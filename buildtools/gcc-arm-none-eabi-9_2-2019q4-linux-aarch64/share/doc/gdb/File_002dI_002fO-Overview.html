@@ -1,0 +1,126 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: File-I/O Overview</title>
+
+<meta name="description" content="Debugging with GDB: File-I/O Overview">
+<meta name="keywords" content="Debugging with GDB: File-I/O Overview">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="File_002dI_002fO-Remote-Protocol-Extension.html#File_002dI_002fO-Remote-Protocol-Extension" rel="up" title="File-I/O Remote Protocol Extension">
+<link href="Protocol-Basics.html#Protocol-Basics" rel="next" title="Protocol Basics">
+<link href="File_002dI_002fO-Remote-Protocol-Extension.html#File_002dI_002fO-Remote-Protocol-Extension" rel="prev" title="File-I/O Remote Protocol Extension">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="File_002dI_002fO-Overview"></a>
+<div class="header">
+<p>
+Next: <a href="Protocol-Basics.html#Protocol-Basics" accesskey="n" rel="next">Protocol Basics</a>, Up: <a href="File_002dI_002fO-Remote-Protocol-Extension.html#File_002dI_002fO-Remote-Protocol-Extension" accesskey="u" rel="up">File-I/O Remote Protocol Extension</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="File_002dI_002fO-Overview-1"></a>
+<h4 class="subsection">E.13.1 File-I/O Overview</h4>
+<a name="index-file_002di_002fo-overview"></a>
+
+<p>The <em>File I/O remote protocol extension</em> (short: File-I/O) allows the
+target to use the host&rsquo;s file system and console I/O to perform various
+system calls.  System calls on the target system are translated into a
+remote protocol packet to the host system, which then performs the needed
+actions and returns a response packet to the target system.
+This simulates file system operations even on targets that lack file systems.
+</p>
+<p>The protocol is defined to be independent of both the host and target systems.
+It uses its own internal representation of datatypes and values.  Both
+<small>GDB</small> and the target&rsquo;s <small>GDB</small> stub are responsible for
+translating the system-dependent value representations into the internal
+protocol representations when data is transmitted.
+</p>
+<p>The communication is synchronous.  A system call is possible only when 
+<small>GDB</small> is waiting for a response from the &lsquo;<samp>C</samp>&rsquo;, &lsquo;<samp>c</samp>&rsquo;, &lsquo;<samp>S</samp>&rsquo; 
+or &lsquo;<samp>s</samp>&rsquo; packets.  While <small>GDB</small> handles the request for a system call,
+the target is stopped to allow deterministic access to the target&rsquo;s
+memory.  Therefore File-I/O is not interruptible by target signals.  On
+the other hand, it is possible to interrupt File-I/O by a user interrupt 
+(&lsquo;<samp>Ctrl-C</samp>&rsquo;) within <small>GDB</small>.
+</p>
+<p>The target&rsquo;s request to perform a host system call does not finish
+the latest &lsquo;<samp>C</samp>&rsquo;, &lsquo;<samp>c</samp>&rsquo;, &lsquo;<samp>S</samp>&rsquo; or &lsquo;<samp>s</samp>&rsquo; action.  That means,
+after finishing the system call, the target returns to continuing the
+previous activity (continue, step).  No additional continue or step
+request from <small>GDB</small> is required.
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) continue
+  &lt;- target requests 'system call X'
+  target is stopped, GDB executes system call
+  -&gt; GDB returns result
+  ... target continues, GDB returns to wait for the target
+  &lt;- target hits breakpoint and sends a Txx packet
+</pre></div>
+
+<p>The protocol only supports I/O on the console and to regular files on 
+the host file system.  Character or block special devices, pipes,
+named pipes, sockets or any other communication method on the host
+system are not supported by this protocol.
+</p>
+<p>File I/O is not supported in non-stop mode.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Protocol-Basics.html#Protocol-Basics" accesskey="n" rel="next">Protocol Basics</a>, Up: <a href="File_002dI_002fO-Remote-Protocol-Extension.html#File_002dI_002fO-Remote-Protocol-Extension" accesskey="u" rel="up">File-I/O Remote Protocol Extension</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,238 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: DBX Options</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: DBX Options">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: DBX Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Debugging-Info.html#Debugging-Info" rel="up" title="Debugging Info">
+<link href="DBX-Hooks.html#DBX-Hooks" rel="next" title="DBX Hooks">
+<link href="All-Debuggers.html#All-Debuggers" rel="prev" title="All Debuggers">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="DBX-Options"></a>
+<div class="header">
+<p>
+Next: <a href="DBX-Hooks.html#DBX-Hooks" accesskey="n" rel="next">DBX Hooks</a>, Previous: <a href="All-Debuggers.html#All-Debuggers" accesskey="p" rel="prev">All Debuggers</a>, Up: <a href="Debugging-Info.html#Debugging-Info" accesskey="u" rel="up">Debugging Info</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Specific-Options-for-DBX-Output"></a>
+<h4 class="subsection">18.21.2 Specific Options for DBX Output</h4>
+
+<p>These are specific options for DBX output.
+</p>
+<dl>
+<dt><a name="index-DBX_005fDEBUGGING_005fINFO"></a>Macro: <strong>DBX_DEBUGGING_INFO</strong></dt>
+<dd><p>Define this macro if GCC should produce debugging output for DBX
+in response to the <samp>-g</samp> option.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-XCOFF_005fDEBUGGING_005fINFO"></a>Macro: <strong>XCOFF_DEBUGGING_INFO</strong></dt>
+<dd><p>Define this macro if GCC should produce XCOFF format debugging output
+in response to the <samp>-g</samp> option.  This is a variant of DBX format.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-DEFAULT_005fGDB_005fEXTENSIONS"></a>Macro: <strong>DEFAULT_GDB_EXTENSIONS</strong></dt>
+<dd><p>Define this macro to control whether GCC should by default generate
+GDB&rsquo;s extended version of DBX debugging information (assuming DBX-format
+debugging information is enabled at all).  If you don&rsquo;t define the
+macro, the default is 1: always generate the extended information
+if there is any occasion to.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-DEBUG_005fSYMS_005fTEXT"></a>Macro: <strong>DEBUG_SYMS_TEXT</strong></dt>
+<dd><p>Define this macro if all <code>.stabs</code> commands should be output while
+in the text section.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-ASM_005fSTABS_005fOP"></a>Macro: <strong>ASM_STABS_OP</strong></dt>
+<dd><p>A C string constant, including spacing, naming the assembler pseudo op to
+use instead of <code>&quot;\t.stabs\t&quot;</code> to define an ordinary debugging symbol.
+If you don&rsquo;t define this macro, <code>&quot;\t.stabs\t&quot;</code> is used.  This macro
+applies only to DBX debugging information format.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-ASM_005fSTABD_005fOP"></a>Macro: <strong>ASM_STABD_OP</strong></dt>
+<dd><p>A C string constant, including spacing, naming the assembler pseudo op to
+use instead of <code>&quot;\t.stabd\t&quot;</code> to define a debugging symbol whose
+value is the current location.  If you don&rsquo;t define this macro,
+<code>&quot;\t.stabd\t&quot;</code> is used.  This macro applies only to DBX debugging
+information format.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-ASM_005fSTABN_005fOP"></a>Macro: <strong>ASM_STABN_OP</strong></dt>
+<dd><p>A C string constant, including spacing, naming the assembler pseudo op to
+use instead of <code>&quot;\t.stabn\t&quot;</code> to define a debugging symbol with no
+name.  If you don&rsquo;t define this macro, <code>&quot;\t.stabn\t&quot;</code> is used.  This
+macro applies only to DBX debugging information format.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-DBX_005fNO_005fXREFS"></a>Macro: <strong>DBX_NO_XREFS</strong></dt>
+<dd><p>Define this macro if DBX on your system does not support the construct
+&lsquo;<samp>xs<var>tagname</var></samp>&rsquo;.  On some systems, this construct is used to
+describe a forward reference to a structure named <var>tagname</var>.
+On other systems, this construct is not supported at all.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-DBX_005fCONTIN_005fLENGTH"></a>Macro: <strong>DBX_CONTIN_LENGTH</strong></dt>
+<dd><p>A symbol name in DBX-format debugging information is normally
+continued (split into two separate <code>.stabs</code> directives) when it
+exceeds a certain length (by default, 80 characters).  On some
+operating systems, DBX requires this splitting; on others, splitting
+must not be done.  You can inhibit splitting by defining this macro
+with the value zero.  You can override the default splitting-length by
+defining this macro as an expression for the length you desire.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-DBX_005fCONTIN_005fCHAR"></a>Macro: <strong>DBX_CONTIN_CHAR</strong></dt>
+<dd><p>Normally continuation is indicated by adding a &lsquo;<samp>\</samp>&rsquo; character to
+the end of a <code>.stabs</code> string when a continuation follows.  To use
+a different character instead, define this macro as a character
+constant for the character you want to use.  Do not define this macro
+if backslash is correct for your system.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-DBX_005fSTATIC_005fSTAB_005fDATA_005fSECTION"></a>Macro: <strong>DBX_STATIC_STAB_DATA_SECTION</strong></dt>
+<dd><p>Define this macro if it is necessary to go to the data section before
+outputting the &lsquo;<samp>.stabs</samp>&rsquo; pseudo-op for a non-global static
+variable.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-DBX_005fTYPE_005fDECL_005fSTABS_005fCODE"></a>Macro: <strong>DBX_TYPE_DECL_STABS_CODE</strong></dt>
+<dd><p>The value to use in the &ldquo;code&rdquo; field of the <code>.stabs</code> directive
+for a typedef.  The default is <code>N_LSYM</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-DBX_005fSTATIC_005fCONST_005fVAR_005fCODE"></a>Macro: <strong>DBX_STATIC_CONST_VAR_CODE</strong></dt>
+<dd><p>The value to use in the &ldquo;code&rdquo; field of the <code>.stabs</code> directive
+for a static variable located in the text section.  DBX format does not
+provide any &ldquo;right&rdquo; way to do this.  The default is <code>N_FUN</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-DBX_005fREGPARM_005fSTABS_005fCODE"></a>Macro: <strong>DBX_REGPARM_STABS_CODE</strong></dt>
+<dd><p>The value to use in the &ldquo;code&rdquo; field of the <code>.stabs</code> directive
+for a parameter passed in registers.  DBX format does not provide any
+&ldquo;right&rdquo; way to do this.  The default is <code>N_RSYM</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-DBX_005fREGPARM_005fSTABS_005fLETTER"></a>Macro: <strong>DBX_REGPARM_STABS_LETTER</strong></dt>
+<dd><p>The letter to use in DBX symbol data to identify a symbol as a parameter
+passed in registers.  DBX format does not customarily provide any way to
+do this.  The default is <code>'P'</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-DBX_005fFUNCTION_005fFIRST"></a>Macro: <strong>DBX_FUNCTION_FIRST</strong></dt>
+<dd><p>Define this macro if the DBX information for a function and its
+arguments should precede the assembler code for the function.  Normally,
+in DBX format, the debugging information entirely follows the assembler
+code.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-DBX_005fBLOCKS_005fFUNCTION_005fRELATIVE"></a>Macro: <strong>DBX_BLOCKS_FUNCTION_RELATIVE</strong></dt>
+<dd><p>Define this macro, with value 1, if the value of a symbol describing
+the scope of a block (<code>N_LBRAC</code> or <code>N_RBRAC</code>) should be
+relative to the start of the enclosing function.  Normally, GCC uses
+an absolute address.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-DBX_005fLINES_005fFUNCTION_005fRELATIVE"></a>Macro: <strong>DBX_LINES_FUNCTION_RELATIVE</strong></dt>
+<dd><p>Define this macro, with value 1, if the value of a symbol indicating
+the current line number (<code>N_SLINE</code>) should be relative to the
+start of the enclosing function.  Normally, GCC uses an absolute address.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-DBX_005fUSE_005fBINCL"></a>Macro: <strong>DBX_USE_BINCL</strong></dt>
+<dd><p>Define this macro if GCC should generate <code>N_BINCL</code> and
+<code>N_EINCL</code> stabs for included header files, as on Sun systems.  This
+macro also directs GCC to output a type number as a pair of a file
+number and a type number within the file.  Normally, GCC does not
+generate <code>N_BINCL</code> or <code>N_EINCL</code> stabs, and it outputs a single
+number for a type number.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="DBX-Hooks.html#DBX-Hooks" accesskey="n" rel="next">DBX Hooks</a>, Previous: <a href="All-Debuggers.html#All-Debuggers" accesskey="p" rel="prev">All Debuggers</a>, Up: <a href="Debugging-Info.html#Debugging-Info" accesskey="u" rel="up">Debugging Info</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: IA-64 Options</title>
+
+<meta name="description" content="Using as: IA-64 Options">
+<meta name="keywords" content="Using as: IA-64 Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="IA_002d64_002dDependent.html#IA_002d64_002dDependent" rel="up" title="IA-64-Dependent">
+<link href="IA_002d64-Syntax.html#IA_002d64-Syntax" rel="next" title="IA-64 Syntax">
+<link href="IA_002d64_002dDependent.html#IA_002d64_002dDependent" rel="prev" title="IA-64-Dependent">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="IA_002d64-Options"></a>
+<div class="header">
+<p>
+Next: <a href="IA_002d64-Syntax.html#IA_002d64-Syntax" accesskey="n" rel="next">IA-64 Syntax</a>, Up: <a href="IA_002d64_002dDependent.html#IA_002d64_002dDependent" accesskey="u" rel="up">IA-64-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Options-12"></a>
+<h4 class="subsection">9.17.1 Options</h4>
+<a name="index-IA_002d64-options"></a>
+<a name="index-options-for-IA_002d64"></a>
+
+<dl compact="compact">
+<dd><a name="index-_002dmconstant_002dgp-command_002dline-option_002c-IA_002d64"></a>
+
+</dd>
+<dt><samp>-mconstant-gp</samp></dt>
+<dd><p>This option instructs the assembler to mark the resulting object file
+as using the &ldquo;constant GP&rdquo; model.  With this model, it is assumed
+that the entire program uses a single global pointer (GP) value.  Note
+that this option does not in any fashion affect the machine code
+emitted by the assembler.  All it does is turn on the EF_IA_64_CONS_GP
+flag in the ELF file header.
+</p>
+</dd>
+<dt><samp>-mauto-pic</samp></dt>
+<dd><p>This option instructs the assembler to mark the resulting object file
+as using the &ldquo;constant GP without function descriptor&rdquo; data model.
+This model is like the &ldquo;constant GP&rdquo; model, except that it
+additionally does away with function descriptors.  What this means is
+that the address of a function refers directly to the function&rsquo;s code
+entry-point.  Normally, such an address would refer to a function
+descriptor, which contains both the code entry-point and the GP-value
+needed by the function.  Note that this option does not in any fashion
+affect the machine code emitted by the assembler.  All it does is
+turn on the EF_IA_64_NOFUNCDESC_CONS_GP flag in the ELF file header.
+</p>
+</dd>
+<dt><samp>-milp32</samp></dt>
+<dt><samp>-milp64</samp></dt>
+<dt><samp>-mlp64</samp></dt>
+<dt><samp>-mp64</samp></dt>
+<dd><p>These options select the data model.  The assembler defaults to <code>-mlp64</code>
+(LP64 data model).
+</p>
+</dd>
+<dt><samp>-mle</samp></dt>
+<dt><samp>-mbe</samp></dt>
+<dd><p>These options select the byte order.  The <code>-mle</code> option selects little-endian
+byte order (default) and <code>-mbe</code> selects big-endian byte order.  Note that
+IA-64 machine code always uses little-endian byte order.
+</p>
+</dd>
+<dt><samp>-mtune=itanium1</samp></dt>
+<dt><samp>-mtune=itanium2</samp></dt>
+<dd><p>Tune for a particular IA-64 CPU, <var>itanium1</var> or <var>itanium2</var>. The
+default is <var>itanium2</var>.
+</p>
+</dd>
+<dt><samp>-munwind-check=warning</samp></dt>
+<dt><samp>-munwind-check=error</samp></dt>
+<dd><p>These options control what the assembler will do when performing
+consistency checks on unwind directives.  <code>-munwind-check=warning</code>
+will make the assembler issue a warning when an unwind directive check
+fails.  This is the default.  <code>-munwind-check=error</code> will make the
+assembler issue an error when an unwind directive check fails.
+</p>
+</dd>
+<dt><samp>-mhint.b=ok</samp></dt>
+<dt><samp>-mhint.b=warning</samp></dt>
+<dt><samp>-mhint.b=error</samp></dt>
+<dd><p>These options control what the assembler will do when the &lsquo;<samp>hint.b</samp>&rsquo;
+instruction is used.  <code>-mhint.b=ok</code> will make the assembler accept
+&lsquo;<samp>hint.b</samp>&rsquo;.  <code>-mint.b=warning</code> will make the assembler issue a
+warning when &lsquo;<samp>hint.b</samp>&rsquo; is used.  <code>-mhint.b=error</code> will make
+the assembler treat &lsquo;<samp>hint.b</samp>&rsquo; as an error, which is the default.
+</p>
+</dd>
+<dt><samp>-x</samp></dt>
+<dt><samp>-xexplicit</samp></dt>
+<dd><p>These options turn on dependency violation checking.
+</p>
+</dd>
+<dt><samp>-xauto</samp></dt>
+<dd><p>This option instructs the assembler to automatically insert stop bits where necessary
+to remove dependency violations.  This is the default mode.
+</p>
+</dd>
+<dt><samp>-xnone</samp></dt>
+<dd><p>This option turns off dependency violation checking.
+</p>
+</dd>
+<dt><samp>-xdebug</samp></dt>
+<dd><p>This turns on debug output intended to help tracking down bugs in the dependency
+violation checker.
+</p>
+</dd>
+<dt><samp>-xdebugn</samp></dt>
+<dd><p>This is a shortcut for -xnone -xdebug.
+</p>
+</dd>
+<dt><samp>-xdebugx</samp></dt>
+<dd><p>This is a shortcut for -xexplicit -xdebug.
+</p>
+</dd>
+</dl>
+
+<a name="index-IA_002d64-Syntax"></a>
+<hr>
+<div class="header">
+<p>
+Next: <a href="IA_002d64-Syntax.html#IA_002d64-Syntax" accesskey="n" rel="next">IA-64 Syntax</a>, Up: <a href="IA_002d64_002dDependent.html#IA_002d64_002dDependent" accesskey="u" rel="up">IA-64-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

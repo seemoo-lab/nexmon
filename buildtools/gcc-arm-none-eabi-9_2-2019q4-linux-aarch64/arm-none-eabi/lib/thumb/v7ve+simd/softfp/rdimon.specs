@@ -1,0 +1,21 @@
+# rdimon.specs
+#
+# Spec file for AArch64 baremetal newlib with version 2 of the
+# AngelAPI semi-hosting using the SVC trap instruction.
+#
+# This version supports extensibility through an extension mechanism.
+
+%rename link_gcc_c_sequence                rdimon_link_gcc_c_sequence
+
+*rdimon_libc:
+%{!specs=nano.specs:-lc} %{specs=nano.specs:-lc_nano}
+
+*rdimon_libgloss:
+%{!specs=nano.specs:-lrdimon} %{specs=nano.specs:-lrdimon_nano}
+
+*link_gcc_c_sequence:
+%(rdimon_link_gcc_c_sequence) --start-group %G %(rdimon_libc) %(rdimon_libgloss) --end-group
+
+*startfile:
+crti%O%s crtbegin%O%s %{!pg:rdimon-crt0%O%s} %{pg:rdimon-crt0%O%s}
+

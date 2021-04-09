@@ -1,0 +1,219 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1992-2019 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License". -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>STABS: Symbol Descriptors</title>
+
+<meta name="description" content="STABS: Symbol Descriptors">
+<meta name="keywords" content="STABS: Symbol Descriptors">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Symbol-Types-Index.html#Symbol-Types-Index" rel="index" title="Symbol Types Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Type-Descriptors.html#Type-Descriptors" rel="next" title="Type Descriptors">
+<link href="Stab-Symbol-Types.html#Stab-Symbol-Types" rel="prev" title="Stab Symbol Types">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Symbol-Descriptors"></a>
+<div class="header">
+<p>
+Next: <a href="Type-Descriptors.html#Type-Descriptors" accesskey="n" rel="next">Type Descriptors</a>, Previous: <a href="Stab-Types.html#Stab-Types" accesskey="p" rel="prev">Stab Types</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Symbol-Types-Index.html#Symbol-Types-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Table-of-Symbol-Descriptors"></a>
+<h2 class="appendix">Appendix B Table of Symbol Descriptors</h2>
+
+<p>The symbol descriptor is the character which follows the colon in many
+stabs, and which tells what kind of stab it is.  See <a href="String-Field.html#String-Field">String Field</a>,
+for more information about their use.
+</p>
+<dl compact="compact">
+<dt><code><var>digit</var></code></dt>
+<dt><code>(</code></dt>
+<dt><code>-</code></dt>
+<dd><p>Variable on the stack; see <a href="Stack-Variables.html#Stack-Variables">Stack Variables</a>.
+</p>
+</dd>
+<dt><code>:</code></dt>
+<dd><p>C<tt>++</tt> nested symbol; see See <a href="Nested-Symbols.html#Nested-Symbols">Nested Symbols</a>.
+</p>
+</dd>
+<dt><code>a</code></dt>
+<dd><p>Parameter passed by reference in register; see <a href="Reference-Parameters.html#Reference-Parameters">Reference Parameters</a>.
+</p>
+</dd>
+<dt><code>b</code></dt>
+<dd><p>Based variable; see <a href="Based-Variables.html#Based-Variables">Based Variables</a>.
+</p>
+</dd>
+<dt><code>c</code></dt>
+<dd><p>Constant; see <a href="Constants.html#Constants">Constants</a>.
+</p>
+</dd>
+<dt><code>C</code></dt>
+<dd><p>Conformant array bound (Pascal, maybe other languages); <a href="Conformant-Arrays.html#Conformant-Arrays">Conformant Arrays</a>.  Name of a caught exception (GNU C<tt>++</tt>).  These can be
+distinguished because the latter uses <code>N_CATCH</code> and the former uses
+another symbol type.
+</p>
+</dd>
+<dt><code>d</code></dt>
+<dd><p>Floating point register variable; see <a href="Register-Variables.html#Register-Variables">Register Variables</a>.
+</p>
+</dd>
+<dt><code>D</code></dt>
+<dd><p>Parameter in floating point register; see <a href="Register-Parameters.html#Register-Parameters">Register Parameters</a>.
+</p>
+</dd>
+<dt><code>f</code></dt>
+<dd><p>File scope function; see <a href="Procedures.html#Procedures">Procedures</a>.
+</p>
+</dd>
+<dt><code>F</code></dt>
+<dd><p>Global function; see <a href="Procedures.html#Procedures">Procedures</a>.
+</p>
+</dd>
+<dt><code>G</code></dt>
+<dd><p>Global variable; see <a href="Global-Variables.html#Global-Variables">Global Variables</a>.
+</p>
+</dd>
+<dt><code>i</code></dt>
+<dd><p>See <a href="Register-Parameters.html#Register-Parameters">Register Parameters</a>.
+</p>
+</dd>
+<dt><code>I</code></dt>
+<dd><p>Internal (nested) procedure; see <a href="Nested-Procedures.html#Nested-Procedures">Nested Procedures</a>.
+</p>
+</dd>
+<dt><code>J</code></dt>
+<dd><p>Internal (nested) function; see <a href="Nested-Procedures.html#Nested-Procedures">Nested Procedures</a>.
+</p>
+</dd>
+<dt><code>L</code></dt>
+<dd><p>Label name (documented by AIX, no further information known).
+</p>
+</dd>
+<dt><code>m</code></dt>
+<dd><p>Module; see <a href="Procedures.html#Procedures">Procedures</a>.
+</p>
+</dd>
+<dt><code>p</code></dt>
+<dd><p>Argument list parameter; see <a href="Parameters.html#Parameters">Parameters</a>.
+</p>
+</dd>
+<dt><code>pP</code></dt>
+<dd><p>See <a href="Parameters.html#Parameters">Parameters</a>.
+</p>
+</dd>
+<dt><code>pF</code></dt>
+<dd><p>Fortran Function parameter; see <a href="Parameters.html#Parameters">Parameters</a>.
+</p>
+</dd>
+<dt><code>P</code></dt>
+<dd><p>Unfortunately, three separate meanings have been independently invented
+for this symbol descriptor.  At least the GNU and Sun uses can be
+distinguished by the symbol type.  Global Procedure (AIX) (symbol type
+used unknown); see <a href="Procedures.html#Procedures">Procedures</a>.  Register parameter (GNU) (symbol
+type <code>N_PSYM</code>); see <a href="Parameters.html#Parameters">Parameters</a>.  Prototype of function
+referenced by this file (Sun <code>acc</code>) (symbol type <code>N_FUN</code>).
+</p>
+</dd>
+<dt><code>Q</code></dt>
+<dd><p>Static Procedure; see <a href="Procedures.html#Procedures">Procedures</a>.
+</p>
+</dd>
+<dt><code>R</code></dt>
+<dd><p>Register parameter; see <a href="Register-Parameters.html#Register-Parameters">Register Parameters</a>.
+</p>
+</dd>
+<dt><code>r</code></dt>
+<dd><p>Register variable; see <a href="Register-Variables.html#Register-Variables">Register Variables</a>.
+</p>
+</dd>
+<dt><code>S</code></dt>
+<dd><p>File scope variable; see <a href="Statics.html#Statics">Statics</a>.
+</p>
+</dd>
+<dt><code>s</code></dt>
+<dd><p>Local variable (OS9000).
+</p>
+</dd>
+<dt><code>t</code></dt>
+<dd><p>Type name; see <a href="Typedefs.html#Typedefs">Typedefs</a>.
+</p>
+</dd>
+<dt><code>T</code></dt>
+<dd><p>Enumeration, structure, or union tag; see <a href="Typedefs.html#Typedefs">Typedefs</a>.
+</p>
+</dd>
+<dt><code>v</code></dt>
+<dd><p>Parameter passed by reference; see <a href="Reference-Parameters.html#Reference-Parameters">Reference Parameters</a>.
+</p>
+</dd>
+<dt><code>V</code></dt>
+<dd><p>Procedure scope static variable; see <a href="Statics.html#Statics">Statics</a>.
+</p>
+</dd>
+<dt><code>x</code></dt>
+<dd><p>Conformant array; see <a href="Conformant-Arrays.html#Conformant-Arrays">Conformant Arrays</a>.
+</p>
+</dd>
+<dt><code>X</code></dt>
+<dd><p>Function return variable; see <a href="Parameters.html#Parameters">Parameters</a>.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Type-Descriptors.html#Type-Descriptors" accesskey="n" rel="next">Type Descriptors</a>, Previous: <a href="Stab-Types.html#Stab-Types" accesskey="p" rel="prev">Stab Types</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Symbol-Types-Index.html#Symbol-Types-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

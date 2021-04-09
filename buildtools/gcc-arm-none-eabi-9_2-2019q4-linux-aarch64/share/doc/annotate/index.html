@@ -1,0 +1,167 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1994-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License". -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GDB&rsquo;s Obsolete Annotations: Top</title>
+
+<meta name="description" content="GDB&rsquo;s Obsolete Annotations: Top">
+<meta name="keywords" content="GDB&rsquo;s Obsolete Annotations: Top">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="#Top" rel="start" title="Top">
+<link href="#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="../dir/index.html" rel="up" title="(dir)">
+<link href="Annotations-Overview.html#Annotations-Overview" rel="next" title="Annotations Overview">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<h1 class="settitle" align="center"><small>GDB</small>&rsquo;s Obsolete Annotations</h1>
+
+
+
+
+
+
+<p>This file documents <small>GDB</small>&rsquo;s obsolete annotations.
+</p>
+<p>Copyright &copy; 1994-2019 Free Software Foundation, Inc.
+</p>
+<p>Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled &ldquo;GNU
+Free Documentation License&rdquo;.
+</p>
+
+
+<a name="Top"></a>
+<div class="header">
+<p>
+Next: <a href="Annotations-Overview.html#Annotations-Overview" accesskey="n" rel="next">Annotations Overview</a>, Up: <a href="../dir/index.html" accesskey="u" rel="up">(dir)</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+<hr>
+<a name="GDB-Annotations"></a>
+<h1 class="top">GDB Annotations</h1>
+
+<p>This document describes the obsolete level two annotation interface
+implemented in older <small>GDB</small> versions.
+</p>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Annotations-Overview.html#Annotations-Overview" accesskey="1">Annotations Overview</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">What annotations are; the general syntax.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Limitations.html#Limitations" accesskey="2">Limitations</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Limitations of the annotation interface.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Migrating-to-GDB_002fMI.html#Migrating-to-GDB_002fMI" accesskey="3">Migrating to GDB/MI</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Migrating to GDB/MI
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Server-Prefix.html#Server-Prefix" accesskey="4">Server Prefix</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Issuing a command without affecting user state.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Value-Annotations.html#Value-Annotations" accesskey="5">Value Annotations</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Values are marked as such.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Frame-Annotations.html#Frame-Annotations" accesskey="6">Frame Annotations</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Stack frames are annotated.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Displays.html#Displays" accesskey="7">Displays</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><small>GDB</small> can be told to display something periodically.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Prompting.html#Prompting" accesskey="8">Prompting</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Annotations marking <small>GDB</small>&rsquo;s need for input.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Errors.html#Errors" accesskey="9">Errors</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Annotations for error messages.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Breakpoint-Info.html#Breakpoint-Info">Breakpoint Info</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Information on breakpoints.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Invalidation.html#Invalidation">Invalidation</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Some annotations describe things now invalid.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Annotations-for-Running.html#Annotations-for-Running">Annotations for Running</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+                        Whether the program is running, how it stopped, etc.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Source-Annotations.html#Source-Annotations">Source Annotations</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Annotations describing source code.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Multi_002dthreaded-Apps.html#Multi_002dthreaded-Apps">Multi-threaded Apps</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">An annotation that reports multi-threadedness.
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License">GNU Free Documentation License</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+<a name="SEC_Contents"></a>
+<h2 class="contents-heading">Table of Contents</h2>
+
+<div class="contents">
+
+<ul class="no-bullet">
+  <li><a name="toc-What-is-an-Annotation_003f" href="Annotations-Overview.html#Annotations-Overview">1 What is an Annotation?</a></li>
+  <li><a name="toc-Limitations-of-the-Annotation-Interface" href="Limitations.html#Limitations">2 Limitations of the Annotation Interface</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Dependant-on-CLI-output" href="Limitations.html#Dependant-on-CLI-output">2.1 Dependant on <small>CLI</small> output</a></li>
+    <li><a name="toc-Scalability" href="Limitations.html#Scalability">2.2 Scalability</a></li>
+    <li><a name="toc-Correctness" href="Limitations.html#Correctness">2.3 Correctness</a></li>
+    <li><a name="toc-Reliability" href="Limitations.html#Reliability">2.4 Reliability</a></li>
+    <li><a name="toc-Maintainability" href="Limitations.html#Maintainability">2.5 Maintainability</a></li>
+  </ul></li>
+  <li><a name="toc-Migrating-to-GDB_002fMI-1" href="Migrating-to-GDB_002fMI.html#Migrating-to-GDB_002fMI">3 Migrating to <small>GDB/MI</small></a></li>
+  <li><a name="toc-The-Server-Prefix" href="Server-Prefix.html#Server-Prefix">4 The Server Prefix</a></li>
+  <li><a name="toc-Values" href="Value-Annotations.html#Value-Annotations">5 Values</a></li>
+  <li><a name="toc-Frames" href="Frame-Annotations.html#Frame-Annotations">6 Frames</a></li>
+  <li><a name="toc-Displays-1" href="Displays.html#Displays">7 Displays</a></li>
+  <li><a name="toc-Annotation-for-GDB-Input" href="Prompting.html#Prompting">8 Annotation for <small>GDB</small> Input</a></li>
+  <li><a name="toc-Errors-1" href="Errors.html#Errors">9 Errors</a></li>
+  <li><a name="toc-Information-on-Breakpoints" href="Breakpoint-Info.html#Breakpoint-Info">10 Information on Breakpoints</a></li>
+  <li><a name="toc-Invalidation-Notices" href="Invalidation.html#Invalidation">11 Invalidation Notices</a></li>
+  <li><a name="toc-Running-the-Program" href="Annotations-for-Running.html#Annotations-for-Running">12 Running the Program</a></li>
+  <li><a name="toc-Displaying-Source" href="Source-Annotations.html#Source-Annotations">13 Displaying Source</a></li>
+  <li><a name="toc-Multi_002dthreaded-Applications" href="Multi_002dthreaded-Apps.html#Multi_002dthreaded-Apps">14 Multi-threaded Applications</a></li>
+  <li><a name="toc-GNU-Free-Documentation-License-1" href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License">Appendix A GNU Free Documentation License</a></li>
+</ul>
+</div>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Annotations-Overview.html#Annotations-Overview" accesskey="n" rel="next">Annotations Overview</a>, Up: <a href="../dir/index.html" accesskey="u" rel="up">(dir)</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>]</p>
+</div>
+
+
+
+</body>
+</html>

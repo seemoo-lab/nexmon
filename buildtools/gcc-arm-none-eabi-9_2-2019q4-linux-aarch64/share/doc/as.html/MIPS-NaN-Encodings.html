@@ -1,0 +1,119 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: MIPS NaN Encodings</title>
+
+<meta name="description" content="Using as: MIPS NaN Encodings">
+<meta name="keywords" content="Using as: MIPS NaN Encodings">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="MIPS_002dDependent.html#MIPS_002dDependent" rel="up" title="MIPS-Dependent">
+<link href="MIPS-Option-Stack.html#MIPS-Option-Stack" rel="next" title="MIPS Option Stack">
+<link href="MIPS-FP-ABI-Compatibility.html#MIPS-FP-ABI-Compatibility" rel="prev" title="MIPS FP ABI Compatibility">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="MIPS-NaN-Encodings"></a>
+<div class="header">
+<p>
+Next: <a href="MIPS-Option-Stack.html#MIPS-Option-Stack" accesskey="n" rel="next">MIPS Option Stack</a>, Previous: <a href="MIPS-FP-ABIs.html#MIPS-FP-ABIs" accesskey="p" rel="prev">MIPS FP ABIs</a>, Up: <a href="MIPS_002dDependent.html#MIPS_002dDependent" accesskey="u" rel="up">MIPS-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Directives-to-record-which-NaN-encoding-is-being-used"></a>
+<h4 class="subsection">9.27.10 Directives to record which NaN encoding is being used</h4>
+
+<a name="index-MIPS-IEEE-754-NaN-data-encoding-selection"></a>
+<a name="index-_002enan-directive_002c-MIPS"></a>
+<p>The IEEE 754 floating-point standard defines two types of not-a-number
+(NaN) data: &ldquo;signalling&rdquo; NaNs and &ldquo;quiet&rdquo; NaNs.  The original version
+of the standard did not specify how these two types should be
+distinguished.  Most implementations followed the i387 model, in which
+the first bit of the significand is set for quiet NaNs and clear for
+signalling NaNs.  However, the original MIPS implementation assigned the
+opposite meaning to the bit, so that it was set for signalling NaNs and
+clear for quiet NaNs.
+</p>
+<p>The 2008 revision of the standard formally suggested the i387 choice
+and as from Sep 2012 the current release of the MIPS architecture
+therefore optionally supports that form.  Code that uses one NaN encoding
+would usually be incompatible with code that uses the other NaN encoding,
+so MIPS ELF objects have a flag (<code>EF_MIPS_NAN2008</code>) to record which
+encoding is being used.
+</p>
+<p>Assembly files can use the <code>.nan</code> directive to select between the
+two encodings.  &lsquo;<samp>.nan 2008</samp>&rsquo; says that the assembly file uses the
+IEEE 754-2008 encoding while &lsquo;<samp>.nan legacy</samp>&rsquo; says that the file uses
+the original MIPS encoding.  If several <code>.nan</code> directives are given,
+the final setting is the one that is used.
+</p>
+<p>The command-line options <samp>-mnan=legacy</samp> and <samp>-mnan=2008</samp>
+can be used instead of &lsquo;<samp>.nan legacy</samp>&rsquo; and &lsquo;<samp>.nan 2008</samp>&rsquo;
+respectively.  However, any <code>.nan</code> directive overrides the
+command-line setting.
+</p>
+<p>&lsquo;<samp>.nan legacy</samp>&rsquo; is the default if no <code>.nan</code> directive or
+<samp>-mnan</samp> option is given.
+</p>
+<p>Note that <small>GNU</small> <code>as</code> does not produce NaNs itself and
+therefore these directives do not affect code generation.  They simply
+control the setting of the <code>EF_MIPS_NAN2008</code> flag.
+</p>
+<p>Traditional MIPS assemblers do not support these directives.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="MIPS-Option-Stack.html#MIPS-Option-Stack" accesskey="n" rel="next">MIPS Option Stack</a>, Previous: <a href="MIPS-FP-ABIs.html#MIPS-FP-ABIs" accesskey="p" rel="prev">MIPS FP ABIs</a>, Up: <a href="MIPS_002dDependent.html#MIPS_002dDependent" accesskey="u" rel="up">MIPS-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Floating Point</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Floating Point">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Floating Point">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Target-Macros.html#Target-Macros" rel="up" title="Target Macros">
+<link href="Mode-Switching.html#Mode-Switching" rel="next" title="Mode Switching">
+<link href="VMS-Debug.html#VMS-Debug" rel="prev" title="VMS Debug">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Floating-Point"></a>
+<div class="header">
+<p>
+Next: <a href="Mode-Switching.html#Mode-Switching" accesskey="n" rel="next">Mode Switching</a>, Previous: <a href="Debugging-Info.html#Debugging-Info" accesskey="p" rel="prev">Debugging Info</a>, Up: <a href="Target-Macros.html#Target-Macros" accesskey="u" rel="up">Target Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Cross-Compilation-and-Floating-Point"></a>
+<h3 class="section">18.22 Cross Compilation and Floating Point</h3>
+<a name="index-cross-compilation-and-floating-point"></a>
+<a name="index-floating-point-and-cross-compilation"></a>
+
+<p>While all modern machines use twos-complement representation for integers,
+there are a variety of representations for floating point numbers.  This
+means that in a cross-compiler the representation of floating point numbers
+in the compiled program may be different from that used in the machine
+doing the compilation.
+</p>
+<p>Because different representation systems may offer different amounts of
+range and precision, all floating point constants must be represented in
+the target machine&rsquo;s format.  Therefore, the cross compiler cannot
+safely use the host machine&rsquo;s floating point arithmetic; it must emulate
+the target&rsquo;s arithmetic.  To ensure consistency, GCC always uses
+emulation to work with floating point values, even when the host and
+target floating point formats are identical.
+</p>
+<p>The following macros are provided by <samp>real.h</samp> for the compiler to
+use.  All parts of the compiler which generate or optimize
+floating-point calculations must use these macros.  They may evaluate
+their operands more than once, so operands must not have side effects.
+</p>
+<dl>
+<dt><a name="index-REAL_005fVALUE_005fTYPE"></a>Macro: <strong>REAL_VALUE_TYPE</strong></dt>
+<dd><p>The C data type to be used to hold a floating point value in the target
+machine&rsquo;s format.  Typically this is a <code>struct</code> containing an
+array of <code>HOST_WIDE_INT</code>, but all code should treat it as an opaque
+quantity.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-REAL_005fVALUE_005fFIX"></a>Macro: <em>HOST_WIDE_INT</em> <strong>REAL_VALUE_FIX</strong> <em>(REAL_VALUE_TYPE <var>x</var>)</em></dt>
+<dd><p>Truncates <var>x</var> to a signed integer, rounding toward zero.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-REAL_005fVALUE_005fUNSIGNED_005fFIX"></a>Macro: <em>unsigned HOST_WIDE_INT</em> <strong>REAL_VALUE_UNSIGNED_FIX</strong> <em>(REAL_VALUE_TYPE <var>x</var>)</em></dt>
+<dd><p>Truncates <var>x</var> to an unsigned integer, rounding toward zero.  If
+<var>x</var> is negative, returns zero.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-REAL_005fVALUE_005fATOF"></a>Macro: <em>REAL_VALUE_TYPE</em> <strong>REAL_VALUE_ATOF</strong> <em>(const char *<var>string</var>, machine_mode <var>mode</var>)</em></dt>
+<dd><p>Converts <var>string</var> into a floating point number in the target machine&rsquo;s
+representation for mode <var>mode</var>.  This routine can handle both
+decimal and hexadecimal floating point constants, using the syntax
+defined by the C language for both.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-REAL_005fVALUE_005fNEGATIVE"></a>Macro: <em>int</em> <strong>REAL_VALUE_NEGATIVE</strong> <em>(REAL_VALUE_TYPE <var>x</var>)</em></dt>
+<dd><p>Returns 1 if <var>x</var> is negative (including negative zero), 0 otherwise.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-REAL_005fVALUE_005fISINF"></a>Macro: <em>int</em> <strong>REAL_VALUE_ISINF</strong> <em>(REAL_VALUE_TYPE <var>x</var>)</em></dt>
+<dd><p>Determines whether <var>x</var> represents infinity (positive or negative).
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-REAL_005fVALUE_005fISNAN"></a>Macro: <em>int</em> <strong>REAL_VALUE_ISNAN</strong> <em>(REAL_VALUE_TYPE <var>x</var>)</em></dt>
+<dd><p>Determines whether <var>x</var> represents a &ldquo;NaN&rdquo; (not-a-number).
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-REAL_005fVALUE_005fNEGATE"></a>Macro: <em>REAL_VALUE_TYPE</em> <strong>REAL_VALUE_NEGATE</strong> <em>(REAL_VALUE_TYPE <var>x</var>)</em></dt>
+<dd><p>Returns the negative of the floating point value <var>x</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-REAL_005fVALUE_005fABS"></a>Macro: <em>REAL_VALUE_TYPE</em> <strong>REAL_VALUE_ABS</strong> <em>(REAL_VALUE_TYPE <var>x</var>)</em></dt>
+<dd><p>Returns the absolute value of <var>x</var>.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Mode-Switching.html#Mode-Switching" accesskey="n" rel="next">Mode Switching</a>, Previous: <a href="Debugging-Info.html#Debugging-Info" accesskey="p" rel="prev">Debugging Info</a>, Up: <a href="Target-Macros.html#Target-Macros" accesskey="u" rel="up">Target Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,264 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Type Traits</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Type Traits">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Type Traits">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C_002b_002b-Extensions.html#C_002b_002b-Extensions" rel="up" title="C++ Extensions">
+<link href="C_002b_002b-Concepts.html#C_002b_002b-Concepts" rel="next" title="C++ Concepts">
+<link href="Function-Multiversioning.html#Function-Multiversioning" rel="prev" title="Function Multiversioning">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Type-Traits"></a>
+<div class="header">
+<p>
+Next: <a href="C_002b_002b-Concepts.html#C_002b_002b-Concepts" accesskey="n" rel="next">C++ Concepts</a>, Previous: <a href="Function-Multiversioning.html#Function-Multiversioning" accesskey="p" rel="prev">Function Multiversioning</a>, Up: <a href="C_002b_002b-Extensions.html#C_002b_002b-Extensions" accesskey="u" rel="up">C++ Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Type-Traits-1"></a>
+<h3 class="section">7.9 Type Traits</h3>
+
+<p>The C++ front end implements syntactic extensions that allow
+compile-time determination of 
+various characteristics of a type (or of a
+pair of types).
+</p>
+<dl compact="compact">
+<dt><code>__has_nothrow_assign (type)</code></dt>
+<dd><p>If <code>type</code> is <code>const</code>-qualified or is a reference type then
+the trait is <code>false</code>.  Otherwise if <code>__has_trivial_assign (type)</code>
+is <code>true</code> then the trait is <code>true</code>, else if <code>type</code> is
+a cv-qualified class or union type with copy assignment operators that are
+known not to throw an exception then the trait is <code>true</code>, else it is
+<code>false</code>.
+Requires: <code>type</code> shall be a complete type, (possibly cv-qualified)
+<code>void</code>, or an array of unknown bound.
+</p>
+</dd>
+<dt><code>__has_nothrow_copy (type)</code></dt>
+<dd><p>If <code>__has_trivial_copy (type)</code> is <code>true</code> then the trait is
+<code>true</code>, else if <code>type</code> is a cv-qualified class or union type
+with copy constructors that are known not to throw an exception then
+the trait is <code>true</code>, else it is <code>false</code>.
+Requires: <code>type</code> shall be a complete type, (possibly cv-qualified)
+<code>void</code>, or an array of unknown bound.
+</p>
+</dd>
+<dt><code>__has_nothrow_constructor (type)</code></dt>
+<dd><p>If <code>__has_trivial_constructor (type)</code> is <code>true</code> then the trait
+is <code>true</code>, else if <code>type</code> is a cv class or union type (or array
+thereof) with a default constructor that is known not to throw an
+exception then the trait is <code>true</code>, else it is <code>false</code>.
+Requires: <code>type</code> shall be a complete type, (possibly cv-qualified)
+<code>void</code>, or an array of unknown bound.
+</p>
+</dd>
+<dt><code>__has_trivial_assign (type)</code></dt>
+<dd><p>If <code>type</code> is <code>const</code>- qualified or is a reference type then
+the trait is <code>false</code>.  Otherwise if <code>__is_pod (type)</code> is
+<code>true</code> then the trait is <code>true</code>, else if <code>type</code> is
+a cv-qualified class or union type with a trivial copy assignment
+([class.copy]) then the trait is <code>true</code>, else it is <code>false</code>.
+Requires: <code>type</code> shall be a complete type, (possibly cv-qualified)
+<code>void</code>, or an array of unknown bound.
+</p>
+</dd>
+<dt><code>__has_trivial_copy (type)</code></dt>
+<dd><p>If <code>__is_pod (type)</code> is <code>true</code> or <code>type</code> is a reference
+type then the trait is <code>true</code>, else if <code>type</code> is a cv class
+or union type with a trivial copy constructor ([class.copy]) then the trait
+is <code>true</code>, else it is <code>false</code>.  Requires: <code>type</code> shall be
+a complete type, (possibly cv-qualified) <code>void</code>, or an array of unknown
+bound.
+</p>
+</dd>
+<dt><code>__has_trivial_constructor (type)</code></dt>
+<dd><p>If <code>__is_pod (type)</code> is <code>true</code> then the trait is <code>true</code>,
+else if <code>type</code> is a cv-qualified class or union type (or array thereof)
+with a trivial default constructor ([class.ctor]) then the trait is <code>true</code>,
+else it is <code>false</code>.
+Requires: <code>type</code> shall be a complete type, (possibly cv-qualified)
+<code>void</code>, or an array of unknown bound.
+</p>
+</dd>
+<dt><code>__has_trivial_destructor (type)</code></dt>
+<dd><p>If <code>__is_pod (type)</code> is <code>true</code> or <code>type</code> is a reference type
+then the trait is <code>true</code>, else if <code>type</code> is a cv class or union
+type (or array thereof) with a trivial destructor ([class.dtor]) then
+the trait is <code>true</code>, else it is <code>false</code>.
+Requires: <code>type</code> shall be a complete type, (possibly cv-qualified)
+<code>void</code>, or an array of unknown bound.
+</p>
+</dd>
+<dt><code>__has_virtual_destructor (type)</code></dt>
+<dd><p>If <code>type</code> is a class type with a virtual destructor
+([class.dtor]) then the trait is <code>true</code>, else it is <code>false</code>.
+Requires: <code>type</code> shall be a complete type, (possibly cv-qualified)
+<code>void</code>, or an array of unknown bound.
+</p>
+</dd>
+<dt><code>__is_abstract (type)</code></dt>
+<dd><p>If <code>type</code> is an abstract class ([class.abstract]) then the trait
+is <code>true</code>, else it is <code>false</code>.
+Requires: <code>type</code> shall be a complete type, (possibly cv-qualified)
+<code>void</code>, or an array of unknown bound.
+</p>
+</dd>
+<dt><code>__is_base_of (base_type, derived_type)</code></dt>
+<dd><p>If <code>base_type</code> is a base class of <code>derived_type</code>
+([class.derived]) then the trait is <code>true</code>, otherwise it is <code>false</code>.
+Top-level cv-qualifications of <code>base_type</code> and
+<code>derived_type</code> are ignored.  For the purposes of this trait, a
+class type is considered is own base.
+Requires: if <code>__is_class (base_type)</code> and <code>__is_class (derived_type)</code>
+are <code>true</code> and <code>base_type</code> and <code>derived_type</code> are not the same
+type (disregarding cv-qualifiers), <code>derived_type</code> shall be a complete
+type.  A diagnostic is produced if this requirement is not met.
+</p>
+</dd>
+<dt><code>__is_class (type)</code></dt>
+<dd><p>If <code>type</code> is a cv-qualified class type, and not a union type
+([basic.compound]) the trait is <code>true</code>, else it is <code>false</code>.
+</p>
+</dd>
+<dt><code>__is_empty (type)</code></dt>
+<dd><p>If <code>__is_class (type)</code> is <code>false</code> then the trait is <code>false</code>.
+Otherwise <code>type</code> is considered empty if and only if: <code>type</code>
+has no non-static data members, or all non-static data members, if
+any, are bit-fields of length 0, and <code>type</code> has no virtual
+members, and <code>type</code> has no virtual base classes, and <code>type</code>
+has no base classes <code>base_type</code> for which
+<code>__is_empty (base_type)</code> is <code>false</code>.
+Requires: <code>type</code> shall be a complete type, (possibly cv-qualified)
+<code>void</code>, or an array of unknown bound.
+</p>
+</dd>
+<dt><code>__is_enum (type)</code></dt>
+<dd><p>If <code>type</code> is a cv enumeration type ([basic.compound]) the trait is
+<code>true</code>, else it is <code>false</code>.
+</p>
+</dd>
+<dt><code>__is_literal_type (type)</code></dt>
+<dd><p>If <code>type</code> is a literal type ([basic.types]) the trait is
+<code>true</code>, else it is <code>false</code>.
+Requires: <code>type</code> shall be a complete type, (possibly cv-qualified)
+<code>void</code>, or an array of unknown bound.
+</p>
+</dd>
+<dt><code>__is_pod (type)</code></dt>
+<dd><p>If <code>type</code> is a cv POD type ([basic.types]) then the trait is <code>true</code>,
+else it is <code>false</code>.
+Requires: <code>type</code> shall be a complete type, (possibly cv-qualified)
+<code>void</code>, or an array of unknown bound.
+</p>
+</dd>
+<dt><code>__is_polymorphic (type)</code></dt>
+<dd><p>If <code>type</code> is a polymorphic class ([class.virtual]) then the trait
+is <code>true</code>, else it is <code>false</code>.
+Requires: <code>type</code> shall be a complete type, (possibly cv-qualified)
+<code>void</code>, or an array of unknown bound.
+</p>
+</dd>
+<dt><code>__is_standard_layout (type)</code></dt>
+<dd><p>If <code>type</code> is a standard-layout type ([basic.types]) the trait is
+<code>true</code>, else it is <code>false</code>.
+Requires: <code>type</code> shall be a complete type, (possibly cv-qualified)
+<code>void</code>, or an array of unknown bound.
+</p>
+</dd>
+<dt><code>__is_trivial (type)</code></dt>
+<dd><p>If <code>type</code> is a trivial type ([basic.types]) the trait is
+<code>true</code>, else it is <code>false</code>.
+Requires: <code>type</code> shall be a complete type, (possibly cv-qualified)
+<code>void</code>, or an array of unknown bound.
+</p>
+</dd>
+<dt><code>__is_union (type)</code></dt>
+<dd><p>If <code>type</code> is a cv union type ([basic.compound]) the trait is
+<code>true</code>, else it is <code>false</code>.
+</p>
+</dd>
+<dt><code>__underlying_type (type)</code></dt>
+<dd><p>The underlying type of <code>type</code>.
+Requires: <code>type</code> shall be an enumeration type ([dcl.enum]).
+</p>
+</dd>
+<dt><code>__integer_pack (length)</code></dt>
+<dd><p>When used as the pattern of a pack expansion within a template
+definition, expands to a template argument pack containing integers
+from <code>0</code> to <code>length-1</code>.  This is provided for efficient
+implementation of <code>std::make_integer_sequence</code>.
+</p>
+</dd>
+</dl>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="C_002b_002b-Concepts.html#C_002b_002b-Concepts" accesskey="n" rel="next">C++ Concepts</a>, Previous: <a href="Function-Multiversioning.html#Function-Multiversioning" accesskey="p" rel="prev">Function Multiversioning</a>, Up: <a href="C_002b_002b-Extensions.html#C_002b_002b-Extensions" accesskey="u" rel="up">C++ Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

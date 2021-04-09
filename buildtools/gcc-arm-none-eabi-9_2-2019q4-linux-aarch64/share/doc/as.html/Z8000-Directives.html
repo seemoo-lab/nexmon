@@ -1,0 +1,162 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: Z8000 Directives</title>
+
+<meta name="description" content="Using as: Z8000 Directives">
+<meta name="keywords" content="Using as: Z8000 Directives">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Z8000_002dDependent.html#Z8000_002dDependent" rel="up" title="Z8000-Dependent">
+<link href="Z8000-Opcodes.html#Z8000-Opcodes" rel="next" title="Z8000 Opcodes">
+<link href="Z8000_002dAddressing.html#Z8000_002dAddressing" rel="prev" title="Z8000-Addressing">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Z8000-Directives"></a>
+<div class="header">
+<p>
+Next: <a href="Z8000-Opcodes.html#Z8000-Opcodes" accesskey="n" rel="next">Z8000 Opcodes</a>, Previous: <a href="Z8000-Syntax.html#Z8000-Syntax" accesskey="p" rel="prev">Z8000 Syntax</a>, Up: <a href="Z8000_002dDependent.html#Z8000_002dDependent" accesskey="u" rel="up">Z8000-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Assembler-Directives-for-the-Z8000"></a>
+<h4 class="subsection">9.57.3 Assembler Directives for the Z8000</h4>
+
+<a name="index-Z8000-directives"></a>
+<a name="index-directives_002c-Z8000"></a>
+<p>The Z8000 port of as includes additional assembler directives,
+for compatibility with other Z8000 assemblers.  These do not begin with
+&lsquo;<samp>.</samp>&rsquo; (unlike the ordinary as directives).
+</p>
+<dl compact="compact">
+<dd><a name="index-segm"></a>
+</dd>
+<dt><code>segm</code></dt>
+<dd><a name="index-_002ez8001"></a>
+</dd>
+<dt><code>.z8001</code></dt>
+<dd><p>Generate code for the segmented Z8001.
+</p>
+<a name="index-unsegm"></a>
+</dd>
+<dt><code>unsegm</code></dt>
+<dd><a name="index-_002ez8002"></a>
+</dd>
+<dt><code>.z8002</code></dt>
+<dd><p>Generate code for the unsegmented Z8002.
+</p>
+<a name="index-name"></a>
+</dd>
+<dt><code>name</code></dt>
+<dd><p>Synonym for <code>.file</code>
+</p>
+<a name="index-global"></a>
+</dd>
+<dt><code>global</code></dt>
+<dd><p>Synonym for <code>.global</code>
+</p>
+<a name="index-wval"></a>
+</dd>
+<dt><code>wval</code></dt>
+<dd><p>Synonym for <code>.word</code>
+</p>
+<a name="index-lval"></a>
+</dd>
+<dt><code>lval</code></dt>
+<dd><p>Synonym for <code>.long</code>
+</p>
+<a name="index-bval"></a>
+</dd>
+<dt><code>bval</code></dt>
+<dd><p>Synonym for <code>.byte</code>
+</p>
+<a name="index-sval"></a>
+</dd>
+<dt><code>sval</code></dt>
+<dd><p>Assemble a string.  <code>sval</code> expects one string literal, delimited by
+single quotes.  It assembles each byte of the string into consecutive
+addresses.  You can use the escape sequence &lsquo;<samp>%<var>xx</var></samp>&rsquo; (where
+<var>xx</var> represents a two-digit hexadecimal number) to represent the
+character whose <small>ASCII</small> value is <var>xx</var>.  Use this feature to
+describe single quote and other characters that may not appear in string
+literals as themselves.  For example, the C statement &lsquo;<samp>char&nbsp;*a&nbsp;=&nbsp;&quot;he&nbsp;said&nbsp;\&quot;it's&nbsp;50%&nbsp;off\&quot;&quot;;</samp>&rsquo;<!-- /@w --> is represented in Z8000 assembly language
+(shown with the assembler output in hex at the left) as
+</p>
+<div class="smallexample">
+<pre class="smallexample">68652073    sval    'he said %22it%27s 50%25 off%22%00'
+61696420
+22697427
+73203530
+25206F66
+662200
+</pre></div>
+
+<a name="index-rsect"></a>
+</dd>
+<dt><code>rsect</code></dt>
+<dd><p>synonym for <code>.section</code>
+</p>
+<a name="index-block"></a>
+</dd>
+<dt><code>block</code></dt>
+<dd><p>synonym for <code>.space</code>
+</p>
+<a name="index-even"></a>
+</dd>
+<dt><code>even</code></dt>
+<dd><p>special case of <code>.align</code>; aligns output to even byte boundary.
+</p></dd>
+</dl>
+
+
+
+
+</body>
+</html>

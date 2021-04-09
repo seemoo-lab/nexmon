@@ -1,0 +1,118 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: File Caching</title>
+
+<meta name="description" content="Debugging with GDB: File Caching">
+<meta name="keywords" content="Debugging with GDB: File Caching">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="GDB-Files.html#GDB-Files" rel="up" title="GDB Files">
+<link href="Separate-Debug-Files.html#Separate-Debug-Files" rel="next" title="Separate Debug Files">
+<link href="Files.html#Files" rel="prev" title="Files">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="File-Caching"></a>
+<div class="header">
+<p>
+Next: <a href="Separate-Debug-Files.html#Separate-Debug-Files" accesskey="n" rel="next">Separate Debug Files</a>, Previous: <a href="Files.html#Files" accesskey="p" rel="prev">Files</a>, Up: <a href="GDB-Files.html#GDB-Files" accesskey="u" rel="up">GDB Files</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="File-Caching-1"></a>
+<h3 class="section">18.2 File Caching</h3>
+<a name="index-caching-of-opened-files"></a>
+<a name="index-caching-of-bfd-objects"></a>
+
+<p>To speed up file loading, and reduce memory usage, <small>GDB</small> will
+reuse the <code>bfd</code> objects used to track open files.  See <a href="http://sourceware.org/binutils/docs/bfd/index.html#Top">BFD</a> in <cite>The Binary File Descriptor Library</cite>.  The following commands
+allow visibility and control of the caching behavior.
+</p>
+<dl compact="compact">
+<dd><a name="index-maint-info-bfds"></a>
+</dd>
+<dt><code>maint info bfds</code></dt>
+<dd><p>This prints information about each <code>bfd</code> object that is known to
+<small>GDB</small>.
+</p>
+<a name="index-maint-set-bfd_002dsharing"></a>
+<a name="index-maint-show-bfd_002dsharing"></a>
+<a name="index-bfd-caching"></a>
+</dd>
+<dt><code>maint set bfd-sharing</code></dt>
+<dt><code>maint show bfd-sharing</code></dt>
+<dd><p>Control whether <code>bfd</code> objects can be shared.  When sharing is
+enabled <small>GDB</small> reuses already open <code>bfd</code> objects rather
+than reopening the same file.  Turning sharing off does not cause
+already shared <code>bfd</code> objects to be unshared, but all future files
+that are opened will create a new <code>bfd</code> object.  Similarly,
+re-enabling sharing does not cause multiple existing <code>bfd</code>
+objects to be collapsed into a single shared <code>bfd</code> object.
+</p>
+<a name="index-set-debug-bfd_002dcache-level"></a>
+<a name="index-bfd-caching-1"></a>
+</dd>
+<dt><code>set debug bfd-cache <var>level</var></code></dt>
+<dd><p>Turns on debugging of the bfd cache, setting the level to <var>level</var>.
+</p>
+<a name="index-show-debug-bfd_002dcache"></a>
+<a name="index-bfd-caching-2"></a>
+</dd>
+<dt><code>show debug bfd-cache</code></dt>
+<dd><p>Show the current debugging level of the bfd cache.
+</p></dd>
+</dl>
+
+
+
+
+</body>
+</html>

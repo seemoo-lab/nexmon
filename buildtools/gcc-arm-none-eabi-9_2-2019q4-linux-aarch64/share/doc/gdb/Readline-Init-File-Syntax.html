@@ -1,0 +1,558 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Readline Init File Syntax</title>
+
+<meta name="description" content="Debugging with GDB: Readline Init File Syntax">
+<meta name="keywords" content="Debugging with GDB: Readline Init File Syntax">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Readline-Init-File.html#Readline-Init-File" rel="up" title="Readline Init File">
+<link href="Conditional-Init-Constructs.html#Conditional-Init-Constructs" rel="next" title="Conditional Init Constructs">
+<link href="Readline-Init-File.html#Readline-Init-File" rel="prev" title="Readline Init File">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Readline-Init-File-Syntax"></a>
+<div class="header">
+<p>
+Next: <a href="Conditional-Init-Constructs.html#Conditional-Init-Constructs" accesskey="n" rel="next">Conditional Init Constructs</a>, Up: <a href="Readline-Init-File.html#Readline-Init-File" accesskey="u" rel="up">Readline Init File</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Readline-Init-File-Syntax-1"></a>
+<h4 class="subsection">32.3.1 Readline Init File Syntax</h4>
+
+<p>There are only a few basic constructs allowed in the
+Readline init file.  Blank lines are ignored.
+Lines beginning with a &lsquo;<samp>#</samp>&rsquo; are comments.
+Lines beginning with a &lsquo;<samp>$</samp>&rsquo; indicate conditional
+constructs (see <a href="Conditional-Init-Constructs.html#Conditional-Init-Constructs">Conditional Init Constructs</a>).  Other lines
+denote variable settings and key bindings.
+</p>
+<dl compact="compact">
+<dt>Variable Settings</dt>
+<dd><p>You can modify the run-time behavior of Readline by
+altering the values of variables in Readline
+using the <code>set</code> command within the init file.
+The syntax is simple:
+</p>
+<div class="example">
+<pre class="example">set <var>variable</var> <var>value</var>
+</pre></div>
+
+<p>Here, for example, is how to
+change from the default Emacs-like key binding to use
+<code>vi</code> line editing commands:
+</p>
+<div class="example">
+<pre class="example">set editing-mode vi
+</pre></div>
+
+<p>Variable names and values, where appropriate, are recognized without regard
+to case.  Unrecognized variable names are ignored.
+</p>
+<p>Boolean variables (those that can be set to on or off) are set to on if
+the value is null or empty, <var>on</var> (case-insensitive), or 1.  Any other
+value results in the variable being set to off.
+</p>
+
+<p>A great deal of run-time behavior is changeable with the following
+variables.
+</p>
+<a name="index-variables_002c-readline"></a>
+<dl compact="compact">
+<dt><code>bell-style</code></dt>
+<dd><a name="index-bell_002dstyle"></a>
+<p>Controls what happens when Readline wants to ring the terminal bell.
+If set to &lsquo;<samp>none</samp>&rsquo;, Readline never rings the bell.  If set to
+&lsquo;<samp>visible</samp>&rsquo;, Readline uses a visible bell if one is available.
+If set to &lsquo;<samp>audible</samp>&rsquo; (the default), Readline attempts to ring
+the terminal&rsquo;s bell.
+</p>
+</dd>
+<dt><code>bind-tty-special-chars</code></dt>
+<dd><a name="index-bind_002dtty_002dspecial_002dchars"></a>
+<p>If set to &lsquo;<samp>on</samp>&rsquo;, Readline attempts to bind the control characters  
+treated specially by the kernel&rsquo;s terminal driver to their Readline
+equivalents.
+</p>
+</dd>
+<dt><code>comment-begin</code></dt>
+<dd><a name="index-comment_002dbegin"></a>
+<p>The string to insert at the beginning of the line when the
+<code>insert-comment</code> command is executed.  The default value
+is <code>&quot;#&quot;</code>.
+</p>
+</dd>
+<dt><code>completion-display-width</code></dt>
+<dd><a name="index-completion_002ddisplay_002dwidth"></a>
+<p>The number of screen columns used to display possible matches
+when performing completion.
+The value is ignored if it is less than 0 or greater than the terminal
+screen width.
+A value of 0 will cause matches to be displayed one per line.
+The default value is -1.
+</p>
+</dd>
+<dt><code>completion-ignore-case</code></dt>
+<dd><a name="index-completion_002dignore_002dcase"></a>
+<p>If set to &lsquo;<samp>on</samp>&rsquo;, Readline performs filename matching and completion
+in a case-insensitive fashion.
+The default value is &lsquo;<samp>off</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>completion-map-case</code></dt>
+<dd><a name="index-completion_002dmap_002dcase"></a>
+<p>If set to &lsquo;<samp>on</samp>&rsquo;, and <var>completion-ignore-case</var> is enabled, Readline
+treats hyphens (&lsquo;<samp>-</samp>&rsquo;) and underscores (&lsquo;<samp>_</samp>&rsquo;) as equivalent when
+performing case-insensitive filename matching and completion.
+</p>
+</dd>
+<dt><code>completion-prefix-display-length</code></dt>
+<dd><a name="index-completion_002dprefix_002ddisplay_002dlength"></a>
+<p>The length in characters of the common prefix of a list of possible
+completions that is displayed without modification.  When set to a
+value greater than zero, common prefixes longer than this value are
+replaced with an ellipsis when displaying possible completions.
+</p>
+</dd>
+<dt><code>completion-query-items</code></dt>
+<dd><a name="index-completion_002dquery_002ditems"></a>
+<p>The number of possible completions that determines when the user is
+asked whether the list of possibilities should be displayed.
+If the number of possible completions is greater than this value,
+Readline will ask the user whether or not he wishes to view
+them; otherwise, they are simply listed.
+This variable must be set to an integer value greater than or equal to 0.
+A negative value means Readline should never ask.
+The default limit is <code>100</code>.
+</p>
+</dd>
+<dt><code>convert-meta</code></dt>
+<dd><a name="index-convert_002dmeta"></a>
+<p>If set to &lsquo;<samp>on</samp>&rsquo;, Readline will convert characters with the
+eighth bit set to an <small>ASCII</small> key sequence by stripping the eighth
+bit and prefixing an <tt class="key">ESC</tt> character, converting them to a
+meta-prefixed key sequence.  The default value is &lsquo;<samp>on</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>disable-completion</code></dt>
+<dd><a name="index-disable_002dcompletion"></a>
+<p>If set to &lsquo;<samp>On</samp>&rsquo;, Readline will inhibit word completion.
+Completion  characters will be inserted into the line as if they had
+been mapped to <code>self-insert</code>.  The default is &lsquo;<samp>off</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>editing-mode</code></dt>
+<dd><a name="index-editing_002dmode"></a>
+<p>The <code>editing-mode</code> variable controls which default set of
+key bindings is used.  By default, Readline starts up in Emacs editing
+mode, where the keystrokes are most similar to Emacs.  This variable can be
+set to either &lsquo;<samp>emacs</samp>&rsquo; or &lsquo;<samp>vi</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>echo-control-characters</code></dt>
+<dd><p>When set to &lsquo;<samp>on</samp>&rsquo;, on operating systems that indicate they support it,
+readline echoes a character corresponding to a signal generated from the
+keyboard.  The default is &lsquo;<samp>on</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>enable-keypad</code></dt>
+<dd><a name="index-enable_002dkeypad"></a>
+<p>When set to &lsquo;<samp>on</samp>&rsquo;, Readline will try to enable the application
+keypad when it is called.  Some systems need this to enable the
+arrow keys.  The default is &lsquo;<samp>off</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>enable-meta-key</code></dt>
+<dd><p>When set to &lsquo;<samp>on</samp>&rsquo;, Readline will try to enable any meta modifier
+key the terminal claims to support when it is called.  On many terminals,
+the meta key is used to send eight-bit characters.
+The default is &lsquo;<samp>on</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>expand-tilde</code></dt>
+<dd><a name="index-expand_002dtilde"></a>
+<p>If set to &lsquo;<samp>on</samp>&rsquo;, tilde expansion is performed when Readline
+attempts word completion.  The default is &lsquo;<samp>off</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>history-preserve-point</code></dt>
+<dd><a name="index-history_002dpreserve_002dpoint"></a>
+<p>If set to &lsquo;<samp>on</samp>&rsquo;, the history code attempts to place the point (the
+current cursor position) at the
+same location on each history line retrieved with <code>previous-history</code>
+or <code>next-history</code>.  The default is &lsquo;<samp>off</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>history-size</code></dt>
+<dd><a name="index-history_002dsize"></a>
+<p>Set the maximum number of history entries saved in the history list.  If
+set to zero, the number of entries in the history list is not limited.
+</p>
+</dd>
+<dt><code>horizontal-scroll-mode</code></dt>
+<dd><a name="index-horizontal_002dscroll_002dmode"></a>
+<p>This variable can be set to either &lsquo;<samp>on</samp>&rsquo; or &lsquo;<samp>off</samp>&rsquo;.  Setting it
+to &lsquo;<samp>on</samp>&rsquo; means that the text of the lines being edited will scroll
+horizontally on a single screen line when they are longer than the width
+of the screen, instead of wrapping onto a new screen line.  By default,
+this variable is set to &lsquo;<samp>off</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>input-meta</code></dt>
+<dd><a name="index-input_002dmeta"></a>
+<a name="index-meta_002dflag"></a>
+<p>If set to &lsquo;<samp>on</samp>&rsquo;, Readline will enable eight-bit input (it
+will not clear the eighth bit in the characters it reads),
+regardless of what the terminal claims it can support.  The
+default value is &lsquo;<samp>off</samp>&rsquo;.  The name <code>meta-flag</code> is a
+synonym for this variable.
+</p>
+</dd>
+<dt><code>isearch-terminators</code></dt>
+<dd><a name="index-isearch_002dterminators"></a>
+<p>The string of characters that should terminate an incremental search without
+subsequently executing the character as a command (see <a href="Searching.html#Searching">Searching</a>).
+If this variable has not been given a value, the characters <tt class="key">ESC</tt> and
+<kbd>C-J</kbd> will terminate an incremental search.
+</p>
+</dd>
+<dt><code>keymap</code></dt>
+<dd><a name="index-keymap"></a>
+<p>Sets Readline&rsquo;s idea of the current keymap for key binding commands.
+Acceptable <code>keymap</code> names are
+<code>emacs</code>,
+<code>emacs-standard</code>,
+<code>emacs-meta</code>,
+<code>emacs-ctlx</code>,
+<code>vi</code>,
+<code>vi-move</code>,
+<code>vi-command</code>, and
+<code>vi-insert</code>.
+<code>vi</code> is equivalent to <code>vi-command</code>; <code>emacs</code> is
+equivalent to <code>emacs-standard</code>.  The default value is <code>emacs</code>.
+The value of the <code>editing-mode</code> variable also affects the
+default keymap.
+</p>
+</dd>
+<dt><code>mark-directories</code></dt>
+<dd><p>If set to &lsquo;<samp>on</samp>&rsquo;, completed directory names have a slash
+appended.  The default is &lsquo;<samp>on</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>mark-modified-lines</code></dt>
+<dd><a name="index-mark_002dmodified_002dlines"></a>
+<p>This variable, when set to &lsquo;<samp>on</samp>&rsquo;, causes Readline to display an
+asterisk (&lsquo;<samp>*</samp>&rsquo;) at the start of history lines which have been modified.
+This variable is &lsquo;<samp>off</samp>&rsquo; by default.
+</p>
+</dd>
+<dt><code>mark-symlinked-directories</code></dt>
+<dd><a name="index-mark_002dsymlinked_002ddirectories"></a>
+<p>If set to &lsquo;<samp>on</samp>&rsquo;, completed names which are symbolic links
+to directories have a slash appended (subject to the value of
+<code>mark-directories</code>).
+The default is &lsquo;<samp>off</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>match-hidden-files</code></dt>
+<dd><a name="index-match_002dhidden_002dfiles"></a>
+<p>This variable, when set to &lsquo;<samp>on</samp>&rsquo;, causes Readline to match files whose
+names begin with a &lsquo;<samp>.</samp>&rsquo; (hidden files) when performing filename
+completion.
+If set to &lsquo;<samp>off</samp>&rsquo;, the leading &lsquo;<samp>.</samp>&rsquo; must be
+supplied by the user in the filename to be completed.
+This variable is &lsquo;<samp>on</samp>&rsquo; by default.
+</p>
+</dd>
+<dt><code>menu-complete-display-prefix</code></dt>
+<dd><a name="index-menu_002dcomplete_002ddisplay_002dprefix"></a>
+<p>If set to &lsquo;<samp>on</samp>&rsquo;, menu completion displays the common prefix of the
+list of possible completions (which may be empty) before cycling through
+the list.  The default is &lsquo;<samp>off</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>output-meta</code></dt>
+<dd><a name="index-output_002dmeta"></a>
+<p>If set to &lsquo;<samp>on</samp>&rsquo;, Readline will display characters with the
+eighth bit set directly rather than as a meta-prefixed escape
+sequence.  The default is &lsquo;<samp>off</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>page-completions</code></dt>
+<dd><a name="index-page_002dcompletions"></a>
+<p>If set to &lsquo;<samp>on</samp>&rsquo;, Readline uses an internal <code>more</code>-like pager
+to display a screenful of possible completions at a time.
+This variable is &lsquo;<samp>on</samp>&rsquo; by default.
+</p>
+</dd>
+<dt><code>print-completions-horizontally</code></dt>
+<dd><p>If set to &lsquo;<samp>on</samp>&rsquo;, Readline will display completions with matches
+sorted horizontally in alphabetical order, rather than down the screen.
+The default is &lsquo;<samp>off</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>revert-all-at-newline</code></dt>
+<dd><a name="index-revert_002dall_002dat_002dnewline"></a>
+<p>If set to &lsquo;<samp>on</samp>&rsquo;, Readline will undo all changes to history lines
+before returning when <code>accept-line</code> is executed.  By default,
+history lines may be modified and retain individual undo lists across
+calls to <code>readline</code>.  The default is &lsquo;<samp>off</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>show-all-if-ambiguous</code></dt>
+<dd><a name="index-show_002dall_002dif_002dambiguous"></a>
+<p>This alters the default behavior of the completion functions.  If
+set to &lsquo;<samp>on</samp>&rsquo;, 
+words which have more than one possible completion cause the
+matches to be listed immediately instead of ringing the bell.
+The default value is &lsquo;<samp>off</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>show-all-if-unmodified</code></dt>
+<dd><a name="index-show_002dall_002dif_002dunmodified"></a>
+<p>This alters the default behavior of the completion functions in
+a fashion similar to <var>show-all-if-ambiguous</var>.
+If set to &lsquo;<samp>on</samp>&rsquo;, 
+words which have more than one possible completion without any
+possible partial completion (the possible completions don&rsquo;t share
+a common prefix) cause the matches to be listed immediately instead
+of ringing the bell.
+The default value is &lsquo;<samp>off</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>skip-completed-text</code></dt>
+<dd><a name="index-skip_002dcompleted_002dtext"></a>
+<p>If set to &lsquo;<samp>on</samp>&rsquo;, this alters the default completion behavior when
+inserting a single match into the line.  It&rsquo;s only active when
+performing completion in the middle of a word.  If enabled, readline
+does not insert characters from the completion that match characters
+after point in the word being completed, so portions of the word
+following the cursor are not duplicated.
+For instance, if this is enabled, attempting completion when the cursor
+is after the &lsquo;<samp>e</samp>&rsquo; in &lsquo;<samp>Makefile</samp>&rsquo; will result in &lsquo;<samp>Makefile</samp>&rsquo;
+rather than &lsquo;<samp>Makefilefile</samp>&rsquo;, assuming there is a single possible
+completion.
+The default value is &lsquo;<samp>off</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>visible-stats</code></dt>
+<dd><a name="index-visible_002dstats"></a>
+<p>If set to &lsquo;<samp>on</samp>&rsquo;, a character denoting a file&rsquo;s type
+is appended to the filename when listing possible
+completions.  The default is &lsquo;<samp>off</samp>&rsquo;.
+</p>
+</dd>
+</dl>
+
+</dd>
+<dt>Key Bindings</dt>
+<dd><p>The syntax for controlling key bindings in the init file is
+simple.  First you need to find the name of the command that you
+want to change.  The following sections contain tables of the command
+name, the default keybinding, if any, and a short description of what
+the command does.
+</p>
+<p>Once you know the name of the command, simply place on a line
+in the init file the name of the key
+you wish to bind the command to, a colon, and then the name of the
+command.
+There can be no space between the key name and the colon &ndash; that will be
+interpreted as part of the key name.
+The name of the key can be expressed in different ways, depending on
+what you find most comfortable.
+</p>
+<p>In addition to command names, readline allows keys to be bound
+to a string that is inserted when the key is pressed (a <var>macro</var>).
+</p>
+
+<dl compact="compact">
+<dt><var>keyname</var>:&nbsp;<var><span class="nolinebreak">function-name</span></var>&nbsp;or&nbsp;<var>macro</var><!-- /@w --></dt>
+<dd><p><var>keyname</var> is the name of a key spelled out in English.  For example:
+</p><div class="example">
+<pre class="example">Control-u: universal-argument
+Meta-Rubout: backward-kill-word
+Control-o: &quot;&gt; output&quot;
+</pre></div>
+
+<p>In the above example, <kbd>C-u</kbd> is bound to the function
+<code>universal-argument</code>,
+<kbd>M-DEL</kbd> is bound to the function <code>backward-kill-word</code>, and
+<kbd>C-o</kbd> is bound to run the macro
+expressed on the right hand side (that is, to insert the text
+&lsquo;<samp>&gt; output</samp>&rsquo; into the line).
+</p>
+<p>A number of symbolic character names are recognized while
+processing this key binding syntax:
+<var>DEL</var>,
+<var>ESC</var>,
+<var>ESCAPE</var>,
+<var>LFD</var>,
+<var>NEWLINE</var>,
+<var>RET</var>,
+<var>RETURN</var>,
+<var>RUBOUT</var>,
+<var>SPACE</var>,
+<var>SPC</var>,
+and
+<var>TAB</var>.
+</p>
+</dd>
+<dt>&quot;<var>keyseq</var>&quot;:&nbsp;<var><span class="nolinebreak">function-name</span></var>&nbsp;or&nbsp;<var>macro</var><!-- /@w --></dt>
+<dd><p><var>keyseq</var> differs from <var>keyname</var> above in that strings
+denoting an entire key sequence can be specified, by placing
+the key sequence in double quotes.  Some <small>GNU</small> Emacs style key
+escapes can be used, as in the following example, but the
+special character names are not recognized.
+</p>
+<div class="example">
+<pre class="example">&quot;\C-u&quot;: universal-argument
+&quot;\C-x\C-r&quot;: re-read-init-file
+&quot;\e[11~&quot;: &quot;Function Key 1&quot;
+</pre></div>
+
+<p>In the above example, <kbd>C-u</kbd> is again bound to the function
+<code>universal-argument</code> (just as it was in the first example),
+&lsquo;<samp><kbd>C-x</kbd> <kbd>C-r</kbd></samp>&rsquo; is bound to the function <code>re-read-init-file</code>,
+and &lsquo;<samp><span class="key">ESC</span> <span class="key">[</span> <span class="key">1</span> <span class="key">1</span> <span class="key">~</span></samp>&rsquo; is bound to insert
+the text &lsquo;<samp>Function Key 1</samp>&rsquo;.
+</p>
+</dd>
+</dl>
+
+<p>The following <small>GNU</small> Emacs style escape sequences are available when
+specifying key sequences:
+</p>
+<dl compact="compact">
+<dt><code><kbd>\C-</kbd></code></dt>
+<dd><p>control prefix
+</p></dd>
+<dt><code><kbd>\M-</kbd></code></dt>
+<dd><p>meta prefix
+</p></dd>
+<dt><code><kbd>\e</kbd></code></dt>
+<dd><p>an escape character
+</p></dd>
+<dt><code><kbd>\\</kbd></code></dt>
+<dd><p>backslash
+</p></dd>
+<dt><code><kbd>\&quot;</kbd></code></dt>
+<dd><p><tt class="key">&quot;</tt>, a double quotation mark
+</p></dd>
+<dt><code><kbd>\'</kbd></code></dt>
+<dd><p><tt class="key">'</tt>, a single quote or apostrophe
+</p></dd>
+</dl>
+
+<p>In addition to the <small>GNU</small> Emacs style escape sequences, a second
+set of backslash escapes is available:
+</p>
+<dl compact="compact">
+<dt><code>\a</code></dt>
+<dd><p>alert (bell)
+</p></dd>
+<dt><code>\b</code></dt>
+<dd><p>backspace
+</p></dd>
+<dt><code>\d</code></dt>
+<dd><p>delete
+</p></dd>
+<dt><code>\f</code></dt>
+<dd><p>form feed
+</p></dd>
+<dt><code>\n</code></dt>
+<dd><p>newline
+</p></dd>
+<dt><code>\r</code></dt>
+<dd><p>carriage return
+</p></dd>
+<dt><code>\t</code></dt>
+<dd><p>horizontal tab
+</p></dd>
+<dt><code>\v</code></dt>
+<dd><p>vertical tab
+</p></dd>
+<dt><code>\<var>nnn</var></code></dt>
+<dd><p>the eight-bit character whose value is the octal value <var>nnn</var>
+(one to three digits)
+</p></dd>
+<dt><code>\x<var>HH</var></code></dt>
+<dd><p>the eight-bit character whose value is the hexadecimal value <var>HH</var>
+(one or two hex digits)
+</p></dd>
+</dl>
+
+<p>When entering the text of a macro, single or double quotes must
+be used to indicate a macro definition.
+Unquoted text is assumed to be a function name.
+In the macro body, the backslash escapes described above are expanded.
+Backslash will quote any other character in the macro text,
+including &lsquo;<samp>&quot;</samp>&rsquo; and &lsquo;<samp>'</samp>&rsquo;.
+For example, the following binding will make &lsquo;<samp><kbd>C-x</kbd> \</samp>&rsquo;
+insert a single &lsquo;<samp>\</samp>&rsquo; into the line:
+</p><div class="example">
+<pre class="example">&quot;\C-x\\&quot;: &quot;\\&quot;
+</pre></div>
+
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Conditional-Init-Constructs.html#Conditional-Init-Constructs" accesskey="n" rel="next">Conditional Init Constructs</a>, Up: <a href="Readline-Init-File.html#Readline-Init-File" accesskey="u" rel="up">Readline Init File</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

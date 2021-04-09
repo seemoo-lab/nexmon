@@ -1,0 +1,138 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: MIPS FP ABI Variants</title>
+
+<meta name="description" content="Using as: MIPS FP ABI Variants">
+<meta name="keywords" content="Using as: MIPS FP ABI Variants">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="MIPS-FP-ABIs.html#MIPS-FP-ABIs" rel="up" title="MIPS FP ABIs">
+<link href="MIPS-FP-ABI-Selection.html#MIPS-FP-ABI-Selection" rel="next" title="MIPS FP ABI Selection">
+<link href="MIPS-FP-ABI-History.html#MIPS-FP-ABI-History" rel="prev" title="MIPS FP ABI History">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="MIPS-FP-ABI-Variants"></a>
+<div class="header">
+<p>
+Next: <a href="MIPS-FP-ABI-Selection.html#MIPS-FP-ABI-Selection" accesskey="n" rel="next">MIPS FP ABI Selection</a>, Previous: <a href="MIPS-FP-ABI-History.html#MIPS-FP-ABI-History" accesskey="p" rel="prev">MIPS FP ABI History</a>, Up: <a href="MIPS-FP-ABIs.html#MIPS-FP-ABIs" accesskey="u" rel="up">MIPS FP ABIs</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Supported-FP-ABIs"></a>
+<h4 class="subsubsection">9.27.9.2 Supported FP ABIs</h4>
+<p>The supported floating-point ABI variants are:
+</p>
+<dl compact="compact">
+<dt><code>0 - No floating-point</code></dt>
+<dd><p>This variant is used to indicate that floating-point is not used within
+the module at all and therefore has no impact on the ABI.  This is the
+default.
+</p>
+</dd>
+<dt><code>1 - Double-precision</code></dt>
+<dd><p>This variant indicates that double-precision support is used.  For 64-bit
+ABIs this means that 64-bit wide floating-point registers are required.
+For 32-bit ABIs this means that 32-bit wide floating-point registers are
+required and double-precision operations use pairs of registers.
+</p>
+</dd>
+<dt><code>2 - Single-precision</code></dt>
+<dd><p>This variant indicates that single-precision support is used.  Double
+precision operations will be supported via soft-float routines.
+</p>
+</dd>
+<dt><code>3 - Soft-float</code></dt>
+<dd><p>This variant indicates that although floating-point support is used all
+operations are emulated in software.  This means the ABI is modified to
+pass all floating-point data in general-purpose registers.
+</p>
+</dd>
+<dt><code>4 - Deprecated</code></dt>
+<dd><p>This variant existed as an initial attempt at supporting 64-bit wide
+floating-point registers for O32 ABI on a MIPS32r2 CPU.  This has been
+superseded by 5, 6 and 7.
+</p>
+</dd>
+<dt><code>5 - Double-precision 32-bit CPU, 32-bit or 64-bit FPU</code></dt>
+<dd><p>This variant is used by 32-bit ABIs to indicate that the floating-point
+code in the module has been designed to operate correctly with either
+32-bit wide or 64-bit wide floating-point registers.  Double-precision
+support is used.  Only O32 currently supports this variant and requires
+a minimum architecture of MIPS II.
+</p>
+</dd>
+<dt><code>6 - Double-precision 32-bit FPU, 64-bit FPU</code></dt>
+<dd><p>This variant is used by 32-bit ABIs to indicate that the floating-point
+code in the module requires 64-bit wide floating-point registers.
+Double-precision support is used.  Only O32 currently supports this
+variant and requires a minimum architecture of MIPS32r2.
+</p>
+</dd>
+<dt><code>7 - Double-precision compat 32-bit FPU, 64-bit FPU</code></dt>
+<dd><p>This variant is used by 32-bit ABIs to indicate that the floating-point
+code in the module requires 64-bit wide floating-point registers.
+Double-precision support is used.  This differs from the previous ABI
+as it restricts use of odd-numbered single-precision registers.  Only
+O32 currently supports this variant and requires a minimum architecture
+of MIPS32r2.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="MIPS-FP-ABI-Selection.html#MIPS-FP-ABI-Selection" accesskey="n" rel="next">MIPS FP ABI Selection</a>, Previous: <a href="MIPS-FP-ABI-History.html#MIPS-FP-ABI-History" accesskey="p" rel="prev">MIPS FP ABI History</a>, Up: <a href="MIPS-FP-ABIs.html#MIPS-FP-ABIs" accesskey="u" rel="up">MIPS FP ABIs</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

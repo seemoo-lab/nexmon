@@ -1,0 +1,226 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Function Attributes</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Function Attributes">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Function Attributes">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C-Extensions.html#C-Extensions" rel="up" title="C Extensions">
+<link href="Common-Function-Attributes.html#Common-Function-Attributes" rel="next" title="Common Function Attributes">
+<link href="Mixed-Declarations.html#Mixed-Declarations" rel="prev" title="Mixed Declarations">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Function-Attributes"></a>
+<div class="header">
+<p>
+Next: <a href="Variable-Attributes.html#Variable-Attributes" accesskey="n" rel="next">Variable Attributes</a>, Previous: <a href="Mixed-Declarations.html#Mixed-Declarations" accesskey="p" rel="prev">Mixed Declarations</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Declaring-Attributes-of-Functions"></a>
+<h3 class="section">6.33 Declaring Attributes of Functions</h3>
+<a name="index-function-attributes"></a>
+<a name="index-declaring-attributes-of-functions"></a>
+<a name="index-volatile-applied-to-function"></a>
+<a name="index-const-applied-to-function"></a>
+
+<p>In GNU C and C++, you can use function attributes to specify certain
+function properties that may help the compiler optimize calls or
+check code more carefully for correctness.  For example, you
+can use attributes to specify that a function never returns
+(<code>noreturn</code>), returns a value depending only on the values of
+its arguments (<code>const</code>), or has <code>printf</code>-style arguments
+(<code>format</code>).
+</p>
+<p>You can also use attributes to control memory placement, code
+generation options or call/return conventions within the function
+being annotated.  Many of these attributes are target-specific.  For
+example, many targets support attributes for defining interrupt
+handler functions, which typically must follow special register usage
+and return conventions.  Such attributes are described in the subsection
+for each target.  However, a considerable number of attributes are
+supported by most, if not all targets.  Those are described in
+the <a href="Common-Function-Attributes.html#Common-Function-Attributes">Common Function Attributes</a> section.
+</p>
+<p>Function attributes are introduced by the <code>__attribute__</code> keyword
+in the declaration of a function, followed by an attribute specification
+enclosed in double parentheses.  You can specify multiple attributes in
+a declaration by separating them by commas within the double parentheses
+or by immediately following one attribute specification with another.
+See <a href="Attribute-Syntax.html#Attribute-Syntax">Attribute Syntax</a>, for the exact rules on attribute syntax and
+placement.  Compatible attribute specifications on distinct declarations
+of the same function are merged.  An attribute specification that is not
+compatible with attributes already applied to a declaration of the same
+function is ignored with a warning.
+</p>
+<p>Some function attributes take one or more arguments that refer to
+the function&rsquo;s parameters by their positions within the function parameter
+list.  Such attribute arguments are referred to as <em>positional arguments</em>.
+Unless specified otherwise, positional arguments that specify properties
+of parameters with pointer types can also specify the same properties of
+the implicit C++ <code>this</code> argument in non-static member functions, and
+of parameters of reference to a pointer type.  For ordinary functions,
+position one refers to the first parameter on the list.  In C++ non-static
+member functions, position one refers to the implicit <code>this</code> pointer.
+The same restrictions and effects apply to function attributes used with
+ordinary functions or C++ member functions.
+</p>
+<p>GCC also supports attributes on
+variable declarations (see <a href="Variable-Attributes.html#Variable-Attributes">Variable Attributes</a>),
+labels (see <a href="Label-Attributes.html#Label-Attributes">Label Attributes</a>),
+enumerators (see <a href="Enumerator-Attributes.html#Enumerator-Attributes">Enumerator Attributes</a>),
+statements (see <a href="Statement-Attributes.html#Statement-Attributes">Statement Attributes</a>),
+and types (see <a href="Type-Attributes.html#Type-Attributes">Type Attributes</a>).
+</p>
+<p>There is some overlap between the purposes of attributes and pragmas
+(see <a href="Pragmas.html#Pragmas">Pragmas Accepted by GCC</a>).  It has been
+found convenient to use <code>__attribute__</code> to achieve a natural
+attachment of attributes to their corresponding declarations, whereas
+<code>#pragma</code> is of use for compatibility with other compilers
+or constructs that do not naturally form part of the grammar.
+</p>
+<p>In addition to the attributes documented here,
+GCC plugins may provide their own attributes.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Common-Function-Attributes.html#Common-Function-Attributes" accesskey="1">Common Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="AArch64-Function-Attributes.html#AArch64-Function-Attributes" accesskey="2">AArch64 Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="AMD-GCN-Function-Attributes.html#AMD-GCN-Function-Attributes" accesskey="3">AMD GCN Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="ARC-Function-Attributes.html#ARC-Function-Attributes" accesskey="4">ARC Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="ARM-Function-Attributes.html#ARM-Function-Attributes" accesskey="5">ARM Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="AVR-Function-Attributes.html#AVR-Function-Attributes" accesskey="6">AVR Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Blackfin-Function-Attributes.html#Blackfin-Function-Attributes" accesskey="7">Blackfin Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="CR16-Function-Attributes.html#CR16-Function-Attributes" accesskey="8">CR16 Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="C_002dSKY-Function-Attributes.html#C_002dSKY-Function-Attributes" accesskey="9">C-SKY Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Epiphany-Function-Attributes.html#Epiphany-Function-Attributes">Epiphany Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="H8_002f300-Function-Attributes.html#H8_002f300-Function-Attributes">H8/300 Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="IA_002d64-Function-Attributes.html#IA_002d64-Function-Attributes">IA-64 Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="M32C-Function-Attributes.html#M32C-Function-Attributes">M32C Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="M32R_002fD-Function-Attributes.html#M32R_002fD-Function-Attributes">M32R/D Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="m68k-Function-Attributes.html#m68k-Function-Attributes">m68k Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="MCORE-Function-Attributes.html#MCORE-Function-Attributes">MCORE Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="MeP-Function-Attributes.html#MeP-Function-Attributes">MeP Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="MicroBlaze-Function-Attributes.html#MicroBlaze-Function-Attributes">MicroBlaze Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Microsoft-Windows-Function-Attributes.html#Microsoft-Windows-Function-Attributes">Microsoft Windows Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="MIPS-Function-Attributes.html#MIPS-Function-Attributes">MIPS Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="MSP430-Function-Attributes.html#MSP430-Function-Attributes">MSP430 Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="NDS32-Function-Attributes.html#NDS32-Function-Attributes">NDS32 Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Nios-II-Function-Attributes.html#Nios-II-Function-Attributes">Nios II Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Nvidia-PTX-Function-Attributes.html#Nvidia-PTX-Function-Attributes">Nvidia PTX Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="PowerPC-Function-Attributes.html#PowerPC-Function-Attributes">PowerPC Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="RISC_002dV-Function-Attributes.html#RISC_002dV-Function-Attributes">RISC-V Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="RL78-Function-Attributes.html#RL78-Function-Attributes">RL78 Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="RX-Function-Attributes.html#RX-Function-Attributes">RX Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="S_002f390-Function-Attributes.html#S_002f390-Function-Attributes">S/390 Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="SH-Function-Attributes.html#SH-Function-Attributes">SH Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="SPU-Function-Attributes.html#SPU-Function-Attributes">SPU Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Symbian-OS-Function-Attributes.html#Symbian-OS-Function-Attributes">Symbian OS Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="V850-Function-Attributes.html#V850-Function-Attributes">V850 Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Visium-Function-Attributes.html#Visium-Function-Attributes">Visium Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="x86-Function-Attributes.html#x86-Function-Attributes">x86 Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Xstormy16-Function-Attributes.html#Xstormy16-Function-Attributes">Xstormy16 Function Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Variable-Attributes.html#Variable-Attributes" accesskey="n" rel="next">Variable Attributes</a>, Previous: <a href="Mixed-Declarations.html#Mixed-Declarations" accesskey="p" rel="prev">Mixed Declarations</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,369 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Basic PowerPC Built-in Functions Available on all Configurations</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Basic PowerPC Built-in Functions Available on all Configurations">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Basic PowerPC Built-in Functions Available on all Configurations">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Basic-PowerPC-Built_002din-Functions.html#Basic-PowerPC-Built_002din-Functions" rel="up" title="Basic PowerPC Built-in Functions">
+<link href="Basic-PowerPC-Built_002din-Functions-Available-on-ISA-2_002e05.html#Basic-PowerPC-Built_002din-Functions-Available-on-ISA-2_002e05" rel="next" title="Basic PowerPC Built-in Functions Available on ISA 2.05">
+<link href="Basic-PowerPC-Built_002din-Functions.html#Basic-PowerPC-Built_002din-Functions" rel="prev" title="Basic PowerPC Built-in Functions">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Basic-PowerPC-Built_002din-Functions-Available-on-all-Configurations"></a>
+<div class="header">
+<p>
+Next: <a href="Basic-PowerPC-Built_002din-Functions-Available-on-ISA-2_002e05.html#Basic-PowerPC-Built_002din-Functions-Available-on-ISA-2_002e05" accesskey="n" rel="next">Basic PowerPC Built-in Functions Available on ISA 2.05</a>, Up: <a href="Basic-PowerPC-Built_002din-Functions.html#Basic-PowerPC-Built_002din-Functions" accesskey="u" rel="up">Basic PowerPC Built-in Functions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Basic-PowerPC-Built_002din-Functions-Available-on-all-Configurations-1"></a>
+<h4 class="subsubsection">6.60.21.1 Basic PowerPC Built-in Functions Available on all Configurations</h4>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fcpu_005finit"></a>Built-in Function: <em>void</em> <strong>__builtin_cpu_init</strong> <em>(void)</em></dt>
+<dd><p>This function is a <code>nop</code> on the PowerPC platform and is included solely
+to maintain API compatibility with the x86 builtins.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fcpu_005fis"></a>Built-in Function: <em>int</em> <strong>__builtin_cpu_is</strong> <em>(const char *<var>cpuname</var>)</em></dt>
+<dd><p>This function returns a value of <code>1</code> if the run-time CPU is of type
+<var>cpuname</var> and returns <code>0</code> otherwise
+</p>
+<p>The <code>__builtin_cpu_is</code> function requires GLIBC 2.23 or newer
+which exports the hardware capability bits.  GCC defines the macro
+<code>__BUILTIN_CPU_SUPPORTS__</code> if the <code>__builtin_cpu_supports</code>
+built-in function is fully supported.
+</p>
+<p>If GCC was configured to use a GLIBC before 2.23, the built-in
+function <code>__builtin_cpu_is</code> always returns a 0 and the compiler
+issues a warning.
+</p>
+<p>The following CPU names can be detected:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>power9</samp>&rsquo;</dt>
+<dd><p>IBM POWER9 Server CPU.
+</p></dd>
+<dt>&lsquo;<samp>power8</samp>&rsquo;</dt>
+<dd><p>IBM POWER8 Server CPU.
+</p></dd>
+<dt>&lsquo;<samp>power7</samp>&rsquo;</dt>
+<dd><p>IBM POWER7 Server CPU.
+</p></dd>
+<dt>&lsquo;<samp>power6x</samp>&rsquo;</dt>
+<dd><p>IBM POWER6 Server CPU (RAW mode).
+</p></dd>
+<dt>&lsquo;<samp>power6</samp>&rsquo;</dt>
+<dd><p>IBM POWER6 Server CPU (Architected mode).
+</p></dd>
+<dt>&lsquo;<samp>power5+</samp>&rsquo;</dt>
+<dd><p>IBM POWER5+ Server CPU.
+</p></dd>
+<dt>&lsquo;<samp>power5</samp>&rsquo;</dt>
+<dd><p>IBM POWER5 Server CPU.
+</p></dd>
+<dt>&lsquo;<samp>ppc970</samp>&rsquo;</dt>
+<dd><p>IBM 970 Server CPU (ie, Apple G5).
+</p></dd>
+<dt>&lsquo;<samp>power4</samp>&rsquo;</dt>
+<dd><p>IBM POWER4 Server CPU.
+</p></dd>
+<dt>&lsquo;<samp>ppca2</samp>&rsquo;</dt>
+<dd><p>IBM A2 64-bit Embedded CPU
+</p></dd>
+<dt>&lsquo;<samp>ppc476</samp>&rsquo;</dt>
+<dd><p>IBM PowerPC 476FP 32-bit Embedded CPU.
+</p></dd>
+<dt>&lsquo;<samp>ppc464</samp>&rsquo;</dt>
+<dd><p>IBM PowerPC 464 32-bit Embedded CPU.
+</p></dd>
+<dt>&lsquo;<samp>ppc440</samp>&rsquo;</dt>
+<dd><p>PowerPC 440 32-bit Embedded CPU.
+</p></dd>
+<dt>&lsquo;<samp>ppc405</samp>&rsquo;</dt>
+<dd><p>PowerPC 405 32-bit Embedded CPU.
+</p></dd>
+<dt>&lsquo;<samp>ppc-cell-be</samp>&rsquo;</dt>
+<dd><p>IBM PowerPC Cell Broadband Engine Architecture CPU.
+</p></dd>
+</dl>
+
+<p>Here is an example:
+</p><div class="smallexample">
+<pre class="smallexample">#ifdef __BUILTIN_CPU_SUPPORTS__
+  if (__builtin_cpu_is (&quot;power8&quot;))
+    {
+       do_power8 (); // POWER8 specific implementation.
+    }
+  else
+#endif
+    {
+       do_generic (); // Generic implementation.
+    }
+</pre></div>
+</dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fcpu_005fsupports"></a>Built-in Function: <em>int</em> <strong>__builtin_cpu_supports</strong> <em>(const char *<var>feature</var>)</em></dt>
+<dd><p>This function returns a value of <code>1</code> if the run-time CPU supports the HWCAP
+feature <var>feature</var> and returns <code>0</code> otherwise.
+</p>
+<p>The <code>__builtin_cpu_supports</code> function requires GLIBC 2.23 or
+newer which exports the hardware capability bits.  GCC defines the
+macro <code>__BUILTIN_CPU_SUPPORTS__</code> if the
+<code>__builtin_cpu_supports</code> built-in function is fully supported.
+</p>
+<p>If GCC was configured to use a GLIBC before 2.23, the built-in
+function <code>__builtin_cpu_suports</code> always returns a 0 and the
+compiler issues a warning.
+</p>
+<p>The following features can be
+detected:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>4xxmac</samp>&rsquo;</dt>
+<dd><p>4xx CPU has a Multiply Accumulator.
+</p></dd>
+<dt>&lsquo;<samp>altivec</samp>&rsquo;</dt>
+<dd><p>CPU has a SIMD/Vector Unit.
+</p></dd>
+<dt>&lsquo;<samp>arch_2_05</samp>&rsquo;</dt>
+<dd><p>CPU supports ISA 2.05 (eg, POWER6)
+</p></dd>
+<dt>&lsquo;<samp>arch_2_06</samp>&rsquo;</dt>
+<dd><p>CPU supports ISA 2.06 (eg, POWER7)
+</p></dd>
+<dt>&lsquo;<samp>arch_2_07</samp>&rsquo;</dt>
+<dd><p>CPU supports ISA 2.07 (eg, POWER8)
+</p></dd>
+<dt>&lsquo;<samp>arch_3_00</samp>&rsquo;</dt>
+<dd><p>CPU supports ISA 3.0 (eg, POWER9)
+</p></dd>
+<dt>&lsquo;<samp>archpmu</samp>&rsquo;</dt>
+<dd><p>CPU supports the set of compatible performance monitoring events.
+</p></dd>
+<dt>&lsquo;<samp>booke</samp>&rsquo;</dt>
+<dd><p>CPU supports the Embedded ISA category.
+</p></dd>
+<dt>&lsquo;<samp>cellbe</samp>&rsquo;</dt>
+<dd><p>CPU has a CELL broadband engine.
+</p></dd>
+<dt>&lsquo;<samp>darn</samp>&rsquo;</dt>
+<dd><p>CPU supports the <code>darn</code> (deliver a random number) instruction.
+</p></dd>
+<dt>&lsquo;<samp>dfp</samp>&rsquo;</dt>
+<dd><p>CPU has a decimal floating point unit.
+</p></dd>
+<dt>&lsquo;<samp>dscr</samp>&rsquo;</dt>
+<dd><p>CPU supports the data stream control register.
+</p></dd>
+<dt>&lsquo;<samp>ebb</samp>&rsquo;</dt>
+<dd><p>CPU supports event base branching.
+</p></dd>
+<dt>&lsquo;<samp>efpdouble</samp>&rsquo;</dt>
+<dd><p>CPU has a SPE double precision floating point unit.
+</p></dd>
+<dt>&lsquo;<samp>efpsingle</samp>&rsquo;</dt>
+<dd><p>CPU has a SPE single precision floating point unit.
+</p></dd>
+<dt>&lsquo;<samp>fpu</samp>&rsquo;</dt>
+<dd><p>CPU has a floating point unit.
+</p></dd>
+<dt>&lsquo;<samp>htm</samp>&rsquo;</dt>
+<dd><p>CPU has hardware transaction memory instructions.
+</p></dd>
+<dt>&lsquo;<samp>htm-nosc</samp>&rsquo;</dt>
+<dd><p>Kernel aborts hardware transactions when a syscall is made.
+</p></dd>
+<dt>&lsquo;<samp>htm-no-suspend</samp>&rsquo;</dt>
+<dd><p>CPU supports hardware transaction memory but does not support the
+<code>tsuspend.</code> instruction.
+</p></dd>
+<dt>&lsquo;<samp>ic_snoop</samp>&rsquo;</dt>
+<dd><p>CPU supports icache snooping capabilities.
+</p></dd>
+<dt>&lsquo;<samp>ieee128</samp>&rsquo;</dt>
+<dd><p>CPU supports 128-bit IEEE binary floating point instructions.
+</p></dd>
+<dt>&lsquo;<samp>isel</samp>&rsquo;</dt>
+<dd><p>CPU supports the integer select instruction.
+</p></dd>
+<dt>&lsquo;<samp>mmu</samp>&rsquo;</dt>
+<dd><p>CPU has a memory management unit.
+</p></dd>
+<dt>&lsquo;<samp>notb</samp>&rsquo;</dt>
+<dd><p>CPU does not have a timebase (eg, 601 and 403gx).
+</p></dd>
+<dt>&lsquo;<samp>pa6t</samp>&rsquo;</dt>
+<dd><p>CPU supports the PA Semi 6T CORE ISA.
+</p></dd>
+<dt>&lsquo;<samp>power4</samp>&rsquo;</dt>
+<dd><p>CPU supports ISA 2.00 (eg, POWER4)
+</p></dd>
+<dt>&lsquo;<samp>power5</samp>&rsquo;</dt>
+<dd><p>CPU supports ISA 2.02 (eg, POWER5)
+</p></dd>
+<dt>&lsquo;<samp>power5+</samp>&rsquo;</dt>
+<dd><p>CPU supports ISA 2.03 (eg, POWER5+)
+</p></dd>
+<dt>&lsquo;<samp>power6x</samp>&rsquo;</dt>
+<dd><p>CPU supports ISA 2.05 (eg, POWER6) extended opcodes mffgpr and mftgpr.
+</p></dd>
+<dt>&lsquo;<samp>ppc32</samp>&rsquo;</dt>
+<dd><p>CPU supports 32-bit mode execution.
+</p></dd>
+<dt>&lsquo;<samp>ppc601</samp>&rsquo;</dt>
+<dd><p>CPU supports the old POWER ISA (eg, 601)
+</p></dd>
+<dt>&lsquo;<samp>ppc64</samp>&rsquo;</dt>
+<dd><p>CPU supports 64-bit mode execution.
+</p></dd>
+<dt>&lsquo;<samp>ppcle</samp>&rsquo;</dt>
+<dd><p>CPU supports a little-endian mode that uses address swizzling.
+</p></dd>
+<dt>&lsquo;<samp>scv</samp>&rsquo;</dt>
+<dd><p>Kernel supports system call vectored.
+</p></dd>
+<dt>&lsquo;<samp>smt</samp>&rsquo;</dt>
+<dd><p>CPU support simultaneous multi-threading.
+</p></dd>
+<dt>&lsquo;<samp>spe</samp>&rsquo;</dt>
+<dd><p>CPU has a signal processing extension unit.
+</p></dd>
+<dt>&lsquo;<samp>tar</samp>&rsquo;</dt>
+<dd><p>CPU supports the target address register.
+</p></dd>
+<dt>&lsquo;<samp>true_le</samp>&rsquo;</dt>
+<dd><p>CPU supports true little-endian mode.
+</p></dd>
+<dt>&lsquo;<samp>ucache</samp>&rsquo;</dt>
+<dd><p>CPU has unified I/D cache.
+</p></dd>
+<dt>&lsquo;<samp>vcrypto</samp>&rsquo;</dt>
+<dd><p>CPU supports the vector cryptography instructions.
+</p></dd>
+<dt>&lsquo;<samp>vsx</samp>&rsquo;</dt>
+<dd><p>CPU supports the vector-scalar extension.
+</p></dd>
+</dl>
+
+<p>Here is an example:
+</p><div class="smallexample">
+<pre class="smallexample">#ifdef __BUILTIN_CPU_SUPPORTS__
+  if (__builtin_cpu_supports (&quot;fpu&quot;))
+    {
+       asm(&quot;fadd %0,%1,%2&quot; : &quot;=d&quot;(dst) : &quot;d&quot;(src1), &quot;d&quot;(src2));
+    }
+  else
+#endif
+    {
+       dst = __fadd (src1, src2); // Software FP addition function.
+    }
+</pre></div>
+</dd></dl>
+
+<p>The following built-in functions are also available on all PowerPC
+processors:
+</p><div class="smallexample">
+<pre class="smallexample">uint64_t __builtin_ppc_get_timebase ();
+unsigned long __builtin_ppc_mftb ();
+double __builtin_unpack_ibm128 (__ibm128, int);
+__ibm128 __builtin_pack_ibm128 (double, double);
+double __builtin_mffs (void);
+void __builtin_mtfsb0 (const int);
+void __builtin_mtfsb1 (const int);
+void __builtin_set_fpscr_rn (int);
+</pre></div>
+
+<p>The <code>__builtin_ppc_get_timebase</code> and <code>__builtin_ppc_mftb</code>
+functions generate instructions to read the Time Base Register.  The
+<code>__builtin_ppc_get_timebase</code> function may generate multiple
+instructions and always returns the 64 bits of the Time Base Register.
+The <code>__builtin_ppc_mftb</code> function always generates one instruction and
+returns the Time Base Register value as an unsigned long, throwing away
+the most significant word on 32-bit environments.  The <code>__builtin_mffs</code>
+return the value of the FPSCR register.  Note, ISA 3.0 supports the
+<code>__builtin_mffsl()</code> which permits software to read the control and
+non-sticky status bits in the FSPCR without the higher latency associated with
+accessing the sticky status bits.  The
+<code>__builtin_mtfsb0</code> and <code>__builtin_mtfsb1</code> take the bit to change
+as an argument.  The valid bit range is between 0 and 31.  The builtins map to
+the <code>mtfsb0</code> and <code>mtfsb1</code> instructions which take the argument and
+add 32.  Hence these instructions only modify the FPSCR[32:63] bits by
+changing the specified bit to a zero or one respectively.  The
+<code>__builtin_set_fpscr_rn</code> builtin allows changing both of the floating
+point rounding mode bits.  The argument is a 2-bit value.  The argument can
+either be a <code>const int</code> or stored in a variable. The builtin uses
+the ISA 3.0
+instruction <code>mffscrn</code> if available, otherwise it reads the FPSCR, masks
+the current rounding mode bits out and OR&rsquo;s in the new value.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Basic-PowerPC-Built_002din-Functions-Available-on-ISA-2_002e05.html#Basic-PowerPC-Built_002din-Functions-Available-on-ISA-2_002e05" accesskey="n" rel="next">Basic PowerPC Built-in Functions Available on ISA 2.05</a>, Up: <a href="Basic-PowerPC-Built_002din-Functions.html#Basic-PowerPC-Built_002din-Functions" accesskey="u" rel="up">Basic PowerPC Built-in Functions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: Infix Ops</title>
+
+<meta name="description" content="Using as: Infix Ops">
+<meta name="keywords" content="Using as: Infix Ops">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Integer-Exprs.html#Integer-Exprs" rel="up" title="Integer Exprs">
+<link href="Pseudo-Ops.html#Pseudo-Ops" rel="next" title="Pseudo Ops">
+<link href="Prefix-Ops.html#Prefix-Ops" rel="prev" title="Prefix Ops">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Infix-Ops"></a>
+<div class="header">
+<p>
+Previous: <a href="Prefix-Ops.html#Prefix-Ops" accesskey="p" rel="prev">Prefix Ops</a>, Up: <a href="Integer-Exprs.html#Integer-Exprs" accesskey="u" rel="up">Integer Exprs</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Infix-Operators"></a>
+<h4 class="subsection">6.2.4 Infix Operators</h4>
+
+<a name="index-infix-operators"></a>
+<a name="index-operators_002c-permitted-arguments"></a>
+<p><em>Infix operators</em> take two arguments, one on either side.  Operators
+have precedence, but operations with equal precedence are performed left
+to right.  Apart from <code>+</code> or <samp>-</samp>, both arguments must be
+absolute, and the result is absolute.
+</p>
+<ol>
+<li><a name="index-operator-precedence"></a>
+<a name="index-precedence-of-operators"></a>
+
+</li><li> Highest Precedence
+
+<dl compact="compact">
+<dt><code>*</code></dt>
+<dd><p><em>Multiplication</em>.
+</p>
+</dd>
+<dt><code>/</code></dt>
+<dd><p><em>Division</em>.  Truncation is the same as the C operator &lsquo;<samp>/</samp>&rsquo;
+</p>
+</dd>
+<dt><code>%</code></dt>
+<dd><p><em>Remainder</em>.
+</p>
+</dd>
+<dt><code>&lt;&lt;</code></dt>
+<dd><p><em>Shift Left</em>.  Same as the C operator &lsquo;<samp>&lt;&lt;</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>&gt;&gt;</code></dt>
+<dd><p><em>Shift Right</em>.  Same as the C operator &lsquo;<samp>&gt;&gt;</samp>&rsquo;.
+</p></dd>
+</dl>
+
+</li><li> Intermediate precedence
+
+<dl compact="compact">
+<dt><code>|</code></dt>
+<dd>
+<p><em>Bitwise Inclusive Or</em>.
+</p>
+</dd>
+<dt><code>&amp;</code></dt>
+<dd><p><em>Bitwise And</em>.
+</p>
+</dd>
+<dt><code>^</code></dt>
+<dd><p><em>Bitwise Exclusive Or</em>.
+</p>
+</dd>
+<dt><code>!</code></dt>
+<dd><p><em>Bitwise Or Not</em>.
+</p></dd>
+</dl>
+
+</li><li> Low Precedence
+
+<dl compact="compact">
+<dd><a name="index-addition_002c-permitted-arguments"></a>
+<a name="index-plus_002c-permitted-arguments"></a>
+<a name="index-arguments-for-addition"></a>
+</dd>
+<dt><code>+</code></dt>
+<dd><p><em>Addition</em>.  If either argument is absolute, the result has the section of
+the other argument.  You may not add together arguments from different
+sections.
+</p>
+<a name="index-subtraction_002c-permitted-arguments"></a>
+<a name="index-minus_002c-permitted-arguments"></a>
+<a name="index-arguments-for-subtraction"></a>
+</dd>
+<dt><code>-</code></dt>
+<dd><p><em>Subtraction</em>.  If the right argument is absolute, the
+result has the section of the left argument.
+If both arguments are in the same section, the result is absolute.
+You may not subtract arguments from different sections.
+</p>
+<a name="index-comparison-expressions"></a>
+<a name="index-expressions_002c-comparison"></a>
+</dd>
+<dt><code>==</code></dt>
+<dd><p><em>Is Equal To</em>
+</p></dd>
+<dt><code>&lt;&gt;</code></dt>
+<dt><code>!=</code></dt>
+<dd><p><em>Is Not Equal To</em>
+</p></dd>
+<dt><code>&lt;</code></dt>
+<dd><p><em>Is Less Than</em>
+</p></dd>
+<dt><code>&gt;</code></dt>
+<dd><p><em>Is Greater Than</em>
+</p></dd>
+<dt><code>&gt;=</code></dt>
+<dd><p><em>Is Greater Than Or Equal To</em>
+</p></dd>
+<dt><code>&lt;=</code></dt>
+<dd><p><em>Is Less Than Or Equal To</em>
+</p>
+<p>The comparison operators can be used as infix operators.  A true results has a
+value of -1 whereas a false result has a value of 0.   Note, these operators
+perform signed comparisons.
+</p></dd>
+</dl>
+
+</li><li> Lowest Precedence
+
+<dl compact="compact">
+<dt><code>&amp;&amp;</code></dt>
+<dd><p><em>Logical And</em>.
+</p>
+</dd>
+<dt><code>||</code></dt>
+<dd><p><em>Logical Or</em>.
+</p>
+<p>These two logical operations can be used to combine the results of sub
+expressions.  Note, unlike the comparison operators a true result returns a
+value of 1 but a false results does still return 0.  Also note that the logical
+or operator has a slightly lower precedence than logical and.
+</p>
+</dd>
+</dl>
+</li></ol>
+
+<p>In short, it&rsquo;s only meaningful to add or subtract the <em>offsets</em> in an
+address; you can only have a defined section in one of the two arguments.
+</p>
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Prefix-Ops.html#Prefix-Ops" accesskey="p" rel="prev">Prefix Ops</a>, Up: <a href="Integer-Exprs.html#Integer-Exprs" accesskey="u" rel="up">Integer Exprs</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

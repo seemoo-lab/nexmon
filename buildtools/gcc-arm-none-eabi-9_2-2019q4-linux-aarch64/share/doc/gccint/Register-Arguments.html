@@ -1,0 +1,612 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Register Arguments</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Register Arguments">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Register Arguments">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Stack-and-Calling.html#Stack-and-Calling" rel="up" title="Stack and Calling">
+<link href="Scalar-Return.html#Scalar-Return" rel="next" title="Scalar Return">
+<link href="Stack-Arguments.html#Stack-Arguments" rel="prev" title="Stack Arguments">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Register-Arguments"></a>
+<div class="header">
+<p>
+Next: <a href="Scalar-Return.html#Scalar-Return" accesskey="n" rel="next">Scalar Return</a>, Previous: <a href="Stack-Arguments.html#Stack-Arguments" accesskey="p" rel="prev">Stack Arguments</a>, Up: <a href="Stack-and-Calling.html#Stack-and-Calling" accesskey="u" rel="up">Stack and Calling</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Passing-Arguments-in-Registers"></a>
+<h4 class="subsection">18.9.7 Passing Arguments in Registers</h4>
+<a name="index-arguments-in-registers"></a>
+<a name="index-registers-arguments"></a>
+
+<p>This section describes the macros which let you control how various
+types of arguments are passed in registers or how they are arranged in
+the stack.
+</p>
+<dl>
+<dt><a name="index-TARGET_005fFUNCTION_005fARG"></a>Target Hook: <em>rtx</em> <strong>TARGET_FUNCTION_ARG</strong> <em>(cumulative_args_t <var>ca</var>, machine_mode <var>mode</var>, const_tree <var>type</var>, bool <var>named</var>)</em></dt>
+<dd><p>Return an RTX indicating whether a function argument is passed in a
+register and if so, which register.
+</p>
+<p>The arguments are <var>ca</var>, which summarizes all the previous
+arguments; <var>mode</var>, the machine mode of the argument; <var>type</var>,
+the data type of the argument as a tree node or 0 if that is not known
+(which happens for C support library functions); and <var>named</var>,
+which is <code>true</code> for an ordinary argument and <code>false</code> for
+nameless arguments that correspond to &lsquo;<samp>&hellip;</samp>&rsquo; in the called
+function&rsquo;s prototype.  <var>type</var> can be an incomplete type if a
+syntax error has previously occurred.
+</p>
+<p>The return value is usually either a <code>reg</code> RTX for the hard
+register in which to pass the argument, or zero to pass the argument
+on the stack.
+</p>
+<p>The return value can be a <code>const_int</code> which means argument is
+passed in a target specific slot with specified number.  Target hooks
+should be used to store or load argument in such case.  See
+<code>TARGET_STORE_BOUNDS_FOR_ARG</code> and <code>TARGET_LOAD_BOUNDS_FOR_ARG</code>
+for more information.
+</p>
+<p>The value of the expression can also be a <code>parallel</code> RTX.  This is
+used when an argument is passed in multiple locations.  The mode of the
+<code>parallel</code> should be the mode of the entire argument.  The
+<code>parallel</code> holds any number of <code>expr_list</code> pairs; each one
+describes where part of the argument is passed.  In each
+<code>expr_list</code> the first operand must be a <code>reg</code> RTX for the hard
+register in which to pass this part of the argument, and the mode of the
+register RTX indicates how large this part of the argument is.  The
+second operand of the <code>expr_list</code> is a <code>const_int</code> which gives
+the offset in bytes into the entire argument of where this part starts.
+As a special exception the first <code>expr_list</code> in the <code>parallel</code>
+RTX may have a first operand of zero.  This indicates that the entire
+argument is also stored on the stack.
+</p>
+<p>The last time this hook is called, it is called with <code>MODE ==
+VOIDmode</code>, and its result is passed to the <code>call</code> or <code>call_value</code>
+pattern as operands 2 and 3 respectively.
+</p>
+<a name="index-stdarg_002eh-and-register-arguments"></a>
+<p>The usual way to make the ISO library <samp>stdarg.h</samp> work on a
+machine where some arguments are usually passed in registers, is to
+cause nameless arguments to be passed on the stack instead.  This is
+done by making <code>TARGET_FUNCTION_ARG</code> return 0 whenever
+<var>named</var> is <code>false</code>.
+</p>
+<a name="index-TARGET_005fMUST_005fPASS_005fIN_005fSTACK_002c-and-TARGET_005fFUNCTION_005fARG"></a>
+<a name="index-REG_005fPARM_005fSTACK_005fSPACE_002c-and-TARGET_005fFUNCTION_005fARG"></a>
+<p>You may use the hook <code>targetm.calls.must_pass_in_stack</code>
+in the definition of this macro to determine if this argument is of a
+type that must be passed in the stack.  If <code>REG_PARM_STACK_SPACE</code>
+is not defined and <code>TARGET_FUNCTION_ARG</code> returns nonzero for such an
+argument, the compiler will abort.  If <code>REG_PARM_STACK_SPACE</code> is
+defined, the argument will be computed in the stack and then loaded into
+a register.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fMUST_005fPASS_005fIN_005fSTACK"></a>Target Hook: <em>bool</em> <strong>TARGET_MUST_PASS_IN_STACK</strong> <em>(machine_mode <var>mode</var>, const_tree <var>type</var>)</em></dt>
+<dd><p>This target hook should return <code>true</code> if we should not pass <var>type</var>
+solely in registers.  The file <samp>expr.h</samp> defines a
+definition that is usually appropriate, refer to <samp>expr.h</samp> for additional
+documentation.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fFUNCTION_005fINCOMING_005fARG"></a>Target Hook: <em>rtx</em> <strong>TARGET_FUNCTION_INCOMING_ARG</strong> <em>(cumulative_args_t <var>ca</var>, machine_mode <var>mode</var>, const_tree <var>type</var>, bool <var>named</var>)</em></dt>
+<dd><p>Define this hook if the caller and callee on the target have different
+views of where arguments are passed.  Also define this hook if there are
+functions that are never directly called, but are invoked by the hardware
+and which have nonstandard calling conventions.
+</p>
+<p>In this case <code>TARGET_FUNCTION_ARG</code> computes the register in
+which the caller passes the value, and
+<code>TARGET_FUNCTION_INCOMING_ARG</code> should be defined in a similar
+fashion to tell the function being called where the arguments will
+arrive.
+</p>
+<p><code>TARGET_FUNCTION_INCOMING_ARG</code> can also return arbitrary address
+computation using hard register, which can be forced into a register,
+so that it can be used to pass special arguments.
+</p>
+<p>If <code>TARGET_FUNCTION_INCOMING_ARG</code> is not defined,
+<code>TARGET_FUNCTION_ARG</code> serves both purposes.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fUSE_005fPSEUDO_005fPIC_005fREG"></a>Target Hook: <em>bool</em> <strong>TARGET_USE_PSEUDO_PIC_REG</strong> <em>(void)</em></dt>
+<dd><p>This hook should return 1 in case pseudo register should be created
+for pic_offset_table_rtx during function expand.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fINIT_005fPIC_005fREG"></a>Target Hook: <em>void</em> <strong>TARGET_INIT_PIC_REG</strong> <em>(void)</em></dt>
+<dd><p>Perform a target dependent initialization of pic_offset_table_rtx.
+This hook is called at the start of register allocation.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fARG_005fPARTIAL_005fBYTES"></a>Target Hook: <em>int</em> <strong>TARGET_ARG_PARTIAL_BYTES</strong> <em>(cumulative_args_t <var>cum</var>, machine_mode <var>mode</var>, tree <var>type</var>, bool <var>named</var>)</em></dt>
+<dd><p>This target hook returns the number of bytes at the beginning of an
+argument that must be put in registers.  The value must be zero for
+arguments that are passed entirely in registers or that are entirely
+pushed on the stack.
+</p>
+<p>On some machines, certain arguments must be passed partially in
+registers and partially in memory.  On these machines, typically the
+first few words of arguments are passed in registers, and the rest
+on the stack.  If a multi-word argument (a <code>double</code> or a
+structure) crosses that boundary, its first few words must be passed
+in registers and the rest must be pushed.  This macro tells the
+compiler when this occurs, and how many bytes should go in registers.
+</p>
+<p><code>TARGET_FUNCTION_ARG</code> for these arguments should return the first
+register to be used by the caller for this argument; likewise
+<code>TARGET_FUNCTION_INCOMING_ARG</code>, for the called function.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fPASS_005fBY_005fREFERENCE"></a>Target Hook: <em>bool</em> <strong>TARGET_PASS_BY_REFERENCE</strong> <em>(cumulative_args_t <var>cum</var>, machine_mode <var>mode</var>, const_tree <var>type</var>, bool <var>named</var>)</em></dt>
+<dd><p>This target hook should return <code>true</code> if an argument at the
+position indicated by <var>cum</var> should be passed by reference.  This
+predicate is queried after target independent reasons for being
+passed by reference, such as <code>TREE_ADDRESSABLE (type)</code>.
+</p>
+<p>If the hook returns true, a copy of that argument is made in memory and a
+pointer to the argument is passed instead of the argument itself.
+The pointer is passed in whatever way is appropriate for passing a pointer
+to that type.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fCALLEE_005fCOPIES"></a>Target Hook: <em>bool</em> <strong>TARGET_CALLEE_COPIES</strong> <em>(cumulative_args_t <var>cum</var>, machine_mode <var>mode</var>, const_tree <var>type</var>, bool <var>named</var>)</em></dt>
+<dd><p>The function argument described by the parameters to this hook is
+known to be passed by reference.  The hook should return true if the
+function argument should be copied by the callee instead of copied
+by the caller.
+</p>
+<p>For any argument for which the hook returns true, if it can be
+determined that the argument is not modified, then a copy need
+not be generated.
+</p>
+<p>The default version of this hook always returns false.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-CUMULATIVE_005fARGS"></a>Macro: <strong>CUMULATIVE_ARGS</strong></dt>
+<dd><p>A C type for declaring a variable that is used as the first argument
+of <code>TARGET_FUNCTION_ARG</code> and other related values.  For some
+target machines, the type <code>int</code> suffices and can hold the number
+of bytes of argument so far.
+</p>
+<p>There is no need to record in <code>CUMULATIVE_ARGS</code> anything about the
+arguments that have been passed on the stack.  The compiler has other
+variables to keep track of that.  For target machines on which all
+arguments are passed on the stack, there is no need to store anything in
+<code>CUMULATIVE_ARGS</code>; however, the data structure must exist and
+should not be empty, so use <code>int</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-OVERRIDE_005fABI_005fFORMAT"></a>Macro: <strong>OVERRIDE_ABI_FORMAT</strong> <em>(<var>fndecl</var>)</em></dt>
+<dd><p>If defined, this macro is called before generating any code for a
+function, but after the <var>cfun</var> descriptor for the function has been
+created.  The back end may use this macro to update <var>cfun</var> to
+reflect an ABI other than that which would normally be used by default.
+If the compiler is generating code for a compiler-generated function,
+<var>fndecl</var> may be <code>NULL</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-INIT_005fCUMULATIVE_005fARGS"></a>Macro: <strong>INIT_CUMULATIVE_ARGS</strong> <em>(<var>cum</var>, <var>fntype</var>, <var>libname</var>, <var>fndecl</var>, <var>n_named_args</var>)</em></dt>
+<dd><p>A C statement (sans semicolon) for initializing the variable
+<var>cum</var> for the state at the beginning of the argument list.  The
+variable has type <code>CUMULATIVE_ARGS</code>.  The value of <var>fntype</var>
+is the tree node for the data type of the function which will receive
+the args, or 0 if the args are to a compiler support library function.
+For direct calls that are not libcalls, <var>fndecl</var> contain the
+declaration node of the function.  <var>fndecl</var> is also set when
+<code>INIT_CUMULATIVE_ARGS</code> is used to find arguments for the function
+being compiled.  <var>n_named_args</var> is set to the number of named
+arguments, including a structure return address if it is passed as a
+parameter, when making a call.  When processing incoming arguments,
+<var>n_named_args</var> is set to -1.
+</p>
+<p>When processing a call to a compiler support library function,
+<var>libname</var> identifies which one.  It is a <code>symbol_ref</code> rtx which
+contains the name of the function, as a string.  <var>libname</var> is 0 when
+an ordinary C function call is being processed.  Thus, each time this
+macro is called, either <var>libname</var> or <var>fntype</var> is nonzero, but
+never both of them at once.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-INIT_005fCUMULATIVE_005fLIBCALL_005fARGS"></a>Macro: <strong>INIT_CUMULATIVE_LIBCALL_ARGS</strong> <em>(<var>cum</var>, <var>mode</var>, <var>libname</var>)</em></dt>
+<dd><p>Like <code>INIT_CUMULATIVE_ARGS</code> but only used for outgoing libcalls,
+it gets a <code>MODE</code> argument instead of <var>fntype</var>, that would be
+<code>NULL</code>.  <var>indirect</var> would always be zero, too.  If this macro
+is not defined, <code>INIT_CUMULATIVE_ARGS (cum, NULL_RTX, libname,
+0)</code> is used instead.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-INIT_005fCUMULATIVE_005fINCOMING_005fARGS"></a>Macro: <strong>INIT_CUMULATIVE_INCOMING_ARGS</strong> <em>(<var>cum</var>, <var>fntype</var>, <var>libname</var>)</em></dt>
+<dd><p>Like <code>INIT_CUMULATIVE_ARGS</code> but overrides it for the purposes of
+finding the arguments for the function being compiled.  If this macro is
+undefined, <code>INIT_CUMULATIVE_ARGS</code> is used instead.
+</p>
+<p>The value passed for <var>libname</var> is always 0, since library routines
+with special calling conventions are never compiled with GCC.  The
+argument <var>libname</var> exists for symmetry with
+<code>INIT_CUMULATIVE_ARGS</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fFUNCTION_005fARG_005fADVANCE"></a>Target Hook: <em>void</em> <strong>TARGET_FUNCTION_ARG_ADVANCE</strong> <em>(cumulative_args_t <var>ca</var>, machine_mode <var>mode</var>, const_tree <var>type</var>, bool <var>named</var>)</em></dt>
+<dd><p>This hook updates the summarizer variable pointed to by <var>ca</var> to
+advance past an argument in the argument list.  The values <var>mode</var>,
+<var>type</var> and <var>named</var> describe that argument.  Once this is done,
+the variable <var>cum</var> is suitable for analyzing the <em>following</em>
+argument with <code>TARGET_FUNCTION_ARG</code>, etc.
+</p>
+<p>This hook need not do anything if the argument in question was passed
+on the stack.  The compiler knows how to track the amount of stack space
+used for arguments without any special help.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fFUNCTION_005fARG_005fOFFSET"></a>Target Hook: <em>HOST_WIDE_INT</em> <strong>TARGET_FUNCTION_ARG_OFFSET</strong> <em>(machine_mode <var>mode</var>, const_tree <var>type</var>)</em></dt>
+<dd><p>This hook returns the number of bytes to add to the offset of an
+argument of type <var>type</var> and mode <var>mode</var> when passed in memory.
+This is needed for the SPU, which passes <code>char</code> and <code>short</code>
+arguments in the preferred slot that is in the middle of the quad word
+instead of starting at the top.  The default implementation returns 0.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fFUNCTION_005fARG_005fPADDING"></a>Target Hook: <em>pad_direction</em> <strong>TARGET_FUNCTION_ARG_PADDING</strong> <em>(machine_mode <var>mode</var>, const_tree <var>type</var>)</em></dt>
+<dd><p>This hook determines whether, and in which direction, to pad out
+an argument of mode <var>mode</var> and type <var>type</var>.  It returns
+<code>PAD_UPWARD</code> to insert padding above the argument, <code>PAD_DOWNWARD</code>
+to insert padding below the argument, or <code>PAD_NONE</code> to inhibit padding.
+</p>
+<p>The <em>amount</em> of padding is not controlled by this hook, but by
+<code>TARGET_FUNCTION_ARG_ROUND_BOUNDARY</code>.  It is always just enough
+to reach the next multiple of that boundary.
+</p>
+<p>This hook has a default definition that is right for most systems.
+For little-endian machines, the default is to pad upward.  For
+big-endian machines, the default is to pad downward for an argument of
+constant size shorter than an <code>int</code>, and upward otherwise.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-PAD_005fVARARGS_005fDOWN"></a>Macro: <strong>PAD_VARARGS_DOWN</strong></dt>
+<dd><p>If defined, a C expression which determines whether the default
+implementation of va_arg will attempt to pad down before reading the
+next argument, if that argument is smaller than its aligned space as
+controlled by <code>PARM_BOUNDARY</code>.  If this macro is not defined, all such
+arguments are padded down if <code>BYTES_BIG_ENDIAN</code> is true.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-BLOCK_005fREG_005fPADDING"></a>Macro: <strong>BLOCK_REG_PADDING</strong> <em>(<var>mode</var>, <var>type</var>, <var>first</var>)</em></dt>
+<dd><p>Specify padding for the last element of a block move between registers and
+memory.  <var>first</var> is nonzero if this is the only element.  Defining this
+macro allows better control of register function parameters on big-endian
+machines, without using <code>PARALLEL</code> rtl.  In particular,
+<code>MUST_PASS_IN_STACK</code> need not test padding and mode of types in
+registers, as there is no longer a &quot;wrong&quot; part of a register;  For example,
+a three byte aggregate may be passed in the high part of a register if so
+required.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fFUNCTION_005fARG_005fBOUNDARY"></a>Target Hook: <em>unsigned int</em> <strong>TARGET_FUNCTION_ARG_BOUNDARY</strong> <em>(machine_mode <var>mode</var>, const_tree <var>type</var>)</em></dt>
+<dd><p>This hook returns the alignment boundary, in bits, of an argument
+with the specified mode and type.  The default hook returns
+<code>PARM_BOUNDARY</code> for all arguments.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fFUNCTION_005fARG_005fROUND_005fBOUNDARY"></a>Target Hook: <em>unsigned int</em> <strong>TARGET_FUNCTION_ARG_ROUND_BOUNDARY</strong> <em>(machine_mode <var>mode</var>, const_tree <var>type</var>)</em></dt>
+<dd><p>Normally, the size of an argument is rounded up to <code>PARM_BOUNDARY</code>,
+which is the default value for this hook.  You can define this hook to
+return a different value if an argument size must be rounded to a larger
+value.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-FUNCTION_005fARG_005fREGNO_005fP"></a>Macro: <strong>FUNCTION_ARG_REGNO_P</strong> <em>(<var>regno</var>)</em></dt>
+<dd><p>A C expression that is nonzero if <var>regno</var> is the number of a hard
+register in which function arguments are sometimes passed.  This does
+<em>not</em> include implicit arguments such as the static chain and
+the structure-value address.  On many machines, no registers can be
+used for this purpose since all function arguments are pushed on the
+stack.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fSPLIT_005fCOMPLEX_005fARG"></a>Target Hook: <em>bool</em> <strong>TARGET_SPLIT_COMPLEX_ARG</strong> <em>(const_tree <var>type</var>)</em></dt>
+<dd><p>This hook should return true if parameter of type <var>type</var> are passed
+as two scalar parameters.  By default, GCC will attempt to pack complex
+arguments into the target&rsquo;s word size.  Some ABIs require complex arguments
+to be split and treated as their individual components.  For example, on
+AIX64, complex floats should be passed in a pair of floating point
+registers, even though a complex float would fit in one 64-bit floating
+point register.
+</p>
+<p>The default value of this hook is <code>NULL</code>, which is treated as always
+false.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fBUILD_005fBUILTIN_005fVA_005fLIST"></a>Target Hook: <em>tree</em> <strong>TARGET_BUILD_BUILTIN_VA_LIST</strong> <em>(void)</em></dt>
+<dd><p>This hook returns a type node for <code>va_list</code> for the target.
+The default version of the hook returns <code>void*</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fENUM_005fVA_005fLIST_005fP"></a>Target Hook: <em>int</em> <strong>TARGET_ENUM_VA_LIST_P</strong> <em>(int <var>idx</var>, const char **<var>pname</var>, tree *<var>ptree</var>)</em></dt>
+<dd><p>This target hook is used in function <code>c_common_nodes_and_builtins</code>
+to iterate through the target specific builtin types for va_list. The
+variable <var>idx</var> is used as iterator. <var>pname</var> has to be a pointer
+to a <code>const char *</code> and <var>ptree</var> a pointer to a <code>tree</code> typed
+variable.
+The arguments <var>pname</var> and <var>ptree</var> are used to store the result of
+this macro and are set to the name of the va_list builtin type and its
+internal type.
+If the return value of this macro is zero, then there is no more element.
+Otherwise the <var>IDX</var> should be increased for the next call of this
+macro to iterate through all types.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fFN_005fABI_005fVA_005fLIST"></a>Target Hook: <em>tree</em> <strong>TARGET_FN_ABI_VA_LIST</strong> <em>(tree <var>fndecl</var>)</em></dt>
+<dd><p>This hook returns the va_list type of the calling convention specified by
+<var>fndecl</var>.
+The default version of this hook returns <code>va_list_type_node</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fCANONICAL_005fVA_005fLIST_005fTYPE"></a>Target Hook: <em>tree</em> <strong>TARGET_CANONICAL_VA_LIST_TYPE</strong> <em>(tree <var>type</var>)</em></dt>
+<dd><p>This hook returns the va_list type of the calling convention specified by the
+type of <var>type</var>. If <var>type</var> is not a valid va_list type, it returns
+<code>NULL_TREE</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fGIMPLIFY_005fVA_005fARG_005fEXPR"></a>Target Hook: <em>tree</em> <strong>TARGET_GIMPLIFY_VA_ARG_EXPR</strong> <em>(tree <var>valist</var>, tree <var>type</var>, gimple_seq *<var>pre_p</var>, gimple_seq *<var>post_p</var>)</em></dt>
+<dd><p>This hook performs target-specific gimplification of
+<code>VA_ARG_EXPR</code>.  The first two parameters correspond to the
+arguments to <code>va_arg</code>; the latter two are as in
+<code>gimplify.c:gimplify_expr</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fVALID_005fPOINTER_005fMODE"></a>Target Hook: <em>bool</em> <strong>TARGET_VALID_POINTER_MODE</strong> <em>(scalar_int_mode <var>mode</var>)</em></dt>
+<dd><p>Define this to return nonzero if the port can handle pointers
+with machine mode <var>mode</var>.  The default version of this
+hook returns true for both <code>ptr_mode</code> and <code>Pmode</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fREF_005fMAY_005fALIAS_005fERRNO"></a>Target Hook: <em>bool</em> <strong>TARGET_REF_MAY_ALIAS_ERRNO</strong> <em>(struct ao_ref *<var>ref</var>)</em></dt>
+<dd><p>Define this to return nonzero if the memory reference <var>ref</var>  may alias with the system C library errno location.  The default  version of this hook assumes the system C library errno location  is either a declaration of type int or accessed by dereferencing  a pointer to int.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fTRANSLATE_005fMODE_005fATTRIBUTE"></a>Target Hook: <em>machine_mode</em> <strong>TARGET_TRANSLATE_MODE_ATTRIBUTE</strong> <em>(machine_mode <var>mode</var>)</em></dt>
+<dd><p>Define this hook if during mode attribute processing, the port should
+translate machine_mode <var>mode</var> to another mode.  For example, rs6000&rsquo;s
+<code>KFmode</code>, when it is the same as <code>TFmode</code>.
+</p>
+<p>The default version of the hook returns that mode that was passed in.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fSCALAR_005fMODE_005fSUPPORTED_005fP"></a>Target Hook: <em>bool</em> <strong>TARGET_SCALAR_MODE_SUPPORTED_P</strong> <em>(scalar_mode <var>mode</var>)</em></dt>
+<dd><p>Define this to return nonzero if the port is prepared to handle
+insns involving scalar mode <var>mode</var>.  For a scalar mode to be
+considered supported, all the basic arithmetic and comparisons
+must work.
+</p>
+<p>The default version of this hook returns true for any mode
+required to handle the basic C types (as defined by the port).
+Included here are the double-word arithmetic supported by the
+code in <samp>optabs.c</samp>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fVECTOR_005fMODE_005fSUPPORTED_005fP"></a>Target Hook: <em>bool</em> <strong>TARGET_VECTOR_MODE_SUPPORTED_P</strong> <em>(machine_mode <var>mode</var>)</em></dt>
+<dd><p>Define this to return nonzero if the port is prepared to handle
+insns involving vector mode <var>mode</var>.  At the very least, it
+must have move patterns for this mode.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fARRAY_005fMODE"></a>Target Hook: <em>opt_machine_mode</em> <strong>TARGET_ARRAY_MODE</strong> <em>(machine_mode <var>mode</var>, unsigned HOST_WIDE_INT <var>nelems</var>)</em></dt>
+<dd><p>Return the mode that GCC should use for an array that has
+<var>nelems</var> elements, with each element having mode <var>mode</var>.
+Return no mode if the target has no special requirements.  In the
+latter case, GCC looks for an integer mode of the appropriate size
+if available and uses BLKmode otherwise.  Usually the search for the
+integer mode is limited to <code>MAX_FIXED_MODE_SIZE</code>, but the
+<code>TARGET_ARRAY_MODE_SUPPORTED_P</code> hook allows a larger mode to be
+used in specific cases.
+</p>
+<p>The main use of this hook is to specify that an array of vectors should
+also have a vector mode.  The default implementation returns no mode.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fARRAY_005fMODE_005fSUPPORTED_005fP"></a>Target Hook: <em>bool</em> <strong>TARGET_ARRAY_MODE_SUPPORTED_P</strong> <em>(machine_mode <var>mode</var>, unsigned HOST_WIDE_INT <var>nelems</var>)</em></dt>
+<dd><p>Return true if GCC should try to use a scalar mode to store an array
+of <var>nelems</var> elements, given that each element has mode <var>mode</var>.
+Returning true here overrides the usual <code>MAX_FIXED_MODE</code> limit
+and allows GCC to use any defined integer mode.
+</p>
+<p>One use of this hook is to support vector load and store operations
+that operate on several homogeneous vectors.  For example, ARM NEON
+has operations like:
+</p>
+<div class="smallexample">
+<pre class="smallexample">int8x8x3_t vld3_s8 (const int8_t *)
+</pre></div>
+
+<p>where the return type is defined as:
+</p>
+<div class="smallexample">
+<pre class="smallexample">typedef struct int8x8x3_t
+{
+  int8x8_t val[3];
+} int8x8x3_t;
+</pre></div>
+
+<p>If this hook allows <code>val</code> to have a scalar mode, then
+<code>int8x8x3_t</code> can have the same mode.  GCC can then store
+<code>int8x8x3_t</code>s in registers rather than forcing them onto the stack.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fLIBGCC_005fFLOATING_005fMODE_005fSUPPORTED_005fP"></a>Target Hook: <em>bool</em> <strong>TARGET_LIBGCC_FLOATING_MODE_SUPPORTED_P</strong> <em>(scalar_float_mode <var>mode</var>)</em></dt>
+<dd><p>Define this to return nonzero if libgcc provides support for the 
+floating-point mode <var>mode</var>, which is known to pass 
+<code>TARGET_SCALAR_MODE_SUPPORTED_P</code>.  The default version of this 
+hook returns true for all of <code>SFmode</code>, <code>DFmode</code>, 
+<code>XFmode</code> and <code>TFmode</code>, if such modes exist.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fFLOATN_005fMODE"></a>Target Hook: <em>opt_scalar_float_mode</em> <strong>TARGET_FLOATN_MODE</strong> <em>(int <var>n</var>, bool <var>extended</var>)</em></dt>
+<dd><p>Define this to return the machine mode to use for the type 
+<code>_Float<var>n</var></code>, if <var>extended</var> is false, or the type 
+<code>_Float<var>n</var>x</code>, if <var>extended</var> is true.  If such a type is not
+supported, return <code>opt_scalar_float_mode ()</code>.  The default version of
+this hook returns <code>SFmode</code> for <code>_Float32</code>, <code>DFmode</code> for
+<code>_Float64</code> and <code>_Float32x</code> and <code>TFmode</code> for 
+<code>_Float128</code>, if those modes exist and satisfy the requirements for 
+those types and pass <code>TARGET_SCALAR_MODE_SUPPORTED_P</code> and 
+<code>TARGET_LIBGCC_FLOATING_MODE_SUPPORTED_P</code>; for <code>_Float64x</code>, it 
+returns the first of <code>XFmode</code> and <code>TFmode</code> that exists and 
+satisfies the same requirements; for other types, it returns 
+<code>opt_scalar_float_mode ()</code>.  The hook is only called for values
+of <var>n</var> and <var>extended</var> that are valid according to
+ISO/IEC TS 18661-3:2015; that is, <var>n</var> is one of 32, 64, 128, or,
+if <var>extended</var> is false, 16 or greater than 128 and a multiple of 32.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fFLOATN_005fBUILTIN_005fP"></a>Target Hook: <em>bool</em> <strong>TARGET_FLOATN_BUILTIN_P</strong> <em>(int <var>func</var>)</em></dt>
+<dd><p>Define this to return true if the <code>_Float<var>n</var></code> and
+<code>_Float<var>n</var>x</code> built-in functions should implicitly enable the
+built-in function without the <code>__builtin_</code> prefix in addition to the
+normal built-in function with the <code>__builtin_</code> prefix.  The default is
+to only enable built-in functions without the <code>__builtin_</code> prefix for
+the GNU C langauge.  In strict ANSI/ISO mode, the built-in function without
+the <code>__builtin_</code> prefix is not enabled.  The argument <code>FUNC</code> is the
+<code>enum built_in_function</code> id of the function to be enabled.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fSMALL_005fREGISTER_005fCLASSES_005fFOR_005fMODE_005fP"></a>Target Hook: <em>bool</em> <strong>TARGET_SMALL_REGISTER_CLASSES_FOR_MODE_P</strong> <em>(machine_mode <var>mode</var>)</em></dt>
+<dd><p>Define this to return nonzero for machine modes for which the port has
+small register classes.  If this target hook returns nonzero for a given
+<var>mode</var>, the compiler will try to minimize the lifetime of registers
+in <var>mode</var>.  The hook may be called with <code>VOIDmode</code> as argument.
+In this case, the hook is expected to return nonzero if it returns nonzero
+for any mode.
+</p>
+<p>On some machines, it is risky to let hard registers live across arbitrary
+insns.  Typically, these machines have instructions that require values
+to be in specific registers (like an accumulator), and reload will fail
+if the required hard register is used for another purpose across such an
+insn.
+</p>
+<p>Passes before reload do not know which hard registers will be used
+in an instruction, but the machine modes of the registers set or used in
+the instruction are already known.  And for some machines, register
+classes are small for, say, integer registers but not for floating point
+registers.  For example, the AMD x86-64 architecture requires specific
+registers for the legacy x86 integer instructions, but there are many
+SSE registers for floating point operations.  On such targets, a good
+strategy may be to return nonzero from this hook for <code>INTEGRAL_MODE_P</code>
+machine modes but zero for the SSE register classes.
+</p>
+<p>The default version of this hook returns false for any mode.  It is always
+safe to redefine this hook to return with a nonzero value.  But if you
+unnecessarily define it, you will reduce the amount of optimizations
+that can be performed in some cases.  If you do not define this hook
+to return a nonzero value when it is required, the compiler will run out
+of spill registers and print a fatal error message.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Scalar-Return.html#Scalar-Return" accesskey="n" rel="next">Scalar Return</a>, Previous: <a href="Stack-Arguments.html#Stack-Arguments" accesskey="p" rel="prev">Stack Arguments</a>, Up: <a href="Stack-and-Calling.html#Stack-and-Calling" accesskey="u" rel="up">Stack and Calling</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

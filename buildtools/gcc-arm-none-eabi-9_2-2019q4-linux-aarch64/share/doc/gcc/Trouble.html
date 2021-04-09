@@ -1,0 +1,120 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Trouble</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Trouble">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Trouble">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Actual-Bugs.html#Actual-Bugs" rel="next" title="Actual Bugs">
+<link href="Invoking-Gcov_002ddump.html#Invoking-Gcov_002ddump" rel="prev" title="Invoking Gcov-dump">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Trouble"></a>
+<div class="header">
+<p>
+Next: <a href="Bugs.html#Bugs" accesskey="n" rel="next">Bugs</a>, Previous: <a href="Gcov_002ddump.html#Gcov_002ddump" accesskey="p" rel="prev">Gcov-dump</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Known-Causes-of-Trouble-with-GCC"></a>
+<h2 class="chapter">13 Known Causes of Trouble with GCC</h2>
+<a name="index-bugs_002c-known"></a>
+<a name="index-installation-trouble"></a>
+<a name="index-known-causes-of-trouble"></a>
+
+<p>This section describes known problems that affect users of GCC.  Most
+of these are not GCC bugs per se&mdash;if they were, we would fix them.
+But the result for a user may be like the result of a bug.
+</p>
+<p>Some of these problems are due to bugs in other software, some are
+missing features that are too much work to add, and some are places
+where people&rsquo;s opinions differ as to what is best.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Actual-Bugs.html#Actual-Bugs" accesskey="1">Actual Bugs</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Bugs we will fix later.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Interoperation.html#Interoperation" accesskey="2">Interoperation</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Problems using GCC with other compilers,
+                        and with certain linkers, assemblers and debuggers.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Incompatibilities.html#Incompatibilities" accesskey="3">Incompatibilities</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">GCC is incompatible with traditional C.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Fixed-Headers.html#Fixed-Headers" accesskey="4">Fixed Headers</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">GCC uses corrected versions of system header files.
+                        This is necessary, but doesn&rsquo;t always work smoothly.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Standard-Libraries.html#Standard-Libraries" accesskey="5">Standard Libraries</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">GCC uses the system C library, which might not be
+                        compliant with the ISO C standard.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Disappointments.html#Disappointments" accesskey="6">Disappointments</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Regrettable things we cannot change, but not quite bugs.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="C_002b_002b-Misunderstandings.html#C_002b_002b-Misunderstandings" accesskey="7">C++ Misunderstandings</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Common misunderstandings with GNU C++.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Non_002dbugs.html#Non_002dbugs" accesskey="8">Non-bugs</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Things we think are right, but some others disagree.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Warnings-and-Errors.html#Warnings-and-Errors" accesskey="9">Warnings and Errors</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Which problems in your code get warnings,
+                        and which get errors.
+</td></tr>
+</table>
+
+
+
+
+</body>
+</html>

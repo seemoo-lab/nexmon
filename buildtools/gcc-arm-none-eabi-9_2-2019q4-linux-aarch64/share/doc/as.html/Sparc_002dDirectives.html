@@ -1,0 +1,161 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: Sparc-Directives</title>
+
+<meta name="description" content="Using as: Sparc-Directives">
+<meta name="keywords" content="Using as: Sparc-Directives">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Sparc_002dDependent.html#Sparc_002dDependent" rel="up" title="Sparc-Dependent">
+<link href="TIC54X_002dDependent.html#TIC54X_002dDependent" rel="next" title="TIC54X-Dependent">
+<link href="Sparc_002dFloat.html#Sparc_002dFloat" rel="prev" title="Sparc-Float">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Sparc_002dDirectives"></a>
+<div class="header">
+<p>
+Previous: <a href="Sparc_002dFloat.html#Sparc_002dFloat" accesskey="p" rel="prev">Sparc-Float</a>, Up: <a href="Sparc_002dDependent.html#Sparc_002dDependent" accesskey="u" rel="up">Sparc-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Sparc-Machine-Directives"></a>
+<h4 class="subsection">9.44.5 Sparc Machine Directives</h4>
+
+<a name="index-SPARC-machine-directives"></a>
+<a name="index-machine-directives_002c-SPARC"></a>
+<p>The Sparc version of <code>as</code> supports the following additional
+machine directives:
+</p>
+<dl compact="compact">
+<dd><a name="index-align-directive_002c-SPARC"></a>
+</dd>
+<dt><code>.align</code></dt>
+<dd><p>This must be followed by the desired alignment in bytes.
+</p>
+<a name="index-common-directive_002c-SPARC"></a>
+</dd>
+<dt><code>.common</code></dt>
+<dd><p>This must be followed by a symbol name, a positive number, and
+<code>&quot;bss&quot;</code>.  This behaves somewhat like <code>.comm</code>, but the
+syntax is different.
+</p>
+<a name="index-half-directive_002c-SPARC"></a>
+</dd>
+<dt><code>.half</code></dt>
+<dd><p>This is functionally identical to <code>.short</code>.
+</p>
+<a name="index-nword-directive_002c-SPARC"></a>
+</dd>
+<dt><code>.nword</code></dt>
+<dd><p>On the Sparc, the <code>.nword</code> directive produces native word sized value,
+ie. if assembling with -32 it is equivalent to <code>.word</code>, if assembling
+with -64 it is equivalent to <code>.xword</code>.
+</p>
+<a name="index-proc-directive_002c-SPARC"></a>
+</dd>
+<dt><code>.proc</code></dt>
+<dd><p>This directive is ignored.  Any text following it on the same
+line is also ignored.
+</p>
+<a name="index-register-directive_002c-SPARC"></a>
+</dd>
+<dt><code>.register</code></dt>
+<dd><p>This directive declares use of a global application or system register.
+It must be followed by a register name %g2, %g3, %g6 or %g7, comma and
+the symbol name for that register.  If symbol name is <code>#scratch</code>,
+it is a scratch register, if it is <code>#ignore</code>, it just suppresses any
+errors about using undeclared global register, but does not emit any
+information about it into the object file.  This can be useful e.g. if you
+save the register before use and restore it after.
+</p>
+<a name="index-reserve-directive_002c-SPARC"></a>
+</dd>
+<dt><code>.reserve</code></dt>
+<dd><p>This must be followed by a symbol name, a positive number, and
+<code>&quot;bss&quot;</code>.  This behaves somewhat like <code>.lcomm</code>, but the
+syntax is different.
+</p>
+<a name="index-seg-directive_002c-SPARC"></a>
+</dd>
+<dt><code>.seg</code></dt>
+<dd><p>This must be followed by <code>&quot;text&quot;</code>, <code>&quot;data&quot;</code>, or
+<code>&quot;data1&quot;</code>.  It behaves like <code>.text</code>, <code>.data</code>, or
+<code>.data 1</code>.
+</p>
+<a name="index-skip-directive_002c-SPARC"></a>
+</dd>
+<dt><code>.skip</code></dt>
+<dd><p>This is functionally identical to the <code>.space</code> directive.
+</p>
+<a name="index-word-directive_002c-SPARC"></a>
+</dd>
+<dt><code>.word</code></dt>
+<dd><p>On the Sparc, the <code>.word</code> directive produces 32 bit values,
+instead of the 16 bit values it produces on many other machines.
+</p>
+<a name="index-xword-directive_002c-SPARC"></a>
+</dd>
+<dt><code>.xword</code></dt>
+<dd><p>On the Sparc V9 processor, the <code>.xword</code> directive produces
+64 bit values.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Sparc_002dFloat.html#Sparc_002dFloat" accesskey="p" rel="prev">Sparc-Float</a>, Up: <a href="Sparc_002dDependent.html#Sparc_002dDependent" accesskey="u" rel="up">Sparc-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

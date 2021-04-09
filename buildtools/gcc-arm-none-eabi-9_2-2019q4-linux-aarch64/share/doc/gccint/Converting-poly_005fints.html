@@ -1,0 +1,189 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Converting poly_ints</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Converting poly_ints">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Converting poly_ints">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="poly_005fint.html#poly_005fint" rel="up" title="poly_int">
+<link href="Miscellaneous-poly_005fint-routines.html#Miscellaneous-poly_005fint-routines" rel="next" title="Miscellaneous poly_int routines">
+<link href="Computing-bounds-on-poly_005fints.html#Computing-bounds-on-poly_005fints" rel="prev" title="Computing bounds on poly_ints">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Converting-poly_005fints"></a>
+<div class="header">
+<p>
+Next: <a href="Miscellaneous-poly_005fint-routines.html#Miscellaneous-poly_005fint-routines" accesskey="n" rel="next">Miscellaneous <code>poly_int</code> routines</a>, Previous: <a href="Computing-bounds-on-poly_005fints.html#Computing-bounds-on-poly_005fints" accesskey="p" rel="prev">Computing bounds on <code>poly_int</code>s</a>, Up: <a href="poly_005fint.html#poly_005fint" accesskey="u" rel="up">poly_int</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Converting-poly_005fints-1"></a>
+<h3 class="section">10.7 Converting <code>poly_int</code>s</h3>
+
+<p>A <code>poly_int&lt;<var>n</var>, <var>T</var>&gt;</code> can be constructed from up to
+<var>n</var> individual <var>T</var> coefficients, with the remaining coefficients
+being implicitly zero.  In particular, this means that every
+<code>poly_int&lt;<var>n</var>, <var>T</var>&gt;</code> can be constructed from a single
+scalar <var>T</var>, or something compatible with <var>T</var>.
+</p>
+<p>Also, a <code>poly_int&lt;<var>n</var>, <var>T</var>&gt;</code> can be constructed from
+a <code>poly_int&lt;<var>n</var>, <var>U</var>&gt;</code> if <var>T</var> can be constructed
+from <var>U</var>.
+</p>
+<p>The following functions provide other forms of conversion,
+or test whether such a conversion would succeed.
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp><var>value</var>.is_constant ()</samp>&rsquo;</dt>
+<dd><p>Return true if <code>poly_int</code> <var>value</var> is a compile-time constant.
+</p>
+</dd>
+<dt>&lsquo;<samp><var>value</var>.is_constant (&amp;<var>c1</var>)</samp>&rsquo;</dt>
+<dd><p>Return true if <code>poly_int</code> <var>value</var> is a compile-time constant,
+storing it in <var>c1</var> if so.  <var>c1</var> must be able to hold all
+constant values of <var>value</var> without loss of precision.
+</p>
+</dd>
+<dt>&lsquo;<samp><var>value</var>.to_constant ()</samp>&rsquo;</dt>
+<dd><p>Assert that <var>value</var> is a compile-time constant and return its value.
+When using this function, please add a comment explaining why the
+condition is known to hold (for example, because an earlier phase
+of analysis rejected non-constants).
+</p>
+</dd>
+<dt>&lsquo;<samp><var>value</var>.to_shwi (&amp;<var>p2</var>)</samp>&rsquo;</dt>
+<dd><p>Return true if &lsquo;<samp>poly_int&lt;<var>N</var>, <var>T</var>&gt;</samp>&rsquo; <var>value</var> can be
+represented without loss of precision as a
+&lsquo;<samp>poly_int&lt;<var>N</var>, <code>HOST_WIDE_INT</code>&gt;</samp>&rsquo;, storing it in that
+form in <var>p2</var> if so.
+</p>
+</dd>
+<dt>&lsquo;<samp><var>value</var>.to_uhwi (&amp;<var>p2</var>)</samp>&rsquo;</dt>
+<dd><p>Return true if &lsquo;<samp>poly_int&lt;<var>N</var>, <var>T</var>&gt;</samp>&rsquo; <var>value</var> can be
+represented without loss of precision as a
+&lsquo;<samp>poly_int&lt;<var>N</var>, <code>unsigned HOST_WIDE_INT</code>&gt;</samp>&rsquo;, storing it in that
+form in <var>p2</var> if so.
+</p>
+</dd>
+<dt>&lsquo;<samp><var>value</var>.force_shwi ()</samp>&rsquo;</dt>
+<dd><p>Forcibly convert each coefficient of &lsquo;<samp>poly_int&lt;<var>N</var>, <var>T</var>&gt;</samp>&rsquo;
+<var>value</var> to <code>HOST_WIDE_INT</code>, truncating any that are out of range.
+Return the result as a &lsquo;<samp>poly_int&lt;<var>N</var>, <code>HOST_WIDE_INT</code>&gt;</samp>&rsquo;.
+</p>
+</dd>
+<dt>&lsquo;<samp><var>value</var>.force_uhwi ()</samp>&rsquo;</dt>
+<dd><p>Forcibly convert each coefficient of &lsquo;<samp>poly_int&lt;<var>N</var>, <var>T</var>&gt;</samp>&rsquo;
+<var>value</var> to <code>unsigned HOST_WIDE_INT</code>, truncating any that are
+out of range.  Return the result as a
+&lsquo;<samp>poly_int&lt;<var>N</var>, <code>unsigned HOST_WIDE_INT</code>&gt;</samp>&rsquo;.
+</p>
+</dd>
+<dt>&lsquo;<samp>wi::shwi (<var>value</var>, <var>precision</var>)</samp>&rsquo;</dt>
+<dd><p>Return a <code>poly_int</code> with the same value as <var>value</var>, but with
+the coefficients converted from <code>HOST_WIDE_INT</code> to <code>wide_int</code>.
+<var>precision</var> specifies the precision of the <code>wide_int</code> cofficients;
+if this is wider than a <code>HOST_WIDE_INT</code>, the coefficients of
+<var>value</var> will be sign-extended to fit.
+</p>
+</dd>
+<dt>&lsquo;<samp>wi::uhwi (<var>value</var>, <var>precision</var>)</samp>&rsquo;</dt>
+<dd><p>Like <code>wi::shwi</code>, except that <var>value</var> has coefficients of
+type <code>unsigned HOST_WIDE_INT</code>.  If <var>precision</var> is wider than
+a <code>HOST_WIDE_INT</code>, the coefficients of <var>value</var> will be
+zero-extended to fit.
+</p>
+</dd>
+<dt>&lsquo;<samp>wi::sext (<var>value</var>, <var>precision</var>)</samp>&rsquo;</dt>
+<dd><p>Return a <code>poly_int</code> of the same type as <var>value</var>, sign-extending
+every coefficient from the low <var>precision</var> bits.  This in effect
+applies <code>wi::sext</code> to each coefficient individually.
+</p>
+</dd>
+<dt>&lsquo;<samp>wi::zext (<var>value</var>, <var>precision</var>)</samp>&rsquo;</dt>
+<dd><p>Like <code>wi::sext</code>, but for zero extension.
+</p>
+</dd>
+<dt>&lsquo;<samp>poly_wide_int::from (<var>value</var>, <var>precision</var>, <var>sign</var>)</samp>&rsquo;</dt>
+<dd><p>Convert <var>value</var> to a <code>poly_wide_int</code> in which each coefficient
+has <var>precision</var> bits.  Extend the coefficients according to
+<var>sign</var> if the coefficients have fewer bits.
+</p>
+</dd>
+<dt>&lsquo;<samp>poly_offset_int::from (<var>value</var>, <var>sign</var>)</samp>&rsquo;</dt>
+<dd><p>Convert <var>value</var> to a <code>poly_offset_int</code>, extending its coefficients
+according to <var>sign</var> if they have fewer bits than <code>offset_int</code>.
+</p>
+</dd>
+<dt>&lsquo;<samp>poly_widest_int::from (<var>value</var>, <var>sign</var>)</samp>&rsquo;</dt>
+<dd><p>Convert <var>value</var> to a <code>poly_widest_int</code>, extending its coefficients
+according to <var>sign</var> if they have fewer bits than <code>widest_int</code>.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Miscellaneous-poly_005fint-routines.html#Miscellaneous-poly_005fint-routines" accesskey="n" rel="next">Miscellaneous <code>poly_int</code> routines</a>, Previous: <a href="Computing-bounds-on-poly_005fints.html#Computing-bounds-on-poly_005fints" accesskey="p" rel="prev">Computing bounds on <code>poly_int</code>s</a>, Up: <a href="poly_005fint.html#poly_005fint" accesskey="u" rel="up">poly_int</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

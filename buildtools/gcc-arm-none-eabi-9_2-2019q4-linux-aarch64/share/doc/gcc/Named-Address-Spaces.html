@@ -1,0 +1,324 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Named Address Spaces</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Named Address Spaces">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Named Address Spaces">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C-Extensions.html#C-Extensions" rel="up" title="C Extensions">
+<link href="Zero-Length.html#Zero-Length" rel="next" title="Zero Length">
+<link href="Fixed_002dPoint.html#Fixed_002dPoint" rel="prev" title="Fixed-Point">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Named-Address-Spaces"></a>
+<div class="header">
+<p>
+Next: <a href="Zero-Length.html#Zero-Length" accesskey="n" rel="next">Zero Length</a>, Previous: <a href="Fixed_002dPoint.html#Fixed_002dPoint" accesskey="p" rel="prev">Fixed-Point</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Named-Address-Spaces-1"></a>
+<h3 class="section">6.17 Named Address Spaces</h3>
+<a name="index-Named-Address-Spaces"></a>
+
+<p>As an extension, GNU C supports named address spaces as
+defined in the N1275 draft of ISO/IEC DTR 18037.  Support for named
+address spaces in GCC will evolve as the draft technical report
+changes.  Calling conventions for any target might also change.  At
+present, only the AVR, SPU, M32C, RL78, and x86 targets support
+address spaces other than the generic address space.
+</p>
+<p>Address space identifiers may be used exactly like any other C type
+qualifier (e.g., <code>const</code> or <code>volatile</code>).  See the N1275
+document for more details.
+</p>
+<a name="AVR-Named-Address-Spaces"></a><a name="AVR-Named-Address-Spaces-1"></a>
+<h4 class="subsection">6.17.1 AVR Named Address Spaces</h4>
+
+<p>On the AVR target, there are several address spaces that can be used
+in order to put read-only data into the flash memory and access that
+data by means of the special instructions <code>LPM</code> or <code>ELPM</code>
+needed to read from flash.
+</p>
+<p>Devices belonging to <code>avrtiny</code> and <code>avrxmega3</code> can access
+flash memory by means of <code>LD*</code> instructions because the flash
+memory is mapped into the RAM address space.  There is <em>no need</em>
+for language extensions like <code>__flash</code> or attribute
+<a href="AVR-Variable-Attributes.html#AVR-Variable-Attributes"><code>progmem</code></a>.
+The default linker description files for these devices cater for that
+feature and <code>.rodata</code> stays in flash: The compiler just generates
+<code>LD*</code> instructions, and the linker script adds core specific
+offsets to all <code>.rodata</code> symbols: <code>0x4000</code> in the case of
+<code>avrtiny</code> and <code>0x8000</code> in the case of <code>avrxmega3</code>.
+See <a href="AVR-Options.html#AVR-Options">AVR Options</a> for a list of respective devices.
+</p>
+<p>For devices not in <code>avrtiny</code> or <code>avrxmega3</code>,
+any data including read-only data is located in RAM (the generic
+address space) because flash memory is not visible in the RAM address
+space.  In order to locate read-only data in flash memory <em>and</em>
+to generate the right instructions to access this data without
+using (inline) assembler code, special address spaces are needed.
+</p>
+<dl compact="compact">
+<dt><code>__flash</code></dt>
+<dd><a name="index-_005f_005fflash-AVR-Named-Address-Spaces"></a>
+<p>The <code>__flash</code> qualifier locates data in the
+<code>.progmem.data</code> section. Data is read using the <code>LPM</code>
+instruction. Pointers to this address space are 16 bits wide.
+</p>
+</dd>
+<dt><code>__flash1</code></dt>
+<dt><code>__flash2</code></dt>
+<dt><code>__flash3</code></dt>
+<dt><code>__flash4</code></dt>
+<dt><code>__flash5</code></dt>
+<dd><a name="index-_005f_005fflash1-AVR-Named-Address-Spaces"></a>
+<a name="index-_005f_005fflash2-AVR-Named-Address-Spaces"></a>
+<a name="index-_005f_005fflash3-AVR-Named-Address-Spaces"></a>
+<a name="index-_005f_005fflash4-AVR-Named-Address-Spaces"></a>
+<a name="index-_005f_005fflash5-AVR-Named-Address-Spaces"></a>
+<p>These are 16-bit address spaces locating data in section
+<code>.progmem<var>N</var>.data</code> where <var>N</var> refers to
+address space <code>__flash<var>N</var></code>.
+The compiler sets the <code>RAMPZ</code> segment register appropriately 
+before reading data by means of the <code>ELPM</code> instruction.
+</p>
+</dd>
+<dt><code>__memx</code></dt>
+<dd><a name="index-_005f_005fmemx-AVR-Named-Address-Spaces"></a>
+<p>This is a 24-bit address space that linearizes flash and RAM:
+If the high bit of the address is set, data is read from
+RAM using the lower two bytes as RAM address.
+If the high bit of the address is clear, data is read from flash
+with <code>RAMPZ</code> set according to the high byte of the address.
+See <a href="AVR-Built_002din-Functions.html#AVR-Built_002din-Functions"><code>__builtin_avr_flash_segment</code></a>.
+</p>
+<p>Objects in this address space are located in <code>.progmemx.data</code>.
+</p></dd>
+</dl>
+
+<p><b>Example</b>
+</p>
+<div class="smallexample">
+<pre class="smallexample">char my_read (const __flash char ** p)
+{
+    /* p is a pointer to RAM that points to a pointer to flash.
+       The first indirection of p reads that flash pointer
+       from RAM and the second indirection reads a char from this
+       flash address.  */
+
+    return **p;
+}
+
+/* Locate array[] in flash memory */
+const __flash int array[] = { 3, 5, 7, 11, 13, 17, 19 };
+
+int i = 1;
+
+int main (void)
+{
+   /* Return 17 by reading from flash memory */
+   return array[array[i]];
+}
+</pre></div>
+
+<p>For each named address space supported by avr-gcc there is an equally
+named but uppercase built-in macro defined. 
+The purpose is to facilitate testing if respective address space
+support is available or not:
+</p>
+<div class="smallexample">
+<pre class="smallexample">#ifdef __FLASH
+const __flash int var = 1;
+
+int read_var (void)
+{
+    return var;
+}
+#else
+#include &lt;avr/pgmspace.h&gt; /* From AVR-LibC */
+
+const int var PROGMEM = 1;
+
+int read_var (void)
+{
+    return (int) pgm_read_word (&amp;var);
+}
+#endif /* __FLASH */
+</pre></div>
+
+<p>Notice that attribute <a href="AVR-Variable-Attributes.html#AVR-Variable-Attributes"><code>progmem</code></a>
+locates data in flash but
+accesses to these data read from generic address space, i.e.
+from RAM,
+so that you need special accessors like <code>pgm_read_byte</code>
+from <a href="http://nongnu.org/avr-libc/user-manual/"><span class="nolinebreak">AVR-LibC</span></a><!-- /@w -->
+together with attribute <code>progmem</code>.
+</p>
+<p><b>Limitations and caveats</b>
+</p>
+<ul>
+<li> Reading across the 64&nbsp;KiB section boundary of
+the <code>__flash</code> or <code>__flash<var>N</var></code> address spaces
+shows undefined behavior. The only address space that
+supports reading across the 64&nbsp;KiB flash segment boundaries is
+<code>__memx</code>.
+
+</li><li> If you use one of the <code>__flash<var>N</var></code> address spaces
+you must arrange your linker script to locate the
+<code>.progmem<var>N</var>.data</code> sections according to your needs.
+
+</li><li> Any data or pointers to the non-generic address spaces must
+be qualified as <code>const</code>, i.e. as read-only data.
+This still applies if the data in one of these address
+spaces like software version number or calibration lookup table are intended to
+be changed after load time by, say, a boot loader. In this case
+the right qualification is <code>const</code> <code>volatile</code> so that the compiler
+must not optimize away known values or insert them
+as immediates into operands of instructions.
+
+</li><li> The following code initializes a variable <code>pfoo</code>
+located in static storage with a 24-bit address:
+<div class="smallexample">
+<pre class="smallexample">extern const __memx char foo;
+const __memx void *pfoo = &amp;foo;
+</pre></div>
+
+</li><li> On the reduced Tiny devices like ATtiny40, no address spaces are supported.
+Just use vanilla C / C++ code without overhead as outlined above.
+Attribute <code>progmem</code> is supported but works differently,
+see <a href="AVR-Variable-Attributes.html#AVR-Variable-Attributes">AVR Variable Attributes</a>.
+
+</li></ul>
+
+<a name="M32C-Named-Address-Spaces"></a>
+<h4 class="subsection">6.17.2 M32C Named Address Spaces</h4>
+<a name="index-_005f_005ffar-M32C-Named-Address-Spaces"></a>
+
+<p>On the M32C target, with the R8C and M16C CPU variants, variables
+qualified with <code>__far</code> are accessed using 32-bit addresses in
+order to access memory beyond the first 64&nbsp;Ki bytes.  If
+<code>__far</code> is used with the M32CM or M32C CPU variants, it has no
+effect.
+</p>
+<a name="RL78-Named-Address-Spaces"></a>
+<h4 class="subsection">6.17.3 RL78 Named Address Spaces</h4>
+<a name="index-_005f_005ffar-RL78-Named-Address-Spaces"></a>
+
+<p>On the RL78 target, variables qualified with <code>__far</code> are accessed
+with 32-bit pointers (20-bit addresses) rather than the default 16-bit
+addresses.  Non-far variables are assumed to appear in the topmost
+64&nbsp;KiB of the address space.
+</p>
+<a name="SPU-Named-Address-Spaces"></a>
+<h4 class="subsection">6.17.4 SPU Named Address Spaces</h4>
+<a name="index-_005f_005fea-SPU-Named-Address-Spaces"></a>
+
+<p>On the SPU target variables may be declared as
+belonging to another address space by qualifying the type with the
+<code>__ea</code> address space identifier:
+</p>
+<div class="smallexample">
+<pre class="smallexample">extern int __ea i;
+</pre></div>
+
+<p>The compiler generates special code to access the variable <code>i</code>.
+It may use runtime library
+support, or generate special machine instructions to access that address
+space.
+</p>
+<a name="x86-Named-Address-Spaces"></a>
+<h4 class="subsection">6.17.5 x86 Named Address Spaces</h4>
+<a name="index-x86-named-address-spaces"></a>
+
+<p>On the x86 target, variables may be declared as being relative
+to the <code>%fs</code> or <code>%gs</code> segments.
+</p>
+<dl compact="compact">
+<dt><code>__seg_fs</code></dt>
+<dt><code>__seg_gs</code></dt>
+<dd><a name="index-_005f_005fseg_005ffs-x86-named-address-space"></a>
+<a name="index-_005f_005fseg_005fgs-x86-named-address-space"></a>
+<p>The object is accessed with the respective segment override prefix.
+</p>
+<p>The respective segment base must be set via some method specific to
+the operating system.  Rather than require an expensive system call
+to retrieve the segment base, these address spaces are not considered
+to be subspaces of the generic (flat) address space.  This means that
+explicit casts are required to convert pointers between these address
+spaces and the generic address space.  In practice the application
+should cast to <code>uintptr_t</code> and apply the segment base offset
+that it installed previously.
+</p>
+<p>The preprocessor symbols <code>__SEG_FS</code> and <code>__SEG_GS</code> are
+defined when these address spaces are supported.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Zero-Length.html#Zero-Length" accesskey="n" rel="next">Zero Length</a>, Previous: <a href="Fixed_002dPoint.html#Fixed_002dPoint" accesskey="p" rel="prev">Fixed-Point</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

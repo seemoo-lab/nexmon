@@ -1,0 +1,1430 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Developer Options</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Developer Options">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Developer Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Invoking-GCC.html#Invoking-GCC" rel="up" title="Invoking GCC">
+<link href="Submodel-Options.html#Submodel-Options" rel="next" title="Submodel Options">
+<link href="Code-Gen-Options.html#Code-Gen-Options" rel="prev" title="Code Gen Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Developer-Options"></a>
+<div class="header">
+<p>
+Next: <a href="Submodel-Options.html#Submodel-Options" accesskey="n" rel="next">Submodel Options</a>, Previous: <a href="Code-Gen-Options.html#Code-Gen-Options" accesskey="p" rel="prev">Code Gen Options</a>, Up: <a href="Invoking-GCC.html#Invoking-GCC" accesskey="u" rel="up">Invoking GCC</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="GCC-Developer-Options"></a>
+<h3 class="section">3.17 GCC Developer Options</h3>
+<a name="index-developer-options"></a>
+<a name="index-debugging-GCC"></a>
+<a name="index-debug-dump-options"></a>
+<a name="index-dump-options"></a>
+<a name="index-compilation-statistics"></a>
+
+<p>This section describes command-line options that are primarily of
+interest to GCC developers, including options to support compiler
+testing and investigation of compiler bugs and compile-time
+performance problems.  This includes options that produce debug dumps
+at various points in the compilation; that print statistics such as
+memory use and execution time; and that print information about GCC&rsquo;s
+configuration, such as where it searches for libraries.  You should
+rarely need to use any of these options for ordinary compilation and
+linking tasks.
+</p>
+<p>Many developer options that cause GCC to dump output to a file take an
+optional &lsquo;<samp>=<var>filename</var></samp>&rsquo; suffix. You can specify &lsquo;<samp>stdout</samp>&rsquo;
+or &lsquo;<samp>-</samp>&rsquo; to dump to standard output, and &lsquo;<samp>stderr</samp>&rsquo; for standard
+error.
+</p>
+<p>If &lsquo;<samp>=<var>filename</var></samp>&rsquo; is omitted, a default dump file name is
+constructed by concatenating the base dump file name, a pass number,
+phase letter, and pass name.  The base dump file name is the name of
+output file produced by the compiler if explicitly specified and not
+an executable; otherwise it is the source file name.
+The pass number is determined by the order passes are registered with
+the compiler&rsquo;s pass manager. 
+This is generally the same as the order of execution, but passes
+registered by plugins, target-specific passes, or passes that are
+otherwise registered late are numbered higher than the pass named
+&lsquo;<samp>final</samp>&rsquo;, even if they are executed earlier.  The phase letter is
+one of &lsquo;<samp>i</samp>&rsquo; (inter-procedural analysis), &lsquo;<samp>l</samp>&rsquo;
+(language-specific), &lsquo;<samp>r</samp>&rsquo; (RTL), or &lsquo;<samp>t</samp>&rsquo; (tree). 
+The files are created in the directory of the output file. 
+</p>
+<dl compact="compact">
+<dt><code>-d<var>letters</var></code></dt>
+<dt><code>-fdump-rtl-<var>pass</var></code></dt>
+<dt><code>-fdump-rtl-<var>pass</var>=<var>filename</var></code></dt>
+<dd><a name="index-d-1"></a>
+<a name="index-fdump_002drtl_002dpass"></a>
+<p>Says to make debugging dumps during compilation at times specified by
+<var>letters</var>.  This is used for debugging the RTL-based passes of the
+compiler.
+</p>
+<p>Some <samp>-d<var>letters</var></samp> switches have different meaning when
+<samp>-E</samp> is used for preprocessing.  See <a href="Preprocessor-Options.html#Preprocessor-Options">Preprocessor Options</a>,
+for information about preprocessor-specific dump options.
+</p>
+<p>Debug dumps can be enabled with a <samp>-fdump-rtl</samp> switch or some
+<samp>-d</samp> option <var>letters</var>.  Here are the possible
+letters for use in <var>pass</var> and <var>letters</var>, and their meanings:
+</p>
+<dl compact="compact">
+<dt><code>-fdump-rtl-alignments</code></dt>
+<dd><a name="index-fdump_002drtl_002dalignments"></a>
+<p>Dump after branch alignments have been computed.
+</p>
+</dd>
+<dt><code>-fdump-rtl-asmcons</code></dt>
+<dd><a name="index-fdump_002drtl_002dasmcons"></a>
+<p>Dump after fixing rtl statements that have unsatisfied in/out constraints.
+</p>
+</dd>
+<dt><code>-fdump-rtl-auto_inc_dec</code></dt>
+<dd><a name="index-fdump_002drtl_002dauto_005finc_005fdec"></a>
+<p>Dump after auto-inc-dec discovery.  This pass is only run on
+architectures that have auto inc or auto dec instructions.
+</p>
+</dd>
+<dt><code>-fdump-rtl-barriers</code></dt>
+<dd><a name="index-fdump_002drtl_002dbarriers"></a>
+<p>Dump after cleaning up the barrier instructions.
+</p>
+</dd>
+<dt><code>-fdump-rtl-bbpart</code></dt>
+<dd><a name="index-fdump_002drtl_002dbbpart"></a>
+<p>Dump after partitioning hot and cold basic blocks.
+</p>
+</dd>
+<dt><code>-fdump-rtl-bbro</code></dt>
+<dd><a name="index-fdump_002drtl_002dbbro"></a>
+<p>Dump after block reordering.
+</p>
+</dd>
+<dt><code>-fdump-rtl-btl1</code></dt>
+<dt><code>-fdump-rtl-btl2</code></dt>
+<dd><a name="index-fdump_002drtl_002dbtl2"></a>
+<a name="index-fdump_002drtl_002dbtl2-1"></a>
+<p><samp>-fdump-rtl-btl1</samp> and <samp>-fdump-rtl-btl2</samp> enable dumping
+after the two branch
+target load optimization passes.
+</p>
+</dd>
+<dt><code>-fdump-rtl-bypass</code></dt>
+<dd><a name="index-fdump_002drtl_002dbypass"></a>
+<p>Dump after jump bypassing and control flow optimizations.
+</p>
+</dd>
+<dt><code>-fdump-rtl-combine</code></dt>
+<dd><a name="index-fdump_002drtl_002dcombine"></a>
+<p>Dump after the RTL instruction combination pass.
+</p>
+</dd>
+<dt><code>-fdump-rtl-compgotos</code></dt>
+<dd><a name="index-fdump_002drtl_002dcompgotos"></a>
+<p>Dump after duplicating the computed gotos.
+</p>
+</dd>
+<dt><code>-fdump-rtl-ce1</code></dt>
+<dt><code>-fdump-rtl-ce2</code></dt>
+<dt><code>-fdump-rtl-ce3</code></dt>
+<dd><a name="index-fdump_002drtl_002dce1"></a>
+<a name="index-fdump_002drtl_002dce2"></a>
+<a name="index-fdump_002drtl_002dce3"></a>
+<p><samp>-fdump-rtl-ce1</samp>, <samp>-fdump-rtl-ce2</samp>, and
+<samp>-fdump-rtl-ce3</samp> enable dumping after the three
+if conversion passes.
+</p>
+</dd>
+<dt><code>-fdump-rtl-cprop_hardreg</code></dt>
+<dd><a name="index-fdump_002drtl_002dcprop_005fhardreg"></a>
+<p>Dump after hard register copy propagation.
+</p>
+</dd>
+<dt><code>-fdump-rtl-csa</code></dt>
+<dd><a name="index-fdump_002drtl_002dcsa"></a>
+<p>Dump after combining stack adjustments.
+</p>
+</dd>
+<dt><code>-fdump-rtl-cse1</code></dt>
+<dt><code>-fdump-rtl-cse2</code></dt>
+<dd><a name="index-fdump_002drtl_002dcse1"></a>
+<a name="index-fdump_002drtl_002dcse2"></a>
+<p><samp>-fdump-rtl-cse1</samp> and <samp>-fdump-rtl-cse2</samp> enable dumping after
+the two common subexpression elimination passes.
+</p>
+</dd>
+<dt><code>-fdump-rtl-dce</code></dt>
+<dd><a name="index-fdump_002drtl_002ddce"></a>
+<p>Dump after the standalone dead code elimination passes.
+</p>
+</dd>
+<dt><code>-fdump-rtl-dbr</code></dt>
+<dd><a name="index-fdump_002drtl_002ddbr"></a>
+<p>Dump after delayed branch scheduling.
+</p>
+</dd>
+<dt><code>-fdump-rtl-dce1</code></dt>
+<dt><code>-fdump-rtl-dce2</code></dt>
+<dd><a name="index-fdump_002drtl_002ddce1"></a>
+<a name="index-fdump_002drtl_002ddce2"></a>
+<p><samp>-fdump-rtl-dce1</samp> and <samp>-fdump-rtl-dce2</samp> enable dumping after
+the two dead store elimination passes.
+</p>
+</dd>
+<dt><code>-fdump-rtl-eh</code></dt>
+<dd><a name="index-fdump_002drtl_002deh"></a>
+<p>Dump after finalization of EH handling code.
+</p>
+</dd>
+<dt><code>-fdump-rtl-eh_ranges</code></dt>
+<dd><a name="index-fdump_002drtl_002deh_005franges"></a>
+<p>Dump after conversion of EH handling range regions.
+</p>
+</dd>
+<dt><code>-fdump-rtl-expand</code></dt>
+<dd><a name="index-fdump_002drtl_002dexpand"></a>
+<p>Dump after RTL generation.
+</p>
+</dd>
+<dt><code>-fdump-rtl-fwprop1</code></dt>
+<dt><code>-fdump-rtl-fwprop2</code></dt>
+<dd><a name="index-fdump_002drtl_002dfwprop1"></a>
+<a name="index-fdump_002drtl_002dfwprop2"></a>
+<p><samp>-fdump-rtl-fwprop1</samp> and <samp>-fdump-rtl-fwprop2</samp> enable
+dumping after the two forward propagation passes.
+</p>
+</dd>
+<dt><code>-fdump-rtl-gcse1</code></dt>
+<dt><code>-fdump-rtl-gcse2</code></dt>
+<dd><a name="index-fdump_002drtl_002dgcse1"></a>
+<a name="index-fdump_002drtl_002dgcse2"></a>
+<p><samp>-fdump-rtl-gcse1</samp> and <samp>-fdump-rtl-gcse2</samp> enable dumping
+after global common subexpression elimination.
+</p>
+</dd>
+<dt><code>-fdump-rtl-init-regs</code></dt>
+<dd><a name="index-fdump_002drtl_002dinit_002dregs"></a>
+<p>Dump after the initialization of the registers.
+</p>
+</dd>
+<dt><code>-fdump-rtl-initvals</code></dt>
+<dd><a name="index-fdump_002drtl_002dinitvals"></a>
+<p>Dump after the computation of the initial value sets.
+</p>
+</dd>
+<dt><code>-fdump-rtl-into_cfglayout</code></dt>
+<dd><a name="index-fdump_002drtl_002dinto_005fcfglayout"></a>
+<p>Dump after converting to cfglayout mode.
+</p>
+</dd>
+<dt><code>-fdump-rtl-ira</code></dt>
+<dd><a name="index-fdump_002drtl_002dira"></a>
+<p>Dump after iterated register allocation.
+</p>
+</dd>
+<dt><code>-fdump-rtl-jump</code></dt>
+<dd><a name="index-fdump_002drtl_002djump"></a>
+<p>Dump after the second jump optimization.
+</p>
+</dd>
+<dt><code>-fdump-rtl-loop2</code></dt>
+<dd><a name="index-fdump_002drtl_002dloop2"></a>
+<p><samp>-fdump-rtl-loop2</samp> enables dumping after the rtl
+loop optimization passes.
+</p>
+</dd>
+<dt><code>-fdump-rtl-mach</code></dt>
+<dd><a name="index-fdump_002drtl_002dmach"></a>
+<p>Dump after performing the machine dependent reorganization pass, if that
+pass exists.
+</p>
+</dd>
+<dt><code>-fdump-rtl-mode_sw</code></dt>
+<dd><a name="index-fdump_002drtl_002dmode_005fsw"></a>
+<p>Dump after removing redundant mode switches.
+</p>
+</dd>
+<dt><code>-fdump-rtl-rnreg</code></dt>
+<dd><a name="index-fdump_002drtl_002drnreg"></a>
+<p>Dump after register renumbering.
+</p>
+</dd>
+<dt><code>-fdump-rtl-outof_cfglayout</code></dt>
+<dd><a name="index-fdump_002drtl_002doutof_005fcfglayout"></a>
+<p>Dump after converting from cfglayout mode.
+</p>
+</dd>
+<dt><code>-fdump-rtl-peephole2</code></dt>
+<dd><a name="index-fdump_002drtl_002dpeephole2"></a>
+<p>Dump after the peephole pass.
+</p>
+</dd>
+<dt><code>-fdump-rtl-postreload</code></dt>
+<dd><a name="index-fdump_002drtl_002dpostreload"></a>
+<p>Dump after post-reload optimizations.
+</p>
+</dd>
+<dt><code>-fdump-rtl-pro_and_epilogue</code></dt>
+<dd><a name="index-fdump_002drtl_002dpro_005fand_005fepilogue"></a>
+<p>Dump after generating the function prologues and epilogues.
+</p>
+</dd>
+<dt><code>-fdump-rtl-sched1</code></dt>
+<dt><code>-fdump-rtl-sched2</code></dt>
+<dd><a name="index-fdump_002drtl_002dsched1"></a>
+<a name="index-fdump_002drtl_002dsched2"></a>
+<p><samp>-fdump-rtl-sched1</samp> and <samp>-fdump-rtl-sched2</samp> enable dumping
+after the basic block scheduling passes.
+</p>
+</dd>
+<dt><code>-fdump-rtl-ree</code></dt>
+<dd><a name="index-fdump_002drtl_002dree"></a>
+<p>Dump after sign/zero extension elimination.
+</p>
+</dd>
+<dt><code>-fdump-rtl-seqabstr</code></dt>
+<dd><a name="index-fdump_002drtl_002dseqabstr"></a>
+<p>Dump after common sequence discovery.
+</p>
+</dd>
+<dt><code>-fdump-rtl-shorten</code></dt>
+<dd><a name="index-fdump_002drtl_002dshorten"></a>
+<p>Dump after shortening branches.
+</p>
+</dd>
+<dt><code>-fdump-rtl-sibling</code></dt>
+<dd><a name="index-fdump_002drtl_002dsibling"></a>
+<p>Dump after sibling call optimizations.
+</p>
+</dd>
+<dt><code>-fdump-rtl-split1</code></dt>
+<dt><code>-fdump-rtl-split2</code></dt>
+<dt><code>-fdump-rtl-split3</code></dt>
+<dt><code>-fdump-rtl-split4</code></dt>
+<dt><code>-fdump-rtl-split5</code></dt>
+<dd><a name="index-fdump_002drtl_002dsplit1"></a>
+<a name="index-fdump_002drtl_002dsplit2"></a>
+<a name="index-fdump_002drtl_002dsplit3"></a>
+<a name="index-fdump_002drtl_002dsplit4"></a>
+<a name="index-fdump_002drtl_002dsplit5"></a>
+<p>These options enable dumping after five rounds of
+instruction splitting.
+</p>
+</dd>
+<dt><code>-fdump-rtl-sms</code></dt>
+<dd><a name="index-fdump_002drtl_002dsms"></a>
+<p>Dump after modulo scheduling.  This pass is only run on some
+architectures.
+</p>
+</dd>
+<dt><code>-fdump-rtl-stack</code></dt>
+<dd><a name="index-fdump_002drtl_002dstack"></a>
+<p>Dump after conversion from GCC&rsquo;s &ldquo;flat register file&rdquo; registers to the
+x87&rsquo;s stack-like registers.  This pass is only run on x86 variants.
+</p>
+</dd>
+<dt><code>-fdump-rtl-subreg1</code></dt>
+<dt><code>-fdump-rtl-subreg2</code></dt>
+<dd><a name="index-fdump_002drtl_002dsubreg1"></a>
+<a name="index-fdump_002drtl_002dsubreg2"></a>
+<p><samp>-fdump-rtl-subreg1</samp> and <samp>-fdump-rtl-subreg2</samp> enable dumping after
+the two subreg expansion passes.
+</p>
+</dd>
+<dt><code>-fdump-rtl-unshare</code></dt>
+<dd><a name="index-fdump_002drtl_002dunshare"></a>
+<p>Dump after all rtl has been unshared.
+</p>
+</dd>
+<dt><code>-fdump-rtl-vartrack</code></dt>
+<dd><a name="index-fdump_002drtl_002dvartrack"></a>
+<p>Dump after variable tracking.
+</p>
+</dd>
+<dt><code>-fdump-rtl-vregs</code></dt>
+<dd><a name="index-fdump_002drtl_002dvregs"></a>
+<p>Dump after converting virtual registers to hard registers.
+</p>
+</dd>
+<dt><code>-fdump-rtl-web</code></dt>
+<dd><a name="index-fdump_002drtl_002dweb"></a>
+<p>Dump after live range splitting.
+</p>
+</dd>
+<dt><code>-fdump-rtl-regclass</code></dt>
+<dt><code>-fdump-rtl-subregs_of_mode_init</code></dt>
+<dt><code>-fdump-rtl-subregs_of_mode_finish</code></dt>
+<dt><code>-fdump-rtl-dfinit</code></dt>
+<dt><code>-fdump-rtl-dfinish</code></dt>
+<dd><a name="index-fdump_002drtl_002dregclass"></a>
+<a name="index-fdump_002drtl_002dsubregs_005fof_005fmode_005finit"></a>
+<a name="index-fdump_002drtl_002dsubregs_005fof_005fmode_005ffinish"></a>
+<a name="index-fdump_002drtl_002ddfinit"></a>
+<a name="index-fdump_002drtl_002ddfinish"></a>
+<p>These dumps are defined but always produce empty files.
+</p>
+</dd>
+<dt><code>-da</code></dt>
+<dt><code>-fdump-rtl-all</code></dt>
+<dd><a name="index-da"></a>
+<a name="index-fdump_002drtl_002dall"></a>
+<p>Produce all the dumps listed above.
+</p>
+</dd>
+<dt><code>-dA</code></dt>
+<dd><a name="index-dA"></a>
+<p>Annotate the assembler output with miscellaneous debugging information.
+</p>
+</dd>
+<dt><code>-dD</code></dt>
+<dd><a name="index-dD-1"></a>
+<p>Dump all macro definitions, at the end of preprocessing, in addition to
+normal output.
+</p>
+</dd>
+<dt><code>-dH</code></dt>
+<dd><a name="index-dH"></a>
+<p>Produce a core dump whenever an error occurs.
+</p>
+</dd>
+<dt><code>-dp</code></dt>
+<dd><a name="index-dp"></a>
+<p>Annotate the assembler output with a comment indicating which
+pattern and alternative is used.  The length and cost of each instruction are
+also printed.
+</p>
+</dd>
+<dt><code>-dP</code></dt>
+<dd><a name="index-dP"></a>
+<p>Dump the RTL in the assembler output as a comment before each instruction.
+Also turns on <samp>-dp</samp> annotation.
+</p>
+</dd>
+<dt><code>-dx</code></dt>
+<dd><a name="index-dx"></a>
+<p>Just generate RTL for a function instead of compiling it.  Usually used
+with <samp>-fdump-rtl-expand</samp>.
+</p></dd>
+</dl>
+
+</dd>
+<dt><code>-fdump-debug</code></dt>
+<dd><a name="index-fdump_002ddebug"></a>
+<p>Dump debugging information generated during the debug
+generation phase.
+</p>
+</dd>
+<dt><code>-fdump-earlydebug</code></dt>
+<dd><a name="index-fdump_002dearlydebug"></a>
+<p>Dump debugging information generated during the early debug
+generation phase.
+</p>
+</dd>
+<dt><code>-fdump-noaddr</code></dt>
+<dd><a name="index-fdump_002dnoaddr"></a>
+<p>When doing debugging dumps, suppress address output.  This makes it more
+feasible to use diff on debugging dumps for compiler invocations with
+different compiler binaries and/or different
+text / bss / data / heap / stack / dso start locations.
+</p>
+</dd>
+<dt><code>-freport-bug</code></dt>
+<dd><a name="index-freport_002dbug"></a>
+<p>Collect and dump debug information into a temporary file if an
+internal compiler error (ICE) occurs.
+</p>
+</dd>
+<dt><code>-fdump-unnumbered</code></dt>
+<dd><a name="index-fdump_002dunnumbered"></a>
+<p>When doing debugging dumps, suppress instruction numbers and address output.
+This makes it more feasible to use diff on debugging dumps for compiler
+invocations with different options, in particular with and without
+<samp>-g</samp>.
+</p>
+</dd>
+<dt><code>-fdump-unnumbered-links</code></dt>
+<dd><a name="index-fdump_002dunnumbered_002dlinks"></a>
+<p>When doing debugging dumps (see <samp>-d</samp> option above), suppress
+instruction numbers for the links to the previous and next instructions
+in a sequence.
+</p>
+</dd>
+<dt><code>-fdump-ipa-<var>switch</var></code></dt>
+<dt><code>-fdump-ipa-<var>switch</var>-<var>options</var></code></dt>
+<dd><a name="index-fdump_002dipa"></a>
+<p>Control the dumping at various stages of inter-procedural analysis
+language tree to a file.  The file name is generated by appending a
+switch specific suffix to the source file name, and the file is created
+in the same directory as the output file.  The following dumps are
+possible:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>all</samp>&rsquo;</dt>
+<dd><p>Enables all inter-procedural analysis dumps.
+</p>
+</dd>
+<dt>&lsquo;<samp>cgraph</samp>&rsquo;</dt>
+<dd><p>Dumps information about call-graph optimization, unused function removal,
+and inlining decisions.
+</p>
+</dd>
+<dt>&lsquo;<samp>inline</samp>&rsquo;</dt>
+<dd><p>Dump after function inlining.
+</p>
+</dd>
+</dl>
+
+<p>Additionally, the options <samp>-optimized</samp>, <samp>-missed</samp>,
+<samp>-note</samp>, and <samp>-all</samp> can be provided, with the same meaning
+as for <samp>-fopt-info</samp>, defaulting to <samp>-optimized</samp>.
+</p>
+<p>For example, <samp>-fdump-ipa-inline-optimized-missed</samp> will emit
+information on callsites that were inlined, along with callsites
+that were not inlined.
+</p>
+<p>By default, the dump will contain messages about successful
+optimizations (equivalent to <samp>-optimized</samp>) together with
+low-level details about the analysis.
+</p>
+</dd>
+<dt><code>-fdump-lang-all</code></dt>
+<dt><code>-fdump-lang-<var>switch</var></code></dt>
+<dt><code>-fdump-lang-<var>switch</var>-<var>options</var></code></dt>
+<dt><code>-fdump-lang-<var>switch</var>-<var>options</var>=<var>filename</var></code></dt>
+<dd><a name="index-fdump_002dlang_002dall"></a>
+<a name="index-fdump_002dlang"></a>
+<p>Control the dumping of language-specific information.  The <var>options</var>
+and <var>filename</var> portions behave as described in the
+<samp>-fdump-tree</samp> option.  The following <var>switch</var> values are
+accepted:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>all</samp>&rsquo;</dt>
+<dd>
+<p>Enable all language-specific dumps.
+</p>
+</dd>
+<dt>&lsquo;<samp>class</samp>&rsquo;</dt>
+<dd><p>Dump class hierarchy information.  Virtual table information is emitted
+unless &rsquo;<samp>slim</samp>&rsquo; is specified.  This option is applicable to C++ only.
+</p>
+</dd>
+<dt>&lsquo;<samp>raw</samp>&rsquo;</dt>
+<dd><p>Dump the raw internal tree data.  This option is applicable to C++ only.
+</p>
+</dd>
+</dl>
+
+</dd>
+<dt><code>-fdump-passes</code></dt>
+<dd><a name="index-fdump_002dpasses"></a>
+<p>Print on <samp>stderr</samp> the list of optimization passes that are turned
+on and off by the current command-line options.
+</p>
+</dd>
+<dt><code>-fdump-statistics-<var>option</var></code></dt>
+<dd><a name="index-fdump_002dstatistics"></a>
+<p>Enable and control dumping of pass statistics in a separate file.  The
+file name is generated by appending a suffix ending in
+&lsquo;<samp>.statistics</samp>&rsquo; to the source file name, and the file is created in
+the same directory as the output file.  If the &lsquo;<samp>-<var>option</var></samp>&rsquo;
+form is used, &lsquo;<samp>-stats</samp>&rsquo; causes counters to be summed over the
+whole compilation unit while &lsquo;<samp>-details</samp>&rsquo; dumps every event as
+the passes generate them.  The default with no option is to sum
+counters for each function compiled.
+</p>
+</dd>
+<dt><code>-fdump-tree-all</code></dt>
+<dt><code>-fdump-tree-<var>switch</var></code></dt>
+<dt><code>-fdump-tree-<var>switch</var>-<var>options</var></code></dt>
+<dt><code>-fdump-tree-<var>switch</var>-<var>options</var>=<var>filename</var></code></dt>
+<dd><a name="index-fdump_002dtree_002dall"></a>
+<a name="index-fdump_002dtree"></a>
+<p>Control the dumping at various stages of processing the intermediate
+language tree to a file.  If the &lsquo;<samp>-<var>options</var></samp>&rsquo;
+form is used, <var>options</var> is a list of &lsquo;<samp>-</samp>&rsquo; separated options
+which control the details of the dump.  Not all options are applicable
+to all dumps; those that are not meaningful are ignored.  The
+following options are available
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>address</samp>&rsquo;</dt>
+<dd><p>Print the address of each node.  Usually this is not meaningful as it
+changes according to the environment and source file.  Its primary use
+is for tying up a dump file with a debug environment.
+</p></dd>
+<dt>&lsquo;<samp>asmname</samp>&rsquo;</dt>
+<dd><p>If <code>DECL_ASSEMBLER_NAME</code> has been set for a given decl, use that
+in the dump instead of <code>DECL_NAME</code>.  Its primary use is ease of
+use working backward from mangled names in the assembly file.
+</p></dd>
+<dt>&lsquo;<samp>slim</samp>&rsquo;</dt>
+<dd><p>When dumping front-end intermediate representations, inhibit dumping
+of members of a scope or body of a function merely because that scope
+has been reached.  Only dump such items when they are directly reachable
+by some other path.
+</p>
+<p>When dumping pretty-printed trees, this option inhibits dumping the
+bodies of control structures.
+</p>
+<p>When dumping RTL, print the RTL in slim (condensed) form instead of
+the default LISP-like representation.
+</p></dd>
+<dt>&lsquo;<samp>raw</samp>&rsquo;</dt>
+<dd><p>Print a raw representation of the tree.  By default, trees are
+pretty-printed into a C-like representation.
+</p></dd>
+<dt>&lsquo;<samp>details</samp>&rsquo;</dt>
+<dd><p>Enable more detailed dumps (not honored by every dump option). Also
+include information from the optimization passes.
+</p></dd>
+<dt>&lsquo;<samp>stats</samp>&rsquo;</dt>
+<dd><p>Enable dumping various statistics about the pass (not honored by every dump
+option).
+</p></dd>
+<dt>&lsquo;<samp>blocks</samp>&rsquo;</dt>
+<dd><p>Enable showing basic block boundaries (disabled in raw dumps).
+</p></dd>
+<dt>&lsquo;<samp>graph</samp>&rsquo;</dt>
+<dd><p>For each of the other indicated dump files (<samp>-fdump-rtl-<var>pass</var></samp>),
+dump a representation of the control flow graph suitable for viewing with
+GraphViz to <samp><var>file</var>.<var>passid</var>.<var>pass</var>.dot</samp>.  Each function in
+the file is pretty-printed as a subgraph, so that GraphViz can render them
+all in a single plot.
+</p>
+<p>This option currently only works for RTL dumps, and the RTL is always
+dumped in slim form.
+</p></dd>
+<dt>&lsquo;<samp>vops</samp>&rsquo;</dt>
+<dd><p>Enable showing virtual operands for every statement.
+</p></dd>
+<dt>&lsquo;<samp>lineno</samp>&rsquo;</dt>
+<dd><p>Enable showing line numbers for statements.
+</p></dd>
+<dt>&lsquo;<samp>uid</samp>&rsquo;</dt>
+<dd><p>Enable showing the unique ID (<code>DECL_UID</code>) for each variable.
+</p></dd>
+<dt>&lsquo;<samp>verbose</samp>&rsquo;</dt>
+<dd><p>Enable showing the tree dump for each statement.
+</p></dd>
+<dt>&lsquo;<samp>eh</samp>&rsquo;</dt>
+<dd><p>Enable showing the EH region number holding each statement.
+</p></dd>
+<dt>&lsquo;<samp>scev</samp>&rsquo;</dt>
+<dd><p>Enable showing scalar evolution analysis details.
+</p></dd>
+<dt>&lsquo;<samp>optimized</samp>&rsquo;</dt>
+<dd><p>Enable showing optimization information (only available in certain
+passes).
+</p></dd>
+<dt>&lsquo;<samp>missed</samp>&rsquo;</dt>
+<dd><p>Enable showing missed optimization information (only available in certain
+passes).
+</p></dd>
+<dt>&lsquo;<samp>note</samp>&rsquo;</dt>
+<dd><p>Enable other detailed optimization information (only available in
+certain passes).
+</p></dd>
+<dt>&lsquo;<samp>all</samp>&rsquo;</dt>
+<dd><p>Turn on all options, except <samp>raw</samp>, <samp>slim</samp>, <samp>verbose</samp>
+and <samp>lineno</samp>.
+</p></dd>
+<dt>&lsquo;<samp>optall</samp>&rsquo;</dt>
+<dd><p>Turn on all optimization options, i.e., <samp>optimized</samp>,
+<samp>missed</samp>, and <samp>note</samp>.
+</p></dd>
+</dl>
+
+<p>To determine what tree dumps are available or find the dump for a pass
+of interest follow the steps below.
+</p>
+<ol>
+<li> Invoke GCC with <samp>-fdump-passes</samp> and in the <samp>stderr</samp> output
+look for a code that corresponds to the pass you are interested in.
+For example, the codes <code>tree-evrp</code>, <code>tree-vrp1</code>, and
+<code>tree-vrp2</code> correspond to the three Value Range Propagation passes.
+The number at the end distinguishes distinct invocations of the same pass.
+</li><li> To enable the creation of the dump file, append the pass code to
+the <samp>-fdump-</samp> option prefix and invoke GCC with it.  For example,
+to enable the dump from the Early Value Range Propagation pass, invoke
+GCC with the <samp>-fdump-tree-evrp</samp> option.  Optionally, you may
+specify the name of the dump file.  If you don&rsquo;t specify one, GCC
+creates as described below.
+</li><li> Find the pass dump in a file whose name is composed of three components
+separated by a period: the name of the source file GCC was invoked to
+compile, a numeric suffix indicating the pass number followed by the
+letter &lsquo;<samp>t</samp>&rsquo; for tree passes (and the letter &lsquo;<samp>r</samp>&rsquo; for RTL passes),
+and finally the pass code.  For example, the Early VRP pass dump might
+be in a file named <samp>myfile.c.038t.evrp</samp> in the current working
+directory.  Note that the numeric codes are not stable and may change
+from one version of GCC to another.
+</li></ol>
+
+</dd>
+<dt><code>-fopt-info</code></dt>
+<dt><code>-fopt-info-<var>options</var></code></dt>
+<dt><code>-fopt-info-<var>options</var>=<var>filename</var></code></dt>
+<dd><a name="index-fopt_002dinfo"></a>
+<p>Controls optimization dumps from various optimization passes. If the
+&lsquo;<samp>-<var>options</var></samp>&rsquo; form is used, <var>options</var> is a list of
+&lsquo;<samp>-</samp>&rsquo; separated option keywords to select the dump details and
+optimizations.  
+</p>
+<p>The <var>options</var> can be divided into three groups:
+</p><ol>
+<li> options describing what kinds of messages should be emitted,
+</li><li> options describing the verbosity of the dump, and
+</li><li> options describing which optimizations should be included.
+</li></ol>
+<p>The options from each group can be freely mixed as they are
+non-overlapping. However, in case of any conflicts,
+the later options override the earlier options on the command
+line. 
+</p>
+<p>The following options control which kinds of messages should be emitted:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>optimized</samp>&rsquo;</dt>
+<dd><p>Print information when an optimization is successfully applied. It is
+up to a pass to decide which information is relevant. For example, the
+vectorizer passes print the source location of loops which are
+successfully vectorized.
+</p></dd>
+<dt>&lsquo;<samp>missed</samp>&rsquo;</dt>
+<dd><p>Print information about missed optimizations. Individual passes
+control which information to include in the output. 
+</p></dd>
+<dt>&lsquo;<samp>note</samp>&rsquo;</dt>
+<dd><p>Print verbose information about optimizations, such as certain
+transformations, more detailed messages about decisions etc.
+</p></dd>
+<dt>&lsquo;<samp>all</samp>&rsquo;</dt>
+<dd><p>Print detailed optimization information. This includes
+&lsquo;<samp>optimized</samp>&rsquo;, &lsquo;<samp>missed</samp>&rsquo;, and &lsquo;<samp>note</samp>&rsquo;.
+</p></dd>
+</dl>
+
+<p>The following option controls the dump verbosity:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>internals</samp>&rsquo;</dt>
+<dd><p>By default, only &ldquo;high-level&rdquo; messages are emitted. This option enables
+additional, more detailed, messages, which are likely to only be of interest
+to GCC developers.
+</p></dd>
+</dl>
+
+<p>One or more of the following option keywords can be used to describe a
+group of optimizations:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>ipa</samp>&rsquo;</dt>
+<dd><p>Enable dumps from all interprocedural optimizations.
+</p></dd>
+<dt>&lsquo;<samp>loop</samp>&rsquo;</dt>
+<dd><p>Enable dumps from all loop optimizations.
+</p></dd>
+<dt>&lsquo;<samp>inline</samp>&rsquo;</dt>
+<dd><p>Enable dumps from all inlining optimizations.
+</p></dd>
+<dt>&lsquo;<samp>omp</samp>&rsquo;</dt>
+<dd><p>Enable dumps from all OMP (Offloading and Multi Processing) optimizations.
+</p></dd>
+<dt>&lsquo;<samp>vec</samp>&rsquo;</dt>
+<dd><p>Enable dumps from all vectorization optimizations.
+</p></dd>
+<dt>&lsquo;<samp>optall</samp>&rsquo;</dt>
+<dd><p>Enable dumps from all optimizations. This is a superset of
+the optimization groups listed above.
+</p></dd>
+</dl>
+
+<p>If <var>options</var> is
+omitted, it defaults to &lsquo;<samp>optimized-optall</samp>&rsquo;, which means to dump messages
+about successful optimizations from all the passes, omitting messages
+that are treated as &ldquo;internals&rdquo;.
+</p>
+<p>If the <var>filename</var> is provided, then the dumps from all the
+applicable optimizations are concatenated into the <var>filename</var>.
+Otherwise the dump is output onto <samp>stderr</samp>. Though multiple
+<samp>-fopt-info</samp> options are accepted, only one of them can include
+a <var>filename</var>. If other filenames are provided then all but the
+first such option are ignored.
+</p>
+<p>Note that the output <var>filename</var> is overwritten
+in case of multiple translation units. If a combined output from
+multiple translation units is desired, <samp>stderr</samp> should be used
+instead.
+</p>
+<p>In the following example, the optimization info is output to
+<samp>stderr</samp>:
+</p>
+<div class="smallexample">
+<pre class="smallexample">gcc -O3 -fopt-info
+</pre></div>
+
+<p>This example:
+</p><div class="smallexample">
+<pre class="smallexample">gcc -O3 -fopt-info-missed=missed.all
+</pre></div>
+
+<p>outputs missed optimization report from all the passes into
+<samp>missed.all</samp>, and this one:
+</p>
+<div class="smallexample">
+<pre class="smallexample">gcc -O2 -ftree-vectorize -fopt-info-vec-missed
+</pre></div>
+
+<p>prints information about missed optimization opportunities from
+vectorization passes on <samp>stderr</samp>.  
+Note that <samp>-fopt-info-vec-missed</samp> is equivalent to 
+<samp>-fopt-info-missed-vec</samp>.  The order of the optimization group
+names and message types listed after <samp>-fopt-info</samp> does not matter.
+</p>
+<p>As another example,
+</p><div class="smallexample">
+<pre class="smallexample">gcc -O3 -fopt-info-inline-optimized-missed=inline.txt
+</pre></div>
+
+<p>outputs information about missed optimizations as well as
+optimized locations from all the inlining passes into
+<samp>inline.txt</samp>.
+</p>
+<p>Finally, consider:
+</p>
+<div class="smallexample">
+<pre class="smallexample">gcc -fopt-info-vec-missed=vec.miss -fopt-info-loop-optimized=loop.opt
+</pre></div>
+
+<p>Here the two output filenames <samp>vec.miss</samp> and <samp>loop.opt</samp> are
+in conflict since only one output file is allowed. In this case, only
+the first option takes effect and the subsequent options are
+ignored. Thus only <samp>vec.miss</samp> is produced which contains
+dumps from the vectorizer about missed opportunities.
+</p>
+</dd>
+<dt><code>-fsave-optimization-record</code></dt>
+<dd><a name="index-fsave_002doptimization_002drecord"></a>
+<p>Write a SRCFILE.opt-record.json.gz file detailing what optimizations
+were performed, for those optimizations that support <samp>-fopt-info</samp>.
+</p>
+<p>This option is experimental and the format of the data within the
+compressed JSON file is subject to change.
+</p>
+<p>It is roughly equivalent to a machine-readable version of
+<samp>-fopt-info-all</samp>, as a collection of messages with source file,
+line number and column number, with the following additional data for
+each message:
+</p>
+<ul>
+<li> the execution count of the code being optimized, along with metadata about
+whether this was from actual profile data, or just an estimate, allowing
+consumers to prioritize messages by code hotness,
+
+</li><li> the function name of the code being optimized, where applicable,
+
+</li><li> the &ldquo;inlining chain&rdquo; for the code being optimized, so that when
+a function is inlined into several different places (which might
+themselves be inlined), the reader can distinguish between the copies,
+
+</li><li> objects identifying those parts of the message that refer to expressions,
+statements or symbol-table nodes, which of these categories they are, and,
+when available, their source code location,
+
+</li><li> the GCC pass that emitted the message, and
+
+</li><li> the location in GCC&rsquo;s own code from which the message was emitted
+
+</li></ul>
+
+<p>Additionally, some messages are logically nested within other
+messages, reflecting implementation details of the optimization
+passes.
+</p>
+</dd>
+<dt><code>-fsched-verbose=<var>n</var></code></dt>
+<dd><a name="index-fsched_002dverbose"></a>
+<p>On targets that use instruction scheduling, this option controls the
+amount of debugging output the scheduler prints to the dump files.
+</p>
+<p>For <var>n</var> greater than zero, <samp>-fsched-verbose</samp> outputs the
+same information as <samp>-fdump-rtl-sched1</samp> and <samp>-fdump-rtl-sched2</samp>.
+For <var>n</var> greater than one, it also output basic block probabilities,
+detailed ready list information and unit/insn info.  For <var>n</var> greater
+than two, it includes RTL at abort point, control-flow and regions info.
+And for <var>n</var> over four, <samp>-fsched-verbose</samp> also includes
+dependence info.
+</p>
+
+
+</dd>
+<dt><code>-fenable-<var>kind</var>-<var>pass</var></code></dt>
+<dt><code>-fdisable-<var>kind</var>-<var>pass</var>=<var>range-list</var></code></dt>
+<dd><a name="index-fdisable_002d"></a>
+<a name="index-fenable_002d"></a>
+
+<p>This is a set of options that are used to explicitly disable/enable
+optimization passes.  These options are intended for use for debugging GCC.
+Compiler users should use regular options for enabling/disabling
+passes instead.
+</p>
+<dl compact="compact">
+<dt><code>-fdisable-ipa-<var>pass</var></code></dt>
+<dd><p>Disable IPA pass <var>pass</var>. <var>pass</var> is the pass name.  If the same pass is
+statically invoked in the compiler multiple times, the pass name should be
+appended with a sequential number starting from 1.
+</p>
+</dd>
+<dt><code>-fdisable-rtl-<var>pass</var></code></dt>
+<dt><code>-fdisable-rtl-<var>pass</var>=<var>range-list</var></code></dt>
+<dd><p>Disable RTL pass <var>pass</var>.  <var>pass</var> is the pass name.  If the same pass is
+statically invoked in the compiler multiple times, the pass name should be
+appended with a sequential number starting from 1.  <var>range-list</var> is a 
+comma-separated list of function ranges or assembler names.  Each range is a number
+pair separated by a colon.  The range is inclusive in both ends.  If the range
+is trivial, the number pair can be simplified as a single number.  If the
+function&rsquo;s call graph node&rsquo;s <var>uid</var> falls within one of the specified ranges,
+the <var>pass</var> is disabled for that function.  The <var>uid</var> is shown in the
+function header of a dump file, and the pass names can be dumped by using
+option <samp>-fdump-passes</samp>.
+</p>
+</dd>
+<dt><code>-fdisable-tree-<var>pass</var></code></dt>
+<dt><code>-fdisable-tree-<var>pass</var>=<var>range-list</var></code></dt>
+<dd><p>Disable tree pass <var>pass</var>.  See <samp>-fdisable-rtl</samp> for the description of
+option arguments.
+</p>
+</dd>
+<dt><code>-fenable-ipa-<var>pass</var></code></dt>
+<dd><p>Enable IPA pass <var>pass</var>.  <var>pass</var> is the pass name.  If the same pass is
+statically invoked in the compiler multiple times, the pass name should be
+appended with a sequential number starting from 1.
+</p>
+</dd>
+<dt><code>-fenable-rtl-<var>pass</var></code></dt>
+<dt><code>-fenable-rtl-<var>pass</var>=<var>range-list</var></code></dt>
+<dd><p>Enable RTL pass <var>pass</var>.  See <samp>-fdisable-rtl</samp> for option argument
+description and examples.
+</p>
+</dd>
+<dt><code>-fenable-tree-<var>pass</var></code></dt>
+<dt><code>-fenable-tree-<var>pass</var>=<var>range-list</var></code></dt>
+<dd><p>Enable tree pass <var>pass</var>.  See <samp>-fdisable-rtl</samp> for the description
+of option arguments.
+</p>
+</dd>
+</dl>
+
+<p>Here are some examples showing uses of these options.
+</p>
+<div class="smallexample">
+<pre class="smallexample">
+# disable ccp1 for all functions
+   -fdisable-tree-ccp1
+# disable complete unroll for function whose cgraph node uid is 1
+   -fenable-tree-cunroll=1
+# disable gcse2 for functions at the following ranges [1,1],
+# [300,400], and [400,1000]
+# disable gcse2 for functions foo and foo2
+   -fdisable-rtl-gcse2=foo,foo2
+# disable early inlining
+   -fdisable-tree-einline
+# disable ipa inlining
+   -fdisable-ipa-inline
+# enable tree full unroll
+   -fenable-tree-unroll
+
+</pre></div>
+
+</dd>
+<dt><code>-fchecking</code></dt>
+<dt><code>-fchecking=<var>n</var></code></dt>
+<dd><a name="index-fchecking"></a>
+<a name="index-fno_002dchecking"></a>
+<p>Enable internal consistency checking.  The default depends on
+the compiler configuration.  <samp>-fchecking=2</samp> enables further
+internal consistency checking that might affect code generation.
+</p>
+</dd>
+<dt><code>-frandom-seed=<var>string</var></code></dt>
+<dd><a name="index-frandom_002dseed"></a>
+<p>This option provides a seed that GCC uses in place of
+random numbers in generating certain symbol names
+that have to be different in every compiled file.  It is also used to
+place unique stamps in coverage data files and the object files that
+produce them.  You can use the <samp>-frandom-seed</samp> option to produce
+reproducibly identical object files.
+</p>
+<p>The <var>string</var> can either be a number (decimal, octal or hex) or an
+arbitrary string (in which case it&rsquo;s converted to a number by
+computing CRC32).
+</p>
+<p>The <var>string</var> should be different for every file you compile.
+</p>
+</dd>
+<dt><code>-save-temps</code></dt>
+<dt><code>-save-temps=cwd</code></dt>
+<dd><a name="index-save_002dtemps"></a>
+<p>Store the usual &ldquo;temporary&rdquo; intermediate files permanently; place them
+in the current directory and name them based on the source file.  Thus,
+compiling <samp>foo.c</samp> with <samp>-c -save-temps</samp> produces files
+<samp>foo.i</samp> and <samp>foo.s</samp>, as well as <samp>foo.o</samp>.  This creates a
+preprocessed <samp>foo.i</samp> output file even though the compiler now
+normally uses an integrated preprocessor.
+</p>
+<p>When used in combination with the <samp>-x</samp> command-line option,
+<samp>-save-temps</samp> is sensible enough to avoid over writing an
+input source file with the same extension as an intermediate file.
+The corresponding intermediate file may be obtained by renaming the
+source file before using <samp>-save-temps</samp>.
+</p>
+<p>If you invoke GCC in parallel, compiling several different source
+files that share a common base name in different subdirectories or the
+same source file compiled for multiple output destinations, it is
+likely that the different parallel compilers will interfere with each
+other, and overwrite the temporary files.  For instance:
+</p>
+<div class="smallexample">
+<pre class="smallexample">gcc -save-temps -o outdir1/foo.o indir1/foo.c&amp;
+gcc -save-temps -o outdir2/foo.o indir2/foo.c&amp;
+</pre></div>
+
+<p>may result in <samp>foo.i</samp> and <samp>foo.o</samp> being written to
+simultaneously by both compilers.
+</p>
+</dd>
+<dt><code>-save-temps=obj</code></dt>
+<dd><a name="index-save_002dtemps_003dobj"></a>
+<p>Store the usual &ldquo;temporary&rdquo; intermediate files permanently.  If the
+<samp>-o</samp> option is used, the temporary files are based on the
+object file.  If the <samp>-o</samp> option is not used, the
+<samp>-save-temps=obj</samp> switch behaves like <samp>-save-temps</samp>.
+</p>
+<p>For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">gcc -save-temps=obj -c foo.c
+gcc -save-temps=obj -c bar.c -o dir/xbar.o
+gcc -save-temps=obj foobar.c -o dir2/yfoobar
+</pre></div>
+
+<p>creates <samp>foo.i</samp>, <samp>foo.s</samp>, <samp>dir/xbar.i</samp>,
+<samp>dir/xbar.s</samp>, <samp>dir2/yfoobar.i</samp>, <samp>dir2/yfoobar.s</samp>, and
+<samp>dir2/yfoobar.o</samp>.
+</p>
+</dd>
+<dt><code>-time<span class="roman">[</span>=<var>file</var><span class="roman">]</span></code></dt>
+<dd><a name="index-time"></a>
+<p>Report the CPU time taken by each subprocess in the compilation
+sequence.  For C source files, this is the compiler proper and assembler
+(plus the linker if linking is done).
+</p>
+<p>Without the specification of an output file, the output looks like this:
+</p>
+<div class="smallexample">
+<pre class="smallexample"># cc1 0.12 0.01
+# as 0.00 0.01
+</pre></div>
+
+<p>The first number on each line is the &ldquo;user time&rdquo;, that is time spent
+executing the program itself.  The second number is &ldquo;system time&rdquo;,
+time spent executing operating system routines on behalf of the program.
+Both numbers are in seconds.
+</p>
+<p>With the specification of an output file, the output is appended to the
+named file, and it looks like this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">0.12 0.01 cc1 <var>options</var>
+0.00 0.01 as <var>options</var>
+</pre></div>
+
+<p>The &ldquo;user time&rdquo; and the &ldquo;system time&rdquo; are moved before the program
+name, and the options passed to the program are displayed, so that one
+can later tell what file was being compiled, and with which options.
+</p>
+</dd>
+<dt><code>-fdump-final-insns<span class="roman">[</span>=<var>file</var><span class="roman">]</span></code></dt>
+<dd><a name="index-fdump_002dfinal_002dinsns"></a>
+<p>Dump the final internal representation (RTL) to <var>file</var>.  If the
+optional argument is omitted (or if <var>file</var> is <code>.</code>), the name
+of the dump file is determined by appending <code>.gkd</code> to the
+compilation output file name.
+</p>
+</dd>
+<dt><code>-fcompare-debug<span class="roman">[</span>=<var>opts</var><span class="roman">]</span></code></dt>
+<dd><a name="index-fcompare_002ddebug"></a>
+<a name="index-fno_002dcompare_002ddebug"></a>
+<p>If no error occurs during compilation, run the compiler a second time,
+adding <var>opts</var> and <samp>-fcompare-debug-second</samp> to the arguments
+passed to the second compilation.  Dump the final internal
+representation in both compilations, and print an error if they differ.
+</p>
+<p>If the equal sign is omitted, the default <samp>-gtoggle</samp> is used.
+</p>
+<p>The environment variable <code>GCC_COMPARE_DEBUG</code>, if defined, non-empty
+and nonzero, implicitly enables <samp>-fcompare-debug</samp>.  If
+<code>GCC_COMPARE_DEBUG</code> is defined to a string starting with a dash,
+then it is used for <var>opts</var>, otherwise the default <samp>-gtoggle</samp>
+is used.
+</p>
+<p><samp>-fcompare-debug=</samp>, with the equal sign but without <var>opts</var>,
+is equivalent to <samp>-fno-compare-debug</samp>, which disables the dumping
+of the final representation and the second compilation, preventing even
+<code>GCC_COMPARE_DEBUG</code> from taking effect.
+</p>
+<p>To verify full coverage during <samp>-fcompare-debug</samp> testing, set
+<code>GCC_COMPARE_DEBUG</code> to say <samp>-fcompare-debug-not-overridden</samp>,
+which GCC rejects as an invalid option in any actual compilation
+(rather than preprocessing, assembly or linking).  To get just a
+warning, setting <code>GCC_COMPARE_DEBUG</code> to &lsquo;<samp>-w%n-fcompare-debug
+not overridden</samp>&rsquo; will do.
+</p>
+</dd>
+<dt><code>-fcompare-debug-second</code></dt>
+<dd><a name="index-fcompare_002ddebug_002dsecond"></a>
+<p>This option is implicitly passed to the compiler for the second
+compilation requested by <samp>-fcompare-debug</samp>, along with options to
+silence warnings, and omitting other options that would cause the compiler
+to produce output to files or to standard output as a side effect.  Dump
+files and preserved temporary files are renamed so as to contain the
+<code>.gk</code> additional extension during the second compilation, to avoid
+overwriting those generated by the first.
+</p>
+<p>When this option is passed to the compiler driver, it causes the
+<em>first</em> compilation to be skipped, which makes it useful for little
+other than debugging the compiler proper.
+</p>
+</dd>
+<dt><code>-gtoggle</code></dt>
+<dd><a name="index-gtoggle"></a>
+<p>Turn off generation of debug info, if leaving out this option
+generates it, or turn it on at level 2 otherwise.  The position of this
+argument in the command line does not matter; it takes effect after all
+other options are processed, and it does so only once, no matter how
+many times it is given.  This is mainly intended to be used with
+<samp>-fcompare-debug</samp>.
+</p>
+</dd>
+<dt><code>-fvar-tracking-assignments-toggle</code></dt>
+<dd><a name="index-fvar_002dtracking_002dassignments_002dtoggle"></a>
+<a name="index-fno_002dvar_002dtracking_002dassignments_002dtoggle"></a>
+<p>Toggle <samp>-fvar-tracking-assignments</samp>, in the same way that
+<samp>-gtoggle</samp> toggles <samp>-g</samp>.
+</p>
+</dd>
+<dt><code>-Q</code></dt>
+<dd><a name="index-Q"></a>
+<p>Makes the compiler print out each function name as it is compiled, and
+print some statistics about each pass when it finishes.
+</p>
+</dd>
+<dt><code>-ftime-report</code></dt>
+<dd><a name="index-ftime_002dreport"></a>
+<p>Makes the compiler print some statistics about the time consumed by each
+pass when it finishes.
+</p>
+</dd>
+<dt><code>-ftime-report-details</code></dt>
+<dd><a name="index-ftime_002dreport_002ddetails"></a>
+<p>Record the time consumed by infrastructure parts separately for each pass.
+</p>
+</dd>
+<dt><code>-fira-verbose=<var>n</var></code></dt>
+<dd><a name="index-fira_002dverbose"></a>
+<p>Control the verbosity of the dump file for the integrated register allocator.
+The default value is 5.  If the value <var>n</var> is greater or equal to 10,
+the dump output is sent to stderr using the same format as <var>n</var> minus 10.
+</p>
+</dd>
+<dt><code>-flto-report</code></dt>
+<dd><a name="index-flto_002dreport"></a>
+<p>Prints a report with internal details on the workings of the link-time
+optimizer.  The contents of this report vary from version to version.
+It is meant to be useful to GCC developers when processing object
+files in LTO mode (via <samp>-flto</samp>).
+</p>
+<p>Disabled by default.
+</p>
+</dd>
+<dt><code>-flto-report-wpa</code></dt>
+<dd><a name="index-flto_002dreport_002dwpa"></a>
+<p>Like <samp>-flto-report</samp>, but only print for the WPA phase of Link
+Time Optimization.
+</p>
+</dd>
+<dt><code>-fmem-report</code></dt>
+<dd><a name="index-fmem_002dreport"></a>
+<p>Makes the compiler print some statistics about permanent memory
+allocation when it finishes.
+</p>
+</dd>
+<dt><code>-fmem-report-wpa</code></dt>
+<dd><a name="index-fmem_002dreport_002dwpa"></a>
+<p>Makes the compiler print some statistics about permanent memory
+allocation for the WPA phase only.
+</p>
+</dd>
+<dt><code>-fpre-ipa-mem-report</code></dt>
+<dd><a name="index-fpre_002dipa_002dmem_002dreport"></a>
+</dd>
+<dt><code>-fpost-ipa-mem-report</code></dt>
+<dd><a name="index-fpost_002dipa_002dmem_002dreport"></a>
+<p>Makes the compiler print some statistics about permanent memory
+allocation before or after interprocedural optimization.
+</p>
+</dd>
+<dt><code>-fprofile-report</code></dt>
+<dd><a name="index-fprofile_002dreport"></a>
+<p>Makes the compiler print some statistics about consistency of the
+(estimated) profile and effect of individual passes.
+</p>
+</dd>
+<dt><code>-fstack-usage</code></dt>
+<dd><a name="index-fstack_002dusage"></a>
+<p>Makes the compiler output stack usage information for the program, on a
+per-function basis.  The filename for the dump is made by appending
+<samp>.su</samp> to the <var>auxname</var>.  <var>auxname</var> is generated from the name of
+the output file, if explicitly specified and it is not an executable,
+otherwise it is the basename of the source file.  An entry is made up
+of three fields:
+</p>
+<ul>
+<li> The name of the function.
+</li><li> A number of bytes.
+</li><li> One or more qualifiers: <code>static</code>, <code>dynamic</code>, <code>bounded</code>.
+</li></ul>
+
+<p>The qualifier <code>static</code> means that the function manipulates the stack
+statically: a fixed number of bytes are allocated for the frame on function
+entry and released on function exit; no stack adjustments are otherwise made
+in the function.  The second field is this fixed number of bytes.
+</p>
+<p>The qualifier <code>dynamic</code> means that the function manipulates the stack
+dynamically: in addition to the static allocation described above, stack
+adjustments are made in the body of the function, for example to push/pop
+arguments around function calls.  If the qualifier <code>bounded</code> is also
+present, the amount of these adjustments is bounded at compile time and
+the second field is an upper bound of the total amount of stack used by
+the function.  If it is not present, the amount of these adjustments is
+not bounded at compile time and the second field only represents the
+bounded part.
+</p>
+</dd>
+<dt><code>-fstats</code></dt>
+<dd><a name="index-fstats"></a>
+<p>Emit statistics about front-end processing at the end of the compilation.
+This option is supported only by the C++ front end, and
+the information is generally only useful to the G++ development team.
+</p>
+</dd>
+<dt><code>-fdbg-cnt-list</code></dt>
+<dd><a name="index-fdbg_002dcnt_002dlist"></a>
+<p>Print the name and the counter upper bound for all debug counters.
+</p>
+
+</dd>
+<dt><code>-fdbg-cnt=<var>counter-value-list</var></code></dt>
+<dd><a name="index-fdbg_002dcnt"></a>
+<p>Set the internal debug counter lower and upper bound.  <var>counter-value-list</var>
+is a comma-separated list of <var>name</var>:<var>lower_bound</var>:<var>upper_bound</var>
+tuples which sets the lower and the upper bound of each debug
+counter <var>name</var>.  The <var>lower_bound</var> is optional and is zero
+initialized if not set.
+All debug counters have the initial upper bound of <code>UINT_MAX</code>;
+thus <code>dbg_cnt</code> returns true always unless the upper bound
+is set by this option.
+For example, with <samp>-fdbg-cnt=dce:2:4,tail_call:10</samp>,
+<code>dbg_cnt(dce)</code> returns true only for third and fourth invocation.
+For <code>dbg_cnt(tail_call)</code> true is returned for first 10 invocations.
+</p>
+</dd>
+<dt><code>-print-file-name=<var>library</var></code></dt>
+<dd><a name="index-print_002dfile_002dname"></a>
+<p>Print the full absolute name of the library file <var>library</var> that
+would be used when linking&mdash;and don&rsquo;t do anything else.  With this
+option, GCC does not compile or link anything; it just prints the
+file name.
+</p>
+</dd>
+<dt><code>-print-multi-directory</code></dt>
+<dd><a name="index-print_002dmulti_002ddirectory"></a>
+<p>Print the directory name corresponding to the multilib selected by any
+other switches present in the command line.  This directory is supposed
+to exist in <code>GCC_EXEC_PREFIX</code>.
+</p>
+</dd>
+<dt><code>-print-multi-lib</code></dt>
+<dd><a name="index-print_002dmulti_002dlib"></a>
+<p>Print the mapping from multilib directory names to compiler switches
+that enable them.  The directory name is separated from the switches by
+&lsquo;<samp>;</samp>&rsquo;, and each switch starts with an &lsquo;<samp>@</samp>&rsquo; instead of the
+&lsquo;<samp>-</samp>&rsquo;, without spaces between multiple switches.  This is supposed to
+ease shell processing.
+</p>
+</dd>
+<dt><code>-print-multi-os-directory</code></dt>
+<dd><a name="index-print_002dmulti_002dos_002ddirectory"></a>
+<p>Print the path to OS libraries for the selected
+multilib, relative to some <samp>lib</samp> subdirectory.  If OS libraries are
+present in the <samp>lib</samp> subdirectory and no multilibs are used, this is
+usually just <samp>.</samp>, if OS libraries are present in <samp>lib<var>suffix</var></samp>
+sibling directories this prints e.g. <samp>../lib64</samp>, <samp>../lib</samp> or
+<samp>../lib32</samp>, or if OS libraries are present in <samp>lib/<var>subdir</var></samp>
+subdirectories it prints e.g. <samp>amd64</samp>, <samp>sparcv9</samp> or <samp>ev6</samp>.
+</p>
+</dd>
+<dt><code>-print-multiarch</code></dt>
+<dd><a name="index-print_002dmultiarch"></a>
+<p>Print the path to OS libraries for the selected multiarch,
+relative to some <samp>lib</samp> subdirectory.
+</p>
+</dd>
+<dt><code>-print-prog-name=<var>program</var></code></dt>
+<dd><a name="index-print_002dprog_002dname"></a>
+<p>Like <samp>-print-file-name</samp>, but searches for a program such as <code>cpp</code>.
+</p>
+</dd>
+<dt><code>-print-libgcc-file-name</code></dt>
+<dd><a name="index-print_002dlibgcc_002dfile_002dname"></a>
+<p>Same as <samp>-print-file-name=libgcc.a</samp>.
+</p>
+<p>This is useful when you use <samp>-nostdlib</samp> or <samp>-nodefaultlibs</samp>
+but you do want to link with <samp>libgcc.a</samp>.  You can do:
+</p>
+<div class="smallexample">
+<pre class="smallexample">gcc -nostdlib <var>files</var>&hellip; `gcc -print-libgcc-file-name`
+</pre></div>
+
+</dd>
+<dt><code>-print-search-dirs</code></dt>
+<dd><a name="index-print_002dsearch_002ddirs"></a>
+<p>Print the name of the configured installation directory and a list of
+program and library directories <code>gcc</code> searches&mdash;and don&rsquo;t do anything else.
+</p>
+<p>This is useful when <code>gcc</code> prints the error message
+&lsquo;<samp>installation problem, cannot exec cpp0: No such file or directory</samp>&rsquo;.
+To resolve this you either need to put <samp>cpp0</samp> and the other compiler
+components where <code>gcc</code> expects to find them, or you can set the environment
+variable <code>GCC_EXEC_PREFIX</code> to the directory where you installed them.
+Don&rsquo;t forget the trailing &lsquo;<samp>/</samp>&rsquo;.
+See <a href="Environment-Variables.html#Environment-Variables">Environment Variables</a>.
+</p>
+</dd>
+<dt><code>-print-sysroot</code></dt>
+<dd><a name="index-print_002dsysroot"></a>
+<p>Print the target sysroot directory that is used during
+compilation.  This is the target sysroot specified either at configure
+time or using the <samp>--sysroot</samp> option, possibly with an extra
+suffix that depends on compilation options.  If no target sysroot is
+specified, the option prints nothing.
+</p>
+</dd>
+<dt><code>-print-sysroot-headers-suffix</code></dt>
+<dd><a name="index-print_002dsysroot_002dheaders_002dsuffix"></a>
+<p>Print the suffix added to the target sysroot when searching for
+headers, or give an error if the compiler is not configured with such
+a suffix&mdash;and don&rsquo;t do anything else.
+</p>
+</dd>
+<dt><code>-dumpmachine</code></dt>
+<dd><a name="index-dumpmachine"></a>
+<p>Print the compiler&rsquo;s target machine (for example,
+&lsquo;<samp>i686-pc-linux-gnu</samp>&rsquo;)&mdash;and don&rsquo;t do anything else.
+</p>
+</dd>
+<dt><code>-dumpversion</code></dt>
+<dd><a name="index-dumpversion"></a>
+<p>Print the compiler version (for example, <code>3.0</code>, <code>6.3.0</code> or <code>7</code>)&mdash;and don&rsquo;t do
+anything else.  This is the compiler version used in filesystem paths and
+specs. Depending on how the compiler has been configured it can be just
+a single number (major version), two numbers separated by a dot (major and
+minor version) or three numbers separated by dots (major, minor and patchlevel
+version).
+</p>
+</dd>
+<dt><code>-dumpfullversion</code></dt>
+<dd><a name="index-dumpfullversion"></a>
+<p>Print the full compiler version&mdash;and don&rsquo;t do anything else. The output is
+always three numbers separated by dots, major, minor and patchlevel version.
+</p>
+</dd>
+<dt><code>-dumpspecs</code></dt>
+<dd><a name="index-dumpspecs"></a>
+<p>Print the compiler&rsquo;s built-in specs&mdash;and don&rsquo;t do anything else.  (This
+is used when GCC itself is being built.)  See <a href="Spec-Files.html#Spec-Files">Spec Files</a>.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Submodel-Options.html#Submodel-Options" accesskey="n" rel="next">Submodel Options</a>, Previous: <a href="Code-Gen-Options.html#Code-Gen-Options" accesskey="p" rel="prev">Code Gen Options</a>, Up: <a href="Invoking-GCC.html#Invoking-GCC" accesskey="u" rel="up">Invoking GCC</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

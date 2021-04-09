@@ -1,0 +1,120 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Assembler</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Assembler">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Assembler">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="RTL.html#RTL" rel="up" title="RTL">
+<link href="Debug-Information.html#Debug-Information" rel="next" title="Debug Information">
+<link href="Incdec.html#Incdec" rel="prev" title="Incdec">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Assembler"></a>
+<div class="header">
+<p>
+Next: <a href="Debug-Information.html#Debug-Information" accesskey="n" rel="next">Debug Information</a>, Previous: <a href="Incdec.html#Incdec" accesskey="p" rel="prev">Incdec</a>, Up: <a href="RTL.html#RTL" accesskey="u" rel="up">RTL</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Assembler-Instructions-as-Expressions"></a>
+<h3 class="section">14.17 Assembler Instructions as Expressions</h3>
+<a name="index-assembler-instructions-in-RTL"></a>
+
+<a name="index-asm_005foperands_002c-usage"></a>
+<p>The RTX code <code>asm_operands</code> represents a value produced by a
+user-specified assembler instruction.  It is used to represent
+an <code>asm</code> statement with arguments.  An <code>asm</code> statement with
+a single output operand, like this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">asm (&quot;foo %1,%2,%0&quot; : &quot;=a&quot; (outputvar) : &quot;g&quot; (x + y), &quot;di&quot; (*z));
+</pre></div>
+
+<p>is represented using a single <code>asm_operands</code> RTX which represents
+the value that is stored in <code>outputvar</code>:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(set <var>rtx-for-outputvar</var>
+     (asm_operands &quot;foo %1,%2,%0&quot; &quot;a&quot; 0
+                   [<var>rtx-for-addition-result</var> <var>rtx-for-*z</var>]
+                   [(asm_input:<var>m1</var> &quot;g&quot;)
+                    (asm_input:<var>m2</var> &quot;di&quot;)]))
+</pre></div>
+
+<p>Here the operands of the <code>asm_operands</code> RTX are the assembler
+template string, the output-operand&rsquo;s constraint, the index-number of the
+output operand among the output operands specified, a vector of input
+operand RTX&rsquo;s, and a vector of input-operand modes and constraints.  The
+mode <var>m1</var> is the mode of the sum <code>x+y</code>; <var>m2</var> is that of
+<code>*z</code>.
+</p>
+<p>When an <code>asm</code> statement has multiple output values, its insn has
+several such <code>set</code> RTX&rsquo;s inside of a <code>parallel</code>.  Each <code>set</code>
+contains an <code>asm_operands</code>; all of these share the same assembler
+template and vectors, but each contains the constraint for the respective
+output operand.  They are also distinguished by the output-operand index
+number, which is 0, 1, &hellip; for successive output operands.
+</p>
+
+
+
+</body>
+</html>

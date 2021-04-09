@@ -1,0 +1,195 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: i386</title>
+
+<meta name="description" content="Debugging with GDB: i386">
+<meta name="keywords" content="Debugging with GDB: i386">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Architectures.html#Architectures" rel="up" title="Architectures">
+<link href="Alpha.html#Alpha" rel="next" title="Alpha">
+<link href="AArch64.html#AArch64" rel="prev" title="AArch64">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="i386"></a>
+<div class="header">
+<p>
+Next: <a href="Alpha.html#Alpha" accesskey="n" rel="next">Alpha</a>, Previous: <a href="AArch64.html#AArch64" accesskey="p" rel="prev">AArch64</a>, Up: <a href="Architectures.html#Architectures" accesskey="u" rel="up">Architectures</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="x86-Architecture_002dspecific-Issues"></a>
+<h4 class="subsection">21.4.2 x86 Architecture-specific Issues</h4>
+
+<dl compact="compact">
+<dt><code>set struct-convention <var>mode</var></code></dt>
+<dd><a name="index-set-struct_002dconvention"></a>
+<a name="index-struct-return-convention"></a>
+<a name="index-struct_002funion-returned-in-registers"></a>
+<p>Set the convention used by the inferior to return <code>struct</code>s and
+<code>union</code>s from functions to <var>mode</var>.  Possible values of
+<var>mode</var> are <code>&quot;pcc&quot;</code>, <code>&quot;reg&quot;</code>, and <code>&quot;default&quot;</code> (the
+default).  <code>&quot;default&quot;</code> or <code>&quot;pcc&quot;</code> means that <code>struct</code>s
+are returned on the stack, while <code>&quot;reg&quot;</code> means that a
+<code>struct</code> or a <code>union</code> whose size is 1, 2, 4, or 8 bytes will
+be returned in a register.
+</p>
+</dd>
+<dt><code>show struct-convention</code></dt>
+<dd><a name="index-show-struct_002dconvention"></a>
+<p>Show the current setting of the convention to return <code>struct</code>s
+from functions.
+</p></dd>
+</dl>
+
+
+<a name="Intel-Memory-Protection-Extensions-_0028MPX_0029_002e"></a>
+<h4 class="subsubsection">21.4.2.1 Intel <em>Memory Protection Extensions</em> (MPX).</h4>
+<a name="index-Intel-Memory-Protection-Extensions-_0028MPX_0029_002e"></a>
+
+<p>Memory Protection Extension (MPX) adds the bound registers &lsquo;<samp>BND0</samp>&rsquo;
+<a name="DOCF16" href="#FOOT16"><sup>16</sup></a> through &lsquo;<samp>BND3</samp>&rsquo;.  Bound registers store a pair of 64-bit values
+which are the lower bound and upper bound.  Bounds are effective addresses or
+memory locations.  The upper bounds are architecturally represented in 1&rsquo;s
+complement form.  A bound having lower bound = 0, and upper bound = 0
+(1&rsquo;s complement of all bits set) will allow access to the entire address space.
+</p>
+<p>&lsquo;<samp>BND0</samp>&rsquo; through &lsquo;<samp>BND3</samp>&rsquo; are represented in <small>GDB</small> as &lsquo;<samp>bnd0raw</samp>&rsquo;
+through &lsquo;<samp>bnd3raw</samp>&rsquo;.  Pseudo registers &lsquo;<samp>bnd0</samp>&rsquo; through &lsquo;<samp>bnd3</samp>&rsquo;
+display the upper bound performing the complement of one operation on the
+upper bound value, i.e.&nbsp;when upper bound in &lsquo;<samp>bnd0raw</samp>&rsquo; is 0 in the
+<small>GDB</small> &lsquo;<samp>bnd0</samp>&rsquo; it will be <code>0xfff&hellip;</code>.  In this sense it
+can also be noted that the upper bounds are inclusive.
+</p>
+<p>As an example, assume that the register BND0 holds bounds for a pointer having
+access allowed for the range between 0x32 and 0x71.  The values present on
+bnd0raw and bnd registers are presented as follows:
+</p>
+<div class="smallexample">
+<pre class="smallexample">	bnd0raw = {0x32, 0xffffffff8e}
+	bnd0 = {lbound = 0x32, ubound = 0x71} : size 64
+</pre></div>
+
+<p>This way the raw value can be accessed via bnd0raw&hellip;bnd3raw.  Any
+change on bnd0&hellip;bnd3 or bnd0raw&hellip;bnd3raw is reflect on its
+counterpart.  When the bnd0&hellip;bnd3 registers are displayed via
+Python, the display includes the memory size, in bits, accessible to
+the pointer.
+</p>
+<p>Bounds can also be stored in bounds tables, which are stored in
+application memory.  These tables store bounds for pointers by specifying
+the bounds pointer&rsquo;s value along with its bounds.  Evaluating and changing
+bounds located in bound tables is therefore interesting while investigating
+bugs on MPX context.  <small>GDB</small> provides commands for this purpose:
+</p>
+<dl compact="compact">
+<dt><code>show mpx bound <var>pointer</var></code></dt>
+<dd><a name="index-show-mpx-bound"></a>
+<p>Display bounds of the given <var>pointer</var>.
+</p>
+</dd>
+<dt><code>set mpx bound <var>pointer</var>, <var>lbound</var>, <var>ubound</var></code></dt>
+<dd><a name="index-set-mpx-bound"></a>
+<p>Set the bounds of a pointer in the bound table.
+This command takes three parameters: <var>pointer</var> is the pointers
+whose bounds are to be changed, <var>lbound</var> and <var>ubound</var> are new values
+for lower and upper bounds respectively.
+</p></dd>
+</dl>
+
+<p>When you call an inferior function on an Intel MPX enabled program,
+GDB sets the inferior&rsquo;s bound registers to the init (disabled) state
+before calling the function.  As a consequence, bounds checks for the
+pointer arguments passed to the function will always pass.
+</p>
+<p>This is necessary because when you call an inferior function, the
+program is usually in the middle of the execution of other function.
+Since at that point bound registers are in an arbitrary state, not
+clearing them would lead to random bound violations in the called
+function.
+</p>
+<p>You can still examine the influence of the bound registers on the
+execution of the called function by stopping the execution of the
+called function at its prologue, setting bound registers, and
+continuing the execution.  For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">	$ break *upper
+	Breakpoint 2 at 0x4009de: file i386-mpx-call.c, line 47.
+	$ print upper (a, b, c, d, 1)
+	Breakpoint 2, upper (a=0x0, b=0x6e0000005b, c=0x0, d=0x0, len=48)....
+	$ print $bnd0
+	{lbound = 0x0, ubound = ffffffff} : size -1
+</pre></div>
+
+<p>At this last step the value of bnd0 can be changed for investigation of bound
+violations caused along the execution of the call.  In order to know how to
+set the bound registers or bound table for the call consult the ABI.
+</p>
+<div class="footnote">
+<hr>
+<h4 class="footnotes-heading">Footnotes</h4>
+
+<h3><a name="FOOT16" href="#DOCF16">(16)</a></h3>
+<p>The register named with capital letters represent the architecture
+registers.</p>
+</div>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Alpha.html#Alpha" accesskey="n" rel="next">Alpha</a>, Previous: <a href="AArch64.html#AArch64" accesskey="p" rel="prev">AArch64</a>, Up: <a href="Architectures.html#Architectures" accesskey="u" rel="up">Architectures</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

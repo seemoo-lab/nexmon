@@ -1,0 +1,209 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Inline</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Inline">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Inline">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C-Extensions.html#C-Extensions" rel="up" title="C Extensions">
+<link href="Volatiles.html#Volatiles" rel="next" title="Volatiles">
+<link href="Alignment.html#Alignment" rel="prev" title="Alignment">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Inline"></a>
+<div class="header">
+<p>
+Next: <a href="Volatiles.html#Volatiles" accesskey="n" rel="next">Volatiles</a>, Previous: <a href="Alignment.html#Alignment" accesskey="p" rel="prev">Alignment</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="An-Inline-Function-is-As-Fast-As-a-Macro"></a>
+<h3 class="section">6.45 An Inline Function is As Fast As a Macro</h3>
+<a name="index-inline-functions"></a>
+<a name="index-integrating-function-code"></a>
+<a name="index-open-coding"></a>
+<a name="index-macros_002c-inline-alternative"></a>
+
+<p>By declaring a function inline, you can direct GCC to make
+calls to that function faster.  One way GCC can achieve this is to
+integrate that function&rsquo;s code into the code for its callers.  This
+makes execution faster by eliminating the function-call overhead; in
+addition, if any of the actual argument values are constant, their
+known values may permit simplifications at compile time so that not
+all of the inline function&rsquo;s code needs to be included.  The effect on
+code size is less predictable; object code may be larger or smaller
+with function inlining, depending on the particular case.  You can
+also direct GCC to try to integrate all &ldquo;simple enough&rdquo; functions
+into their callers with the option <samp>-finline-functions</samp>.
+</p>
+<p>GCC implements three different semantics of declaring a function
+inline.  One is available with <samp>-std=gnu89</samp> or
+<samp>-fgnu89-inline</samp> or when <code>gnu_inline</code> attribute is present
+on all inline declarations, another when
+<samp>-std=c99</samp>,
+<samp>-std=gnu99</samp> or an option for a later C version is used
+(without <samp>-fgnu89-inline</samp>), and the third
+is used when compiling C++.
+</p>
+<p>To declare a function inline, use the <code>inline</code> keyword in its
+declaration, like this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">static inline int
+inc (int *a)
+{
+  return (*a)++;
+}
+</pre></div>
+
+<p>If you are writing a header file to be included in ISO C90 programs, write
+<code>__inline__</code> instead of <code>inline</code>.  See <a href="Alternate-Keywords.html#Alternate-Keywords">Alternate Keywords</a>.
+</p>
+<p>The three types of inlining behave similarly in two important cases:
+when the <code>inline</code> keyword is used on a <code>static</code> function,
+like the example above, and when a function is first declared without
+using the <code>inline</code> keyword and then is defined with
+<code>inline</code>, like this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">extern int inc (int *a);
+inline int
+inc (int *a)
+{
+  return (*a)++;
+}
+</pre></div>
+
+<p>In both of these common cases, the program behaves the same as if you
+had not used the <code>inline</code> keyword, except for its speed.
+</p>
+<a name="index-inline-functions_002c-omission-of"></a>
+<a name="index-fkeep_002dinline_002dfunctions-1"></a>
+<p>When a function is both inline and <code>static</code>, if all calls to the
+function are integrated into the caller, and the function&rsquo;s address is
+never used, then the function&rsquo;s own assembler code is never referenced.
+In this case, GCC does not actually output assembler code for the
+function, unless you specify the option <samp>-fkeep-inline-functions</samp>.
+If there is a nonintegrated call, then the function is compiled to
+assembler code as usual.  The function must also be compiled as usual if
+the program refers to its address, because that cannot be inlined.
+</p>
+<a name="index-Winline-1"></a>
+<p>Note that certain usages in a function definition can make it unsuitable
+for inline substitution.  Among these usages are: variadic functions,
+use of <code>alloca</code>, use of computed goto (see <a href="Labels-as-Values.html#Labels-as-Values">Labels as Values</a>),
+use of nonlocal goto, use of nested functions, use of <code>setjmp</code>, use
+of <code>__builtin_longjmp</code> and use of <code>__builtin_return</code> or
+<code>__builtin_apply_args</code>.  Using <samp>-Winline</samp> warns when a
+function marked <code>inline</code> could not be substituted, and gives the
+reason for the failure.
+</p>
+<a name="index-automatic-inline-for-C_002b_002b-member-fns"></a>
+<a name="index-inline-automatic-for-C_002b_002b-member-fns"></a>
+<a name="index-member-fns_002c-automatically-inline"></a>
+<a name="index-C_002b_002b-member-fns_002c-automatically-inline"></a>
+<a name="index-fno_002ddefault_002dinline"></a>
+<p>As required by ISO C++, GCC considers member functions defined within
+the body of a class to be marked inline even if they are
+not explicitly declared with the <code>inline</code> keyword.  You can
+override this with <samp>-fno-default-inline</samp>; see <a href="C_002b_002b-Dialect-Options.html#C_002b_002b-Dialect-Options">Options Controlling C++ Dialect</a>.
+</p>
+<p>GCC does not inline any functions when not optimizing unless you specify
+the &lsquo;<samp>always_inline</samp>&rsquo; attribute for the function, like this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">/* <span class="roman">Prototype.</span>  */
+inline void foo (const char) __attribute__((always_inline));
+</pre></div>
+
+<p>The remainder of this section is specific to GNU C90 inlining.
+</p>
+<a name="index-non_002dstatic-inline-function"></a>
+<p>When an inline function is not <code>static</code>, then the compiler must assume
+that there may be calls from other source files; since a global symbol can
+be defined only once in any program, the function must not be defined in
+the other source files, so the calls therein cannot be integrated.
+Therefore, a non-<code>static</code> inline function is always compiled on its
+own in the usual fashion.
+</p>
+<p>If you specify both <code>inline</code> and <code>extern</code> in the function
+definition, then the definition is used only for inlining.  In no case
+is the function compiled on its own, not even if you refer to its
+address explicitly.  Such an address becomes an external reference, as
+if you had only declared the function, and had not defined it.
+</p>
+<p>This combination of <code>inline</code> and <code>extern</code> has almost the
+effect of a macro.  The way to use it is to put a function definition in
+a header file with these keywords, and put another copy of the
+definition (lacking <code>inline</code> and <code>extern</code>) in a library file.
+The definition in the header file causes most calls to the function
+to be inlined.  If any uses of the function remain, they refer to
+the single copy in the library.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Volatiles.html#Volatiles" accesskey="n" rel="next">Volatiles</a>, Previous: <a href="Alignment.html#Alignment" accesskey="p" rel="prev">Alignment</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1987-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation.  A copy of
+the license is included in the
+section entitled "GNU Free Documentation License".
+
+This manual contains no Invariant Sections.  The Front-Cover Texts are
+(a) (see below), and the Back-Cover Texts are (b) (see below).
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The C Preprocessor: Alternatives to Wrapper #ifndef</title>
+
+<meta name="description" content="The C Preprocessor: Alternatives to Wrapper #ifndef">
+<meta name="keywords" content="The C Preprocessor: Alternatives to Wrapper #ifndef">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Index-of-Directives.html#Index-of-Directives" rel="index" title="Index of Directives">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Header-Files.html#Header-Files" rel="up" title="Header Files">
+<link href="Computed-Includes.html#Computed-Includes" rel="next" title="Computed Includes">
+<link href="Once_002dOnly-Headers.html#Once_002dOnly-Headers" rel="prev" title="Once-Only Headers">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Alternatives-to-Wrapper-_0023ifndef"></a>
+<div class="header">
+<p>
+Next: <a href="Computed-Includes.html#Computed-Includes" accesskey="n" rel="next">Computed Includes</a>, Previous: <a href="Once_002dOnly-Headers.html#Once_002dOnly-Headers" accesskey="p" rel="prev">Once-Only Headers</a>, Up: <a href="Header-Files.html#Header-Files" accesskey="u" rel="up">Header Files</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index-of-Directives.html#Index-of-Directives" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Alternatives-to-Wrapper-_0023ifndef-1"></a>
+<h3 class="section">2.5 Alternatives to Wrapper #ifndef</h3>
+
+<p>CPP supports two more ways of indicating that a header file should be
+read only once.  Neither one is as portable as a wrapper &lsquo;<samp>#ifndef</samp>&rsquo;
+and we recommend you do not use them in new programs, with the caveat
+that &lsquo;<samp>#import</samp>&rsquo; is standard practice in Objective-C.
+</p>
+<a name="index-_0023import"></a>
+<p>CPP supports a variant of &lsquo;<samp>#include</samp>&rsquo; called &lsquo;<samp>#import</samp>&rsquo; which
+includes a file, but does so at most once.  If you use &lsquo;<samp>#import</samp>&rsquo;
+instead of &lsquo;<samp>#include</samp>&rsquo;, then you don&rsquo;t need the conditionals
+inside the header file to prevent multiple inclusion of the contents.
+&lsquo;<samp>#import</samp>&rsquo; is standard in Objective-C, but is considered a
+deprecated extension in C and C++.
+</p>
+<p>&lsquo;<samp>#import</samp>&rsquo; is not a well designed feature.  It requires the users of
+a header file to know that it should only be included once.  It is much
+better for the header file&rsquo;s implementor to write the file so that users
+don&rsquo;t need to know this.  Using a wrapper &lsquo;<samp>#ifndef</samp>&rsquo; accomplishes
+this goal.
+</p>
+<p>In the present implementation, a single use of &lsquo;<samp>#import</samp>&rsquo; will
+prevent the file from ever being read again, by either &lsquo;<samp>#import</samp>&rsquo; or
+&lsquo;<samp>#include</samp>&rsquo;.  You should not rely on this; do not use both
+&lsquo;<samp>#import</samp>&rsquo; and &lsquo;<samp>#include</samp>&rsquo; to refer to the same header file.
+</p>
+<p>Another way to prevent a header file from being included more than once
+is with the &lsquo;<samp>#pragma once</samp>&rsquo; directive (see <a href="Pragmas.html#Pragmas">Pragmas</a>).  
+&lsquo;<samp>#pragma once</samp>&rsquo; does not have the problems that &lsquo;<samp>#import</samp>&rsquo; does,
+but it is not recognized by all preprocessors, so you cannot rely on it
+in a portable program.
+</p>
+
+
+
+</body>
+</html>

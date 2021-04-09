@@ -1,0 +1,213 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Binary Utilities: size</title>
+
+<meta name="description" content="GNU Binary Utilities: size">
+<meta name="keywords" content="GNU Binary Utilities: size">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Binutils-Index.html#Binutils-Index" rel="index" title="Binutils Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="strings.html#strings" rel="next" title="strings">
+<link href="ranlib.html#ranlib" rel="prev" title="ranlib">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="size"></a>
+<div class="header">
+<p>
+Next: <a href="strings.html#strings" accesskey="n" rel="next">strings</a>, Previous: <a href="ranlib.html#ranlib" accesskey="p" rel="prev">ranlib</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Binutils-Index.html#Binutils-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="size-1"></a>
+<h2 class="chapter">6 size</h2>
+
+<a name="index-size"></a>
+<a name="index-section-sizes"></a>
+
+
+<div class="smallexample">
+<pre class="smallexample">size [<samp>-A</samp>|<samp>-B</samp>|<samp>-G</samp>|<samp>--format=</samp><var>compatibility</var>]
+     [<samp>--help</samp>]
+     [<samp>-d</samp>|<samp>-o</samp>|<samp>-x</samp>|<samp>--radix=</samp><var>number</var>]
+     [<samp>--common</samp>]
+     [<samp>-t</samp>|<samp>--totals</samp>]
+     [<samp>--target=</samp><var>bfdname</var>] [<samp>-V</samp>|<samp>--version</samp>]
+     [<var>objfile</var>&hellip;]
+</pre></div>
+
+
+<p>The <small>GNU</small> <code>size</code> utility lists the section sizes and the total
+size for each of the binary files <var>objfile</var> on its argument list.
+By default, one line of output is generated for each file or each
+module if the file is an archive.
+</p>
+<p><var>objfile</var>&hellip; are the files to be examined.  If none are
+specified, the file <code>a.out</code> will be used instead.
+</p>
+
+
+<p>The command-line options have the following meanings:
+</p>
+<dl compact="compact">
+<dt><code>-A</code></dt>
+<dt><code>-B</code></dt>
+<dt><code>-G</code></dt>
+<dt><code>--format=<var>compatibility</var></code></dt>
+<dd><a name="index-size-display-format"></a>
+<p>Using one of these options, you can choose whether the output from <small>GNU</small>
+<code>size</code> resembles output from System V <code>size</code> (using <samp>-A</samp>,
+or <samp>--format=sysv</samp>), or Berkeley <code>size</code> (using <samp>-B</samp>, or
+<samp>--format=berkeley</samp>).  The default is the one-line format similar to
+Berkeley&rsquo;s.  Alternatively, you can choose the GNU format output
+(using <samp>-G</samp>, or <samp>--format=gnu</samp>), this is similar to
+Berkeley&rsquo;s output format, but sizes are counted differently.
+</p>
+<p>Here is an example of the Berkeley (default) format of output from
+<code>size</code>:
+</p><div class="smallexample">
+<pre class="smallexample">$ size --format=Berkeley ranlib size
+   text    data     bss     dec     hex filename
+ 294880   81920   11592  388392   5ed28 ranlib
+ 294880   81920   11888  388688   5ee50 size
+</pre></div>
+
+<p>The Berkeley style output counts read only data in the <code>text</code>
+column, not in the <code>data</code> column, the <code>dec</code> and <code>hex</code>
+columns both display the sum of the <code>text</code>, <code>data</code>, and
+<code>bss</code> columns in decimal and hexadecimal respectively.
+</p>
+<p>The GNU format counts read only data in the <code>data</code> column, not
+the <code>text</code> column, and only displays the sum of the <code>text</code>,
+<code>data</code>, and <code>bss</code> columns once, in the <code>total</code> column.
+The <samp>--radix</samp> option can be used to change the number base for
+all columns.  Here is the same data displayed with GNU conventions:
+</p>
+<div class="smallexample">
+<pre class="smallexample">$ size --format=GNU ranlib size
+      text       data        bss      total filename
+    279880      96920      11592     388392 ranlib
+    279880      96920      11888     388688 size
+</pre></div>
+
+<p>This is the same data, but displayed closer to System V conventions:
+</p>
+<div class="smallexample">
+<pre class="smallexample">$ size --format=SysV ranlib size
+ranlib  :
+section         size         addr
+.text         294880         8192
+.data          81920       303104
+.bss           11592       385024
+Total         388392
+
+
+size  :
+section         size         addr
+.text         294880         8192
+.data          81920       303104
+.bss           11888       385024
+Total         388688
+</pre></div>
+
+</dd>
+<dt><code>--help</code></dt>
+<dd><p>Show a summary of acceptable arguments and options.
+</p>
+</dd>
+<dt><code>-d</code></dt>
+<dt><code>-o</code></dt>
+<dt><code>-x</code></dt>
+<dt><code>--radix=<var>number</var></code></dt>
+<dd><a name="index-size-number-format"></a>
+<a name="index-radix-for-section-sizes"></a>
+<p>Using one of these options, you can control whether the size of each
+section is given in decimal (<samp>-d</samp>, or <samp>--radix=10</samp>); octal
+(<samp>-o</samp>, or <samp>--radix=8</samp>); or hexadecimal (<samp>-x</samp>, or
+<samp>--radix=16</samp>).  In <samp>--radix=<var>number</var></samp>, only the three
+values (8, 10, 16) are supported.  The total size is always given in two
+radices; decimal and hexadecimal for <samp>-d</samp> or <samp>-x</samp> output, or
+octal and hexadecimal if you&rsquo;re using <samp>-o</samp>.
+</p>
+</dd>
+<dt><code>--common</code></dt>
+<dd><p>Print total size of common symbols in each file.  When using Berkeley
+or GNU format these are included in the bss size.
+</p>
+</dd>
+<dt><code>-t</code></dt>
+<dt><code>--totals</code></dt>
+<dd><p>Show totals of all objects listed (Berkeley or GNU format mode only).
+</p>
+</dd>
+<dt><code>--target=<var>bfdname</var></code></dt>
+<dd><a name="index-object-code-format-2"></a>
+<p>Specify that the object-code format for <var>objfile</var> is
+<var>bfdname</var>.  This option may not be necessary; <code>size</code> can
+automatically recognize many formats.
+See <a href="Target-Selection.html#Target-Selection">Target Selection</a>, for more information.
+</p>
+</dd>
+<dt><code>-V</code></dt>
+<dt><code>--version</code></dt>
+<dd><p>Display the version number of <code>size</code>.
+</p></dd>
+</dl>
+
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="strings.html#strings" accesskey="n" rel="next">strings</a>, Previous: <a href="ranlib.html#ranlib" accesskey="p" rel="prev">ranlib</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Binutils-Index.html#Binutils-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,23 @@
+# aprofile-validation-v2m.specs
+#
+# Spec file for AArch32 A profile baremetal newlib, libgloss on
+# VALIDATION platform with AngelAPI semi-hosting version 2 using the HLT
+# trap instruction.
+#
+# This Spec file is also appropriate for the foundation model.
+
+%rename link old_link
+
+*link:
+--defsym=_rdimon_vector_base=0x00000000 -Ttext-segment=0x00010000 %(old_link)
+
+%rename lib libc
+
+*libgloss:
+-lrdimon-v2m
+
+*lib:
+cpu-init/rdimon-aem.o%s --start-group %(libc) %(libgloss) --end-group
+
+*startfile:
+crti%O%s crtbegin%O%s %{!pg:rdimon-crt0-v2m%O%s} %{pg:rdimon-crt0-v2m%O%s}

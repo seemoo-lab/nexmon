@@ -1,0 +1,155 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: GFORTRAN_CONVERT_UNIT</title>
+
+<meta name="description" content="The GNU Fortran Compiler: GFORTRAN_CONVERT_UNIT">
+<meta name="keywords" content="The GNU Fortran Compiler: GFORTRAN_CONVERT_UNIT">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Runtime.html#Runtime" rel="up" title="Runtime">
+<link href="GFORTRAN_005fERROR_005fBACKTRACE.html#GFORTRAN_005fERROR_005fBACKTRACE" rel="next" title="GFORTRAN_ERROR_BACKTRACE">
+<link href="GFORTRAN_005fLIST_005fSEPARATOR.html#GFORTRAN_005fLIST_005fSEPARATOR" rel="prev" title="GFORTRAN_LIST_SEPARATOR">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="GFORTRAN_005fCONVERT_005fUNIT"></a>
+<div class="header">
+<p>
+Next: <a href="GFORTRAN_005fERROR_005fBACKTRACE.html#GFORTRAN_005fERROR_005fBACKTRACE" accesskey="n" rel="next">GFORTRAN_ERROR_BACKTRACE</a>, Previous: <a href="GFORTRAN_005fLIST_005fSEPARATOR.html#GFORTRAN_005fLIST_005fSEPARATOR" accesskey="p" rel="prev">GFORTRAN_LIST_SEPARATOR</a>, Up: <a href="Runtime.html#Runtime" accesskey="u" rel="up">Runtime</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="GFORTRAN_005fCONVERT_005fUNIT_002d_002d_002dSet-endianness-for-unformatted-I_002fO"></a>
+<h3 class="section">3.10 <code>GFORTRAN_CONVERT_UNIT</code>&mdash;Set endianness for unformatted I/O</h3>
+
+<p>By setting the <code>GFORTRAN_CONVERT_UNIT</code> variable, it is possible
+to change the representation of data for unformatted files.
+The syntax for the <code>GFORTRAN_CONVERT_UNIT</code> variable is:
+</p><div class="smallexample">
+<pre class="smallexample">GFORTRAN_CONVERT_UNIT: mode | mode ';' exception | exception ;
+mode: 'native' | 'swap' | 'big_endian' | 'little_endian' ;
+exception: mode ':' unit_list | unit_list ;
+unit_list: unit_spec | unit_list unit_spec ;
+unit_spec: INTEGER | INTEGER '-' INTEGER ;
+</pre></div>
+<p>The variable consists of an optional default mode, followed by
+a list of optional exceptions, which are separated by semicolons
+from the preceding default and each other.  Each exception consists
+of a format and a comma-separated list of units.  Valid values for
+the modes are the same as for the <code>CONVERT</code> specifier:
+</p>
+<ul class="no-bullet">
+<li><!-- /@w --> <code>NATIVE</code> Use the native format.  This is the default.
+</li><li><!-- /@w --> <code>SWAP</code> Swap between little- and big-endian.
+</li><li><!-- /@w --> <code>LITTLE_ENDIAN</code> Use the little-endian format
+for unformatted files.
+</li><li><!-- /@w --> <code>BIG_ENDIAN</code> Use the big-endian format for unformatted files.
+</li></ul>
+<p>A missing mode for an exception is taken to mean <code>BIG_ENDIAN</code>.
+Examples of values for <code>GFORTRAN_CONVERT_UNIT</code> are:
+</p><ul class="no-bullet">
+<li><!-- /@w --> <code>'big_endian'</code>  Do all unformatted I/O in big_endian mode.
+</li><li><!-- /@w --> <code>'little_endian;native:10-20,25'</code>  Do all unformatted I/O
+in little_endian mode, except for units 10 to 20 and 25, which are in
+native format.
+</li><li><!-- /@w --> <code>'10-20'</code>  Units 10 to 20 are big-endian, the rest is native.
+</li></ul>
+
+<p>Setting the environment variables should be done on the command
+line or via the <code>export</code>
+command for <code>sh</code>-compatible shells and via <code>setenv</code>
+for <code>csh</code>-compatible shells.
+</p>
+<p>Example for <code>sh</code>:
+</p><div class="smallexample">
+<pre class="smallexample">$ gfortran foo.f90
+$ GFORTRAN_CONVERT_UNIT='big_endian;native:10-20' ./a.out
+</pre></div>
+
+<p>Example code for <code>csh</code>:
+</p><div class="smallexample">
+<pre class="smallexample">% gfortran foo.f90
+% setenv GFORTRAN_CONVERT_UNIT 'big_endian;native:10-20'
+% ./a.out
+</pre></div>
+
+<p>Using anything but the native representation for unformatted data
+carries a significant speed overhead.  If speed in this area matters
+to you, it is best if you use this only for data that needs to be
+portable.
+</p>
+<p>See <a href="CONVERT-specifier.html#CONVERT-specifier">CONVERT specifier</a>, for an alternative way to specify the
+data representation for unformatted files.  See <a href="Runtime-Options.html#Runtime-Options">Runtime Options</a>, for
+setting a default data representation for the whole program.  The
+<code>CONVERT</code> specifier overrides the <samp>-fconvert</samp> compile options.
+</p>
+<p><em>Note that the values specified via the GFORTRAN_CONVERT_UNIT
+environment variable will override the CONVERT specifier in the
+open statement</em>.  This is to give control over data formats to
+users who do not have the source code of their program available.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="GFORTRAN_005fERROR_005fBACKTRACE.html#GFORTRAN_005fERROR_005fBACKTRACE" accesskey="n" rel="next">GFORTRAN_ERROR_BACKTRACE</a>, Previous: <a href="GFORTRAN_005fLIST_005fSEPARATOR.html#GFORTRAN_005fLIST_005fSEPARATOR" accesskey="p" rel="prev">GFORTRAN_LIST_SEPARATOR</a>, Up: <a href="Runtime.html#Runtime" accesskey="u" rel="up">Runtime</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

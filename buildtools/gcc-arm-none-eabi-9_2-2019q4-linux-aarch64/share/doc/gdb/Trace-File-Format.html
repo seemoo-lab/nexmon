@@ -1,0 +1,169 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Trace File Format</title>
+
+<meta name="description" content="Debugging with GDB: Trace File Format">
+<meta name="keywords" content="Debugging with GDB: Trace File Format">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Index-Section-Format.html#Index-Section-Format" rel="next" title="Index Section Format">
+<link href="Process-list.html#Process-list" rel="prev" title="Process list">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Trace-File-Format"></a>
+<div class="header">
+<p>
+Next: <a href="Index-Section-Format.html#Index-Section-Format" accesskey="n" rel="next">Index Section Format</a>, Previous: <a href="Operating-System-Information.html#Operating-System-Information" accesskey="p" rel="prev">Operating System Information</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Trace-File-Format-1"></a>
+<h2 class="appendix">Appendix I Trace File Format</h2>
+<a name="index-trace-file-format"></a>
+
+<p>The trace file comes in three parts: a header, a textual description
+section, and a trace frame section with binary data.
+</p>
+<p>The header has the form <code>\x7fTRACE0\n</code>.  The first byte is
+<code>0x7f</code> so as to indicate that the file contains binary data,
+while the <code>0</code> is a version number that may have different values
+in the future.
+</p>
+<p>The description section consists of multiple lines of <small>ASCII</small> text
+separated by newline characters (<code>0xa</code>).  The lines may include a
+variety of optional descriptive or context-setting information, such
+as tracepoint definitions or register set size.  <small>GDB</small> will
+ignore any line that it does not recognize.  An empty line marks the end
+of this section.
+</p>
+<dl compact="compact">
+<dt><code>R <var>size</var></code></dt>
+<dd><p>Specifies the size of a register block in bytes.  This is equal to the
+size of a <code>g</code> packet payload in the remote protocol.  <var>size</var>
+is an ascii decimal number.  There should be only one such line in
+a single trace file.
+</p>
+</dd>
+<dt><code>status <var>status</var></code></dt>
+<dd><p>Trace status.  <var>status</var> has the same format as a <code>qTStatus</code>
+remote packet reply.  There should be only one such line in a single trace
+file.
+</p>
+</dd>
+<dt><code>tp <var>payload</var></code></dt>
+<dd><p>Tracepoint definition.  The <var>payload</var> has the same format as
+<code>qTfP</code>/<code>qTsP</code> remote packet reply payload.  A single tracepoint
+may take multiple lines of definition, corresponding to the multiple
+reply packets.
+</p>
+</dd>
+<dt><code>tsv <var>payload</var></code></dt>
+<dd><p>Trace state variable definition.  The <var>payload</var> has the same format as
+<code>qTfV</code>/<code>qTsV</code> remote packet reply payload.  A single variable
+may take multiple lines of definition, corresponding to the multiple
+reply packets.
+</p>
+</dd>
+<dt><code>tdesc <var>payload</var></code></dt>
+<dd><p>Target description in XML format.  The <var>payload</var> is a single line of
+the XML file.  All such lines should be concatenated together to get
+the original XML file.  This file is in the same format as <code>qXfer</code>
+<code>features</code> payload, and corresponds to the main <code>target.xml</code>
+file.  Includes are not allowed.
+</p>
+</dd>
+</dl>
+
+<p>The trace frame section consists of a number of consecutive frames.
+Each frame begins with a two-byte tracepoint number, followed by a
+four-byte size giving the amount of data in the frame.  The data in
+the frame consists of a number of blocks, each introduced by a
+character indicating its type (at least register, memory, and trace
+state variable).  The data in this section is raw binary, not a
+hexadecimal or other encoding; its endianness matches the target&rsquo;s
+endianness.
+</p>
+
+<dl compact="compact">
+<dt><code>R <var>bytes</var></code></dt>
+<dd><p>Register block.  The number and ordering of bytes matches that of a
+<code>g</code> packet in the remote protocol.  Note that these are the
+actual bytes, in target order, not a hexadecimal encoding.
+</p>
+</dd>
+<dt><code>M <var>address</var> <var>length</var> <var>bytes</var>...</code></dt>
+<dd><p>Memory block.  This is a contiguous block of memory, at the 8-byte
+address <var>address</var>, with a 2-byte length <var>length</var>, followed by
+<var>length</var> bytes.
+</p>
+</dd>
+<dt><code>V <var>number</var> <var>value</var></code></dt>
+<dd><p>Trace state variable block.  This records the 8-byte signed value
+<var>value</var> of trace state variable numbered <var>number</var>.
+</p>
+</dd>
+</dl>
+
+<p>Future enhancements of the trace file format may include additional types
+of blocks.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Index-Section-Format.html#Index-Section-Format" accesskey="n" rel="next">Index Section Format</a>, Previous: <a href="Operating-System-Information.html#Operating-System-Information" accesskey="p" rel="prev">Operating System Information</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

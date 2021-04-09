@@ -1,0 +1,148 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: struct stat</title>
+
+<meta name="description" content="Debugging with GDB: struct stat">
+<meta name="keywords" content="Debugging with GDB: struct stat">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Protocol_002dspecific-Representation-of-Datatypes.html#Protocol_002dspecific-Representation-of-Datatypes" rel="up" title="Protocol-specific Representation of Datatypes">
+<link href="struct-timeval.html#struct-timeval" rel="next" title="struct timeval">
+<link href="Memory-Transfer.html#Memory-Transfer" rel="prev" title="Memory Transfer">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="struct-stat"></a>
+<div class="header">
+<p>
+Next: <a href="struct-timeval.html#struct-timeval" accesskey="n" rel="next">struct timeval</a>, Previous: <a href="Memory-Transfer.html#Memory-Transfer" accesskey="p" rel="prev">Memory Transfer</a>, Up: <a href="Protocol_002dspecific-Representation-of-Datatypes.html#Protocol_002dspecific-Representation-of-Datatypes" accesskey="u" rel="up">Protocol-specific Representation of Datatypes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="struct-stat-1"></a>
+<h4 class="unnumberedsubsubsec">struct stat</h4>
+<a name="index-struct-stat_002c-in-file_002di_002fo-protocol"></a>
+
+<p>The buffer of type <code>struct stat</code> used by the target and <small>GDB</small> 
+is defined as follows:
+</p>
+<div class="smallexample">
+<pre class="smallexample">struct stat {
+    unsigned int  st_dev;      /* device */
+    unsigned int  st_ino;      /* inode */
+    mode_t        st_mode;     /* protection */
+    unsigned int  st_nlink;    /* number of hard links */
+    unsigned int  st_uid;      /* user ID of owner */
+    unsigned int  st_gid;      /* group ID of owner */
+    unsigned int  st_rdev;     /* device type (if inode device) */
+    unsigned long st_size;     /* total size, in bytes */
+    unsigned long st_blksize;  /* blocksize for filesystem I/O */
+    unsigned long st_blocks;   /* number of blocks allocated */
+    time_t        st_atime;    /* time of last access */
+    time_t        st_mtime;    /* time of last modification */
+    time_t        st_ctime;    /* time of last change */
+};
+</pre></div>
+
+<p>The integral datatypes conform to the definitions given in the
+appropriate section (see <a href="Integral-Datatypes.html#Integral-Datatypes">Integral Datatypes</a>, for details) so this
+structure is of size 64 bytes.
+</p>
+<p>The values of several fields have a restricted meaning and/or
+range of values.
+</p>
+<dl compact="compact">
+<dt><code>st_dev</code></dt>
+<dd><p>A value of 0 represents a file, 1 the console.
+</p>
+</dd>
+<dt><code>st_ino</code></dt>
+<dd><p>No valid meaning for the target.  Transmitted unchanged.
+</p>
+</dd>
+<dt><code>st_mode</code></dt>
+<dd><p>Valid mode bits are described in <a href="Constants.html#Constants">Constants</a>.  Any other
+bits have currently no meaning for the target.
+</p>
+</dd>
+<dt><code>st_uid</code></dt>
+<dt><code>st_gid</code></dt>
+<dt><code>st_rdev</code></dt>
+<dd><p>No valid meaning for the target.  Transmitted unchanged.
+</p>
+</dd>
+<dt><code>st_atime</code></dt>
+<dt><code>st_mtime</code></dt>
+<dt><code>st_ctime</code></dt>
+<dd><p>These values have a host and file system dependent
+accuracy.  Especially on Windows hosts, the file system may not
+support exact timing values.
+</p></dd>
+</dl>
+
+<p>The target gets a <code>struct stat</code> of the above representation and is
+responsible for coercing it to the target representation before
+continuing.
+</p>
+<p>Note that due to size differences between the host, target, and protocol
+representations of <code>struct stat</code> members, these members could eventually
+get truncated on the target.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="struct-timeval.html#struct-timeval" accesskey="n" rel="next">struct timeval</a>, Previous: <a href="Memory-Transfer.html#Memory-Transfer" accesskey="p" rel="prev">Memory Transfer</a>, Up: <a href="Protocol_002dspecific-Representation-of-Datatypes.html#Protocol_002dspecific-Representation-of-Datatypes" accesskey="u" rel="up">Protocol-specific Representation of Datatypes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

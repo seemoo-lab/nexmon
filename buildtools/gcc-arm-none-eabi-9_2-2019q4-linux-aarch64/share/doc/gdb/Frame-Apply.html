@@ -1,0 +1,213 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Frame Apply</title>
+
+<meta name="description" content="Debugging with GDB: Frame Apply">
+<meta name="keywords" content="Debugging with GDB: Frame Apply">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Stack.html#Stack" rel="up" title="Stack">
+<link href="Frame-Filter-Management.html#Frame-Filter-Management" rel="next" title="Frame Filter Management">
+<link href="Frame-Info.html#Frame-Info" rel="prev" title="Frame Info">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Frame-Apply"></a>
+<div class="header">
+<p>
+Next: <a href="Frame-Filter-Management.html#Frame-Filter-Management" accesskey="n" rel="next">Frame Filter Management</a>, Previous: <a href="Frame-Info.html#Frame-Info" accesskey="p" rel="prev">Frame Info</a>, Up: <a href="Stack.html#Stack" accesskey="u" rel="up">Stack</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Applying-a-Command-to-Several-Frames_002e"></a>
+<h3 class="section">8.5 Applying a Command to Several Frames.</h3>
+<a name="index-frame-apply"></a>
+<a name="index-apply-command-to-several-frames"></a>
+<dl compact="compact">
+<dt><code>frame apply [all | <var>count</var> | <var>-count</var> | level <var>level</var>&hellip;] [<var>flag</var>]&hellip; <var>command</var></code></dt>
+<dd><p>The <code>frame apply</code> command allows you to apply the named
+<var>command</var> to one or more frames.
+</p>
+<dl compact="compact">
+<dt><code><code>all</code></code></dt>
+<dd><p>Specify <code>all</code> to apply <var>command</var> to all frames.
+</p>
+</dd>
+<dt><code><var>count</var></code></dt>
+<dd><p>Use <var>count</var> to apply <var>command</var> to the innermost <var>count</var>
+frames, where <var>count</var> is a positive number.
+</p>
+</dd>
+<dt><code><var>-count</var></code></dt>
+<dd><p>Use <var>-count</var> to apply <var>command</var> to the outermost <var>count</var>
+frames, where <var>count</var> is a positive number.
+</p>
+</dd>
+<dt><code><code>level</code></code></dt>
+<dd><p>Use <code>level</code> to apply <var>command</var> to the set of frames identified
+by the <var>level</var> list.  <var>level</var> is a frame level or a range of frame
+levels as <var>level1</var>-<var>level2</var>.  The frame level is the number shown
+in the first field of the &lsquo;<samp>backtrace</samp>&rsquo; command output.
+E.g., &lsquo;<samp>2-4 6-8 3</samp>&rsquo; indicates to apply <var>command</var> for the frames
+at levels 2, 3, 4, 6, 7, 8, and then again on frame at level 3.
+</p>
+</dd>
+</dl>
+
+</dd>
+</dl>
+
+<p>Note that the frames on which <code>frame apply</code> applies a command are
+also influenced by the <code>set backtrace</code> settings such as <code>set
+backtrace past-main</code> and <code>set backtrace limit N</code>.  See
+See <a href="Backtrace.html#Backtrace">Backtraces</a>.
+</p>
+<p>The <var>flag</var> arguments control what output to produce and how to handle
+errors raised when applying <var>command</var> to a frame.  <var>flag</var>
+must start with a <code>-</code> directly followed by one letter in
+<code>qcs</code>.  If several flags are provided, they must be given
+individually, such as <code>-c -q</code>.
+</p>
+<p>By default, <small>GDB</small> displays some frame information before the
+output produced by <var>command</var>, and an error raised during the
+execution of a <var>command</var> will abort <code>frame apply</code>.  The
+following flags can be used to fine-tune this behavior:
+</p>
+<dl compact="compact">
+<dt><code>-c</code></dt>
+<dd><p>The flag <code>-c</code>, which stands for &lsquo;<samp>continue</samp>&rsquo;, causes any
+errors in <var>command</var> to be displayed, and the execution of
+<code>frame apply</code> then continues.
+</p></dd>
+<dt><code>-s</code></dt>
+<dd><p>The flag <code>-s</code>, which stands for &lsquo;<samp>silent</samp>&rsquo;, causes any errors
+or empty output produced by a <var>command</var> to be silently ignored.
+That is, the execution continues, but the frame information and errors
+are not printed.
+</p></dd>
+<dt><code>-q</code></dt>
+<dd><p>The flag <code>-q</code> (&lsquo;<samp>quiet</samp>&rsquo;) disables printing the frame
+information.
+</p></dd>
+</dl>
+
+<p>The following example shows how the flags <code>-c</code> and <code>-s</code> are
+working when applying the command <code>p j</code> to all frames, where
+variable <code>j</code> can only be successfully printed in the outermost
+<code>#1 main</code> frame.
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) frame apply all p j
+#0  some_function (i=5) at fun.c:4
+No symbol &quot;j&quot; in current context.
+(gdb) frame apply all -c p j
+#0  some_function (i=5) at fun.c:4
+No symbol &quot;j&quot; in current context.
+#1  0x565555fb in main (argc=1, argv=0xffffd2c4) at fun.c:11
+$1 = 5
+(gdb) frame apply all -s p j
+#1  0x565555fb in main (argc=1, argv=0xffffd2c4) at fun.c:11
+$2 = 5
+(gdb)
+</pre></div>
+
+<p>By default, &lsquo;<samp>frame apply</samp>&rsquo;, prints the frame location
+information before the command output:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) frame apply all p $sp
+#0  some_function (i=5) at fun.c:4
+$4 = (void *) 0xffffd1e0
+#1  0x565555fb in main (argc=1, argv=0xffffd2c4) at fun.c:11
+$5 = (void *) 0xffffd1f0
+(gdb)
+</pre></div>
+
+<p>If flag <code>-q</code> is given, no frame information is printed:
+</p><div class="smallexample">
+<pre class="smallexample">(gdb) frame apply all -q p $sp
+$12 = (void *) 0xffffd1e0
+$13 = (void *) 0xffffd1f0
+(gdb)
+</pre></div>
+
+<dl compact="compact">
+<dd>
+<a name="index-faas"></a>
+<a name="index-apply-a-command-to-all-frames-_0028ignoring-errors-and-empty-output_0029"></a>
+</dd>
+<dt><code>faas <var>command</var></code></dt>
+<dd><p>Shortcut for <code>frame apply all -s <var>command</var></code>.
+Applies <var>command</var> on all frames, ignoring errors and empty output.
+</p>
+<p>It can for example be used to print a local variable or a function
+argument without knowing the frame where this variable or argument
+is, using:
+</p><div class="smallexample">
+<pre class="smallexample">(gdb) faas p some_local_var_i_do_not_remember_where_it_is
+</pre></div>
+
+<p>Note that the command <code>tfaas <var>command</var></code> applies <var>command</var>
+on all frames of all threads.  See See <a href="Threads.html#Threads">Threads</a>.
+</p></dd>
+</dl>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Frame-Filter-Management.html#Frame-Filter-Management" accesskey="n" rel="next">Frame Filter Management</a>, Previous: <a href="Frame-Info.html#Frame-Info" accesskey="p" rel="prev">Frame Info</a>, Up: <a href="Stack.html#Stack" accesskey="u" rel="up">Stack</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

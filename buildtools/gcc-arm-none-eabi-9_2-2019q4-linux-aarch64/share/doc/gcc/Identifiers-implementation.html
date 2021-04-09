@@ -1,0 +1,107 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Identifiers implementation</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Identifiers implementation">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Identifiers implementation">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C-Implementation.html#C-Implementation" rel="up" title="C Implementation">
+<link href="Characters-implementation.html#Characters-implementation" rel="next" title="Characters implementation">
+<link href="Environment-implementation.html#Environment-implementation" rel="prev" title="Environment implementation">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Identifiers-implementation"></a>
+<div class="header">
+<p>
+Next: <a href="Characters-implementation.html#Characters-implementation" accesskey="n" rel="next">Characters implementation</a>, Previous: <a href="Environment-implementation.html#Environment-implementation" accesskey="p" rel="prev">Environment implementation</a>, Up: <a href="C-Implementation.html#C-Implementation" accesskey="u" rel="up">C Implementation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Identifiers"></a>
+<h3 class="section">4.3 Identifiers</h3>
+
+<ul>
+<li> <cite>Which additional multibyte characters may appear in identifiers
+and their correspondence to universal character names (C99 and C11 6.4.2).</cite>
+
+<p>See <a href="http://gcc.gnu.org/onlinedocs/cpp/Implementation_002ddefined-behavior.html#Implementation_002ddefined-behavior">Implementation-defined
+behavior</a> in <cite>The C Preprocessor</cite>.
+</p>
+</li><li> <cite>The number of significant initial characters in an identifier
+(C90 6.1.2, C90, C99 and C11 5.2.4.1, C99 and C11 6.4.2).</cite>
+
+<p>For internal names, all characters are significant.  For external names,
+the number of significant characters are defined by the linker; for
+almost all targets, all characters are significant.
+</p>
+</li><li> <cite>Whether case distinctions are significant in an identifier with
+external linkage (C90 6.1.2).</cite>
+
+<p>This is a property of the linker.  C99 and C11 require that case distinctions
+are always significant in identifiers with external linkage and
+systems without this property are not supported by GCC.
+</p>
+</li></ul>
+
+
+
+
+</body>
+</html>

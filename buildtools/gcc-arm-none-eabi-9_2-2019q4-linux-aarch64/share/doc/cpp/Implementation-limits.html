@@ -1,0 +1,152 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1987-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation.  A copy of
+the license is included in the
+section entitled "GNU Free Documentation License".
+
+This manual contains no Invariant Sections.  The Front-Cover Texts are
+(a) (see below), and the Back-Cover Texts are (b) (see below).
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The C Preprocessor: Implementation limits</title>
+
+<meta name="description" content="The C Preprocessor: Implementation limits">
+<meta name="keywords" content="The C Preprocessor: Implementation limits">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Index-of-Directives.html#Index-of-Directives" rel="index" title="Index of Directives">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Implementation-Details.html#Implementation-Details" rel="up" title="Implementation Details">
+<link href="Obsolete-Features.html#Obsolete-Features" rel="next" title="Obsolete Features">
+<link href="Implementation_002ddefined-behavior.html#Implementation_002ddefined-behavior" rel="prev" title="Implementation-defined behavior">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Implementation-limits"></a>
+<div class="header">
+<p>
+Next: <a href="Obsolete-Features.html#Obsolete-Features" accesskey="n" rel="next">Obsolete Features</a>, Previous: <a href="Implementation_002ddefined-behavior.html#Implementation_002ddefined-behavior" accesskey="p" rel="prev">Implementation-defined behavior</a>, Up: <a href="Implementation-Details.html#Implementation-Details" accesskey="u" rel="up">Implementation Details</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index-of-Directives.html#Index-of-Directives" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Implementation-limits-1"></a>
+<h3 class="section">11.2 Implementation limits</h3>
+<a name="index-implementation-limits"></a>
+
+<p>CPP has a small number of internal limits.  This section lists the
+limits which the C standard requires to be no lower than some minimum,
+and all the others known.  It is intended that there should be as few limits
+as possible.  If you encounter an undocumented or inconvenient limit,
+please report that as a bug.  See <a href="http://gcc.gnu.org/onlinedocs/gcc/Bugs.html#Bugs">Reporting Bugs</a> in <cite>Using
+the GNU Compiler Collection (GCC)</cite>.
+</p>
+<p>Where we say something is limited <em>only by available memory</em>, that
+means that internal data structures impose no intrinsic limit, and space
+is allocated with <code>malloc</code> or equivalent.  The actual limit will
+therefore depend on many things, such as the size of other things
+allocated by the compiler at the same time, the amount of memory
+consumed by other processes on the same computer, etc.
+</p>
+<ul>
+<li> Nesting levels of &lsquo;<samp>#include</samp>&rsquo; files.
+
+<p>We impose an arbitrary limit of 200 levels, to avoid runaway recursion.
+The standard requires at least 15 levels.
+</p>
+</li><li> Nesting levels of conditional inclusion.
+
+<p>The C standard mandates this be at least 63.  CPP is limited only by
+available memory.
+</p>
+</li><li> Levels of parenthesized expressions within a full expression.
+
+<p>The C standard requires this to be at least 63.  In preprocessor
+conditional expressions, it is limited only by available memory.
+</p>
+</li><li> Significant initial characters in an identifier or macro name.
+
+<p>The preprocessor treats all characters as significant.  The C standard
+requires only that the first 63 be significant.
+</p>
+</li><li> Number of macros simultaneously defined in a single translation unit.
+
+<p>The standard requires at least 4095 be possible.  CPP is limited only
+by available memory.
+</p>
+</li><li> Number of parameters in a macro definition and arguments in a macro call.
+
+<p>We allow <code>USHRT_MAX</code>, which is no smaller than 65,535.  The minimum
+required by the standard is 127.
+</p>
+</li><li> Number of characters on a logical source line.
+
+<p>The C standard requires a minimum of 4096 be permitted.  CPP places
+no limits on this, but you may get incorrect column numbers reported in
+diagnostics for lines longer than 65,535 characters.
+</p>
+</li><li> Maximum size of a source file.
+
+<p>The standard does not specify any lower limit on the maximum size of a
+source file.  GNU cpp maps files into memory, so it is limited by the
+available address space.  This is generally at least two gigabytes.
+Depending on the operating system, the size of physical memory may or
+may not be a limitation.
+</p>
+</li></ul>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Obsolete-Features.html#Obsolete-Features" accesskey="n" rel="next">Obsolete Features</a>, Previous: <a href="Implementation_002ddefined-behavior.html#Implementation_002ddefined-behavior" accesskey="p" rel="prev">Implementation-defined behavior</a>, Up: <a href="Implementation-Details.html#Implementation-Details" accesskey="u" rel="up">Implementation Details</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index-of-Directives.html#Index-of-Directives" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

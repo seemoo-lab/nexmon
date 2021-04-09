@@ -1,0 +1,96 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: Fill</title>
+
+<meta name="description" content="Using as: Fill">
+<meta name="keywords" content="Using as: Fill">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Pseudo-Ops.html#Pseudo-Ops" rel="up" title="Pseudo Ops">
+<link href="Float.html#Float" rel="next" title="Float">
+<link href="File.html#File" rel="prev" title="File">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Fill"></a>
+<div class="header">
+<p>
+Next: <a href="Float.html#Float" accesskey="n" rel="next">Float</a>, Previous: <a href="File.html#File" accesskey="p" rel="prev">File</a>, Up: <a href="Pseudo-Ops.html#Pseudo-Ops" accesskey="u" rel="up">Pseudo Ops</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="g_t_002efill-repeat-_002c-size-_002c-value"></a>
+<h3 class="section">7.36 <code>.fill <var>repeat</var> , <var>size</var> , <var>value</var></code></h3>
+
+<a name="index-fill-directive"></a>
+<a name="index-writing-patterns-in-memory"></a>
+<a name="index-patterns_002c-writing-in-memory"></a>
+<p><var>repeat</var>, <var>size</var> and <var>value</var> are absolute expressions.
+This emits <var>repeat</var> copies of <var>size</var> bytes.  <var>Repeat</var>
+may be zero or more.  <var>Size</var> may be zero or more, but if it is
+more than 8, then it is deemed to have the value 8, compatible with
+other people&rsquo;s assemblers.  The contents of each <var>repeat</var> bytes
+is taken from an 8-byte number.  The highest order 4 bytes are
+zero.  The lowest order 4 bytes are <var>value</var> rendered in the
+byte-order of an integer on the computer <code>as</code> is assembling for.
+Each <var>size</var> bytes in a repetition is taken from the lowest order
+<var>size</var> bytes of this number.  Again, this bizarre behavior is
+compatible with other people&rsquo;s assemblers.
+</p>
+<p><var>size</var> and <var>value</var> are optional.
+If the second comma and <var>value</var> are absent, <var>value</var> is
+assumed zero.  If the first comma and following tokens are absent,
+<var>size</var> is assumed to be 1.
+</p>
+
+
+
+</body>
+</html>

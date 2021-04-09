@@ -1,0 +1,288 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Completion</title>
+
+<meta name="description" content="Debugging with GDB: Completion">
+<meta name="keywords" content="Debugging with GDB: Completion">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Commands.html#Commands" rel="up" title="Commands">
+<link href="Help.html#Help" rel="next" title="Help">
+<link href="Command-Syntax.html#Command-Syntax" rel="prev" title="Command Syntax">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Completion"></a>
+<div class="header">
+<p>
+Next: <a href="Help.html#Help" accesskey="n" rel="next">Help</a>, Previous: <a href="Command-Syntax.html#Command-Syntax" accesskey="p" rel="prev">Command Syntax</a>, Up: <a href="Commands.html#Commands" accesskey="u" rel="up">Commands</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Command-Completion"></a>
+<h3 class="section">3.2 Command Completion</h3>
+
+<a name="index-completion"></a>
+<a name="index-word-completion"></a>
+<p><small>GDB</small> can fill in the rest of a word in a command for you, if there is
+only one possibility; it can also show you what the valid possibilities
+are for the next word in a command, at any time.  This works for <small>GDB</small>
+commands, <small>GDB</small> subcommands, and the names of symbols in your program.
+</p>
+<p>Press the <tt class="key">TAB</tt> key whenever you want <small>GDB</small> to fill out the rest
+of a word.  If there is only one possibility, <small>GDB</small> fills in the
+word, and waits for you to finish the command (or press <tt class="key">RET</tt> to
+enter it).  For example, if you type
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) info bre <span class="key">TAB</span>
+</pre></div>
+
+<p><small>GDB</small> fills in the rest of the word &lsquo;<samp>breakpoints</samp>&rsquo;, since that is
+the only <code>info</code> subcommand beginning with &lsquo;<samp>bre</samp>&rsquo;:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) info breakpoints
+</pre></div>
+
+<p>You can either press <tt class="key">RET</tt> at this point, to run the <code>info
+breakpoints</code> command, or backspace and enter something else, if
+&lsquo;<samp>breakpoints</samp>&rsquo; does not look like the command you expected.  (If you
+were sure you wanted <code>info breakpoints</code> in the first place, you
+might as well just type <tt class="key">RET</tt> immediately after &lsquo;<samp>info bre</samp>&rsquo;,
+to exploit command abbreviations rather than command completion).
+</p>
+<p>If there is more than one possibility for the next word when you press
+<tt class="key">TAB</tt>, <small>GDB</small> sounds a bell.  You can either supply more
+characters and try again, or just press <tt class="key">TAB</tt> a second time;
+<small>GDB</small> displays all the possible completions for that word.  For
+example, you might want to set a breakpoint on a subroutine whose name
+begins with &lsquo;<samp>make_</samp>&rsquo;, but when you type <kbd>b make_<span class="key">TAB</span></kbd> <small>GDB</small>
+just sounds the bell.  Typing <tt class="key">TAB</tt> again displays all the
+function names in your program that begin with those characters, for
+example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) b make_ <span class="key">TAB</span>
+</pre><pre class="smallexample">GDB sounds bell; press <span class="key">TAB</span> again, to see:
+</pre><pre class="smallexample">make_a_section_from_file     make_environ
+make_abs_section             make_function_type
+make_blockvector             make_pointer_type
+make_cleanup                 make_reference_type
+make_command                 make_symbol_completion_list
+(gdb) b make_
+</pre></div>
+
+<p>After displaying the available possibilities, <small>GDB</small> copies your
+partial input (&lsquo;<samp>b make_</samp>&rsquo; in the example) so you can finish the
+command.
+</p>
+<p>If you just want to see the list of alternatives in the first place, you
+can press <kbd>M-?</kbd> rather than pressing <tt class="key">TAB</tt> twice.  <kbd>M-?</kbd>
+means <kbd><span class="key">META</span> ?</kbd>.  You can type this either by holding down a
+key designated as the <tt class="key">META</tt> shift on your keyboard (if there is
+one) while typing <kbd>?</kbd>, or as <tt class="key">ESC</tt> followed by <kbd>?</kbd>.
+</p>
+<p>If the number of possible completions is large, <small>GDB</small> will
+print as much of the list as it has collected, as well as a message
+indicating that the list may be truncated.
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) b m<span class="key">TAB</span><span class="key">TAB</span>
+main
+&lt;... the rest of the possible completions ...&gt;
+*** List may be truncated, max-completions reached. ***
+(gdb) b m
+</pre></div>
+
+<p>This behavior can be controlled with the following commands:
+</p>
+<dl compact="compact">
+<dd><a name="index-set-max_002dcompletions"></a>
+</dd>
+<dt><code>set max-completions <var>limit</var></code></dt>
+<dt><code>set max-completions unlimited</code></dt>
+<dd><p>Set the maximum number of completion candidates.  <small>GDB</small> will
+stop looking for more completions once it collects this many candidates.
+This is useful when completing on things like function names as collecting
+all the possible candidates can be time consuming.
+The default value is 200.  A value of zero disables tab-completion.
+Note that setting either no limit or a very large limit can make
+completion slow.
+<a name="index-show-max_002dcompletions"></a>
+</p></dd>
+<dt><code>show max-completions</code></dt>
+<dd><p>Show the maximum number of candidates that <small>GDB</small> will collect and show
+during completion.
+</p></dd>
+</dl>
+
+<a name="index-quotes-in-commands"></a>
+<a name="index-completion-of-quoted-strings"></a>
+<p>Sometimes the string you need, while logically a &ldquo;word&rdquo;, may contain
+parentheses or other characters that <small>GDB</small> normally excludes from
+its notion of a word.  To permit word completion to work in this
+situation, you may enclose words in <code>'</code> (single quote marks) in
+<small>GDB</small> commands.
+</p>
+<p>A likely situation where you might need this is in typing an
+expression that involves a C<tt>++</tt> symbol name with template
+parameters.  This is because when completing expressions, GDB treats
+the &lsquo;<samp>&lt;</samp>&rsquo; character as word delimiter, assuming that it&rsquo;s the
+less-than comparison operator (see <a href="C-Operators.html#C-Operators">C and C<tt>++</tt>
+Operators</a>).
+</p>
+<p>For example, when you want to call a C<tt>++</tt> template function
+interactively using the <code>print</code> or <code>call</code> commands, you may
+need to distinguish whether you mean the version of <code>name</code> that
+was specialized for <code>int</code>, <code>name&lt;int&gt;()</code>, or the version
+that was specialized for <code>float</code>, <code>name&lt;float&gt;()</code>.  To use
+the word-completion facilities in this situation, type a single quote
+<code>'</code> at the beginning of the function name.  This alerts
+<small>GDB</small> that it may need to consider more information than usual
+when you press <tt class="key">TAB</tt> or <kbd>M-?</kbd> to request word completion:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) p 'func&lt; <kbd>M-?</kbd>
+func&lt;int&gt;()    func&lt;float&gt;()
+(gdb) p 'func&lt;
+</pre></div>
+
+<p>When setting breakpoints however (see <a href="Specify-Location.html#Specify-Location">Specify Location</a>), you don&rsquo;t
+usually need to type a quote before the function name, because
+<small>GDB</small> understands that you want to set a breakpoint on a
+function:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) b func&lt; <kbd>M-?</kbd>
+func&lt;int&gt;()    func&lt;float&gt;()
+(gdb) b func&lt;
+</pre></div>
+
+<p>This is true even in the case of typing the name of C<tt>++</tt> overloaded
+functions (multiple definitions of the same function, distinguished by
+argument type).  For example, when you want to set a breakpoint you
+don&rsquo;t need to distinguish whether you mean the version of <code>name</code>
+that takes an <code>int</code> parameter, <code>name(int)</code>, or the version
+that takes a <code>float</code> parameter, <code>name(float)</code>.
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) b bubble( <kbd>M-?</kbd>
+bubble(int)    bubble(double)
+(gdb) b bubble(dou <kbd>M-?</kbd>
+bubble(double)
+</pre></div>
+
+<p>See <a href="Symbols.html#quoting-names">quoting names</a> for a description of other scenarios that
+require quoting.
+</p>
+<p>For more information about overloaded functions, see <a href="C-Plus-Plus-Expressions.html#C-Plus-Plus-Expressions">C<tt>++</tt> Expressions</a>.  You can use the command <code>set
+overload-resolution off</code> to disable overload resolution;
+see <a href="Debugging-C-Plus-Plus.html#Debugging-C-Plus-Plus"><small>GDB</small> Features for C<tt>++</tt></a>.
+</p>
+<a name="index-completion-of-structure-field-names"></a>
+<a name="index-structure-field-name-completion"></a>
+<a name="index-completion-of-union-field-names"></a>
+<a name="index-union-field-name-completion"></a>
+<p>When completing in an expression which looks up a field in a
+structure, <small>GDB</small> also tries<a name="DOCF2" href="#FOOT2"><sup>2</sup></a> to
+limit completions to the field names available in the type of the
+left-hand-side:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) p gdb_stdout.<kbd>M-?</kbd>
+magic                to_fputs             to_rewind
+to_data              to_isatty            to_write
+to_delete            to_put               to_write_async_safe
+to_flush             to_read
+</pre></div>
+
+<p>This is because the <code>gdb_stdout</code> is a variable of the type
+<code>struct ui_file</code> that is defined in <small>GDB</small> sources as
+follows:
+</p>
+<div class="smallexample">
+<pre class="smallexample">struct ui_file
+{
+   int *magic;
+   ui_file_flush_ftype *to_flush;
+   ui_file_write_ftype *to_write;
+   ui_file_write_async_safe_ftype *to_write_async_safe;
+   ui_file_fputs_ftype *to_fputs;
+   ui_file_read_ftype *to_read;
+   ui_file_delete_ftype *to_delete;
+   ui_file_isatty_ftype *to_isatty;
+   ui_file_rewind_ftype *to_rewind;
+   ui_file_put_ftype *to_put;
+   void *to_data;
+}
+</pre></div>
+
+
+<div class="footnote">
+<hr>
+<h4 class="footnotes-heading">Footnotes</h4>
+
+<h3><a name="FOOT2" href="#DOCF2">(2)</a></h3>
+<p>The completer can be
+confused by certain kinds of invalid expressions.  Also, it only
+examines the static type of the expression, not the dynamic type.</p>
+</div>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Help.html#Help" accesskey="n" rel="next">Help</a>, Previous: <a href="Command-Syntax.html#Command-Syntax" accesskey="p" rel="prev">Command Syntax</a>, Up: <a href="Commands.html#Commands" accesskey="u" rel="up">Commands</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

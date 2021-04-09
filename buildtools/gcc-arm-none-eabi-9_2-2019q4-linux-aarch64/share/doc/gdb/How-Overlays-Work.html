@@ -1,0 +1,202 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: How Overlays Work</title>
+
+<meta name="description" content="Debugging with GDB: How Overlays Work">
+<meta name="keywords" content="Debugging with GDB: How Overlays Work">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Overlays.html#Overlays" rel="up" title="Overlays">
+<link href="Overlay-Commands.html#Overlay-Commands" rel="next" title="Overlay Commands">
+<link href="Overlays.html#Overlays" rel="prev" title="Overlays">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="How-Overlays-Work"></a>
+<div class="header">
+<p>
+Next: <a href="Overlay-Commands.html#Overlay-Commands" accesskey="n" rel="next">Overlay Commands</a>, Up: <a href="Overlays.html#Overlays" accesskey="u" rel="up">Overlays</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="How-Overlays-Work-1"></a>
+<h3 class="section">14.1 How Overlays Work</h3>
+<a name="index-mapped-overlays"></a>
+<a name="index-unmapped-overlays"></a>
+<a name="index-load-address_002c-overlay_0027s"></a>
+<a name="index-mapped-address"></a>
+<a name="index-overlay-area"></a>
+
+<p>Suppose you have a computer whose instruction address space is only 64
+kilobytes long, but which has much more memory which can be accessed by
+other means: special instructions, segment registers, or memory
+management hardware, for example.  Suppose further that you want to
+adapt a program which is larger than 64 kilobytes to run on this system.
+</p>
+<p>One solution is to identify modules of your program which are relatively
+independent, and need not call each other directly; call these modules
+<em>overlays</em>.  Separate the overlays from the main program, and place
+their machine code in the larger memory.  Place your main program in
+instruction memory, but leave at least enough space there to hold the
+largest overlay as well.
+</p>
+<p>Now, to call a function located in an overlay, you must first copy that
+overlay&rsquo;s machine code from the large memory into the space set aside
+for it in the instruction memory, and then jump to its entry point
+there.
+</p>
+
+<div class="smallexample">
+<pre class="smallexample">    Data             Instruction            Larger
+Address Space       Address Space        Address Space
++-----------+       +-----------+        +-----------+
+|           |       |           |        |           |
++-----------+       +-----------+        +-----------+&lt;-- overlay 1
+| program   |       |   main    |   .----| overlay 1 | load address
+| variables |       |  program  |   |    +-----------+
+| and heap  |       |           |   |    |           |
++-----------+       |           |   |    +-----------+&lt;-- overlay 2
+|           |       +-----------+   |    |           | load address
++-----------+       |           |   |  .-| overlay 2 |
+                    |           |   |  | |           |
+         mapped ---&gt;+-----------+   |  | +-----------+
+         address    |           |   |  | |           |
+                    |  overlay  | &lt;-'  | |           |
+                    |   area    |  &lt;---' +-----------+&lt;-- overlay 3
+                    |           | &lt;---.  |           | load address
+                    +-----------+     `--| overlay 3 |
+                    |           |        |           |
+                    +-----------+        |           |
+                                         +-----------+
+                                         |           |
+                                         +-----------+
+
+                    <a name="A-code-overlay"></a>A code overlay
+</pre></div>
+
+<p>The diagram (see <a href="#A-code-overlay">A code overlay</a>) shows a system with separate data
+and instruction address spaces.  To map an overlay, the program copies
+its code from the larger address space to the instruction address space.
+Since the overlays shown here all use the same mapped address, only one
+may be mapped at a time.  For a system with a single address space for
+data and instructions, the diagram would be similar, except that the
+program variables and heap would share an address space with the main
+program and the overlay area.
+</p>
+<p>An overlay loaded into instruction memory and ready for use is called a
+<em>mapped</em> overlay; its <em>mapped address</em> is its address in the
+instruction memory.  An overlay not present (or only partially present)
+in instruction memory is called <em>unmapped</em>; its <em>load address</em>
+is its address in the larger memory.  The mapped address is also called
+the <em>virtual memory address</em>, or <em>VMA</em>; the load address is also
+called the <em>load memory address</em>, or <em>LMA</em>.
+</p>
+<p>Unfortunately, overlays are not a completely transparent way to adapt a
+program to limited instruction memory.  They introduce a new set of
+global constraints you must keep in mind as you design your program:
+</p>
+<ul>
+<li> Before calling or returning to a function in an overlay, your program
+must make sure that overlay is actually mapped.  Otherwise, the call or
+return will transfer control to the right address, but in the wrong
+overlay, and your program will probably crash.
+
+</li><li> If the process of mapping an overlay is expensive on your system, you
+will need to choose your overlays carefully to minimize their effect on
+your program&rsquo;s performance.
+
+</li><li> The executable file you load onto your system must contain each
+overlay&rsquo;s instructions, appearing at the overlay&rsquo;s load address, not its
+mapped address.  However, each overlay&rsquo;s instructions must be relocated
+and its symbols defined as if the overlay were at its mapped address.
+You can use GNU linker scripts to specify different load and relocation
+addresses for pieces of your program; see <a href="http://sourceware.org/binutils/docs/ld/Overlay-Description.html#Overlay-Description">Overlay Description</a> in <cite>Using ld: the GNU linker</cite>.
+
+</li><li> The procedure for loading executable files onto your system must be able
+to load their contents into the larger address space as well as the
+instruction and data spaces.
+
+</li></ul>
+
+<p>The overlay system described above is rather simple, and could be
+improved in many ways:
+</p>
+<ul>
+<li> If your system has suitable bank switch registers or memory management
+hardware, you could use those facilities to make an overlay&rsquo;s load area
+contents simply appear at their mapped address in instruction space.
+This would probably be faster than copying the overlay to its mapped
+area in the usual way.
+
+</li><li> If your overlays are small enough, you could set aside more than one
+overlay area, and have more than one overlay mapped at a time.
+
+</li><li> You can use overlays to manage data, as well as instructions.  In
+general, data overlays are even less transparent to your design than
+code overlays: whereas code overlays only require care when you call or
+return to functions, data overlays require care every time you access
+the data.  Also, if you change the contents of a data overlay, you
+must copy its contents back out to its load address before you can copy a
+different data overlay into the same mapped area.
+
+</li></ul>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Overlay-Commands.html#Overlay-Commands" accesskey="n" rel="next">Overlay Commands</a>, Up: <a href="Overlays.html#Overlays" accesskey="u" rel="up">Overlays</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

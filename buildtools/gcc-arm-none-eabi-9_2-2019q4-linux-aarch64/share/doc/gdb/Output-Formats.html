@@ -1,0 +1,202 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Output Formats</title>
+
+<meta name="description" content="Debugging with GDB: Output Formats">
+<meta name="keywords" content="Debugging with GDB: Output Formats">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Data.html#Data" rel="up" title="Data">
+<link href="Memory.html#Memory" rel="next" title="Memory">
+<link href="Arrays.html#Arrays" rel="prev" title="Arrays">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Output-Formats"></a>
+<div class="header">
+<p>
+Next: <a href="Memory.html#Memory" accesskey="n" rel="next">Memory</a>, Previous: <a href="Arrays.html#Arrays" accesskey="p" rel="prev">Arrays</a>, Up: <a href="Data.html#Data" accesskey="u" rel="up">Data</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Output-Formats-1"></a>
+<h3 class="section">10.5 Output Formats</h3>
+
+<a name="index-formatted-output"></a>
+<a name="index-output-formats"></a>
+<p>By default, <small>GDB</small> prints a value according to its data type.  Sometimes
+this is not what you want.  For example, you might want to print a number
+in hex, or a pointer in decimal.  Or you might want to view data in memory
+at a certain address as a character string or as an instruction.  To do
+these things, specify an <em>output format</em> when you print a value.
+</p>
+<p>The simplest use of output formats is to say how to print a value
+already computed.  This is done by starting the arguments of the
+<code>print</code> command with a slash and a format letter.  The format
+letters supported are:
+</p>
+<dl compact="compact">
+<dt><code>x</code></dt>
+<dd><p>Regard the bits of the value as an integer, and print the integer in
+hexadecimal.
+</p>
+</dd>
+<dt><code>d</code></dt>
+<dd><p>Print as integer in signed decimal.
+</p>
+</dd>
+<dt><code>u</code></dt>
+<dd><p>Print as integer in unsigned decimal.
+</p>
+</dd>
+<dt><code>o</code></dt>
+<dd><p>Print as integer in octal.
+</p>
+</dd>
+<dt><code>t</code></dt>
+<dd><p>Print as integer in binary.  The letter &lsquo;<samp>t</samp>&rsquo; stands for &ldquo;two&rdquo;.
+<a name="DOCF10" href="#FOOT10"><sup>10</sup></a>
+</p>
+</dd>
+<dt><code>a</code></dt>
+<dd><a name="index-unknown-address_002c-locating"></a>
+<a name="index-locate-address"></a>
+<p>Print as an address, both absolute in hexadecimal and as an offset from
+the nearest preceding symbol.  You can use this format used to discover
+where (in what function) an unknown address is located:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) p/a 0x54320
+$3 = 0x54320 &lt;_initialize_vx+396&gt;
+</pre></div>
+
+<p>The command <code>info symbol 0x54320</code> yields similar results.
+See <a href="Symbols.html#Symbols">info symbol</a>.
+</p>
+</dd>
+<dt><code>c</code></dt>
+<dd><p>Regard as an integer and print it as a character constant.  This
+prints both the numerical value and its character representation.  The
+character representation is replaced with the octal escape &lsquo;<samp>\nnn</samp>&rsquo;
+for characters outside the 7-bit <small>ASCII</small> range.
+</p>
+<p>Without this format, <small>GDB</small> displays <code>char</code>,
+<code>unsigned&nbsp;char</code><!-- /@w -->, and <code>signed&nbsp;char</code><!-- /@w --> data as character
+constants.  Single-byte members of vectors are displayed as integer
+data.
+</p>
+</dd>
+<dt><code>f</code></dt>
+<dd><p>Regard the bits of the value as a floating point number and print
+using typical floating point syntax.
+</p>
+</dd>
+<dt><code>s</code></dt>
+<dd><a name="index-printing-strings"></a>
+<a name="index-printing-byte-arrays"></a>
+<p>Regard as a string, if possible.  With this format, pointers to single-byte
+data are displayed as null-terminated strings and arrays of single-byte data
+are displayed as fixed-length strings.  Other values are displayed in their
+natural types.
+</p>
+<p>Without this format, <small>GDB</small> displays pointers to and arrays of
+<code>char</code>, <code>unsigned&nbsp;char</code><!-- /@w -->, and <code>signed&nbsp;char</code><!-- /@w --> as
+strings.  Single-byte members of a vector are displayed as an integer
+array.
+</p>
+</dd>
+<dt><code>z</code></dt>
+<dd><p>Like &lsquo;<samp>x</samp>&rsquo; formatting, the value is treated as an integer and
+printed as hexadecimal, but leading zeros are printed to pad the value
+to the size of the integer type.
+</p>
+</dd>
+<dt><code>r</code></dt>
+<dd><a name="index-raw-printing"></a>
+<p>Print using the &lsquo;<samp>raw</samp>&rsquo; formatting.  By default, <small>GDB</small> will
+use a Python-based pretty-printer, if one is available (see <a href="Pretty-Printing.html#Pretty-Printing">Pretty Printing</a>).  This typically results in a higher-level display of the
+value&rsquo;s contents.  The &lsquo;<samp>r</samp>&rsquo; format bypasses any Python
+pretty-printer which might exist.
+</p></dd>
+</dl>
+
+<p>For example, to print the program counter in hex (see <a href="Registers.html#Registers">Registers</a>), type
+</p>
+<div class="smallexample">
+<pre class="smallexample">p/x $pc
+</pre></div>
+
+<p>Note that no space is required before the slash; this is because command
+names in <small>GDB</small> cannot contain a slash.
+</p>
+<p>To reprint the last value in the value history with a different format,
+you can use the <code>print</code> command with just a format and no
+expression.  For example, &lsquo;<samp>p/x</samp>&rsquo; reprints the last value in hex.
+</p>
+<div class="footnote">
+<hr>
+<h4 class="footnotes-heading">Footnotes</h4>
+
+<h3><a name="FOOT10" href="#DOCF10">(10)</a></h3>
+<p>&lsquo;<samp>b</samp>&rsquo; cannot be used because these format letters are also
+used with the <code>x</code> command, where &lsquo;<samp>b</samp>&rsquo; stands for &ldquo;byte&rdquo;;
+see <a href="Memory.html#Memory">Examining Memory</a>.</p>
+</div>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Memory.html#Memory" accesskey="n" rel="next">Memory</a>, Previous: <a href="Arrays.html#Arrays" accesskey="p" rel="prev">Arrays</a>, Up: <a href="Data.html#Data" accesskey="u" rel="up">Data</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

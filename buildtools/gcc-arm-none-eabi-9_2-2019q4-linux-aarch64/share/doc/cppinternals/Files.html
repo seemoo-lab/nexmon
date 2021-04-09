@@ -1,0 +1,135 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU C Preprocessor Internals: Files</title>
+
+<meta name="description" content="The GNU C Preprocessor Internals: Files">
+<meta name="keywords" content="The GNU C Preprocessor Internals: Files">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="next" title="Concept Index">
+<link href="Guard-Macros.html#Guard-Macros" rel="prev" title="Guard Macros">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Files"></a>
+<div class="header">
+<p>
+Next: <a href="Concept-Index.html#Concept-Index" accesskey="n" rel="next">Concept Index</a>, Previous: <a href="Guard-Macros.html#Guard-Macros" accesskey="p" rel="prev">Guard Macros</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="File-Handling"></a>
+<h2 class="unnumbered">File Handling</h2>
+<a name="index-files"></a>
+
+<p>Fairly obviously, the file handling code of cpplib resides in the file
+<samp>files.c</samp>.  It takes care of the details of file searching,
+opening, reading and caching, for both the main source file and all the
+headers it recursively includes.
+</p>
+<p>The basic strategy is to minimize the number of system calls.  On many
+systems, the basic <code>open ()</code> and <code>fstat ()</code> system calls can
+be quite expensive.  For every <code>#include</code>-d file, we need to try
+all the directories in the search path until we find a match.  Some
+projects, such as glibc, pass twenty or thirty include paths on the
+command line, so this can rapidly become time consuming.
+</p>
+<p>For a header file we have not encountered before we have little choice
+but to do this.  However, it is often the case that the same headers are
+repeatedly included, and in these cases we try to avoid repeating the
+filesystem queries whilst searching for the correct file.
+</p>
+<p>For each file we try to open, we store the constructed path in a splay
+tree.  This path first undergoes simplification by the function
+<code>_cpp_simplify_pathname</code>.  For example,
+<samp>/usr/include/bits/../foo.h</samp> is simplified to
+<samp>/usr/include/foo.h</samp> before we enter it in the splay tree and try
+to <code>open ()</code> the file.  CPP will then find subsequent uses of
+<samp>foo.h</samp>, even as <samp>/usr/include/foo.h</samp>, in the splay tree and
+save system calls.
+</p>
+<p>Further, it is likely the file contents have also been cached, saving a
+<code>read ()</code> system call.  We don&rsquo;t bother caching the contents of
+header files that are re-inclusion protected, and whose re-inclusion
+macro is defined when we leave the header file for the first time.  If
+the host supports it, we try to map suitably large files into memory,
+rather than reading them in directly.
+</p>
+<p>The include paths are internally stored on a null-terminated
+singly-linked list, starting with the <code>&quot;header.h&quot;</code> directory search
+chain, which then links into the <code>&lt;header.h&gt;</code> directory chain.
+</p>
+<p>Files included with the <code>&lt;foo.h&gt;</code> syntax start the lookup directly
+in the second half of this chain.  However, files included with the
+<code>&quot;foo.h&quot;</code> syntax start at the beginning of the chain, but with one
+extra directory prepended.  This is the directory of the current file;
+the one containing the <code>#include</code> directive.  Prepending this
+directory on a per-file basis is handled by the function
+<code>search_from</code>.
+</p>
+<p>Note that a header included with a directory component, such as
+<code>#include &quot;mydir/foo.h&quot;</code> and opened as
+<samp>/usr/local/include/mydir/foo.h</samp>, will have the complete path minus
+the basename &lsquo;<samp>foo.h</samp>&rsquo; as the current directory.
+</p>
+<p>Enough information is stored in the splay tree that CPP can immediately
+tell whether it can skip the header file because of the multiple include
+optimization, whether the file didn&rsquo;t exist or couldn&rsquo;t be opened for
+some reason, or whether the header was flagged not to be re-used, as it
+is with the obsolete <code>#import</code> directive.
+</p>
+<p>For the benefit of MS-DOS filesystems with an 8.3 filename limitation,
+CPP offers the ability to treat various include file names as aliases
+for the real header files with shorter names.  The map from one to the
+other is found in a special file called &lsquo;<samp>header.gcc</samp>&rsquo;, stored in the
+command line (or system) include directories to which the mapping
+applies.  This may be higher up the directory tree than the full path to
+the file minus the base name.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Concept-Index.html#Concept-Index" accesskey="n" rel="next">Concept Index</a>, Previous: <a href="Guard-Macros.html#Guard-Macros" accesskey="p" rel="prev">Guard Macros</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

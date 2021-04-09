@@ -1,0 +1,147 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Structures unions enumerations and bit-fields implementation</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Structures unions enumerations and bit-fields implementation">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Structures unions enumerations and bit-fields implementation">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C-Implementation.html#C-Implementation" rel="up" title="C Implementation">
+<link href="Qualifiers-implementation.html#Qualifiers-implementation" rel="next" title="Qualifiers implementation">
+<link href="Hints-implementation.html#Hints-implementation" rel="prev" title="Hints implementation">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Structures-unions-enumerations-and-bit_002dfields-implementation"></a>
+<div class="header">
+<p>
+Next: <a href="Qualifiers-implementation.html#Qualifiers-implementation" accesskey="n" rel="next">Qualifiers implementation</a>, Previous: <a href="Hints-implementation.html#Hints-implementation" accesskey="p" rel="prev">Hints implementation</a>, Up: <a href="C-Implementation.html#C-Implementation" accesskey="u" rel="up">C Implementation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Structures_002c-Unions_002c-Enumerations_002c-and-Bit_002dFields"></a>
+<h3 class="section">4.9 Structures, Unions, Enumerations, and Bit-Fields</h3>
+
+<ul>
+<li> <cite>A member of a union object is accessed using a member of a
+different type (C90 6.3.2.3).</cite>
+
+<p>The relevant bytes of the representation of the object are treated as
+an object of the type used for the access.  See <a href="Optimize-Options.html#Type_002dpunning">Type-punning</a>.  This
+may be a trap representation.
+</p>
+</li><li> <cite>Whether a &ldquo;plain&rdquo; <code>int</code> bit-field is treated as a
+<code>signed int</code> bit-field or as an <code>unsigned int</code> bit-field
+(C90 6.5.2, C90 6.5.2.1, C99 and C11 6.7.2, C99 and C11 6.7.2.1).</cite>
+
+<a name="index-funsigned_002dbitfields-1"></a>
+<p>By default it is treated as <code>signed int</code> but this may be changed
+by the <samp>-funsigned-bitfields</samp> option.
+</p>
+</li><li> <cite>Allowable bit-field types other than <code>_Bool</code>, <code>signed int</code>,
+and <code>unsigned int</code> (C99 and C11 6.7.2.1).</cite>
+
+<p>Other integer types, such as <code>long int</code>, and enumerated types are
+permitted even in strictly conforming mode.
+</p>
+</li><li> <cite>Whether atomic types are permitted for bit-fields (C11 6.7.2.1).</cite>
+
+<p>Atomic types are not permitted for bit-fields.
+</p>
+</li><li> <cite>Whether a bit-field can straddle a storage-unit boundary (C90
+6.5.2.1, C99 and C11 6.7.2.1).</cite>
+
+<p>Determined by ABI.
+</p>
+</li><li> <cite>The order of allocation of bit-fields within a unit (C90
+6.5.2.1, C99 and C11 6.7.2.1).</cite>
+
+<p>Determined by ABI.
+</p>
+</li><li> <cite>The alignment of non-bit-field members of structures (C90
+6.5.2.1, C99 and C11 6.7.2.1).</cite>
+
+<p>Determined by ABI.
+</p>
+</li><li> <cite>The integer type compatible with each enumerated type (C90
+6.5.2.2, C99 and C11 6.7.2.2).</cite>
+
+<a name="index-fshort_002denums-1"></a>
+<p>Normally, the type is <code>unsigned int</code> if there are no negative
+values in the enumeration, otherwise <code>int</code>.  If
+<samp>-fshort-enums</samp> is specified, then if there are negative values
+it is the first of <code>signed char</code>, <code>short</code> and <code>int</code>
+that can represent all the values, otherwise it is the first of
+<code>unsigned char</code>, <code>unsigned short</code> and <code>unsigned int</code>
+that can represent all the values.
+</p>
+<p>On some targets, <samp>-fshort-enums</samp> is the default; this is
+determined by the ABI.
+</p>
+</li></ul>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Qualifiers-implementation.html#Qualifiers-implementation" accesskey="n" rel="next">Qualifiers implementation</a>, Previous: <a href="Hints-implementation.html#Hints-implementation" accesskey="p" rel="prev">Hints implementation</a>, Up: <a href="C-Implementation.html#C-Implementation" accesskey="u" rel="up">C Implementation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

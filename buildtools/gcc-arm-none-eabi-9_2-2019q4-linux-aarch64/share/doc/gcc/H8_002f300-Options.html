@@ -1,0 +1,144 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): H8/300 Options</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): H8/300 Options">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): H8/300 Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Submodel-Options.html#Submodel-Options" rel="up" title="Submodel Options">
+<link href="HPPA-Options.html#HPPA-Options" rel="next" title="HPPA Options">
+<link href="GNU_002fLinux-Options.html#GNU_002fLinux-Options" rel="prev" title="GNU/Linux Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="H8_002f300-Options"></a>
+<div class="header">
+<p>
+Next: <a href="HPPA-Options.html#HPPA-Options" accesskey="n" rel="next">HPPA Options</a>, Previous: <a href="GNU_002fLinux-Options.html#GNU_002fLinux-Options" accesskey="p" rel="prev">GNU/Linux Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="H8_002f300-Options-1"></a>
+<h4 class="subsection">3.18.18 H8/300 Options</h4>
+
+<p>These &lsquo;<samp>-m</samp>&rsquo; options are defined for the H8/300 implementations:
+</p>
+<dl compact="compact">
+<dt><code>-mrelax</code></dt>
+<dd><a name="index-mrelax-1"></a>
+<p>Shorten some address references at link time, when possible; uses the
+linker option <samp>-relax</samp>.  See <a href="http://sourceware.org/binutils/docs/ld/H8_002f300.html#H8_002f300"><code>ld</code> and the H8/300</a> in <cite>Using ld</cite>, for a fuller description.
+</p>
+</dd>
+<dt><code>-mh</code></dt>
+<dd><a name="index-mh"></a>
+<p>Generate code for the H8/300H.
+</p>
+</dd>
+<dt><code>-ms</code></dt>
+<dd><a name="index-ms"></a>
+<p>Generate code for the H8S.
+</p>
+</dd>
+<dt><code>-mn</code></dt>
+<dd><a name="index-mn"></a>
+<p>Generate code for the H8S and H8/300H in the normal mode.  This switch
+must be used either with <samp>-mh</samp> or <samp>-ms</samp>.
+</p>
+</dd>
+<dt><code>-ms2600</code></dt>
+<dd><a name="index-ms2600"></a>
+<p>Generate code for the H8S/2600.  This switch must be used with <samp>-ms</samp>.
+</p>
+</dd>
+<dt><code>-mexr</code></dt>
+<dd><a name="index-mexr"></a>
+<p>Extended registers are stored on stack before execution of function
+with monitor attribute. Default option is <samp>-mexr</samp>.
+This option is valid only for H8S targets.
+</p>
+</dd>
+<dt><code>-mno-exr</code></dt>
+<dd><a name="index-mno_002dexr"></a>
+<a name="index-mexr-1"></a>
+<p>Extended registers are not stored on stack before execution of function 
+with monitor attribute. Default option is <samp>-mno-exr</samp>. 
+This option is valid only for H8S targets.
+</p>
+</dd>
+<dt><code>-mint32</code></dt>
+<dd><a name="index-mint32-1"></a>
+<p>Make <code>int</code> data 32 bits by default.
+</p>
+</dd>
+<dt><code>-malign-300</code></dt>
+<dd><a name="index-malign_002d300"></a>
+<p>On the H8/300H and H8S, use the same alignment rules as for the H8/300.
+The default for the H8/300H and H8S is to align longs and floats on
+4-byte boundaries.
+<samp>-malign-300</samp> causes them to be aligned on 2-byte boundaries.
+This option has no effect on the H8/300.
+</p></dd>
+</dl>
+
+
+
+
+</body>
+</html>

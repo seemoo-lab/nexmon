@@ -1,0 +1,553 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): AArch64 Options</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): AArch64 Options">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): AArch64 Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Submodel-Options.html#Submodel-Options" rel="up" title="Submodel Options">
+<link href="Adapteva-Epiphany-Options.html#Adapteva-Epiphany-Options" rel="next" title="Adapteva Epiphany Options">
+<link href="Submodel-Options.html#Submodel-Options" rel="prev" title="Submodel Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="AArch64-Options"></a>
+<div class="header">
+<p>
+Next: <a href="Adapteva-Epiphany-Options.html#Adapteva-Epiphany-Options" accesskey="n" rel="next">Adapteva Epiphany Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="AArch64-Options-1"></a>
+<h4 class="subsection">3.18.1 AArch64 Options</h4>
+<a name="index-AArch64-Options"></a>
+
+<p>These options are defined for AArch64 implementations:
+</p>
+<dl compact="compact">
+<dt><code>-mabi=<var>name</var></code></dt>
+<dd><a name="index-mabi"></a>
+<p>Generate code for the specified data model.  Permissible values
+are &lsquo;<samp>ilp32</samp>&rsquo; for SysV-like data model where int, long int and pointers
+are 32 bits, and &lsquo;<samp>lp64</samp>&rsquo; for SysV-like data model where int is 32 bits,
+but long int and pointers are 64 bits.
+</p>
+<p>The default depends on the specific target configuration.  Note that
+the LP64 and ILP32 ABIs are not link-compatible; you must compile your
+entire program with the same ABI, and link with a compatible set of libraries.
+</p>
+</dd>
+<dt><code>-mbig-endian</code></dt>
+<dd><a name="index-mbig_002dendian"></a>
+<p>Generate big-endian code.  This is the default when GCC is configured for an
+&lsquo;<samp>aarch64_be-*-*</samp>&rsquo; target.
+</p>
+</dd>
+<dt><code>-mgeneral-regs-only</code></dt>
+<dd><a name="index-mgeneral_002dregs_002donly"></a>
+<p>Generate code which uses only the general-purpose registers.  This will prevent
+the compiler from using floating-point and Advanced SIMD registers but will not
+impose any restrictions on the assembler.
+</p>
+</dd>
+<dt><code>-mlittle-endian</code></dt>
+<dd><a name="index-mlittle_002dendian"></a>
+<p>Generate little-endian code.  This is the default when GCC is configured for an
+&lsquo;<samp>aarch64-*-*</samp>&rsquo; but not an &lsquo;<samp>aarch64_be-*-*</samp>&rsquo; target.
+</p>
+</dd>
+<dt><code>-mcmodel=tiny</code></dt>
+<dd><a name="index-mcmodel_003dtiny"></a>
+<p>Generate code for the tiny code model.  The program and its statically defined
+symbols must be within 1MB of each other.  Programs can be statically or
+dynamically linked.
+</p>
+</dd>
+<dt><code>-mcmodel=small</code></dt>
+<dd><a name="index-mcmodel_003dsmall"></a>
+<p>Generate code for the small code model.  The program and its statically defined
+symbols must be within 4GB of each other.  Programs can be statically or
+dynamically linked.  This is the default code model.
+</p>
+</dd>
+<dt><code>-mcmodel=large</code></dt>
+<dd><a name="index-mcmodel_003dlarge"></a>
+<p>Generate code for the large code model.  This makes no assumptions about
+addresses and sizes of sections.  Programs can be statically linked only.
+</p>
+</dd>
+<dt><code>-mstrict-align</code></dt>
+<dt><code>-mno-strict-align</code></dt>
+<dd><a name="index-mstrict_002dalign"></a>
+<a name="index-mno_002dstrict_002dalign"></a>
+<p>Avoid or allow generating memory accesses that may not be aligned on a natural
+object boundary as described in the architecture specification.
+</p>
+</dd>
+<dt><code>-momit-leaf-frame-pointer</code></dt>
+<dt><code>-mno-omit-leaf-frame-pointer</code></dt>
+<dd><a name="index-momit_002dleaf_002dframe_002dpointer"></a>
+<a name="index-mno_002domit_002dleaf_002dframe_002dpointer"></a>
+<p>Omit or keep the frame pointer in leaf functions.  The former behavior is the
+default.
+</p>
+</dd>
+<dt><code>-mstack-protector-guard=<var>guard</var></code></dt>
+<dt><code>-mstack-protector-guard-reg=<var>reg</var></code></dt>
+<dt><code>-mstack-protector-guard-offset=<var>offset</var></code></dt>
+<dd><a name="index-mstack_002dprotector_002dguard"></a>
+<a name="index-mstack_002dprotector_002dguard_002dreg"></a>
+<a name="index-mstack_002dprotector_002dguard_002doffset"></a>
+<p>Generate stack protection code using canary at <var>guard</var>.  Supported
+locations are &lsquo;<samp>global</samp>&rsquo; for a global canary or &lsquo;<samp>sysreg</samp>&rsquo; for a
+canary in an appropriate system register.
+</p>
+<p>With the latter choice the options
+<samp>-mstack-protector-guard-reg=<var>reg</var></samp> and
+<samp>-mstack-protector-guard-offset=<var>offset</var></samp> furthermore specify
+which system register to use as base register for reading the canary,
+and from what offset from that base register. There is no default
+register or offset as this is entirely for use within the Linux
+kernel.
+</p>
+</dd>
+<dt><code>-mstack-protector-guard=<var>guard</var></code></dt>
+<dt><code>-mstack-protector-guard-reg=<var>reg</var></code></dt>
+<dt><code>-mstack-protector-guard-offset=<var>offset</var></code></dt>
+<dd><a name="index-mstack_002dprotector_002dguard-1"></a>
+<a name="index-mstack_002dprotector_002dguard_002dreg-1"></a>
+<a name="index-mstack_002dprotector_002dguard_002doffset-1"></a>
+<p>Generate stack protection code using canary at <var>guard</var>.  Supported
+locations are &lsquo;<samp>global</samp>&rsquo; for a global canary or &lsquo;<samp>sysreg</samp>&rsquo; for a
+canary in an appropriate system register.
+</p>
+<p>With the latter choice the options
+<samp>-mstack-protector-guard-reg=<var>reg</var></samp> and
+<samp>-mstack-protector-guard-offset=<var>offset</var></samp> furthermore specify
+which system register to use as base register for reading the canary,
+and from what offset from that base register. There is no default
+register or offset as this is entirely for use within the Linux
+kernel.
+</p>
+</dd>
+<dt><code>-mtls-dialect=desc</code></dt>
+<dd><a name="index-mtls_002ddialect_003ddesc"></a>
+<p>Use TLS descriptors as the thread-local storage mechanism for dynamic accesses
+of TLS variables.  This is the default.
+</p>
+</dd>
+<dt><code>-mtls-dialect=traditional</code></dt>
+<dd><a name="index-mtls_002ddialect_003dtraditional"></a>
+<p>Use traditional TLS as the thread-local storage mechanism for dynamic accesses
+of TLS variables.
+</p>
+</dd>
+<dt><code>-mtls-size=<var>size</var></code></dt>
+<dd><a name="index-mtls_002dsize"></a>
+<p>Specify bit size of immediate TLS offsets.  Valid values are 12, 24, 32, 48.
+This option requires binutils 2.26 or newer.
+</p>
+</dd>
+<dt><code>-mfix-cortex-a53-835769</code></dt>
+<dt><code>-mno-fix-cortex-a53-835769</code></dt>
+<dd><a name="index-mfix_002dcortex_002da53_002d835769"></a>
+<a name="index-mno_002dfix_002dcortex_002da53_002d835769"></a>
+<p>Enable or disable the workaround for the ARM Cortex-A53 erratum number 835769.
+This involves inserting a NOP instruction between memory instructions and
+64-bit integer multiply-accumulate instructions.
+</p>
+</dd>
+<dt><code>-mfix-cortex-a53-843419</code></dt>
+<dt><code>-mno-fix-cortex-a53-843419</code></dt>
+<dd><a name="index-mfix_002dcortex_002da53_002d843419"></a>
+<a name="index-mno_002dfix_002dcortex_002da53_002d843419"></a>
+<p>Enable or disable the workaround for the ARM Cortex-A53 erratum number 843419.
+This erratum workaround is made at link time and this will only pass the
+corresponding flag to the linker.
+</p>
+</dd>
+<dt><code>-mlow-precision-recip-sqrt</code></dt>
+<dt><code>-mno-low-precision-recip-sqrt</code></dt>
+<dd><a name="index-mlow_002dprecision_002drecip_002dsqrt"></a>
+<a name="index-mno_002dlow_002dprecision_002drecip_002dsqrt"></a>
+<p>Enable or disable the reciprocal square root approximation.
+This option only has an effect if <samp>-ffast-math</samp> or
+<samp>-funsafe-math-optimizations</samp> is used as well.  Enabling this reduces
+precision of reciprocal square root results to about 16 bits for
+single precision and to 32 bits for double precision.
+</p>
+</dd>
+<dt><code>-mlow-precision-sqrt</code></dt>
+<dt><code>-mno-low-precision-sqrt</code></dt>
+<dd><a name="index-mlow_002dprecision_002dsqrt"></a>
+<a name="index-mno_002dlow_002dprecision_002dsqrt"></a>
+<p>Enable or disable the square root approximation.
+This option only has an effect if <samp>-ffast-math</samp> or
+<samp>-funsafe-math-optimizations</samp> is used as well.  Enabling this reduces
+precision of square root results to about 16 bits for
+single precision and to 32 bits for double precision.
+If enabled, it implies <samp>-mlow-precision-recip-sqrt</samp>.
+</p>
+</dd>
+<dt><code>-mlow-precision-div</code></dt>
+<dt><code>-mno-low-precision-div</code></dt>
+<dd><a name="index-mlow_002dprecision_002ddiv"></a>
+<a name="index-mno_002dlow_002dprecision_002ddiv"></a>
+<p>Enable or disable the division approximation.
+This option only has an effect if <samp>-ffast-math</samp> or
+<samp>-funsafe-math-optimizations</samp> is used as well.  Enabling this reduces
+precision of division results to about 16 bits for
+single precision and to 32 bits for double precision.
+</p>
+</dd>
+<dt><code>-mtrack-speculation</code></dt>
+<dt><code>-mno-track-speculation</code></dt>
+<dd><p>Enable or disable generation of additional code to track speculative
+execution through conditional branches.  The tracking state can then
+be used by the compiler when expanding calls to
+<code>__builtin_speculation_safe_copy</code> to permit a more efficient code
+sequence to be generated.
+</p>
+</dd>
+<dt><code>-march=<var>name</var></code></dt>
+<dd><a name="index-march"></a>
+<p>Specify the name of the target architecture and, optionally, one or
+more feature modifiers.  This option has the form
+<samp>-march=<var>arch</var><span class="roman">{</span>+<span class="roman">[</span>no<span class="roman">]</span><var>feature</var><span class="roman">}*</span></samp>.
+</p>
+<p>The permissible values for <var>arch</var> are &lsquo;<samp>armv8-a</samp>&rsquo;,
+&lsquo;<samp>armv8.1-a</samp>&rsquo;, &lsquo;<samp>armv8.2-a</samp>&rsquo;, &lsquo;<samp>armv8.3-a</samp>&rsquo;, &lsquo;<samp>armv8.4-a</samp>&rsquo;,
+&lsquo;<samp>armv8.5-a</samp>&rsquo; or <var>native</var>.
+</p>
+<p>The value &lsquo;<samp>armv8.5-a</samp>&rsquo; implies &lsquo;<samp>armv8.4-a</samp>&rsquo; and enables compiler
+support for the ARMv8.5-A architecture extensions.
+</p>
+<p>The value &lsquo;<samp>armv8.4-a</samp>&rsquo; implies &lsquo;<samp>armv8.3-a</samp>&rsquo; and enables compiler
+support for the ARMv8.4-A architecture extensions.
+</p>
+<p>The value &lsquo;<samp>armv8.3-a</samp>&rsquo; implies &lsquo;<samp>armv8.2-a</samp>&rsquo; and enables compiler
+support for the ARMv8.3-A architecture extensions.
+</p>
+<p>The value &lsquo;<samp>armv8.2-a</samp>&rsquo; implies &lsquo;<samp>armv8.1-a</samp>&rsquo; and enables compiler
+support for the ARMv8.2-A architecture extensions.
+</p>
+<p>The value &lsquo;<samp>armv8.1-a</samp>&rsquo; implies &lsquo;<samp>armv8-a</samp>&rsquo; and enables compiler
+support for the ARMv8.1-A architecture extension.  In particular, it
+enables the &lsquo;<samp>+crc</samp>&rsquo;, &lsquo;<samp>+lse</samp>&rsquo;, and &lsquo;<samp>+rdma</samp>&rsquo; features.
+</p>
+<p>The value &lsquo;<samp>native</samp>&rsquo; is available on native AArch64 GNU/Linux and
+causes the compiler to pick the architecture of the host system.  This
+option has no effect if the compiler is unable to recognize the
+architecture of the host system,
+</p>
+<p>The permissible values for <var>feature</var> are listed in the sub-section
+on <a href="#aarch64_002dfeature_002dmodifiers"><samp>-march</samp> and <samp>-mcpu</samp>
+Feature Modifiers</a>.  Where conflicting feature modifiers are
+specified, the right-most feature is used.
+</p>
+<p>GCC uses <var>name</var> to determine what kind of instructions it can emit
+when generating assembly code.  If <samp>-march</samp> is specified
+without either of <samp>-mtune</samp> or <samp>-mcpu</samp> also being
+specified, the code is tuned to perform well across a range of target
+processors implementing the target architecture.
+</p>
+</dd>
+<dt><code>-mtune=<var>name</var></code></dt>
+<dd><a name="index-mtune"></a>
+<p>Specify the name of the target processor for which GCC should tune the
+performance of the code.  Permissible values for this option are:
+&lsquo;<samp>generic</samp>&rsquo;, &lsquo;<samp>cortex-a35</samp>&rsquo;, &lsquo;<samp>cortex-a53</samp>&rsquo;, &lsquo;<samp>cortex-a55</samp>&rsquo;,
+&lsquo;<samp>cortex-a57</samp>&rsquo;, &lsquo;<samp>cortex-a72</samp>&rsquo;, &lsquo;<samp>cortex-a73</samp>&rsquo;, &lsquo;<samp>cortex-a75</samp>&rsquo;,
+&lsquo;<samp>cortex-a76</samp>&rsquo;, &lsquo;<samp>ares</samp>&rsquo;, &lsquo;<samp>exynos-m1</samp>&rsquo;, &lsquo;<samp>emag</samp>&rsquo;, &lsquo;<samp>falkor</samp>&rsquo;,
+&lsquo;<samp>neoverse-e1</samp>&rsquo;,&lsquo;<samp>neoverse-n1</samp>&rsquo;,&lsquo;<samp>qdf24xx</samp>&rsquo;, &lsquo;<samp>saphira</samp>&rsquo;,
+&lsquo;<samp>phecda</samp>&rsquo;, &lsquo;<samp>xgene1</samp>&rsquo;, &lsquo;<samp>vulcan</samp>&rsquo;, &lsquo;<samp>octeontx</samp>&rsquo;,
+&lsquo;<samp>octeontx81</samp>&rsquo;,  &lsquo;<samp>octeontx83</samp>&rsquo;, &lsquo;<samp>thunderx</samp>&rsquo;, &lsquo;<samp>thunderxt88</samp>&rsquo;,
+&lsquo;<samp>thunderxt88p1</samp>&rsquo;, &lsquo;<samp>thunderxt81</samp>&rsquo;, &lsquo;<samp>tsv110</samp>&rsquo;,
+&lsquo;<samp>thunderxt83</samp>&rsquo;, &lsquo;<samp>thunderx2t99</samp>&rsquo;,
+&lsquo;<samp>cortex-a57.cortex-a53</samp>&rsquo;, &lsquo;<samp>cortex-a72.cortex-a53</samp>&rsquo;,
+&lsquo;<samp>cortex-a73.cortex-a35</samp>&rsquo;, &lsquo;<samp>cortex-a73.cortex-a53</samp>&rsquo;,
+&lsquo;<samp>cortex-a75.cortex-a55</samp>&rsquo;, &lsquo;<samp>cortex-a76.cortex-a55</samp>&rsquo;
+&lsquo;<samp>native</samp>&rsquo;.
+</p>
+<p>The values &lsquo;<samp>cortex-a57.cortex-a53</samp>&rsquo;, &lsquo;<samp>cortex-a72.cortex-a53</samp>&rsquo;,
+&lsquo;<samp>cortex-a73.cortex-a35</samp>&rsquo;, &lsquo;<samp>cortex-a73.cortex-a53</samp>&rsquo;,
+&lsquo;<samp>cortex-a75.cortex-a55</samp>&rsquo;, &lsquo;<samp>cortex-a76.cortex-a55</samp>&rsquo; specify that GCC
+should tune for a big.LITTLE system.
+</p>
+<p>Additionally on native AArch64 GNU/Linux systems the value
+&lsquo;<samp>native</samp>&rsquo; tunes performance to the host system.  This option has no effect
+if the compiler is unable to recognize the processor of the host system.
+</p>
+<p>Where none of <samp>-mtune=</samp>, <samp>-mcpu=</samp> or <samp>-march=</samp>
+are specified, the code is tuned to perform well across a range
+of target processors.
+</p>
+<p>This option cannot be suffixed by feature modifiers.
+</p>
+</dd>
+<dt><code>-mcpu=<var>name</var></code></dt>
+<dd><a name="index-mcpu"></a>
+<p>Specify the name of the target processor, optionally suffixed by one
+or more feature modifiers.  This option has the form
+<samp>-mcpu=<var>cpu</var><span class="roman">{</span>+<span class="roman">[</span>no<span class="roman">]</span><var>feature</var><span class="roman">}*</span></samp>, where
+the permissible values for <var>cpu</var> are the same as those available
+for <samp>-mtune</samp>.  The permissible values for <var>feature</var> are
+documented in the sub-section on
+<a href="#aarch64_002dfeature_002dmodifiers"><samp>-march</samp> and <samp>-mcpu</samp>
+Feature Modifiers</a>.  Where conflicting feature modifiers are
+specified, the right-most feature is used.
+</p>
+<p>GCC uses <var>name</var> to determine what kind of instructions it can emit when
+generating assembly code (as if by <samp>-march</samp>) and to determine
+the target processor for which to tune for performance (as if
+by <samp>-mtune</samp>).  Where this option is used in conjunction
+with <samp>-march</samp> or <samp>-mtune</samp>, those options take precedence
+over the appropriate part of this option.
+</p>
+</dd>
+<dt><code>-moverride=<var>string</var></code></dt>
+<dd><a name="index-moverride"></a>
+<p>Override tuning decisions made by the back-end in response to a
+<samp>-mtune=</samp> switch.  The syntax, semantics, and accepted values
+for <var>string</var> in this option are not guaranteed to be consistent
+across releases.
+</p>
+<p>This option is only intended to be useful when developing GCC.
+</p>
+</dd>
+<dt><code>-mverbose-cost-dump</code></dt>
+<dd><a name="index-mverbose_002dcost_002ddump"></a>
+<p>Enable verbose cost model dumping in the debug dump files.  This option is
+provided for use in debugging the compiler.
+</p>
+</dd>
+<dt><code>-mpc-relative-literal-loads</code></dt>
+<dt><code>-mno-pc-relative-literal-loads</code></dt>
+<dd><a name="index-mpc_002drelative_002dliteral_002dloads"></a>
+<a name="index-mno_002dpc_002drelative_002dliteral_002dloads"></a>
+<p>Enable or disable PC-relative literal loads.  With this option literal pools are
+accessed using a single instruction and emitted after each function.  This
+limits the maximum size of functions to 1MB.  This is enabled by default for
+<samp>-mcmodel=tiny</samp>.
+</p>
+</dd>
+<dt><code>-msign-return-address=<var>scope</var></code></dt>
+<dd><a name="index-msign_002dreturn_002daddress"></a>
+<p>Select the function scope on which return address signing will be applied.
+Permissible values are &lsquo;<samp>none</samp>&rsquo;, which disables return address signing,
+&lsquo;<samp>non-leaf</samp>&rsquo;, which enables pointer signing for functions which are not leaf
+functions, and &lsquo;<samp>all</samp>&rsquo;, which enables pointer signing for all functions.  The
+default value is &lsquo;<samp>none</samp>&rsquo;. This option has been deprecated by
+-mbranch-protection.
+</p>
+</dd>
+<dt><code>-mbranch-protection=<var>none</var>|<var>standard</var>|<var>pac-ret</var>[+<var>leaf</var>]|<var>bti</var></code></dt>
+<dd><a name="index-mbranch_002dprotection"></a>
+<p>Select the branch protection features to use.
+&lsquo;<samp>none</samp>&rsquo; is the default and turns off all types of branch protection.
+&lsquo;<samp>standard</samp>&rsquo; turns on all types of branch protection features.  If a feature
+has additional tuning options, then &lsquo;<samp>standard</samp>&rsquo; sets it to its standard
+level.
+&lsquo;<samp>pac-ret[+<var>leaf</var>]</samp>&rsquo; turns on return address signing to its standard
+level: signing functions that save the return address to memory (non-leaf
+functions will practically always do this) using the a-key.  The optional
+argument &lsquo;<samp>leaf</samp>&rsquo; can be used to extend the signing to include leaf
+functions.
+&lsquo;<samp>bti</samp>&rsquo; turns on branch target identification mechanism.
+</p>
+</dd>
+<dt><code>-msve-vector-bits=<var>bits</var></code></dt>
+<dd><a name="index-msve_002dvector_002dbits"></a>
+<p>Specify the number of bits in an SVE vector register.  This option only has
+an effect when SVE is enabled.
+</p>
+<p>GCC supports two forms of SVE code generation: &ldquo;vector-length
+agnostic&rdquo; output that works with any size of vector register and
+&ldquo;vector-length specific&rdquo; output that allows GCC to make assumptions
+about the vector length when it is useful for optimization reasons.
+The possible values of &lsquo;<samp>bits</samp>&rsquo; are: &lsquo;<samp>scalable</samp>&rsquo;, &lsquo;<samp>128</samp>&rsquo;,
+&lsquo;<samp>256</samp>&rsquo;, &lsquo;<samp>512</samp>&rsquo;, &lsquo;<samp>1024</samp>&rsquo; and &lsquo;<samp>2048</samp>&rsquo;.
+Specifying &lsquo;<samp>scalable</samp>&rsquo; selects vector-length agnostic
+output.  At present &lsquo;<samp>-msve-vector-bits=128</samp>&rsquo; also generates vector-length
+agnostic output.  All other values generate vector-length specific code.
+The behavior of these values may change in future releases and no value except
+&lsquo;<samp>scalable</samp>&rsquo; should be relied on for producing code that is portable across
+different hardware SVE vector lengths.
+</p>
+<p>The default is &lsquo;<samp>-msve-vector-bits=scalable</samp>&rsquo;, which produces
+vector-length agnostic code.
+</p></dd>
+</dl>
+
+<a name="g_t_002dmarch-and-_002dmcpu-Feature-Modifiers"></a>
+<h4 class="subsubsection">3.18.1.1 <samp>-march</samp> and <samp>-mcpu</samp> Feature Modifiers</h4>
+<a name="aarch64_002dfeature_002dmodifiers"></a><a name="index-_002dmarch-feature-modifiers"></a>
+<a name="index-_002dmcpu-feature-modifiers"></a>
+<p>Feature modifiers used with <samp>-march</samp> and <samp>-mcpu</samp> can be any of
+the following and their inverses <samp>no<var>feature</var></samp>:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>crc</samp>&rsquo;</dt>
+<dd><p>Enable CRC extension.  This is on by default for
+<samp>-march=armv8.1-a</samp>.
+</p></dd>
+<dt>&lsquo;<samp>crypto</samp>&rsquo;</dt>
+<dd><p>Enable Crypto extension.  This also enables Advanced SIMD and floating-point
+instructions.
+</p></dd>
+<dt>&lsquo;<samp>fp</samp>&rsquo;</dt>
+<dd><p>Enable floating-point instructions.  This is on by default for all possible
+values for options <samp>-march</samp> and <samp>-mcpu</samp>.
+</p></dd>
+<dt>&lsquo;<samp>simd</samp>&rsquo;</dt>
+<dd><p>Enable Advanced SIMD instructions.  This also enables floating-point
+instructions.  This is on by default for all possible values for options
+<samp>-march</samp> and <samp>-mcpu</samp>.
+</p></dd>
+<dt>&lsquo;<samp>sve</samp>&rsquo;</dt>
+<dd><p>Enable Scalable Vector Extension instructions.  This also enables Advanced
+SIMD and floating-point instructions.
+</p></dd>
+<dt>&lsquo;<samp>lse</samp>&rsquo;</dt>
+<dd><p>Enable Large System Extension instructions.  This is on by default for
+<samp>-march=armv8.1-a</samp>.
+</p></dd>
+<dt>&lsquo;<samp>rdma</samp>&rsquo;</dt>
+<dd><p>Enable Round Double Multiply Accumulate instructions.  This is on by default
+for <samp>-march=armv8.1-a</samp>.
+</p></dd>
+<dt>&lsquo;<samp>fp16</samp>&rsquo;</dt>
+<dd><p>Enable FP16 extension.  This also enables floating-point instructions.
+</p></dd>
+<dt>&lsquo;<samp>fp16fml</samp>&rsquo;</dt>
+<dd><p>Enable FP16 fmla extension.  This also enables FP16 extensions and
+floating-point instructions. This option is enabled by default for <samp>-march=armv8.4-a</samp>. Use of this option with architectures prior to Armv8.2-A is not supported.
+</p>
+</dd>
+<dt>&lsquo;<samp>rcpc</samp>&rsquo;</dt>
+<dd><p>Enable the RcPc extension.  This does not change code generation from GCC,
+but is passed on to the assembler, enabling inline asm statements to use
+instructions from the RcPc extension.
+</p></dd>
+<dt>&lsquo;<samp>dotprod</samp>&rsquo;</dt>
+<dd><p>Enable the Dot Product extension.  This also enables Advanced SIMD instructions.
+</p></dd>
+<dt>&lsquo;<samp>aes</samp>&rsquo;</dt>
+<dd><p>Enable the Armv8-a aes and pmull crypto extension.  This also enables Advanced
+SIMD instructions.
+</p></dd>
+<dt>&lsquo;<samp>sha2</samp>&rsquo;</dt>
+<dd><p>Enable the Armv8-a sha2 crypto extension.  This also enables Advanced SIMD instructions.
+</p></dd>
+<dt>&lsquo;<samp>sha3</samp>&rsquo;</dt>
+<dd><p>Enable the sha512 and sha3 crypto extension.  This also enables Advanced SIMD
+instructions. Use of this option with architectures prior to Armv8.2-A is not supported.
+</p></dd>
+<dt>&lsquo;<samp>sm4</samp>&rsquo;</dt>
+<dd><p>Enable the sm3 and sm4 crypto extension.  This also enables Advanced SIMD instructions.
+Use of this option with architectures prior to Armv8.2-A is not supported.
+</p></dd>
+<dt>&lsquo;<samp>profile</samp>&rsquo;</dt>
+<dd><p>Enable the Statistical Profiling extension.  This option is only to enable the
+extension at the assembler level and does not affect code generation.
+</p></dd>
+<dt>&lsquo;<samp>rng</samp>&rsquo;</dt>
+<dd><p>Enable the Armv8.5-a Random Number instructions.  This option is only to
+enable the extension at the assembler level and does not affect code
+generation.
+</p></dd>
+<dt>&lsquo;<samp>memtag</samp>&rsquo;</dt>
+<dd><p>Enable the Armv8.5-a Memory Tagging Extensions.  This option is only to
+enable the extension at the assembler level and does not affect code
+generation.
+</p></dd>
+<dt>&lsquo;<samp>sb</samp>&rsquo;</dt>
+<dd><p>Enable the Armv8-a Speculation Barrier instruction.  This option is only to
+enable the extension at the assembler level and does not affect code
+generation.  This option is enabled by default for <samp>-march=armv8.5-a</samp>.
+</p></dd>
+<dt>&lsquo;<samp>ssbs</samp>&rsquo;</dt>
+<dd><p>Enable the Armv8-a Speculative Store Bypass Safe instruction.  This option
+is only to enable the extension at the assembler level and does not affect code
+generation.  This option is enabled by default for <samp>-march=armv8.5-a</samp>.
+</p></dd>
+<dt>&lsquo;<samp>predres</samp>&rsquo;</dt>
+<dd><p>Enable the Armv8-a Execution and Data Prediction Restriction instructions.
+This option is only to enable the extension at the assembler level and does
+not affect code generation.  This option is enabled by default for
+<samp>-march=armv8.5-a</samp>.
+</p>
+</dd>
+</dl>
+
+<p>Feature <samp>crypto</samp> implies <samp>aes</samp>, <samp>sha2</samp>, and <samp>simd</samp>,
+which implies <samp>fp</samp>.
+Conversely, <samp>nofp</samp> implies <samp>nosimd</samp>, which implies
+<samp>nocrypto</samp>, <samp>noaes</samp> and <samp>nosha2</samp>.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Adapteva-Epiphany-Options.html#Adapteva-Epiphany-Options" accesskey="n" rel="next">Adapteva Epiphany Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

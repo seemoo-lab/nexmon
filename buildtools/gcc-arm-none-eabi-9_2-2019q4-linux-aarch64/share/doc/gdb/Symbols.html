@@ -1,0 +1,913 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Symbols</title>
+
+<meta name="description" content="Debugging with GDB: Symbols">
+<meta name="keywords" content="Debugging with GDB: Symbols">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Altering.html#Altering" rel="next" title="Altering">
+<link href="Unsupported-Languages.html#Unsupported-Languages" rel="prev" title="Unsupported Languages">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Symbols"></a>
+<div class="header">
+<p>
+Next: <a href="Altering.html#Altering" accesskey="n" rel="next">Altering</a>, Previous: <a href="Languages.html#Languages" accesskey="p" rel="prev">Languages</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Examining-the-Symbol-Table"></a>
+<h2 class="chapter">16 Examining the Symbol Table</h2>
+
+<p>The commands described in this chapter allow you to inquire about the
+symbols (names of variables, functions and types) defined in your
+program.  This information is inherent in the text of your program and
+does not change as your program executes.  <small>GDB</small> finds it in your
+program&rsquo;s symbol table, in the file indicated when you started <small>GDB</small>
+(see <a href="File-Options.html#File-Options">Choosing Files</a>), or by one of the
+file-management commands (see <a href="Files.html#Files">Commands to Specify Files</a>).
+</p>
+<a name="index-symbol-names"></a>
+<a name="index-names-of-symbols"></a>
+<a name="index-quoting-names"></a>
+<a name="quoting-names"></a><p>Occasionally, you may need to refer to symbols that contain unusual
+characters, which <small>GDB</small> ordinarily treats as word delimiters.  The
+most frequent case is in referring to static variables in other
+source files (see <a href="Variables.html#Variables">Program Variables</a>).  File names
+are recorded in object files as debugging symbols, but <small>GDB</small> would
+ordinarily parse a typical file name, like <samp>foo.c</samp>, as the three words
+&lsquo;<samp>foo</samp>&rsquo; &lsquo;<samp>.</samp>&rsquo; &lsquo;<samp>c</samp>&rsquo;.  To allow <small>GDB</small> to recognize
+&lsquo;<samp>foo.c</samp>&rsquo; as a single symbol, enclose it in single quotes; for example,
+</p>
+<div class="smallexample">
+<pre class="smallexample">p 'foo.c'::x
+</pre></div>
+
+<p>looks up the value of <code>x</code> in the scope of the file <samp>foo.c</samp>.
+</p>
+<dl compact="compact">
+<dd><a name="index-case_002dinsensitive-symbol-names"></a>
+<a name="index-case-sensitivity-in-symbol-names"></a>
+<a name="index-set-case_002dsensitive"></a>
+</dd>
+<dt><code>set case-sensitive on</code></dt>
+<dt><code>set case-sensitive off</code></dt>
+<dt><code>set case-sensitive auto</code></dt>
+<dd><p>Normally, when <small>GDB</small> looks up symbols, it matches their names
+with case sensitivity determined by the current source language.
+Occasionally, you may wish to control that.  The command <code>set
+case-sensitive</code> lets you do that by specifying <code>on</code> for
+case-sensitive matches or <code>off</code> for case-insensitive ones.  If
+you specify <code>auto</code>, case sensitivity is reset to the default
+suitable for the source language.  The default is case-sensitive
+matches for all languages except for Fortran, for which the default is
+case-insensitive matches.
+</p>
+<a name="index-show-case_002dsensitive"></a>
+</dd>
+<dt><code>show case-sensitive</code></dt>
+<dd><p>This command shows the current setting of case sensitivity for symbols
+lookups.
+</p>
+<a name="index-set-print-type-methods"></a>
+</dd>
+<dt><code>set print type methods</code></dt>
+<dt><code>set print type methods on</code></dt>
+<dt><code>set print type methods off</code></dt>
+<dd><p>Normally, when <small>GDB</small> prints a class, it displays any methods
+declared in that class.  You can control this behavior either by
+passing the appropriate flag to <code>ptype</code>, or using <code>set
+print type methods</code>.  Specifying <code>on</code> will cause <small>GDB</small> to
+display the methods; this is the default.  Specifying <code>off</code> will
+cause <small>GDB</small> to omit the methods.
+</p>
+<a name="index-show-print-type-methods"></a>
+</dd>
+<dt><code>show print type methods</code></dt>
+<dd><p>This command shows the current setting of method display when printing
+classes.
+</p>
+<a name="index-set-print-type-nested_002dtype_002dlimit"></a>
+</dd>
+<dt><code>set print type nested-type-limit <var>limit</var></code></dt>
+<dt><code>set print type nested-type-limit unlimited</code></dt>
+<dd><p>Set the limit of displayed nested types that the type printer will
+show.  A <var>limit</var> of <code>unlimited</code> or <code>-1</code> will show all
+nested definitions.  By default, the type printer will not show any nested
+types defined in classes.
+</p>
+<a name="index-show-print-type-nested_002dtype_002dlimit"></a>
+</dd>
+<dt><code>show print type nested-type-limit</code></dt>
+<dd><p>This command shows the current display limit of nested types when
+printing classes.
+</p>
+<a name="index-set-print-type-typedefs"></a>
+</dd>
+<dt><code>set print type typedefs</code></dt>
+<dt><code>set print type typedefs on</code></dt>
+<dt><code>set print type typedefs off</code></dt>
+<dd>
+<p>Normally, when <small>GDB</small> prints a class, it displays any typedefs
+defined in that class.  You can control this behavior either by
+passing the appropriate flag to <code>ptype</code>, or using <code>set
+print type typedefs</code>.  Specifying <code>on</code> will cause <small>GDB</small> to
+display the typedef definitions; this is the default.  Specifying
+<code>off</code> will cause <small>GDB</small> to omit the typedef definitions.
+Note that this controls whether the typedef definition itself is
+printed, not whether typedef names are substituted when printing other
+types.
+</p>
+<a name="index-show-print-type-typedefs"></a>
+</dd>
+<dt><code>show print type typedefs</code></dt>
+<dd><p>This command shows the current setting of typedef display when
+printing classes.
+</p>
+<a name="index-info-address"></a>
+<a name="index-address-of-a-symbol"></a>
+</dd>
+<dt><code>info address <var>symbol</var></code></dt>
+<dd><p>Describe where the data for <var>symbol</var> is stored.  For a register
+variable, this says which register it is kept in.  For a non-register
+local variable, this prints the stack-frame offset at which the variable
+is always stored.
+</p>
+<p>Note the contrast with &lsquo;<samp>print &amp;<var>symbol</var></samp>&rsquo;, which does not work
+at all for a register variable, and for a stack local variable prints
+the exact address of the current instantiation of the variable.
+</p>
+<a name="index-info-symbol"></a>
+<a name="index-symbol-from-address"></a>
+<a name="index-closest-symbol-and-offset-for-an-address"></a>
+</dd>
+<dt><code>info symbol <var>addr</var></code></dt>
+<dd><p>Print the name of a symbol which is stored at the address <var>addr</var>.
+If no symbol is stored exactly at <var>addr</var>, <small>GDB</small> prints the
+nearest symbol and an offset from it:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) info symbol 0x54320
+_initialize_vx + 396 in section .text
+</pre></div>
+
+<p>This is the opposite of the <code>info address</code> command.  You can use
+it to find out the name of a variable or a function given its address.
+</p>
+<p>For dynamically linked executables, the name of executable or shared
+library containing the symbol is also printed:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) info symbol 0x400225
+_start + 5 in section .text of /tmp/a.out
+(gdb) info symbol 0x2aaaac2811cf
+__read_nocancel + 6 in section .text of /usr/lib64/libc.so.6
+</pre></div>
+
+<a name="index-demangle-1"></a>
+<a name="index-demangle"></a>
+</dd>
+<dt><code>demangle <span class="roman">[</span>-l <var>language</var><span class="roman">]</span> <span class="roman">[</span><var>--</var><span class="roman">]</span> <var>name</var></code></dt>
+<dd><p>Demangle <var>name</var>.
+If <var>language</var> is provided it is the name of the language to demangle
+<var>name</var> in.  Otherwise <var>name</var> is demangled in the current language.
+</p>
+<p>The &lsquo;<samp>--</samp>&rsquo; option specifies the end of options,
+and is useful when <var>name</var> begins with a dash.
+</p>
+<p>The parameter <code>demangle-style</code> specifies how to interpret the kind
+of mangling used. See <a href="Print-Settings.html#Print-Settings">Print Settings</a>.
+</p>
+<a name="index-whatis"></a>
+</dd>
+<dt><code>whatis[/<var>flags</var>] [<var>arg</var>]</code></dt>
+<dd><p>Print the data type of <var>arg</var>, which can be either an expression
+or a name of a data type.  With no argument, print the data type of
+<code>$</code>, the last value in the value history.
+</p>
+<p>If <var>arg</var> is an expression (see <a href="Expressions.html#Expressions">Expressions</a>), it
+is not actually evaluated, and any side-effecting operations (such as
+assignments or function calls) inside it do not take place.
+</p>
+<p>If <var>arg</var> is a variable or an expression, <code>whatis</code> prints its
+literal type as it is used in the source code.  If the type was
+defined using a <code>typedef</code>, <code>whatis</code> will <em>not</em> print
+the data type underlying the <code>typedef</code>.  If the type of the
+variable or the expression is a compound data type, such as
+<code>struct</code> or  <code>class</code>, <code>whatis</code> never prints their
+fields or methods.  It just prints the <code>struct</code>/<code>class</code>
+name (a.k.a. its <em>tag</em>).  If you want to see the members of
+such a compound data type, use <code>ptype</code>.
+</p>
+<p>If <var>arg</var> is a type name that was defined using <code>typedef</code>,
+<code>whatis</code> <em>unrolls</em> only one level of that <code>typedef</code>.
+Unrolling means that <code>whatis</code> will show the underlying type used
+in the <code>typedef</code> declaration of <var>arg</var>.  However, if that
+underlying type is also a <code>typedef</code>, <code>whatis</code> will not
+unroll it.
+</p>
+<p>For C code, the type names may also have the form &lsquo;<samp>class
+<var>class-name</var></samp>&rsquo;, &lsquo;<samp>struct <var>struct-tag</var></samp>&rsquo;, &lsquo;<samp>union
+<var>union-tag</var></samp>&rsquo; or &lsquo;<samp>enum <var>enum-tag</var></samp>&rsquo;.
+</p>
+<p><var>flags</var> can be used to modify how the type is displayed.
+Available flags are:
+</p>
+<dl compact="compact">
+<dt><code>r</code></dt>
+<dd><p>Display in &ldquo;raw&rdquo; form.  Normally, <small>GDB</small> substitutes template
+parameters and typedefs defined in a class when printing the class&rsquo;
+members.  The <code>/r</code> flag disables this.
+</p>
+</dd>
+<dt><code>m</code></dt>
+<dd><p>Do not print methods defined in the class.
+</p>
+</dd>
+<dt><code>M</code></dt>
+<dd><p>Print methods defined in the class.  This is the default, but the flag
+exists in case you change the default with <code>set print type methods</code>.
+</p>
+</dd>
+<dt><code>t</code></dt>
+<dd><p>Do not print typedefs defined in the class.  Note that this controls
+whether the typedef definition itself is printed, not whether typedef
+names are substituted when printing other types.
+</p>
+</dd>
+<dt><code>T</code></dt>
+<dd><p>Print typedefs defined in the class.  This is the default, but the flag
+exists in case you change the default with <code>set print type typedefs</code>.
+</p>
+</dd>
+<dt><code>o</code></dt>
+<dd><p>Print the offsets and sizes of fields in a struct, similar to what the
+<code>pahole</code> tool does.  This option implies the <code>/tm</code> flags.
+</p>
+<p>For example, given the following declarations:
+</p>
+<div class="smallexample">
+<pre class="smallexample">struct tuv
+{
+  int a1;
+  char *a2;
+  int a3;
+};
+
+struct xyz
+{
+  int f1;
+  char f2;
+  void *f3;
+  struct tuv f4;
+};
+
+union qwe
+{
+  struct tuv fff1;
+  struct xyz fff2;
+};
+
+struct tyu
+{
+  int a1 : 1;
+  int a2 : 3;
+  int a3 : 23;
+  char a4 : 2;
+  int64_t a5;
+  int a6 : 5;
+  int64_t a7 : 3;
+};
+</pre></div>
+
+<p>Issuing a <kbd>ptype /o struct tuv</kbd> command would print:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) ptype /o struct tuv
+/* offset    |  size */  type = struct tuv {
+/*    0      |     4 */    int a1;
+/* XXX  4-byte hole  */
+/*    8      |     8 */    char *a2;
+/*   16      |     4 */    int a3;
+
+                           /* total size (bytes):   24 */
+                         }
+</pre></div>
+
+<p>Notice the format of the first column of comments.  There, you can
+find two parts separated by the &lsquo;<samp>|</samp>&rsquo; character: the <em>offset</em>,
+which indicates where the field is located inside the struct, in
+bytes, and the <em>size</em> of the field.  Another interesting line is
+the marker of a <em>hole</em> in the struct, indicating that it may be
+possible to pack the struct and make it use less space by reorganizing
+its fields.
+</p>
+<p>It is also possible to print offsets inside an union:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) ptype /o union qwe
+/* offset    |  size */  type = union qwe {
+/*                24 */    struct tuv {
+/*    0      |     4 */        int a1;
+/* XXX  4-byte hole  */
+/*    8      |     8 */        char *a2;
+/*   16      |     4 */        int a3;
+
+                               /* total size (bytes):   24 */
+                           } fff1;
+/*                40 */    struct xyz {
+/*    0      |     4 */        int f1;
+/*    4      |     1 */        char f2;
+/* XXX  3-byte hole  */
+/*    8      |     8 */        void *f3;
+/*   16      |    24 */        struct tuv {
+/*   16      |     4 */            int a1;
+/* XXX  4-byte hole  */
+/*   24      |     8 */            char *a2;
+/*   32      |     4 */            int a3;
+
+                                   /* total size (bytes):   24 */
+                               } f4;
+
+                               /* total size (bytes):   40 */
+                           } fff2;
+
+                           /* total size (bytes):   40 */
+                         }
+</pre></div>
+
+<p>In this case, since <code>struct tuv</code> and <code>struct xyz</code> occupy the
+same space (because we are dealing with an union), the offset is not
+printed for them.  However, you can still examine the offset of each
+of these structures&rsquo; fields.
+</p>
+<p>Another useful scenario is printing the offsets of a struct containing
+bitfields:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) ptype /o struct tyu
+/* offset    |  size */  type = struct tyu {
+/*    0:31   |     4 */    int a1 : 1;
+/*    0:28   |     4 */    int a2 : 3;
+/*    0: 5   |     4 */    int a3 : 23;
+/*    3: 3   |     1 */    signed char a4 : 2;
+/* XXX  3-bit hole   */
+/* XXX  4-byte hole  */
+/*    8      |     8 */    int64_t a5;
+/*   16:27   |     4 */    int a6 : 5;
+/*   16:56   |     8 */    int64_t a7 : 3;
+
+                           /* total size (bytes):   24 */
+                         }
+</pre></div>
+
+<p>Note how the offset information is now extended to also include how
+many bits are left to be used in each bitfield.
+</p></dd>
+</dl>
+
+<a name="index-ptype"></a>
+</dd>
+<dt><code>ptype[/<var>flags</var>] [<var>arg</var>]</code></dt>
+<dd><p><code>ptype</code> accepts the same arguments as <code>whatis</code>, but prints a
+detailed description of the type, instead of just the name of the type.
+See <a href="Expressions.html#Expressions">Expressions</a>.
+</p>
+<p>Contrary to <code>whatis</code>, <code>ptype</code> always unrolls any
+<code>typedef</code>s in its argument declaration, whether the argument is
+a variable, expression, or a data type.  This means that <code>ptype</code>
+of a variable or an expression will not print literally its type as
+present in the source code&mdash;use <code>whatis</code> for that.  <code>typedef</code>s at
+the pointer or reference targets are also unrolled.  Only <code>typedef</code>s of
+fields, methods and inner <code>class typedef</code>s of <code>struct</code>s,
+<code>class</code>es and <code>union</code>s are not unrolled even with <code>ptype</code>.
+</p>
+<p>For example, for this variable declaration:
+</p>
+<div class="smallexample">
+<pre class="smallexample">typedef double real_t;
+struct complex { real_t real; double imag; };
+typedef struct complex complex_t;
+complex_t var;
+real_t *real_pointer_var;
+</pre></div>
+
+<p>the two commands give this output:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) whatis var
+type = complex_t
+(gdb) ptype var
+type = struct complex {
+    real_t real;
+    double imag;
+}
+(gdb) whatis complex_t
+type = struct complex
+(gdb) whatis struct complex
+type = struct complex
+(gdb) ptype struct complex
+type = struct complex {
+    real_t real;
+    double imag;
+}
+(gdb) whatis real_pointer_var
+type = real_t *
+(gdb) ptype real_pointer_var
+type = double *
+</pre></div>
+
+<p>As with <code>whatis</code>, using <code>ptype</code> without an argument refers to
+the type of <code>$</code>, the last value in the value history.
+</p>
+<a name="index-incomplete-type"></a>
+<p>Sometimes, programs use opaque data types or incomplete specifications
+of complex data structure.  If the debug information included in the
+program does not allow <small>GDB</small> to display a full declaration of
+the data type, it will say &lsquo;<samp>&lt;incomplete type&gt;</samp>&rsquo;.  For example,
+given these declarations:
+</p>
+<div class="smallexample">
+<pre class="smallexample">    struct foo;
+    struct foo *fooptr;
+</pre></div>
+
+<p>but no definition for <code>struct foo</code> itself, <small>GDB</small> will say:
+</p>
+<div class="smallexample">
+<pre class="smallexample">  (gdb) ptype foo
+  $1 = &lt;incomplete type&gt;
+</pre></div>
+
+<p>&ldquo;Incomplete type&rdquo; is C terminology for data types that are not
+completely specified.
+</p>
+<a name="index-unknown-type"></a>
+<p>Othertimes, information about a variable&rsquo;s type is completely absent
+from the debug information included in the program.  This most often
+happens when the program or library where the variable is defined
+includes no debug information at all.  <small>GDB</small> knows the variable
+exists from inspecting the linker/loader symbol table (e.g., the ELF
+dynamic symbol table), but such symbols do not contain type
+information.  Inspecting the type of a (global) variable for which
+<small>GDB</small> has no type information shows:
+</p>
+<div class="smallexample">
+<pre class="smallexample">  (gdb) ptype var
+  type = &lt;data variable, no debug info&gt;
+</pre></div>
+
+<p>See <a href="Variables.html#Variables">no debug info variables</a>, for how to print the values
+of such variables.
+</p>
+<a name="index-info-types"></a>
+</dd>
+<dt><code>info types <var>regexp</var></code></dt>
+<dt><code>info types</code></dt>
+<dd><p>Print a brief description of all types whose names match the regular
+expression <var>regexp</var> (or all types in your program, if you supply
+no argument).  Each complete typename is matched as though it were a
+complete line; thus, &lsquo;<samp>i type value</samp>&rsquo; gives information on all
+types in your program whose names include the string <code>value</code>, but
+&lsquo;<samp>i type ^value$</samp>&rsquo; gives information only on types whose complete
+name is <code>value</code>.
+</p>
+<p>In programs using different languages, <small>GDB</small> chooses the syntax
+to print the type description according to the
+&lsquo;<samp>set language</samp>&rsquo; value: using &lsquo;<samp>set language auto</samp>&rsquo;
+(see <a href="Automatically.html#Automatically">Set Language Automatically</a>) means to use the
+language of the type, other values mean to use
+the manually specified language (see <a href="Manually.html#Manually">Set Language Manually</a>).
+</p>
+<p>This command differs from <code>ptype</code> in two ways: first, like
+<code>whatis</code>, it does not print a detailed description; second, it
+lists all source files and line numbers where a type is defined.
+</p>
+<a name="index-info-type_002dprinters"></a>
+</dd>
+<dt><code>info type-printers</code></dt>
+<dd><p>Versions of <small>GDB</small> that ship with Python scripting enabled may
+have &ldquo;type printers&rdquo; available.  When using <code>ptype</code> or
+<code>whatis</code>, these printers are consulted when the name of a type
+is needed.  See <a href="Type-Printing-API.html#Type-Printing-API">Type Printing API</a>, for more information on writing
+type printers.
+</p>
+<p><code>info type-printers</code> displays all the available type printers.
+</p>
+<a name="index-enable-type_002dprinter"></a>
+<a name="index-disable-type_002dprinter"></a>
+</dd>
+<dt><code>enable type-printer <var>name</var>&hellip;</code></dt>
+<dt><code>disable type-printer <var>name</var>&hellip;</code></dt>
+<dd><p>These commands can be used to enable or disable type printers.
+</p>
+<a name="index-info-scope"></a>
+<a name="index-local-variables"></a>
+</dd>
+<dt><code>info scope <var>location</var></code></dt>
+<dd><p>List all the variables local to a particular scope.  This command
+accepts a <var>location</var> argument&mdash;a function name, a source line, or
+an address preceded by a &lsquo;<samp>*</samp>&rsquo;, and prints all the variables local
+to the scope defined by that location.  (See <a href="Specify-Location.html#Specify-Location">Specify Location</a>, for
+details about supported forms of <var>location</var>.)  For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) <b>info scope command_line_handler</b>
+Scope for command_line_handler:
+Symbol rl is an argument at stack/frame offset 8, length 4.
+Symbol linebuffer is in static storage at address 0x150a18, length 4.
+Symbol linelength is in static storage at address 0x150a1c, length 4.
+Symbol p is a local variable in register $esi, length 4.
+Symbol p1 is a local variable in register $ebx, length 4.
+Symbol nline is a local variable in register $edx, length 4.
+Symbol repeat is a local variable at frame offset -8, length 4.
+</pre></div>
+
+<p>This command is especially useful for determining what data to collect
+during a <em>trace experiment</em>, see <a href="Tracepoint-Actions.html#Tracepoint-Actions">collect</a>.
+</p>
+<a name="index-info-source"></a>
+</dd>
+<dt><code>info source</code></dt>
+<dd><p>Show information about the current source file&mdash;that is, the source file for
+the function containing the current point of execution:
+</p><ul>
+<li> the name of the source file, and the directory containing it,
+</li><li> the directory it was compiled in,
+</li><li> its length, in lines,
+</li><li> which programming language it is written in,
+</li><li> if the debug information provides it, the program that compiled the file
+(which may include, e.g., the compiler version and command line arguments),
+</li><li> whether the executable includes debugging information for that file, and
+if so, what format the information is in (e.g., STABS, Dwarf 2, etc.), and
+</li><li> whether the debugging information includes information about
+preprocessor macros.
+</li></ul>
+
+
+<a name="index-info-sources"></a>
+</dd>
+<dt><code>info sources</code></dt>
+<dd><p>Print the names of all source files in your program for which there is
+debugging information, organized into two lists: files whose symbols
+have already been read, and files whose symbols will be read when needed.
+</p>
+<a name="index-info-functions"></a>
+</dd>
+<dt><code>info functions [-q]</code></dt>
+<dd><p>Print the names and data types of all defined functions.
+Similarly to &lsquo;<samp>info types</samp>&rsquo;, this command groups its output by source
+files and annotates each function definition with its source line
+number.
+</p>
+<p>In programs using different languages, <small>GDB</small> chooses the syntax
+to print the function name and type according to the
+&lsquo;<samp>set language</samp>&rsquo; value: using &lsquo;<samp>set language auto</samp>&rsquo;
+(see <a href="Automatically.html#Automatically">Set Language Automatically</a>) means to use the
+language of the function, other values mean to use
+the manually specified language (see <a href="Manually.html#Manually">Set Language Manually</a>).
+</p>
+<p>The optional flag &lsquo;<samp>-q</samp>&rsquo;, which stands for &lsquo;<samp>quiet</samp>&rsquo;, disables
+printing header information and messages explaining why no functions
+have been printed.
+</p>
+</dd>
+<dt><code>info functions [-q] [-t <var>type_regexp</var>] [<var>regexp</var>]</code></dt>
+<dd><p>Like &lsquo;<samp>info functions</samp>&rsquo;, but only print the names and data types
+of the functions selected with the provided regexp(s).
+</p>
+<p>If <var>regexp</var> is provided, print only the functions whose names
+match the regular expression <var>regexp</var>.
+Thus, &lsquo;<samp>info fun step</samp>&rsquo; finds all functions whose
+names include <code>step</code>; &lsquo;<samp>info fun ^step</samp>&rsquo; finds those whose names
+start with <code>step</code>.  If a function name contains characters that
+conflict with the regular expression language (e.g.
+&lsquo;<samp>operator*()</samp>&rsquo;), they may be quoted with a backslash.
+</p>
+<p>If <var>type_regexp</var> is provided, print only the functions whose
+types, as printed by the <code>whatis</code> command, match
+the regular expression <var>type_regexp</var>.
+If <var>type_regexp</var> contains space(s), it should be enclosed in
+quote characters.  If needed, use backslash to escape the meaning
+of special characters or quotes.
+Thus, &lsquo;<samp>info fun -t '^int ('</samp>&rsquo; finds the functions that return
+an integer; &lsquo;<samp>info fun -t '(.*int.*'</samp>&rsquo; finds the functions that
+have an argument type containing int; &lsquo;<samp>info fun -t '^int (' ^step</samp>&rsquo;
+finds the functions whose names start with <code>step</code> and that return
+int.
+</p>
+<p>If both <var>regexp</var> and <var>type_regexp</var> are provided, a function
+is printed only if its name matches <var>regexp</var> and its type matches
+<var>type_regexp</var>.
+</p>
+
+<a name="index-info-variables"></a>
+</dd>
+<dt><code>info variables [-q]</code></dt>
+<dd><p>Print the names and data types of all variables that are defined
+outside of functions (i.e. excluding local variables).
+The printed variables are grouped by source files and annotated with
+their respective source line numbers.
+</p>
+<p>In programs using different languages, <small>GDB</small> chooses the syntax
+to print the variable name and type according to the
+&lsquo;<samp>set language</samp>&rsquo; value: using &lsquo;<samp>set language auto</samp>&rsquo;
+(see <a href="Automatically.html#Automatically">Set Language Automatically</a>) means to use the
+language of the variable, other values mean to use
+the manually specified language (see <a href="Manually.html#Manually">Set Language Manually</a>).
+</p>
+<p>The optional flag &lsquo;<samp>-q</samp>&rsquo;, which stands for &lsquo;<samp>quiet</samp>&rsquo;, disables
+printing header information and messages explaining why no variables
+have been printed.
+</p>
+</dd>
+<dt><code>info variables [-q] [-t <var>type_regexp</var>] [<var>regexp</var>]</code></dt>
+<dd><p>Like <kbd>info variables</kbd>, but only print the variables selected
+with the provided regexp(s).
+</p>
+<p>If <var>regexp</var> is provided, print only the variables whose names
+match the regular expression <var>regexp</var>.
+</p>
+<p>If <var>type_regexp</var> is provided, print only the variables whose
+types, as printed by the <code>whatis</code> command, match
+the regular expression <var>type_regexp</var>.
+If <var>type_regexp</var> contains space(s), it should be enclosed in
+quote characters.  If needed, use backslash to escape the meaning
+of special characters or quotes.
+</p>
+<p>If both <var>regexp</var> and <var>type_regexp</var> are provided, an argument
+is printed only if its name matches <var>regexp</var> and its type matches
+<var>type_regexp</var>.
+</p>
+<a name="index-info-classes"></a>
+<a name="index-Objective_002dC_002c-classes-and-selectors"></a>
+</dd>
+<dt><code>info classes</code></dt>
+<dt><code>info classes <var>regexp</var></code></dt>
+<dd><p>Display all Objective-C classes in your program, or
+(with the <var>regexp</var> argument) all those matching a particular regular
+expression.
+</p>
+<a name="index-info-selectors"></a>
+</dd>
+<dt><code>info selectors</code></dt>
+<dt><code>info selectors <var>regexp</var></code></dt>
+<dd><p>Display all Objective-C selectors in your program, or
+(with the <var>regexp</var> argument) all those matching a particular regular
+expression.
+</p>
+
+<a name="index-opaque-data-types"></a>
+<a name="index-set-opaque_002dtype_002dresolution"></a>
+</dd>
+<dt><code>set opaque-type-resolution on</code></dt>
+<dd><p>Tell <small>GDB</small> to resolve opaque types.  An opaque type is a type
+declared as a pointer to a <code>struct</code>, <code>class</code>, or
+<code>union</code>&mdash;for example, <code>struct MyType *</code>&mdash;that is used in one
+source file although the full declaration of <code>struct MyType</code> is in
+another source file.  The default is on.
+</p>
+<p>A change in the setting of this subcommand will not take effect until
+the next time symbols for a file are loaded.
+</p>
+</dd>
+<dt><code>set opaque-type-resolution off</code></dt>
+<dd><p>Tell <small>GDB</small> not to resolve opaque types.  In this case, the type
+is printed as follows:
+</p><div class="smallexample">
+<pre class="smallexample">{&lt;no data fields&gt;}
+</pre></div>
+
+<a name="index-show-opaque_002dtype_002dresolution"></a>
+</dd>
+<dt><code>show opaque-type-resolution</code></dt>
+<dd><p>Show whether opaque types are resolved or not.
+</p>
+<a name="index-set-print-symbol_002dloading"></a>
+<a name="index-print-messages-when-symbols-are-loaded"></a>
+</dd>
+<dt><code>set print symbol-loading</code></dt>
+<dt><code>set print symbol-loading full</code></dt>
+<dt><code>set print symbol-loading brief</code></dt>
+<dt><code>set print symbol-loading off</code></dt>
+<dd><p>The <code>set print symbol-loading</code> command allows you to control the
+printing of messages when <small>GDB</small> loads symbol information.
+By default a message is printed for the executable and one for each
+shared library, and normally this is what you want.  However, when
+debugging apps with large numbers of shared libraries these messages
+can be annoying.
+When set to <code>brief</code> a message is printed for each executable,
+and when <small>GDB</small> loads a collection of shared libraries at once
+it will only print one message regardless of the number of shared
+libraries.  When set to <code>off</code> no messages are printed.
+</p>
+<a name="index-show-print-symbol_002dloading"></a>
+</dd>
+<dt><code>show print symbol-loading</code></dt>
+<dd><p>Show whether messages will be printed when a <small>GDB</small> command
+entered from the keyboard causes symbol information to be loaded.
+</p>
+<a name="index-maint-print-symbols"></a>
+<a name="index-symbol-dump"></a>
+<a name="index-maint-print-psymbols"></a>
+<a name="index-partial-symbol-dump"></a>
+<a name="index-maint-print-msymbols"></a>
+<a name="index-minimal-symbol-dump"></a>
+</dd>
+<dt><code>maint print symbols <span class="roman">[</span>-pc <var>address</var><span class="roman">]</span> <span class="roman">[</span><var>filename</var><span class="roman">]</span></code></dt>
+<dt><code>maint print symbols <span class="roman">[</span>-objfile <var>objfile</var><span class="roman">]</span> <span class="roman">[</span>-source <var>source</var><span class="roman">]</span> <span class="roman">[</span>--<span class="roman">]</span> <span class="roman">[</span><var>filename</var><span class="roman">]</span></code></dt>
+<dt><code>maint print psymbols <span class="roman">[</span>-objfile <var>objfile</var><span class="roman">]</span> <span class="roman">[</span>-pc <var>address</var><span class="roman">]</span> <span class="roman">[</span>--<span class="roman">]</span> <span class="roman">[</span><var>filename</var><span class="roman">]</span></code></dt>
+<dt><code>maint print psymbols <span class="roman">[</span>-objfile <var>objfile</var><span class="roman">]</span> <span class="roman">[</span>-source <var>source</var><span class="roman">]</span> <span class="roman">[</span>--<span class="roman">]</span> <span class="roman">[</span><var>filename</var><span class="roman">]</span></code></dt>
+<dt><code>maint print msymbols <span class="roman">[</span>-objfile <var>objfile</var><span class="roman">]</span> <span class="roman">[</span>--<span class="roman">]</span> <span class="roman">[</span><var>filename</var><span class="roman">]</span></code></dt>
+<dd><p>Write a dump of debugging symbol data into the file <var>filename</var> or
+the terminal if <var>filename</var> is unspecified.
+If <code>-objfile <var>objfile</var></code> is specified, only dump symbols for
+that objfile.
+If <code>-pc <var>address</var></code> is specified, only dump symbols for the file
+with code at that address.  Note that <var>address</var> may be a symbol like
+<code>main</code>.
+If <code>-source <var>source</var></code> is specified, only dump symbols for that
+source file.
+</p>
+<p>These commands are used to debug the <small>GDB</small> symbol-reading code.
+These commands do not modify internal <small>GDB</small> state, therefore
+&lsquo;<samp>maint print symbols</samp>&rsquo; will only print symbols for already expanded symbol
+tables.
+You can use the command <code>info sources</code> to find out which files these are.
+If you use &lsquo;<samp>maint print psymbols</samp>&rsquo; instead, the dump shows information
+about symbols that <small>GDB</small> only knows partially&mdash;that is, symbols
+defined in files that <small>GDB</small> has skimmed, but not yet read completely.
+Finally, &lsquo;<samp>maint print msymbols</samp>&rsquo; just dumps &ldquo;minimal symbols&rdquo;, e.g.,
+&ldquo;ELF symbols&rdquo;.
+</p>
+<p>See <a href="Files.html#Files">Commands to Specify Files</a>, for a discussion of how
+<small>GDB</small> reads symbols (in the description of <code>symbol-file</code>).
+</p>
+<a name="index-maint-info-symtabs"></a>
+<a name="index-maint-info-psymtabs"></a>
+<a name="index-listing-GDB_0027s-internal-symbol-tables"></a>
+<a name="index-symbol-tables_002c-listing-GDB_0027s-internal"></a>
+<a name="index-full-symbol-tables_002c-listing-GDB_0027s-internal"></a>
+<a name="index-partial-symbol-tables_002c-listing-GDB_0027s-internal"></a>
+</dd>
+<dt><code>maint info symtabs <span class="roman">[</span> <var>regexp</var> <span class="roman">]</span></code></dt>
+<dt><code>maint info psymtabs <span class="roman">[</span> <var>regexp</var> <span class="roman">]</span></code></dt>
+<dd>
+<p>List the <code>struct symtab</code> or <code>struct partial_symtab</code>
+structures whose names match <var>regexp</var>.  If <var>regexp</var> is not
+given, list them all.  The output includes expressions which you can
+copy into a <small>GDB</small> debugging this one to examine a particular
+structure in more detail.  For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) maint info psymtabs dwarf2read
+{ objfile /home/gnu/build/gdb/gdb
+  ((struct objfile *) 0x82e69d0)
+  { psymtab /home/gnu/src/gdb/dwarf2read.c
+    ((struct partial_symtab *) 0x8474b10)
+    readin no
+    fullname (null)
+    text addresses 0x814d3c8 -- 0x8158074
+    globals (* (struct partial_symbol **) 0x8507a08 @ 9)
+    statics (* (struct partial_symbol **) 0x40e95b78 @ 2882)
+    dependencies (none)
+  }
+}
+(gdb) maint info symtabs
+(gdb)
+</pre></div>
+<p>We see that there is one partial symbol table whose filename contains
+the string &lsquo;<samp>dwarf2read</samp>&rsquo;, belonging to the &lsquo;<samp>gdb</samp>&rsquo; executable;
+and we see that <small>GDB</small> has not read in any symtabs yet at all.
+If we set a breakpoint on a function, that will cause <small>GDB</small> to
+read the symtab for the compilation unit containing that function:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) break dwarf2_psymtab_to_symtab
+Breakpoint 1 at 0x814e5da: file /home/gnu/src/gdb/dwarf2read.c,
+line 1574.
+(gdb) maint info symtabs
+{ objfile /home/gnu/build/gdb/gdb
+  ((struct objfile *) 0x82e69d0)
+  { symtab /home/gnu/src/gdb/dwarf2read.c
+    ((struct symtab *) 0x86c1f38)
+    dirname (null)
+    fullname (null)
+    blockvector ((struct blockvector *) 0x86c1bd0) (primary)
+    linetable ((struct linetable *) 0x8370fa0)
+    debugformat DWARF 2
+  }
+}
+(gdb)
+</pre></div>
+
+<a name="index-maint-info-line_002dtable"></a>
+<a name="index-listing-GDB_0027s-internal-line-tables"></a>
+<a name="index-line-tables_002c-listing-GDB_0027s-internal"></a>
+</dd>
+<dt><code>maint info line-table <span class="roman">[</span> <var>regexp</var> <span class="roman">]</span></code></dt>
+<dd>
+<p>List the <code>struct linetable</code> from all <code>struct symtab</code>
+instances whose name matches <var>regexp</var>.  If <var>regexp</var> is not
+given, list the <code>struct linetable</code> from all <code>struct symtab</code>.
+</p>
+<a name="index-maint-set-symbol_002dcache_002dsize"></a>
+<a name="index-symbol-cache-size"></a>
+</dd>
+<dt><code>maint set symbol-cache-size <var>size</var></code></dt>
+<dd><p>Set the size of the symbol cache to <var>size</var>.
+The default size is intended to be good enough for debugging
+most applications.  This option exists to allow for experimenting
+with different sizes.
+</p>
+<a name="index-maint-show-symbol_002dcache_002dsize"></a>
+</dd>
+<dt><code>maint show symbol-cache-size</code></dt>
+<dd><p>Show the size of the symbol cache.
+</p>
+<a name="index-maint-print-symbol_002dcache"></a>
+<a name="index-symbol-cache_002c-printing-its-contents"></a>
+</dd>
+<dt><code>maint print symbol-cache</code></dt>
+<dd><p>Print the contents of the symbol cache.
+This is useful when debugging symbol cache issues.
+</p>
+<a name="index-maint-print-symbol_002dcache_002dstatistics"></a>
+<a name="index-symbol-cache_002c-printing-usage-statistics"></a>
+</dd>
+<dt><code>maint print symbol-cache-statistics</code></dt>
+<dd><p>Print symbol cache usage statistics.
+This helps determine how well the cache is being utilized.
+</p>
+<a name="index-maint-flush_002dsymbol_002dcache"></a>
+<a name="index-symbol-cache_002c-flushing"></a>
+</dd>
+<dt><code>maint flush-symbol-cache</code></dt>
+<dd><p>Flush the contents of the symbol cache, all entries are removed.
+This command is useful when debugging the symbol cache.
+It is also useful when collecting performance data.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Altering.html#Altering" accesskey="n" rel="next">Altering</a>, Previous: <a href="Languages.html#Languages" accesskey="p" rel="prev">Languages</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

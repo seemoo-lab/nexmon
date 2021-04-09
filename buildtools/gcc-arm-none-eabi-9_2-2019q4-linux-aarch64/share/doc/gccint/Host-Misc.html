@@ -1,0 +1,168 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Host Misc</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Host Misc">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Host Misc">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Host-Config.html#Host-Config" rel="up" title="Host Config">
+<link href="Fragments.html#Fragments" rel="next" title="Fragments">
+<link href="Filesystem.html#Filesystem" rel="prev" title="Filesystem">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Host-Misc"></a>
+<div class="header">
+<p>
+Previous: <a href="Filesystem.html#Filesystem" accesskey="p" rel="prev">Filesystem</a>, Up: <a href="Host-Config.html#Host-Config" accesskey="u" rel="up">Host Config</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Host-Misc-1"></a>
+<h3 class="section">19.3 Host Misc</h3>
+<a name="index-configuration-file-1"></a>
+<a name="index-xm_002dmachine_002eh-1"></a>
+
+<dl compact="compact">
+<dt><code>FATAL_EXIT_CODE</code>
+<a name="index-FATAL_005fEXIT_005fCODE"></a>
+</dt>
+<dd><p>A C expression for the status code to be returned when the compiler
+exits after serious errors.  The default is the system-provided macro
+&lsquo;<samp>EXIT_FAILURE</samp>&rsquo;, or &lsquo;<samp>1</samp>&rsquo; if the system doesn&rsquo;t define that
+macro.  Define this macro only if these defaults are incorrect.
+</p>
+</dd>
+<dt><code>SUCCESS_EXIT_CODE</code>
+<a name="index-SUCCESS_005fEXIT_005fCODE"></a>
+</dt>
+<dd><p>A C expression for the status code to be returned when the compiler
+exits without serious errors.  (Warnings are not serious errors.)  The
+default is the system-provided macro &lsquo;<samp>EXIT_SUCCESS</samp>&rsquo;, or &lsquo;<samp>0</samp>&rsquo; if
+the system doesn&rsquo;t define that macro.  Define this macro only if these
+defaults are incorrect.
+</p>
+</dd>
+<dt><code>USE_C_ALLOCA</code>
+<a name="index-USE_005fC_005fALLOCA"></a>
+</dt>
+<dd><p>Define this macro if GCC should use the C implementation of <code>alloca</code>
+provided by <samp>libiberty.a</samp>.  This only affects how some parts of the
+compiler itself allocate memory.  It does not change code generation.
+</p>
+<p>When GCC is built with a compiler other than itself, the C <code>alloca</code>
+is always used.  This is because most other implementations have serious
+bugs.  You should define this macro only on a system where no
+stack-based <code>alloca</code> can possibly work.  For instance, if a system
+has a small limit on the size of the stack, GCC&rsquo;s builtin <code>alloca</code>
+will not work reliably.
+</p>
+</dd>
+<dt><code>COLLECT2_HOST_INITIALIZATION</code>
+<a name="index-COLLECT2_005fHOST_005fINITIALIZATION"></a>
+</dt>
+<dd><p>If defined, a C statement (sans semicolon) that performs host-dependent
+initialization when <code>collect2</code> is being initialized.
+</p>
+</dd>
+<dt><code>GCC_DRIVER_HOST_INITIALIZATION</code>
+<a name="index-GCC_005fDRIVER_005fHOST_005fINITIALIZATION"></a>
+</dt>
+<dd><p>If defined, a C statement (sans semicolon) that performs host-dependent
+initialization when a compilation driver is being initialized.
+</p>
+</dd>
+<dt><code>HOST_LONG_LONG_FORMAT</code>
+<a name="index-HOST_005fLONG_005fLONG_005fFORMAT"></a>
+</dt>
+<dd><p>If defined, the string used to indicate an argument of type <code>long
+long</code> to functions like <code>printf</code>.  The default value is
+<code>&quot;ll&quot;</code>.
+</p>
+</dd>
+<dt><code>HOST_LONG_FORMAT</code>
+<a name="index-HOST_005fLONG_005fFORMAT"></a>
+</dt>
+<dd><p>If defined, the string used to indicate an argument of type <code>long</code>
+to functions like <code>printf</code>.  The default value is <code>&quot;l&quot;</code>.
+</p>
+</dd>
+<dt><code>HOST_PTR_PRINTF</code>
+<a name="index-HOST_005fPTR_005fPRINTF"></a>
+</dt>
+<dd><p>If defined, the string used to indicate an argument of type <code>void *</code>
+to functions like <code>printf</code>.  The default value is <code>&quot;%p&quot;</code>.
+</p></dd>
+</dl>
+
+<p>In addition, if <code>configure</code> generates an incorrect definition of
+any of the macros in <samp>auto-host.h</samp>, you can override that
+definition in a host configuration header.  If you need to do this,
+first see if it is possible to fix <code>configure</code>.
+</p>
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Filesystem.html#Filesystem" accesskey="p" rel="prev">Filesystem</a>, Up: <a href="Host-Config.html#Host-Config" accesskey="u" rel="up">Host Config</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

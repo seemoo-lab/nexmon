@@ -1,0 +1,629 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): C Dialect Options</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): C Dialect Options">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): C Dialect Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Invoking-GCC.html#Invoking-GCC" rel="up" title="Invoking GCC">
+<link href="C_002b_002b-Dialect-Options.html#C_002b_002b-Dialect-Options" rel="next" title="C++ Dialect Options">
+<link href="Invoking-G_002b_002b.html#Invoking-G_002b_002b" rel="prev" title="Invoking G++">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="C-Dialect-Options"></a>
+<div class="header">
+<p>
+Next: <a href="C_002b_002b-Dialect-Options.html#C_002b_002b-Dialect-Options" accesskey="n" rel="next">C++ Dialect Options</a>, Previous: <a href="Invoking-G_002b_002b.html#Invoking-G_002b_002b" accesskey="p" rel="prev">Invoking G++</a>, Up: <a href="Invoking-GCC.html#Invoking-GCC" accesskey="u" rel="up">Invoking GCC</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Options-Controlling-C-Dialect"></a>
+<h3 class="section">3.4 Options Controlling C Dialect</h3>
+<a name="index-dialect-options"></a>
+<a name="index-language-dialect-options"></a>
+<a name="index-options_002c-dialect"></a>
+
+<p>The following options control the dialect of C (or languages derived
+from C, such as C++, Objective-C and Objective-C++) that the compiler
+accepts:
+</p>
+<dl compact="compact">
+<dd><a name="index-ANSI-support"></a>
+<a name="index-ISO-support"></a>
+</dd>
+<dt><code>-ansi</code></dt>
+<dd><a name="index-ansi-1"></a>
+<p>In C mode, this is equivalent to <samp>-std=c90</samp>. In C++ mode, it is
+equivalent to <samp>-std=c++98</samp>.
+</p>
+<p>This turns off certain features of GCC that are incompatible with ISO
+C90 (when compiling C code), or of standard C++ (when compiling C++ code),
+such as the <code>asm</code> and <code>typeof</code> keywords, and
+predefined macros such as <code>unix</code> and <code>vax</code> that identify the
+type of system you are using.  It also enables the undesirable and
+rarely used ISO trigraph feature.  For the C compiler,
+it disables recognition of C++ style &lsquo;<samp>//</samp>&rsquo; comments as well as
+the <code>inline</code> keyword.
+</p>
+<p>The alternate keywords <code>__asm__</code>, <code>__extension__</code>,
+<code>__inline__</code> and <code>__typeof__</code> continue to work despite
+<samp>-ansi</samp>.  You would not want to use them in an ISO C program, of
+course, but it is useful to put them in header files that might be included
+in compilations done with <samp>-ansi</samp>.  Alternate predefined macros
+such as <code>__unix__</code> and <code>__vax__</code> are also available, with or
+without <samp>-ansi</samp>.
+</p>
+<p>The <samp>-ansi</samp> option does not cause non-ISO programs to be
+rejected gratuitously.  For that, <samp>-Wpedantic</samp> is required in
+addition to <samp>-ansi</samp>.  See <a href="Warning-Options.html#Warning-Options">Warning Options</a>.
+</p>
+<p>The macro <code>__STRICT_ANSI__</code> is predefined when the <samp>-ansi</samp>
+option is used.  Some header files may notice this macro and refrain
+from declaring certain functions or defining certain macros that the
+ISO standard doesn&rsquo;t call for; this is to avoid interfering with any
+programs that might use these names for other things.
+</p>
+<p>Functions that are normally built in but do not have semantics
+defined by ISO C (such as <code>alloca</code> and <code>ffs</code>) are not built-in
+functions when <samp>-ansi</samp> is used.  See <a href="Other-Builtins.html#Other-Builtins">Other
+built-in functions provided by GCC</a>, for details of the functions
+affected.
+</p>
+</dd>
+<dt><code>-std=</code></dt>
+<dd><a name="index-std-1"></a>
+<p>Determine the language standard. See <a href="Standards.html#Standards">Language Standards
+Supported by GCC</a>, for details of these standard versions.  This option
+is currently only supported when compiling C or C++.
+</p>
+<p>The compiler can accept several base standards, such as &lsquo;<samp>c90</samp>&rsquo; or
+&lsquo;<samp>c++98</samp>&rsquo;, and GNU dialects of those standards, such as
+&lsquo;<samp>gnu90</samp>&rsquo; or &lsquo;<samp>gnu++98</samp>&rsquo;.  When a base standard is specified, the
+compiler accepts all programs following that standard plus those
+using GNU extensions that do not contradict it.  For example,
+<samp>-std=c90</samp> turns off certain features of GCC that are
+incompatible with ISO C90, such as the <code>asm</code> and <code>typeof</code>
+keywords, but not other GNU extensions that do not have a meaning in
+ISO C90, such as omitting the middle term of a <code>?:</code>
+expression. On the other hand, when a GNU dialect of a standard is
+specified, all features supported by the compiler are enabled, even when
+those features change the meaning of the base standard.  As a result, some
+strict-conforming programs may be rejected.  The particular standard
+is used by <samp>-Wpedantic</samp> to identify which features are GNU
+extensions given that version of the standard. For example
+<samp>-std=gnu90 -Wpedantic</samp> warns about C++ style &lsquo;<samp>//</samp>&rsquo;
+comments, while <samp>-std=gnu99 -Wpedantic</samp> does not.
+</p>
+<p>A value for this option must be provided; possible values are
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>c90</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>c89</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>iso9899:1990</samp>&rsquo;</dt>
+<dd><p>Support all ISO C90 programs (certain GNU extensions that conflict
+with ISO C90 are disabled). Same as <samp>-ansi</samp> for C code.
+</p>
+</dd>
+<dt>&lsquo;<samp>iso9899:199409</samp>&rsquo;</dt>
+<dd><p>ISO C90 as modified in amendment 1.
+</p>
+</dd>
+<dt>&lsquo;<samp>c99</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>c9x</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>iso9899:1999</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>iso9899:199x</samp>&rsquo;</dt>
+<dd><p>ISO C99.  This standard is substantially completely supported, modulo
+bugs and floating-point issues
+(mainly but not entirely relating to optional C99 features from
+Annexes F and G).  See
+<a href="http://gcc.gnu.org/c99status.html">http://gcc.gnu.org/c99status.html</a><!-- /@w --> for more information.  The
+names &lsquo;<samp>c9x</samp>&rsquo; and &lsquo;<samp>iso9899:199x</samp>&rsquo; are deprecated.
+</p>
+</dd>
+<dt>&lsquo;<samp>c11</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>c1x</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>iso9899:2011</samp>&rsquo;</dt>
+<dd><p>ISO C11, the 2011 revision of the ISO C standard.  This standard is
+substantially completely supported, modulo bugs, floating-point issues
+(mainly but not entirely relating to optional C11 features from
+Annexes F and G) and the optional Annexes K (Bounds-checking
+interfaces) and L (Analyzability).  The name &lsquo;<samp>c1x</samp>&rsquo; is deprecated.
+</p>
+</dd>
+<dt>&lsquo;<samp>c17</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>c18</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>iso9899:2017</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>iso9899:2018</samp>&rsquo;</dt>
+<dd><p>ISO C17, the 2017 revision of the ISO C standard
+(published in 2018).  This standard is
+same as C11 except for corrections of defects (all of which are also
+applied with <samp>-std=c11</samp>) and a new value of
+<code>__STDC_VERSION__</code>, and so is supported to the same extent as C11.
+</p>
+</dd>
+<dt>&lsquo;<samp>c2x</samp>&rsquo;</dt>
+<dd><p>The next version of the ISO C standard, still under development.  The
+support for this version is experimental and incomplete.
+</p>
+</dd>
+<dt>&lsquo;<samp>gnu90</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>gnu89</samp>&rsquo;</dt>
+<dd><p>GNU dialect of ISO C90 (including some C99 features).
+</p>
+</dd>
+<dt>&lsquo;<samp>gnu99</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>gnu9x</samp>&rsquo;</dt>
+<dd><p>GNU dialect of ISO C99.  The name &lsquo;<samp>gnu9x</samp>&rsquo; is deprecated.
+</p>
+</dd>
+<dt>&lsquo;<samp>gnu11</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>gnu1x</samp>&rsquo;</dt>
+<dd><p>GNU dialect of ISO C11.
+The name &lsquo;<samp>gnu1x</samp>&rsquo; is deprecated.
+</p>
+</dd>
+<dt>&lsquo;<samp>gnu17</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>gnu18</samp>&rsquo;</dt>
+<dd><p>GNU dialect of ISO C17.  This is the default for C code.
+</p>
+</dd>
+<dt>&lsquo;<samp>gnu2x</samp>&rsquo;</dt>
+<dd><p>The next version of the ISO C standard, still under development, plus
+GNU extensions.  The support for this version is experimental and
+incomplete.
+</p>
+</dd>
+<dt>&lsquo;<samp>c++98</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>c++03</samp>&rsquo;</dt>
+<dd><p>The 1998 ISO C++ standard plus the 2003 technical corrigendum and some
+additional defect reports. Same as <samp>-ansi</samp> for C++ code.
+</p>
+</dd>
+<dt>&lsquo;<samp>gnu++98</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>gnu++03</samp>&rsquo;</dt>
+<dd><p>GNU dialect of <samp>-std=c++98</samp>.
+</p>
+</dd>
+<dt>&lsquo;<samp>c++11</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>c++0x</samp>&rsquo;</dt>
+<dd><p>The 2011 ISO C++ standard plus amendments.
+The name &lsquo;<samp>c++0x</samp>&rsquo; is deprecated.
+</p>
+</dd>
+<dt>&lsquo;<samp>gnu++11</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>gnu++0x</samp>&rsquo;</dt>
+<dd><p>GNU dialect of <samp>-std=c++11</samp>.
+The name &lsquo;<samp>gnu++0x</samp>&rsquo; is deprecated.
+</p>
+</dd>
+<dt>&lsquo;<samp>c++14</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>c++1y</samp>&rsquo;</dt>
+<dd><p>The 2014 ISO C++ standard plus amendments.
+The name &lsquo;<samp>c++1y</samp>&rsquo; is deprecated.
+</p>
+</dd>
+<dt>&lsquo;<samp>gnu++14</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>gnu++1y</samp>&rsquo;</dt>
+<dd><p>GNU dialect of <samp>-std=c++14</samp>.
+This is the default for C++ code.
+The name &lsquo;<samp>gnu++1y</samp>&rsquo; is deprecated.
+</p>
+</dd>
+<dt>&lsquo;<samp>c++17</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>c++1z</samp>&rsquo;</dt>
+<dd><p>The 2017 ISO C++ standard plus amendments.
+The name &lsquo;<samp>c++1z</samp>&rsquo; is deprecated.
+</p>
+</dd>
+<dt>&lsquo;<samp>gnu++17</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>gnu++1z</samp>&rsquo;</dt>
+<dd><p>GNU dialect of <samp>-std=c++17</samp>.
+The name &lsquo;<samp>gnu++1z</samp>&rsquo; is deprecated.
+</p>
+</dd>
+<dt>&lsquo;<samp>c++2a</samp>&rsquo;</dt>
+<dd><p>The next revision of the ISO C++ standard, tentatively planned for
+2020.  Support is highly experimental, and will almost certainly
+change in incompatible ways in future releases.
+</p>
+</dd>
+<dt>&lsquo;<samp>gnu++2a</samp>&rsquo;</dt>
+<dd><p>GNU dialect of <samp>-std=c++2a</samp>.  Support is highly experimental,
+and will almost certainly change in incompatible ways in future
+releases.
+</p></dd>
+</dl>
+
+</dd>
+<dt><code>-fgnu89-inline</code></dt>
+<dd><a name="index-fgnu89_002dinline"></a>
+<p>The option <samp>-fgnu89-inline</samp> tells GCC to use the traditional
+GNU semantics for <code>inline</code> functions when in C99 mode.
+See <a href="Inline.html#Inline">An Inline Function is As Fast As a Macro</a>.
+Using this option is roughly equivalent to adding the
+<code>gnu_inline</code> function attribute to all inline functions
+(see <a href="Function-Attributes.html#Function-Attributes">Function Attributes</a>).
+</p>
+<p>The option <samp>-fno-gnu89-inline</samp> explicitly tells GCC to use the
+C99 semantics for <code>inline</code> when in C99 or gnu99 mode (i.e., it
+specifies the default behavior).
+This option is not supported in <samp>-std=c90</samp> or
+<samp>-std=gnu90</samp> mode.
+</p>
+<p>The preprocessor macros <code>__GNUC_GNU_INLINE__</code> and
+<code>__GNUC_STDC_INLINE__</code> may be used to check which semantics are
+in effect for <code>inline</code> functions.  See <a href="http://gcc.gnu.org/onlinedocs/cpp/Common-Predefined-Macros.html#Common-Predefined-Macros">Common Predefined
+Macros</a> in <cite>The C Preprocessor</cite>.
+</p>
+</dd>
+<dt><code>-fpermitted-flt-eval-methods=<var>style</var></code></dt>
+<dd><a name="index-fpermitted_002dflt_002deval_002dmethods"></a>
+<a name="index-fpermitted_002dflt_002deval_002dmethods_003dc11"></a>
+<a name="index-fpermitted_002dflt_002deval_002dmethods_003dts_002d18661_002d3"></a>
+<p>ISO/IEC TS 18661-3 defines new permissible values for
+<code>FLT_EVAL_METHOD</code> that indicate that operations and constants with
+a semantic type that is an interchange or extended format should be
+evaluated to the precision and range of that type.  These new values are
+a superset of those permitted under C99/C11, which does not specify the
+meaning of other positive values of <code>FLT_EVAL_METHOD</code>.  As such, code
+conforming to C11 may not have been written expecting the possibility of
+the new values.
+</p>
+<p><samp>-fpermitted-flt-eval-methods</samp> specifies whether the compiler
+should allow only the values of <code>FLT_EVAL_METHOD</code> specified in C99/C11,
+or the extended set of values specified in ISO/IEC TS 18661-3.
+</p>
+<p><var>style</var> is either <code>c11</code> or <code>ts-18661-3</code> as appropriate.
+</p>
+<p>The default when in a standards compliant mode (<samp>-std=c11</samp> or similar)
+is <samp>-fpermitted-flt-eval-methods=c11</samp>.  The default when in a GNU
+dialect (<samp>-std=gnu11</samp> or similar) is
+<samp>-fpermitted-flt-eval-methods=ts-18661-3</samp>.
+</p>
+</dd>
+<dt><code>-aux-info <var>filename</var></code></dt>
+<dd><a name="index-aux_002dinfo"></a>
+<p>Output to the given filename prototyped declarations for all functions
+declared and/or defined in a translation unit, including those in header
+files.  This option is silently ignored in any language other than C.
+</p>
+<p>Besides declarations, the file indicates, in comments, the origin of
+each declaration (source file and line), whether the declaration was
+implicit, prototyped or unprototyped (&lsquo;<samp>I</samp>&rsquo;, &lsquo;<samp>N</samp>&rsquo; for new or
+&lsquo;<samp>O</samp>&rsquo; for old, respectively, in the first character after the line
+number and the colon), and whether it came from a declaration or a
+definition (&lsquo;<samp>C</samp>&rsquo; or &lsquo;<samp>F</samp>&rsquo;, respectively, in the following
+character).  In the case of function definitions, a K&amp;R-style list of
+arguments followed by their declarations is also provided, inside
+comments, after the declaration.
+</p>
+</dd>
+<dt><code>-fallow-parameterless-variadic-functions</code></dt>
+<dd><a name="index-fallow_002dparameterless_002dvariadic_002dfunctions"></a>
+<p>Accept variadic functions without named parameters.
+</p>
+<p>Although it is possible to define such a function, this is not very
+useful as it is not possible to read the arguments.  This is only
+supported for C as this construct is allowed by C++.
+</p>
+</dd>
+<dt><code>-fno-asm</code></dt>
+<dd><a name="index-fno_002dasm"></a>
+<a name="index-fasm"></a>
+<p>Do not recognize <code>asm</code>, <code>inline</code> or <code>typeof</code> as a
+keyword, so that code can use these words as identifiers.  You can use
+the keywords <code>__asm__</code>, <code>__inline__</code> and <code>__typeof__</code>
+instead.  <samp>-ansi</samp> implies <samp>-fno-asm</samp>.
+</p>
+<p>In C++, this switch only affects the <code>typeof</code> keyword, since
+<code>asm</code> and <code>inline</code> are standard keywords.  You may want to
+use the <samp>-fno-gnu-keywords</samp> flag instead, which has the same
+effect.  In C99 mode (<samp>-std=c99</samp> or <samp>-std=gnu99</samp>), this
+switch only affects the <code>asm</code> and <code>typeof</code> keywords, since
+<code>inline</code> is a standard keyword in ISO C99.
+</p>
+</dd>
+<dt><code>-fno-builtin</code></dt>
+<dt><code>-fno-builtin-<var>function</var></code></dt>
+<dd><a name="index-fno_002dbuiltin"></a>
+<a name="index-fbuiltin"></a>
+<a name="index-built_002din-functions"></a>
+<p>Don&rsquo;t recognize built-in functions that do not begin with
+&lsquo;<samp>__builtin_</samp>&rsquo; as prefix.  See <a href="Other-Builtins.html#Other-Builtins">Other built-in
+functions provided by GCC</a>, for details of the functions affected,
+including those which are not built-in functions when <samp>-ansi</samp> or
+<samp>-std</samp> options for strict ISO C conformance are used because they
+do not have an ISO standard meaning.
+</p>
+<p>GCC normally generates special code to handle certain built-in functions
+more efficiently; for instance, calls to <code>alloca</code> may become single
+instructions which adjust the stack directly, and calls to <code>memcpy</code>
+may become inline copy loops.  The resulting code is often both smaller
+and faster, but since the function calls no longer appear as such, you
+cannot set a breakpoint on those calls, nor can you change the behavior
+of the functions by linking with a different library.  In addition,
+when a function is recognized as a built-in function, GCC may use
+information about that function to warn about problems with calls to
+that function, or to generate more efficient code, even if the
+resulting code still contains calls to that function.  For example,
+warnings are given with <samp>-Wformat</samp> for bad calls to
+<code>printf</code> when <code>printf</code> is built in and <code>strlen</code> is
+known not to modify global memory.
+</p>
+<p>With the <samp>-fno-builtin-<var>function</var></samp> option
+only the built-in function <var>function</var> is
+disabled.  <var>function</var> must not begin with &lsquo;<samp>__builtin_</samp>&rsquo;.  If a
+function is named that is not built-in in this version of GCC, this
+option is ignored.  There is no corresponding
+<samp>-fbuiltin-<var>function</var></samp> option; if you wish to enable
+built-in functions selectively when using <samp>-fno-builtin</samp> or
+<samp>-ffreestanding</samp>, you may define macros such as:
+</p>
+<div class="smallexample">
+<pre class="smallexample">#define abs(n)          __builtin_abs ((n))
+#define strcpy(d, s)    __builtin_strcpy ((d), (s))
+</pre></div>
+
+</dd>
+<dt><code>-fgimple</code></dt>
+<dd><a name="index-fgimple"></a>
+
+<p>Enable parsing of function definitions marked with <code>__GIMPLE</code>.
+This is an experimental feature that allows unit testing of GIMPLE
+passes.
+</p>
+</dd>
+<dt><code>-fhosted</code></dt>
+<dd><a name="index-fhosted"></a>
+<a name="index-hosted-environment-1"></a>
+
+<p>Assert that compilation targets a hosted environment.  This implies
+<samp>-fbuiltin</samp>.  A hosted environment is one in which the
+entire standard library is available, and in which <code>main</code> has a return
+type of <code>int</code>.  Examples are nearly everything except a kernel.
+This is equivalent to <samp>-fno-freestanding</samp>.
+</p>
+</dd>
+<dt><code>-ffreestanding</code></dt>
+<dd><a name="index-ffreestanding-1"></a>
+<a name="index-hosted-environment-2"></a>
+
+<p>Assert that compilation targets a freestanding environment.  This
+implies <samp>-fno-builtin</samp>.  A freestanding environment
+is one in which the standard library may not exist, and program startup may
+not necessarily be at <code>main</code>.  The most obvious example is an OS kernel.
+This is equivalent to <samp>-fno-hosted</samp>.
+</p>
+<p>See <a href="Standards.html#Standards">Language Standards Supported by GCC</a>, for details of
+freestanding and hosted environments.
+</p>
+</dd>
+<dt><code>-fopenacc</code></dt>
+<dd><a name="index-fopenacc"></a>
+<a name="index-OpenACC-accelerator-programming"></a>
+<p>Enable handling of OpenACC directives <code>#pragma acc</code> in C/C++ and
+<code>!$acc</code> in Fortran.  When <samp>-fopenacc</samp> is specified, the
+compiler generates accelerated code according to the OpenACC Application
+Programming Interface v2.0 <a href="https://www.openacc.org">https://www.openacc.org</a><!-- /@w -->.  This option
+implies <samp>-pthread</samp>, and thus is only supported on targets that
+have support for <samp>-pthread</samp>.
+</p>
+</dd>
+<dt><code>-fopenacc-dim=<var>geom</var></code></dt>
+<dd><a name="index-fopenacc_002ddim"></a>
+<a name="index-OpenACC-accelerator-programming-1"></a>
+<p>Specify default compute dimensions for parallel offload regions that do
+not explicitly specify.  The <var>geom</var> value is a triple of
+&rsquo;:&rsquo;-separated sizes, in order &rsquo;gang&rsquo;, &rsquo;worker&rsquo; and, &rsquo;vector&rsquo;.  A size
+can be omitted, to use a target-specific default value.
+</p>
+</dd>
+<dt><code>-fopenmp</code></dt>
+<dd><a name="index-fopenmp"></a>
+<a name="index-OpenMP-parallel"></a>
+<p>Enable handling of OpenMP directives <code>#pragma omp</code> in C/C++ and
+<code>!$omp</code> in Fortran.  When <samp>-fopenmp</samp> is specified, the
+compiler generates parallel code according to the OpenMP Application
+Program Interface v4.5 <a href="https://www.openmp.org">https://www.openmp.org</a><!-- /@w -->.  This option
+implies <samp>-pthread</samp>, and thus is only supported on targets that
+have support for <samp>-pthread</samp>. <samp>-fopenmp</samp> implies
+<samp>-fopenmp-simd</samp>.
+</p>
+</dd>
+<dt><code>-fopenmp-simd</code></dt>
+<dd><a name="index-fopenmp_002dsimd"></a>
+<a name="index-OpenMP-SIMD"></a>
+<a name="index-SIMD"></a>
+<p>Enable handling of OpenMP&rsquo;s SIMD directives with <code>#pragma omp</code>
+in C/C++ and <code>!$omp</code> in Fortran. Other OpenMP directives
+are ignored.
+</p>
+</dd>
+<dt><code>-fgnu-tm</code></dt>
+<dd><a name="index-fgnu_002dtm"></a>
+<p>When the option <samp>-fgnu-tm</samp> is specified, the compiler
+generates code for the Linux variant of Intel&rsquo;s current Transactional
+Memory ABI specification document (Revision 1.1, May 6 2009).  This is
+an experimental feature whose interface may change in future versions
+of GCC, as the official specification changes.  Please note that not
+all architectures are supported for this feature.
+</p>
+<p>For more information on GCC&rsquo;s support for transactional memory,
+See <a href="../libitm/Enabling-libitm.html#Enabling-libitm">The GNU Transactional Memory Library</a> in <cite>GNU
+Transactional Memory Library</cite>.
+</p>
+<p>Note that the transactional memory feature is not supported with
+non-call exceptions (<samp>-fnon-call-exceptions</samp>).
+</p>
+</dd>
+<dt><code>-fms-extensions</code></dt>
+<dd><a name="index-fms_002dextensions"></a>
+<p>Accept some non-standard constructs used in Microsoft header files.
+</p>
+<p>In C++ code, this allows member names in structures to be similar
+to previous types declarations.
+</p>
+<div class="smallexample">
+<pre class="smallexample">typedef int UOW;
+struct ABC {
+  UOW UOW;
+};
+</pre></div>
+
+<p>Some cases of unnamed fields in structures and unions are only
+accepted with this option.  See <a href="Unnamed-Fields.html#Unnamed-Fields">Unnamed struct/union
+fields within structs/unions</a>, for details.
+</p>
+<p>Note that this option is off for all targets but x86 
+targets using ms-abi.
+</p>
+</dd>
+<dt><code>-fplan9-extensions</code></dt>
+<dd><a name="index-fplan9_002dextensions"></a>
+<p>Accept some non-standard constructs used in Plan 9 code.
+</p>
+<p>This enables <samp>-fms-extensions</samp>, permits passing pointers to
+structures with anonymous fields to functions that expect pointers to
+elements of the type of the field, and permits referring to anonymous
+fields declared using a typedef.  See <a href="Unnamed-Fields.html#Unnamed-Fields">Unnamed
+struct/union fields within structs/unions</a>, for details.  This is only
+supported for C, not C++.
+</p>
+</dd>
+<dt><code>-fcond-mismatch</code></dt>
+<dd><a name="index-fcond_002dmismatch"></a>
+<p>Allow conditional expressions with mismatched types in the second and
+third arguments.  The value of such an expression is void.  This option
+is not supported for C++.
+</p>
+</dd>
+<dt><code>-flax-vector-conversions</code></dt>
+<dd><a name="index-flax_002dvector_002dconversions"></a>
+<p>Allow implicit conversions between vectors with differing numbers of
+elements and/or incompatible element types.  This option should not be
+used for new code.
+</p>
+</dd>
+<dt><code>-funsigned-char</code></dt>
+<dd><a name="index-funsigned_002dchar"></a>
+<p>Let the type <code>char</code> be unsigned, like <code>unsigned char</code>.
+</p>
+<p>Each kind of machine has a default for what <code>char</code> should
+be.  It is either like <code>unsigned char</code> by default or like
+<code>signed char</code> by default.
+</p>
+<p>Ideally, a portable program should always use <code>signed char</code> or
+<code>unsigned char</code> when it depends on the signedness of an object.
+But many programs have been written to use plain <code>char</code> and
+expect it to be signed, or expect it to be unsigned, depending on the
+machines they were written for.  This option, and its inverse, let you
+make such a program work with the opposite default.
+</p>
+<p>The type <code>char</code> is always a distinct type from each of
+<code>signed char</code> or <code>unsigned char</code>, even though its behavior
+is always just like one of those two.
+</p>
+</dd>
+<dt><code>-fsigned-char</code></dt>
+<dd><a name="index-fsigned_002dchar"></a>
+<p>Let the type <code>char</code> be signed, like <code>signed char</code>.
+</p>
+<p>Note that this is equivalent to <samp>-fno-unsigned-char</samp>, which is
+the negative form of <samp>-funsigned-char</samp>.  Likewise, the option
+<samp>-fno-signed-char</samp> is equivalent to <samp>-funsigned-char</samp>.
+</p>
+</dd>
+<dt><code>-fsigned-bitfields</code></dt>
+<dt><code>-funsigned-bitfields</code></dt>
+<dt><code>-fno-signed-bitfields</code></dt>
+<dt><code>-fno-unsigned-bitfields</code></dt>
+<dd><a name="index-fsigned_002dbitfields"></a>
+<a name="index-funsigned_002dbitfields"></a>
+<a name="index-fno_002dsigned_002dbitfields"></a>
+<a name="index-fno_002dunsigned_002dbitfields"></a>
+<p>These options control whether a bit-field is signed or unsigned, when the
+declaration does not use either <code>signed</code> or <code>unsigned</code>.  By
+default, such a bit-field is signed, because this is consistent: the
+basic integer types such as <code>int</code> are signed types.
+</p>
+</dd>
+<dt><code>-fsso-struct=<var>endianness</var></code></dt>
+<dd><a name="index-fsso_002dstruct"></a>
+<p>Set the default scalar storage order of structures and unions to the
+specified endianness.  The accepted values are &lsquo;<samp>big-endian</samp>&rsquo;,
+&lsquo;<samp>little-endian</samp>&rsquo; and &lsquo;<samp>native</samp>&rsquo; for the native endianness of
+the target (the default).  This option is not supported for C++.
+</p>
+<p><strong>Warning:</strong> the <samp>-fsso-struct</samp> switch causes GCC to generate
+code that is not binary compatible with code generated without it if the
+specified endianness is not the native endianness of the target.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="C_002b_002b-Dialect-Options.html#C_002b_002b-Dialect-Options" accesskey="n" rel="next">C++ Dialect Options</a>, Previous: <a href="Invoking-G_002b_002b.html#Invoking-G_002b_002b" accesskey="p" rel="prev">Invoking G++</a>, Up: <a href="Invoking-GCC.html#Invoking-GCC" accesskey="u" rel="up">Invoking GCC</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

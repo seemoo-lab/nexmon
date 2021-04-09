@@ -1,0 +1,424 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Debugging Output</title>
+
+<meta name="description" content="Debugging with GDB: Debugging Output">
+<meta name="keywords" content="Debugging with GDB: Debugging Output">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Controlling-GDB.html#Controlling-GDB" rel="up" title="Controlling GDB">
+<link href="Other-Misc-Settings.html#Other-Misc-Settings" rel="next" title="Other Misc Settings">
+<link href="Messages_002fWarnings.html#Messages_002fWarnings" rel="prev" title="Messages/Warnings">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Debugging-Output"></a>
+<div class="header">
+<p>
+Next: <a href="Other-Misc-Settings.html#Other-Misc-Settings" accesskey="n" rel="next">Other Misc Settings</a>, Previous: <a href="Messages_002fWarnings.html#Messages_002fWarnings" accesskey="p" rel="prev">Messages/Warnings</a>, Up: <a href="Controlling-GDB.html#Controlling-GDB" accesskey="u" rel="up">Controlling GDB</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Optional-Messages-about-Internal-Happenings"></a>
+<h3 class="section">22.10 Optional Messages about Internal Happenings</h3>
+<a name="index-optional-debugging-messages"></a>
+
+<p><small>GDB</small> has commands that enable optional debugging messages from
+various <small>GDB</small> subsystems; normally these commands are of
+interest to <small>GDB</small> maintainers, or when reporting a bug.  This
+section documents those commands.
+</p>
+<dl compact="compact">
+<dd><a name="index-set-exec_002ddone_002ddisplay"></a>
+</dd>
+<dt><code>set exec-done-display</code></dt>
+<dd><p>Turns on or off the notification of asynchronous commands&rsquo;
+completion.  When on, <small>GDB</small> will print a message when an
+asynchronous command finishes its execution.  The default is off.
+<a name="index-show-exec_002ddone_002ddisplay"></a>
+</p></dd>
+<dt><code>show exec-done-display</code></dt>
+<dd><p>Displays the current setting of asynchronous command completion
+notification.
+<a name="index-set-debug"></a>
+<a name="index-ARM-AArch64"></a>
+</p></dd>
+<dt><code>set debug aarch64</code></dt>
+<dd><p>Turns on or off display of debugging messages related to ARM AArch64.
+The default is off.
+<a name="index-show-debug"></a>
+</p></dd>
+<dt><code>show debug aarch64</code></dt>
+<dd><p>Displays the current state of displaying debugging messages related to
+ARM AArch64.
+<a name="index-gdbarch-debugging-info"></a>
+<a name="index-architecture-debugging-info"></a>
+</p></dd>
+<dt><code>set debug arch</code></dt>
+<dd><p>Turns on or off display of gdbarch debugging info.  The default is off
+</p></dd>
+<dt><code>show debug arch</code></dt>
+<dd><p>Displays the current state of displaying gdbarch debugging info.
+</p></dd>
+<dt><code>set debug aix-solib</code></dt>
+<dd><a name="index-AIX-shared-library-debugging"></a>
+<p>Control display of debugging messages from the AIX shared library
+support module.  The default is off.
+</p></dd>
+<dt><code>show debug aix-thread</code></dt>
+<dd><p>Show the current state of displaying AIX shared library debugging messages.
+</p></dd>
+<dt><code>set debug aix-thread</code></dt>
+<dd><a name="index-AIX-threads"></a>
+<p>Display debugging messages about inner workings of the AIX thread
+module.
+</p></dd>
+<dt><code>show debug aix-thread</code></dt>
+<dd><p>Show the current state of AIX thread debugging info display.
+</p></dd>
+<dt><code>set debug check-physname</code></dt>
+<dd><a name="index-physname"></a>
+<p>Check the results of the &ldquo;physname&rdquo; computation.  When reading DWARF
+debugging information for C<tt>++</tt>, <small>GDB</small> attempts to compute
+each entity&rsquo;s name.  <small>GDB</small> can do this computation in two
+different ways, depending on exactly what information is present.
+When enabled, this setting causes <small>GDB</small> to compute the names
+both ways and display any discrepancies.
+</p></dd>
+<dt><code>show debug check-physname</code></dt>
+<dd><p>Show the current state of &ldquo;physname&rdquo; checking.
+</p></dd>
+<dt><code>set debug coff-pe-read</code></dt>
+<dd><a name="index-COFF_002fPE-exported-symbols"></a>
+<p>Control display of debugging messages related to reading of COFF/PE
+exported symbols.  The default is off.
+</p></dd>
+<dt><code>show debug coff-pe-read</code></dt>
+<dd><p>Displays the current state of displaying debugging messages related to
+reading of COFF/PE exported symbols.
+</p></dd>
+<dt><code>set debug dwarf-die</code></dt>
+<dd><a name="index-DWARF-DIEs"></a>
+<p>Dump DWARF DIEs after they are read in.
+The value is the number of nesting levels to print.
+A value of zero turns off the display.
+</p></dd>
+<dt><code>show debug dwarf-die</code></dt>
+<dd><p>Show the current state of DWARF DIE debugging.
+</p></dd>
+<dt><code>set debug dwarf-line</code></dt>
+<dd><a name="index-DWARF-Line-Tables"></a>
+<p>Turns on or off display of debugging messages related to reading
+DWARF line tables.  The default is 0 (off).
+A value of 1 provides basic information.
+A value greater than 1 provides more verbose information.
+</p></dd>
+<dt><code>show debug dwarf-line</code></dt>
+<dd><p>Show the current state of DWARF line table debugging.
+</p></dd>
+<dt><code>set debug dwarf-read</code></dt>
+<dd><a name="index-DWARF-Reading"></a>
+<p>Turns on or off display of debugging messages related to reading
+DWARF debug info.  The default is 0 (off).
+A value of 1 provides basic information.
+A value greater than 1 provides more verbose information.
+</p></dd>
+<dt><code>show debug dwarf-read</code></dt>
+<dd><p>Show the current state of DWARF reader debugging.
+</p></dd>
+<dt><code>set debug displaced</code></dt>
+<dd><a name="index-displaced-stepping-debugging-info"></a>
+<p>Turns on or off display of <small>GDB</small> debugging info for the
+displaced stepping support.  The default is off.
+</p></dd>
+<dt><code>show debug displaced</code></dt>
+<dd><p>Displays the current state of displaying <small>GDB</small> debugging info
+related to displaced stepping.
+</p></dd>
+<dt><code>set debug event</code></dt>
+<dd><a name="index-event-debugging-info"></a>
+<p>Turns on or off display of <small>GDB</small> event debugging info.  The
+default is off.
+</p></dd>
+<dt><code>show debug event</code></dt>
+<dd><p>Displays the current state of displaying <small>GDB</small> event debugging
+info.
+</p></dd>
+<dt><code>set debug expression</code></dt>
+<dd><a name="index-expression-debugging-info"></a>
+<p>Turns on or off display of debugging info about <small>GDB</small>
+expression parsing.  The default is off.
+</p></dd>
+<dt><code>show debug expression</code></dt>
+<dd><p>Displays the current state of displaying debugging info about
+<small>GDB</small> expression parsing.
+</p></dd>
+<dt><code>set debug fbsd-lwp</code></dt>
+<dd><a name="index-FreeBSD-LWP-debug-messages"></a>
+<p>Turns on or off debugging messages from the FreeBSD LWP debug support.
+</p></dd>
+<dt><code>show debug fbsd-lwp</code></dt>
+<dd><p>Show the current state of FreeBSD LWP debugging messages.
+</p></dd>
+<dt><code>set debug fbsd-nat</code></dt>
+<dd><a name="index-FreeBSD-native-target-debug-messages"></a>
+<p>Turns on or off debugging messages from the FreeBSD native target.
+</p></dd>
+<dt><code>show debug fbsd-nat</code></dt>
+<dd><p>Show the current state of FreeBSD native target debugging messages.
+</p></dd>
+<dt><code>set debug frame</code></dt>
+<dd><a name="index-frame-debugging-info"></a>
+<p>Turns on or off display of <small>GDB</small> frame debugging info.  The
+default is off.
+</p></dd>
+<dt><code>show debug frame</code></dt>
+<dd><p>Displays the current state of displaying <small>GDB</small> frame debugging
+info.
+</p></dd>
+<dt><code>set debug gnu-nat</code></dt>
+<dd><a name="index-GNU_002fHurd-debug-messages"></a>
+<p>Turn on or off debugging messages from the <small>GNU</small>/Hurd debug support.
+</p></dd>
+<dt><code>show debug gnu-nat</code></dt>
+<dd><p>Show the current state of <small>GNU</small>/Hurd debugging messages.
+</p></dd>
+<dt><code>set debug infrun</code></dt>
+<dd><a name="index-inferior-debugging-info"></a>
+<p>Turns on or off display of <small>GDB</small> debugging info for running the inferior.
+The default is off.  <samp>infrun.c</samp> contains GDB&rsquo;s runtime state machine used 
+for implementing operations such as single-stepping the inferior.
+</p></dd>
+<dt><code>show debug infrun</code></dt>
+<dd><p>Displays the current state of <small>GDB</small> inferior debugging.
+</p></dd>
+<dt><code>set debug jit</code></dt>
+<dd><a name="index-just_002din_002dtime-compilation_002c-debugging-messages"></a>
+<p>Turn on or off debugging messages from JIT debug support.
+</p></dd>
+<dt><code>show debug jit</code></dt>
+<dd><p>Displays the current state of <small>GDB</small> JIT debugging.
+</p></dd>
+<dt><code>set debug lin-lwp</code></dt>
+<dd><a name="index-GNU_002fLinux-LWP-debug-messages"></a>
+<a name="index-Linux-lightweight-processes"></a>
+<p>Turn on or off debugging messages from the Linux LWP debug support.
+</p></dd>
+<dt><code>show debug lin-lwp</code></dt>
+<dd><p>Show the current state of Linux LWP debugging messages.
+</p></dd>
+<dt><code>set debug linux-namespaces</code></dt>
+<dd><a name="index-GNU_002fLinux-namespaces-debug-messages"></a>
+<p>Turn on or off debugging messages from the Linux namespaces debug support.
+</p></dd>
+<dt><code>show debug linux-namespaces</code></dt>
+<dd><p>Show the current state of Linux namespaces debugging messages.
+</p></dd>
+<dt><code>set debug mach-o</code></dt>
+<dd><a name="index-Mach_002dO-symbols-processing"></a>
+<p>Control display of debugging messages related to Mach-O symbols
+processing.  The default is off.
+</p></dd>
+<dt><code>show debug mach-o</code></dt>
+<dd><p>Displays the current state of displaying debugging messages related to
+reading of COFF/PE exported symbols.
+</p></dd>
+<dt><code>set debug notification</code></dt>
+<dd><a name="index-remote-async-notification-debugging-info"></a>
+<p>Turn on or off debugging messages about remote async notification.
+The default is off.
+</p></dd>
+<dt><code>show debug notification</code></dt>
+<dd><p>Displays the current state of remote async notification debugging messages.
+</p></dd>
+<dt><code>set debug observer</code></dt>
+<dd><a name="index-observer-debugging-info"></a>
+<p>Turns on or off display of <small>GDB</small> observer debugging.  This
+includes info such as the notification of observable events.
+</p></dd>
+<dt><code>show debug observer</code></dt>
+<dd><p>Displays the current state of observer debugging.
+</p></dd>
+<dt><code>set debug overload</code></dt>
+<dd><a name="index-C_002b_002b-overload-debugging-info"></a>
+<p>Turns on or off display of <small>GDB</small> C<tt>++</tt> overload debugging
+info. This includes info such as ranking of functions, etc.  The default
+is off.
+</p></dd>
+<dt><code>show debug overload</code></dt>
+<dd><p>Displays the current state of displaying <small>GDB</small> C<tt>++</tt> overload
+debugging info.
+<a name="index-expression-parser_002c-debugging-info"></a>
+<a name="index-debug-expression-parser"></a>
+</p></dd>
+<dt><code>set debug parser</code></dt>
+<dd><p>Turns on or off the display of expression parser debugging output.
+Internally, this sets the <code>yydebug</code> variable in the expression
+parser.  See <a href="http://www.gnu.org/software/bison/manual/html_node/Tracing.html#Tracing">Tracing Your Parser</a> in <cite>Bison</cite>, for
+details.  The default is off.
+</p></dd>
+<dt><code>show debug parser</code></dt>
+<dd><p>Show the current state of expression parser debugging.
+<a name="index-packets_002c-reporting-on-stdout"></a>
+<a name="index-serial-connections_002c-debugging"></a>
+<a name="index-debug-remote-protocol"></a>
+<a name="index-remote-protocol-debugging"></a>
+<a name="index-display-remote-packets"></a>
+</p></dd>
+<dt><code>set debug remote</code></dt>
+<dd><p>Turns on or off display of reports on all packets sent back and forth across
+the serial line to the remote machine.  The info is printed on the
+<small>GDB</small> standard output stream. The default is off.
+</p></dd>
+<dt><code>show debug remote</code></dt>
+<dd><p>Displays the state of display of remote packets.
+</p>
+</dd>
+<dt><code>set debug separate-debug-file</code></dt>
+<dd><p>Turns on or off display of debug output about separate debug file search.
+</p></dd>
+<dt><code>show debug separate-debug-file</code></dt>
+<dd><p>Displays the state of separate debug file search debug output.
+</p>
+</dd>
+<dt><code>set debug serial</code></dt>
+<dd><p>Turns on or off display of <small>GDB</small> serial debugging info. The
+default is off.
+</p></dd>
+<dt><code>show debug serial</code></dt>
+<dd><p>Displays the current state of displaying <small>GDB</small> serial debugging
+info.
+</p></dd>
+<dt><code>set debug solib-frv</code></dt>
+<dd><a name="index-FR_002dV-shared_002dlibrary-debugging"></a>
+<p>Turn on or off debugging messages for FR-V shared-library code.
+</p></dd>
+<dt><code>show debug solib-frv</code></dt>
+<dd><p>Display the current state of FR-V shared-library code debugging
+messages.
+</p></dd>
+<dt><code>set debug symbol-lookup</code></dt>
+<dd><a name="index-symbol-lookup"></a>
+<p>Turns on or off display of debugging messages related to symbol lookup.
+The default is 0 (off).
+A value of 1 provides basic information.
+A value greater than 1 provides more verbose information.
+</p></dd>
+<dt><code>show debug symbol-lookup</code></dt>
+<dd><p>Show the current state of symbol lookup debugging messages.
+</p></dd>
+<dt><code>set debug symfile</code></dt>
+<dd><a name="index-symbol-file-functions"></a>
+<p>Turns on or off display of debugging messages related to symbol file functions.
+The default is off.  See <a href="Files.html#Files">Files</a>.
+</p></dd>
+<dt><code>show debug symfile</code></dt>
+<dd><p>Show the current state of symbol file debugging messages.
+</p></dd>
+<dt><code>set debug symtab-create</code></dt>
+<dd><a name="index-symbol-table-creation"></a>
+<p>Turns on or off display of debugging messages related to symbol table creation.
+The default is 0 (off).
+A value of 1 provides basic information.
+A value greater than 1 provides more verbose information.
+</p></dd>
+<dt><code>show debug symtab-create</code></dt>
+<dd><p>Show the current state of symbol table creation debugging.
+</p></dd>
+<dt><code>set debug target</code></dt>
+<dd><a name="index-target-debugging-info"></a>
+<p>Turns on or off display of <small>GDB</small> target debugging info. This info
+includes what is going on at the target level of GDB, as it happens. The
+default is 0.  Set it to 1 to track events, and to 2 to also track the
+value of large memory transfers.
+</p></dd>
+<dt><code>show debug target</code></dt>
+<dd><p>Displays the current state of displaying <small>GDB</small> target debugging
+info.
+</p></dd>
+<dt><code>set debug timestamp</code></dt>
+<dd><a name="index-timestampping-debugging-info"></a>
+<p>Turns on or off display of timestamps with <small>GDB</small> debugging info.
+When enabled, seconds and microseconds are displayed before each debugging
+message.
+</p></dd>
+<dt><code>show debug timestamp</code></dt>
+<dd><p>Displays the current state of displaying timestamps with <small>GDB</small>
+debugging info.
+</p></dd>
+<dt><code>set debug varobj</code></dt>
+<dd><a name="index-variable-object-debugging-info"></a>
+<p>Turns on or off display of <small>GDB</small> variable object debugging
+info. The default is off.
+</p></dd>
+<dt><code>show debug varobj</code></dt>
+<dd><p>Displays the current state of displaying <small>GDB</small> variable object
+debugging info.
+</p></dd>
+<dt><code>set debug xml</code></dt>
+<dd><a name="index-XML-parser-debugging"></a>
+<p>Turn on or off debugging messages for built-in XML parsers.
+</p></dd>
+<dt><code>show debug xml</code></dt>
+<dd><p>Displays the current state of XML debugging messages.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Other-Misc-Settings.html#Other-Misc-Settings" accesskey="n" rel="next">Other Misc Settings</a>, Previous: <a href="Messages_002fWarnings.html#Messages_002fWarnings" accesskey="p" rel="prev">Messages/Warnings</a>, Up: <a href="Controlling-GDB.html#Controlling-GDB" accesskey="u" rel="up">Controlling GDB</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU C Preprocessor Internals: Hash Nodes</title>
+
+<meta name="description" content="The GNU C Preprocessor Internals: Hash Nodes">
+<meta name="keywords" content="The GNU C Preprocessor Internals: Hash Nodes">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Macro-Expansion.html#Macro-Expansion" rel="next" title="Macro Expansion">
+<link href="Lexer.html#Lexer" rel="prev" title="Lexer">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Hash-Nodes"></a>
+<div class="header">
+<p>
+Next: <a href="Macro-Expansion.html#Macro-Expansion" accesskey="n" rel="next">Macro Expansion</a>, Previous: <a href="Lexer.html#Lexer" accesskey="p" rel="prev">Lexer</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Hash-Nodes-1"></a>
+<h2 class="unnumbered">Hash Nodes</h2>
+<a name="index-hash-table"></a>
+<a name="index-identifiers"></a>
+<a name="index-macros"></a>
+<a name="index-assertions"></a>
+<a name="index-named-operators"></a>
+
+<p>When cpplib encounters an &ldquo;identifier&rdquo;, it generates a hash code for
+it and stores it in the hash table.  By &ldquo;identifier&rdquo; we mean tokens
+with type <code>CPP_NAME</code>; this includes identifiers in the usual C
+sense, as well as keywords, directive names, macro names and so on.  For
+example, all of <code>pragma</code>, <code>int</code>, <code>foo</code> and
+<code>__GNUC__</code> are identifiers and hashed when lexed.
+</p>
+<p>Each node in the hash table contain various information about the
+identifier it represents.  For example, its length and type.  At any one
+time, each identifier falls into exactly one of three categories:
+</p>
+<ul>
+<li> Macros
+
+<p>These have been declared to be macros, either on the command line or
+with <code>#define</code>.  A few, such as <code>__TIME__</code> are built-ins
+entered in the hash table during initialization.  The hash node for a
+normal macro points to a structure with more information about the
+macro, such as whether it is function-like, how many arguments it takes,
+and its expansion.  Built-in macros are flagged as special, and instead
+contain an enum indicating which of the various built-in macros it is.
+</p>
+</li><li> Assertions
+
+<p>Assertions are in a separate namespace to macros.  To enforce this, cpp
+actually prepends a <code>#</code> character before hashing and entering it in
+the hash table.  An assertion&rsquo;s node points to a chain of answers to
+that assertion.
+</p>
+</li><li> Void
+
+<p>Everything else falls into this category&mdash;an identifier that is not
+currently a macro, or a macro that has since been undefined with
+<code>#undef</code>.
+</p>
+<p>When preprocessing C++, this category also includes the named operators,
+such as <code>xor</code>.  In expressions these behave like the operators they
+represent, but in contexts where the spelling of a token matters they
+are spelt differently.  This spelling distinction is relevant when they
+are operands of the stringizing and pasting macro operators <code>#</code> and
+<code>##</code>.  Named operator hash nodes are flagged, both to catch the
+spelling distinction and to prevent them from being defined as macros.
+</p></li></ul>
+
+<p>The same identifiers share the same hash node.  Since each identifier
+token, after lexing, contains a pointer to its hash node, this is used
+to provide rapid lookup of various information.  For example, when
+parsing a <code>#define</code> statement, CPP flags each argument&rsquo;s identifier
+hash node with the index of that argument.  This makes duplicated
+argument checking an O(1) operation for each argument.  Similarly, for
+each identifier in the macro&rsquo;s expansion, lookup to see if it is an
+argument, and which argument it is, is also an O(1) operation.  Further,
+each directive name, such as <code>endif</code>, has an associated directive
+enum stored in its hash node, so that directive lookup is also O(1).
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Macro-Expansion.html#Macro-Expansion" accesskey="n" rel="next">Macro Expansion</a>, Previous: <a href="Lexer.html#Lexer" accesskey="p" rel="prev">Lexer</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

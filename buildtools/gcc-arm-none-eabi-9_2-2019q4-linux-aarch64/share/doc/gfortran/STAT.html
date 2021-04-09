@@ -1,0 +1,180 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: STAT</title>
+
+<meta name="description" content="The GNU Fortran Compiler: STAT">
+<meta name="keywords" content="The GNU Fortran Compiler: STAT">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Intrinsic-Procedures.html#Intrinsic-Procedures" rel="up" title="Intrinsic Procedures">
+<link href="STORAGE_005fSIZE.html#STORAGE_005fSIZE" rel="next" title="STORAGE_SIZE">
+<link href="SRAND.html#SRAND" rel="prev" title="SRAND">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="STAT"></a>
+<div class="header">
+<p>
+Next: <a href="STORAGE_005fSIZE.html#STORAGE_005fSIZE" accesskey="n" rel="next">STORAGE_SIZE</a>, Previous: <a href="SRAND.html#SRAND" accesskey="p" rel="prev">SRAND</a>, Up: <a href="Intrinsic-Procedures.html#Intrinsic-Procedures" accesskey="u" rel="up">Intrinsic Procedures</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="STAT-_002d_002d_002d-Get-file-status"></a>
+<h3 class="section">9.260 <code>STAT</code> &mdash; Get file status</h3>
+<a name="index-STAT"></a>
+<a name="index-file-system_002c-file-status-2"></a>
+
+<dl compact="compact">
+<dt><em>Description</em>:</dt>
+<dd><p>This function returns information about a file. No permissions are required on 
+the file itself, but execute (search) permission is required on all of the 
+directories in path that lead to the file.
+</p>
+<p>The elements that are obtained and stored in the array <code>VALUES</code>:
+</p><table>
+<tr><td width="15%"><code>VALUES(1)</code></td><td width="70%">Device ID</td></tr>
+<tr><td width="15%"><code>VALUES(2)</code></td><td width="70%">Inode number</td></tr>
+<tr><td width="15%"><code>VALUES(3)</code></td><td width="70%">File mode</td></tr>
+<tr><td width="15%"><code>VALUES(4)</code></td><td width="70%">Number of links</td></tr>
+<tr><td width="15%"><code>VALUES(5)</code></td><td width="70%">Owner&rsquo;s uid</td></tr>
+<tr><td width="15%"><code>VALUES(6)</code></td><td width="70%">Owner&rsquo;s gid</td></tr>
+<tr><td width="15%"><code>VALUES(7)</code></td><td width="70%">ID of device containing directory entry for file (0 if not available)</td></tr>
+<tr><td width="15%"><code>VALUES(8)</code></td><td width="70%">File size (bytes)</td></tr>
+<tr><td width="15%"><code>VALUES(9)</code></td><td width="70%">Last access time</td></tr>
+<tr><td width="15%"><code>VALUES(10)</code></td><td width="70%">Last modification time</td></tr>
+<tr><td width="15%"><code>VALUES(11)</code></td><td width="70%">Last file status change time</td></tr>
+<tr><td width="15%"><code>VALUES(12)</code></td><td width="70%">Preferred I/O block size (-1 if not available)</td></tr>
+<tr><td width="15%"><code>VALUES(13)</code></td><td width="70%">Number of blocks allocated (-1 if not available)</td></tr>
+</table>
+
+<p>Not all these elements are relevant on all systems. 
+If an element is not relevant, it is returned as 0.
+</p>
+<p>This intrinsic is provided in both subroutine and function forms; however,
+only one form can be used in any given program unit.
+</p>
+</dd>
+<dt><em>Standard</em>:</dt>
+<dd><p>GNU extension
+</p>
+</dd>
+<dt><em>Class</em>:</dt>
+<dd><p>Subroutine, function
+</p>
+</dd>
+<dt><em>Syntax</em>:</dt>
+<dd><table>
+<tr><td width="80%"><code>CALL STAT(NAME, VALUES [, STATUS])</code></td></tr>
+<tr><td width="80%"><code>STATUS = STAT(NAME, VALUES)</code></td></tr>
+</table>
+
+</dd>
+<dt><em>Arguments</em>:</dt>
+<dd><table>
+<tr><td width="15%"><var>NAME</var></td><td width="70%">The type shall be <code>CHARACTER</code>, of the
+default kind and a valid path within the file system.</td></tr>
+<tr><td width="15%"><var>VALUES</var></td><td width="70%">The type shall be <code>INTEGER(4), DIMENSION(13)</code>.</td></tr>
+<tr><td width="15%"><var>STATUS</var></td><td width="70%">(Optional) status flag of type <code>INTEGER(4)</code>. Returns 0 
+on success and a system specific error code otherwise.</td></tr>
+</table>
+
+</dd>
+<dt><em>Example</em>:</dt>
+<dd><div class="smallexample">
+<pre class="smallexample">PROGRAM test_stat
+  INTEGER, DIMENSION(13) :: buff
+  INTEGER :: status
+
+  CALL STAT(&quot;/etc/passwd&quot;, buff, status)
+
+  IF (status == 0) THEN
+    WRITE (*, FMT=&quot;('Device ID:',               T30, I19)&quot;) buff(1)
+    WRITE (*, FMT=&quot;('Inode number:',            T30, I19)&quot;) buff(2)
+    WRITE (*, FMT=&quot;('File mode (octal):',       T30, O19)&quot;) buff(3)
+    WRITE (*, FMT=&quot;('Number of links:',         T30, I19)&quot;) buff(4)
+    WRITE (*, FMT=&quot;('Owner''s uid:',            T30, I19)&quot;) buff(5)
+    WRITE (*, FMT=&quot;('Owner''s gid:',            T30, I19)&quot;) buff(6)
+    WRITE (*, FMT=&quot;('Device where located:',    T30, I19)&quot;) buff(7)
+    WRITE (*, FMT=&quot;('File size:',               T30, I19)&quot;) buff(8)
+    WRITE (*, FMT=&quot;('Last access time:',        T30, A19)&quot;) CTIME(buff(9))
+    WRITE (*, FMT=&quot;('Last modification time',   T30, A19)&quot;) CTIME(buff(10))
+    WRITE (*, FMT=&quot;('Last status change time:', T30, A19)&quot;) CTIME(buff(11))
+    WRITE (*, FMT=&quot;('Preferred block size:',    T30, I19)&quot;) buff(12)
+    WRITE (*, FMT=&quot;('No. of blocks allocated:', T30, I19)&quot;) buff(13)
+  END IF
+END PROGRAM
+</pre></div>
+
+</dd>
+<dt><em>See also</em>:</dt>
+<dd><p>To stat an open file: <a href="FSTAT.html#FSTAT">FSTAT</a>, to stat a link: <a href="LSTAT.html#LSTAT">LSTAT</a>
+</p></dd>
+</dl>
+
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="STORAGE_005fSIZE.html#STORAGE_005fSIZE" accesskey="n" rel="next">STORAGE_SIZE</a>, Previous: <a href="SRAND.html#SRAND" accesskey="p" rel="prev">SRAND</a>, Up: <a href="Intrinsic-Procedures.html#Intrinsic-Procedures" accesskey="u" rel="up">Intrinsic Procedures</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

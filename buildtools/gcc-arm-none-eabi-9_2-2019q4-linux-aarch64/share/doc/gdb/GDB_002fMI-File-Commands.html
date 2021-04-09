@@ -1,0 +1,298 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: GDB/MI File Commands</title>
+
+<meta name="description" content="Debugging with GDB: GDB/MI File Commands">
+<meta name="keywords" content="Debugging with GDB: GDB/MI File Commands">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="GDB_002fMI.html#GDB_002fMI" rel="up" title="GDB/MI">
+<link href="GDB_002fMI-Target-Manipulation.html#GDB_002fMI-Target-Manipulation" rel="next" title="GDB/MI Target Manipulation">
+<link href="GDB_002fMI-Symbol-Query.html#GDB_002fMI-Symbol-Query" rel="prev" title="GDB/MI Symbol Query">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="GDB_002fMI-File-Commands"></a>
+<div class="header">
+<p>
+Next: <a href="GDB_002fMI-Target-Manipulation.html#GDB_002fMI-Target-Manipulation" accesskey="n" rel="next">GDB/MI Target Manipulation</a>, Previous: <a href="GDB_002fMI-Symbol-Query.html#GDB_002fMI-Symbol-Query" accesskey="p" rel="prev">GDB/MI Symbol Query</a>, Up: <a href="GDB_002fMI.html#GDB_002fMI" accesskey="u" rel="up">GDB/MI</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="GDB_002fMI-File-Commands-1"></a>
+<h3 class="section">27.19 <small>GDB/MI</small> File Commands</h3>
+
+<p>This section describes the GDB/MI commands to specify executable file names
+and to read in and obtain symbol table information.
+</p>
+<a name="The-_002dfile_002dexec_002dand_002dsymbols-Command"></a>
+<h4 class="subheading">The <code>-file-exec-and-symbols</code> Command</h4>
+<a name="index-_002dfile_002dexec_002dand_002dsymbols"></a>
+
+<a name="Synopsis-78"></a>
+<h4 class="subsubheading">Synopsis</h4>
+
+<div class="smallexample">
+<pre class="smallexample"> -file-exec-and-symbols <var>file</var>
+</pre></div>
+
+<p>Specify the executable file to be debugged.  This file is the one from
+which the symbol table is also read.  If no file is specified, the
+command clears the executable and symbol information.  If breakpoints
+are set when using this command with no arguments, <small>GDB</small> will produce
+error messages.  Otherwise, no output is produced, except a completion
+notification.
+</p>
+<a name="GDB-Command-60"></a>
+<h4 class="subsubheading"><small>GDB</small> Command</h4>
+
+<p>The corresponding <small>GDB</small> command is &lsquo;<samp>file</samp>&rsquo;.
+</p>
+<a name="Example-60"></a>
+<h4 class="subsubheading">Example</h4>
+
+<div class="smallexample">
+<pre class="smallexample">(gdb)
+-file-exec-and-symbols /kwikemart/marge/ezannoni/TRUNK/mbx/hello.mbx
+^done
+(gdb)
+</pre></div>
+
+
+<a name="The-_002dfile_002dexec_002dfile-Command"></a>
+<h4 class="subheading">The <code>-file-exec-file</code> Command</h4>
+<a name="index-_002dfile_002dexec_002dfile"></a>
+
+<a name="Synopsis-79"></a>
+<h4 class="subsubheading">Synopsis</h4>
+
+<div class="smallexample">
+<pre class="smallexample"> -file-exec-file <var>file</var>
+</pre></div>
+
+<p>Specify the executable file to be debugged.  Unlike
+&lsquo;<samp>-file-exec-and-symbols</samp>&rsquo;, the symbol table is <em>not</em> read
+from this file.  If used without argument, <small>GDB</small> clears the information
+about the executable file.  No output is produced, except a completion
+notification.
+</p>
+<a name="GDB-Command-61"></a>
+<h4 class="subsubheading"><small>GDB</small> Command</h4>
+
+<p>The corresponding <small>GDB</small> command is &lsquo;<samp>exec-file</samp>&rsquo;.
+</p>
+<a name="Example-61"></a>
+<h4 class="subsubheading">Example</h4>
+
+<div class="smallexample">
+<pre class="smallexample">(gdb)
+-file-exec-file /kwikemart/marge/ezannoni/TRUNK/mbx/hello.mbx
+^done
+(gdb)
+</pre></div>
+
+
+
+
+<a name="The-_002dfile_002dlist_002dexec_002dsource_002dfile-Command"></a>
+<h4 class="subheading">The <code>-file-list-exec-source-file</code> Command</h4>
+<a name="index-_002dfile_002dlist_002dexec_002dsource_002dfile"></a>
+
+<a name="Synopsis-80"></a>
+<h4 class="subsubheading">Synopsis</h4>
+
+<div class="smallexample">
+<pre class="smallexample"> -file-list-exec-source-file
+</pre></div>
+
+<p>List the line number, the current source file, and the absolute path
+to the current source file for the current executable.  The macro
+information field has a value of &lsquo;<samp>1</samp>&rsquo; or &lsquo;<samp>0</samp>&rsquo; depending on
+whether or not the file includes preprocessor macro information.
+</p>
+<a name="GDB-Command-62"></a>
+<h4 class="subsubheading"><small>GDB</small> Command</h4>
+
+<p>The <small>GDB</small> equivalent is &lsquo;<samp>info source</samp>&rsquo;
+</p>
+<a name="Example-62"></a>
+<h4 class="subsubheading">Example</h4>
+
+<div class="smallexample">
+<pre class="smallexample">(gdb)
+123-file-list-exec-source-file
+123^done,line=&quot;1&quot;,file=&quot;foo.c&quot;,fullname=&quot;/home/bar/foo.c,macro-info=&quot;1&quot;
+(gdb)
+</pre></div>
+
+
+<a name="The-_002dfile_002dlist_002dexec_002dsource_002dfiles-Command"></a>
+<h4 class="subheading">The <code>-file-list-exec-source-files</code> Command</h4>
+<a name="index-_002dfile_002dlist_002dexec_002dsource_002dfiles"></a>
+
+<a name="Synopsis-81"></a>
+<h4 class="subsubheading">Synopsis</h4>
+
+<div class="smallexample">
+<pre class="smallexample"> -file-list-exec-source-files
+</pre></div>
+
+<p>List the source files for the current executable.
+</p>
+<p>It will always output both the filename and fullname (absolute file
+name) of a source file.
+</p>
+<a name="GDB-Command-63"></a>
+<h4 class="subsubheading"><small>GDB</small> Command</h4>
+
+<p>The <small>GDB</small> equivalent is &lsquo;<samp>info sources</samp>&rsquo;.
+<code>gdbtk</code> has an analogous command &lsquo;<samp>gdb_listfiles</samp>&rsquo;.
+</p>
+<a name="Example-63"></a>
+<h4 class="subsubheading">Example</h4>
+<div class="smallexample">
+<pre class="smallexample">(gdb)
+-file-list-exec-source-files
+^done,files=[
+{file=foo.c,fullname=/home/foo.c},
+{file=/home/bar.c,fullname=/home/bar.c},
+{file=gdb_could_not_find_fullpath.c}]
+(gdb)
+</pre></div>
+
+<a name="The-_002dfile_002dlist_002dshared_002dlibraries-Command"></a>
+<h4 class="subheading">The <code>-file-list-shared-libraries</code> Command</h4>
+<a name="index-_002dfile_002dlist_002dshared_002dlibraries"></a>
+
+<a name="Synopsis-82"></a>
+<h4 class="subsubheading">Synopsis</h4>
+
+<div class="smallexample">
+<pre class="smallexample"> -file-list-shared-libraries [ <var>regexp</var> ]
+</pre></div>
+
+<p>List the shared libraries in the program.
+With a regular expression <var>regexp</var>, only those libraries whose
+names match <var>regexp</var> are listed.
+</p>
+<a name="GDB-Command-64"></a>
+<h4 class="subsubheading"><small>GDB</small> Command</h4>
+
+<p>The corresponding <small>GDB</small> command is &lsquo;<samp>info shared</samp>&rsquo;.  The fields
+have a similar meaning to the <code>=library-loaded</code> notification.
+The <code>ranges</code> field specifies the multiple segments belonging to this
+library.  Each range has the following fields:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>from</samp>&rsquo;</dt>
+<dd><p>The address defining the inclusive lower bound of the segment.
+</p></dd>
+<dt>&lsquo;<samp>to</samp>&rsquo;</dt>
+<dd><p>The address defining the exclusive upper bound of the segment.
+</p></dd>
+</dl>
+
+<a name="Example-64"></a>
+<h4 class="subsubheading">Example</h4>
+<div class="smallexample">
+<pre class="smallexample">(gdb)
+-file-list-exec-source-files
+^done,shared-libraries=[
+{id=&quot;/lib/libfoo.so&quot;,target-name=&quot;/lib/libfoo.so&quot;,host-name=&quot;/lib/libfoo.so&quot;,symbols-loaded=&quot;1&quot;,thread-group=&quot;i1&quot;,ranges=[{from=&quot;0x72815989&quot;,to=&quot;0x728162c0&quot;}]},
+{id=&quot;/lib/libbar.so&quot;,target-name=&quot;/lib/libbar.so&quot;,host-name=&quot;/lib/libbar.so&quot;,symbols-loaded=&quot;1&quot;,thread-group=&quot;i1&quot;,ranges=[{from=&quot;0x76ee48c0&quot;,to=&quot;0x76ee9160&quot;}]}]
+(gdb)
+</pre></div>
+
+
+
+
+<a name="The-_002dfile_002dsymbol_002dfile-Command"></a>
+<h4 class="subheading">The <code>-file-symbol-file</code> Command</h4>
+<a name="index-_002dfile_002dsymbol_002dfile"></a>
+
+<a name="Synopsis-83"></a>
+<h4 class="subsubheading">Synopsis</h4>
+
+<div class="smallexample">
+<pre class="smallexample"> -file-symbol-file <var>file</var>
+</pre></div>
+
+<p>Read symbol table info from the specified <var>file</var> argument.  When
+used without arguments, clears <small>GDB</small>&rsquo;s symbol table info.  No output is
+produced, except for a completion notification.
+</p>
+<a name="GDB-Command-65"></a>
+<h4 class="subsubheading"><small>GDB</small> Command</h4>
+
+<p>The corresponding <small>GDB</small> command is &lsquo;<samp>symbol-file</samp>&rsquo;.
+</p>
+<a name="Example-65"></a>
+<h4 class="subsubheading">Example</h4>
+
+<div class="smallexample">
+<pre class="smallexample">(gdb)
+-file-symbol-file /kwikemart/marge/ezannoni/TRUNK/mbx/hello.mbx
+^done
+(gdb)
+</pre></div>
+
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="GDB_002fMI-Target-Manipulation.html#GDB_002fMI-Target-Manipulation" accesskey="n" rel="next">GDB/MI Target Manipulation</a>, Previous: <a href="GDB_002fMI-Symbol-Query.html#GDB_002fMI-Symbol-Query" accesskey="p" rel="prev">GDB/MI Symbol Query</a>, Up: <a href="GDB_002fMI.html#GDB_002fMI" accesskey="u" rel="up">GDB/MI</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

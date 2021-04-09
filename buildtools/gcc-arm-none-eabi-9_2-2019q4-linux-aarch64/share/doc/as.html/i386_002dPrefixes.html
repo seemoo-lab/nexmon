@@ -1,0 +1,152 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: i386-Prefixes</title>
+
+<meta name="description" content="Using as: i386-Prefixes">
+<meta name="keywords" content="Using as: i386-Prefixes">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="i386_002dDependent.html#i386_002dDependent" rel="up" title="i386-Dependent">
+<link href="i386_002dMemory.html#i386_002dMemory" rel="next" title="i386-Memory">
+<link href="i386_002dRegs.html#i386_002dRegs" rel="prev" title="i386-Regs">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="i386_002dPrefixes"></a>
+<div class="header">
+<p>
+Next: <a href="i386_002dMemory.html#i386_002dMemory" accesskey="n" rel="next">i386-Memory</a>, Previous: <a href="i386_002dRegs.html#i386_002dRegs" accesskey="p" rel="prev">i386-Regs</a>, Up: <a href="i386_002dDependent.html#i386_002dDependent" accesskey="u" rel="up">i386-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Instruction-Prefixes"></a>
+<h4 class="subsection">9.16.6 Instruction Prefixes</h4>
+
+<a name="index-i386-instruction-prefixes"></a>
+<a name="index-instruction-prefixes_002c-i386"></a>
+<a name="index-prefixes_002c-i386"></a>
+<p>Instruction prefixes are used to modify the following instruction.  They
+are used to repeat string instructions, to provide section overrides, to
+perform bus lock operations, and to change operand and address sizes.
+(Most instructions that normally operate on 32-bit operands will use
+16-bit operands if the instruction has an &ldquo;operand size&rdquo; prefix.)
+Instruction prefixes are best written on the same line as the instruction
+they act upon. For example, the &lsquo;<samp>scas</samp>&rsquo; (scan string) instruction is
+repeated with:
+</p>
+<div class="smallexample">
+<pre class="smallexample">        repne scas %es:(%edi),%al
+</pre></div>
+
+<p>You may also place prefixes on the lines immediately preceding the
+instruction, but this circumvents checks that <code>as</code> does
+with prefixes, and will not work with all prefixes.
+</p>
+<p>Here is a list of instruction prefixes:
+</p>
+<a name="index-section-override-prefixes_002c-i386"></a>
+<ul>
+<li> Section override prefixes &lsquo;<samp>cs</samp>&rsquo;, &lsquo;<samp>ds</samp>&rsquo;, &lsquo;<samp>ss</samp>&rsquo;, &lsquo;<samp>es</samp>&rsquo;,
+&lsquo;<samp>fs</samp>&rsquo;, &lsquo;<samp>gs</samp>&rsquo;.  These are automatically added by specifying
+using the <var>section</var>:<var>memory-operand</var> form for memory references.
+
+</li><li> <a name="index-size-prefixes_002c-i386"></a>
+Operand/Address size prefixes &lsquo;<samp>data16</samp>&rsquo; and &lsquo;<samp>addr16</samp>&rsquo;
+change 32-bit operands/addresses into 16-bit operands/addresses,
+while &lsquo;<samp>data32</samp>&rsquo; and &lsquo;<samp>addr32</samp>&rsquo; change 16-bit ones (in a
+<code>.code16</code> section) into 32-bit operands/addresses.  These prefixes
+<em>must</em> appear on the same line of code as the instruction they
+modify. For example, in a 16-bit <code>.code16</code> section, you might
+write:
+
+<div class="smallexample">
+<pre class="smallexample">        addr32 jmpl *(%ebx)
+</pre></div>
+
+</li><li> <a name="index-bus-lock-prefixes_002c-i386"></a>
+<a name="index-inhibiting-interrupts_002c-i386"></a>
+The bus lock prefix &lsquo;<samp>lock</samp>&rsquo; inhibits interrupts during execution of
+the instruction it precedes.  (This is only valid with certain
+instructions; see a 80386 manual for details).
+
+</li><li> <a name="index-coprocessor-wait_002c-i386"></a>
+The wait for coprocessor prefix &lsquo;<samp>wait</samp>&rsquo; waits for the coprocessor to
+complete the current instruction.  This should never be needed for the
+80386/80387 combination.
+
+</li><li> <a name="index-repeat-prefixes_002c-i386"></a>
+The &lsquo;<samp>rep</samp>&rsquo;, &lsquo;<samp>repe</samp>&rsquo;, and &lsquo;<samp>repne</samp>&rsquo; prefixes are added
+to string instructions to make them repeat &lsquo;<samp>%ecx</samp>&rsquo; times (&lsquo;<samp>%cx</samp>&rsquo;
+times if the current address size is 16-bits).
+</li><li> <a name="index-REX-prefixes_002c-i386"></a>
+The &lsquo;<samp>rex</samp>&rsquo; family of prefixes is used by x86-64 to encode
+extensions to i386 instruction set.  The &lsquo;<samp>rex</samp>&rsquo; prefix has four
+bits &mdash; an operand size overwrite (<code>64</code>) used to change operand size
+from 32-bit to 64-bit and X, Y and Z extensions bits used to extend the
+register set.
+
+<p>You may write the &lsquo;<samp>rex</samp>&rsquo; prefixes directly. The &lsquo;<samp>rex64xyz</samp>&rsquo;
+instruction emits &lsquo;<samp>rex</samp>&rsquo; prefix with all the bits set.  By omitting
+the <code>64</code>, <code>x</code>, <code>y</code> or <code>z</code> you may write other
+prefixes as well.  Normally, there is no need to write the prefixes
+explicitly, since gas will automatically generate them based on the
+instruction operands.
+</p></li></ul>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="i386_002dMemory.html#i386_002dMemory" accesskey="n" rel="next">i386-Memory</a>, Previous: <a href="i386_002dRegs.html#i386_002dRegs" accesskey="p" rel="prev">i386-Regs</a>, Up: <a href="i386_002dDependent.html#i386_002dDependent" accesskey="u" rel="up">i386-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

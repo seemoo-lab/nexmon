@@ -1,0 +1,132 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Man Page Generation</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Man Page Generation">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Man Page Generation">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Documentation.html#Documentation" rel="up" title="Documentation">
+<link href="Miscellaneous-Docs.html#Miscellaneous-Docs" rel="next" title="Miscellaneous Docs">
+<link href="Texinfo-Manuals.html#Texinfo-Manuals" rel="prev" title="Texinfo Manuals">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Man-Page-Generation"></a>
+<div class="header">
+<p>
+Next: <a href="Miscellaneous-Docs.html#Miscellaneous-Docs" accesskey="n" rel="next">Miscellaneous Docs</a>, Previous: <a href="Texinfo-Manuals.html#Texinfo-Manuals" accesskey="p" rel="prev">Texinfo Manuals</a>, Up: <a href="Documentation.html#Documentation" accesskey="u" rel="up">Documentation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Man-Page-Generation-1"></a>
+<h4 class="subsubsection">6.3.7.2 Man Page Generation</h4>
+
+<p>Because of user demand, in addition to full Texinfo manuals, man pages
+are provided which contain extracts from those manuals.  These man
+pages are generated from the Texinfo manuals using
+<samp>contrib/texi2pod.pl</samp> and <code>pod2man</code>.  (The man page for
+<code>g++</code>, <samp>cp/g++.1</samp>, just contains a &lsquo;<samp>.so</samp>&rsquo; reference
+to <samp>gcc.1</samp>, but all the other man pages are generated from
+Texinfo manuals.)
+</p>
+<p>Because many systems may not have the necessary tools installed to
+generate the man pages, they are only generated if the
+<samp>configure</samp> script detects that recent enough tools are
+installed, and the Makefiles allow generating man pages to fail
+without aborting the build.  Man pages are also included in release
+distributions.  They are generated in the source directory.
+</p>
+<p>Magic comments in Texinfo files starting &lsquo;<samp>@c man</samp>&rsquo; control what
+parts of a Texinfo file go into a man page.  Only a subset of Texinfo
+is supported by <samp>texi2pod.pl</samp>, and it may be necessary to add
+support for more Texinfo features to this script when generating new
+man pages.  To improve the man page output, some special Texinfo
+macros are provided in <samp>doc/include/gcc-common.texi</samp> which
+<samp>texi2pod.pl</samp> understands:
+</p>
+<dl compact="compact">
+<dt><code>@gcctabopt</code></dt>
+<dd><p>Use in the form &lsquo;<samp>@table @gcctabopt</samp>&rsquo; for tables of options,
+where for printed output the effect of &lsquo;<samp>@code</samp>&rsquo; is better than
+that of &lsquo;<samp>@option</samp>&rsquo; but for man page output a different effect is
+wanted.
+</p></dd>
+<dt><code>@gccoptlist</code></dt>
+<dd><p>Use for summary lists of options in manuals.
+</p></dd>
+<dt><code>@gol</code></dt>
+<dd><p>Use at the end of each line inside &lsquo;<samp>@gccoptlist</samp>&rsquo;.  This is
+necessary to avoid problems with differences in how the
+&lsquo;<samp>@gccoptlist</samp>&rsquo; macro is handled by different Texinfo formatters.
+</p></dd>
+</dl>
+
+<p>FIXME: describe the <samp>texi2pod.pl</samp> input language and magic
+comments in more detail.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Miscellaneous-Docs.html#Miscellaneous-Docs" accesskey="n" rel="next">Miscellaneous Docs</a>, Previous: <a href="Texinfo-Manuals.html#Texinfo-Manuals" accesskey="p" rel="prev">Texinfo Manuals</a>, Up: <a href="Documentation.html#Documentation" accesskey="u" rel="up">Documentation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: SELECTED_REAL_KIND</title>
+
+<meta name="description" content="The GNU Fortran Compiler: SELECTED_REAL_KIND">
+<meta name="keywords" content="The GNU Fortran Compiler: SELECTED_REAL_KIND">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Intrinsic-Procedures.html#Intrinsic-Procedures" rel="up" title="Intrinsic Procedures">
+<link href="SET_005fEXPONENT.html#SET_005fEXPONENT" rel="next" title="SET_EXPONENT">
+<link href="SELECTED_005fINT_005fKIND.html#SELECTED_005fINT_005fKIND" rel="prev" title="SELECTED_INT_KIND">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="SELECTED_005fREAL_005fKIND"></a>
+<div class="header">
+<p>
+Next: <a href="SET_005fEXPONENT.html#SET_005fEXPONENT" accesskey="n" rel="next">SET_EXPONENT</a>, Previous: <a href="SELECTED_005fINT_005fKIND.html#SELECTED_005fINT_005fKIND" accesskey="p" rel="prev">SELECTED_INT_KIND</a>, Up: <a href="Intrinsic-Procedures.html#Intrinsic-Procedures" accesskey="u" rel="up">Intrinsic Procedures</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="SELECTED_005fREAL_005fKIND-_002d_002d_002d-Choose-real-kind"></a>
+<h3 class="section">9.242 <code>SELECTED_REAL_KIND</code> &mdash; Choose real kind</h3>
+<a name="index-SELECTED_005fREAL_005fKIND"></a>
+<a name="index-real-kind"></a>
+<a name="index-kind_002c-real"></a>
+<a name="index-radix_002c-real"></a>
+
+<dl compact="compact">
+<dt><em>Description</em>:</dt>
+<dd><p><code>SELECTED_REAL_KIND(P,R)</code> returns the kind value of a real data type
+with decimal precision of at least <code>P</code> digits, exponent range of
+at least <code>R</code>, and with a radix of <code>RADIX</code>.
+</p>
+</dd>
+<dt><em>Standard</em>:</dt>
+<dd><p>Fortran 95 and later, with <code>RADIX</code> Fortran 2008 or later
+</p>
+</dd>
+<dt><em>Class</em>:</dt>
+<dd><p>Transformational function
+</p>
+</dd>
+<dt><em>Syntax</em>:</dt>
+<dd><p><code>RESULT = SELECTED_REAL_KIND([P, R, RADIX])</code>
+</p>
+</dd>
+<dt><em>Arguments</em>:</dt>
+<dd><table>
+<tr><td width="15%"><var>P</var></td><td width="70%">(Optional) shall be a scalar and of type <code>INTEGER</code>.</td></tr>
+<tr><td width="15%"><var>R</var></td><td width="70%">(Optional) shall be a scalar and of type <code>INTEGER</code>.</td></tr>
+<tr><td width="15%"><var>RADIX</var></td><td width="70%">(Optional) shall be a scalar and of type <code>INTEGER</code>.</td></tr>
+</table>
+<p>Before Fortran 2008, at least one of the arguments <var>R</var> or <var>P</var> shall
+be present; since Fortran 2008, they are assumed to be zero if absent.
+</p>
+</dd>
+<dt><em>Return value</em>:</dt>
+<dd>
+<p><code>SELECTED_REAL_KIND</code> returns the value of the kind type parameter of
+a real data type with decimal precision of at least <code>P</code> digits, a
+decimal exponent range of at least <code>R</code>, and with the requested
+<code>RADIX</code>. If the <code>RADIX</code> parameter is absent, real kinds with
+any radix can be returned. If more than one real data type meet the
+criteria, the kind of the data type with the smallest decimal precision
+is returned. If no real data type matches the criteria, the result is
+</p><dl compact="compact">
+<dt>-1 if the processor does not support a real data type with a</dt>
+<dd><p>precision greater than or equal to <code>P</code>, but the <code>R</code> and
+<code>RADIX</code> requirements can be fulfilled
+</p></dd>
+<dt>-2 if the processor does not support a real type with an exponent</dt>
+<dd><p>range greater than or equal to <code>R</code>, but <code>P</code> and <code>RADIX</code>
+are fulfillable
+</p></dd>
+<dt>-3 if <code>RADIX</code> but not <code>P</code> and <code>R</code> requirements</dt>
+<dd><p>are fulfillable
+</p></dd>
+<dt>-4 if <code>RADIX</code> and either <code>P</code> or <code>R</code> requirements</dt>
+<dd><p>are fulfillable
+</p></dd>
+<dt>-5 if there is no real type with the given <code>RADIX</code></dt>
+</dl>
+
+</dd>
+<dt><em>See also</em>:</dt>
+<dd><p><a href="PRECISION.html#PRECISION">PRECISION</a>, <a href="RANGE.html#RANGE">RANGE</a>, <a href="RADIX.html#RADIX">RADIX</a>
+</p>
+</dd>
+<dt><em>Example</em>:</dt>
+<dd><div class="smallexample">
+<pre class="smallexample">program real_kinds
+  integer,parameter :: p6 = selected_real_kind(6)
+  integer,parameter :: p10r100 = selected_real_kind(10,100)
+  integer,parameter :: r400 = selected_real_kind(r=400)
+  real(kind=p6) :: x
+  real(kind=p10r100) :: y
+  real(kind=r400) :: z
+
+  print *, precision(x), range(x)
+  print *, precision(y), range(y)
+  print *, precision(z), range(z)
+end program real_kinds
+</pre></div>
+</dd>
+</dl>
+
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="SET_005fEXPONENT.html#SET_005fEXPONENT" accesskey="n" rel="next">SET_EXPONENT</a>, Previous: <a href="SELECTED_005fINT_005fKIND.html#SELECTED_005fINT_005fKIND" accesskey="p" rel="prev">SELECTED_INT_KIND</a>, Up: <a href="Intrinsic-Procedures.html#Intrinsic-Procedures" accesskey="u" rel="up">Intrinsic Procedures</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,343 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Functions for C++</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Functions for C++">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Functions for C++">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C-and-C_002b_002b-Trees.html#C-and-C_002b_002b-Trees" rel="up" title="C and C++ Trees">
+<link href="Statements-for-C_002b_002b.html#Statements-for-C_002b_002b" rel="next" title="Statements for C++">
+<link href="Classes.html#Classes" rel="prev" title="Classes">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Functions-for-C_002b_002b"></a>
+<div class="header">
+<p>
+Next: <a href="Statements-for-C_002b_002b.html#Statements-for-C_002b_002b" accesskey="n" rel="next">Statements for C++</a>, Previous: <a href="Classes.html#Classes" accesskey="p" rel="prev">Classes</a>, Up: <a href="C-and-C_002b_002b-Trees.html#C-and-C_002b_002b-Trees" accesskey="u" rel="up">C and C++ Trees</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Functions-for-C_002b_002b-1"></a>
+<h4 class="subsection">11.10.4 Functions for C++</h4>
+<a name="index-function-1"></a>
+<a name="index-FUNCTION_005fDECL-1"></a>
+<a name="index-OVERLOAD"></a>
+<a name="index-OVL_005fCURRENT"></a>
+<a name="index-OVL_005fNEXT"></a>
+
+<p>A function is represented by a <code>FUNCTION_DECL</code> node.  A set of
+overloaded functions is sometimes represented by an <code>OVERLOAD</code> node.
+</p>
+<p>An <code>OVERLOAD</code> node is not a declaration, so none of the
+&lsquo;<samp>DECL_</samp>&rsquo; macros should be used on an <code>OVERLOAD</code>.  An
+<code>OVERLOAD</code> node is similar to a <code>TREE_LIST</code>.  Use
+<code>OVL_CURRENT</code> to get the function associated with an
+<code>OVERLOAD</code> node; use <code>OVL_NEXT</code> to get the next
+<code>OVERLOAD</code> node in the list of overloaded functions.  The macros
+<code>OVL_CURRENT</code> and <code>OVL_NEXT</code> are actually polymorphic; you can
+use them to work with <code>FUNCTION_DECL</code> nodes as well as with
+overloads.  In the case of a <code>FUNCTION_DECL</code>, <code>OVL_CURRENT</code>
+will always return the function itself, and <code>OVL_NEXT</code> will always
+be <code>NULL_TREE</code>.
+</p>
+<p>To determine the scope of a function, you can use the
+<code>DECL_CONTEXT</code> macro.  This macro will return the class
+(either a <code>RECORD_TYPE</code> or a <code>UNION_TYPE</code>) or namespace (a
+<code>NAMESPACE_DECL</code>) of which the function is a member.  For a virtual
+function, this macro returns the class in which the function was
+actually defined, not the base class in which the virtual declaration
+occurred.
+</p>
+<p>If a friend function is defined in a class scope, the
+<code>DECL_FRIEND_CONTEXT</code> macro can be used to determine the class in
+which it was defined.  For example, in
+</p><div class="smallexample">
+<pre class="smallexample">class C { friend void f() {} };
+</pre></div>
+<p>the <code>DECL_CONTEXT</code> for <code>f</code> will be the
+<code>global_namespace</code>, but the <code>DECL_FRIEND_CONTEXT</code> will be the
+<code>RECORD_TYPE</code> for <code>C</code>.
+</p>
+
+<p>The following macros and functions can be used on a <code>FUNCTION_DECL</code>:
+</p><dl compact="compact">
+<dt><code>DECL_MAIN_P</code>
+<a name="index-DECL_005fMAIN_005fP"></a>
+</dt>
+<dd><p>This predicate holds for a function that is the program entry point
+<code>::code</code>.
+</p>
+</dd>
+<dt><code>DECL_LOCAL_FUNCTION_P</code>
+<a name="index-DECL_005fLOCAL_005fFUNCTION_005fP"></a>
+</dt>
+<dd><p>This predicate holds if the function was declared at block scope, even
+though it has a global scope.
+</p>
+</dd>
+<dt><code>DECL_ANTICIPATED</code>
+<a name="index-DECL_005fANTICIPATED"></a>
+</dt>
+<dd><p>This predicate holds if the function is a built-in function but its
+prototype is not yet explicitly declared.
+</p>
+</dd>
+<dt><code>DECL_EXTERN_C_FUNCTION_P</code>
+<a name="index-DECL_005fEXTERN_005fC_005fFUNCTION_005fP"></a>
+</dt>
+<dd><p>This predicate holds if the function is declared as an
+&lsquo;<code>extern &quot;C&quot;</code>&rsquo; function.
+</p>
+</dd>
+<dt><code>DECL_LINKONCE_P</code>
+<a name="index-DECL_005fLINKONCE_005fP"></a>
+</dt>
+<dd><p>This macro holds if multiple copies of this function may be emitted in
+various translation units.  It is the responsibility of the linker to
+merge the various copies.  Template instantiations are the most common
+example of functions for which <code>DECL_LINKONCE_P</code> holds; G++
+instantiates needed templates in all translation units which require them,
+and then relies on the linker to remove duplicate instantiations.
+</p>
+<p>FIXME: This macro is not yet implemented.
+</p>
+</dd>
+<dt><code>DECL_FUNCTION_MEMBER_P</code>
+<a name="index-DECL_005fFUNCTION_005fMEMBER_005fP"></a>
+</dt>
+<dd><p>This macro holds if the function is a member of a class, rather than a
+member of a namespace.
+</p>
+</dd>
+<dt><code>DECL_STATIC_FUNCTION_P</code>
+<a name="index-DECL_005fSTATIC_005fFUNCTION_005fP"></a>
+</dt>
+<dd><p>This predicate holds if the function a static member function.
+</p>
+</dd>
+<dt><code>DECL_NONSTATIC_MEMBER_FUNCTION_P</code>
+<a name="index-DECL_005fNONSTATIC_005fMEMBER_005fFUNCTION_005fP"></a>
+</dt>
+<dd><p>This macro holds for a non-static member function.
+</p>
+</dd>
+<dt><code>DECL_CONST_MEMFUNC_P</code>
+<a name="index-DECL_005fCONST_005fMEMFUNC_005fP"></a>
+</dt>
+<dd><p>This predicate holds for a <code>const</code>-member function.
+</p>
+</dd>
+<dt><code>DECL_VOLATILE_MEMFUNC_P</code>
+<a name="index-DECL_005fVOLATILE_005fMEMFUNC_005fP"></a>
+</dt>
+<dd><p>This predicate holds for a <code>volatile</code>-member function.
+</p>
+</dd>
+<dt><code>DECL_CONSTRUCTOR_P</code>
+<a name="index-DECL_005fCONSTRUCTOR_005fP"></a>
+</dt>
+<dd><p>This macro holds if the function is a constructor.
+</p>
+</dd>
+<dt><code>DECL_NONCONVERTING_P</code>
+<a name="index-DECL_005fNONCONVERTING_005fP"></a>
+</dt>
+<dd><p>This predicate holds if the constructor is a non-converting constructor.
+</p>
+</dd>
+<dt><code>DECL_COMPLETE_CONSTRUCTOR_P</code>
+<a name="index-DECL_005fCOMPLETE_005fCONSTRUCTOR_005fP"></a>
+</dt>
+<dd><p>This predicate holds for a function which is a constructor for an object
+of a complete type.
+</p>
+</dd>
+<dt><code>DECL_BASE_CONSTRUCTOR_P</code>
+<a name="index-DECL_005fBASE_005fCONSTRUCTOR_005fP"></a>
+</dt>
+<dd><p>This predicate holds for a function which is a constructor for a base
+class sub-object.
+</p>
+</dd>
+<dt><code>DECL_COPY_CONSTRUCTOR_P</code>
+<a name="index-DECL_005fCOPY_005fCONSTRUCTOR_005fP"></a>
+</dt>
+<dd><p>This predicate holds for a function which is a copy-constructor.
+</p>
+</dd>
+<dt><code>DECL_DESTRUCTOR_P</code>
+<a name="index-DECL_005fDESTRUCTOR_005fP"></a>
+</dt>
+<dd><p>This macro holds if the function is a destructor.
+</p>
+</dd>
+<dt><code>DECL_COMPLETE_DESTRUCTOR_P</code>
+<a name="index-DECL_005fCOMPLETE_005fDESTRUCTOR_005fP"></a>
+</dt>
+<dd><p>This predicate holds if the function is the destructor for an object a
+complete type.
+</p>
+</dd>
+<dt><code>DECL_OVERLOADED_OPERATOR_P</code>
+<a name="index-DECL_005fOVERLOADED_005fOPERATOR_005fP"></a>
+</dt>
+<dd><p>This macro holds if the function is an overloaded operator.
+</p>
+</dd>
+<dt><code>DECL_CONV_FN_P</code>
+<a name="index-DECL_005fCONV_005fFN_005fP"></a>
+</dt>
+<dd><p>This macro holds if the function is a type-conversion operator.
+</p>
+</dd>
+<dt><code>DECL_GLOBAL_CTOR_P</code>
+<a name="index-DECL_005fGLOBAL_005fCTOR_005fP"></a>
+</dt>
+<dd><p>This predicate holds if the function is a file-scope initialization
+function.
+</p>
+</dd>
+<dt><code>DECL_GLOBAL_DTOR_P</code>
+<a name="index-DECL_005fGLOBAL_005fDTOR_005fP"></a>
+</dt>
+<dd><p>This predicate holds if the function is a file-scope finalization
+function.
+</p>
+</dd>
+<dt><code>DECL_THUNK_P</code>
+<a name="index-DECL_005fTHUNK_005fP"></a>
+</dt>
+<dd><p>This predicate holds if the function is a thunk.
+</p>
+<p>These functions represent stub code that adjusts the <code>this</code> pointer
+and then jumps to another function.  When the jumped-to function
+returns, control is transferred directly to the caller, without
+returning to the thunk.  The first parameter to the thunk is always the
+<code>this</code> pointer; the thunk should add <code>THUNK_DELTA</code> to this
+value.  (The <code>THUNK_DELTA</code> is an <code>int</code>, not an
+<code>INTEGER_CST</code>.)
+</p>
+<p>Then, if <code>THUNK_VCALL_OFFSET</code> (an <code>INTEGER_CST</code>) is nonzero
+the adjusted <code>this</code> pointer must be adjusted again.  The complete
+calculation is given by the following pseudo-code:
+</p>
+<div class="smallexample">
+<pre class="smallexample">this += THUNK_DELTA
+if (THUNK_VCALL_OFFSET)
+  this += (*((ptrdiff_t **) this))[THUNK_VCALL_OFFSET]
+</pre></div>
+
+<p>Finally, the thunk should jump to the location given
+by <code>DECL_INITIAL</code>; this will always be an expression for the
+address of a function.
+</p>
+</dd>
+<dt><code>DECL_NON_THUNK_FUNCTION_P</code>
+<a name="index-DECL_005fNON_005fTHUNK_005fFUNCTION_005fP"></a>
+</dt>
+<dd><p>This predicate holds if the function is <em>not</em> a thunk function.
+</p>
+</dd>
+<dt><code>GLOBAL_INIT_PRIORITY</code>
+<a name="index-GLOBAL_005fINIT_005fPRIORITY"></a>
+</dt>
+<dd><p>If either <code>DECL_GLOBAL_CTOR_P</code> or <code>DECL_GLOBAL_DTOR_P</code> holds,
+then this gives the initialization priority for the function.  The
+linker will arrange that all functions for which
+<code>DECL_GLOBAL_CTOR_P</code> holds are run in increasing order of priority
+before <code>main</code> is called.  When the program exits, all functions for
+which <code>DECL_GLOBAL_DTOR_P</code> holds are run in the reverse order.
+</p>
+</dd>
+<dt><code>TYPE_RAISES_EXCEPTIONS</code>
+<a name="index-TYPE_005fRAISES_005fEXCEPTIONS"></a>
+</dt>
+<dd><p>This macro returns the list of exceptions that a (member-)function can
+raise.  The returned list, if non <code>NULL</code>, is comprised of nodes
+whose <code>TREE_VALUE</code> represents a type.
+</p>
+</dd>
+<dt><code>TYPE_NOTHROW_P</code>
+<a name="index-TYPE_005fNOTHROW_005fP"></a>
+</dt>
+<dd><p>This predicate holds when the exception-specification of its arguments
+is of the form &lsquo;<code>()</code>&rsquo;.
+</p>
+</dd>
+<dt><code>DECL_ARRAY_DELETE_OPERATOR_P</code>
+<a name="index-DECL_005fARRAY_005fDELETE_005fOPERATOR_005fP"></a>
+</dt>
+<dd><p>This predicate holds if the function an overloaded
+<code>operator delete[]</code>.
+</p>
+</dd>
+</dl>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Statements-for-C_002b_002b.html#Statements-for-C_002b_002b" accesskey="n" rel="next">Statements for C++</a>, Previous: <a href="Classes.html#Classes" accesskey="p" rel="prev">Classes</a>, Up: <a href="C-and-C_002b_002b-Trees.html#C-and-C_002b_002b-Trees" accesskey="u" rel="up">C and C++ Trees</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

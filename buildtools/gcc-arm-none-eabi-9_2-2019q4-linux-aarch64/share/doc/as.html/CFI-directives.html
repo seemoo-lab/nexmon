@@ -1,0 +1,317 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: CFI directives</title>
+
+<meta name="description" content="Using as: CFI directives">
+<meta name="keywords" content="Using as: CFI directives">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Pseudo-Ops.html#Pseudo-Ops" rel="up" title="Pseudo Ops">
+<link href="Comm.html#Comm" rel="next" title="Comm">
+<link href="Byte.html#Byte" rel="prev" title="Byte">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="CFI-directives"></a>
+<div class="header">
+<p>
+Next: <a href="Comm.html#Comm" accesskey="n" rel="next">Comm</a>, Previous: <a href="Byte.html#Byte" accesskey="p" rel="prev">Byte</a>, Up: <a href="Pseudo-Ops.html#Pseudo-Ops" accesskey="u" rel="up">Pseudo Ops</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="CFI-directives-1"></a>
+<h3 class="section">7.10 CFI directives</h3>
+<a name="g_t_002ecfi_005fsections-section_005flist"></a>
+<h4 class="subsection">7.10.1 <code>.cfi_sections <var>section_list</var></code></h4>
+<a name="index-cfi_005fsections-directive"></a>
+<p><code>.cfi_sections</code> may be used to specify whether CFI directives
+should emit <code>.eh_frame</code> section and/or <code>.debug_frame</code> section.
+If <var>section_list</var> is <code>.eh_frame</code>, <code>.eh_frame</code> is emitted,
+if <var>section_list</var> is <code>.debug_frame</code>, <code>.debug_frame</code> is emitted.
+To emit both use <code>.eh_frame, .debug_frame</code>.  The default if this
+directive is not used is <code>.cfi_sections .eh_frame</code>.
+</p>
+<p>On targets that support compact unwinding tables these can be generated
+by specifying <code>.eh_frame_entry</code> instead of <code>.eh_frame</code>.
+</p>
+<p>Some targets may support an additional name, such as <code>.c6xabi.exidx</code>
+which is used by the  target.
+</p>
+<p>The <code>.cfi_sections</code> directive can be repeated, with the same or different
+arguments, provided that CFI generation has not yet started.  Once CFI
+generation has started however the section list is fixed and any attempts to
+redefine it will result in an error.
+</p>
+<a name="g_t_002ecfi_005fstartproc-_005bsimple_005d"></a>
+<h4 class="subsection">7.10.2 <code>.cfi_startproc [simple]</code></h4>
+<a name="index-cfi_005fstartproc-directive"></a>
+<p><code>.cfi_startproc</code> is used at the beginning of each function that
+should have an entry in <code>.eh_frame</code>. It initializes some internal
+data structures. Don&rsquo;t forget to close the function by
+<code>.cfi_endproc</code>.
+</p>
+<p>Unless <code>.cfi_startproc</code> is used along with parameter <code>simple</code>
+it also emits some architecture dependent initial CFI instructions.
+</p>
+<a name="g_t_002ecfi_005fendproc"></a>
+<h4 class="subsection">7.10.3 <code>.cfi_endproc</code></h4>
+<a name="index-cfi_005fendproc-directive"></a>
+<p><code>.cfi_endproc</code> is used at the end of a function where it closes its
+unwind entry previously opened by
+<code>.cfi_startproc</code>, and emits it to <code>.eh_frame</code>.
+</p>
+<a name="g_t_002ecfi_005fpersonality-encoding-_005b_002c-exp_005d"></a>
+<h4 class="subsection">7.10.4 <code>.cfi_personality <var>encoding</var> [, <var>exp</var>]</code></h4>
+<a name="index-cfi_005fpersonality-directive"></a>
+<p><code>.cfi_personality</code> defines personality routine and its encoding.
+<var>encoding</var> must be a constant determining how the personality
+should be encoded.  If it is 255 (<code>DW_EH_PE_omit</code>), second
+argument is not present, otherwise second argument should be
+a constant or a symbol name.  When using indirect encodings,
+the symbol provided should be the location where personality
+can be loaded from, not the personality routine itself.
+The default after <code>.cfi_startproc</code> is <code>.cfi_personality 0xff</code>,
+no personality routine.
+</p>
+<a name="g_t_002ecfi_005fpersonality_005fid-id"></a>
+<h4 class="subsection">7.10.5 <code>.cfi_personality_id <var>id</var></code></h4>
+<a name="index-cfi_005fpersonality_005fid-directive"></a>
+<p><code>cfi_personality_id</code> defines a personality routine by its index as
+defined in a compact unwinding format.
+Only valid when generating compact EH frames (i.e.
+with <code>.cfi_sections eh_frame_entry</code>.
+</p>
+<a name="g_t_002ecfi_005ffde_005fdata-_005bopcode1-_005b_002c-_2026_005d_005d"></a>
+<h4 class="subsection">7.10.6 <code>.cfi_fde_data [<var>opcode1</var> [, &hellip;]]</code></h4>
+<a name="index-cfi_005ffde_005fdata-directive"></a>
+<p><code>cfi_fde_data</code> is used to describe the compact unwind opcodes to be
+used for the current function.  These are emitted inline in the
+<code>.eh_frame_entry</code> section if small enough and there is no LSDA, or
+in the <code>.gnu.extab</code> section otherwise.
+Only valid when generating compact EH frames (i.e.
+with <code>.cfi_sections eh_frame_entry</code>.
+</p>
+<a name="g_t_002ecfi_005flsda-encoding-_005b_002c-exp_005d"></a>
+<h4 class="subsection">7.10.7 <code>.cfi_lsda <var>encoding</var> [, <var>exp</var>]</code></h4>
+<p><code>.cfi_lsda</code> defines LSDA and its encoding.
+<var>encoding</var> must be a constant determining how the LSDA
+should be encoded.  If it is 255 (<code>DW_EH_PE_omit</code>), the second
+argument is not present, otherwise the second argument should be a constant
+or a symbol name.  The default after <code>.cfi_startproc</code> is <code>.cfi_lsda 0xff</code>,
+meaning that no LSDA is present.
+</p>
+<a name="g_t_002ecfi_005finline_005flsda-_005balign_005d"></a>
+<h4 class="subsection">7.10.8 <code>.cfi_inline_lsda</code> [<var>align</var>]</h4>
+<p><code>.cfi_inline_lsda</code> marks the start of a LSDA data section and
+switches to the corresponding <code>.gnu.extab</code> section.
+Must be preceded by a CFI block containing a <code>.cfi_lsda</code> directive.
+Only valid when generating compact EH frames (i.e.
+with <code>.cfi_sections eh_frame_entry</code>.
+</p>
+<p>The table header and unwinding opcodes will be generated at this point,
+so that they are immediately followed by the LSDA data.  The symbol
+referenced by the <code>.cfi_lsda</code> directive should still be defined
+in case a fallback FDE based encoding is used.  The LSDA data is terminated
+by a section directive.
+</p>
+<p>The optional <var>align</var> argument specifies the alignment required.
+The alignment is specified as a power of two, as with the
+<code>.p2align</code> directive.
+</p>
+<a name="g_t_002ecfi_005fdef_005fcfa-register_002c-offset"></a>
+<h4 class="subsection">7.10.9 <code>.cfi_def_cfa <var>register</var>, <var>offset</var></code></h4>
+<p><code>.cfi_def_cfa</code> defines a rule for computing CFA as: <i>take
+address from <var>register</var> and add <var>offset</var> to it</i>.
+</p>
+<a name="g_t_002ecfi_005fdef_005fcfa_005fregister-register"></a>
+<h4 class="subsection">7.10.10 <code>.cfi_def_cfa_register <var>register</var></code></h4>
+<p><code>.cfi_def_cfa_register</code> modifies a rule for computing CFA. From
+now on <var>register</var> will be used instead of the old one. Offset
+remains the same.
+</p>
+<a name="g_t_002ecfi_005fdef_005fcfa_005foffset-offset"></a>
+<h4 class="subsection">7.10.11 <code>.cfi_def_cfa_offset <var>offset</var></code></h4>
+<p><code>.cfi_def_cfa_offset</code> modifies a rule for computing CFA. Register
+remains the same, but <var>offset</var> is new. Note that it is the
+absolute offset that will be added to a defined register to compute
+CFA address.
+</p>
+<a name="g_t_002ecfi_005fadjust_005fcfa_005foffset-offset"></a>
+<h4 class="subsection">7.10.12 <code>.cfi_adjust_cfa_offset <var>offset</var></code></h4>
+<p>Same as <code>.cfi_def_cfa_offset</code> but <var>offset</var> is a relative
+value that is added/subtracted from the previous offset.
+</p>
+<a name="g_t_002ecfi_005foffset-register_002c-offset"></a>
+<h4 class="subsection">7.10.13 <code>.cfi_offset <var>register</var>, <var>offset</var></code></h4>
+<p>Previous value of <var>register</var> is saved at offset <var>offset</var> from
+CFA.
+</p>
+<a name="g_t_002ecfi_005fval_005foffset-register_002c-offset"></a>
+<h4 class="subsection">7.10.14 <code>.cfi_val_offset <var>register</var>, <var>offset</var></code></h4>
+<p>Previous value of <var>register</var> is CFA + <var>offset</var>.
+</p>
+<a name="g_t_002ecfi_005frel_005foffset-register_002c-offset"></a>
+<h4 class="subsection">7.10.15 <code>.cfi_rel_offset <var>register</var>, <var>offset</var></code></h4>
+<p>Previous value of <var>register</var> is saved at offset <var>offset</var> from
+the current CFA register.  This is transformed to <code>.cfi_offset</code>
+using the known displacement of the CFA register from the CFA.
+This is often easier to use, because the number will match the
+code it&rsquo;s annotating.
+</p>
+<a name="g_t_002ecfi_005fregister-register1_002c-register2"></a>
+<h4 class="subsection">7.10.16 <code>.cfi_register <var>register1</var>, <var>register2</var></code></h4>
+<p>Previous value of <var>register1</var> is saved in register <var>register2</var>.
+</p>
+<a name="g_t_002ecfi_005frestore-register"></a>
+<h4 class="subsection">7.10.17 <code>.cfi_restore <var>register</var></code></h4>
+<p><code>.cfi_restore</code> says that the rule for <var>register</var> is now the
+same as it was at the beginning of the function, after all initial
+instruction added by <code>.cfi_startproc</code> were executed.
+</p>
+<a name="g_t_002ecfi_005fundefined-register"></a>
+<h4 class="subsection">7.10.18 <code>.cfi_undefined <var>register</var></code></h4>
+<p>From now on the previous value of <var>register</var> can&rsquo;t be restored anymore.
+</p>
+<a name="g_t_002ecfi_005fsame_005fvalue-register"></a>
+<h4 class="subsection">7.10.19 <code>.cfi_same_value <var>register</var></code></h4>
+<p>Current value of <var>register</var> is the same like in the previous frame,
+i.e. no restoration needed.
+</p>
+<a name="g_t_002ecfi_005fremember_005fstate-and-_002ecfi_005frestore_005fstate"></a>
+<h4 class="subsection">7.10.20 <code>.cfi_remember_state</code> and <code>.cfi_restore_state</code></h4>
+<p><code>.cfi_remember_state</code> pushes the set of rules for every register onto an
+implicit stack, while <code>.cfi_restore_state</code> pops them off the stack and
+places them in the current row.  This is useful for situations where you have
+multiple <code>.cfi_*</code> directives that need to be undone due to the control
+flow of the program.  For example, we could have something like this (assuming
+the CFA is the value of <code>rbp</code>):
+</p>
+<div class="smallexample">
+<pre class="smallexample">        je label
+        popq %rbx
+        .cfi_restore %rbx
+        popq %r12
+        .cfi_restore %r12
+        popq %rbp
+        .cfi_restore %rbp
+        .cfi_def_cfa %rsp, 8
+        ret
+label:
+        /* Do something else */
+</pre></div>
+
+<p>Here, we want the <code>.cfi</code> directives to affect only the rows corresponding
+to the instructions before <code>label</code>.  This means we&rsquo;d have to add multiple
+<code>.cfi</code> directives after <code>label</code> to recreate the original save
+locations of the registers, as well as setting the CFA back to the value of
+<code>rbp</code>.  This would be clumsy, and result in a larger binary size. Instead,
+we can write:
+</p>
+<div class="smallexample">
+<pre class="smallexample">        je label
+        popq %rbx
+        .cfi_remember_state
+        .cfi_restore %rbx
+        popq %r12
+        .cfi_restore %r12
+        popq %rbp
+        .cfi_restore %rbp
+        .cfi_def_cfa %rsp, 8
+        ret
+label:
+        .cfi_restore_state
+        /* Do something else */
+</pre></div>
+
+<p>That way, the rules for the instructions after <code>label</code> will be the same
+as before the first <code>.cfi_restore</code> without having to use multiple
+<code>.cfi</code> directives.
+</p>
+<a name="g_t_002ecfi_005freturn_005fcolumn-register"></a>
+<h4 class="subsection">7.10.21 <code>.cfi_return_column <var>register</var></code></h4>
+<p>Change return column <var>register</var>, i.e. the return address is either
+directly in <var>register</var> or can be accessed by rules for <var>register</var>.
+</p>
+<a name="g_t_002ecfi_005fsignal_005fframe"></a>
+<h4 class="subsection">7.10.22 <code>.cfi_signal_frame</code></h4>
+<p>Mark current function as signal trampoline.
+</p>
+<a name="g_t_002ecfi_005fwindow_005fsave"></a>
+<h4 class="subsection">7.10.23 <code>.cfi_window_save</code></h4>
+<p>SPARC register window has been saved.
+</p>
+<a name="g_t_002ecfi_005fescape-expression_005b_002c-_2026_005d"></a>
+<h4 class="subsection">7.10.24 <code>.cfi_escape</code> <var>expression</var>[, &hellip;]</h4>
+<p>Allows the user to add arbitrary bytes to the unwind info.  One
+might use this to add OS-specific CFI opcodes, or generic CFI
+opcodes that GAS does not yet support.
+</p>
+<a name="g_t_002ecfi_005fval_005fencoded_005faddr-register_002c-encoding_002c-label"></a>
+<h4 class="subsection">7.10.25 <code>.cfi_val_encoded_addr <var>register</var>, <var>encoding</var>, <var>label</var></code></h4>
+<p>The current value of <var>register</var> is <var>label</var>.  The value of <var>label</var>
+will be encoded in the output file according to <var>encoding</var>; see the
+description of <code>.cfi_personality</code> for details on this encoding.
+</p>
+<p>The usefulness of equating a register to a fixed label is probably
+limited to the return address register.  Here, it can be useful to
+mark a code segment that has only one return address which is reached
+by a direct branch and no copy of the return address exists in memory
+or another register.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Comm.html#Comm" accesskey="n" rel="next">Comm</a>, Previous: <a href="Byte.html#Byte" accesskey="p" rel="prev">Byte</a>, Up: <a href="Pseudo-Ops.html#Pseudo-Ops" accesskey="u" rel="up">Pseudo Ops</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

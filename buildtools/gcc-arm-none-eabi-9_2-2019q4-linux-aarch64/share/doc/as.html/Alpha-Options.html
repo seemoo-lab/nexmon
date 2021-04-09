@@ -1,0 +1,172 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: Alpha Options</title>
+
+<meta name="description" content="Using as: Alpha Options">
+<meta name="keywords" content="Using as: Alpha Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Alpha_002dDependent.html#Alpha_002dDependent" rel="up" title="Alpha-Dependent">
+<link href="Alpha-Syntax.html#Alpha-Syntax" rel="next" title="Alpha Syntax">
+<link href="Alpha-Notes.html#Alpha-Notes" rel="prev" title="Alpha Notes">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Alpha-Options"></a>
+<div class="header">
+<p>
+Next: <a href="Alpha-Syntax.html#Alpha-Syntax" accesskey="n" rel="next">Alpha Syntax</a>, Previous: <a href="Alpha-Notes.html#Alpha-Notes" accesskey="p" rel="prev">Alpha Notes</a>, Up: <a href="Alpha_002dDependent.html#Alpha_002dDependent" accesskey="u" rel="up">Alpha-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Options-1"></a>
+<h4 class="subsection">9.2.2 Options</h4>
+<a name="index-Alpha-options"></a>
+<a name="index-options-for-Alpha"></a>
+
+<dl compact="compact">
+<dd><a name="index-_002dmcpu-command_002dline-option_002c-Alpha"></a>
+</dd>
+<dt><code>-m<var>cpu</var></code></dt>
+<dd><p>This option specifies the target processor.  If an attempt is made to
+assemble an instruction which will not execute on the target processor,
+the assembler may either expand the instruction as a macro or issue an
+error message.  This option is equivalent to the <code>.arch</code> directive.
+</p>
+<p>The following processor names are recognized:
+<code>21064</code>,
+<code>21064a</code>,
+<code>21066</code>,
+<code>21068</code>,
+<code>21164</code>,
+<code>21164a</code>,
+<code>21164pc</code>,
+<code>21264</code>,
+<code>21264a</code>,
+<code>21264b</code>,
+<code>ev4</code>,
+<code>ev5</code>,
+<code>lca45</code>,
+<code>ev5</code>,
+<code>ev56</code>,
+<code>pca56</code>,
+<code>ev6</code>,
+<code>ev67</code>,
+<code>ev68</code>.
+The special name <code>all</code> may be used to allow the assembler to accept
+instructions valid for any Alpha processor.
+</p>
+<p>In order to support existing practice in OSF/1 with respect to <code>.arch</code>,
+and existing practice within <code>MILO</code> (the Linux ARC bootloader), the
+numbered processor names (e.g. 21064) enable the processor-specific PALcode
+instructions, while the &ldquo;electro-vlasic&rdquo; names (e.g. <code>ev4</code>) do not.
+</p>
+<a name="index-_002dmdebug-command_002dline-option_002c-Alpha"></a>
+<a name="index-_002dno_002dmdebug-command_002dline-option_002c-Alpha"></a>
+</dd>
+<dt><code>-mdebug</code></dt>
+<dt><code>-no-mdebug</code></dt>
+<dd><p>Enables or disables the generation of <code>.mdebug</code> encapsulation for
+stabs directives and procedure descriptors.  The default is to automatically
+enable <code>.mdebug</code> when the first stabs directive is seen.
+</p>
+<a name="index-_002drelax-command_002dline-option_002c-Alpha"></a>
+</dd>
+<dt><code>-relax</code></dt>
+<dd><p>This option forces all relocations to be put into the object file, instead
+of saving space and resolving some relocations at assembly time.  Note that
+this option does not propagate all symbol arithmetic into the object file,
+because not all symbol arithmetic can be represented.  However, the option
+can still be useful in specific applications.
+</p>
+<a name="index-_002dreplace-command_002dline-option_002c-Alpha"></a>
+<a name="index-_002dnoreplace-command_002dline-option_002c-Alpha"></a>
+</dd>
+<dt><code>-replace</code></dt>
+<dt><code>-noreplace</code></dt>
+<dd><p>Enables or disables the optimization of procedure calls, both at assemblage
+and at link time.  These options are only available for VMS targets and
+<code>-replace</code> is the default.  See section 1.4.1 of the OpenVMS Linker
+Utility Manual.
+</p>
+<a name="index-_002dg-command_002dline-option_002c-Alpha"></a>
+</dd>
+<dt><code>-g</code></dt>
+<dd><p>This option is used when the compiler generates debug information.  When
+<code>gcc</code> is using <code>mips-tfile</code> to generate debug
+information for ECOFF, local labels must be passed through to the object
+file.  Otherwise this option has no effect.
+</p>
+<a name="index-_002dG-command_002dline-option_002c-Alpha"></a>
+</dd>
+<dt><code>-G<var>size</var></code></dt>
+<dd><p>A local common symbol larger than <var>size</var> is placed in <code>.bss</code>,
+while smaller symbols are placed in <code>.sbss</code>.
+</p>
+<a name="index-_002dF-command_002dline-option_002c-Alpha"></a>
+<a name="index-_002d32addr-command_002dline-option_002c-Alpha"></a>
+</dd>
+<dt><code>-F</code></dt>
+<dt><code>-32addr</code></dt>
+<dd><p>These options are ignored for backward compatibility.
+</p></dd>
+</dl>
+
+<a name="index-Alpha-Syntax"></a>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Alpha-Syntax.html#Alpha-Syntax" accesskey="n" rel="next">Alpha Syntax</a>, Previous: <a href="Alpha-Notes.html#Alpha-Notes" accesskey="p" rel="prev">Alpha Notes</a>, Up: <a href="Alpha_002dDependent.html#Alpha_002dDependent" accesskey="u" rel="up">Alpha-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

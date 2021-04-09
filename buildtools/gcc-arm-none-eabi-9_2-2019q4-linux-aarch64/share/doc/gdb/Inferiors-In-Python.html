@@ -1,0 +1,194 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Inferiors In Python</title>
+
+<meta name="description" content="Debugging with GDB: Inferiors In Python">
+<meta name="keywords" content="Debugging with GDB: Inferiors In Python">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Python-API.html#Python-API" rel="up" title="Python API">
+<link href="Events-In-Python.html#Events-In-Python" rel="next" title="Events In Python">
+<link href="Writing-an-Xmethod.html#Writing-an-Xmethod" rel="prev" title="Writing an Xmethod">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Inferiors-In-Python"></a>
+<div class="header">
+<p>
+Next: <a href="Events-In-Python.html#Events-In-Python" accesskey="n" rel="next">Events In Python</a>, Previous: <a href="Writing-an-Xmethod.html#Writing-an-Xmethod" accesskey="p" rel="prev">Writing an Xmethod</a>, Up: <a href="Python-API.html#Python-API" accesskey="u" rel="up">Python API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Inferiors-In-Python-1"></a>
+<h4 class="subsubsection">23.2.2.16 Inferiors In Python</h4>
+<a name="index-inferiors-in-Python"></a>
+
+<a name="index-gdb_002eInferior"></a>
+<p>Programs which are being run under <small>GDB</small> are called inferiors
+(see <a href="Inferiors-and-Programs.html#Inferiors-and-Programs">Inferiors and Programs</a>).  Python scripts can access
+information about and manipulate inferiors controlled by <small>GDB</small>
+via objects of the <code>gdb.Inferior</code> class.
+</p>
+<p>The following inferior-related functions are available in the <code>gdb</code>
+module:
+</p>
+<dl>
+<dt><a name="index-gdb_002einferiors"></a>Function: <strong>gdb.inferiors</strong> <em>()</em></dt>
+<dd><p>Return a tuple containing all inferior objects.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gdb_002eselected_005finferior"></a>Function: <strong>gdb.selected_inferior</strong> <em>()</em></dt>
+<dd><p>Return an object representing the current inferior.
+</p></dd></dl>
+
+<p>A <code>gdb.Inferior</code> object has the following attributes:
+</p>
+<dl>
+<dt><a name="index-Inferior_002enum"></a>Variable: <strong>Inferior.num</strong></dt>
+<dd><p>ID of inferior, as assigned by GDB.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Inferior_002epid"></a>Variable: <strong>Inferior.pid</strong></dt>
+<dd><p>Process ID of the inferior, as assigned by the underlying operating
+system.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Inferior_002ewas_005fattached"></a>Variable: <strong>Inferior.was_attached</strong></dt>
+<dd><p>Boolean signaling whether the inferior was created using &lsquo;attach&rsquo;, or
+started by <small>GDB</small> itself.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Inferior_002eprogspace"></a>Variable: <strong>Inferior.progspace</strong></dt>
+<dd><p>The inferior&rsquo;s program space.  See <a href="Progspaces-In-Python.html#Progspaces-In-Python">Progspaces In Python</a>.
+</p></dd></dl>
+
+<p>A <code>gdb.Inferior</code> object has the following methods:
+</p>
+<dl>
+<dt><a name="index-Inferior_002eis_005fvalid"></a>Function: <strong>Inferior.is_valid</strong> <em>()</em></dt>
+<dd><p>Returns <code>True</code> if the <code>gdb.Inferior</code> object is valid,
+<code>False</code> if not.  A <code>gdb.Inferior</code> object will become invalid
+if the inferior no longer exists within <small>GDB</small>.  All other
+<code>gdb.Inferior</code> methods will throw an exception if it is invalid
+at the time the method is called.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Inferior_002ethreads"></a>Function: <strong>Inferior.threads</strong> <em>()</em></dt>
+<dd><p>This method returns a tuple holding all the threads which are valid
+when it is called.  If there are no valid threads, the method will
+return an empty tuple.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Inferior_002earchitecture"></a>Function: <strong>Inferior.architecture</strong> <em>()</em></dt>
+<dd><p>Return the <code>gdb.Architecture</code> (see <a href="Architectures-In-Python.html#Architectures-In-Python">Architectures In Python</a>)
+for this inferior.  This represents the architecture of the inferior
+as a whole.  Some platforms can have multiple architectures in a
+single address space, so this may not match the architecture of a
+particular frame (see <a href="Frames-In-Python.html#Frames-In-Python">Frames In Python</a>).
+</p></dd></dl>
+
+<a name="index-Inferior_002eread_005fmemory"></a>
+<dl>
+<dt><a name="index-Inferior_002eread_005fmemory-1"></a>Function: <strong>Inferior.read_memory</strong> <em>(address, length)</em></dt>
+<dd><p>Read <var>length</var> addressable memory units from the inferior, starting at
+<var>address</var>.  Returns a buffer object, which behaves much like an array
+or a string.  It can be modified and given to the
+<code>Inferior.write_memory</code> function.  In Python 3, the return
+value is a <code>memoryview</code> object.
+</p></dd></dl>
+
+<a name="index-Inferior_002ewrite_005fmemory"></a>
+<dl>
+<dt><a name="index-Inferior_002ewrite_005fmemory-1"></a>Function: <strong>Inferior.write_memory</strong> <em>(address, buffer <span class="roman">[</span>, length<span class="roman">]</span>)</em></dt>
+<dd><p>Write the contents of <var>buffer</var> to the inferior, starting at
+<var>address</var>.  The <var>buffer</var> parameter must be a Python object
+which supports the buffer protocol, i.e., a string, an array or the
+object returned from <code>Inferior.read_memory</code>.  If given, <var>length</var>
+determines the number of addressable memory units from <var>buffer</var> to be
+written.
+</p></dd></dl>
+
+<a name="index-gdb_002esearch_005fmemory"></a>
+<dl>
+<dt><a name="index-Inferior_002esearch_005fmemory"></a>Function: <strong>Inferior.search_memory</strong> <em>(address, length, pattern)</em></dt>
+<dd><p>Search a region of the inferior memory starting at <var>address</var> with
+the given <var>length</var> using the search pattern supplied in
+<var>pattern</var>.  The <var>pattern</var> parameter must be a Python object
+which supports the buffer protocol, i.e., a string, an array or the
+object returned from <code>gdb.read_memory</code>.  Returns a Python <code>Long</code>
+containing the address where the pattern was found, or <code>None</code> if
+the pattern could not be found.
+</p></dd></dl>
+
+<a name="index-Inferior_002ethread_005ffrom_005fthread_005fhandle"></a>
+<dl>
+<dt><a name="index-Inferior_002ethread_005ffrom_005fthread_005fhandle-1"></a>Function: <strong>Inferior.thread_from_thread_handle</strong> <em>(thread_handle)</em></dt>
+<dd><p>Return the thread object corresponding to <var>thread_handle</var>, a thread
+library specific data structure such as <code>pthread_t</code> for pthreads
+library implementations.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Events-In-Python.html#Events-In-Python" accesskey="n" rel="next">Events In Python</a>, Previous: <a href="Writing-an-Xmethod.html#Writing-an-Xmethod" accesskey="p" rel="prev">Writing an Xmethod</a>, Up: <a href="Python-API.html#Python-API" accesskey="u" rel="up">Python API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

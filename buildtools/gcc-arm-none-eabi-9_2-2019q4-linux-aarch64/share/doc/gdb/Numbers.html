@@ -1,0 +1,145 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Numbers</title>
+
+<meta name="description" content="Debugging with GDB: Numbers">
+<meta name="keywords" content="Debugging with GDB: Numbers">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Controlling-GDB.html#Controlling-GDB" rel="up" title="Controlling GDB">
+<link href="ABI.html#ABI" rel="next" title="ABI">
+<link href="Output-Styling.html#Output-Styling" rel="prev" title="Output Styling">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Numbers"></a>
+<div class="header">
+<p>
+Next: <a href="ABI.html#ABI" accesskey="n" rel="next">ABI</a>, Previous: <a href="Output-Styling.html#Output-Styling" accesskey="p" rel="prev">Output Styling</a>, Up: <a href="Controlling-GDB.html#Controlling-GDB" accesskey="u" rel="up">Controlling GDB</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Numbers-1"></a>
+<h3 class="section">22.6 Numbers</h3>
+<a name="index-number-representation"></a>
+<a name="index-entering-numbers"></a>
+
+<p>You can always enter numbers in octal, decimal, or hexadecimal in
+<small>GDB</small> by the usual conventions: octal numbers begin with
+&lsquo;<samp>0</samp>&rsquo;, decimal numbers end with &lsquo;<samp>.</samp>&rsquo;, and hexadecimal numbers
+begin with &lsquo;<samp>0x</samp>&rsquo;.  Numbers that neither begin with &lsquo;<samp>0</samp>&rsquo; or
+&lsquo;<samp>0x</samp>&rsquo;, nor end with a &lsquo;<samp>.</samp>&rsquo; are, by default, entered in base
+10; likewise, the default display for numbers&mdash;when no particular
+format is specified&mdash;is base 10.  You can change the default base for
+both input and output with the commands described below.
+</p>
+<dl compact="compact">
+<dd><a name="index-set-input_002dradix"></a>
+</dd>
+<dt><code>set input-radix <var>base</var></code></dt>
+<dd><p>Set the default base for numeric input.  Supported choices
+for <var>base</var> are decimal 8, 10, or 16.  The base must itself be
+specified either unambiguously or using the current input radix; for
+example, any of
+</p>
+<div class="smallexample">
+<pre class="smallexample">set input-radix 012
+set input-radix 10.
+set input-radix 0xa
+</pre></div>
+
+<p>sets the input base to decimal.  On the other hand, &lsquo;<samp>set input-radix 10</samp>&rsquo;
+leaves the input radix unchanged, no matter what it was, since
+&lsquo;<samp>10</samp>&rsquo;, being without any leading or trailing signs of its base, is
+interpreted in the current radix.  Thus, if the current radix is 16,
+&lsquo;<samp>10</samp>&rsquo; is interpreted in hex, i.e. as 16 decimal, which doesn&rsquo;t
+change the radix.
+</p>
+<a name="index-set-output_002dradix"></a>
+</dd>
+<dt><code>set output-radix <var>base</var></code></dt>
+<dd><p>Set the default base for numeric display.  Supported choices
+for <var>base</var> are decimal 8, 10, or 16.  The base must itself be
+specified either unambiguously or using the current input radix.
+</p>
+<a name="index-show-input_002dradix"></a>
+</dd>
+<dt><code>show input-radix</code></dt>
+<dd><p>Display the current default base for numeric input.
+</p>
+<a name="index-show-output_002dradix"></a>
+</dd>
+<dt><code>show output-radix</code></dt>
+<dd><p>Display the current default base for numeric display.
+</p>
+</dd>
+<dt><code>set radix <span class="roman">[</span><var>base</var><span class="roman">]</span></code></dt>
+<dt><code>show radix</code></dt>
+<dd><a name="index-set-radix"></a>
+<a name="index-show-radix"></a>
+<p>These commands set and show the default base for both input and output
+of numbers.  <code>set radix</code> sets the radix of input and output to
+the same base; without an argument, it resets the radix back to its
+default value of 10.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="ABI.html#ABI" accesskey="n" rel="next">ABI</a>, Previous: <a href="Output-Styling.html#Output-Styling" accesskey="p" rel="prev">Output Styling</a>, Up: <a href="Controlling-GDB.html#Controlling-GDB" accesskey="u" rel="up">Controlling GDB</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

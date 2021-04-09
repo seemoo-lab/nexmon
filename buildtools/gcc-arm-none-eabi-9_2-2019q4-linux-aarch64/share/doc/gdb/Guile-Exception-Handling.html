@@ -1,0 +1,218 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Guile Exception Handling</title>
+
+<meta name="description" content="Debugging with GDB: Guile Exception Handling">
+<meta name="keywords" content="Debugging with GDB: Guile Exception Handling">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Guile-API.html#Guile-API" rel="up" title="Guile API">
+<link href="Values-From-Inferior-In-Guile.html#Values-From-Inferior-In-Guile" rel="next" title="Values From Inferior In Guile">
+<link href="GDB-Scheme-Data-Types.html#GDB-Scheme-Data-Types" rel="prev" title="GDB Scheme Data Types">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Guile-Exception-Handling"></a>
+<div class="header">
+<p>
+Next: <a href="Values-From-Inferior-In-Guile.html#Values-From-Inferior-In-Guile" accesskey="n" rel="next">Values From Inferior In Guile</a>, Previous: <a href="GDB-Scheme-Data-Types.html#GDB-Scheme-Data-Types" accesskey="p" rel="prev">GDB Scheme Data Types</a>, Up: <a href="Guile-API.html#Guile-API" accesskey="u" rel="up">Guile API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Guile-Exception-Handling-1"></a>
+<h4 class="subsubsection">23.3.3.4 Guile Exception Handling</h4>
+<a name="index-guile-exceptions"></a>
+<a name="index-exceptions_002c-guile"></a>
+<a name="index-set-guile-print_002dstack"></a>
+
+<p>When executing the <code>guile</code> command, Guile exceptions
+uncaught within the Guile code are translated to calls to the
+<small>GDB</small> error-reporting mechanism.  If the command that called
+<code>guile</code> does not handle the error, <small>GDB</small> will
+terminate it and report the error according to the setting of
+the <code>guile print-stack</code> parameter.
+</p>
+<p>The <code>guile print-stack</code> parameter has three settings:
+</p>
+<dl compact="compact">
+<dt><code>none</code></dt>
+<dd><p>Nothing is printed.
+</p>
+</dd>
+<dt><code>message</code></dt>
+<dd><p>An error message is printed containing the Guile exception name,
+the associated value, and the Guile call stack backtrace at the
+point where the exception was raised.  Example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) guile (display foo)
+ERROR: In procedure memoize-variable-access!:
+ERROR: Unbound variable: foo
+Error while executing Scheme code.
+</pre></div>
+
+</dd>
+<dt><code>full</code></dt>
+<dd><p>In addition to an error message a full backtrace is printed.
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) set guile print-stack full
+(gdb) guile (display foo)
+Guile Backtrace:
+In ice-9/boot-9.scm:
+ 157: 10 [catch #t #&lt;catch-closure 2c76e20&gt; ...]
+In unknown file:
+   ?: 9 [apply-smob/1 #&lt;catch-closure 2c76e20&gt;]
+In ice-9/boot-9.scm:
+ 157: 8 [catch #t #&lt;catch-closure 2c76d20&gt; ...]
+In unknown file:
+   ?: 7 [apply-smob/1 #&lt;catch-closure 2c76d20&gt;]
+   ?: 6 [call-with-input-string &quot;(display foo)&quot; ...]
+In ice-9/boot-9.scm:
+2320: 5 [save-module-excursion #&lt;procedure 2c2dc30 ... ()&gt;]
+In ice-9/eval-string.scm:
+  44: 4 [read-and-eval #&lt;input: string 27cb410&gt; #:lang ...]
+  37: 3 [lp (display foo)]
+In ice-9/eval.scm:
+ 387: 2 [eval # ()]
+ 393: 1 [eval #&lt;memoized foo&gt; ()]
+In unknown file:
+   ?: 0 [memoize-variable-access! #&lt;memoized foo&gt; ...]
+
+ERROR: In procedure memoize-variable-access!:
+ERROR: Unbound variable: foo
+Error while executing Scheme code.
+</pre></div>
+</dd>
+</dl>
+
+<p><small>GDB</small> errors that happen in <small>GDB</small> commands invoked by
+Guile code are converted to Guile exceptions.  The type of the
+Guile exception depends on the error.
+</p>
+<p>Guile procedures provided by <small>GDB</small> can throw the standard
+Guile exceptions like <code>wrong-type-arg</code> and <code>out-of-range</code>.
+</p>
+<p>User interrupt (via <kbd>C-c</kbd> or by typing <kbd>q</kbd> at a pagination
+prompt) is translated to a Guile <code>signal</code> exception with value
+<code>SIGINT</code>.
+</p>
+<p><small>GDB</small> Guile procedures can also throw these exceptions:
+</p>
+<dl compact="compact">
+<dt><code>gdb:error</code>
+<a name="index-gdb_003aerror"></a>
+</dt>
+<dd><p>This exception is a catch-all for errors generated from within <small>GDB</small>.
+</p>
+</dd>
+<dt><code>gdb:invalid-object</code>
+<a name="index-gdb_003ainvalid_002dobject"></a>
+</dt>
+<dd><p>This exception is thrown when accessing Guile objects that wrap underlying
+<small>GDB</small> objects have become invalid.  For example, a
+<code>&lt;gdb:breakpoint&gt;</code> object becomes invalid if the user deletes it
+from the command line.  The object still exists in Guile, but the
+object it represents is gone.  Further operations on this breakpoint
+will throw this exception.
+</p>
+</dd>
+<dt><code>gdb:memory-error</code>
+<a name="index-gdb_003amemory_002derror"></a>
+</dt>
+<dd><p>This exception is thrown when an operation tried to access invalid
+memory in the inferior.
+</p>
+</dd>
+<dt><code>gdb:pp-type-error</code>
+<a name="index-gdb_003app_002dtype_002derror"></a>
+</dt>
+<dd><p>This exception is thrown when a Guile pretty-printer passes a bad object
+to <small>GDB</small>.
+</p></dd>
+</dl>
+
+<p>The following exception-related procedures are provided by the
+<code>(gdb)</code> module.
+</p>
+<dl>
+<dt><a name="index-make_002dexception"></a>Scheme Procedure: <strong>make-exception</strong> <em>key args</em></dt>
+<dd><p>Return a <code>&lt;gdb:exception&gt;</code> object given by its <var>key</var> and
+<var>args</var>, which are the standard Guile parameters of an exception.
+See the Guile documentation for more information (see <a href="http://www.gnu.org/software/guile/manual/html_node/Exceptions.html#Exceptions">Exceptions</a> in <cite>GNU Guile Reference Manual</cite>).
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-exception_003f"></a>Scheme Procedure: <strong>exception?</strong> <em>object</em></dt>
+<dd><p>Return <code>#t</code> if <var>object</var> is a <code>&lt;gdb:exception&gt;</code> object.
+Otherwise return <code>#f</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-exception_002dkey"></a>Scheme Procedure: <strong>exception-key</strong> <em>exception</em></dt>
+<dd><p>Return the <var>args</var> field of a <code>&lt;gdb:exception&gt;</code> object.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-exception_002dargs"></a>Scheme Procedure: <strong>exception-args</strong> <em>exception</em></dt>
+<dd><p>Return the <var>args</var> field of a <code>&lt;gdb:exception&gt;</code> object.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Values-From-Inferior-In-Guile.html#Values-From-Inferior-In-Guile" accesskey="n" rel="next">Values From Inferior In Guile</a>, Previous: <a href="GDB-Scheme-Data-Types.html#GDB-Scheme-Data-Types" accesskey="p" rel="prev">GDB Scheme Data Types</a>, Up: <a href="Guile-API.html#Guile-API" accesskey="u" rel="up">Guile API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

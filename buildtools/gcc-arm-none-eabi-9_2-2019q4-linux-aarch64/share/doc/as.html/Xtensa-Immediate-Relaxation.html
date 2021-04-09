@@ -1,0 +1,172 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: Xtensa Immediate Relaxation</title>
+
+<meta name="description" content="Using as: Xtensa Immediate Relaxation">
+<meta name="keywords" content="Using as: Xtensa Immediate Relaxation">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Xtensa-Relaxation.html#Xtensa-Relaxation" rel="up" title="Xtensa Relaxation">
+<link href="Xtensa-Directives.html#Xtensa-Directives" rel="next" title="Xtensa Directives">
+<link href="Xtensa-Jump-Relaxation.html#Xtensa-Jump-Relaxation" rel="prev" title="Xtensa Jump Relaxation">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Xtensa-Immediate-Relaxation"></a>
+<div class="header">
+<p>
+Previous: <a href="Xtensa-Jump-Relaxation.html#Xtensa-Jump-Relaxation" accesskey="p" rel="prev">Xtensa Jump Relaxation</a>, Up: <a href="Xtensa-Relaxation.html#Xtensa-Relaxation" accesskey="u" rel="up">Xtensa Relaxation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Other-Immediate-Field-Relaxation"></a>
+<h4 class="subsubsection">9.55.4.4 Other Immediate Field Relaxation</h4>
+<a name="index-immediate-fields_002c-relaxation"></a>
+<a name="index-relaxation-of-immediate-fields"></a>
+
+<p>The assembler normally performs the following other relaxations.  They
+can be disabled by using underscore prefixes (see <a href="Xtensa-Opcodes.html#Xtensa-Opcodes">Opcode Names</a>), the &lsquo;<samp>--no-transform</samp>&rsquo; command-line option
+(see <a href="Xtensa-Options.html#Xtensa-Options">Command-line Options</a>), or the
+<code>no-transform</code> directive (see <a href="Transform-Directive.html#Transform-Directive">transform</a>).
+</p>
+<a name="index-MOVI-instructions_002c-relaxation"></a>
+<a name="index-relaxation-of-MOVI-instructions"></a>
+<p>The <code>MOVI</code> machine instruction can only materialize values in the
+range from -2048 to 2047.  Values outside this range are best
+materialized with <code>L32R</code> instructions.  Thus:
+</p>
+<div class="smallexample">
+<pre class="smallexample">    movi a0, 100000
+</pre></div>
+
+<p>is assembled into the following machine code:
+</p>
+<div class="smallexample">
+<pre class="smallexample">    .literal .L1, 100000
+    l32r a0, .L1
+</pre></div>
+
+<a name="index-L8UI-instructions_002c-relaxation"></a>
+<a name="index-L16SI-instructions_002c-relaxation"></a>
+<a name="index-L16UI-instructions_002c-relaxation"></a>
+<a name="index-L32I-instructions_002c-relaxation"></a>
+<a name="index-relaxation-of-L8UI-instructions"></a>
+<a name="index-relaxation-of-L16SI-instructions"></a>
+<a name="index-relaxation-of-L16UI-instructions"></a>
+<a name="index-relaxation-of-L32I-instructions"></a>
+<p>The <code>L8UI</code> machine instruction can only be used with immediate
+offsets in the range from 0 to 255. The <code>L16SI</code> and <code>L16UI</code>
+machine instructions can only be used with offsets from 0 to 510.  The
+<code>L32I</code> machine instruction can only be used with offsets from 0 to
+1020.  A load offset outside these ranges can be materialized with
+an <code>L32R</code> instruction if the destination register of the load
+is different than the source address register.  For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">    l32i a1, a0, 2040
+</pre></div>
+
+<p>is translated to:
+</p>
+<div class="smallexample">
+<pre class="smallexample">    .literal .L1, 2040
+    l32r a1, .L1
+</pre><pre class="smallexample">    add a1, a0, a1
+    l32i a1, a1, 0
+</pre></div>
+
+<p>If the load destination and source address register are the same, an
+out-of-range offset causes an error.
+</p>
+<a name="index-ADDI-instructions_002c-relaxation"></a>
+<a name="index-relaxation-of-ADDI-instructions"></a>
+<p>The Xtensa <code>ADDI</code> instruction only allows immediate operands in the
+range from -128 to 127.  There are a number of alternate instruction
+sequences for the <code>ADDI</code> operation.  First, if the
+immediate is 0, the <code>ADDI</code> will be turned into a <code>MOV.N</code>
+instruction (or the equivalent <code>OR</code> instruction if the code density
+option is not available).  If the <code>ADDI</code> immediate is outside of
+the range -128 to 127, but inside the range -32896 to 32639, an
+<code>ADDMI</code> instruction or <code>ADDMI</code>/<code>ADDI</code> sequence will be
+used.  Finally, if the immediate is outside of this range and a free
+register is available, an <code>L32R</code>/<code>ADD</code> sequence will be used
+with a literal allocated from the literal pool.
+</p>
+<p>For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">    addi    a5, a6, 0
+    addi    a5, a6, 512
+</pre><pre class="smallexample">    addi    a5, a6, 513
+    addi    a5, a6, 50000
+</pre></div>
+
+<p>is assembled into the following:
+</p>
+<div class="smallexample">
+<pre class="smallexample">    .literal .L1, 50000
+    mov.n   a5, a6
+</pre><pre class="smallexample">    addmi   a5, a6, 0x200
+    addmi   a5, a6, 0x200
+    addi    a5, a5, 1
+</pre><pre class="smallexample">    l32r    a5, .L1
+    add     a5, a6, a5
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Xtensa-Jump-Relaxation.html#Xtensa-Jump-Relaxation" accesskey="p" rel="prev">Xtensa Jump Relaxation</a>, Up: <a href="Xtensa-Relaxation.html#Xtensa-Relaxation" accesskey="u" rel="up">Xtensa Relaxation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

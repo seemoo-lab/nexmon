@@ -1,0 +1,164 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1987-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation.  A copy of
+the license is included in the
+section entitled "GNU Free Documentation License".
+
+This manual contains no Invariant Sections.  The Front-Cover Texts are
+(a) (see below), and the Back-Cover Texts are (b) (see below).
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The C Preprocessor: Preprocessor Output</title>
+
+<meta name="description" content="The C Preprocessor: Preprocessor Output">
+<meta name="keywords" content="The C Preprocessor: Preprocessor Output">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Index-of-Directives.html#Index-of-Directives" rel="index" title="Index of Directives">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Traditional-Mode.html#Traditional-Mode" rel="next" title="Traditional Mode">
+<link href="Other-Directives.html#Other-Directives" rel="prev" title="Other Directives">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Preprocessor-Output"></a>
+<div class="header">
+<p>
+Next: <a href="Traditional-Mode.html#Traditional-Mode" accesskey="n" rel="next">Traditional Mode</a>, Previous: <a href="Other-Directives.html#Other-Directives" accesskey="p" rel="prev">Other Directives</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index-of-Directives.html#Index-of-Directives" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Preprocessor-Output-1"></a>
+<h2 class="chapter">9 Preprocessor Output</h2>
+
+<p>When the C preprocessor is used with the C, C++, or Objective-C
+compilers, it is integrated into the compiler and communicates a stream
+of binary tokens directly to the compiler&rsquo;s parser.  However, it can
+also be used in the more conventional standalone mode, where it produces
+textual output.
+</p>
+<a name="index-output-format"></a>
+<p>The output from the C preprocessor looks much like the input, except
+that all preprocessing directive lines have been replaced with blank
+lines and all comments with spaces.  Long runs of blank lines are
+discarded.
+</p>
+<p>The ISO standard specifies that it is implementation defined whether a
+preprocessor preserves whitespace between tokens, or replaces it with
+e.g. a single space.  In GNU CPP, whitespace between tokens is collapsed
+to become a single space, with the exception that the first token on a
+non-directive line is preceded with sufficient spaces that it appears in
+the same column in the preprocessed output that it appeared in the
+original source file.  This is so the output is easy to read.
+CPP does not insert any
+whitespace where there was none in the original source, except where
+necessary to prevent an accidental token paste.
+</p>
+<a name="index-linemarkers"></a>
+<p>Source file name and line number information is conveyed by lines
+of the form
+</p>
+<div class="smallexample">
+<pre class="smallexample"># <var>linenum</var> <var>filename</var> <var>flags</var>
+</pre></div>
+
+<p>These are called <em>linemarkers</em>.  They are inserted as needed into
+the output (but never within a string or character constant).  They mean
+that the following line originated in file <var>filename</var> at line
+<var>linenum</var>.  <var>filename</var> will never contain any non-printing
+characters; they are replaced with octal escape sequences.
+</p>
+<p>After the file name comes zero or more flags, which are &lsquo;<samp>1</samp>&rsquo;,
+&lsquo;<samp>2</samp>&rsquo;, &lsquo;<samp>3</samp>&rsquo;, or &lsquo;<samp>4</samp>&rsquo;.  If there are multiple flags, spaces
+separate them.  Here is what the flags mean:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>1</samp>&rsquo;</dt>
+<dd><p>This indicates the start of a new file.
+</p></dd>
+<dt>&lsquo;<samp>2</samp>&rsquo;</dt>
+<dd><p>This indicates returning to a file (after having included another file).
+</p></dd>
+<dt>&lsquo;<samp>3</samp>&rsquo;</dt>
+<dd><p>This indicates that the following text comes from a system header file,
+so certain warnings should be suppressed.
+</p></dd>
+<dt>&lsquo;<samp>4</samp>&rsquo;</dt>
+<dd><p>This indicates that the following text should be treated as being
+wrapped in an implicit <code>extern &quot;C&quot;</code> block.
+</p></dd>
+</dl>
+
+<p>As an extension, the preprocessor accepts linemarkers in non-assembler
+input files.  They are treated like the corresponding &lsquo;<samp>#line</samp>&rsquo;
+directive, (see <a href="Line-Control.html#Line-Control">Line Control</a>), except that trailing flags are
+permitted, and are interpreted with the meanings described above.  If
+multiple flags are given, they must be in ascending order.
+</p>
+<p>Some directives may be duplicated in the output of the preprocessor.
+These are &lsquo;<samp>#ident</samp>&rsquo; (always), &lsquo;<samp>#pragma</samp>&rsquo; (only if the
+preprocessor does not handle the pragma itself), and &lsquo;<samp>#define</samp>&rsquo; and
+&lsquo;<samp>#undef</samp>&rsquo; (with certain debugging options).  If this happens, the
+&lsquo;<samp>#</samp>&rsquo; of the directive will always be in the first column, and there
+will be no space between the &lsquo;<samp>#</samp>&rsquo; and the directive name.  If macro
+expansion happens to generate tokens which might be mistaken for a
+duplicated directive, a space will be inserted between the &lsquo;<samp>#</samp>&rsquo; and
+the directive name.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Traditional-Mode.html#Traditional-Mode" accesskey="n" rel="next">Traditional Mode</a>, Previous: <a href="Other-Directives.html#Other-Directives" accesskey="p" rel="prev">Other Directives</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index-of-Directives.html#Index-of-Directives" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

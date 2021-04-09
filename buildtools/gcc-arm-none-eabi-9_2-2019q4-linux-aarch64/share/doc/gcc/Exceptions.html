@@ -1,0 +1,161 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Exceptions</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Exceptions">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Exceptions">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Objective_002dC.html#Objective_002dC" rel="up" title="Objective-C">
+<link href="Synchronization.html#Synchronization" rel="next" title="Synchronization">
+<link href="compatibility_005falias.html#compatibility_005falias" rel="prev" title="compatibility_alias">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Exceptions"></a>
+<div class="header">
+<p>
+Next: <a href="Synchronization.html#Synchronization" accesskey="n" rel="next">Synchronization</a>, Previous: <a href="compatibility_005falias.html#compatibility_005falias" accesskey="p" rel="prev">compatibility_alias</a>, Up: <a href="Objective_002dC.html#Objective_002dC" accesskey="u" rel="up">Objective-C</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Exceptions-1"></a>
+<h3 class="section">8.7 Exceptions</h3>
+
+<p>GNU Objective-C provides exception support built into the language, as
+in the following example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">  @try {
+    &hellip;
+       @throw expr;
+    &hellip;
+  }
+  @catch (AnObjCClass *exc) {
+    &hellip;
+      @throw expr;
+    &hellip;
+      @throw;
+    &hellip;
+  }
+  @catch (AnotherClass *exc) {
+    &hellip;
+  }
+  @catch (id allOthers) {
+    &hellip;
+  }
+  @finally {
+    &hellip;
+      @throw expr;
+    &hellip;
+  }
+</pre></div>
+
+<p>The <code>@throw</code> statement may appear anywhere in an Objective-C or
+Objective-C++ program; when used inside of a <code>@catch</code> block, the
+<code>@throw</code> may appear without an argument (as shown above), in
+which case the object caught by the <code>@catch</code> will be rethrown.
+</p>
+<p>Note that only (pointers to) Objective-C objects may be thrown and
+caught using this scheme.  When an object is thrown, it will be caught
+by the nearest <code>@catch</code> clause capable of handling objects of
+that type, analogously to how <code>catch</code> blocks work in C++ and
+Java.  A <code>@catch(id &hellip;)</code> clause (as shown above) may also
+be provided to catch any and all Objective-C exceptions not caught by
+previous <code>@catch</code> clauses (if any).
+</p>
+<p>The <code>@finally</code> clause, if present, will be executed upon exit
+from the immediately preceding <code>@try &hellip; @catch</code> section.
+This will happen regardless of whether any exceptions are thrown,
+caught or rethrown inside the <code>@try &hellip; @catch</code> section,
+analogously to the behavior of the <code>finally</code> clause in Java.
+</p>
+<p>There are several caveats to using the new exception mechanism:
+</p>
+<ul>
+<li> The <samp>-fobjc-exceptions</samp> command line option must be used when
+compiling Objective-C files that use exceptions.
+
+</li><li> With the GNU runtime, exceptions are always implemented as &ldquo;native&rdquo;
+exceptions and it is recommended that the <samp>-fexceptions</samp> and
+<samp>-shared-libgcc</samp> options are used when linking.
+
+</li><li> With the NeXT runtime, although currently designed to be binary
+compatible with <code>NS_HANDLER</code>-style idioms provided by the
+<code>NSException</code> class, the new exceptions can only be used on Mac
+OS X 10.3 (Panther) and later systems, due to additional functionality
+needed in the NeXT Objective-C runtime.
+
+</li><li> As mentioned above, the new exceptions do not support handling
+types other than Objective-C objects.   Furthermore, when used from
+Objective-C++, the Objective-C exception model does not interoperate with C++
+exceptions at this time.  This means you cannot <code>@throw</code> an exception
+from Objective-C and <code>catch</code> it in C++, or vice versa
+(i.e., <code>throw &hellip; @catch</code>).
+</li></ul>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Synchronization.html#Synchronization" accesskey="n" rel="next">Synchronization</a>, Previous: <a href="compatibility_005falias.html#compatibility_005falias" accesskey="p" rel="prev">compatibility_alias</a>, Up: <a href="Objective_002dC.html#Objective_002dC" accesskey="u" rel="up">Objective-C</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

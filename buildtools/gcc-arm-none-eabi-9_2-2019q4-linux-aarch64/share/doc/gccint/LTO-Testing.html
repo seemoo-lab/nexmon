@@ -1,0 +1,130 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: LTO Testing</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: LTO Testing">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: LTO Testing">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Testsuites.html#Testsuites" rel="up" title="Testsuites">
+<link href="gcov-Testing.html#gcov-Testing" rel="next" title="gcov Testing">
+<link href="C-Tests.html#C-Tests" rel="prev" title="C Tests">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="LTO-Testing"></a>
+<div class="header">
+<p>
+Next: <a href="gcov-Testing.html#gcov-Testing" accesskey="n" rel="next">gcov Testing</a>, Previous: <a href="C-Tests.html#C-Tests" accesskey="p" rel="prev">C Tests</a>, Up: <a href="Testsuites.html#Testsuites" accesskey="u" rel="up">Testsuites</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Support-for-testing-link_002dtime-optimizations"></a>
+<h3 class="section">7.5 Support for testing link-time optimizations</h3>
+
+<p>Tests for link-time optimizations usually require multiple source files
+that are compiled separately, perhaps with different sets of options.
+There are several special-purpose test directives used for these tests.
+</p>
+<dl compact="compact">
+<dt><code>{ dg-lto-do <var>do-what-keyword</var> }</code></dt>
+<dd><p><var>do-what-keyword</var> specifies how the test is compiled and whether
+it is executed.  It is one of:
+</p>
+<dl compact="compact">
+<dt><code>assemble</code></dt>
+<dd><p>Compile with <samp>-c</samp> to produce a relocatable object file.
+</p></dd>
+<dt><code>link</code></dt>
+<dd><p>Compile, assemble, and link to produce an executable file.
+</p></dd>
+<dt><code>run</code></dt>
+<dd><p>Produce and run an executable file, which is expected to return
+an exit code of 0.
+</p></dd>
+</dl>
+
+<p>The default is <code>assemble</code>.  That can be overridden for a set of
+tests by redefining <code>dg-do-what-default</code> within the <code>.exp</code>
+file for those tests.
+</p>
+<p>Unlike <code>dg-do</code>, <code>dg-lto-do</code> does not support an optional
+&lsquo;<samp>target</samp>&rsquo; or &lsquo;<samp>xfail</samp>&rsquo; list.  Use <code>dg-skip-if</code>,
+<code>dg-xfail-if</code>, or <code>dg-xfail-run-if</code>.
+</p>
+</dd>
+<dt><code>{ dg-lto-options { { <var>options</var> } [{ <var>options</var> }] } [{ target <var>selector</var> }]}</code></dt>
+<dd><p>This directive provides a list of one or more sets of compiler options
+to override <var>LTO_OPTIONS</var>.  Each test will be compiled and run with
+each of these sets of options.
+</p>
+</dd>
+<dt><code>{ dg-extra-ld-options <var>options</var> [{ target <var>selector</var> }]}</code></dt>
+<dd><p>This directive adds <var>options</var> to the linker options used.
+</p>
+</dd>
+<dt><code>{ dg-suppress-ld-options <var>options</var> [{ target <var>selector</var> }]}</code></dt>
+<dd><p>This directive removes <var>options</var> from the set of linker options used.
+</p></dd>
+</dl>
+
+
+
+
+</body>
+</html>

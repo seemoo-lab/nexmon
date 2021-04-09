@@ -1,0 +1,164 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Visium Options</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Visium Options">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Visium Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Submodel-Options.html#Submodel-Options" rel="up" title="Submodel Options">
+<link href="VMS-Options.html#VMS-Options" rel="next" title="VMS Options">
+<link href="VAX-Options.html#VAX-Options" rel="prev" title="VAX Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Visium-Options"></a>
+<div class="header">
+<p>
+Next: <a href="VMS-Options.html#VMS-Options" accesskey="n" rel="next">VMS Options</a>, Previous: <a href="VAX-Options.html#VAX-Options" accesskey="p" rel="prev">VAX Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Visium-Options-1"></a>
+<h4 class="subsection">3.18.55 Visium Options</h4>
+<a name="index-Visium-options"></a>
+
+<dl compact="compact">
+<dt><code>-mdebug</code></dt>
+<dd><a name="index-mdebug-2"></a>
+<p>A program which performs file I/O and is destined to run on an MCM target
+should be linked with this option.  It causes the libraries libc.a and
+libdebug.a to be linked.  The program should be run on the target under
+the control of the GDB remote debugging stub.
+</p>
+</dd>
+<dt><code>-msim</code></dt>
+<dd><a name="index-msim-10"></a>
+<p>A program which performs file I/O and is destined to run on the simulator
+should be linked with option.  This causes libraries libc.a and libsim.a to
+be linked.
+</p>
+</dd>
+<dt><code>-mfpu</code></dt>
+<dt><code>-mhard-float</code></dt>
+<dd><a name="index-mfpu-4"></a>
+<a name="index-mhard_002dfloat-9"></a>
+<p>Generate code containing floating-point instructions.  This is the
+default.
+</p>
+</dd>
+<dt><code>-mno-fpu</code></dt>
+<dt><code>-msoft-float</code></dt>
+<dd><a name="index-mno_002dfpu-1"></a>
+<a name="index-msoft_002dfloat-13"></a>
+<p>Generate code containing library calls for floating-point.
+</p>
+<p><samp>-msoft-float</samp> changes the calling convention in the output file;
+therefore, it is only useful if you compile <em>all</em> of a program with
+this option.  In particular, you need to compile <samp>libgcc.a</samp>, the
+library that comes with GCC, with <samp>-msoft-float</samp> in order for
+this to work.
+</p>
+</dd>
+<dt><code>-mcpu=<var>cpu_type</var></code></dt>
+<dd><a name="index-mcpu-14"></a>
+<p>Set the instruction set, register set, and instruction scheduling parameters
+for machine type <var>cpu_type</var>.  Supported values for <var>cpu_type</var> are
+&lsquo;<samp>mcm</samp>&rsquo;, &lsquo;<samp>gr5</samp>&rsquo; and &lsquo;<samp>gr6</samp>&rsquo;.
+</p>
+<p>&lsquo;<samp>mcm</samp>&rsquo; is a synonym of &lsquo;<samp>gr5</samp>&rsquo; present for backward compatibility.
+</p>
+<p>By default (unless configured otherwise), GCC generates code for the GR5
+variant of the Visium architecture.  
+</p>
+<p>With <samp>-mcpu=gr6</samp>, GCC generates code for the GR6 variant of the Visium
+architecture.  The only difference from GR5 code is that the compiler will
+generate block move instructions.
+</p>
+</dd>
+<dt><code>-mtune=<var>cpu_type</var></code></dt>
+<dd><a name="index-mtune-15"></a>
+<p>Set the instruction scheduling parameters for machine type <var>cpu_type</var>,
+but do not set the instruction set or register set that the option
+<samp>-mcpu=<var>cpu_type</var></samp> would.
+</p>
+</dd>
+<dt><code>-msv-mode</code></dt>
+<dd><a name="index-msv_002dmode"></a>
+<p>Generate code for the supervisor mode, where there are no restrictions on
+the access to general registers.  This is the default.
+</p>
+</dd>
+<dt><code>-muser-mode</code></dt>
+<dd><a name="index-muser_002dmode-1"></a>
+<p>Generate code for the user mode, where the access to some general registers
+is forbidden: on the GR5, registers r24 to r31 cannot be accessed in this
+mode; on the GR6, only registers r29 to r31 are affected.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="VMS-Options.html#VMS-Options" accesskey="n" rel="next">VMS Options</a>, Previous: <a href="VAX-Options.html#VAX-Options" accesskey="p" rel="prev">VAX Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

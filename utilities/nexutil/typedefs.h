@@ -208,7 +208,7 @@ typedef unsigned int	uint32;
 #endif
 
 #ifndef TYPEDEF_UINT64
-typedef unsigned long long uint64;
+/* typedef unsigned long long uint64; */
 #endif
 
 #ifndef TYPEDEF_UINTPTR

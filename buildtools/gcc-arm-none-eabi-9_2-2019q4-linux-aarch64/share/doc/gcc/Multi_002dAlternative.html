@@ -1,0 +1,113 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Multi-Alternative</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Multi-Alternative">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Multi-Alternative">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Constraints.html#Constraints" rel="up" title="Constraints">
+<link href="Modifiers.html#Modifiers" rel="next" title="Modifiers">
+<link href="Simple-Constraints.html#Simple-Constraints" rel="prev" title="Simple Constraints">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Multi_002dAlternative"></a>
+<div class="header">
+<p>
+Next: <a href="Modifiers.html#Modifiers" accesskey="n" rel="next">Modifiers</a>, Previous: <a href="Simple-Constraints.html#Simple-Constraints" accesskey="p" rel="prev">Simple Constraints</a>, Up: <a href="Constraints.html#Constraints" accesskey="u" rel="up">Constraints</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Multiple-Alternative-Constraints"></a>
+<h4 class="subsubsection">6.47.3.2 Multiple Alternative Constraints</h4>
+<a name="index-multiple-alternative-constraints"></a>
+
+<p>Sometimes a single instruction has multiple alternative sets of possible
+operands.  For example, on the 68000, a logical-or instruction can combine
+register or an immediate value into memory, or it can combine any kind of
+operand into a register; but it cannot combine one memory location into
+another.
+</p>
+<p>These constraints are represented as multiple alternatives.  An alternative
+can be described by a series of letters for each operand.  The overall
+constraint for an operand is made from the letters for this operand
+from the first alternative, a comma, the letters for this operand from
+the second alternative, a comma, and so on until the last alternative.
+All operands for a single instruction must have the same number of 
+alternatives.
+</p>
+<p>So the first alternative for the 68000&rsquo;s logical-or could be written as 
+<code>&quot;+m&quot; (output) : &quot;ir&quot; (input)</code>.  The second could be <code>&quot;+r&quot; 
+(output): &quot;irm&quot; (input)</code>.  However, the fact that two memory locations 
+cannot be used in a single instruction prevents simply using <code>&quot;+rm&quot; 
+(output) : &quot;irm&quot; (input)</code>.  Using multi-alternatives, this might be 
+written as <code>&quot;+m,r&quot; (output) : &quot;ir,irm&quot; (input)</code>.  This describes
+all the available alternatives to the compiler, allowing it to choose 
+the most efficient one for the current conditions.
+</p>
+<p>There is no way within the template to determine which alternative was 
+chosen.  However you may be able to wrap your <code>asm</code> statements with 
+builtins such as <code>__builtin_constant_p</code> to achieve the desired results.
+</p>
+
+
+
+
+</body>
+</html>

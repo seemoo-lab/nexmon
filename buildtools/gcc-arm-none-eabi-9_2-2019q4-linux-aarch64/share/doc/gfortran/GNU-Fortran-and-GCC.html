@@ -1,0 +1,130 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: GNU Fortran and GCC</title>
+
+<meta name="description" content="The GNU Fortran Compiler: GNU Fortran and GCC">
+<meta name="keywords" content="The GNU Fortran Compiler: GNU Fortran and GCC">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Introduction.html#Introduction" rel="up" title="Introduction">
+<link href="Preprocessing-and-conditional-compilation.html#Preprocessing-and-conditional-compilation" rel="next" title="Preprocessing and conditional compilation">
+<link href="About-GNU-Fortran.html#About-GNU-Fortran" rel="prev" title="About GNU Fortran">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="GNU-Fortran-and-GCC"></a>
+<div class="header">
+<p>
+Next: <a href="Preprocessing-and-conditional-compilation.html#Preprocessing-and-conditional-compilation" accesskey="n" rel="next">Preprocessing and conditional compilation</a>, Previous: <a href="About-GNU-Fortran.html#About-GNU-Fortran" accesskey="p" rel="prev">About GNU Fortran</a>, Up: <a href="Introduction.html#Introduction" accesskey="u" rel="up">Introduction</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="GNU-Fortran-and-GCC-1"></a>
+<h3 class="section">1.2 GNU Fortran and GCC</h3>
+<a name="index-GNU-Compiler-Collection"></a>
+<a name="index-GCC"></a>
+
+<p>GNU Fortran is a part of GCC, the <em>GNU Compiler Collection</em>.  GCC
+consists of a collection of front ends for various languages, which
+translate the source code into a language-independent form called
+<em>GENERIC</em>.  This is then processed by a common middle end which
+provides optimization, and then passed to one of a collection of back
+ends which generate code for different computer architectures and
+operating systems.
+</p>
+<p>Functionally, this is implemented with a driver program (<code>gcc</code>)
+which provides the command-line interface for the compiler.  It calls
+the relevant compiler front-end program (e.g., <code>f951</code> for
+Fortran) for each file in the source code, and then calls the assembler
+and linker as appropriate to produce the compiled output.  In a copy of
+GCC which has been compiled with Fortran language support enabled,
+<code>gcc</code> will recognize files with <samp>.f</samp>, <samp>.for</samp>, <samp>.ftn</samp>,
+<samp>.f90</samp>, <samp>.f95</samp>, <samp>.f03</samp> and <samp>.f08</samp> extensions as
+Fortran source code, and compile it accordingly.  A <code>gfortran</code>
+driver program is also provided, which is identical to <code>gcc</code>
+except that it automatically links the Fortran runtime libraries into the
+compiled program.
+</p>
+<p>Source files with <samp>.f</samp>, <samp>.for</samp>, <samp>.fpp</samp>, <samp>.ftn</samp>, <samp>.F</samp>,
+<samp>.FOR</samp>, <samp>.FPP</samp>, and <samp>.FTN</samp> extensions are treated as fixed form.
+Source files with <samp>.f90</samp>, <samp>.f95</samp>, <samp>.f03</samp>, <samp>.f08</samp>,
+<samp>.F90</samp>, <samp>.F95</samp>, <samp>.F03</samp> and <samp>.F08</samp> extensions are
+treated as free form.  The capitalized versions of either form are run
+through preprocessing.  Source files with the lower case <samp>.fpp</samp>
+extension are also run through preprocessing.
+</p>
+<p>This manual specifically documents the Fortran front end, which handles
+the programming language&rsquo;s syntax and semantics.  The aspects of GCC
+which relate to the optimization passes and the back-end code generation
+are documented in the GCC manual; see
+<a href="http://gcc.gnu.org/onlinedocs/gcc/index.html#Top">Introduction</a> in <cite>Using the GNU Compiler Collection (GCC)</cite>.
+The two manuals together provide a complete reference for the GNU
+Fortran compiler.
+</p>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Preprocessing-and-conditional-compilation.html#Preprocessing-and-conditional-compilation" accesskey="n" rel="next">Preprocessing and conditional compilation</a>, Previous: <a href="About-GNU-Fortran.html#About-GNU-Fortran" accesskey="p" rel="prev">About GNU Fortran</a>, Up: <a href="Introduction.html#Introduction" accesskey="u" rel="up">Introduction</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

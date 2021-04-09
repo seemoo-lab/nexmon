@@ -1,0 +1,9 @@
+libnexio.a
+libnexio.o
+nexutil
+*.cmd
+templateram*.bin
+vasip.bin
+*ucode*.bin
+*~
+wip/*

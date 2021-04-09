@@ -1,0 +1,199 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: LTO object file layout</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: LTO object file layout">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: LTO object file layout">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="LTO.html#LTO" rel="up" title="LTO">
+<link href="IPA.html#IPA" rel="next" title="IPA">
+<link href="LTO-Overview.html#LTO-Overview" rel="prev" title="LTO Overview">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="LTO-object-file-layout"></a>
+<div class="header">
+<p>
+Next: <a href="IPA.html#IPA" accesskey="n" rel="next">IPA</a>, Previous: <a href="LTO-Overview.html#LTO-Overview" accesskey="p" rel="prev">LTO Overview</a>, Up: <a href="LTO.html#LTO" accesskey="u" rel="up">LTO</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="LTO-file-sections"></a>
+<h3 class="section">25.2 LTO file sections</h3>
+
+<p>LTO information is stored in several ELF sections inside object files.
+Data structures and enum codes for sections are defined in
+<samp>lto-streamer.h</samp>.
+</p>
+<p>These sections are emitted from <samp>lto-streamer-out.c</samp> and mapped
+in all at once from <samp>lto/lto.c</samp>:<code>lto_file_read</code>.  The
+individual functions dealing with the reading/writing of each section
+are described below.
+</p>
+<ul>
+<li> Command line options (<code>.gnu.lto_.opts</code>)
+
+<p>This section contains the command line options used to generate the
+object files.  This is used at link time to determine the optimization
+level and other settings when they are not explicitly specified at the
+linker command line.
+</p>
+<p>Currently, GCC does not support combining LTO object files compiled
+with different set of the command line options into a single binary.
+At link time, the options given on the command line and the options
+saved on all the files in a link-time set are applied globally.  No
+attempt is made at validating the combination of flags (other than the
+usual validation done by option processing).  This is implemented in
+<samp>lto/lto.c</samp>:<code>lto_read_all_file_options</code>.
+</p>
+
+</li><li> Symbol table (<code>.gnu.lto_.symtab</code>)
+
+<p>This table replaces the ELF symbol table for functions and variables
+represented in the LTO IL.  Symbols used and exported by the optimized
+assembly code of &ldquo;fat&rdquo; objects might not match the ones used and
+exported by the intermediate code.  This table is necessary because
+the intermediate code is less optimized and thus requires a separate
+symbol table.
+</p>
+<p>Additionally, the binary code in the &ldquo;fat&rdquo; object will lack a call
+to a function, since the call was optimized out at compilation time
+after the intermediate language was streamed out.  In some special
+cases, the same optimization may not happen during link-time
+optimization.  This would lead to an undefined symbol if only one
+symbol table was used.
+</p>
+<p>The symbol table is emitted in
+<samp>lto-streamer-out.c</samp>:<code>produce_symtab</code>.
+</p>
+
+</li><li> Global declarations and types (<code>.gnu.lto_.decls</code>)
+
+<p>This section contains an intermediate language dump of all
+declarations and types required to represent the callgraph, static
+variables and top-level debug info.
+</p>
+<p>The contents of this section are emitted in
+<samp>lto-streamer-out.c</samp>:<code>produce_asm_for_decls</code>.  Types and
+symbols are emitted in a topological order that preserves the sharing
+of pointers when the file is read back in
+(<samp>lto.c</samp>:<code>read_cgraph_and_symbols</code>).
+</p>
+
+</li><li> The callgraph (<code>.gnu.lto_.cgraph</code>)
+
+<p>This section contains the basic data structure used by the GCC
+inter-procedural optimization infrastructure.  This section stores an
+annotated multi-graph which represents the functions and call sites as
+well as the variables, aliases and top-level <code>asm</code> statements.
+</p>
+<p>This section is emitted in
+<samp>lto-streamer-out.c</samp>:<code>output_cgraph</code> and read in
+<samp>lto-cgraph.c</samp>:<code>input_cgraph</code>.
+</p>
+
+</li><li> IPA references (<code>.gnu.lto_.refs</code>)
+
+<p>This section contains references between function and static
+variables.  It is emitted by <samp>lto-cgraph.c</samp>:<code>output_refs</code>
+and read by <samp>lto-cgraph.c</samp>:<code>input_refs</code>.
+</p>
+
+</li><li> Function bodies (<code>.gnu.lto_.function_body.&lt;name&gt;</code>)
+
+<p>This section contains function bodies in the intermediate language
+representation.  Every function body is in a separate section to allow
+copying of the section independently to different object files or
+reading the function on demand.
+</p>
+<p>Functions are emitted in
+<samp>lto-streamer-out.c</samp>:<code>output_function</code> and read in
+<samp>lto-streamer-in.c</samp>:<code>input_function</code>.
+</p>
+
+</li><li> Static variable initializers (<code>.gnu.lto_.vars</code>)
+
+<p>This section contains all the symbols in the global variable pool.  It
+is emitted by <samp>lto-cgraph.c</samp>:<code>output_varpool</code> and read in
+<samp>lto-cgraph.c</samp>:<code>input_cgraph</code>.
+</p>
+</li><li> Summaries and optimization summaries used by IPA passes
+(<code>.gnu.lto_.&lt;xxx&gt;</code>, where <code>&lt;xxx&gt;</code> is one of <code>jmpfuncs</code>,
+<code>pureconst</code> or <code>reference</code>)
+
+<p>These sections are used by IPA passes that need to emit summary
+information during LTO generation to be read and aggregated at
+link time.  Each pass is responsible for implementing two pass manager
+hooks: one for writing the summary and another for reading it in.  The
+format of these sections is entirely up to each individual pass.  The
+only requirement is that the writer and reader hooks agree on the
+format.
+</p></li></ul>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="IPA.html#IPA" accesskey="n" rel="next">IPA</a>, Previous: <a href="LTO-Overview.html#LTO-Overview" accesskey="p" rel="prev">LTO Overview</a>, Up: <a href="LTO.html#LTO" accesskey="u" rel="up">LTO</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

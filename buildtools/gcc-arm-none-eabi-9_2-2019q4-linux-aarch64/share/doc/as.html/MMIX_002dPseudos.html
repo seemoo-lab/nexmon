@@ -1,0 +1,323 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: MMIX-Pseudos</title>
+
+<meta name="description" content="Using as: MMIX-Pseudos">
+<meta name="keywords" content="Using as: MMIX-Pseudos">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="MMIX_002dSyntax.html#MMIX_002dSyntax" rel="up" title="MMIX-Syntax">
+<link href="MMIX_002dmmixal.html#MMIX_002dmmixal" rel="next" title="MMIX-mmixal">
+<link href="MMIX_002dRegs.html#MMIX_002dRegs" rel="prev" title="MMIX-Regs">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="MMIX_002dPseudos"></a>
+<div class="header">
+<p>
+Previous: <a href="MMIX_002dRegs.html#MMIX_002dRegs" accesskey="p" rel="prev">MMIX-Regs</a>, Up: <a href="MMIX_002dSyntax.html#MMIX_002dSyntax" accesskey="u" rel="up">MMIX-Syntax</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Assembler-Directives-3"></a>
+<h4 class="subsubsection">9.28.3.4 Assembler Directives</h4>
+<a name="index-assembler-directives_002c-MMIX"></a>
+<a name="index-pseudo_002dops_002c-MMIX"></a>
+<a name="index-MMIX-assembler-directives"></a>
+<a name="index-MMIX-pseudo_002dops"></a>
+
+<dl compact="compact">
+<dt><code>LOC</code></dt>
+<dd><a name="index-assembler-directive-LOC_002c-MMIX"></a>
+<a name="index-pseudo_002dop-LOC_002c-MMIX"></a>
+<a name="index-MMIX-assembler-directive-LOC"></a>
+<a name="index-MMIX-pseudo_002dop-LOC"></a>
+
+<a name="MMIX_002dloc"></a><p>The <code>LOC</code> directive sets the current location to the value of the
+operand field, which may include changing sections.  If the operand is a
+constant, the section is set to either <code>.data</code> if the value is
+<code>0x2000000000000000</code> or larger, else it is set to <code>.text</code>.
+Within a section, the current location may only be changed to
+monotonically higher addresses.  A LOC expression must be a previously
+defined symbol or a &ldquo;pure&rdquo; constant.
+</p>
+<p>An example, which sets the label <var>prev</var> to the current location, and
+updates the current location to eight bytes forward:
+</p><div class="smallexample">
+<pre class="smallexample">prev LOC @+8
+</pre></div>
+
+<p>When a LOC has a constant as its operand, a symbol
+<code>__.MMIX.start..text</code> or <code>__.MMIX.start..data</code> is defined
+depending on the address as mentioned above.  Each such symbol is
+interpreted as special by the linker, locating the section at that
+address.  Note that if multiple files are linked, the first object file
+with that section will be mapped to that address (not necessarily the file
+with the LOC definition).
+</p>
+</dd>
+<dt><code>LOCAL</code></dt>
+<dd><a name="index-assembler-directive-LOCAL_002c-MMIX"></a>
+<a name="index-pseudo_002dop-LOCAL_002c-MMIX"></a>
+<a name="index-MMIX-assembler-directive-LOCAL"></a>
+<a name="index-MMIX-pseudo_002dop-LOCAL"></a>
+
+<a name="MMIX_002dlocal"></a><p>Example:
+</p><div class="smallexample">
+<pre class="smallexample"> LOCAL external_symbol
+ LOCAL 42
+ .local asymbol
+</pre></div>
+
+<p>This directive-operation generates a link-time assertion that the operand
+does not correspond to a global register.  The operand is an expression
+that at link-time resolves to a register symbol or a number.  A number is
+treated as the register having that number.  There is one restriction on
+the use of this directive: the pseudo-directive must be placed in a
+section with contents, code or data.
+</p>
+</dd>
+<dt><code>IS</code></dt>
+<dd><a name="index-assembler-directive-IS_002c-MMIX"></a>
+<a name="index-pseudo_002dop-IS_002c-MMIX"></a>
+<a name="index-MMIX-assembler-directive-IS"></a>
+<a name="index-MMIX-pseudo_002dop-IS"></a>
+
+<a name="MMIX_002dis"></a><p>The <code>IS</code> directive:
+</p><div class="smallexample">
+<pre class="smallexample">asymbol IS an_expression
+</pre></div>
+<p>sets the symbol &lsquo;<samp>asymbol</samp>&rsquo; to &lsquo;<samp>an_expression</samp>&rsquo;.  A symbol may not
+be set more than once using this directive.  Local labels may be set using
+this directive, for example:
+</p><div class="smallexample">
+<pre class="smallexample">5H IS @+4
+</pre></div>
+
+</dd>
+<dt><code>GREG</code></dt>
+<dd><a name="index-assembler-directive-GREG_002c-MMIX"></a>
+<a name="index-pseudo_002dop-GREG_002c-MMIX"></a>
+<a name="index-MMIX-assembler-directive-GREG"></a>
+<a name="index-MMIX-pseudo_002dop-GREG"></a>
+
+<a name="MMIX_002dgreg"></a><p>This directive reserves a global register, gives it an initial value and
+optionally gives it a symbolic name.  Some examples:
+</p>
+<div class="smallexample">
+<pre class="smallexample">areg GREG
+breg GREG data_value
+     GREG data_buffer
+     .greg creg, another_data_value
+</pre></div>
+
+<p>The symbolic register name can be used in place of a (non-special)
+register.  If a value isn&rsquo;t provided, it defaults to zero.  Unless the
+option &lsquo;<samp>--no-merge-gregs</samp>&rsquo; is specified, non-zero registers allocated
+with this directive may be eliminated by <code>as</code>; another
+register with the same value used in its place.
+Any of the instructions
+&lsquo;<samp>CSWAP</samp>&rsquo;,
+&lsquo;<samp>GO</samp>&rsquo;,
+&lsquo;<samp>LDA</samp>&rsquo;,
+&lsquo;<samp>LDBU</samp>&rsquo;,
+&lsquo;<samp>LDB</samp>&rsquo;,
+&lsquo;<samp>LDHT</samp>&rsquo;,
+&lsquo;<samp>LDOU</samp>&rsquo;,
+&lsquo;<samp>LDO</samp>&rsquo;,
+&lsquo;<samp>LDSF</samp>&rsquo;,
+&lsquo;<samp>LDTU</samp>&rsquo;,
+&lsquo;<samp>LDT</samp>&rsquo;,
+&lsquo;<samp>LDUNC</samp>&rsquo;,
+&lsquo;<samp>LDVTS</samp>&rsquo;,
+&lsquo;<samp>LDWU</samp>&rsquo;,
+&lsquo;<samp>LDW</samp>&rsquo;,
+&lsquo;<samp>PREGO</samp>&rsquo;,
+&lsquo;<samp>PRELD</samp>&rsquo;,
+&lsquo;<samp>PREST</samp>&rsquo;,
+&lsquo;<samp>PUSHGO</samp>&rsquo;,
+&lsquo;<samp>STBU</samp>&rsquo;,
+&lsquo;<samp>STB</samp>&rsquo;,
+&lsquo;<samp>STCO</samp>&rsquo;,
+&lsquo;<samp>STHT</samp>&rsquo;,
+&lsquo;<samp>STOU</samp>&rsquo;,
+&lsquo;<samp>STSF</samp>&rsquo;,
+&lsquo;<samp>STTU</samp>&rsquo;,
+&lsquo;<samp>STT</samp>&rsquo;,
+&lsquo;<samp>STUNC</samp>&rsquo;,
+&lsquo;<samp>SYNCD</samp>&rsquo;,
+&lsquo;<samp>SYNCID</samp>&rsquo;,
+can have a value nearby <a name="GREG_002dbase"></a>an initial value in place of its
+second and third operands.  Here, &ldquo;nearby&rdquo; is defined as within the
+range 0&hellip;255 from the initial value of such an allocated register.
+</p>
+<div class="smallexample">
+<pre class="smallexample">buffer1 BYTE 0,0,0,0,0
+buffer2 BYTE 0,0,0,0,0
+ &hellip;
+ GREG buffer1
+ LDOU $42,buffer2
+</pre></div>
+<p>In the example above, the &lsquo;<samp>Y</samp>&rsquo; field of the <code>LDOUI</code> instruction
+(LDOU with a constant Z) will be replaced with the global register
+allocated for &lsquo;<samp>buffer1</samp>&rsquo;, and the &lsquo;<samp>Z</samp>&rsquo; field will have the value
+5, the offset from &lsquo;<samp>buffer1</samp>&rsquo; to &lsquo;<samp>buffer2</samp>&rsquo;.  The result is
+equivalent to this code:
+</p><div class="smallexample">
+<pre class="smallexample">buffer1 BYTE 0,0,0,0,0
+buffer2 BYTE 0,0,0,0,0
+ &hellip;
+tmpreg GREG buffer1
+ LDOU $42,tmpreg,(buffer2-buffer1)
+</pre></div>
+
+<p>Global registers allocated with this directive are allocated in order
+higher-to-lower within a file.  Other than that, the exact order of
+register allocation and elimination is undefined.  For example, the order
+is undefined when more than one file with such directives are linked
+together.  With the options &lsquo;<samp>-x</samp>&rsquo; and &lsquo;<samp>--linker-allocated-gregs</samp>&rsquo;,
+&lsquo;<samp>GREG</samp>&rsquo; directives for two-operand cases like the one mentioned above
+can be omitted.  Sufficient global registers will then be allocated by the
+linker.
+</p>
+</dd>
+<dt><code>BYTE</code></dt>
+<dd><a name="index-assembler-directive-BYTE_002c-MMIX"></a>
+<a name="index-pseudo_002dop-BYTE_002c-MMIX"></a>
+<a name="index-MMIX-assembler-directive-BYTE"></a>
+<a name="index-MMIX-pseudo_002dop-BYTE"></a>
+
+<a name="MMIX_002dbyte"></a><p>The &lsquo;<samp>BYTE</samp>&rsquo; directive takes a series of operands separated by a comma.
+If an operand is a string (see <a href="Strings.html#Strings">Strings</a>), each character of that string
+is emitted as a byte.  Other operands must be constant expressions without
+forward references, in the range 0&hellip;255.  If you need operands having
+expressions with forward references, use &lsquo;<samp>.byte</samp>&rsquo; (see <a href="Byte.html#Byte">Byte</a>).  An
+operand can be omitted, defaulting to a zero value.
+</p>
+</dd>
+<dt><code>WYDE</code></dt>
+<dt><code>TETRA</code></dt>
+<dt><code>OCTA</code></dt>
+<dd><a name="index-assembler-directive-WYDE_002c-MMIX"></a>
+<a name="index-pseudo_002dop-WYDE_002c-MMIX"></a>
+<a name="index-MMIX-assembler-directive-WYDE"></a>
+<a name="index-MMIX-pseudo_002dop-WYDE"></a>
+<a name="index-assembler-directive-TETRA_002c-MMIX"></a>
+<a name="index-pseudo_002dop-TETRA_002c-MMIX"></a>
+<a name="index-MMIX-assembler-directive-TETRA"></a>
+<a name="index-MMIX-pseudo_002dop-TETRA"></a>
+<a name="index-assembler-directive-OCTA_002c-MMIX"></a>
+<a name="index-pseudo_002dop-OCTA_002c-MMIX"></a>
+<a name="index-MMIX-assembler-directive-OCTA"></a>
+<a name="index-MMIX-pseudo_002dop-OCTA"></a>
+
+<a name="MMIX_002dconstants"></a><p>The directives &lsquo;<samp>WYDE</samp>&rsquo;, &lsquo;<samp>TETRA</samp>&rsquo; and &lsquo;<samp>OCTA</samp>&rsquo; emit constants of
+two, four and eight bytes size respectively.  Before anything else happens
+for the directive, the current location is aligned to the respective
+constant-size boundary.  If a label is defined at the beginning of the
+line, its value will be that after the alignment.  A single operand can be
+omitted, defaulting to a zero value emitted for the directive.  Operands
+can be expressed as strings (see <a href="Strings.html#Strings">Strings</a>), in which case each
+character in the string is emitted as a separate constant of the size
+indicated by the directive.
+</p>
+</dd>
+<dt><code>PREFIX</code></dt>
+<dd><a name="index-assembler-directive-PREFIX_002c-MMIX"></a>
+<a name="index-pseudo_002dop-PREFIX_002c-MMIX"></a>
+<a name="index-MMIX-assembler-directive-PREFIX"></a>
+<a name="index-MMIX-pseudo_002dop-PREFIX"></a>
+
+<a name="MMIX_002dprefix"></a><p>The &lsquo;<samp>PREFIX</samp>&rsquo; directive sets a symbol name prefix to be prepended to
+all symbols (except local symbols, see <a href="MMIX_002dSymbols.html#MMIX_002dSymbols">MMIX-Symbols</a>), that are not
+prefixed with &lsquo;<samp>:</samp>&rsquo;, until the next &lsquo;<samp>PREFIX</samp>&rsquo; directive.  Such
+prefixes accumulate.  For example,
+</p><div class="smallexample">
+<pre class="smallexample"> PREFIX a
+ PREFIX b
+c IS 0
+</pre></div>
+<p>defines a symbol &lsquo;<samp>abc</samp>&rsquo; with the value 0.
+</p>
+</dd>
+<dt><code>BSPEC</code></dt>
+<dt><code>ESPEC</code></dt>
+<dd><a name="index-assembler-directive-BSPEC_002c-MMIX"></a>
+<a name="index-pseudo_002dop-BSPEC_002c-MMIX"></a>
+<a name="index-MMIX-assembler-directive-BSPEC"></a>
+<a name="index-MMIX-pseudo_002dop-BSPEC"></a>
+<a name="index-assembler-directive-ESPEC_002c-MMIX"></a>
+<a name="index-pseudo_002dop-ESPEC_002c-MMIX"></a>
+<a name="index-MMIX-assembler-directive-ESPEC"></a>
+<a name="index-MMIX-pseudo_002dop-ESPEC"></a>
+
+<a name="MMIX_002dspec"></a><p>A pair of &lsquo;<samp>BSPEC</samp>&rsquo; and &lsquo;<samp>ESPEC</samp>&rsquo; directives delimit a section of
+special contents (without specified semantics).  Example:
+</p><div class="smallexample">
+<pre class="smallexample"> BSPEC 42
+ TETRA 1,2,3
+ ESPEC
+</pre></div>
+<p>The single operand to &lsquo;<samp>BSPEC</samp>&rsquo; must be number in the range
+0&hellip;255.  The &lsquo;<samp>BSPEC</samp>&rsquo; number 80 is used by the GNU binutils
+implementation.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="MMIX_002dRegs.html#MMIX_002dRegs" accesskey="p" rel="prev">MMIX-Regs</a>, Up: <a href="MMIX_002dSyntax.html#MMIX_002dSyntax" accesskey="u" rel="up">MMIX-Syntax</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

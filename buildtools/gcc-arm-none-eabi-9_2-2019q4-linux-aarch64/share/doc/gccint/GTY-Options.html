@@ -1,0 +1,388 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: GTY Options</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: GTY Options">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: GTY Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Type-Information.html#Type-Information" rel="up" title="Type Information">
+<link href="Inheritance-and-GTY.html#Inheritance-and-GTY" rel="next" title="Inheritance and GTY">
+<link href="Type-Information.html#Type-Information" rel="prev" title="Type Information">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="GTY-Options"></a>
+<div class="header">
+<p>
+Next: <a href="Inheritance-and-GTY.html#Inheritance-and-GTY" accesskey="n" rel="next">Inheritance and GTY</a>, Up: <a href="Type-Information.html#Type-Information" accesskey="u" rel="up">Type Information</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="The-Inside-of-a-GTY_0028_0028_0029_0029"></a>
+<h3 class="section">23.1 The Inside of a <code>GTY(())</code></h3>
+
+<p>Sometimes the C code is not enough to fully describe the type
+structure.  Extra information can be provided with <code>GTY</code> options
+and additional markers.  Some options take a parameter, which may be
+either a string or a type name, depending on the parameter.  If an
+option takes no parameter, it is acceptable either to omit the
+parameter entirely, or to provide an empty string as a parameter.  For
+example, <code>GTY&nbsp;((skip))<!-- /@w --></code> and <code>GTY&nbsp;((skip&nbsp;(&quot;&quot;)))<!-- /@w --></code> are
+equivalent.
+</p>
+<p>When the parameter is a string, often it is a fragment of C code.  Four
+special escapes may be used in these strings, to refer to pieces of
+the data structure being marked:
+</p>
+<a name="index-_0025-in-GTY-option"></a>
+<dl compact="compact">
+<dt><code>%h</code></dt>
+<dd><p>The current structure.
+</p></dd>
+<dt><code>%1</code></dt>
+<dd><p>The structure that immediately contains the current structure.
+</p></dd>
+<dt><code>%0</code></dt>
+<dd><p>The outermost structure that contains the current structure.
+</p></dd>
+<dt><code>%a</code></dt>
+<dd><p>A partial expression of the form <code>[i1][i2]&hellip;</code> that indexes
+the array item currently being marked.
+</p></dd>
+</dl>
+
+<p>For instance, suppose that you have a structure of the form
+</p><div class="smallexample">
+<pre class="smallexample">struct A {
+  &hellip;
+};
+struct B {
+  struct A foo[12];
+};
+</pre></div>
+<p>and <code>b</code> is a variable of type <code>struct B</code>.  When marking
+&lsquo;<samp>b.foo[11]</samp>&rsquo;, <code>%h</code> would expand to &lsquo;<samp>b.foo[11]</samp>&rsquo;,
+<code>%0</code> and <code>%1</code> would both expand to &lsquo;<samp>b</samp>&rsquo;, and <code>%a</code>
+would expand to &lsquo;<samp>[11]</samp>&rsquo;.
+</p>
+<p>As in ordinary C, adjacent strings will be concatenated; this is
+helpful when you have a complicated expression.
+</p><div class="smallexample">
+<pre class="smallexample">GTY ((chain_next (&quot;TREE_CODE (&amp;%h.generic) == INTEGER_TYPE&quot;
+                  &quot; ? TYPE_NEXT_VARIANT (&amp;%h.generic)&quot;
+                  &quot; : TREE_CHAIN (&amp;%h.generic)&quot;)))
+</pre></div>
+
+<p>The available options are:
+</p>
+<dl compact="compact">
+<dd><a name="index-length"></a>
+</dd>
+<dt><code>length (&quot;<var>expression</var>&quot;)</code></dt>
+<dd>
+<p>There are two places the type machinery will need to be explicitly told
+the length of an array of non-atomic objects.  The first case is when a
+structure ends in a variable-length array, like this:
+</p><div class="smallexample">
+<pre class="smallexample">struct GTY(()) rtvec_def {
+  int num_elem;         /* <span class="roman">number of elements</span> */
+  rtx GTY ((length (&quot;%h.num_elem&quot;))) elem[1];
+};
+</pre></div>
+
+<p>In this case, the <code>length</code> option is used to override the specified
+array length (which should usually be <code>1</code>).  The parameter of the
+option is a fragment of C code that calculates the length.
+</p>
+<p>The second case is when a structure or a global variable contains a
+pointer to an array, like this:
+</p><div class="smallexample">
+<pre class="smallexample">struct gimple_omp_for_iter * GTY((length (&quot;%h.collapse&quot;))) iter;
+</pre></div>
+<p>In this case, <code>iter</code> has been allocated by writing something like
+</p><div class="smallexample">
+<pre class="smallexample">  x-&gt;iter = ggc_alloc_cleared_vec_gimple_omp_for_iter (collapse);
+</pre></div>
+<p>and the <code>collapse</code> provides the length of the field.
+</p>
+<p>This second use of <code>length</code> also works on global variables, like:
+</p><pre class="verbatim">static GTY((length(&quot;reg_known_value_size&quot;))) rtx *reg_known_value;
+</pre>
+<p>Note that the <code>length</code> option is only meant for use with arrays of
+non-atomic objects, that is, objects that contain pointers pointing to
+other GTY-managed objects.  For other GC-allocated arrays and strings
+you should use <code>atomic</code>.
+</p>
+<a name="index-skip"></a>
+</dd>
+<dt><code>skip</code></dt>
+<dd>
+<p>If <code>skip</code> is applied to a field, the type machinery will ignore it.
+This is somewhat dangerous; the only safe use is in a union when one
+field really isn&rsquo;t ever used.
+</p>
+<a name="index-for_005fuser"></a>
+</dd>
+<dt><code>for_user</code></dt>
+<dd>
+<p>Use this to mark types that need to be marked by user gc routines, but are not
+refered to in a template argument.  So if you have some user gc type T1 and a
+non user gc type T2 you can give T2 the for_user option so that the marking
+functions for T1 can call non mangled functions to mark T2.
+</p>
+<a name="index-desc"></a>
+<a name="index-tag"></a>
+<a name="index-default"></a>
+</dd>
+<dt><code>desc (&quot;<var>expression</var>&quot;)</code></dt>
+<dt><code>tag (&quot;<var>constant</var>&quot;)</code></dt>
+<dt><code>default</code></dt>
+<dd>
+<p>The type machinery needs to be told which field of a <code>union</code> is
+currently active.  This is done by giving each field a constant
+<code>tag</code> value, and then specifying a discriminator using <code>desc</code>.
+The value of the expression given by <code>desc</code> is compared against
+each <code>tag</code> value, each of which should be different.  If no
+<code>tag</code> is matched, the field marked with <code>default</code> is used if
+there is one, otherwise no field in the union will be marked.
+</p>
+<p>In the <code>desc</code> option, the &ldquo;current structure&rdquo; is the union that
+it discriminates.  Use <code>%1</code> to mean the structure containing it.
+There are no escapes available to the <code>tag</code> option, since it is a
+constant.
+</p>
+<p>For example,
+</p><div class="smallexample">
+<pre class="smallexample">struct GTY(()) tree_binding
+{
+  struct tree_common common;
+  union tree_binding_u {
+    tree GTY ((tag (&quot;0&quot;))) scope;
+    struct cp_binding_level * GTY ((tag (&quot;1&quot;))) level;
+  } GTY ((desc (&quot;BINDING_HAS_LEVEL_P ((tree)&amp;%0)&quot;))) xscope;
+  tree value;
+};
+</pre></div>
+
+<p>In this example, the value of BINDING_HAS_LEVEL_P when applied to a
+<code>struct tree_binding *</code> is presumed to be 0 or 1.  If 1, the type
+mechanism will treat the field <code>level</code> as being present and if 0,
+will treat the field <code>scope</code> as being present.
+</p>
+<p>The <code>desc</code> and <code>tag</code> options can also be used for inheritance
+to denote which subclass an instance is.  See <a href="Inheritance-and-GTY.html#Inheritance-and-GTY">Inheritance and GTY</a>
+for more information.
+</p>
+<a name="index-cache"></a>
+</dd>
+<dt><code>cache</code></dt>
+<dd>
+<p>When the <code>cache</code> option is applied to a global variable gt_clear_cache is
+called on that variable between the mark and sweep phases of garbage
+collection.  The gt_clear_cache function is free to mark blocks as used, or to
+clear pointers in the variable.
+</p>
+<a name="index-deletable"></a>
+</dd>
+<dt><code>deletable</code></dt>
+<dd>
+<p><code>deletable</code>, when applied to a global variable, indicates that when
+garbage collection runs, there&rsquo;s no need to mark anything pointed to
+by this variable, it can just be set to <code>NULL</code> instead.  This is used
+to keep a list of free structures around for re-use.
+</p>
+<a name="index-maybe_005fundef"></a>
+</dd>
+<dt><code>maybe_undef</code></dt>
+<dd>
+<p>When applied to a field, <code>maybe_undef</code> indicates that it&rsquo;s OK if
+the structure that this fields points to is never defined, so long as
+this field is always <code>NULL</code>.  This is used to avoid requiring
+backends to define certain optional structures.  It doesn&rsquo;t work with
+language frontends.
+</p>
+<a name="index-nested_005fptr"></a>
+</dd>
+<dt><code>nested_ptr (<var>type</var>, &quot;<var>to expression</var>&quot;, &quot;<var>from expression</var>&quot;)</code></dt>
+<dd>
+<p>The type machinery expects all pointers to point to the start of an
+object.  Sometimes for abstraction purposes it&rsquo;s convenient to have
+a pointer which points inside an object.  So long as it&rsquo;s possible to
+convert the original object to and from the pointer, such pointers
+can still be used.  <var>type</var> is the type of the original object,
+the <var>to expression</var> returns the pointer given the original object,
+and the <var>from expression</var> returns the original object given
+the pointer.  The pointer will be available using the <code>%h</code>
+escape.
+</p>
+<a name="index-chain_005fnext"></a>
+<a name="index-chain_005fprev"></a>
+<a name="index-chain_005fcircular"></a>
+</dd>
+<dt><code>chain_next (&quot;<var>expression</var>&quot;)</code></dt>
+<dt><code>chain_prev (&quot;<var>expression</var>&quot;)</code></dt>
+<dt><code>chain_circular (&quot;<var>expression</var>&quot;)</code></dt>
+<dd>
+<p>It&rsquo;s helpful for the type machinery to know if objects are often
+chained together in long lists; this lets it generate code that uses
+less stack space by iterating along the list instead of recursing down
+it.  <code>chain_next</code> is an expression for the next item in the list,
+<code>chain_prev</code> is an expression for the previous item.  For singly
+linked lists, use only <code>chain_next</code>; for doubly linked lists, use
+both.  The machinery requires that taking the next item of the
+previous item gives the original item.  <code>chain_circular</code> is similar
+to <code>chain_next</code>, but can be used for circular single linked lists.
+</p>
+<a name="index-reorder"></a>
+</dd>
+<dt><code>reorder (&quot;<var>function name</var>&quot;)</code></dt>
+<dd>
+<p>Some data structures depend on the relative ordering of pointers.  If
+the precompiled header machinery needs to change that ordering, it
+will call the function referenced by the <code>reorder</code> option, before
+changing the pointers in the object that&rsquo;s pointed to by the field the
+option applies to.  The function must take four arguments, with the
+signature &lsquo;<samp>void&nbsp;*,&nbsp;void&nbsp;*,&nbsp;<span class="nolinebreak">gt_pointer_operator,</span>&nbsp;void&nbsp;*<!-- /@w --></samp>&rsquo;.
+The first parameter is a pointer to the structure that contains the
+object being updated, or the object itself if there is no containing
+structure.  The second parameter is a cookie that should be ignored.
+The third parameter is a routine that, given a pointer, will update it
+to its correct new value.  The fourth parameter is a cookie that must
+be passed to the second parameter.
+</p>
+<p>PCH cannot handle data structures that depend on the absolute values
+of pointers.  <code>reorder</code> functions can be expensive.  When
+possible, it is better to depend on properties of the data, like an ID
+number or the hash of a string instead.
+</p>
+<a name="index-atomic"></a>
+</dd>
+<dt><code>atomic</code></dt>
+<dd>
+<p>The <code>atomic</code> option can only be used with pointers.  It informs
+the GC machinery that the memory that the pointer points to does not
+contain any pointers, and hence it should be treated by the GC and PCH
+machinery as an &ldquo;atomic&rdquo; block of memory that does not need to be
+examined when scanning memory for pointers.  In particular, the
+machinery will not scan that memory for pointers to mark them as
+reachable (when marking pointers for GC) or to relocate them (when
+writing a PCH file).
+</p>
+<p>The <code>atomic</code> option differs from the <code>skip</code> option.
+<code>atomic</code> keeps the memory under Garbage Collection, but makes the
+GC ignore the contents of the memory.  <code>skip</code> is more drastic in
+that it causes the pointer and the memory to be completely ignored by
+the Garbage Collector.  So, memory marked as <code>atomic</code> is
+automatically freed when no longer reachable, while memory marked as
+<code>skip</code> is not.
+</p>
+<p>The <code>atomic</code> option must be used with great care, because all
+sorts of problem can occur if used incorrectly, that is, if the memory
+the pointer points to does actually contain a pointer.
+</p>
+<p>Here is an example of how to use it:
+</p><div class="smallexample">
+<pre class="smallexample">struct GTY(()) my_struct {
+  int number_of_elements;
+  unsigned int * GTY ((atomic)) elements;
+};
+</pre></div>
+<p>In this case, <code>elements</code> is a pointer under GC, and the memory it
+points to needs to be allocated using the Garbage Collector, and will
+be freed automatically by the Garbage Collector when it is no longer
+referenced.  But the memory that the pointer points to is an array of
+<code>unsigned int</code> elements, and the GC must not try to scan it to
+find pointers to mark or relocate, which is why it is marked with the
+<code>atomic</code> option.
+</p>
+<p>Note that, currently, global variables cannot be marked with
+<code>atomic</code>; only fields of a struct can.  This is a known
+limitation.  It would be useful to be able to mark global pointers
+with <code>atomic</code> to make the PCH machinery aware of them so that
+they are saved and restored correctly to PCH files.
+</p>
+<a name="index-special"></a>
+</dd>
+<dt><code>special (&quot;<var>name</var>&quot;)</code></dt>
+<dd>
+<p>The <code>special</code> option is used to mark types that have to be dealt
+with by special case machinery.  The parameter is the name of the
+special case.  See <samp>gengtype.c</samp> for further details.  Avoid
+adding new special cases unless there is no other alternative.
+</p>
+<a name="index-user"></a>
+</dd>
+<dt><code>user</code></dt>
+<dd>
+<p>The <code>user</code> option indicates that the code to mark structure
+fields is completely handled by user-provided routines.  See section
+<a href="User-GC.html#User-GC">User GC</a> for details on what functions need to be provided.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Inheritance-and-GTY.html#Inheritance-and-GTY" accesskey="n" rel="next">Inheritance and GTY</a>, Up: <a href="Type-Information.html#Type-Information" accesskey="u" rel="up">Type Information</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

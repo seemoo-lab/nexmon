@@ -1,0 +1,211 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Requirements</title>
+
+<meta name="description" content="Debugging with GDB: Requirements">
+<meta name="keywords" content="Debugging with GDB: Requirements">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Installing-GDB.html#Installing-GDB" rel="up" title="Installing GDB">
+<link href="Running-Configure.html#Running-Configure" rel="next" title="Running Configure">
+<link href="Installing-GDB.html#Installing-GDB" rel="prev" title="Installing GDB">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Requirements"></a>
+<div class="header">
+<p>
+Next: <a href="Running-Configure.html#Running-Configure" accesskey="n" rel="next">Running Configure</a>, Up: <a href="Installing-GDB.html#Installing-GDB" accesskey="u" rel="up">Installing GDB</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Requirements-for-Building-GDB"></a>
+<h3 class="section">C.1 Requirements for Building <small>GDB</small></h3>
+<a name="index-building-GDB_002c-requirements-for"></a>
+
+<p>Building <small>GDB</small> requires various tools and packages to be available.
+Other packages will be used only if they are found.
+</p>
+<a name="Tools_002fPackages-Necessary-for-Building-GDB"></a>
+<h3 class="heading">Tools/Packages Necessary for Building <small>GDB</small></h3>
+<dl compact="compact">
+<dt>C<tt>++</tt>11 compiler</dt>
+<dd><p><small>GDB</small> is written in C<tt>++</tt>11.  It should be buildable with any
+recent C<tt>++</tt>11 compiler, e.g. GCC.
+</p>
+</dd>
+<dt>GNU make</dt>
+<dd><p><small>GDB</small>&rsquo;s build system relies on features only found in the GNU
+make program.  Other variants of <code>make</code> will not work.
+</p></dd>
+</dl>
+
+<a name="Tools_002fPackages-Optional-for-Building-GDB"></a>
+<h3 class="heading">Tools/Packages Optional for Building <small>GDB</small></h3>
+<dl compact="compact">
+<dt>Expat</dt>
+<dd><a name="Expat"></a><p><small>GDB</small> can use the Expat XML parsing library.  This library may be
+included with your operating system distribution; if it is not, you
+can get the latest version from <a href="http://expat.sourceforge.net">http://expat.sourceforge.net</a>.
+The <samp>configure</samp> script will search for this library in several
+standard locations; if it is installed in an unusual path, you can
+use the <samp>--with-libexpat-prefix</samp> option to specify its location.
+</p>
+<p>Expat is used for:
+</p>
+<ul>
+<li> Remote protocol memory maps (see <a href="Memory-Map-Format.html#Memory-Map-Format">Memory Map Format</a>)
+</li><li> Target descriptions (see <a href="Target-Descriptions.html#Target-Descriptions">Target Descriptions</a>)
+</li><li> Remote shared library lists (See <a href="Library-List-Format.html#Library-List-Format">Library List Format</a>,
+or alternatively see <a href="Library-List-Format-for-SVR4-Targets.html#Library-List-Format-for-SVR4-Targets">Library List Format for SVR4 Targets</a>)
+</li><li> MS-Windows shared libraries (see <a href="Files.html#Shared-Libraries">Shared Libraries</a>)
+</li><li> Traceframe info (see <a href="Traceframe-Info-Format.html#Traceframe-Info-Format">Traceframe Info Format</a>)
+</li><li> Branch trace (see <a href="Branch-Trace-Format.html#Branch-Trace-Format">Branch Trace Format</a>,
+see <a href="Branch-Trace-Configuration-Format.html#Branch-Trace-Configuration-Format">Branch Trace Configuration Format</a>)
+</li></ul>
+
+</dd>
+<dt>Guile</dt>
+<dd><p><small>GDB</small> can be scripted using GNU Guile.  See <a href="Guile.html#Guile">Guile</a>.  By
+default, <small>GDB</small> will be compiled if the Guile libraries are
+installed and are found by <samp>configure</samp>.  You can use the
+<code>--with-guile</code> option to request Guile, and pass either the Guile
+version number or the file name of the relevant <code>pkg-config</code>
+program to choose a particular version of Guile.
+</p>
+</dd>
+<dt>iconv</dt>
+<dd><p><small>GDB</small>&rsquo;s features related to character sets (see <a href="Character-Sets.html#Character-Sets">Character Sets</a>) require a functioning <code>iconv</code> implementation.  If you are
+on a GNU system, then this is provided by the GNU C Library.  Some
+other systems also provide a working <code>iconv</code>.
+</p>
+<p>If <small>GDB</small> is using the <code>iconv</code> program which is installed
+in a non-standard place, you will need to tell <small>GDB</small> where to
+find it.  This is done with <samp>--with-iconv-bin</samp> which specifies
+the directory that contains the <code>iconv</code> program.  This program is
+run in order to make a list of the available character sets.
+</p>
+<p>On systems without <code>iconv</code>, you can install GNU Libiconv.  If
+Libiconv is installed in a standard place, <small>GDB</small> will
+automatically use it if it is needed.  If you have previously
+installed Libiconv in a non-standard place, you can use the
+<samp>--with-libiconv-prefix</samp> option to <samp>configure</samp>.
+</p>
+<p><small>GDB</small>&rsquo;s top-level <samp>configure</samp> and <samp>Makefile</samp> will
+arrange to build Libiconv if a directory named <samp>libiconv</samp> appears
+in the top-most source directory.  If Libiconv is built this way, and
+if the operating system does not provide a suitable <code>iconv</code>
+implementation, then the just-built library will automatically be used
+by <small>GDB</small>.  One easy way to set this up is to download GNU
+Libiconv, unpack it inside the top-level directory of the <small>GDB</small>
+source tree, and then rename the directory holding the Libiconv source
+code to &lsquo;<samp>libiconv</samp>&rsquo;.
+</p>
+</dd>
+<dt>lzma</dt>
+<dd><p><small>GDB</small> can support debugging sections that are compressed with
+the LZMA library.  See <a href="MiniDebugInfo.html#MiniDebugInfo">MiniDebugInfo</a>.  If this library is not
+included with your operating system, you can find it in the xz package
+at <a href="http://tukaani.org/xz/">http://tukaani.org/xz/</a>.  If the LZMA library is available in
+the usual place, then the <samp>configure</samp> script will use it
+automatically.  If it is installed in an unusual path, you can use the
+<samp>--with-lzma-prefix</samp> option to specify its location.
+</p>
+</dd>
+<dt>MPFR</dt>
+<dd><a name="MPFR"></a><p><small>GDB</small> can use the GNU MPFR multiple-precision floating-point
+library.  This library may be included with your operating system
+distribution; if it is not, you can get the latest version from
+<a href="http://www.mpfr.org">http://www.mpfr.org</a>.  The <samp>configure</samp> script will search
+for this library in several standard locations; if it is installed
+in an unusual path, you can use the <samp>--with-libmpfr-prefix</samp>
+option to specify its location.
+</p>
+<p>GNU MPFR is used to emulate target floating-point arithmetic during
+expression evaluation when the target uses different floating-point
+formats than the host.  If GNU MPFR it is not available, <small>GDB</small>
+will fall back to using host floating-point arithmetic.
+</p>
+</dd>
+<dt>Python</dt>
+<dd><p><small>GDB</small> can be scripted using Python language.  See <a href="Python.html#Python">Python</a>.
+By default, <small>GDB</small> will be compiled if the Python libraries are
+installed and are found by <samp>configure</samp>.  You can use the
+<code>--with-python</code> option to request Python, and pass either the
+file name of the relevant <code>python</code> executable, or the name of the
+directory in which Python is installed, to choose a particular
+installation of Python.
+</p>
+</dd>
+<dt>zlib</dt>
+<dd><a name="index-compressed-debug-sections"></a>
+<p><small>GDB</small> will use the &lsquo;<samp>zlib</samp>&rsquo; library, if available, to read
+compressed debug sections.  Some linkers, such as GNU gold, are capable
+of producing binaries with compressed debug sections.  If <small>GDB</small>
+is compiled with &lsquo;<samp>zlib</samp>&rsquo;, it will be able to read the debug
+information in such binaries.
+</p>
+<p>The &lsquo;<samp>zlib</samp>&rsquo; library is likely included with your operating system
+distribution; if it is not, you can get the latest version from
+<a href="http://zlib.net">http://zlib.net</a>.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Running-Configure.html#Running-Configure" accesskey="n" rel="next">Running Configure</a>, Up: <a href="Installing-GDB.html#Installing-GDB" accesskey="u" rel="up">Installing GDB</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

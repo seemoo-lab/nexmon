@@ -1,0 +1,199 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: compat Testing</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: compat Testing">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: compat Testing">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Testsuites.html#Testsuites" rel="up" title="Testsuites">
+<link href="Torture-Tests.html#Torture-Tests" rel="next" title="Torture Tests">
+<link href="profopt-Testing.html#profopt-Testing" rel="prev" title="profopt Testing">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="compat-Testing"></a>
+<div class="header">
+<p>
+Next: <a href="Torture-Tests.html#Torture-Tests" accesskey="n" rel="next">Torture Tests</a>, Previous: <a href="profopt-Testing.html#profopt-Testing" accesskey="p" rel="prev">profopt Testing</a>, Up: <a href="Testsuites.html#Testsuites" accesskey="u" rel="up">Testsuites</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Support-for-testing-binary-compatibility"></a>
+<h3 class="section">7.8 Support for testing binary compatibility</h3>
+
+<p>The file <samp>compat.exp</samp> provides language-independent support for
+binary compatibility testing.  It supports testing interoperability of
+two compilers that follow the same ABI, or of multiple sets of
+compiler options that should not affect binary compatibility.  It is
+intended to be used for testsuites that complement ABI testsuites.
+</p>
+<p>A test supported by this framework has three parts, each in a
+separate source file: a main program and two pieces that interact
+with each other to split up the functionality being tested.
+</p>
+<dl compact="compact">
+<dt><samp><var>testname</var>_main.<var>suffix</var></samp></dt>
+<dd><p>Contains the main program, which calls a function in file
+<samp><var>testname</var>_x.<var>suffix</var></samp>.
+</p>
+</dd>
+<dt><samp><var>testname</var>_x.<var>suffix</var></samp></dt>
+<dd><p>Contains at least one call to a function in
+<samp><var>testname</var>_y.<var>suffix</var></samp>.
+</p>
+</dd>
+<dt><samp><var>testname</var>_y.<var>suffix</var></samp></dt>
+<dd><p>Shares data with, or gets arguments from,
+<samp><var>testname</var>_x.<var>suffix</var></samp>.
+</p></dd>
+</dl>
+
+<p>Within each test, the main program and one functional piece are
+compiled by the GCC under test.  The other piece can be compiled by
+an alternate compiler.  If no alternate compiler is specified,
+then all three source files are all compiled by the GCC under test.
+You can specify pairs of sets of compiler options.  The first element
+of such a pair specifies options used with the GCC under test, and the
+second element of the pair specifies options used with the alternate
+compiler.  Each test is compiled with each pair of options.
+</p>
+<p><samp>compat.exp</samp> defines default pairs of compiler options.
+These can be overridden by defining the environment variable
+<code>COMPAT_OPTIONS</code> as:
+</p>
+<div class="smallexample">
+<pre class="smallexample">COMPAT_OPTIONS=&quot;[list [list {<var>tst1</var>} {<var>alt1</var>}]
+  &hellip;[list {<var>tstn</var>} {<var>altn</var>}]]&quot;
+</pre></div>
+
+<p>where <var>tsti</var> and <var>alti</var> are lists of options, with <var>tsti</var>
+used by the compiler under test and <var>alti</var> used by the alternate
+compiler.  For example, with
+<code>[list [list {-g -O0} {-O3}] [list {-fpic} {-fPIC -O2}]]</code>,
+the test is first built with <samp>-g -O0</samp> by the compiler under
+test and with <samp>-O3</samp> by the alternate compiler.  The test is
+built a second time using <samp>-fpic</samp> by the compiler under test
+and <samp>-fPIC -O2</samp> by the alternate compiler.
+</p>
+<p>An alternate compiler is specified by defining an environment
+variable to be the full pathname of an installed compiler; for C
+define <code>ALT_CC_UNDER_TEST</code>, and for C++ define
+<code>ALT_CXX_UNDER_TEST</code>.  These will be written to the
+<samp>site.exp</samp> file used by DejaGnu.  The default is to build each
+test with the compiler under test using the first of each pair of
+compiler options from <code>COMPAT_OPTIONS</code>.  When
+<code>ALT_CC_UNDER_TEST</code> or
+<code>ALT_CXX_UNDER_TEST</code> is <code>same</code>, each test is built using
+the compiler under test but with combinations of the options from
+<code>COMPAT_OPTIONS</code>.
+</p>
+<p>To run only the C++ compatibility suite using the compiler under test
+and another version of GCC using specific compiler options, do the
+following from <samp><var>objdir</var>/gcc</samp>:
+</p>
+<div class="smallexample">
+<pre class="smallexample">rm site.exp
+make -k \
+  ALT_CXX_UNDER_TEST=${alt_prefix}/bin/g++ \
+  COMPAT_OPTIONS=&quot;<var>lists as shown above</var>&quot; \
+  check-c++ \
+  RUNTESTFLAGS=&quot;compat.exp&quot;
+</pre></div>
+
+<p>A test that fails when the source files are compiled with different
+compilers, but passes when the files are compiled with the same
+compiler, demonstrates incompatibility of the generated code or
+runtime support.  A test that fails for the alternate compiler but
+passes for the compiler under test probably tests for a bug that was
+fixed in the compiler under test but is present in the alternate
+compiler.
+</p>
+<p>The binary compatibility tests support a small number of test framework
+commands that appear within comments in a test file.
+</p>
+<dl compact="compact">
+<dt><code>dg-require-*</code></dt>
+<dd><p>These commands can be used in <samp><var>testname</var>_main.<var>suffix</var></samp>
+to skip the test if specific support is not available on the target.
+</p>
+</dd>
+<dt><code>dg-options</code></dt>
+<dd><p>The specified options are used for compiling this particular source
+file, appended to the options from <code>COMPAT_OPTIONS</code>.  When this
+command appears in <samp><var>testname</var>_main.<var>suffix</var></samp> the options
+are also used to link the test program.
+</p>
+</dd>
+<dt><code>dg-xfail-if</code></dt>
+<dd><p>This command can be used in a secondary source file to specify that
+compilation is expected to fail for particular options on particular
+targets.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Torture-Tests.html#Torture-Tests" accesskey="n" rel="next">Torture Tests</a>, Previous: <a href="profopt-Testing.html#profopt-Testing" accesskey="p" rel="prev">profopt Testing</a>, Up: <a href="Testsuites.html#Testsuites" accesskey="u" rel="up">Testsuites</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Variadic Macros</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Variadic Macros">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Variadic Macros">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C-Extensions.html#C-Extensions" rel="up" title="C Extensions">
+<link href="Escaped-Newlines.html#Escaped-Newlines" rel="next" title="Escaped Newlines">
+<link href="Variable-Length.html#Variable-Length" rel="prev" title="Variable Length">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Variadic-Macros"></a>
+<div class="header">
+<p>
+Next: <a href="Escaped-Newlines.html#Escaped-Newlines" accesskey="n" rel="next">Escaped Newlines</a>, Previous: <a href="Variable-Length.html#Variable-Length" accesskey="p" rel="prev">Variable Length</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Macros-with-a-Variable-Number-of-Arguments_002e"></a>
+<h3 class="section">6.21 Macros with a Variable Number of Arguments.</h3>
+<a name="index-variable-number-of-arguments"></a>
+<a name="index-macro-with-variable-arguments"></a>
+<a name="index-rest-argument-_0028in-macro_0029"></a>
+<a name="index-variadic-macros"></a>
+
+<p>In the ISO C standard of 1999, a macro can be declared to accept a
+variable number of arguments much as a function can.  The syntax for
+defining the macro is similar to that of a function.  Here is an
+example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">#define debug(format, ...) fprintf (stderr, format, __VA_ARGS__)
+</pre></div>
+
+<p>Here &lsquo;<samp>&hellip;</samp>&rsquo; is a <em>variable argument</em>.  In the invocation of
+such a macro, it represents the zero or more tokens until the closing
+parenthesis that ends the invocation, including any commas.  This set of
+tokens replaces the identifier <code>__VA_ARGS__</code> in the macro body
+wherever it appears.  See the CPP manual for more information.
+</p>
+<p>GCC has long supported variadic macros, and used a different syntax that
+allowed you to give a name to the variable arguments just like any other
+argument.  Here is an example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">#define debug(format, args...) fprintf (stderr, format, args)
+</pre></div>
+
+<p>This is in all ways equivalent to the ISO C example above, but arguably
+more readable and descriptive.
+</p>
+<p>GNU CPP has two further variadic macro extensions, and permits them to
+be used with either of the above forms of macro definition.
+</p>
+<p>In standard C, you are not allowed to leave the variable argument out
+entirely; but you are allowed to pass an empty argument.  For example,
+this invocation is invalid in ISO C, because there is no comma after
+the string:
+</p>
+<div class="smallexample">
+<pre class="smallexample">debug (&quot;A message&quot;)
+</pre></div>
+
+<p>GNU CPP permits you to completely omit the variable arguments in this
+way.  In the above examples, the compiler would complain, though since
+the expansion of the macro still has the extra comma after the format
+string.
+</p>
+<p>To help solve this problem, CPP behaves specially for variable arguments
+used with the token paste operator, &lsquo;<samp>##</samp>&rsquo;.  If instead you write
+</p>
+<div class="smallexample">
+<pre class="smallexample">#define debug(format, ...) fprintf (stderr, format, ## __VA_ARGS__)
+</pre></div>
+
+<p>and if the variable arguments are omitted or empty, the &lsquo;<samp>##</samp>&rsquo;
+operator causes the preprocessor to remove the comma before it.  If you
+do provide some variable arguments in your macro invocation, GNU CPP
+does not complain about the paste operation and instead places the
+variable arguments after the comma.  Just like any other pasted macro
+argument, these arguments are not macro expanded.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Escaped-Newlines.html#Escaped-Newlines" accesskey="n" rel="next">Escaped Newlines</a>, Previous: <a href="Variable-Length.html#Variable-Length" accesskey="p" rel="prev">Variable Length</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

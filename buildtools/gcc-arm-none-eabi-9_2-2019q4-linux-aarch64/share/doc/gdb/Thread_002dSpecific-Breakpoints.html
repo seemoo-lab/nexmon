@@ -1,0 +1,136 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Thread-Specific Breakpoints</title>
+
+<meta name="description" content="Debugging with GDB: Thread-Specific Breakpoints">
+<meta name="keywords" content="Debugging with GDB: Thread-Specific Breakpoints">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Thread-Stops.html#Thread-Stops" rel="up" title="Thread Stops">
+<link href="Interrupted-System-Calls.html#Interrupted-System-Calls" rel="next" title="Interrupted System Calls">
+<link href="Background-Execution.html#Background-Execution" rel="prev" title="Background Execution">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Thread_002dSpecific-Breakpoints"></a>
+<div class="header">
+<p>
+Next: <a href="Interrupted-System-Calls.html#Interrupted-System-Calls" accesskey="n" rel="next">Interrupted System Calls</a>, Previous: <a href="Background-Execution.html#Background-Execution" accesskey="p" rel="prev">Background Execution</a>, Up: <a href="Thread-Stops.html#Thread-Stops" accesskey="u" rel="up">Thread Stops</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Thread_002dSpecific-Breakpoints-1"></a>
+<h4 class="subsection">5.5.4 Thread-Specific Breakpoints</h4>
+
+<p>When your program has multiple threads (see <a href="Threads.html#Threads">Debugging
+Programs with Multiple Threads</a>), you can choose whether to set
+breakpoints on all threads, or on a particular thread.
+</p>
+<dl compact="compact">
+<dd><a name="index-breakpoints-and-threads"></a>
+<a name="index-thread-breakpoints"></a>
+<a name="index-break-_2026-thread-thread_002did"></a>
+</dd>
+<dt><code>break <var>location</var> thread <var>thread-id</var></code></dt>
+<dt><code>break <var>location</var> thread <var>thread-id</var> if &hellip;</code></dt>
+<dd><p><var>location</var> specifies source lines; there are several ways of
+writing them (see <a href="Specify-Location.html#Specify-Location">Specify Location</a>), but the effect is always to
+specify some source line.
+</p>
+<p>Use the qualifier &lsquo;<samp>thread <var>thread-id</var></samp>&rsquo; with a breakpoint command
+to specify that you only want <small>GDB</small> to stop the program when a
+particular thread reaches this breakpoint.  The <var>thread-id</var> specifier
+is one of the thread identifiers assigned by <small>GDB</small>, shown
+in the first column of the &lsquo;<samp>info threads</samp>&rsquo; display.
+</p>
+<p>If you do not specify &lsquo;<samp>thread <var>thread-id</var></samp>&rsquo; when you set a
+breakpoint, the breakpoint applies to <em>all</em> threads of your
+program.
+</p>
+<p>You can use the <code>thread</code> qualifier on conditional breakpoints as
+well; in this case, place &lsquo;<samp>thread <var>thread-id</var></samp>&rsquo; before or
+after the breakpoint condition, like this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) break frik.c:13 thread 28 if bartab &gt; lim
+</pre></div>
+
+</dd>
+</dl>
+
+<p>Thread-specific breakpoints are automatically deleted when
+<small>GDB</small> detects the corresponding thread is no longer in the
+thread list.  For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) c
+Thread-specific breakpoint 3 deleted - thread 28 no longer in the thread list.
+</pre></div>
+
+<p>There are several ways for a thread to disappear, such as a regular
+thread exit, but also when you detach from the process with the
+<code>detach</code> command (see <a href="Attach.html#Attach">Debugging an Already-running
+Process</a>), or if <small>GDB</small> loses the remote connection
+(see <a href="Remote-Debugging.html#Remote-Debugging">Remote Debugging</a>), etc.  Note that with some targets,
+<small>GDB</small> is only able to detect a thread has exited when the user
+explictly asks for the thread list with the <code>info threads</code>
+command.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Interrupted-System-Calls.html#Interrupted-System-Calls" accesskey="n" rel="next">Interrupted System Calls</a>, Previous: <a href="Background-Execution.html#Background-Execution" accesskey="p" rel="prev">Background Execution</a>, Up: <a href="Thread-Stops.html#Thread-Stops" accesskey="u" rel="up">Thread Stops</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

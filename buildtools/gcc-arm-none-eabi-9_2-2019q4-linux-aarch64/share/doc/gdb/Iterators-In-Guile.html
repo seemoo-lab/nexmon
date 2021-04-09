@@ -1,0 +1,213 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Iterators In Guile</title>
+
+<meta name="description" content="Debugging with GDB: Iterators In Guile">
+<meta name="keywords" content="Debugging with GDB: Iterators In Guile">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Guile-API.html#Guile-API" rel="up" title="Guile API">
+<link href="Guile-Auto_002dloading.html#Guile-Auto_002dloading" rel="next" title="Guile Auto-loading">
+<link href="Memory-Ports-in-Guile.html#Memory-Ports-in-Guile" rel="prev" title="Memory Ports in Guile">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Iterators-In-Guile"></a>
+<div class="header">
+<p>
+Previous: <a href="Memory-Ports-in-Guile.html#Memory-Ports-in-Guile" accesskey="p" rel="prev">Memory Ports in Guile</a>, Up: <a href="Guile-API.html#Guile-API" accesskey="u" rel="up">Guile API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Iterators-In-Guile-1"></a>
+<h4 class="subsubsection">23.3.3.25 Iterators In Guile</h4>
+
+<a name="index-guile-iterators"></a>
+<a name="index-_003cgdb_003aiterator_003e"></a>
+
+<p>A simple iterator facility is provided to allow, for example,
+iterating over the set of program symbols without having to first
+construct a list of all of them.  A useful contribution would be
+to add support for SRFI 41 and SRFI 45.
+</p>
+<dl>
+<dt><a name="index-make_002diterator"></a>Scheme Procedure: <strong>make-iterator</strong> <em>object progress next!</em></dt>
+<dd><p>A <code>&lt;gdb:iterator&gt;</code> object is constructed with the <code>make-iterator</code>
+procedure.  It takes three arguments: the object to be iterated over,
+an object to record the progress of the iteration, and a procedure to
+return the next element in the iteration, or an implementation chosen value
+to denote the end of iteration.
+</p>
+<p>By convention, end of iteration is marked with <code>(end-of-iteration)</code>,
+and may be tested with the <code>end-of-iteration?</code> predicate.
+The result of <code>(end-of-iteration)</code> is chosen so that it is not
+otherwise used by the <code>(gdb)</code> module.  If you are using
+<code>&lt;gdb:iterator&gt;</code> in your own code it is your responsibility to
+maintain this invariant.
+</p>
+<p>A trivial example for illustration&rsquo;s sake:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(use-modules (gdb iterator))
+(define my-list (list 1 2 3))
+(define iter
+  (make-iterator my-list my-list
+                 (lambda (iter)
+                   (let ((l (iterator-progress iter)))
+                     (if (eq? l '())
+                         (end-of-iteration)
+                         (begin
+                           (set-iterator-progress! iter (cdr l))
+                           (car l)))))))
+</pre></div>
+
+<p>Here is a slightly more realistic example, which computes a list of all the
+functions in <code>my-global-block</code>.
+</p>
+<div class="smallexample">
+<pre class="smallexample">(use-modules (gdb iterator))
+(define this-sal (find-pc-line (frame-pc (selected-frame))))
+(define this-symtab (sal-symtab this-sal))
+(define this-global-block (symtab-global-block this-symtab))
+(define syms-iter (make-block-symbols-iterator this-global-block))
+(define functions (iterator-filter symbol-function? syms-iter))
+</pre></div>
+</dd></dl>
+
+<dl>
+<dt><a name="index-iterator_003f"></a>Scheme Procedure: <strong>iterator?</strong> <em>object</em></dt>
+<dd><p>Return <code>#t</code> if <var>object</var> is a <code>&lt;gdb:iterator&gt;</code> object.
+Otherwise return <code>#f</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-iterator_002dobject"></a>Scheme Procedure: <strong>iterator-object</strong> <em>iterator</em></dt>
+<dd><p>Return the first argument that was passed to <code>make-iterator</code>.
+This is the object being iterated over.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-iterator_002dprogress"></a>Scheme Procedure: <strong>iterator-progress</strong> <em>iterator</em></dt>
+<dd><p>Return the object tracking iteration progress.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-set_002diterator_002dprogress_0021"></a>Scheme Procedure: <strong>set-iterator-progress!</strong> <em>iterator new-value</em></dt>
+<dd><p>Set the object tracking iteration progress.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-iterator_002dnext_0021"></a>Scheme Procedure: <strong>iterator-next!</strong> <em>iterator</em></dt>
+<dd><p>Invoke the procedure that was the third argument to <code>make-iterator</code>,
+passing it one argument, the <code>&lt;gdb:iterator&gt;</code> object.
+The result is either the next element in the iteration, or an end
+marker as implemented by the <code>next!</code> procedure.
+By convention the end marker is the result of <code>(end-of-iteration)</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-end_002dof_002diteration"></a>Scheme Procedure: <strong>end-of-iteration</strong></dt>
+<dd><p>Return the Scheme object that denotes end of iteration.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-end_002dof_002diteration_003f"></a>Scheme Procedure: <strong>end-of-iteration?</strong> <em>object</em></dt>
+<dd><p>Return <code>#t</code> if <var>object</var> is the end of iteration marker.
+Otherwise return <code>#f</code>.
+</p></dd></dl>
+
+<p>These functions are provided by the <code>(gdb iterator)</code> module to
+assist in using iterators.
+</p>
+<dl>
+<dt><a name="index-make_002dlist_002diterator"></a>Scheme Procedure: <strong>make-list-iterator</strong> <em>list</em></dt>
+<dd><p>Return a <code>&lt;gdb:iterator&gt;</code> object that will iterate over <var>list</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-iterator_002d_003elist"></a>Scheme Procedure: <strong>iterator-&gt;list</strong> <em>iterator</em></dt>
+<dd><p>Return the elements pointed to by <var>iterator</var> as a list.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-iterator_002dmap"></a>Scheme Procedure: <strong>iterator-map</strong> <em>proc iterator</em></dt>
+<dd><p>Return the list of objects obtained by applying <var>proc</var> to the object
+pointed to by <var>iterator</var> and to each subsequent object.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-iterator_002dfor_002deach"></a>Scheme Procedure: <strong>iterator-for-each</strong> <em>proc iterator</em></dt>
+<dd><p>Apply <var>proc</var> to each element pointed to by <var>iterator</var>.
+The result is unspecified.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-iterator_002dfilter"></a>Scheme Procedure: <strong>iterator-filter</strong> <em>pred iterator</em></dt>
+<dd><p>Return the list of elements pointed to by <var>iterator</var> that satisfy
+<var>pred</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-iterator_002duntil"></a>Scheme Procedure: <strong>iterator-until</strong> <em>pred iterator</em></dt>
+<dd><p>Run <var>iterator</var> until the result of <code>(pred element)</code> is true
+and return that as the result.  Otherwise return <code>#f</code>.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Memory-Ports-in-Guile.html#Memory-Ports-in-Guile" accesskey="p" rel="prev">Memory Ports in Guile</a>, Up: <a href="Guile-API.html#Guile-API" accesskey="u" rel="up">Guile API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,212 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Dependency analysis</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Dependency analysis">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Dependency analysis">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Loop-Analysis-and-Representation.html#Loop-Analysis-and-Representation" rel="up" title="Loop Analysis and Representation">
+<link href="Machine-Desc.html#Machine-Desc" rel="next" title="Machine Desc">
+<link href="Number-of-iterations.html#Number-of-iterations" rel="prev" title="Number of iterations">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Dependency-analysis"></a>
+<div class="header">
+<p>
+Previous: <a href="Number-of-iterations.html#Number-of-iterations" accesskey="p" rel="prev">Number of iterations</a>, Up: <a href="Loop-Analysis-and-Representation.html#Loop-Analysis-and-Representation" accesskey="u" rel="up">Loop Analysis and Representation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Data-Dependency-Analysis"></a>
+<h3 class="section">16.8 Data Dependency Analysis</h3>
+<a name="index-Data-Dependency-Analysis"></a>
+
+<p>The code for the data dependence analysis can be found in
+<samp>tree-data-ref.c</samp> and its interface and data structures are
+described in <samp>tree-data-ref.h</samp>.  The function that computes the
+data dependences for all the array and pointer references for a given
+loop is <code>compute_data_dependences_for_loop</code>.  This function is
+currently used by the linear loop transform and the vectorization
+passes.  Before calling this function, one has to allocate two vectors:
+a first vector will contain the set of data references that are
+contained in the analyzed loop body, and the second vector will contain
+the dependence relations between the data references.  Thus if the
+vector of data references is of size <code>n</code>, the vector containing the
+dependence relations will contain <code>n*n</code> elements.  However if the
+analyzed loop contains side effects, such as calls that potentially can
+interfere with the data references in the current analyzed loop, the
+analysis stops while scanning the loop body for data references, and
+inserts a single <code>chrec_dont_know</code> in the dependence relation
+array.
+</p>
+<p>The data references are discovered in a particular order during the
+scanning of the loop body: the loop body is analyzed in execution order,
+and the data references of each statement are pushed at the end of the
+data reference array.  Two data references syntactically occur in the
+program in the same order as in the array of data references.  This
+syntactic order is important in some classical data dependence tests,
+and mapping this order to the elements of this array avoids costly
+queries to the loop body representation.
+</p>
+<p>Three types of data references are currently handled: ARRAY_REF,
+INDIRECT_REF and COMPONENT_REF. The data structure for the data reference
+is <code>data_reference</code>, where <code>data_reference_p</code> is a name of a
+pointer to the data reference structure. The structure contains the
+following elements:
+</p>
+<ul>
+<li> <code>base_object_info</code>: Provides information about the base object
+of the data reference and its access functions. These access functions
+represent the evolution of the data reference in the loop relative to
+its base, in keeping with the classical meaning of the data reference
+access function for the support of arrays. For example, for a reference
+<code>a.b[i][j]</code>, the base object is <code>a.b</code> and the access functions,
+one for each array subscript, are:
+<code>{i_init, + i_step}_1, {j_init, +, j_step}_2</code>.
+
+</li><li> <code>first_location_in_loop</code>: Provides information about the first
+location accessed by the data reference in the loop and about the access
+function used to represent evolution relative to this location. This data
+is used to support pointers, and is not used for arrays (for which we
+have base objects). Pointer accesses are represented as a one-dimensional
+access that starts from the first location accessed in the loop. For
+example:
+
+<div class="smallexample">
+<pre class="smallexample">      for1 i
+         for2 j
+          *((int *)p + i + j) = a[i][j];
+</pre></div>
+
+<p>The access function of the pointer access is <code>{0, + 4B}_for2</code>
+relative to <code>p + i</code>. The access functions of the array are
+<code>{i_init, + i_step}_for1</code> and <code>{j_init, +, j_step}_for2</code>
+relative to <code>a</code>.
+</p>
+<p>Usually, the object the pointer refers to is either unknown, or we cannot
+prove that the access is confined to the boundaries of a certain object.
+</p>
+<p>Two data references can be compared only if at least one of these two
+representations has all its fields filled for both data references.
+</p>
+<p>The current strategy for data dependence tests is as follows:
+If both <code>a</code> and <code>b</code> are represented as arrays, compare
+<code>a.base_object</code> and <code>b.base_object</code>;
+if they are equal, apply dependence tests (use access functions based on
+base_objects).
+Else if both <code>a</code> and <code>b</code> are represented as pointers, compare
+<code>a.first_location</code> and <code>b.first_location</code>;
+if they are equal, apply dependence tests (use access functions based on
+first location).
+However, if <code>a</code> and <code>b</code> are represented differently, only try
+to prove that the bases are definitely different.
+</p>
+</li><li> Aliasing information.
+</li><li> Alignment information.
+</li></ul>
+
+<p>The structure describing the relation between two data references is
+<code>data_dependence_relation</code> and the shorter name for a pointer to
+such a structure is <code>ddr_p</code>.  This structure contains:
+</p>
+<ul>
+<li> a pointer to each data reference,
+</li><li> a tree node <code>are_dependent</code> that is set to <code>chrec_known</code>
+if the analysis has proved that there is no dependence between these two
+data references, <code>chrec_dont_know</code> if the analysis was not able to
+determine any useful result and potentially there could exist a
+dependence between these data references, and <code>are_dependent</code> is
+set to <code>NULL_TREE</code> if there exist a dependence relation between the
+data references, and the description of this dependence relation is
+given in the <code>subscripts</code>, <code>dir_vects</code>, and <code>dist_vects</code>
+arrays,
+</li><li> a boolean that determines whether the dependence relation can be
+represented by a classical distance vector,
+</li><li> an array <code>subscripts</code> that contains a description of each
+subscript of the data references.  Given two array accesses a
+subscript is the tuple composed of the access functions for a given
+dimension.  For example, given <code>A[f1][f2][f3]</code> and
+<code>B[g1][g2][g3]</code>, there are three subscripts: <code>(f1, g1), (f2,
+g2), (f3, g3)</code>.
+</li><li> two arrays <code>dir_vects</code> and <code>dist_vects</code> that contain
+classical representations of the data dependences under the form of
+direction and distance dependence vectors,
+</li><li> an array of loops <code>loop_nest</code> that contains the loops to
+which the distance and direction vectors refer to.
+</li></ul>
+
+<p>Several functions for pretty printing the information extracted by the
+data dependence analysis are available: <code>dump_ddrs</code> prints with a
+maximum verbosity the details of a data dependence relations array,
+<code>dump_dist_dir_vectors</code> prints only the classical distance and
+direction vectors for a data dependence relations array, and
+<code>dump_data_references</code> prints the details of the data references
+contained in a data reference array.
+</p>
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Number-of-iterations.html#Number-of-iterations" accesskey="p" rel="prev">Number of iterations</a>, Up: <a href="Loop-Analysis-and-Representation.html#Loop-Analysis-and-Representation" accesskey="u" rel="up">Loop Analysis and Representation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

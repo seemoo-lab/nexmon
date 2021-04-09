@@ -1,0 +1,120 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Stack Registers</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Stack Registers">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Stack Registers">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Registers.html#Registers" rel="up" title="Registers">
+<link href="Register-Classes.html#Register-Classes" rel="next" title="Register Classes">
+<link href="Leaf-Functions.html#Leaf-Functions" rel="prev" title="Leaf Functions">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Stack-Registers"></a>
+<div class="header">
+<p>
+Previous: <a href="Leaf-Functions.html#Leaf-Functions" accesskey="p" rel="prev">Leaf Functions</a>, Up: <a href="Registers.html#Registers" accesskey="u" rel="up">Registers</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Registers-That-Form-a-Stack"></a>
+<h4 class="subsection">18.7.5 Registers That Form a Stack</h4>
+
+<p>There are special features to handle computers where some of the
+&ldquo;registers&rdquo; form a stack.  Stack registers are normally written by
+pushing onto the stack, and are numbered relative to the top of the
+stack.
+</p>
+<p>Currently, GCC can only handle one group of stack-like registers, and
+they must be consecutively numbered.  Furthermore, the existing
+support for stack-like registers is specific to the 80387 floating
+point coprocessor.  If you have a new architecture that uses
+stack-like registers, you will need to do substantial work on
+<samp>reg-stack.c</samp> and write your machine description to cooperate
+with it, as well as defining these macros.
+</p>
+<dl>
+<dt><a name="index-STACK_005fREGS"></a>Macro: <strong>STACK_REGS</strong></dt>
+<dd><p>Define this if the machine has any stack-like registers.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-STACK_005fREG_005fCOVER_005fCLASS"></a>Macro: <strong>STACK_REG_COVER_CLASS</strong></dt>
+<dd><p>This is a cover class containing the stack registers.  Define this if
+the machine has any stack-like registers.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-FIRST_005fSTACK_005fREG"></a>Macro: <strong>FIRST_STACK_REG</strong></dt>
+<dd><p>The number of the first stack-like register.  This one is the top
+of the stack.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-LAST_005fSTACK_005fREG"></a>Macro: <strong>LAST_STACK_REG</strong></dt>
+<dd><p>The number of the last stack-like register.  This one is the bottom of
+the stack.
+</p></dd></dl>
+
+
+
+
+</body>
+</html>

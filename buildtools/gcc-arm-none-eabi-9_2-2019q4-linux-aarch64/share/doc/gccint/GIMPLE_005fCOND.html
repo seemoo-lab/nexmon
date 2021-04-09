@@ -1,0 +1,176 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: GIMPLE_COND</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: GIMPLE_COND">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: GIMPLE_COND">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Tuple-specific-accessors.html#Tuple-specific-accessors" rel="up" title="Tuple specific accessors">
+<link href="GIMPLE_005fDEBUG.html#GIMPLE_005fDEBUG" rel="next" title="GIMPLE_DEBUG">
+<link href="GIMPLE_005fCATCH.html#GIMPLE_005fCATCH" rel="prev" title="GIMPLE_CATCH">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="GIMPLE_005fCOND"></a>
+<div class="header">
+<p>
+Next: <a href="GIMPLE_005fDEBUG.html#GIMPLE_005fDEBUG" accesskey="n" rel="next"><code>GIMPLE_DEBUG</code></a>, Previous: <a href="GIMPLE_005fCATCH.html#GIMPLE_005fCATCH" accesskey="p" rel="prev"><code>GIMPLE_CATCH</code></a>, Up: <a href="Tuple-specific-accessors.html#Tuple-specific-accessors" accesskey="u" rel="up">Tuple specific accessors</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="GIMPLE_005fCOND-1"></a>
+<h4 class="subsection">12.8.6 <code>GIMPLE_COND</code></h4>
+<a name="index-GIMPLE_005fCOND"></a>
+
+<dl>
+<dt><a name="index-_002agimple_005fbuild_005fcond"></a>GIMPLE function: <em>gcond</em> <strong>*gimple_build_cond</strong> <em>( enum tree_code pred_code, tree lhs, tree rhs, tree t_label, tree f_label)</em></dt>
+<dd><p>Build a <code>GIMPLE_COND</code> statement.  <code>A</code> <code>GIMPLE_COND</code> statement compares
+<code>LHS</code> and <code>RHS</code> and if the condition in <code>PRED_CODE</code> is true, jump to
+the label in <code>t_label</code>, otherwise jump to the label in <code>f_label</code>.
+<code>PRED_CODE</code> are relational operator tree codes like <code>EQ_EXPR</code>,
+<code>LT_EXPR</code>, <code>LE_EXPR</code>, <code>NE_EXPR</code>, etc.
+</p></dd></dl>
+
+
+<dl>
+<dt><a name="index-_002agimple_005fbuild_005fcond_005ffrom_005ftree"></a>GIMPLE function: <em>gcond</em> <strong>*gimple_build_cond_from_tree</strong> <em>(tree cond, tree t_label, tree f_label)</em></dt>
+<dd><p>Build a <code>GIMPLE_COND</code> statement from the conditional expression
+tree <code>COND</code>.  <code>T_LABEL</code> and <code>F_LABEL</code> are as in <code>gimple_build_cond</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcond_005fcode"></a>GIMPLE function: <em>enum tree_code</em> <strong>gimple_cond_code</strong> <em>(gimple g)</em></dt>
+<dd><p>Return the code of the predicate computed by conditional
+statement <code>G</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcond_005fset_005fcode"></a>GIMPLE function: <em>void</em> <strong>gimple_cond_set_code</strong> <em>(gcond *g, enum tree_code code)</em></dt>
+<dd><p>Set <code>CODE</code> to be the predicate code for the conditional statement
+<code>G</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcond_005flhs"></a>GIMPLE function: <em>tree</em> <strong>gimple_cond_lhs</strong> <em>(gimple g)</em></dt>
+<dd><p>Return the <code>LHS</code> of the predicate computed by conditional statement
+<code>G</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcond_005fset_005flhs"></a>GIMPLE function: <em>void</em> <strong>gimple_cond_set_lhs</strong> <em>(gcond *g, tree lhs)</em></dt>
+<dd><p>Set <code>LHS</code> to be the <code>LHS</code> operand of the predicate computed by
+conditional statement <code>G</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcond_005frhs"></a>GIMPLE function: <em>tree</em> <strong>gimple_cond_rhs</strong> <em>(gimple g)</em></dt>
+<dd><p>Return the <code>RHS</code> operand of the predicate computed by conditional
+<code>G</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcond_005fset_005frhs"></a>GIMPLE function: <em>void</em> <strong>gimple_cond_set_rhs</strong> <em>(gcond *g, tree rhs)</em></dt>
+<dd><p>Set <code>RHS</code> to be the <code>RHS</code> operand of the predicate computed by
+conditional statement <code>G</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcond_005ftrue_005flabel"></a>GIMPLE function: <em>tree</em> <strong>gimple_cond_true_label</strong> <em>(const gcond *g)</em></dt>
+<dd><p>Return the label used by conditional statement <code>G</code> when its
+predicate evaluates to true.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcond_005fset_005ftrue_005flabel"></a>GIMPLE function: <em>void</em> <strong>gimple_cond_set_true_label</strong> <em>(gcond *g, tree label)</em></dt>
+<dd><p>Set <code>LABEL</code> to be the label used by conditional statement <code>G</code> when
+its predicate evaluates to true.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcond_005fset_005ffalse_005flabel"></a>GIMPLE function: <em>void</em> <strong>gimple_cond_set_false_label</strong> <em>(gcond *g, tree label)</em></dt>
+<dd><p>Set <code>LABEL</code> to be the label used by conditional statement <code>G</code> when
+its predicate evaluates to false.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcond_005ffalse_005flabel"></a>GIMPLE function: <em>tree</em> <strong>gimple_cond_false_label</strong> <em>(const gcond *g)</em></dt>
+<dd><p>Return the label used by conditional statement <code>G</code> when its
+predicate evaluates to false.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcond_005fmake_005ffalse"></a>GIMPLE function: <em>void</em> <strong>gimple_cond_make_false</strong> <em>(gcond *g)</em></dt>
+<dd><p>Set the conditional <code>COND_STMT</code> to be of the form &rsquo;if (1 == 0)&rsquo;.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gimple_005fcond_005fmake_005ftrue"></a>GIMPLE function: <em>void</em> <strong>gimple_cond_make_true</strong> <em>(gcond *g)</em></dt>
+<dd><p>Set the conditional <code>COND_STMT</code> to be of the form &rsquo;if (1 == 1)&rsquo;.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="GIMPLE_005fDEBUG.html#GIMPLE_005fDEBUG" accesskey="n" rel="next"><code>GIMPLE_DEBUG</code></a>, Previous: <a href="GIMPLE_005fCATCH.html#GIMPLE_005fCATCH" accesskey="p" rel="prev"><code>GIMPLE_CATCH</code></a>, Up: <a href="Tuple-specific-accessors.html#Tuple-specific-accessors" accesskey="u" rel="up">Tuple specific accessors</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

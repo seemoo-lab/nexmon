@@ -1,0 +1,374 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Breakpoints In Python</title>
+
+<meta name="description" content="Debugging with GDB: Breakpoints In Python">
+<meta name="keywords" content="Debugging with GDB: Breakpoints In Python">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Python-API.html#Python-API" rel="up" title="Python API">
+<link href="Finish-Breakpoints-in-Python.html#Finish-Breakpoints-in-Python" rel="next" title="Finish Breakpoints in Python">
+<link href="Line-Tables-In-Python.html#Line-Tables-In-Python" rel="prev" title="Line Tables In Python">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Breakpoints-In-Python"></a>
+<div class="header">
+<p>
+Next: <a href="Finish-Breakpoints-in-Python.html#Finish-Breakpoints-in-Python" accesskey="n" rel="next">Finish Breakpoints in Python</a>, Previous: <a href="Line-Tables-In-Python.html#Line-Tables-In-Python" accesskey="p" rel="prev">Line Tables In Python</a>, Up: <a href="Python-API.html#Python-API" accesskey="u" rel="up">Python API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Manipulating-breakpoints-using-Python"></a>
+<h4 class="subsubsection">23.2.2.30 Manipulating breakpoints using Python</h4>
+
+<a name="index-breakpoints-in-python"></a>
+<a name="index-gdb_002eBreakpoint"></a>
+
+<p>Python code can manipulate breakpoints via the <code>gdb.Breakpoint</code>
+class.
+</p>
+<p>A breakpoint can be created using one of the two forms of the
+<code>gdb.Breakpoint</code> constructor.  The first one accepts a string
+like one would pass to the <code>break</code>
+(see <a href="Set-Breaks.html#Set-Breaks">Setting Breakpoints</a>) and <code>watch</code>
+(see <a href="Set-Watchpoints.html#Set-Watchpoints">Setting Watchpoints</a>) commands, and can be used to
+create both breakpoints and watchpoints.  The second accepts separate Python
+arguments similar to <a href="Explicit-Locations.html#Explicit-Locations">Explicit Locations</a>, and can only be used to create
+breakpoints.
+</p>
+<dl>
+<dt><a name="index-Breakpoint_002e_005f_005finit_005f_005f"></a>Function: <strong>Breakpoint.__init__</strong> <em>(spec <span class="roman">[</span>, type <span class="roman">][</span>, wp_class <span class="roman">][</span>, internal <span class="roman">][</span>, temporary <span class="roman">][</span>, qualified <span class="roman">]</span>)</em></dt>
+<dd><p>Create a new breakpoint according to <var>spec</var>, which is a string naming the
+location of a breakpoint, or an expression that defines a watchpoint.  The
+string should describe a location in a format recognized by the <code>break</code>
+command (see <a href="Set-Breaks.html#Set-Breaks">Setting Breakpoints</a>) or, in the case of a
+watchpoint, by the <code>watch</code> command
+(see <a href="Set-Watchpoints.html#Set-Watchpoints">Setting Watchpoints</a>).
+</p>
+<p>The optional <var>type</var> argument specifies the type of the breakpoint to create,
+as defined below.
+</p>
+<p>The optional <var>wp_class</var> argument defines the class of watchpoint to create,
+if <var>type</var> is <code>gdb.BP_WATCHPOINT</code>.  If <var>wp_class</var> is omitted, it
+defaults to <code>gdb.WP_WRITE</code>.
+</p>
+<p>The optional <var>internal</var> argument allows the breakpoint to become invisible
+to the user.  The breakpoint will neither be reported when created, nor will it
+be listed in the output from <code>info breakpoints</code> (but will be listed with
+the <code>maint info breakpoints</code> command).
+</p>
+<p>The optional <var>temporary</var> argument makes the breakpoint a temporary
+breakpoint.  Temporary breakpoints are deleted after they have been hit.  Any
+further access to the Python breakpoint after it has been hit will result in a
+runtime error (as that breakpoint has now been automatically deleted).
+</p>
+<p>The optional <var>qualified</var> argument is a boolean that allows interpreting
+the function passed in <code>spec</code> as a fully-qualified name.  It is equivalent
+to <code>break</code>&rsquo;s <code>-qualified</code> flag (see <a href="Linespec-Locations.html#Linespec-Locations">Linespec Locations</a> and
+<a href="Explicit-Locations.html#Explicit-Locations">Explicit Locations</a>).
+</p>
+</dd></dl>
+
+<dl>
+<dt><a name="index-Breakpoint_002e_005f_005finit_005f_005f-1"></a>Function: <strong>Breakpoint.__init__</strong> <em>(<span class="roman">[</span> source <span class="roman">][</span>, function <span class="roman">][</span>, label <span class="roman">][</span>, line <span class="roman">]</span>, <span class="roman">][</span> internal <span class="roman">][</span>, temporary <span class="roman">][</span>, qualified <span class="roman">]</span>)</em></dt>
+<dd><p>This second form of creating a new breakpoint specifies the explicit
+location (see <a href="Explicit-Locations.html#Explicit-Locations">Explicit Locations</a>) using keywords.  The new breakpoint will
+be created in the specified source file <var>source</var>, at the specified
+<var>function</var>, <var>label</var> and <var>line</var>.
+</p>
+<p><var>internal</var>, <var>temporary</var> and <var>qualified</var> have the same usage as
+explained previously.
+</p></dd></dl>
+
+<p>The available types are represented by constants defined in the <code>gdb</code>
+module:
+</p>
+<dl compact="compact">
+<dd><a name="index-BP_005fBREAKPOINT"></a>
+</dd>
+<dt><code>gdb.BP_BREAKPOINT</code>
+<a name="index-gdb_002eBP_005fBREAKPOINT"></a>
+</dt>
+<dd><p>Normal code breakpoint.
+</p>
+<a name="index-BP_005fWATCHPOINT"></a>
+</dd>
+<dt><code>gdb.BP_WATCHPOINT</code>
+<a name="index-gdb_002eBP_005fWATCHPOINT"></a>
+</dt>
+<dd><p>Watchpoint breakpoint.
+</p>
+<a name="index-BP_005fHARDWARE_005fWATCHPOINT"></a>
+</dd>
+<dt><code>gdb.BP_HARDWARE_WATCHPOINT</code>
+<a name="index-gdb_002eBP_005fHARDWARE_005fWATCHPOINT"></a>
+</dt>
+<dd><p>Hardware assisted watchpoint.
+</p>
+<a name="index-BP_005fREAD_005fWATCHPOINT"></a>
+</dd>
+<dt><code>gdb.BP_READ_WATCHPOINT</code>
+<a name="index-gdb_002eBP_005fREAD_005fWATCHPOINT"></a>
+</dt>
+<dd><p>Hardware assisted read watchpoint.
+</p>
+<a name="index-BP_005fACCESS_005fWATCHPOINT"></a>
+</dd>
+<dt><code>gdb.BP_ACCESS_WATCHPOINT</code>
+<a name="index-gdb_002eBP_005fACCESS_005fWATCHPOINT"></a>
+</dt>
+<dd><p>Hardware assisted access watchpoint.
+</p></dd>
+</dl>
+
+<p>The available watchpoint types represented by constants are defined in the
+<code>gdb</code> module:
+</p>
+<dl compact="compact">
+<dd><a name="index-WP_005fREAD"></a>
+</dd>
+<dt><code>gdb.WP_READ</code>
+<a name="index-gdb_002eWP_005fREAD"></a>
+</dt>
+<dd><p>Read only watchpoint.
+</p>
+<a name="index-WP_005fWRITE"></a>
+</dd>
+<dt><code>gdb.WP_WRITE</code>
+<a name="index-gdb_002eWP_005fWRITE"></a>
+</dt>
+<dd><p>Write only watchpoint.
+</p>
+<a name="index-WP_005fACCESS"></a>
+</dd>
+<dt><code>gdb.WP_ACCESS</code>
+<a name="index-gdb_002eWP_005fACCESS"></a>
+</dt>
+<dd><p>Read/Write watchpoint.
+</p></dd>
+</dl>
+
+<dl>
+<dt><a name="index-Breakpoint_002estop"></a>Function: <strong>Breakpoint.stop</strong> <em>(self)</em></dt>
+<dd><p>The <code>gdb.Breakpoint</code> class can be sub-classed and, in
+particular, you may choose to implement the <code>stop</code> method.
+If this method is defined in a sub-class of <code>gdb.Breakpoint</code>,
+it will be called when the inferior reaches any location of a
+breakpoint which instantiates that sub-class.  If the method returns
+<code>True</code>, the inferior will be stopped at the location of the
+breakpoint, otherwise the inferior will continue.
+</p>
+<p>If there are multiple breakpoints at the same location with a
+<code>stop</code> method, each one will be called regardless of the
+return status of the previous.  This ensures that all <code>stop</code>
+methods have a chance to execute at that location.  In this scenario
+if one of the methods returns <code>True</code> but the others return
+<code>False</code>, the inferior will still be stopped.
+</p>
+<p>You should not alter the execution state of the inferior (i.e., step,
+next, etc.), alter the current frame context (i.e., change the current
+active frame), or alter, add or delete any breakpoint.  As a general
+rule, you should not alter any data within <small>GDB</small> or the inferior
+at this time.
+</p>
+<p>Example <code>stop</code> implementation:
+</p>
+<div class="smallexample">
+<pre class="smallexample">class MyBreakpoint (gdb.Breakpoint):
+      def stop (self):
+        inf_val = gdb.parse_and_eval(&quot;foo&quot;)
+        if inf_val == 3:
+          return True
+        return False
+</pre></div>
+</dd></dl>
+
+<dl>
+<dt><a name="index-Breakpoint_002eis_005fvalid"></a>Function: <strong>Breakpoint.is_valid</strong> <em>()</em></dt>
+<dd><p>Return <code>True</code> if this <code>Breakpoint</code> object is valid,
+<code>False</code> otherwise.  A <code>Breakpoint</code> object can become invalid
+if the user deletes the breakpoint.  In this case, the object still
+exists, but the underlying breakpoint does not.  In the cases of
+watchpoint scope, the watchpoint remains valid even if execution of the
+inferior leaves the scope of that watchpoint.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Breakpoint_002edelete"></a>Function: <strong>Breakpoint.delete</strong> <em>()</em></dt>
+<dd><p>Permanently deletes the <small>GDB</small> breakpoint.  This also
+invalidates the Python <code>Breakpoint</code> object.  Any further access
+to this object&rsquo;s attributes or methods will raise an error.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Breakpoint_002eenabled"></a>Variable: <strong>Breakpoint.enabled</strong></dt>
+<dd><p>This attribute is <code>True</code> if the breakpoint is enabled, and
+<code>False</code> otherwise.  This attribute is writable.  You can use it to enable
+or disable the breakpoint.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Breakpoint_002esilent"></a>Variable: <strong>Breakpoint.silent</strong></dt>
+<dd><p>This attribute is <code>True</code> if the breakpoint is silent, and
+<code>False</code> otherwise.  This attribute is writable.
+</p>
+<p>Note that a breakpoint can also be silent if it has commands and the
+first command is <code>silent</code>.  This is not reported by the
+<code>silent</code> attribute.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Breakpoint_002epending"></a>Variable: <strong>Breakpoint.pending</strong></dt>
+<dd><p>This attribute is <code>True</code> if the breakpoint is pending, and
+<code>False</code> otherwise.  See <a href="Set-Breaks.html#Set-Breaks">Set Breaks</a>.  This attribute is
+read-only.
+</p></dd></dl>
+
+<a name="python_005fbreakpoint_005fthread"></a><dl>
+<dt><a name="index-Breakpoint_002ethread"></a>Variable: <strong>Breakpoint.thread</strong></dt>
+<dd><p>If the breakpoint is thread-specific, this attribute holds the
+thread&rsquo;s global id.  If the breakpoint is not thread-specific, this
+attribute is <code>None</code>.  This attribute is writable.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Breakpoint_002etask"></a>Variable: <strong>Breakpoint.task</strong></dt>
+<dd><p>If the breakpoint is Ada task-specific, this attribute holds the Ada task
+id.  If the breakpoint is not task-specific (or the underlying
+language is not Ada), this attribute is <code>None</code>.  This attribute
+is writable.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Breakpoint_002eignore_005fcount"></a>Variable: <strong>Breakpoint.ignore_count</strong></dt>
+<dd><p>This attribute holds the ignore count for the breakpoint, an integer.
+This attribute is writable.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Breakpoint_002enumber"></a>Variable: <strong>Breakpoint.number</strong></dt>
+<dd><p>This attribute holds the breakpoint&rsquo;s number &mdash; the identifier used by
+the user to manipulate the breakpoint.  This attribute is not writable.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Breakpoint_002etype"></a>Variable: <strong>Breakpoint.type</strong></dt>
+<dd><p>This attribute holds the breakpoint&rsquo;s type &mdash; the identifier used to
+determine the actual breakpoint type or use-case.  This attribute is not
+writable.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Breakpoint_002evisible"></a>Variable: <strong>Breakpoint.visible</strong></dt>
+<dd><p>This attribute tells whether the breakpoint is visible to the user
+when set, or when the &lsquo;<samp>info breakpoints</samp>&rsquo; command is run.  This
+attribute is not writable.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Breakpoint_002etemporary"></a>Variable: <strong>Breakpoint.temporary</strong></dt>
+<dd><p>This attribute indicates whether the breakpoint was created as a
+temporary breakpoint.  Temporary breakpoints are automatically deleted
+after that breakpoint has been hit.  Access to this attribute, and all
+other attributes and functions other than the <code>is_valid</code>
+function, will result in an error after the breakpoint has been hit
+(as it has been automatically deleted).  This attribute is not
+writable.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Breakpoint_002ehit_005fcount"></a>Variable: <strong>Breakpoint.hit_count</strong></dt>
+<dd><p>This attribute holds the hit count for the breakpoint, an integer.
+This attribute is writable, but currently it can only be set to zero.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Breakpoint_002elocation"></a>Variable: <strong>Breakpoint.location</strong></dt>
+<dd><p>This attribute holds the location of the breakpoint, as specified by
+the user.  It is a string.  If the breakpoint does not have a location
+(that is, it is a watchpoint) the attribute&rsquo;s value is <code>None</code>.  This
+attribute is not writable.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Breakpoint_002eexpression"></a>Variable: <strong>Breakpoint.expression</strong></dt>
+<dd><p>This attribute holds a breakpoint expression, as specified by
+the user.  It is a string.  If the breakpoint does not have an
+expression (the breakpoint is not a watchpoint) the attribute&rsquo;s value
+is <code>None</code>.  This attribute is not writable.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Breakpoint_002econdition"></a>Variable: <strong>Breakpoint.condition</strong></dt>
+<dd><p>This attribute holds the condition of the breakpoint, as specified by
+the user.  It is a string.  If there is no condition, this attribute&rsquo;s
+value is <code>None</code>.  This attribute is writable.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Breakpoint_002ecommands"></a>Variable: <strong>Breakpoint.commands</strong></dt>
+<dd><p>This attribute holds the commands attached to the breakpoint.  If
+there are commands, this attribute&rsquo;s value is a string holding all the
+commands, separated by newlines.  If there are no commands, this
+attribute is <code>None</code>.  This attribute is writable.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Finish-Breakpoints-in-Python.html#Finish-Breakpoints-in-Python" accesskey="n" rel="next">Finish Breakpoints in Python</a>, Previous: <a href="Line-Tables-In-Python.html#Line-Tables-In-Python" accesskey="p" rel="prev">Line Tables In Python</a>, Up: <a href="Python-API.html#Python-API" accesskey="u" rel="up">Python API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

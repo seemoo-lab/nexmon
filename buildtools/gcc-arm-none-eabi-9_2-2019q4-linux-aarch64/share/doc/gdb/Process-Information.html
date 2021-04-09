@@ -1,0 +1,257 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Process Information</title>
+
+<meta name="description" content="Debugging with GDB: Process Information">
+<meta name="keywords" content="Debugging with GDB: Process Information">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Native.html#Native" rel="up" title="Native">
+<link href="DJGPP-Native.html#DJGPP-Native" rel="next" title="DJGPP Native">
+<link href="BSD-libkvm-Interface.html#BSD-libkvm-Interface" rel="prev" title="BSD libkvm Interface">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Process-Information"></a>
+<div class="header">
+<p>
+Next: <a href="DJGPP-Native.html#DJGPP-Native" accesskey="n" rel="next">DJGPP Native</a>, Previous: <a href="BSD-libkvm-Interface.html#BSD-libkvm-Interface" accesskey="p" rel="prev">BSD libkvm Interface</a>, Up: <a href="Native.html#Native" accesskey="u" rel="up">Native</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Process-Information-1"></a>
+<h4 class="subsection">21.1.2 Process Information</h4>
+<a name="index-_002fproc"></a>
+<a name="index-examine-process-image"></a>
+<a name="index-process-info-via-_002fproc"></a>
+
+<p>Some operating systems provide interfaces to fetch additional
+information about running processes beyond memory and per-thread
+register state.  If <small>GDB</small> is configured for an operating system
+with a supported interface, the command <code>info proc</code> is available
+to report information about the process running your program, or about
+any process running on your system.
+</p>
+<p>One supported interface is a facility called &lsquo;<samp>/proc</samp>&rsquo; that can be
+used to examine the image of a running process using file-system
+subroutines.  This facility is supported on <small>GNU</small>/Linux and Solaris
+systems.
+</p>
+<p>On FreeBSD systems, system control nodes are used to query process
+information.
+</p>
+<p>In addition, some systems may provide additional process information
+in core files.  Note that a core file may include a subset of the
+information available from a live process.  Process information is
+currently avaiable from cores created on <small>GNU</small>/Linux and FreeBSD
+systems.
+</p>
+<dl compact="compact">
+<dd><a name="index-info-proc"></a>
+<a name="index-process-ID"></a>
+</dd>
+<dt><code>info proc</code></dt>
+<dt><code>info proc <var>process-id</var></code></dt>
+<dd><p>Summarize available information about a process.  If a
+process ID is specified by <var>process-id</var>, display information about
+that process; otherwise display information about the program being
+debugged.  The summary includes the debugged process ID, the command
+line used to invoke it, its current working directory, and its
+executable file&rsquo;s absolute file name.
+</p>
+<p>On some systems, <var>process-id</var> can be of the form
+&lsquo;<samp>[<var>pid</var>]/<var>tid</var></samp>&rsquo; which specifies a certain thread ID
+within a process.  If the optional <var>pid</var> part is missing, it means
+a thread from the process being debugged (the leading &lsquo;<samp>/</samp>&rsquo; still
+needs to be present, or else <small>GDB</small> will interpret the number as
+a process ID rather than a thread ID).
+</p>
+</dd>
+<dt><code>info proc cmdline</code></dt>
+<dd><a name="index-info-proc-cmdline"></a>
+<p>Show the original command line of the process.  This command is
+supported on <small>GNU</small>/Linux and FreeBSD.
+</p>
+</dd>
+<dt><code>info proc cwd</code></dt>
+<dd><a name="index-info-proc-cwd"></a>
+<p>Show the current working directory of the process.  This command is
+supported on <small>GNU</small>/Linux and FreeBSD.
+</p>
+</dd>
+<dt><code>info proc exe</code></dt>
+<dd><a name="index-info-proc-exe"></a>
+<p>Show the name of executable of the process.  This command is supported
+on <small>GNU</small>/Linux and FreeBSD.
+</p>
+</dd>
+<dt><code>info proc files</code></dt>
+<dd><a name="index-info-proc-files"></a>
+<p>Show the file descriptors open by the process.  For each open file
+descriptor, <small>GDB</small> shows its number, type (file, directory,
+character device, socket), file pointer offset, and the name of the
+resource open on the descriptor.  The resource name can be a file name
+(for files, directories, and devices) or a protocol followed by socket
+address (for network connections).  This command is supported on
+FreeBSD.
+</p>
+<p>This example shows the open file descriptors for a process using a
+tty for standard input and output as well as two network sockets:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) info proc files 22136
+process 22136
+Open files:
+
+      FD   Type     Offset   Flags   Name
+    text   file          - r-------- /usr/bin/ssh
+    ctty    chr          - rw------- /dev/pts/20
+     cwd    dir          - r-------- /usr/home/john
+    root    dir          - r-------- /
+       0    chr  0x32933a4 rw------- /dev/pts/20
+       1    chr  0x32933a4 rw------- /dev/pts/20
+       2    chr  0x32933a4 rw------- /dev/pts/20
+       3 socket        0x0 rw----n-- tcp4 10.0.1.2:53014 -&gt; 10.0.1.10:22
+       4 socket        0x0 rw------- unix stream:/tmp/ssh-FIt89oAzOn5f/agent.2456
+</pre></div>
+
+</dd>
+<dt><code>info proc mappings</code></dt>
+<dd><a name="index-memory-address-space-mappings"></a>
+<p>Report the memory address space ranges accessible in a process.  On
+Solaris and FreeBSD systems, each memory range includes information on
+whether the process has read, write, or execute access rights to each
+range.  On <small>GNU</small>/Linux and FreeBSD systems, each memory range
+includes the object file which is mapped to that range.
+</p>
+</dd>
+<dt><code>info proc stat</code></dt>
+<dt><code>info proc status</code></dt>
+<dd><a name="index-process-detailed-status-information"></a>
+<p>Show additional process-related information, including the user ID and
+group ID; virtual memory usage; the signals that are pending, blocked,
+and ignored; its TTY; its consumption of system and user time; its
+stack size; its &lsquo;<samp>nice</samp>&rsquo; value; etc.  These commands are supported
+on <small>GNU</small>/Linux and FreeBSD.
+</p>
+<p>For <small>GNU</small>/Linux systems, see the &lsquo;<samp>proc</samp>&rsquo; man page for more
+information (type <kbd>man 5 proc</kbd> from your shell prompt).
+</p>
+<p>For FreeBSD systems, <code>info proc stat</code> is an alias for <code>info
+proc status</code>.
+</p>
+</dd>
+<dt><code>info proc all</code></dt>
+<dd><p>Show all the information about the process described under all of the
+above <code>info proc</code> subcommands.
+</p>
+
+</dd>
+<dt><code>set procfs-trace</code></dt>
+<dd><a name="index-set-procfs_002dtrace"></a>
+<a name="index-procfs-API-calls"></a>
+<p>This command enables and disables tracing of <code>procfs</code> API calls.
+</p>
+</dd>
+<dt><code>show procfs-trace</code></dt>
+<dd><a name="index-show-procfs_002dtrace"></a>
+<p>Show the current state of <code>procfs</code> API call tracing.
+</p>
+</dd>
+<dt><code>set procfs-file <var>file</var></code></dt>
+<dd><a name="index-set-procfs_002dfile"></a>
+<p>Tell <small>GDB</small> to write <code>procfs</code> API trace to the named
+<var>file</var>.  <small>GDB</small> appends the trace info to the previous
+contents of the file.  The default is to display the trace on the
+standard output.
+</p>
+</dd>
+<dt><code>show procfs-file</code></dt>
+<dd><a name="index-show-procfs_002dfile"></a>
+<p>Show the file to which <code>procfs</code> API trace is written.
+</p>
+</dd>
+<dt><code>proc-trace-entry</code></dt>
+<dt><code>proc-trace-exit</code></dt>
+<dt><code>proc-untrace-entry</code></dt>
+<dt><code>proc-untrace-exit</code></dt>
+<dd><a name="index-proc_002dtrace_002dentry"></a>
+<a name="index-proc_002dtrace_002dexit"></a>
+<a name="index-proc_002duntrace_002dentry"></a>
+<a name="index-proc_002duntrace_002dexit"></a>
+<p>These commands enable and disable tracing of entries into and exits
+from the <code>syscall</code> interface.
+</p>
+</dd>
+<dt><code>info pidlist</code></dt>
+<dd><a name="index-info-pidlist"></a>
+<a name="index-process-list_002c-QNX-Neutrino"></a>
+<p>For QNX Neutrino only, this command displays the list of all the
+processes and all the threads within each process.
+</p>
+</dd>
+<dt><code>info meminfo</code></dt>
+<dd><a name="index-info-meminfo"></a>
+<a name="index-mapinfo-list_002c-QNX-Neutrino"></a>
+<p>For QNX Neutrino only, this command displays the list of all mapinfos.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="DJGPP-Native.html#DJGPP-Native" accesskey="n" rel="next">DJGPP Native</a>, Previous: <a href="BSD-libkvm-Interface.html#BSD-libkvm-Interface" accesskey="p" rel="prev">BSD libkvm Interface</a>, Up: <a href="Native.html#Native" accesskey="u" rel="up">Native</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

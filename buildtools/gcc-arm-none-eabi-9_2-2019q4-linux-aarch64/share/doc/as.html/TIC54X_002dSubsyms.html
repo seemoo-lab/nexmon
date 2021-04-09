@@ -1,0 +1,138 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: TIC54X-Subsyms</title>
+
+<meta name="description" content="Using as: TIC54X-Subsyms">
+<meta name="keywords" content="Using as: TIC54X-Subsyms">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="TIC54X_002dDependent.html#TIC54X_002dDependent" rel="up" title="TIC54X-Dependent">
+<link href="TIC54X_002dLocals.html#TIC54X_002dLocals" rel="next" title="TIC54X-Locals">
+<link href="TIC54X_002dConstants.html#TIC54X_002dConstants" rel="prev" title="TIC54X-Constants">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="TIC54X_002dSubsyms"></a>
+<div class="header">
+<p>
+Next: <a href="TIC54X_002dLocals.html#TIC54X_002dLocals" accesskey="n" rel="next">TIC54X-Locals</a>, Previous: <a href="TIC54X_002dConstants.html#TIC54X_002dConstants" accesskey="p" rel="prev">TIC54X-Constants</a>, Up: <a href="TIC54X_002dDependent.html#TIC54X_002dDependent" accesskey="u" rel="up">TIC54X-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="String-Substitution"></a>
+<h4 class="subsection">9.45.5 String Substitution</h4>
+<p>A subset of allowable symbols (which we&rsquo;ll call subsyms) may be assigned
+arbitrary string values.  This is roughly equivalent to C preprocessor
+#define macros.  When <code>as</code> encounters one of these
+symbols, the symbol is replaced in the input stream by its string value.
+Subsym names <strong>must</strong> begin with a letter.
+</p>
+<p>Subsyms may be defined using the <code>.asg</code> and <code>.eval</code> directives
+(See <a href="TIC54X_002dDirectives.html#TIC54X_002dDirectives"><code>.asg</code></a>,
+See <a href="TIC54X_002dDirectives.html#TIC54X_002dDirectives"><code>.eval</code></a>.
+</p>
+<p>Expansion is recursive until a previously encountered symbol is seen, at
+which point substitution stops.
+</p>
+<p>In this example, x is replaced with SYM2; SYM2 is replaced with SYM1, and SYM1
+is replaced with x.  At this point, x has already been encountered
+and the substitution stops.
+</p>
+<div class="smallexample">
+<pre class="smallexample"> .asg   &quot;x&quot;,SYM1
+ .asg   &quot;SYM1&quot;,SYM2
+ .asg   &quot;SYM2&quot;,x
+ add    x,a             ; final code assembled is &quot;add  x, a&quot;
+</pre></div>
+
+<p>Macro parameters are converted to subsyms; a side effect of this is the normal
+<code>as</code> &rsquo;\ARG&rsquo; dereferencing syntax is unnecessary.  Subsyms
+defined within a macro will have global scope, unless the <code>.var</code>
+directive is used to identify the subsym as a local macro variable
+see <a href="TIC54X_002dDirectives.html#TIC54X_002dDirectives"><code>.var</code></a>.
+</p>
+<p>Substitution may be forced in situations where replacement might be
+ambiguous by placing colons on either side of the subsym.  The following
+code:
+</p>
+<div class="smallexample">
+<pre class="smallexample"> .eval  &quot;10&quot;,x
+LAB:X:  add     #x, a
+</pre></div>
+
+<p>When assembled becomes:
+</p>
+<div class="smallexample">
+<pre class="smallexample">LAB10  add     #10, a
+</pre></div>
+
+<p>Smaller parts of the string assigned to a subsym may be accessed with
+the following syntax:
+</p>
+<dl compact="compact">
+<dt><code><code>:<var>symbol</var>(<var>char_index</var>):</code></code></dt>
+<dd><p>Evaluates to a single-character string, the character at <var>char_index</var>.
+</p></dd>
+<dt><code><code>:<var>symbol</var>(<var>start</var>,<var>length</var>):</code></code></dt>
+<dd><p>Evaluates to a substring of <var>symbol</var> beginning at <var>start</var> with
+length <var>length</var>.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="TIC54X_002dLocals.html#TIC54X_002dLocals" accesskey="n" rel="next">TIC54X-Locals</a>, Previous: <a href="TIC54X_002dConstants.html#TIC54X_002dConstants" accesskey="p" rel="prev">TIC54X-Constants</a>, Up: <a href="TIC54X_002dDependent.html#TIC54X_002dDependent" accesskey="u" rel="up">TIC54X-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

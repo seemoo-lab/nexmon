@@ -1,0 +1,167 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1987-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation.  A copy of
+the license is included in the
+section entitled "GNU Free Documentation License".
+
+This manual contains no Invariant Sections.  The Front-Cover Texts are
+(a) (see below), and the Back-Cover Texts are (b) (see below).
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The C Preprocessor: Stringizing</title>
+
+<meta name="description" content="The C Preprocessor: Stringizing">
+<meta name="keywords" content="The C Preprocessor: Stringizing">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Index-of-Directives.html#Index-of-Directives" rel="index" title="Index of Directives">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Macros.html#Macros" rel="up" title="Macros">
+<link href="Concatenation.html#Concatenation" rel="next" title="Concatenation">
+<link href="Macro-Arguments.html#Macro-Arguments" rel="prev" title="Macro Arguments">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Stringizing"></a>
+<div class="header">
+<p>
+Next: <a href="Concatenation.html#Concatenation" accesskey="n" rel="next">Concatenation</a>, Previous: <a href="Macro-Arguments.html#Macro-Arguments" accesskey="p" rel="prev">Macro Arguments</a>, Up: <a href="Macros.html#Macros" accesskey="u" rel="up">Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index-of-Directives.html#Index-of-Directives" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Stringizing-1"></a>
+<h3 class="section">3.4 Stringizing</h3>
+<a name="index-stringizing"></a>
+<a name="index-_0023-operator"></a>
+
+<p>Sometimes you may want to convert a macro argument into a string
+constant.  Parameters are not replaced inside string constants, but you
+can use the &lsquo;<samp>#</samp>&rsquo; preprocessing operator instead.  When a macro
+parameter is used with a leading &lsquo;<samp>#</samp>&rsquo;, the preprocessor replaces it
+with the literal text of the actual argument, converted to a string
+constant.  Unlike normal parameter replacement, the argument is not
+macro-expanded first.  This is called <em>stringizing</em>.
+</p>
+<p>There is no way to combine an argument with surrounding text and
+stringize it all together.  Instead, you can write a series of adjacent
+string constants and stringized arguments.  The preprocessor
+replaces the stringized arguments with string constants.  The C
+compiler then combines all the adjacent string constants into one
+long string.
+</p>
+<p>Here is an example of a macro definition that uses stringizing:
+</p>
+<div class="smallexample">
+<pre class="smallexample">#define WARN_IF(EXP) \
+do { if (EXP) \
+        fprintf (stderr, &quot;Warning: &quot; #EXP &quot;\n&quot;); } \
+while (0)
+WARN_IF (x == 0);
+     &rarr; do { if (x == 0)
+           fprintf (stderr, &quot;Warning: &quot; &quot;x == 0&quot; &quot;\n&quot;); } while (0);
+</pre></div>
+
+<p>The argument for <code>EXP</code> is substituted once, as-is, into the
+<code>if</code> statement, and once, stringized, into the argument to
+<code>fprintf</code>.  If <code>x</code> were a macro, it would be expanded in the
+<code>if</code> statement, but not in the string.
+</p>
+<p>The <code>do</code> and <code>while (0)</code> are a kludge to make it possible to
+write <code>WARN_IF (<var>arg</var>);</code>, which the resemblance of
+<code>WARN_IF</code> to a function would make C programmers want to do; see
+<a href="Swallowing-the-Semicolon.html#Swallowing-the-Semicolon">Swallowing the Semicolon</a>.
+</p>
+<p>Stringizing in C involves more than putting double-quote characters
+around the fragment.  The preprocessor backslash-escapes the quotes
+surrounding embedded string constants, and all backslashes within string and
+character constants, in order to get a valid C string constant with the
+proper contents.  Thus, stringizing <code>p&nbsp;=&nbsp;&quot;foo\n&quot;;<!-- /@w --></code> results in
+<tt>&quot;p&nbsp;=&nbsp;\&quot;foo\\n\&quot;;&quot;<!-- /@w --></tt>.  However, backslashes that are not inside string
+or character constants are not duplicated: &lsquo;<samp>\n</samp>&rsquo; by itself
+stringizes to <tt>&quot;\n&quot;</tt>.
+</p>
+<p>All leading and trailing whitespace in text being stringized is
+ignored.  Any sequence of whitespace in the middle of the text is
+converted to a single space in the stringized result.  Comments are
+replaced by whitespace long before stringizing happens, so they
+never appear in stringized text.
+</p>
+<p>There is no way to convert a macro argument into a character constant.
+</p>
+<p>If you want to stringize the result of expansion of a macro argument,
+you have to use two levels of macros.
+</p>
+<div class="smallexample">
+<pre class="smallexample">#define xstr(s) str(s)
+#define str(s) #s
+#define foo 4
+str (foo)
+     &rarr; &quot;foo&quot;
+xstr (foo)
+     &rarr; xstr (4)
+     &rarr; str (4)
+     &rarr; &quot;4&quot;
+</pre></div>
+
+<p><code>s</code> is stringized when it is used in <code>str</code>, so it is not
+macro-expanded first.  But <code>s</code> is an ordinary argument to
+<code>xstr</code>, so it is completely macro-expanded before <code>xstr</code>
+itself is expanded (see <a href="Argument-Prescan.html#Argument-Prescan">Argument Prescan</a>).  Therefore, by the time
+<code>str</code> gets to its argument, it has already been macro-expanded.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Concatenation.html#Concatenation" accesskey="n" rel="next">Concatenation</a>, Previous: <a href="Macro-Arguments.html#Macro-Arguments" accesskey="p" rel="prev">Macro Arguments</a>, Up: <a href="Macros.html#Macros" accesskey="u" rel="up">Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index-of-Directives.html#Index-of-Directives" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU linker LD
+(GNU Toolchain for the A-profile Architecture 9.2-2019.12 (arm-9.10))
+version 2.33.1.
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License". -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>LD: MRI</title>
+
+<meta name="description" content="LD: MRI">
+<meta name="keywords" content="LD: MRI">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="LD-Index.html#LD-Index" rel="index" title="LD Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License" rel="next" title="GNU Free Documentation License">
+<link href="Bug-Reporting.html#Bug-Reporting" rel="prev" title="Bug Reporting">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="MRI"></a>
+<div class="header">
+<p>
+Next: <a href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License" accesskey="n" rel="next">GNU Free Documentation License</a>, Previous: <a href="Reporting-Bugs.html#Reporting-Bugs" accesskey="p" rel="prev">Reporting Bugs</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="LD-Index.html#LD-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="MRI-Compatible-Script-Files"></a>
+<h2 class="appendix">Appendix A MRI Compatible Script Files</h2>
+<a name="index-MRI-compatibility"></a>
+<p>To aid users making the transition to <small>GNU</small> <code>ld</code> from the MRI
+linker, <code>ld</code> can use MRI compatible linker scripts as an
+alternative to the more general-purpose linker scripting language
+described in <a href="Scripts.html#Scripts">Scripts</a>.  MRI compatible linker scripts have a much
+simpler command set than the scripting language otherwise used with
+<code>ld</code>.  <small>GNU</small> <code>ld</code> supports the most commonly used MRI
+linker commands; these commands are described here.
+</p>
+<p>In general, MRI scripts aren&rsquo;t of much use with the <code>a.out</code> object
+file format, since it only has three sections and MRI scripts lack some
+features to make use of them.
+</p>
+<p>You can specify a file containing an MRI-compatible script using the
+&lsquo;<samp>-c</samp>&rsquo; command-line option.
+</p>
+<p>Each command in an MRI-compatible script occupies its own line; each
+command line starts with the keyword that identifies the command (though
+blank lines are also allowed for punctuation).  If a line of an
+MRI-compatible script begins with an unrecognized keyword, <code>ld</code>
+issues a warning message, but continues processing the script.
+</p>
+<p>Lines beginning with &lsquo;<samp>*</samp>&rsquo; are comments.
+</p>
+<p>You can write these commands using all upper-case letters, or all
+lower case; for example, &lsquo;<samp>chip</samp>&rsquo; is the same as &lsquo;<samp>CHIP</samp>&rsquo;.
+The following list shows only the upper-case form of each command.
+</p>
+<dl compact="compact">
+<dd><a name="index-ABSOLUTE-_0028MRI_0029"></a>
+</dd>
+<dt><code>ABSOLUTE <var>secname</var></code></dt>
+<dt><code>ABSOLUTE <var>secname</var>, <var>secname</var>, &hellip; <var>secname</var></code></dt>
+<dd><p>Normally, <code>ld</code> includes in the output file all sections from all
+the input files.  However, in an MRI-compatible script, you can use the
+<code>ABSOLUTE</code> command to restrict the sections that will be present in
+your output program.  If the <code>ABSOLUTE</code> command is used at all in a
+script, then only the sections named explicitly in <code>ABSOLUTE</code>
+commands will appear in the linker output.  You can still use other
+input sections (whatever you select on the command line, or using
+<code>LOAD</code>) to resolve addresses in the output file.
+</p>
+<a name="index-ALIAS-_0028MRI_0029"></a>
+</dd>
+<dt><code>ALIAS <var>out-secname</var>, <var>in-secname</var></code></dt>
+<dd><p>Use this command to place the data from input section <var>in-secname</var>
+in a section called <var>out-secname</var> in the linker output file.
+</p>
+<p><var>in-secname</var> may be an integer.
+</p>
+<a name="index-ALIGN-_0028MRI_0029"></a>
+</dd>
+<dt><code>ALIGN <var>secname</var> = <var>expression</var></code></dt>
+<dd><p>Align the section called <var>secname</var> to <var>expression</var>.  The
+<var>expression</var> should be a power of two.
+</p>
+<a name="index-BASE-_0028MRI_0029"></a>
+</dd>
+<dt><code>BASE <var>expression</var></code></dt>
+<dd><p>Use the value of <var>expression</var> as the lowest address (other than
+absolute addresses) in the output file.
+</p>
+<a name="index-CHIP-_0028MRI_0029"></a>
+</dd>
+<dt><code>CHIP <var>expression</var></code></dt>
+<dt><code>CHIP <var>expression</var>, <var>expression</var></code></dt>
+<dd><p>This command does nothing; it is accepted only for compatibility.
+</p>
+<a name="index-END-_0028MRI_0029"></a>
+</dd>
+<dt><code>END</code></dt>
+<dd><p>This command does nothing whatever; it&rsquo;s only accepted for compatibility.
+</p>
+<a name="index-FORMAT-_0028MRI_0029"></a>
+</dd>
+<dt><code>FORMAT <var>output-format</var></code></dt>
+<dd><p>Similar to the <code>OUTPUT_FORMAT</code> command in the more general linker
+language, but restricted to S-records, if <var>output-format</var> is &lsquo;<samp>S</samp>&rsquo;
+</p>
+<a name="index-LIST-_0028MRI_0029"></a>
+</dd>
+<dt><code>LIST <var>anything</var>&hellip;</code></dt>
+<dd><p>Print (to the standard output file) a link map, as produced by the
+<code>ld</code> command-line option &lsquo;<samp>-M</samp>&rsquo;.
+</p>
+<p>The keyword <code>LIST</code> may be followed by anything on the
+same line, with no change in its effect.
+</p>
+<a name="index-LOAD-_0028MRI_0029"></a>
+</dd>
+<dt><code>LOAD <var>filename</var></code></dt>
+<dt><code>LOAD <var>filename</var>, <var>filename</var>, &hellip; <var>filename</var></code></dt>
+<dd><p>Include one or more object file <var>filename</var> in the link; this has the
+same effect as specifying <var>filename</var> directly on the <code>ld</code>
+command line.
+</p>
+<a name="index-NAME-_0028MRI_0029"></a>
+</dd>
+<dt><code>NAME <var>output-name</var></code></dt>
+<dd><p><var>output-name</var> is the name for the program produced by <code>ld</code>; the
+MRI-compatible command <code>NAME</code> is equivalent to the command-line
+option &lsquo;<samp>-o</samp>&rsquo; or the general script language command <code>OUTPUT</code>.
+</p>
+<a name="index-ORDER-_0028MRI_0029"></a>
+</dd>
+<dt><code>ORDER <var>secname</var>, <var>secname</var>, &hellip; <var>secname</var></code></dt>
+<dt><code>ORDER <var>secname</var> <var>secname</var> <var>secname</var></code></dt>
+<dd><p>Normally, <code>ld</code> orders the sections in its output file in the
+order in which they first appear in the input files.  In an MRI-compatible
+script, you can override this ordering with the <code>ORDER</code> command.  The
+sections you list with <code>ORDER</code> will appear first in your output
+file, in the order specified.
+</p>
+<a name="index-PUBLIC-_0028MRI_0029"></a>
+</dd>
+<dt><code>PUBLIC <var>name</var>=<var>expression</var></code></dt>
+<dt><code>PUBLIC <var>name</var>,<var>expression</var></code></dt>
+<dt><code>PUBLIC <var>name</var> <var>expression</var></code></dt>
+<dd><p>Supply a value (<var>expression</var>) for external symbol
+<var>name</var> used in the linker input files.
+</p>
+<a name="index-SECT-_0028MRI_0029"></a>
+</dd>
+<dt><code>SECT <var>secname</var>, <var>expression</var></code></dt>
+<dt><code>SECT <var>secname</var>=<var>expression</var></code></dt>
+<dt><code>SECT <var>secname</var> <var>expression</var></code></dt>
+<dd><p>You can use any of these three forms of the <code>SECT</code> command to
+specify the start address (<var>expression</var>) for section <var>secname</var>.
+If you have more than one <code>SECT</code> statement for the same
+<var>secname</var>, only the <em>first</em> sets the start address.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License" accesskey="n" rel="next">GNU Free Documentation License</a>, Previous: <a href="Reporting-Bugs.html#Reporting-Bugs" accesskey="p" rel="prev">Reporting Bugs</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="LD-Index.html#LD-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

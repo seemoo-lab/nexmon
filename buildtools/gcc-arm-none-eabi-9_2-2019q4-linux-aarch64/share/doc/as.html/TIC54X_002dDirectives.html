@@ -1,0 +1,488 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: TIC54X-Directives</title>
+
+<meta name="description" content="Using as: TIC54X-Directives">
+<meta name="keywords" content="Using as: TIC54X-Directives">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="TIC54X_002dDependent.html#TIC54X_002dDependent" rel="up" title="TIC54X-Dependent">
+<link href="TIC54X_002dMacros.html#TIC54X_002dMacros" rel="next" title="TIC54X-Macros">
+<link href="TIC54X_002dExt.html#TIC54X_002dExt" rel="prev" title="TIC54X-Ext">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="TIC54X_002dDirectives"></a>
+<div class="header">
+<p>
+Next: <a href="TIC54X_002dMacros.html#TIC54X_002dMacros" accesskey="n" rel="next">TIC54X-Macros</a>, Previous: <a href="TIC54X_002dExt.html#TIC54X_002dExt" accesskey="p" rel="prev">TIC54X-Ext</a>, Up: <a href="TIC54X_002dDependent.html#TIC54X_002dDependent" accesskey="u" rel="up">TIC54X-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Directives-2"></a>
+<h4 class="subsection">9.45.9 Directives</h4>
+
+<a name="index-machine-directives_002c-TIC54X"></a>
+<a name="index-TIC54X-machine-directives"></a>
+
+<dl compact="compact">
+<dd>
+<a name="index-align-directive_002c-TIC54X"></a>
+<a name="index-even-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.align [<var>size</var>]</code></dt>
+<dt><code>.even</code></dt>
+<dd><p>Align the section program counter on the next boundary, based on
+<var>size</var>.  <var>size</var> may be any power of 2.  <code>.even</code> is
+equivalent to <code>.align</code> with a <var>size</var> of 2.
+</p><dl compact="compact">
+<dt><code>1</code></dt>
+<dd><p>Align SPC to word boundary
+</p></dd>
+<dt><code>2</code></dt>
+<dd><p>Align SPC to longword boundary (same as .even)
+</p></dd>
+<dt><code>128</code></dt>
+<dd><p>Align SPC to page boundary
+</p></dd>
+</dl>
+
+<a name="index-asg-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.asg <var>string</var>, <var>name</var></code></dt>
+<dd><p>Assign <var>name</var> the string <var>string</var>.  String replacement is
+performed on <var>string</var> before assignment.
+</p>
+<a name="index-eval-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.eval <var>string</var>, <var>name</var></code></dt>
+<dd><p>Evaluate the contents of string <var>string</var> and assign the result as a
+string to the subsym <var>name</var>.  String replacement is performed on
+<var>string</var> before assignment.
+</p>
+<a name="index-bss-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.bss <var>symbol</var>, <var>size</var> [, [<var>blocking_flag</var>] [,<var>alignment_flag</var>]]</code></dt>
+<dd><p>Reserve space for <var>symbol</var> in the .bss section.  <var>size</var> is in
+words.  If present, <var>blocking_flag</var> indicates the allocated space
+should be aligned on a page boundary if it would otherwise cross a page
+boundary.  If present, <var>alignment_flag</var> causes the assembler to
+allocate <var>size</var> on a long word boundary.
+</p>
+<a name="index-byte-directive_002c-TIC54X"></a>
+<a name="index-ubyte-directive_002c-TIC54X"></a>
+<a name="index-char-directive_002c-TIC54X"></a>
+<a name="index-uchar-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.byte <var>value</var> [,...,<var>value_n</var>]</code></dt>
+<dt><code>.ubyte <var>value</var> [,...,<var>value_n</var>]</code></dt>
+<dt><code>.char <var>value</var> [,...,<var>value_n</var>]</code></dt>
+<dt><code>.uchar <var>value</var> [,...,<var>value_n</var>]</code></dt>
+<dd><p>Place one or more bytes into consecutive words of the current section.
+The upper 8 bits of each word is zero-filled.  If a label is used, it
+points to the word allocated for the first byte encountered.
+</p>
+<a name="index-clink-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.clink [&quot;<var>section_name</var>&quot;]</code></dt>
+<dd><p>Set STYP_CLINK flag for this section, which indicates to the linker that
+if no symbols from this section are referenced, the section should not
+be included in the link.  If <var>section_name</var> is omitted, the current
+section is used.
+</p>
+<a name="index-c_005fmode-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.c_mode</code></dt>
+<dd><p>TBD.
+</p>
+<a name="index-copy-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.copy &quot;<var>filename</var>&quot; | <var>filename</var></code></dt>
+<dt><code>.include &quot;<var>filename</var>&quot; | <var>filename</var></code></dt>
+<dd><p>Read source statements from <var>filename</var>.  The normal include search
+path is used.  Normally .copy will cause statements from the included
+file to be printed in the assembly listing and .include will not, but
+this distinction is not currently implemented.
+</p>
+<a name="index-data-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.data</code></dt>
+<dd><p>Begin assembling code into the .data section.
+</p>
+<a name="index-double-directive_002c-TIC54X"></a>
+<a name="index-ldouble-directive_002c-TIC54X"></a>
+<a name="index-float-directive_002c-TIC54X"></a>
+<a name="index-xfloat-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.double <var>value</var> [,...,<var>value_n</var>]</code></dt>
+<dt><code>.ldouble <var>value</var> [,...,<var>value_n</var>]</code></dt>
+<dt><code>.float <var>value</var> [,...,<var>value_n</var>]</code></dt>
+<dt><code>.xfloat <var>value</var> [,...,<var>value_n</var>]</code></dt>
+<dd><p>Place an IEEE single-precision floating-point representation of one or
+more floating-point values into the current section.  All but
+<code>.xfloat</code> align the result on a longword boundary.  Values are
+stored most-significant word first.
+</p>
+<a name="index-drlist-directive_002c-TIC54X"></a>
+<a name="index-drnolist-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.drlist</code></dt>
+<dt><code>.drnolist</code></dt>
+<dd><p>Control printing of directives to the listing file.  Ignored.
+</p>
+<a name="index-emsg-directive_002c-TIC54X"></a>
+<a name="index-mmsg-directive_002c-TIC54X"></a>
+<a name="index-wmsg-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.emsg <var>string</var></code></dt>
+<dt><code>.mmsg <var>string</var></code></dt>
+<dt><code>.wmsg <var>string</var></code></dt>
+<dd><p>Emit a user-defined error, message, or warning, respectively.
+</p>
+<a name="index-far_005fmode-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.far_mode</code></dt>
+<dd><p>Use extended addressing when assembling statements.  This should appear
+only once per file, and is equivalent to the -mfar-mode option see <a href="TIC54X_002dOpts.html#TIC54X_002dOpts"><code>-mfar-mode</code></a>.
+</p>
+<a name="index-fclist-directive_002c-TIC54X"></a>
+<a name="index-fcnolist-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.fclist</code></dt>
+<dt><code>.fcnolist</code></dt>
+<dd><p>Control printing of false conditional blocks to the listing file.
+</p>
+<a name="index-field-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.field <var>value</var> [,<var>size</var>]</code></dt>
+<dd><p>Initialize a bitfield of <var>size</var> bits in the current section.  If
+<var>value</var> is relocatable, then <var>size</var> must be 16.  <var>size</var>
+defaults to 16 bits.  If <var>value</var> does not fit into <var>size</var> bits,
+the value will be truncated.  Successive <code>.field</code> directives will
+pack starting at the current word, filling the most significant bits
+first, and aligning to the start of the next word if the field size does
+not fit into the space remaining in the current word.  A <code>.align</code>
+directive with an operand of 1 will force the next <code>.field</code>
+directive to begin packing into a new word.  If a label is used, it
+points to the word that contains the specified field.
+</p>
+<a name="index-global-directive_002c-TIC54X"></a>
+<a name="index-def-directive_002c-TIC54X"></a>
+<a name="index-ref-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.global <var>symbol</var> [,...,<var>symbol_n</var>]</code></dt>
+<dt><code>.def <var>symbol</var> [,...,<var>symbol_n</var>]</code></dt>
+<dt><code>.ref <var>symbol</var> [,...,<var>symbol_n</var>]</code></dt>
+<dd><p><code>.def</code> nominally identifies a symbol defined in the current file
+and available to other files.  <code>.ref</code> identifies a symbol used in
+the current file but defined elsewhere.  Both map to the standard
+<code>.global</code> directive.
+</p>
+<a name="index-half-directive_002c-TIC54X"></a>
+<a name="index-uhalf-directive_002c-TIC54X"></a>
+<a name="index-short-directive_002c-TIC54X"></a>
+<a name="index-ushort-directive_002c-TIC54X"></a>
+<a name="index-int-directive_002c-TIC54X"></a>
+<a name="index-uint-directive_002c-TIC54X"></a>
+<a name="index-word-directive_002c-TIC54X"></a>
+<a name="index-uword-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.half <var>value</var> [,...,<var>value_n</var>]</code></dt>
+<dt><code>.uhalf <var>value</var> [,...,<var>value_n</var>]</code></dt>
+<dt><code>.short <var>value</var> [,...,<var>value_n</var>]</code></dt>
+<dt><code>.ushort <var>value</var> [,...,<var>value_n</var>]</code></dt>
+<dt><code>.int <var>value</var> [,...,<var>value_n</var>]</code></dt>
+<dt><code>.uint <var>value</var> [,...,<var>value_n</var>]</code></dt>
+<dt><code>.word <var>value</var> [,...,<var>value_n</var>]</code></dt>
+<dt><code>.uword <var>value</var> [,...,<var>value_n</var>]</code></dt>
+<dd><p>Place one or more values into consecutive words of the current section.
+If a label is used, it points to the word allocated for the first value
+encountered.
+</p>
+<a name="index-label-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.label <var>symbol</var></code></dt>
+<dd><p>Define a special <var>symbol</var> to refer to the load time address of the
+current section program counter.
+</p>
+<a name="index-length-directive_002c-TIC54X"></a>
+<a name="index-width-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.length</code></dt>
+<dt><code>.width</code></dt>
+<dd><p>Set the page length and width of the output listing file.  Ignored.
+</p>
+<a name="index-list-directive_002c-TIC54X"></a>
+<a name="index-nolist-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.list</code></dt>
+<dt><code>.nolist</code></dt>
+<dd><p>Control whether the source listing is printed.  Ignored.
+</p>
+<a name="index-long-directive_002c-TIC54X"></a>
+<a name="index-ulong-directive_002c-TIC54X"></a>
+<a name="index-xlong-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.long <var>value</var> [,...,<var>value_n</var>]</code></dt>
+<dt><code>.ulong <var>value</var> [,...,<var>value_n</var>]</code></dt>
+<dt><code>.xlong <var>value</var> [,...,<var>value_n</var>]</code></dt>
+<dd><p>Place one or more 32-bit values into consecutive words in the current
+section.  The most significant word is stored first.  <code>.long</code> and
+<code>.ulong</code> align the result on a longword boundary; <code>xlong</code> does
+not.
+</p>
+<a name="index-loop-directive_002c-TIC54X"></a>
+<a name="index-break-directive_002c-TIC54X"></a>
+<a name="index-endloop-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.loop [<var>count</var>]</code></dt>
+<dt><code>.break [<var>condition</var>]</code></dt>
+<dt><code>.endloop</code></dt>
+<dd><p>Repeatedly assemble a block of code.  <code>.loop</code> begins the block, and
+<code>.endloop</code> marks its termination.  <var>count</var> defaults to 1024,
+and indicates the number of times the block should be repeated.
+<code>.break</code> terminates the loop so that assembly begins after the
+<code>.endloop</code> directive.  The optional <var>condition</var> will cause the
+loop to terminate only if it evaluates to zero.
+</p>
+<a name="index-macro-directive_002c-TIC54X"></a>
+<a name="index-endm-directive_002c-TIC54X"></a>
+</dd>
+<dt><code><var>macro_name</var> .macro [<var>param1</var>][,...<var>param_n</var>]</code></dt>
+<dt><code>[.mexit]</code></dt>
+<dt><code>.endm</code></dt>
+<dd><p>See the section on macros for more explanation (See <a href="TIC54X_002dMacros.html#TIC54X_002dMacros">TIC54X-Macros</a>.
+</p>
+<a name="index-mlib-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.mlib &quot;<var>filename</var>&quot; | <var>filename</var></code></dt>
+<dd><p>Load the macro library <var>filename</var>.  <var>filename</var> must be an
+archived library (BFD ar-compatible) of text files, expected to contain
+only macro definitions.   The standard include search path is used.
+</p>
+<a name="index-mlist-directive_002c-TIC54X"></a>
+<a name="index-mnolist-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.mlist</code></dt>
+<dt><code>.mnolist</code></dt>
+<dd><p>Control whether to include macro and loop block expansions in the
+listing output.  Ignored.
+</p>
+<a name="index-mmregs-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.mmregs</code></dt>
+<dd><p>Define global symbolic names for the &rsquo;c54x registers.  Supposedly
+equivalent to executing <code>.set</code> directives for each register with
+its memory-mapped value, but in reality is provided only for
+compatibility and does nothing.
+</p>
+<a name="index-newblock-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.newblock</code></dt>
+<dd><p>This directive resets any TIC54X local labels currently defined.  Normal
+<code>as</code> local labels are unaffected.
+</p>
+<a name="index-option-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.option <var>option_list</var></code></dt>
+<dd><p>Set listing options.  Ignored.
+</p>
+<a name="index-sblock-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.sblock &quot;<var>section_name</var>&quot; | <var>section_name</var> [,&quot;<var>name_n</var>&quot; | <var>name_n</var>]</code></dt>
+<dd><p>Designate <var>section_name</var> for blocking.  Blocking guarantees that a
+section will start on a page boundary (128 words) if it would otherwise
+cross a page boundary.  Only initialized sections may be designated with
+this directive.  See also See <a href="TIC54X_002dBlock.html#TIC54X_002dBlock">TIC54X-Block</a>.
+</p>
+<a name="index-sect-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.sect &quot;<var>section_name</var>&quot;</code></dt>
+<dd><p>Define a named initialized section and make it the current section.
+</p>
+<a name="index-set-directive_002c-TIC54X"></a>
+<a name="index-equ-directive_002c-TIC54X"></a>
+</dd>
+<dt><code><var>symbol</var> .set &quot;<var>value</var>&quot;</code></dt>
+<dt><code><var>symbol</var> .equ &quot;<var>value</var>&quot;</code></dt>
+<dd><p>Equate a constant <var>value</var> to a <var>symbol</var>, which is placed in the
+symbol table.  <var>symbol</var> may not be previously defined.
+</p>
+<a name="index-space-directive_002c-TIC54X"></a>
+<a name="index-bes-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.space <var>size_in_bits</var></code></dt>
+<dt><code>.bes <var>size_in_bits</var></code></dt>
+<dd><p>Reserve the given number of bits in the current section and zero-fill
+them.  If a label is used with <code>.space</code>, it points to the
+<strong>first</strong> word reserved.  With <code>.bes</code>, the label points to the
+<strong>last</strong> word reserved.
+</p>
+<a name="index-sslist-directive_002c-TIC54X"></a>
+<a name="index-ssnolist-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.sslist</code></dt>
+<dt><code>.ssnolist</code></dt>
+<dd><p>Controls the inclusion of subsym replacement in the listing output.  Ignored.
+</p>
+<a name="index-string-directive_002c-TIC54X"></a>
+<a name="index-pstring-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.string &quot;<var>string</var>&quot; [,...,&quot;<var>string_n</var>&quot;]</code></dt>
+<dt><code>.pstring &quot;<var>string</var>&quot; [,...,&quot;<var>string_n</var>&quot;]</code></dt>
+<dd><p>Place 8-bit characters from <var>string</var> into the current section.
+<code>.string</code> zero-fills the upper 8 bits of each word, while
+<code>.pstring</code> puts two characters into each word, filling the
+most-significant bits first.  Unused space is zero-filled.  If a label
+is used, it points to the first word initialized.
+</p>
+<a name="index-struct-directive_002c-TIC54X"></a>
+<a name="index-tag-directive_002c-TIC54X"></a>
+<a name="index-endstruct-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>[<var>stag</var>] .struct [<var>offset</var>]</code></dt>
+<dt><code>[<var>name_1</var>] element [<var>count_1</var>]</code></dt>
+<dt><code>[<var>name_2</var>] element [<var>count_2</var>]</code></dt>
+<dt><code>[<var>tname</var>] .tag <var>stagx</var> [<var>tcount</var>]</code></dt>
+<dt><code>...</code></dt>
+<dt><code>[<var>name_n</var>] element [<var>count_n</var>]</code></dt>
+<dt><code>[<var>ssize</var>] .endstruct</code></dt>
+<dt><code><var>label</var> .tag [<var>stag</var>]</code></dt>
+<dd><p>Assign symbolic offsets to the elements of a structure.  <var>stag</var>
+defines a symbol to use to reference the structure.  <var>offset</var>
+indicates a starting value to use for the first element encountered;
+otherwise it defaults to zero.  Each element can have a named offset,
+<var>name</var>, which is a symbol assigned the value of the element&rsquo;s offset
+into the structure.  If <var>stag</var> is missing, these become global
+symbols.  <var>count</var> adjusts the offset that many times, as if
+<code>element</code> were an array.  <code>element</code> may be one of
+<code>.byte</code>, <code>.word</code>, <code>.long</code>, <code>.float</code>, or any
+equivalent of those, and the structure offset is adjusted accordingly.
+<code>.field</code> and <code>.string</code> are also allowed; the size of
+<code>.field</code> is one bit, and <code>.string</code> is considered to be one
+word in size.  Only element descriptors, structure/union tags,
+<code>.align</code> and conditional assembly directives are allowed within
+<code>.struct</code>/<code>.endstruct</code>.  <code>.align</code> aligns member offsets
+to word boundaries only.  <var>ssize</var>, if provided, will always be
+assigned the size of the structure.
+</p>
+<p>The <code>.tag</code> directive, in addition to being used to define a
+structure/union element within a structure, may be used to apply a
+structure to a symbol.  Once applied to <var>label</var>, the individual
+structure elements may be applied to <var>label</var> to produce the desired
+offsets using <var>label</var> as the structure base.
+</p>
+<a name="index-tab-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.tab</code></dt>
+<dd><p>Set the tab size in the output listing.  Ignored.
+</p>
+<a name="index-union-directive_002c-TIC54X"></a>
+<a name="index-tag-directive_002c-TIC54X-1"></a>
+<a name="index-endunion-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>[<var>utag</var>] .union</code></dt>
+<dt><code>[<var>name_1</var>] element [<var>count_1</var>]</code></dt>
+<dt><code>[<var>name_2</var>] element [<var>count_2</var>]</code></dt>
+<dt><code>[<var>tname</var>] .tag <var>utagx</var>[,<var>tcount</var>]</code></dt>
+<dt><code>...</code></dt>
+<dt><code>[<var>name_n</var>] element [<var>count_n</var>]</code></dt>
+<dt><code>[<var>usize</var>] .endstruct</code></dt>
+<dt><code><var>label</var> .tag [<var>utag</var>]</code></dt>
+<dd><p>Similar to <code>.struct</code>, but the offset after each element is reset to
+zero, and the <var>usize</var> is set to the maximum of all defined elements.
+Starting offset for the union is always zero.
+</p>
+<a name="index-usect-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>[<var>symbol</var>] .usect &quot;<var>section_name</var>&quot;, <var>size</var>, [,[<var>blocking_flag</var>] [,<var>alignment_flag</var>]]</code></dt>
+<dd><p>Reserve space for variables in a named, uninitialized section (similar to
+.bss).  <code>.usect</code> allows definitions sections independent of .bss.
+<var>symbol</var> points to the first location reserved by this allocation.
+The symbol may be used as a variable name.  <var>size</var> is the allocated
+size in words.  <var>blocking_flag</var> indicates whether to block this
+section on a page boundary (128 words) (see <a href="TIC54X_002dBlock.html#TIC54X_002dBlock">TIC54X-Block</a>).
+<var>alignment flag</var> indicates whether the section should be
+longword-aligned.
+</p>
+<a name="index-var-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.var <var>sym</var>[,..., <var>sym_n</var>]</code></dt>
+<dd><p>Define a subsym to be a local variable within a macro.  See
+See <a href="TIC54X_002dMacros.html#TIC54X_002dMacros">TIC54X-Macros</a>.
+</p>
+<a name="index-version-directive_002c-TIC54X"></a>
+</dd>
+<dt><code>.version <var>version</var></code></dt>
+<dd><p>Set which processor to build instructions for.  Though the following
+values are accepted, the op is ignored.
+</p><dl compact="compact">
+<dt><code>541</code></dt>
+<dt><code>542</code></dt>
+<dt><code>543</code></dt>
+<dt><code>545</code></dt>
+<dt><code>545LP</code></dt>
+<dt><code>546LP</code></dt>
+<dt><code>548</code></dt>
+<dt><code>549</code></dt>
+</dl>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="TIC54X_002dMacros.html#TIC54X_002dMacros" accesskey="n" rel="next">TIC54X-Macros</a>, Previous: <a href="TIC54X_002dExt.html#TIC54X_002dExt" accesskey="p" rel="prev">TIC54X-Ext</a>, Up: <a href="TIC54X_002dDependent.html#TIC54X_002dDependent" accesskey="u" rel="up">TIC54X-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

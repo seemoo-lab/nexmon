@@ -1,0 +1,221 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): MIPS Loongson Built-in Functions</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): MIPS Loongson Built-in Functions">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): MIPS Loongson Built-in Functions">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Target-Builtins.html#Target-Builtins" rel="up" title="Target Builtins">
+<link href="Paired_002dSingle-Arithmetic.html#Paired_002dSingle-Arithmetic" rel="next" title="Paired-Single Arithmetic">
+<link href="MIPS-Paired_002dSingle-Support.html#MIPS-Paired_002dSingle-Support" rel="prev" title="MIPS Paired-Single Support">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="MIPS-Loongson-Built_002din-Functions"></a>
+<div class="header">
+<p>
+Next: <a href="MIPS-SIMD-Architecture-_0028MSA_0029-Support.html#MIPS-SIMD-Architecture-_0028MSA_0029-Support" accesskey="n" rel="next">MIPS SIMD Architecture (MSA) Support</a>, Previous: <a href="MIPS-Paired_002dSingle-Support.html#MIPS-Paired_002dSingle-Support" accesskey="p" rel="prev">MIPS Paired-Single Support</a>, Up: <a href="Target-Builtins.html#Target-Builtins" accesskey="u" rel="up">Target Builtins</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="MIPS-Loongson-Built_002din-Functions-1"></a>
+<h4 class="subsection">6.60.15 MIPS Loongson Built-in Functions</h4>
+
+<p>GCC provides intrinsics to access the SIMD instructions provided by the
+ST Microelectronics Loongson-2E and -2F processors.  These intrinsics,
+available after inclusion of the <code>loongson.h</code> header file,
+operate on the following 64-bit vector types:
+</p>
+<ul>
+<li> <code>uint8x8_t</code>, a vector of eight unsigned 8-bit integers;
+</li><li> <code>uint16x4_t</code>, a vector of four unsigned 16-bit integers;
+</li><li> <code>uint32x2_t</code>, a vector of two unsigned 32-bit integers;
+</li><li> <code>int8x8_t</code>, a vector of eight signed 8-bit integers;
+</li><li> <code>int16x4_t</code>, a vector of four signed 16-bit integers;
+</li><li> <code>int32x2_t</code>, a vector of two signed 32-bit integers.
+</li></ul>
+
+<p>The intrinsics provided are listed below; each is named after the
+machine instruction to which it corresponds, with suffixes added as
+appropriate to distinguish intrinsics that expand to the same machine
+instruction yet have different argument types.  Refer to the architecture
+documentation for a description of the functionality of each
+instruction.
+</p>
+<div class="smallexample">
+<pre class="smallexample">int16x4_t packsswh (int32x2_t s, int32x2_t t);
+int8x8_t packsshb (int16x4_t s, int16x4_t t);
+uint8x8_t packushb (uint16x4_t s, uint16x4_t t);
+uint32x2_t paddw_u (uint32x2_t s, uint32x2_t t);
+uint16x4_t paddh_u (uint16x4_t s, uint16x4_t t);
+uint8x8_t paddb_u (uint8x8_t s, uint8x8_t t);
+int32x2_t paddw_s (int32x2_t s, int32x2_t t);
+int16x4_t paddh_s (int16x4_t s, int16x4_t t);
+int8x8_t paddb_s (int8x8_t s, int8x8_t t);
+uint64_t paddd_u (uint64_t s, uint64_t t);
+int64_t paddd_s (int64_t s, int64_t t);
+int16x4_t paddsh (int16x4_t s, int16x4_t t);
+int8x8_t paddsb (int8x8_t s, int8x8_t t);
+uint16x4_t paddush (uint16x4_t s, uint16x4_t t);
+uint8x8_t paddusb (uint8x8_t s, uint8x8_t t);
+uint64_t pandn_ud (uint64_t s, uint64_t t);
+uint32x2_t pandn_uw (uint32x2_t s, uint32x2_t t);
+uint16x4_t pandn_uh (uint16x4_t s, uint16x4_t t);
+uint8x8_t pandn_ub (uint8x8_t s, uint8x8_t t);
+int64_t pandn_sd (int64_t s, int64_t t);
+int32x2_t pandn_sw (int32x2_t s, int32x2_t t);
+int16x4_t pandn_sh (int16x4_t s, int16x4_t t);
+int8x8_t pandn_sb (int8x8_t s, int8x8_t t);
+uint16x4_t pavgh (uint16x4_t s, uint16x4_t t);
+uint8x8_t pavgb (uint8x8_t s, uint8x8_t t);
+uint32x2_t pcmpeqw_u (uint32x2_t s, uint32x2_t t);
+uint16x4_t pcmpeqh_u (uint16x4_t s, uint16x4_t t);
+uint8x8_t pcmpeqb_u (uint8x8_t s, uint8x8_t t);
+int32x2_t pcmpeqw_s (int32x2_t s, int32x2_t t);
+int16x4_t pcmpeqh_s (int16x4_t s, int16x4_t t);
+int8x8_t pcmpeqb_s (int8x8_t s, int8x8_t t);
+uint32x2_t pcmpgtw_u (uint32x2_t s, uint32x2_t t);
+uint16x4_t pcmpgth_u (uint16x4_t s, uint16x4_t t);
+uint8x8_t pcmpgtb_u (uint8x8_t s, uint8x8_t t);
+int32x2_t pcmpgtw_s (int32x2_t s, int32x2_t t);
+int16x4_t pcmpgth_s (int16x4_t s, int16x4_t t);
+int8x8_t pcmpgtb_s (int8x8_t s, int8x8_t t);
+uint16x4_t pextrh_u (uint16x4_t s, int field);
+int16x4_t pextrh_s (int16x4_t s, int field);
+uint16x4_t pinsrh_0_u (uint16x4_t s, uint16x4_t t);
+uint16x4_t pinsrh_1_u (uint16x4_t s, uint16x4_t t);
+uint16x4_t pinsrh_2_u (uint16x4_t s, uint16x4_t t);
+uint16x4_t pinsrh_3_u (uint16x4_t s, uint16x4_t t);
+int16x4_t pinsrh_0_s (int16x4_t s, int16x4_t t);
+int16x4_t pinsrh_1_s (int16x4_t s, int16x4_t t);
+int16x4_t pinsrh_2_s (int16x4_t s, int16x4_t t);
+int16x4_t pinsrh_3_s (int16x4_t s, int16x4_t t);
+int32x2_t pmaddhw (int16x4_t s, int16x4_t t);
+int16x4_t pmaxsh (int16x4_t s, int16x4_t t);
+uint8x8_t pmaxub (uint8x8_t s, uint8x8_t t);
+int16x4_t pminsh (int16x4_t s, int16x4_t t);
+uint8x8_t pminub (uint8x8_t s, uint8x8_t t);
+uint8x8_t pmovmskb_u (uint8x8_t s);
+int8x8_t pmovmskb_s (int8x8_t s);
+uint16x4_t pmulhuh (uint16x4_t s, uint16x4_t t);
+int16x4_t pmulhh (int16x4_t s, int16x4_t t);
+int16x4_t pmullh (int16x4_t s, int16x4_t t);
+int64_t pmuluw (uint32x2_t s, uint32x2_t t);
+uint8x8_t pasubub (uint8x8_t s, uint8x8_t t);
+uint16x4_t biadd (uint8x8_t s);
+uint16x4_t psadbh (uint8x8_t s, uint8x8_t t);
+uint16x4_t pshufh_u (uint16x4_t dest, uint16x4_t s, uint8_t order);
+int16x4_t pshufh_s (int16x4_t dest, int16x4_t s, uint8_t order);
+uint16x4_t psllh_u (uint16x4_t s, uint8_t amount);
+int16x4_t psllh_s (int16x4_t s, uint8_t amount);
+uint32x2_t psllw_u (uint32x2_t s, uint8_t amount);
+int32x2_t psllw_s (int32x2_t s, uint8_t amount);
+uint16x4_t psrlh_u (uint16x4_t s, uint8_t amount);
+int16x4_t psrlh_s (int16x4_t s, uint8_t amount);
+uint32x2_t psrlw_u (uint32x2_t s, uint8_t amount);
+int32x2_t psrlw_s (int32x2_t s, uint8_t amount);
+uint16x4_t psrah_u (uint16x4_t s, uint8_t amount);
+int16x4_t psrah_s (int16x4_t s, uint8_t amount);
+uint32x2_t psraw_u (uint32x2_t s, uint8_t amount);
+int32x2_t psraw_s (int32x2_t s, uint8_t amount);
+uint32x2_t psubw_u (uint32x2_t s, uint32x2_t t);
+uint16x4_t psubh_u (uint16x4_t s, uint16x4_t t);
+uint8x8_t psubb_u (uint8x8_t s, uint8x8_t t);
+int32x2_t psubw_s (int32x2_t s, int32x2_t t);
+int16x4_t psubh_s (int16x4_t s, int16x4_t t);
+int8x8_t psubb_s (int8x8_t s, int8x8_t t);
+uint64_t psubd_u (uint64_t s, uint64_t t);
+int64_t psubd_s (int64_t s, int64_t t);
+int16x4_t psubsh (int16x4_t s, int16x4_t t);
+int8x8_t psubsb (int8x8_t s, int8x8_t t);
+uint16x4_t psubush (uint16x4_t s, uint16x4_t t);
+uint8x8_t psubusb (uint8x8_t s, uint8x8_t t);
+uint32x2_t punpckhwd_u (uint32x2_t s, uint32x2_t t);
+uint16x4_t punpckhhw_u (uint16x4_t s, uint16x4_t t);
+uint8x8_t punpckhbh_u (uint8x8_t s, uint8x8_t t);
+int32x2_t punpckhwd_s (int32x2_t s, int32x2_t t);
+int16x4_t punpckhhw_s (int16x4_t s, int16x4_t t);
+int8x8_t punpckhbh_s (int8x8_t s, int8x8_t t);
+uint32x2_t punpcklwd_u (uint32x2_t s, uint32x2_t t);
+uint16x4_t punpcklhw_u (uint16x4_t s, uint16x4_t t);
+uint8x8_t punpcklbh_u (uint8x8_t s, uint8x8_t t);
+int32x2_t punpcklwd_s (int32x2_t s, int32x2_t t);
+int16x4_t punpcklhw_s (int16x4_t s, int16x4_t t);
+int8x8_t punpcklbh_s (int8x8_t s, int8x8_t t);
+</pre></div>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Paired_002dSingle-Arithmetic.html#Paired_002dSingle-Arithmetic" accesskey="1">Paired-Single Arithmetic</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Paired_002dSingle-Built_002din-Functions.html#Paired_002dSingle-Built_002din-Functions" accesskey="2">Paired-Single Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="MIPS_002d3D-Built_002din-Functions.html#MIPS_002d3D-Built_002din-Functions" accesskey="3">MIPS-3D Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="MIPS-SIMD-Architecture-_0028MSA_0029-Support.html#MIPS-SIMD-Architecture-_0028MSA_0029-Support" accesskey="n" rel="next">MIPS SIMD Architecture (MSA) Support</a>, Previous: <a href="MIPS-Paired_002dSingle-Support.html#MIPS-Paired_002dSingle-Support" accesskey="p" rel="prev">MIPS Paired-Single Support</a>, Up: <a href="Target-Builtins.html#Target-Builtins" accesskey="u" rel="up">Target Builtins</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

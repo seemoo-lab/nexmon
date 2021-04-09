@@ -1,0 +1,186 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Microsoft Windows Function Attributes</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Microsoft Windows Function Attributes">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Microsoft Windows Function Attributes">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Function-Attributes.html#Function-Attributes" rel="up" title="Function Attributes">
+<link href="MIPS-Function-Attributes.html#MIPS-Function-Attributes" rel="next" title="MIPS Function Attributes">
+<link href="MicroBlaze-Function-Attributes.html#MicroBlaze-Function-Attributes" rel="prev" title="MicroBlaze Function Attributes">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Microsoft-Windows-Function-Attributes"></a>
+<div class="header">
+<p>
+Next: <a href="MIPS-Function-Attributes.html#MIPS-Function-Attributes" accesskey="n" rel="next">MIPS Function Attributes</a>, Previous: <a href="MicroBlaze-Function-Attributes.html#MicroBlaze-Function-Attributes" accesskey="p" rel="prev">MicroBlaze Function Attributes</a>, Up: <a href="Function-Attributes.html#Function-Attributes" accesskey="u" rel="up">Function Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Microsoft-Windows-Function-Attributes-1"></a>
+<h4 class="subsection">6.33.19 Microsoft Windows Function Attributes</h4>
+
+<p>The following attributes are available on Microsoft Windows and Symbian OS
+targets.
+</p>
+<dl compact="compact">
+<dt><code>dllexport</code></dt>
+<dd><a name="index-dllexport-function-attribute"></a>
+<a name="index-_005f_005fdeclspec_0028dllexport_0029"></a>
+<p>On Microsoft Windows targets and Symbian OS targets the
+<code>dllexport</code> attribute causes the compiler to provide a global
+pointer to a pointer in a DLL, so that it can be referenced with the
+<code>dllimport</code> attribute.  On Microsoft Windows targets, the pointer
+name is formed by combining <code>_imp__</code> and the function or variable
+name.
+</p>
+<p>You can use <code>__declspec(dllexport)</code> as a synonym for
+<code>__attribute__ ((dllexport))</code> for compatibility with other
+compilers.
+</p>
+<p>On systems that support the <code>visibility</code> attribute, this
+attribute also implies &ldquo;default&rdquo; visibility.  It is an error to
+explicitly specify any other visibility.
+</p>
+<p>GCC&rsquo;s default behavior is to emit all inline functions with the
+<code>dllexport</code> attribute.  Since this can cause object file-size bloat,
+you can use <samp>-fno-keep-inline-dllexport</samp>, which tells GCC to
+ignore the attribute for inlined functions unless the 
+<samp>-fkeep-inline-functions</samp> flag is used instead.
+</p>
+<p>The attribute is ignored for undefined symbols.
+</p>
+<p>When applied to C++ classes, the attribute marks defined non-inlined
+member functions and static data members as exports.  Static consts
+initialized in-class are not marked unless they are also defined
+out-of-class.
+</p>
+<p>For Microsoft Windows targets there are alternative methods for
+including the symbol in the DLL&rsquo;s export table such as using a
+<samp>.def</samp> file with an <code>EXPORTS</code> section or, with GNU ld, using
+the <samp>--export-all</samp> linker flag.
+</p>
+</dd>
+<dt><code>dllimport</code></dt>
+<dd><a name="index-dllimport-function-attribute"></a>
+<a name="index-_005f_005fdeclspec_0028dllimport_0029"></a>
+<p>On Microsoft Windows and Symbian OS targets, the <code>dllimport</code>
+attribute causes the compiler to reference a function or variable via
+a global pointer to a pointer that is set up by the DLL exporting the
+symbol.  The attribute implies <code>extern</code>.  On Microsoft Windows
+targets, the pointer name is formed by combining <code>_imp__</code> and the
+function or variable name.
+</p>
+<p>You can use <code>__declspec(dllimport)</code> as a synonym for
+<code>__attribute__ ((dllimport))</code> for compatibility with other
+compilers.
+</p>
+<p>On systems that support the <code>visibility</code> attribute, this
+attribute also implies &ldquo;default&rdquo; visibility.  It is an error to
+explicitly specify any other visibility.
+</p>
+<p>Currently, the attribute is ignored for inlined functions.  If the
+attribute is applied to a symbol <em>definition</em>, an error is reported.
+If a symbol previously declared <code>dllimport</code> is later defined, the
+attribute is ignored in subsequent references, and a warning is emitted.
+The attribute is also overridden by a subsequent declaration as
+<code>dllexport</code>.
+</p>
+<p>When applied to C++ classes, the attribute marks non-inlined
+member functions and static data members as imports.  However, the
+attribute is ignored for virtual methods to allow creation of vtables
+using thunks.
+</p>
+<p>On the SH Symbian OS target the <code>dllimport</code> attribute also has
+another affect&mdash;it can cause the vtable and run-time type information
+for a class to be exported.  This happens when the class has a
+dllimported constructor or a non-inline, non-pure virtual function
+and, for either of those two conditions, the class also has an inline
+constructor or destructor and has a key function that is defined in
+the current translation unit.
+</p>
+<p>For Microsoft Windows targets the use of the <code>dllimport</code>
+attribute on functions is not necessary, but provides a small
+performance benefit by eliminating a thunk in the DLL.  The use of the
+<code>dllimport</code> attribute on imported variables can be avoided by passing the
+<samp>--enable-auto-import</samp> switch to the GNU linker.  As with
+functions, using the attribute for a variable eliminates a thunk in
+the DLL.
+</p>
+<p>One drawback to using this attribute is that a pointer to a
+<em>variable</em> marked as <code>dllimport</code> cannot be used as a constant
+address. However, a pointer to a <em>function</em> with the
+<code>dllimport</code> attribute can be used as a constant initializer; in
+this case, the address of a stub function in the import lib is
+referenced.  On Microsoft Windows targets, the attribute can be disabled
+for functions by setting the <samp>-mnop-fun-dllimport</samp> flag.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="MIPS-Function-Attributes.html#MIPS-Function-Attributes" accesskey="n" rel="next">MIPS Function Attributes</a>, Previous: <a href="MicroBlaze-Function-Attributes.html#MicroBlaze-Function-Attributes" accesskey="p" rel="prev">MicroBlaze Function Attributes</a>, Up: <a href="Function-Attributes.html#Function-Attributes" accesskey="u" rel="up">Function Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

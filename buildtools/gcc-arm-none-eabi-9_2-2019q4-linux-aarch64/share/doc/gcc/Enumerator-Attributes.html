@@ -1,0 +1,121 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Enumerator Attributes</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Enumerator Attributes">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Enumerator Attributes">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C-Extensions.html#C-Extensions" rel="up" title="C Extensions">
+<link href="Statement-Attributes.html#Statement-Attributes" rel="next" title="Statement Attributes">
+<link href="Label-Attributes.html#Label-Attributes" rel="prev" title="Label Attributes">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Enumerator-Attributes"></a>
+<div class="header">
+<p>
+Next: <a href="Statement-Attributes.html#Statement-Attributes" accesskey="n" rel="next">Statement Attributes</a>, Previous: <a href="Label-Attributes.html#Label-Attributes" accesskey="p" rel="prev">Label Attributes</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Enumerator-Attributes-1"></a>
+<h3 class="section">6.37 Enumerator Attributes</h3>
+<a name="index-Enumerator-Attributes"></a>
+
+<p>GCC allows attributes to be set on enumerators.  See <a href="Attribute-Syntax.html#Attribute-Syntax">Attribute Syntax</a>, for
+details of the exact syntax for using attributes.  Other attributes are
+available for functions (see <a href="Function-Attributes.html#Function-Attributes">Function Attributes</a>), variables
+(see <a href="Variable-Attributes.html#Variable-Attributes">Variable Attributes</a>), labels (see <a href="Label-Attributes.html#Label-Attributes">Label Attributes</a>), statements
+(see <a href="Statement-Attributes.html#Statement-Attributes">Statement Attributes</a>), and for types (see <a href="Type-Attributes.html#Type-Attributes">Type Attributes</a>).
+</p>
+<p>This example uses the <code>deprecated</code> enumerator attribute to indicate the
+<code>oldval</code> enumerator is deprecated:
+</p>
+<div class="smallexample">
+<pre class="smallexample">enum E {
+  oldval __attribute__((deprecated)),
+  newval
+};
+
+int
+fn (void)
+{
+  return oldval;
+}
+</pre></div>
+
+<dl compact="compact">
+<dt><code>deprecated</code></dt>
+<dd><a name="index-deprecated-enumerator-attribute"></a>
+<p>The <code>deprecated</code> attribute results in a warning if the enumerator
+is used anywhere in the source file.  This is useful when identifying
+enumerators that are expected to be removed in a future version of a
+program.  The warning also includes the location of the declaration
+of the deprecated enumerator, to enable users to easily find further
+information about why the enumerator is deprecated, or what they should
+do instead.  Note that the warnings only occurs for uses.
+</p>
+</dd>
+</dl>
+
+
+
+
+</body>
+</html>

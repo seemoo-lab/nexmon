@@ -1,0 +1,314 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, the Front-Cover texts being (a) (see below), and
+with the Back-Cover Texts being (b) (see below).  A copy of the
+license is included in the section entitled "GNU
+Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Installing GCC</title>
+
+<meta name="description" content="Installing GCC">
+<meta name="keywords" content="Installing GCC">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<h1 class="settitle" align="center">Installing GCC</h1>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<a name="index-Testing"></a>
+<a name="index-Installing-GCC_003a-Testing"></a>
+<a name="index-Testsuite"></a>
+
+<p>Before you install GCC, we encourage you to run the testsuites and to
+compare your results with results from a similar configuration that have
+been submitted to the
+<a href="http://gcc.gnu.org/ml/gcc-testresults/">gcc-testresults mailing list</a>.
+Some of these archived results are linked from the build status lists
+at <a href="http://gcc.gnu.org/buildstat.html">http://gcc.gnu.org/buildstat.html</a>, although not everyone who
+reports a successful build runs the testsuites and submits the results.
+This step is optional and may require you to download additional software,
+but it can give you confidence in your new GCC installation or point out
+problems before you install and start using your new GCC.
+</p>
+<p>First, you must have <a href="download.html">downloaded the testsuites</a>.
+These are part of the full distribution, but if you downloaded the
+&ldquo;core&rdquo; compiler plus any front ends, you must download the testsuites
+separately.
+</p>
+<p>Second, you must have the testing tools installed.  This includes
+<a href="http://www.gnu.org/software/dejagnu/">DejaGnu</a>, Tcl, and Expect;
+the DejaGnu site has links to these. For running the BRIG frontend
+tests, a tool to assemble the binary BRIGs from HSAIL text,
+<a href="https://github.com/HSAFoundation/HSAIL-Tools/">HSAILasm</a> must
+be installed.
+</p>
+<p>If the directories where <code>runtest</code> and <code>expect</code> were
+installed are not in the <code>PATH</code>, you may need to set the following
+environment variables appropriately, as in the following example (which
+assumes that DejaGnu has been installed under <samp>/usr/local</samp>):
+</p>
+<div class="smallexample">
+<pre class="smallexample">TCL_LIBRARY = /usr/local/share/tcl8.0
+DEJAGNULIBS = /usr/local/share/dejagnu
+</pre></div>
+
+<p>(On systems such as Cygwin, these paths are required to be actual
+paths, not mounts or links; presumably this is due to some lack of
+portability in the DejaGnu code.)
+</p>
+
+<p>Finally, you can run the testsuite (which may take a long time):
+</p><div class="smallexample">
+<pre class="smallexample">cd <var>objdir</var>; make -k check
+</pre></div>
+
+<p>This will test various components of GCC, such as compiler
+front ends and runtime libraries.  While running the testsuite, DejaGnu
+might emit some harmless messages resembling
+&lsquo;<samp>WARNING: Couldn't find the global config file.</samp>&rsquo; or
+&lsquo;<samp>WARNING: Couldn't find tool init file</samp>&rsquo; that can be ignored.
+</p>
+<p>If you are testing a cross-compiler, you may want to run the testsuite
+on a simulator as described at <a href="http://gcc.gnu.org/simtest-howto.html">http://gcc.gnu.org/simtest-howto.html</a>.
+</p>
+<a name="How-can-you-run-the-testsuite-on-selected-tests_003f"></a>
+<h3 class="section">How can you run the testsuite on selected tests?</h3>
+
+<p>In order to run sets of tests selectively, there are targets
+&lsquo;<samp>make check-gcc</samp>&rsquo; and language specific &lsquo;<samp>make check-c</samp>&rsquo;,
+&lsquo;<samp>make check-c++</samp>&rsquo;, &lsquo;<samp>make check-d</samp>&rsquo; &lsquo;<samp>make check-fortran</samp>&rsquo;,
+&lsquo;<samp>make check-ada</samp>&rsquo;, &lsquo;<samp>make check-objc</samp>&rsquo;, &lsquo;<samp>make check-obj-c++</samp>&rsquo;,
+&lsquo;<samp>make check-lto</samp>&rsquo;
+in the <samp>gcc</samp> subdirectory of the object directory.  You can also
+just run &lsquo;<samp>make check</samp>&rsquo; in a subdirectory of the object directory.
+</p>
+
+<p>A more selective way to just run all <code>gcc</code> execute tests in the
+testsuite is to use
+</p>
+<div class="smallexample">
+<pre class="smallexample">make check-gcc RUNTESTFLAGS=&quot;execute.exp <var>other-options</var>&quot;
+</pre></div>
+
+<p>Likewise, in order to run only the <code>g++</code> &ldquo;old-deja&rdquo; tests in
+the testsuite with filenames matching &lsquo;<samp>9805*</samp>&rsquo;, you would use
+</p>
+<div class="smallexample">
+<pre class="smallexample">make check-g++ RUNTESTFLAGS=&quot;old-deja.exp=9805* <var>other-options</var>&quot;
+</pre></div>
+
+<p>The file-matching expression following <var>filename</var><code>.exp=</code> is treated
+as a series of whitespace-delimited glob expressions so that multiple patterns
+may be passed, although any whitespace must either be escaped or surrounded by
+single quotes if multiple expressions are desired. For example,
+</p>
+<div class="smallexample">
+<pre class="smallexample">make check-g++ RUNTESTFLAGS=&quot;old-deja.exp=9805*\ virtual2.c <var>other-options</var>&quot;
+make check-g++ RUNTESTFLAGS=&quot;'old-deja.exp=9805* virtual2.c' <var>other-options</var>&quot;
+</pre></div>
+
+<p>The <samp>*.exp</samp> files are located in the testsuite directories of the GCC
+source, the most important ones being <samp>compile.exp</samp>,
+<samp>execute.exp</samp>, <samp>dg.exp</samp> and <samp>old-deja.exp</samp>.
+To get a list of the possible <samp>*.exp</samp> files, pipe the
+output of &lsquo;<samp>make check</samp>&rsquo; into a file and look at the
+&lsquo;<samp>Running &hellip;  .exp</samp>&rsquo; lines.
+</p>
+<a name="Passing-options-and-running-multiple-testsuites"></a>
+<h3 class="section">Passing options and running multiple testsuites</h3>
+
+<p>You can pass multiple options to the testsuite using the
+&lsquo;<samp>--target_board</samp>&rsquo; option of DejaGNU, either passed as part of
+&lsquo;<samp>RUNTESTFLAGS</samp>&rsquo;, or directly to <code>runtest</code> if you prefer to
+work outside the makefiles.  For example,
+</p>
+<div class="smallexample">
+<pre class="smallexample">make check-g++ RUNTESTFLAGS=&quot;--target_board=unix/-O3/-fmerge-constants&quot;
+</pre></div>
+
+<p>will run the standard <code>g++</code> testsuites (&ldquo;unix&rdquo; is the target name
+for a standard native testsuite situation), passing
+&lsquo;<samp>-O3 -fmerge-constants</samp>&rsquo; to the compiler on every test, i.e.,
+slashes separate options.
+</p>
+<p>You can run the testsuites multiple times using combinations of options
+with a syntax similar to the brace expansion of popular shells:
+</p>
+<div class="smallexample">
+<pre class="smallexample">&hellip;&quot;--target_board=arm-sim\{-mhard-float,-msoft-float\}\{-O1,-O2,-O3,\}&quot;
+</pre></div>
+
+<p>(Note the empty option caused by the trailing comma in the final group.)
+The following will run each testsuite eight times using the &lsquo;<samp>arm-sim</samp>&rsquo;
+target, as if you had specified all possible combinations yourself:
+</p>
+<div class="smallexample">
+<pre class="smallexample">--target_board='arm-sim/-mhard-float/-O1 \
+                arm-sim/-mhard-float/-O2 \
+                arm-sim/-mhard-float/-O3 \
+                arm-sim/-mhard-float \
+                arm-sim/-msoft-float/-O1 \
+                arm-sim/-msoft-float/-O2 \
+                arm-sim/-msoft-float/-O3 \
+                arm-sim/-msoft-float'
+</pre></div>
+
+<p>They can be combined as many times as you wish, in arbitrary ways.  This
+list:
+</p>
+<div class="smallexample">
+<pre class="smallexample">&hellip;&quot;--target_board=unix/-Wextra\{-O3,-fno-strength\}\{-fomit-frame,\}&quot;
+</pre></div>
+
+<p>will generate four combinations, all involving &lsquo;<samp>-Wextra</samp>&rsquo;.
+</p>
+<p>The disadvantage to this method is that the testsuites are run in serial,
+which is a waste on multiprocessor systems.  For users with GNU Make and
+a shell which performs brace expansion, you can run the testsuites in
+parallel by having the shell perform the combinations and <code>make</code>
+do the parallel runs.  Instead of using &lsquo;<samp>--target_board</samp>&rsquo;, use a
+special makefile target:
+</p>
+<div class="smallexample">
+<pre class="smallexample">make -j<var>N</var> check-<var>testsuite</var>//<var>test-target</var>/<var>option1</var>/<var>option2</var>/&hellip;
+</pre></div>
+
+<p>For example,
+</p>
+<div class="smallexample">
+<pre class="smallexample">make -j3 check-gcc//sh-hms-sim/{-m1,-m2,-m3,-m3e,-m4}/{,-nofpu}
+</pre></div>
+
+<p>will run three concurrent &ldquo;make-gcc&rdquo; testsuites, eventually testing all
+ten combinations as described above.  Note that this is currently only
+supported in the <samp>gcc</samp> subdirectory.  (To see how this works, try
+typing <code>echo</code> before the example given here.)
+</p>
+
+<a name="How-to-interpret-test-results"></a>
+<h3 class="section">How to interpret test results</h3>
+
+<p>The result of running the testsuite are various <samp>*.sum</samp> and <samp>*.log</samp>
+files in the testsuite subdirectories.  The <samp>*.log</samp> files contain a
+detailed log of the compiler invocations and the corresponding
+results, the <samp>*.sum</samp> files summarize the results.  These summaries
+contain status codes for all tests:
+</p>
+<ul>
+<li> PASS: the test passed as expected
+</li><li> XPASS: the test unexpectedly passed
+</li><li> FAIL: the test unexpectedly failed
+</li><li> XFAIL: the test failed as expected
+</li><li> UNSUPPORTED: the test is not supported on this platform
+</li><li> ERROR: the testsuite detected an error
+</li><li> WARNING: the testsuite detected a possible problem
+</li></ul>
+
+<p>It is normal for some tests to report unexpected failures.  At the
+current time the testing harness does not allow fine grained control
+over whether or not a test is expected to fail.  This problem should
+be fixed in future releases.
+</p>
+
+<a name="Submitting-test-results"></a>
+<h3 class="section">Submitting test results</h3>
+
+<p>If you want to report the results to the GCC project, use the
+<samp>contrib/test_summary</samp> shell script.  Start it in the <var>objdir</var> with
+</p>
+<div class="smallexample">
+<pre class="smallexample"><var>srcdir</var>/contrib/test_summary -p your_commentary.txt \
+    -m gcc-testresults@gcc.gnu.org |sh
+</pre></div>
+
+<p>This script uses the <code>Mail</code> program to send the results, so
+make sure it is in your <code>PATH</code>.  The file <samp>your_commentary.txt</samp> is
+prepended to the testsuite summary and should contain any special
+remarks you have on your results or your build environment.  Please
+do not edit the testsuite result block or the subject line, as these
+messages may be automatically processed.
+</p>
+<hr />
+<p><p><a href="./index.html">Return to the GCC Installation page</a>
+</p>
+
+
+
+
+
+
+<hr>
+
+
+
+</body>
+</html>

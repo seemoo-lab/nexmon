@@ -1,0 +1,231 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): CRIS Options</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): CRIS Options">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): CRIS Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Submodel-Options.html#Submodel-Options" rel="up" title="Submodel Options">
+<link href="CR16-Options.html#CR16-Options" rel="next" title="CR16 Options">
+<link href="C6X-Options.html#C6X-Options" rel="prev" title="C6X Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="CRIS-Options"></a>
+<div class="header">
+<p>
+Next: <a href="CR16-Options.html#CR16-Options" accesskey="n" rel="next">CR16 Options</a>, Previous: <a href="C6X-Options.html#C6X-Options" accesskey="p" rel="prev">C6X Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="CRIS-Options-1"></a>
+<h4 class="subsection">3.18.9 CRIS Options</h4>
+<a name="index-CRIS-Options"></a>
+
+<p>These options are defined specifically for the CRIS ports.
+</p>
+<dl compact="compact">
+<dt><code>-march=<var>architecture-type</var></code></dt>
+<dt><code>-mcpu=<var>architecture-type</var></code></dt>
+<dd><a name="index-march-4"></a>
+<a name="index-mcpu-3"></a>
+<p>Generate code for the specified architecture.  The choices for
+<var>architecture-type</var> are &lsquo;<samp>v3</samp>&rsquo;, &lsquo;<samp>v8</samp>&rsquo; and &lsquo;<samp>v10</samp>&rsquo; for
+respectively ETRAX&nbsp;<!-- /@w -->4, ETRAX&nbsp;<!-- /@w -->100, and ETRAX&nbsp;<!-- /@w -->100&nbsp;<!-- /@w -->LX.
+Default is &lsquo;<samp>v0</samp>&rsquo; except for cris-axis-linux-gnu, where the default is
+&lsquo;<samp>v10</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>-mtune=<var>architecture-type</var></code></dt>
+<dd><a name="index-mtune-5"></a>
+<p>Tune to <var>architecture-type</var> everything applicable about the generated
+code, except for the ABI and the set of available instructions.  The
+choices for <var>architecture-type</var> are the same as for
+<samp>-march=<var>architecture-type</var></samp>.
+</p>
+</dd>
+<dt><code>-mmax-stack-frame=<var>n</var></code></dt>
+<dd><a name="index-mmax_002dstack_002dframe"></a>
+<p>Warn when the stack frame of a function exceeds <var>n</var> bytes.
+</p>
+</dd>
+<dt><code>-metrax4</code></dt>
+<dt><code>-metrax100</code></dt>
+<dd><a name="index-metrax4"></a>
+<a name="index-metrax100"></a>
+<p>The options <samp>-metrax4</samp> and <samp>-metrax100</samp> are synonyms for
+<samp>-march=v3</samp> and <samp>-march=v8</samp> respectively.
+</p>
+</dd>
+<dt><code>-mmul-bug-workaround</code></dt>
+<dt><code>-mno-mul-bug-workaround</code></dt>
+<dd><a name="index-mmul_002dbug_002dworkaround"></a>
+<a name="index-mno_002dmul_002dbug_002dworkaround"></a>
+<p>Work around a bug in the <code>muls</code> and <code>mulu</code> instructions for CPU
+models where it applies.  This option is active by default.
+</p>
+</dd>
+<dt><code>-mpdebug</code></dt>
+<dd><a name="index-mpdebug"></a>
+<p>Enable CRIS-specific verbose debug-related information in the assembly
+code.  This option also has the effect of turning off the &lsquo;<samp>#NO_APP</samp>&rsquo;
+formatted-code indicator to the assembler at the beginning of the
+assembly file.
+</p>
+</dd>
+<dt><code>-mcc-init</code></dt>
+<dd><a name="index-mcc_002dinit"></a>
+<p>Do not use condition-code results from previous instruction; always emit
+compare and test instructions before use of condition codes.
+</p>
+</dd>
+<dt><code>-mno-side-effects</code></dt>
+<dd><a name="index-mno_002dside_002deffects"></a>
+<a name="index-mside_002deffects"></a>
+<p>Do not emit instructions with side effects in addressing modes other than
+post-increment.
+</p>
+</dd>
+<dt><code>-mstack-align</code></dt>
+<dt><code>-mno-stack-align</code></dt>
+<dt><code>-mdata-align</code></dt>
+<dt><code>-mno-data-align</code></dt>
+<dt><code>-mconst-align</code></dt>
+<dt><code>-mno-const-align</code></dt>
+<dd><a name="index-mstack_002dalign"></a>
+<a name="index-mno_002dstack_002dalign"></a>
+<a name="index-mdata_002dalign"></a>
+<a name="index-mno_002ddata_002dalign"></a>
+<a name="index-mconst_002dalign"></a>
+<a name="index-mno_002dconst_002dalign"></a>
+<p>These options (&lsquo;<samp>no-</samp>&rsquo; options) arrange (eliminate arrangements) for the
+stack frame, individual data and constants to be aligned for the maximum
+single data access size for the chosen CPU model.  The default is to
+arrange for 32-bit alignment.  ABI details such as structure layout are
+not affected by these options.
+</p>
+</dd>
+<dt><code>-m32-bit</code></dt>
+<dt><code>-m16-bit</code></dt>
+<dt><code>-m8-bit</code></dt>
+<dd><a name="index-m32_002dbit"></a>
+<a name="index-m16_002dbit"></a>
+<a name="index-m8_002dbit"></a>
+<p>Similar to the stack- data- and const-align options above, these options
+arrange for stack frame, writable data and constants to all be 32-bit,
+16-bit or 8-bit aligned.  The default is 32-bit alignment.
+</p>
+</dd>
+<dt><code>-mno-prologue-epilogue</code></dt>
+<dt><code>-mprologue-epilogue</code></dt>
+<dd><a name="index-mno_002dprologue_002depilogue"></a>
+<a name="index-mprologue_002depilogue"></a>
+<p>With <samp>-mno-prologue-epilogue</samp>, the normal function prologue and
+epilogue which set up the stack frame are omitted and no return
+instructions or return sequences are generated in the code.  Use this
+option only together with visual inspection of the compiled code: no
+warnings or errors are generated when call-saved registers must be saved,
+or storage for local variables needs to be allocated.
+</p>
+</dd>
+<dt><code>-mno-gotplt</code></dt>
+<dt><code>-mgotplt</code></dt>
+<dd><a name="index-mno_002dgotplt"></a>
+<a name="index-mgotplt"></a>
+<p>With <samp>-fpic</samp> and <samp>-fPIC</samp>, don&rsquo;t generate (do generate)
+instruction sequences that load addresses for functions from the PLT part
+of the GOT rather than (traditional on other architectures) calls to the
+PLT.  The default is <samp>-mgotplt</samp>.
+</p>
+</dd>
+<dt><code>-melf</code></dt>
+<dd><a name="index-melf"></a>
+<p>Legacy no-op option only recognized with the cris-axis-elf and
+cris-axis-linux-gnu targets.
+</p>
+</dd>
+<dt><code>-mlinux</code></dt>
+<dd><a name="index-mlinux"></a>
+<p>Legacy no-op option only recognized with the cris-axis-linux-gnu target.
+</p>
+</dd>
+<dt><code>-sim</code></dt>
+<dd><a name="index-sim"></a>
+<p>This option, recognized for the cris-axis-elf, arranges
+to link with input-output functions from a simulator library.  Code,
+initialized data and zero-initialized data are allocated consecutively.
+</p>
+</dd>
+<dt><code>-sim2</code></dt>
+<dd><a name="index-sim2"></a>
+<p>Like <samp>-sim</samp>, but pass linker options to locate initialized data at
+0x40000000 and zero-initialized data at 0x80000000.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="CR16-Options.html#CR16-Options" accesskey="n" rel="next">CR16 Options</a>, Previous: <a href="C6X-Options.html#C6X-Options" accesskey="p" rel="prev">C6X Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

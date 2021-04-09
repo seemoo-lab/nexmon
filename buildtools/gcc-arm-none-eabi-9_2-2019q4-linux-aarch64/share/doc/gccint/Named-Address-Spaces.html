@@ -1,0 +1,211 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Named Address Spaces</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Named Address Spaces">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Named Address Spaces">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Target-Macros.html#Target-Macros" rel="up" title="Target Macros">
+<link href="Misc.html#Misc" rel="next" title="Misc">
+<link href="D-Language-and-ABI.html#D-Language-and-ABI" rel="prev" title="D Language and ABI">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Named-Address-Spaces"></a>
+<div class="header">
+<p>
+Next: <a href="Misc.html#Misc" accesskey="n" rel="next">Misc</a>, Previous: <a href="D-Language-and-ABI.html#D-Language-and-ABI" accesskey="p" rel="prev">D Language and ABI</a>, Up: <a href="Target-Macros.html#Target-Macros" accesskey="u" rel="up">Target Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Adding-support-for-named-address-spaces"></a>
+<h3 class="section">18.30 Adding support for named address spaces</h3>
+<a name="index-named-address-spaces"></a>
+
+<p>The draft technical report of the ISO/IEC JTC1 S22 WG14 N1275
+standards committee, <cite>Programming Languages - C - Extensions to
+support embedded processors</cite>, specifies a syntax for embedded
+processors to specify alternate address spaces.  You can configure a
+GCC port to support section 5.1 of the draft report to add support for
+address spaces other than the default address space.  These address
+spaces are new keywords that are similar to the <code>volatile</code> and
+<code>const</code> type attributes.
+</p>
+<p>Pointers to named address spaces can have a different size than
+pointers to the generic address space.
+</p>
+<p>For example, the SPU port uses the <code>__ea</code> address space to refer
+to memory in the host processor, rather than memory local to the SPU
+processor.  Access to memory in the <code>__ea</code> address space involves
+issuing DMA operations to move data between the host processor and the
+local processor memory address space.  Pointers in the <code>__ea</code>
+address space are either 32 bits or 64 bits based on the
+<samp>-mea32</samp> or <samp>-mea64</samp> switches (native SPU pointers are
+always 32 bits).
+</p>
+<p>Internally, address spaces are represented as a small integer in the
+range 0 to 15 with address space 0 being reserved for the generic
+address space.
+</p>
+<p>To register a named address space qualifier keyword with the C front end,
+the target may call the <code>c_register_addr_space</code> routine.  For example,
+the SPU port uses the following to declare <code>__ea</code> as the keyword for
+named address space #1:
+</p><div class="smallexample">
+<pre class="smallexample">#define ADDR_SPACE_EA 1
+c_register_addr_space (&quot;__ea&quot;, ADDR_SPACE_EA);
+</pre></div>
+
+<dl>
+<dt><a name="index-TARGET_005fADDR_005fSPACE_005fPOINTER_005fMODE"></a>Target Hook: <em>scalar_int_mode</em> <strong>TARGET_ADDR_SPACE_POINTER_MODE</strong> <em>(addr_space_t <var>address_space</var>)</em></dt>
+<dd><p>Define this to return the machine mode to use for pointers to
+<var>address_space</var> if the target supports named address spaces.
+The default version of this hook returns <code>ptr_mode</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fADDR_005fSPACE_005fADDRESS_005fMODE"></a>Target Hook: <em>scalar_int_mode</em> <strong>TARGET_ADDR_SPACE_ADDRESS_MODE</strong> <em>(addr_space_t <var>address_space</var>)</em></dt>
+<dd><p>Define this to return the machine mode to use for addresses in
+<var>address_space</var> if the target supports named address spaces.
+The default version of this hook returns <code>Pmode</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fADDR_005fSPACE_005fVALID_005fPOINTER_005fMODE"></a>Target Hook: <em>bool</em> <strong>TARGET_ADDR_SPACE_VALID_POINTER_MODE</strong> <em>(scalar_int_mode <var>mode</var>, addr_space_t <var>as</var>)</em></dt>
+<dd><p>Define this to return nonzero if the port can handle pointers
+with machine mode <var>mode</var> to address space <var>as</var>.  This target
+hook is the same as the <code>TARGET_VALID_POINTER_MODE</code> target hook,
+except that it includes explicit named address space support.  The default
+version of this hook returns true for the modes returned by either the
+<code>TARGET_ADDR_SPACE_POINTER_MODE</code> or <code>TARGET_ADDR_SPACE_ADDRESS_MODE</code>
+target hooks for the given address space.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fADDR_005fSPACE_005fLEGITIMATE_005fADDRESS_005fP"></a>Target Hook: <em>bool</em> <strong>TARGET_ADDR_SPACE_LEGITIMATE_ADDRESS_P</strong> <em>(machine_mode <var>mode</var>, rtx <var>exp</var>, bool <var>strict</var>, addr_space_t <var>as</var>)</em></dt>
+<dd><p>Define this to return true if <var>exp</var> is a valid address for mode
+<var>mode</var> in the named address space <var>as</var>.  The <var>strict</var>
+parameter says whether strict addressing is in effect after reload has
+finished.  This target hook is the same as the
+<code>TARGET_LEGITIMATE_ADDRESS_P</code> target hook, except that it includes
+explicit named address space support.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fADDR_005fSPACE_005fLEGITIMIZE_005fADDRESS"></a>Target Hook: <em>rtx</em> <strong>TARGET_ADDR_SPACE_LEGITIMIZE_ADDRESS</strong> <em>(rtx <var>x</var>, rtx <var>oldx</var>, machine_mode <var>mode</var>, addr_space_t <var>as</var>)</em></dt>
+<dd><p>Define this to modify an invalid address <var>x</var> to be a valid address
+with mode <var>mode</var> in the named address space <var>as</var>.  This target
+hook is the same as the <code>TARGET_LEGITIMIZE_ADDRESS</code> target hook,
+except that it includes explicit named address space support.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fADDR_005fSPACE_005fSUBSET_005fP"></a>Target Hook: <em>bool</em> <strong>TARGET_ADDR_SPACE_SUBSET_P</strong> <em>(addr_space_t <var>subset</var>, addr_space_t <var>superset</var>)</em></dt>
+<dd><p>Define this to return whether the <var>subset</var> named address space is
+contained within the <var>superset</var> named address space.  Pointers to
+a named address space that is a subset of another named address space
+will be converted automatically without a cast if used together in
+arithmetic operations.  Pointers to a superset address space can be
+converted to pointers to a subset address space via explicit casts.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fADDR_005fSPACE_005fZERO_005fADDRESS_005fVALID"></a>Target Hook: <em>bool</em> <strong>TARGET_ADDR_SPACE_ZERO_ADDRESS_VALID</strong> <em>(addr_space_t <var>as</var>)</em></dt>
+<dd><p>Define this to modify the default handling of address 0 for the
+address space.  Return true if 0 should be considered a valid address.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fADDR_005fSPACE_005fCONVERT"></a>Target Hook: <em>rtx</em> <strong>TARGET_ADDR_SPACE_CONVERT</strong> <em>(rtx <var>op</var>, tree <var>from_type</var>, tree <var>to_type</var>)</em></dt>
+<dd><p>Define this to convert the pointer expression represented by the RTL
+<var>op</var> with type <var>from_type</var> that points to a named address
+space to a new pointer expression with type <var>to_type</var> that points
+to a different named address space.  When this hook it called, it is
+guaranteed that one of the two address spaces is a subset of the other,
+as determined by the <code>TARGET_ADDR_SPACE_SUBSET_P</code> target hook.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fADDR_005fSPACE_005fDEBUG"></a>Target Hook: <em>int</em> <strong>TARGET_ADDR_SPACE_DEBUG</strong> <em>(addr_space_t <var>as</var>)</em></dt>
+<dd><p>Define this to define how the address space is encoded in dwarf.
+The result is the value to be used with <code>DW_AT_address_class</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fADDR_005fSPACE_005fDIAGNOSE_005fUSAGE"></a>Target Hook: <em>void</em> <strong>TARGET_ADDR_SPACE_DIAGNOSE_USAGE</strong> <em>(addr_space_t <var>as</var>, location_t <var>loc</var>)</em></dt>
+<dd><p>Define this hook if the availability of an address space depends on
+command line options and some diagnostics should be printed when the
+address space is used.  This hook is called during parsing and allows
+to emit a better diagnostic compared to the case where the address space
+was not registered with <code>c_register_addr_space</code>.  <var>as</var> is
+the address space as registered with <code>c_register_addr_space</code>.
+<var>loc</var> is the location of the address space qualifier token.
+The default implementation does nothing.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Misc.html#Misc" accesskey="n" rel="next">Misc</a>, Previous: <a href="D-Language-and-ABI.html#D-Language-and-ABI" accesskey="p" rel="prev">D Language and ABI</a>, Up: <a href="Target-Macros.html#Target-Macros" accesskey="u" rel="up">Target Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

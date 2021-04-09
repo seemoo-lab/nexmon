@@ -1,0 +1,108 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Passes</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Passes">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Passes">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Parsing-pass.html#Parsing-pass" rel="next" title="Parsing pass">
+<link href="Option-properties.html#Option-properties" rel="prev" title="Option properties">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Passes"></a>
+<div class="header">
+<p>
+Next: <a href="poly_005fint.html#poly_005fint" accesskey="n" rel="next">poly_int</a>, Previous: <a href="Options.html#Options" accesskey="p" rel="prev">Options</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Passes-and-Files-of-the-Compiler"></a>
+<h2 class="chapter">9 Passes and Files of the Compiler</h2>
+<a name="index-passes-and-files-of-the-compiler"></a>
+<a name="index-files-and-passes-of-the-compiler"></a>
+<a name="index-compiler-passes-and-files"></a>
+<a name="index-pass-dumps"></a>
+
+<p>This chapter is dedicated to giving an overview of the optimization and
+code generation passes of the compiler.  In the process, it describes
+some of the language front end interface, though this description is no
+where near complete.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Parsing-pass.html#Parsing-pass" accesskey="1">Parsing pass</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">The language front end turns text into bits.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Gimplification-pass.html#Gimplification-pass" accesskey="2">Gimplification pass</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">The bits are turned into something we can optimize.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Pass-manager.html#Pass-manager" accesskey="3">Pass manager</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Sequencing the optimization passes.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Tree-SSA-passes.html#Tree-SSA-passes" accesskey="4">Tree SSA passes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Optimizations on a high-level representation.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="RTL-passes.html#RTL-passes" accesskey="5">RTL passes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Optimizations on a low-level representation.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Optimization-info.html#Optimization-info" accesskey="6">Optimization info</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Dumping optimization information from passes.
+</td></tr>
+</table>
+
+
+
+
+</body>
+</html>

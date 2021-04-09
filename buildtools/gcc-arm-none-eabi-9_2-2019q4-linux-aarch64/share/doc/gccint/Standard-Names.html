@@ -1,0 +1,3127 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Standard Names</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Standard Names">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Standard Names">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Machine-Desc.html#Machine-Desc" rel="up" title="Machine Desc">
+<link href="Pattern-Ordering.html#Pattern-Ordering" rel="next" title="Pattern Ordering">
+<link href="C-Constraint-Interface.html#C-Constraint-Interface" rel="prev" title="C Constraint Interface">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Standard-Names"></a>
+<div class="header">
+<p>
+Next: <a href="Pattern-Ordering.html#Pattern-Ordering" accesskey="n" rel="next">Pattern Ordering</a>, Previous: <a href="Constraints.html#Constraints" accesskey="p" rel="prev">Constraints</a>, Up: <a href="Machine-Desc.html#Machine-Desc" accesskey="u" rel="up">Machine Desc</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Standard-Pattern-Names-For-Generation"></a>
+<h3 class="section">17.9 Standard Pattern Names For Generation</h3>
+<a name="index-standard-pattern-names"></a>
+<a name="index-pattern-names"></a>
+<a name="index-names_002c-pattern"></a>
+
+<p>Here is a table of the instruction names that are meaningful in the RTL
+generation pass of the compiler.  Giving one of these names to an
+instruction pattern tells the RTL generation pass that it can use the
+pattern to accomplish a certain task.
+</p>
+<dl compact="compact">
+<dd><a name="index-movm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>mov<var>m</var></samp>&rsquo;</dt>
+<dd><p>Here <var>m</var> stands for a two-letter machine mode name, in lowercase.
+This instruction pattern moves data with that machine mode from operand
+1 to operand 0.  For example, &lsquo;<samp>movsi</samp>&rsquo; moves full-word data.
+</p>
+<p>If operand 0 is a <code>subreg</code> with mode <var>m</var> of a register whose
+own mode is wider than <var>m</var>, the effect of this instruction is
+to store the specified value in the part of the register that corresponds
+to mode <var>m</var>.  Bits outside of <var>m</var>, but which are within the
+same target word as the <code>subreg</code> are undefined.  Bits which are
+outside the target word are left unchanged.
+</p>
+<p>This class of patterns is special in several ways.  First of all, each
+of these names up to and including full word size <em>must</em> be defined,
+because there is no other way to copy a datum from one place to another.
+If there are patterns accepting operands in larger modes,
+&lsquo;<samp>mov<var>m</var></samp>&rsquo; must be defined for integer modes of those sizes.
+</p>
+<p>Second, these patterns are not used solely in the RTL generation pass.
+Even the reload pass can generate move insns to copy values from stack
+slots into temporary registers.  When it does so, one of the operands is
+a hard register and the other is an operand that can need to be reloaded
+into a register.
+</p>
+<a name="index-force_005freg"></a>
+<p>Therefore, when given such a pair of operands, the pattern must generate
+RTL which needs no reloading and needs no temporary registers&mdash;no
+registers other than the operands.  For example, if you support the
+pattern with a <code>define_expand</code>, then in such a case the
+<code>define_expand</code> mustn&rsquo;t call <code>force_reg</code> or any other such
+function which might generate new pseudo registers.
+</p>
+<p>This requirement exists even for subword modes on a RISC machine where
+fetching those modes from memory normally requires several insns and
+some temporary registers.
+</p>
+<a name="index-change_005faddress"></a>
+<p>During reload a memory reference with an invalid address may be passed
+as an operand.  Such an address will be replaced with a valid address
+later in the reload pass.  In this case, nothing may be done with the
+address except to use it as it stands.  If it is copied, it will not be
+replaced with a valid address.  No attempt should be made to make such
+an address into a valid address and no routine (such as
+<code>change_address</code>) that will do so may be called.  Note that
+<code>general_operand</code> will fail when applied to such an address.
+</p>
+<a name="index-reload_005fin_005fprogress"></a>
+<p>The global variable <code>reload_in_progress</code> (which must be explicitly
+declared if required) can be used to determine whether such special
+handling is required.
+</p>
+<p>The variety of operands that have reloads depends on the rest of the
+machine description, but typically on a RISC machine these can only be
+pseudo registers that did not get hard registers, while on other
+machines explicit memory references will get optional reloads.
+</p>
+<p>If a scratch register is required to move an object to or from memory,
+it can be allocated using <code>gen_reg_rtx</code> prior to life analysis.
+</p>
+<p>If there are cases which need scratch registers during or after reload,
+you must provide an appropriate secondary_reload target hook.
+</p>
+<a name="index-can_005fcreate_005fpseudo_005fp"></a>
+<p>The macro <code>can_create_pseudo_p</code> can be used to determine if it
+is unsafe to create new pseudo registers.  If this variable is nonzero, then
+it is unsafe to call <code>gen_reg_rtx</code> to allocate a new pseudo.
+</p>
+<p>The constraints on a &lsquo;<samp>mov<var>m</var></samp>&rsquo; must permit moving any hard
+register to any other hard register provided that
+<code>TARGET_HARD_REGNO_MODE_OK</code> permits mode <var>m</var> in both registers and
+<code>TARGET_REGISTER_MOVE_COST</code> applied to their classes returns a value
+of 2.
+</p>
+<p>It is obligatory to support floating point &lsquo;<samp>mov<var>m</var></samp>&rsquo;
+instructions into and out of any registers that can hold fixed point
+values, because unions and structures (which have modes <code>SImode</code> or
+<code>DImode</code>) can be in those registers and they may have floating
+point members.
+</p>
+<p>There may also be a need to support fixed point &lsquo;<samp>mov<var>m</var></samp>&rsquo;
+instructions in and out of floating point registers.  Unfortunately, I
+have forgotten why this was so, and I don&rsquo;t know whether it is still
+true.  If <code>TARGET_HARD_REGNO_MODE_OK</code> rejects fixed point values in
+floating point registers, then the constraints of the fixed point
+&lsquo;<samp>mov<var>m</var></samp>&rsquo; instructions must be designed to avoid ever trying to
+reload into a floating point register.
+</p>
+<a name="index-reload_005fin-instruction-pattern"></a>
+<a name="index-reload_005fout-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>reload_in<var>m</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>reload_out<var>m</var></samp>&rsquo;</dt>
+<dd><p>These named patterns have been obsoleted by the target hook
+<code>secondary_reload</code>.
+</p>
+<p>Like &lsquo;<samp>mov<var>m</var></samp>&rsquo;, but used when a scratch register is required to
+move between operand 0 and operand 1.  Operand 2 describes the scratch
+register.  See the discussion of the <code>SECONDARY_RELOAD_CLASS</code>
+macro in see <a href="Register-Classes.html#Register-Classes">Register Classes</a>.
+</p>
+<p>There are special restrictions on the form of the <code>match_operand</code>s
+used in these patterns.  First, only the predicate for the reload
+operand is examined, i.e., <code>reload_in</code> examines operand 1, but not
+the predicates for operand 0 or 2.  Second, there may be only one
+alternative in the constraints.  Third, only a single register class
+letter may be used for the constraint; subsequent constraint letters
+are ignored.  As a special exception, an empty constraint string
+matches the <code>ALL_REGS</code> register class.  This may relieve ports
+of the burden of defining an <code>ALL_REGS</code> constraint letter just
+for these patterns.
+</p>
+<a name="index-movstrictm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>movstrict<var>m</var></samp>&rsquo;</dt>
+<dd><p>Like &lsquo;<samp>mov<var>m</var></samp>&rsquo; except that if operand 0 is a <code>subreg</code>
+with mode <var>m</var> of a register whose natural mode is wider,
+the &lsquo;<samp>movstrict<var>m</var></samp>&rsquo; instruction is guaranteed not to alter
+any of the register except the part which belongs to mode <var>m</var>.
+</p>
+<a name="index-movmisalignm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>movmisalign<var>m</var></samp>&rsquo;</dt>
+<dd><p>This variant of a move pattern is designed to load or store a value
+from a memory address that is not naturally aligned for its mode.
+For a store, the memory will be in operand 0; for a load, the memory
+will be in operand 1.  The other operand is guaranteed not to be a
+memory, so that it&rsquo;s easy to tell whether this is a load or store.
+</p>
+<p>This pattern is used by the autovectorizer, and when expanding a
+<code>MISALIGNED_INDIRECT_REF</code> expression.
+</p>
+<a name="index-load_005fmultiple-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>load_multiple</samp>&rsquo;</dt>
+<dd><p>Load several consecutive memory locations into consecutive registers.
+Operand 0 is the first of the consecutive registers, operand 1
+is the first memory location, and operand 2 is a constant: the
+number of consecutive registers.
+</p>
+<p>Define this only if the target machine really has such an instruction;
+do not define this if the most efficient way of loading consecutive
+registers from memory is to do them one at a time.
+</p>
+<p>On some machines, there are restrictions as to which consecutive
+registers can be stored into memory, such as particular starting or
+ending register numbers or only a range of valid counts.  For those
+machines, use a <code>define_expand</code> (see <a href="Expander-Definitions.html#Expander-Definitions">Expander Definitions</a>)
+and make the pattern fail if the restrictions are not met.
+</p>
+<p>Write the generated insn as a <code>parallel</code> with elements being a
+<code>set</code> of one register from the appropriate memory location (you may
+also need <code>use</code> or <code>clobber</code> elements).  Use a
+<code>match_parallel</code> (see <a href="RTL-Template.html#RTL-Template">RTL Template</a>) to recognize the insn.  See
+<samp>rs6000.md</samp> for examples of the use of this insn pattern.
+</p>
+<a name="index-store_005fmultiple-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>store_multiple</samp>&rsquo;</dt>
+<dd><p>Similar to &lsquo;<samp>load_multiple</samp>&rsquo;, but store several consecutive registers
+into consecutive memory locations.  Operand 0 is the first of the
+consecutive memory locations, operand 1 is the first register, and
+operand 2 is a constant: the number of consecutive registers.
+</p>
+<a name="index-vec_005fload_005flanesmn-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vec_load_lanes<var>m</var><var>n</var></samp>&rsquo;</dt>
+<dd><p>Perform an interleaved load of several vectors from memory operand 1
+into register operand 0.  Both operands have mode <var>m</var>.  The register
+operand is viewed as holding consecutive vectors of mode <var>n</var>,
+while the memory operand is a flat array that contains the same number
+of elements.  The operation is equivalent to:
+</p>
+<div class="smallexample">
+<pre class="smallexample">int c = GET_MODE_SIZE (<var>m</var>) / GET_MODE_SIZE (<var>n</var>);
+for (j = 0; j &lt; GET_MODE_NUNITS (<var>n</var>); j++)
+  for (i = 0; i &lt; c; i++)
+    operand0[i][j] = operand1[j * c + i];
+</pre></div>
+
+<p>For example, &lsquo;<samp>vec_load_lanestiv4hi</samp>&rsquo; loads 8 16-bit values
+from memory into a register of mode &lsquo;<samp>TI</samp>&rsquo;.  The register
+contains two consecutive vectors of mode &lsquo;<samp>V4HI</samp>&rsquo;.
+</p>
+<p>This pattern can only be used if:
+</p><div class="smallexample">
+<pre class="smallexample">TARGET_ARRAY_MODE_SUPPORTED_P (<var>n</var>, <var>c</var>)
+</pre></div>
+<p>is true.  GCC assumes that, if a target supports this kind of
+instruction for some mode <var>n</var>, it also supports unaligned
+loads for vectors of mode <var>n</var>.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-vec_005fmask_005fload_005flanesmn-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vec_mask_load_lanes<var>m</var><var>n</var></samp>&rsquo;</dt>
+<dd><p>Like &lsquo;<samp>vec_load_lanes<var>m</var><var>n</var></samp>&rsquo;, but takes an additional
+mask operand (operand 2) that specifies which elements of the destination
+vectors should be loaded.  Other elements of the destination
+vectors are set to zero.  The operation is equivalent to:
+</p>
+<div class="smallexample">
+<pre class="smallexample">int c = GET_MODE_SIZE (<var>m</var>) / GET_MODE_SIZE (<var>n</var>);
+for (j = 0; j &lt; GET_MODE_NUNITS (<var>n</var>); j++)
+  if (operand2[j])
+    for (i = 0; i &lt; c; i++)
+      operand0[i][j] = operand1[j * c + i];
+  else
+    for (i = 0; i &lt; c; i++)
+      operand0[i][j] = 0;
+</pre></div>
+
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-vec_005fstore_005flanesmn-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vec_store_lanes<var>m</var><var>n</var></samp>&rsquo;</dt>
+<dd><p>Equivalent to &lsquo;<samp>vec_load_lanes<var>m</var><var>n</var></samp>&rsquo;, with the memory
+and register operands reversed.  That is, the instruction is
+equivalent to:
+</p>
+<div class="smallexample">
+<pre class="smallexample">int c = GET_MODE_SIZE (<var>m</var>) / GET_MODE_SIZE (<var>n</var>);
+for (j = 0; j &lt; GET_MODE_NUNITS (<var>n</var>); j++)
+  for (i = 0; i &lt; c; i++)
+    operand0[j * c + i] = operand1[i][j];
+</pre></div>
+
+<p>for a memory operand 0 and register operand 1.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-vec_005fmask_005fstore_005flanesmn-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vec_mask_store_lanes<var>m</var><var>n</var></samp>&rsquo;</dt>
+<dd><p>Like &lsquo;<samp>vec_store_lanes<var>m</var><var>n</var></samp>&rsquo;, but takes an additional
+mask operand (operand 2) that specifies which elements of the source
+vectors should be stored.  The operation is equivalent to:
+</p>
+<div class="smallexample">
+<pre class="smallexample">int c = GET_MODE_SIZE (<var>m</var>) / GET_MODE_SIZE (<var>n</var>);
+for (j = 0; j &lt; GET_MODE_NUNITS (<var>n</var>); j++)
+  if (operand2[j])
+    for (i = 0; i &lt; c; i++)
+      operand0[j * c + i] = operand1[i][j];
+</pre></div>
+
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-gather_005floadm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>gather_load<var>m</var></samp>&rsquo;</dt>
+<dd><p>Load several separate memory locations into a vector of mode <var>m</var>.
+Operand 1 is a scalar base address and operand 2 is a vector of
+offsets from that base.  Operand 0 is a destination vector with the
+same number of elements as the offset.  For each element index <var>i</var>:
+</p>
+<ul>
+<li> extend the offset element <var>i</var> to address width, using zero
+extension if operand 3 is 1 and sign extension if operand 3 is zero;
+</li><li> multiply the extended offset by operand 4;
+</li><li> add the result to the base; and
+</li><li> load the value at that address into element <var>i</var> of operand 0.
+</li></ul>
+
+<p>The value of operand 3 does not matter if the offsets are already
+address width.
+</p>
+<a name="index-mask_005fgather_005floadm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>mask_gather_load<var>m</var></samp>&rsquo;</dt>
+<dd><p>Like &lsquo;<samp>gather_load<var>m</var></samp>&rsquo;, but takes an extra mask operand as
+operand 5.  Bit <var>i</var> of the mask is set if element <var>i</var>
+of the result should be loaded from memory and clear if element <var>i</var>
+of the result should be set to zero.
+</p>
+<a name="index-scatter_005fstorem-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>scatter_store<var>m</var></samp>&rsquo;</dt>
+<dd><p>Store a vector of mode <var>m</var> into several distinct memory locations.
+Operand 0 is a scalar base address and operand 1 is a vector of offsets
+from that base.  Operand 4 is the vector of values that should be stored,
+which has the same number of elements as the offset.  For each element
+index <var>i</var>:
+</p>
+<ul>
+<li> extend the offset element <var>i</var> to address width, using zero
+extension if operand 2 is 1 and sign extension if operand 2 is zero;
+</li><li> multiply the extended offset by operand 3;
+</li><li> add the result to the base; and
+</li><li> store element <var>i</var> of operand 4 to that address.
+</li></ul>
+
+<p>The value of operand 2 does not matter if the offsets are already
+address width.
+</p>
+<a name="index-mask_005fscatter_005fstorem-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>mask_scatter_store<var>m</var></samp>&rsquo;</dt>
+<dd><p>Like &lsquo;<samp>scatter_store<var>m</var></samp>&rsquo;, but takes an extra mask operand as
+operand 5.  Bit <var>i</var> of the mask is set if element <var>i</var>
+of the result should be stored to memory.
+</p>
+<a name="index-vec_005fsetm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vec_set<var>m</var></samp>&rsquo;</dt>
+<dd><p>Set given field in the vector value.  Operand 0 is the vector to modify,
+operand 1 is new value of field and operand 2 specify the field index.
+</p>
+<a name="index-vec_005fextractmn-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vec_extract<var>m</var><var>n</var></samp>&rsquo;</dt>
+<dd><p>Extract given field from the vector value.  Operand 1 is the vector, operand 2
+specify field index and operand 0 place to store value into.  The
+<var>n</var> mode is the mode of the field or vector of fields that should be
+extracted, should be either element mode of the vector mode <var>m</var>, or
+a vector mode with the same element mode and smaller number of elements.
+If <var>n</var> is a vector mode, the index is counted in units of that mode.
+</p>
+<a name="index-vec_005finitmn-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vec_init<var>m</var><var>n</var></samp>&rsquo;</dt>
+<dd><p>Initialize the vector to given values.  Operand 0 is the vector to initialize
+and operand 1 is parallel containing values for individual fields.  The
+<var>n</var> mode is the mode of the elements, should be either element mode of
+the vector mode <var>m</var>, or a vector mode with the same element mode and
+smaller number of elements.
+</p>
+<a name="index-vec_005fduplicatem-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vec_duplicate<var>m</var></samp>&rsquo;</dt>
+<dd><p>Initialize vector output operand 0 so that each element has the value given
+by scalar input operand 1.  The vector has mode <var>m</var> and the scalar has
+the mode appropriate for one element of <var>m</var>.
+</p>
+<p>This pattern only handles duplicates of non-constant inputs.  Constant
+vectors go through the <code>mov<var>m</var></code> pattern instead.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-vec_005fseriesm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vec_series<var>m</var></samp>&rsquo;</dt>
+<dd><p>Initialize vector output operand 0 so that element <var>i</var> is equal to
+operand 1 plus <var>i</var> times operand 2.  In other words, create a linear
+series whose base value is operand 1 and whose step is operand 2.
+</p>
+<p>The vector output has mode <var>m</var> and the scalar inputs have the mode
+appropriate for one element of <var>m</var>.  This pattern is not used for
+floating-point vectors, in order to avoid having to specify the
+rounding behavior for <var>i</var> &gt; 1.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-while_005fultmn-instruction-pattern"></a>
+</dd>
+<dt><code>while_ult<var>m</var><var>n</var></code></dt>
+<dd><p>Set operand 0 to a mask that is true while incrementing operand 1
+gives a value that is less than operand 2.  Operand 0 has mode <var>n</var>
+and operands 1 and 2 are scalar integers of mode <var>m</var>.
+The operation is equivalent to:
+</p>
+<div class="smallexample">
+<pre class="smallexample">operand0[0] = operand1 &lt; operand2;
+for (i = 1; i &lt; GET_MODE_NUNITS (<var>n</var>); i++)
+  operand0[i] = operand0[i - 1] &amp;&amp; (operand1 + i &lt; operand2);
+</pre></div>
+
+<a name="index-vec_005fcmpmn-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vec_cmp<var>m</var><var>n</var></samp>&rsquo;</dt>
+<dd><p>Output a vector comparison.  Operand 0 of mode <var>n</var> is the destination for
+predicate in operand 1 which is a signed vector comparison with operands of
+mode <var>m</var> in operands 2 and 3.  Predicate is computed by element-wise
+evaluation of the vector comparison with a truth value of all-ones and a false
+value of all-zeros.
+</p>
+<a name="index-vec_005fcmpumn-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vec_cmpu<var>m</var><var>n</var></samp>&rsquo;</dt>
+<dd><p>Similar to <code>vec_cmp<var>m</var><var>n</var></code> but perform unsigned vector comparison.
+</p>
+<a name="index-vec_005fcmpeqmn-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vec_cmpeq<var>m</var><var>n</var></samp>&rsquo;</dt>
+<dd><p>Similar to <code>vec_cmp<var>m</var><var>n</var></code> but perform equality or non-equality
+vector comparison only.  If <code>vec_cmp<var>m</var><var>n</var></code>
+or <code>vec_cmpu<var>m</var><var>n</var></code> instruction pattern is supported,
+it will be preferred over <code>vec_cmpeq<var>m</var><var>n</var></code>, so there is
+no need to define this instruction pattern if the others are supported.
+</p>
+<a name="index-vcondmn-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vcond<var>m</var><var>n</var></samp>&rsquo;</dt>
+<dd><p>Output a conditional vector move.  Operand 0 is the destination to
+receive a combination of operand 1 and operand 2, which are of mode <var>m</var>,
+dependent on the outcome of the predicate in operand 3 which is a signed
+vector comparison with operands of mode <var>n</var> in operands 4 and 5.  The
+modes <var>m</var> and <var>n</var> should have the same size.  Operand 0
+will be set to the value <var>op1</var> &amp; <var>msk</var> | <var>op2</var> &amp; ~<var>msk</var>
+where <var>msk</var> is computed by element-wise evaluation of the vector
+comparison with a truth value of all-ones and a false value of all-zeros.
+</p>
+<a name="index-vcondumn-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vcondu<var>m</var><var>n</var></samp>&rsquo;</dt>
+<dd><p>Similar to <code>vcond<var>m</var><var>n</var></code> but performs unsigned vector
+comparison.
+</p>
+<a name="index-vcondeqmn-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vcondeq<var>m</var><var>n</var></samp>&rsquo;</dt>
+<dd><p>Similar to <code>vcond<var>m</var><var>n</var></code> but performs equality or
+non-equality vector comparison only.  If <code>vcond<var>m</var><var>n</var></code>
+or <code>vcondu<var>m</var><var>n</var></code> instruction pattern is supported,
+it will be preferred over <code>vcondeq<var>m</var><var>n</var></code>, so there is
+no need to define this instruction pattern if the others are supported.
+</p>
+<a name="index-vcond_005fmask_005fmn-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vcond_mask_<var>m</var><var>n</var></samp>&rsquo;</dt>
+<dd><p>Similar to <code>vcond<var>m</var><var>n</var></code> but operand 3 holds a pre-computed
+result of vector comparison.
+</p>
+<a name="index-maskloadmn-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>maskload<var>m</var><var>n</var></samp>&rsquo;</dt>
+<dd><p>Perform a masked load of vector from memory operand 1 of mode <var>m</var>
+into register operand 0.  Mask is provided in register operand 2 of
+mode <var>n</var>.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-maskstoremn-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>maskstore<var>m</var><var>n</var></samp>&rsquo;</dt>
+<dd><p>Perform a masked store of vector from register operand 1 of mode <var>m</var>
+into memory operand 0.  Mask is provided in register operand 2 of
+mode <var>n</var>.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-vec_005fpermm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vec_perm<var>m</var></samp>&rsquo;</dt>
+<dd><p>Output a (variable) vector permutation.  Operand 0 is the destination
+to receive elements from operand 1 and operand 2, which are of mode
+<var>m</var>.  Operand 3 is the <em>selector</em>.  It is an integral mode
+vector of the same width and number of elements as mode <var>m</var>.
+</p>
+<p>The input elements are numbered from 0 in operand 1 through
+<em>2*<var>N</var>-1</em> in operand 2.  The elements of the selector must
+be computed modulo <em>2*<var>N</var></em>.  Note that if
+<code>rtx_equal_p(operand1, operand2)</code>, this can be implemented
+with just operand 1 and selector elements modulo <var>N</var>.
+</p>
+<p>In order to make things easy for a number of targets, if there is no
+&lsquo;<samp>vec_perm</samp>&rsquo; pattern for mode <var>m</var>, but there is for mode <var>q</var>
+where <var>q</var> is a vector of <code>QImode</code> of the same width as <var>m</var>,
+the middle-end will lower the mode <var>m</var> <code>VEC_PERM_EXPR</code> to
+mode <var>q</var>.
+</p>
+<p>See also <code>TARGET_VECTORIZER_VEC_PERM_CONST</code>, which performs
+the analogous operation for constant selectors.
+</p>
+<a name="index-pushm1-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>push<var>m</var>1</samp>&rsquo;</dt>
+<dd><p>Output a push instruction.  Operand 0 is value to push.  Used only when
+<code>PUSH_ROUNDING</code> is defined.  For historical reason, this pattern may be
+missing and in such case an <code>mov</code> expander is used instead, with a
+<code>MEM</code> expression forming the push operation.  The <code>mov</code> expander
+method is deprecated.
+</p>
+<a name="index-addm3-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>add<var>m</var>3</samp>&rsquo;</dt>
+<dd><p>Add operand 2 and operand 1, storing the result in operand 0.  All operands
+must have mode <var>m</var>.  This can be used even on two-address machines, by
+means of constraints requiring operands 1 and 0 to be the same location.
+</p>
+<a name="index-ssaddm3-instruction-pattern"></a>
+<a name="index-usaddm3-instruction-pattern"></a>
+<a name="index-subm3-instruction-pattern"></a>
+<a name="index-sssubm3-instruction-pattern"></a>
+<a name="index-ussubm3-instruction-pattern"></a>
+<a name="index-mulm3-instruction-pattern"></a>
+<a name="index-ssmulm3-instruction-pattern"></a>
+<a name="index-usmulm3-instruction-pattern"></a>
+<a name="index-divm3-instruction-pattern"></a>
+<a name="index-ssdivm3-instruction-pattern"></a>
+<a name="index-udivm3-instruction-pattern"></a>
+<a name="index-usdivm3-instruction-pattern"></a>
+<a name="index-modm3-instruction-pattern"></a>
+<a name="index-umodm3-instruction-pattern"></a>
+<a name="index-uminm3-instruction-pattern"></a>
+<a name="index-umaxm3-instruction-pattern"></a>
+<a name="index-andm3-instruction-pattern"></a>
+<a name="index-iorm3-instruction-pattern"></a>
+<a name="index-xorm3-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>ssadd<var>m</var>3</samp>&rsquo;, &lsquo;<samp>usadd<var>m</var>3</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>sub<var>m</var>3</samp>&rsquo;, &lsquo;<samp>sssub<var>m</var>3</samp>&rsquo;, &lsquo;<samp>ussub<var>m</var>3</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>mul<var>m</var>3</samp>&rsquo;, &lsquo;<samp>ssmul<var>m</var>3</samp>&rsquo;, &lsquo;<samp>usmul<var>m</var>3</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>div<var>m</var>3</samp>&rsquo;, &lsquo;<samp>ssdiv<var>m</var>3</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>udiv<var>m</var>3</samp>&rsquo;, &lsquo;<samp>usdiv<var>m</var>3</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>mod<var>m</var>3</samp>&rsquo;, &lsquo;<samp>umod<var>m</var>3</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>umin<var>m</var>3</samp>&rsquo;, &lsquo;<samp>umax<var>m</var>3</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>and<var>m</var>3</samp>&rsquo;, &lsquo;<samp>ior<var>m</var>3</samp>&rsquo;, &lsquo;<samp>xor<var>m</var>3</samp>&rsquo;</dt>
+<dd><p>Similar, for other arithmetic operations.
+</p>
+<a name="index-addvm4-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>addv<var>m</var>4</samp>&rsquo;</dt>
+<dd><p>Like <code>add<var>m</var>3</code> but takes a <code>code_label</code> as operand 3 and
+emits code to jump to it if signed overflow occurs during the addition.
+This pattern is used to implement the built-in functions performing
+signed integer addition with overflow checking.
+</p>
+<a name="index-subvm4-instruction-pattern"></a>
+<a name="index-mulvm4-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>subv<var>m</var>4</samp>&rsquo;, &lsquo;<samp>mulv<var>m</var>4</samp>&rsquo;</dt>
+<dd><p>Similar, for other signed arithmetic operations.
+</p>
+<a name="index-uaddvm4-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>uaddv<var>m</var>4</samp>&rsquo;</dt>
+<dd><p>Like <code>addv<var>m</var>4</code> but for unsigned addition.  That is to
+say, the operation is the same as signed addition but the jump
+is taken only on unsigned overflow.
+</p>
+<a name="index-usubvm4-instruction-pattern"></a>
+<a name="index-umulvm4-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>usubv<var>m</var>4</samp>&rsquo;, &lsquo;<samp>umulv<var>m</var>4</samp>&rsquo;</dt>
+<dd><p>Similar, for other unsigned arithmetic operations.
+</p>
+<a name="index-addptrm3-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>addptr<var>m</var>3</samp>&rsquo;</dt>
+<dd><p>Like <code>add<var>m</var>3</code> but is guaranteed to only be used for address
+calculations.  The expanded code is not allowed to clobber the
+condition code.  It only needs to be defined if <code>add<var>m</var>3</code>
+sets the condition code.  If adds used for address calculations and
+normal adds are not compatible it is required to expand a distinct
+pattern (e.g. using an unspec).  The pattern is used by LRA to emit
+address calculations.  <code>add<var>m</var>3</code> is used if
+<code>addptr<var>m</var>3</code> is not defined.
+</p>
+<a name="index-fmam4-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>fma<var>m</var>4</samp>&rsquo;</dt>
+<dd><p>Multiply operand 2 and operand 1, then add operand 3, storing the
+result in operand 0 without doing an intermediate rounding step.  All
+operands must have mode <var>m</var>.  This pattern is used to implement
+the <code>fma</code>, <code>fmaf</code>, and <code>fmal</code> builtin functions from
+the ISO C99 standard.
+</p>
+<a name="index-fmsm4-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>fms<var>m</var>4</samp>&rsquo;</dt>
+<dd><p>Like <code>fma<var>m</var>4</code>, except operand 3 subtracted from the
+product instead of added to the product.  This is represented
+in the rtl as
+</p>
+<div class="smallexample">
+<pre class="smallexample">(fma:<var>m</var> <var>op1</var> <var>op2</var> (neg:<var>m</var> <var>op3</var>))
+</pre></div>
+
+<a name="index-fnmam4-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>fnma<var>m</var>4</samp>&rsquo;</dt>
+<dd><p>Like <code>fma<var>m</var>4</code> except that the intermediate product
+is negated before being added to operand 3.  This is represented
+in the rtl as
+</p>
+<div class="smallexample">
+<pre class="smallexample">(fma:<var>m</var> (neg:<var>m</var> <var>op1</var>) <var>op2</var> <var>op3</var>)
+</pre></div>
+
+<a name="index-fnmsm4-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>fnms<var>m</var>4</samp>&rsquo;</dt>
+<dd><p>Like <code>fms<var>m</var>4</code> except that the intermediate product
+is negated before subtracting operand 3.  This is represented
+in the rtl as
+</p>
+<div class="smallexample">
+<pre class="smallexample">(fma:<var>m</var> (neg:<var>m</var> <var>op1</var>) <var>op2</var> (neg:<var>m</var> <var>op3</var>))
+</pre></div>
+
+<a name="index-minm3-instruction-pattern"></a>
+<a name="index-maxm3-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>smin<var>m</var>3</samp>&rsquo;, &lsquo;<samp>smax<var>m</var>3</samp>&rsquo;</dt>
+<dd><p>Signed minimum and maximum operations.  When used with floating point,
+if both operands are zeros, or if either operand is <code>NaN</code>, then
+it is unspecified which of the two operands is returned as the result.
+</p>
+<a name="index-fminm3-instruction-pattern"></a>
+<a name="index-fmaxm3-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>fmin<var>m</var>3</samp>&rsquo;, &lsquo;<samp>fmax<var>m</var>3</samp>&rsquo;</dt>
+<dd><p>IEEE-conformant minimum and maximum operations.  If one operand is a quiet
+<code>NaN</code>, then the other operand is returned.  If both operands are quiet
+<code>NaN</code>, then a quiet <code>NaN</code> is returned.  In the case when gcc supports
+signaling <code>NaN</code> (-fsignaling-nans) an invalid floating point exception is
+raised and a quiet <code>NaN</code> is returned.
+</p>
+<p>All operands have mode <var>m</var>, which is a scalar or vector
+floating-point mode.  These patterns are not allowed to <code>FAIL</code>.
+</p>
+<a name="index-reduc_005fsmin_005fscal_005fm-instruction-pattern"></a>
+<a name="index-reduc_005fsmax_005fscal_005fm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>reduc_smin_scal_<var>m</var></samp>&rsquo;, &lsquo;<samp>reduc_smax_scal_<var>m</var></samp>&rsquo;</dt>
+<dd><p>Find the signed minimum/maximum of the elements of a vector. The vector is
+operand 1, and operand 0 is the scalar result, with mode equal to the mode of
+the elements of the input vector.
+</p>
+<a name="index-reduc_005fumin_005fscal_005fm-instruction-pattern"></a>
+<a name="index-reduc_005fumax_005fscal_005fm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>reduc_umin_scal_<var>m</var></samp>&rsquo;, &lsquo;<samp>reduc_umax_scal_<var>m</var></samp>&rsquo;</dt>
+<dd><p>Find the unsigned minimum/maximum of the elements of a vector. The vector is
+operand 1, and operand 0 is the scalar result, with mode equal to the mode of
+the elements of the input vector.
+</p>
+<a name="index-reduc_005fplus_005fscal_005fm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>reduc_plus_scal_<var>m</var></samp>&rsquo;</dt>
+<dd><p>Compute the sum of the elements of a vector. The vector is operand 1, and
+operand 0 is the scalar result, with mode equal to the mode of the elements of
+the input vector.
+</p>
+<a name="index-reduc_005fand_005fscal_005fm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>reduc_and_scal_<var>m</var></samp>&rsquo;</dt>
+<dd><a name="index-reduc_005fior_005fscal_005fm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>reduc_ior_scal_<var>m</var></samp>&rsquo;</dt>
+<dd><a name="index-reduc_005fxor_005fscal_005fm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>reduc_xor_scal_<var>m</var></samp>&rsquo;</dt>
+<dd><p>Compute the bitwise <code>AND</code>/<code>IOR</code>/<code>XOR</code> reduction of the elements
+of a vector of mode <var>m</var>.  Operand 1 is the vector input and operand 0
+is the scalar result.  The mode of the scalar result is the same as one
+element of <var>m</var>.
+</p>
+<a name="index-extract_005flast_005fm-instruction-pattern"></a>
+</dd>
+<dt><code>extract_last_<var>m</var></code></dt>
+<dd><p>Find the last set bit in mask operand 1 and extract the associated element
+of vector operand 2.  Store the result in scalar operand 0.  Operand 2
+has vector mode <var>m</var> while operand 0 has the mode appropriate for one
+element of <var>m</var>.  Operand 1 has the usual mask mode for vectors of mode
+<var>m</var>; see <code>TARGET_VECTORIZE_GET_MASK_MODE</code>.
+</p>
+<a name="index-fold_005fextract_005flast_005fm-instruction-pattern"></a>
+</dd>
+<dt><code>fold_extract_last_<var>m</var></code></dt>
+<dd><p>If any bits of mask operand 2 are set, find the last set bit, extract
+the associated element from vector operand 3, and store the result
+in operand 0.  Store operand 1 in operand 0 otherwise.  Operand 3
+has mode <var>m</var> and operands 0 and 1 have the mode appropriate for
+one element of <var>m</var>.  Operand 2 has the usual mask mode for vectors
+of mode <var>m</var>; see <code>TARGET_VECTORIZE_GET_MASK_MODE</code>.
+</p>
+<a name="index-fold_005fleft_005fplus_005fm-instruction-pattern"></a>
+</dd>
+<dt><code>fold_left_plus_<var>m</var></code></dt>
+<dd><p>Take scalar operand 1 and successively add each element from vector
+operand 2.  Store the result in scalar operand 0.  The vector has
+mode <var>m</var> and the scalars have the mode appropriate for one
+element of <var>m</var>.  The operation is strictly in-order: there is
+no reassociation.
+</p>
+<a name="index-sdot_005fprodm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>sdot_prod<var>m</var></samp>&rsquo;</dt>
+<dd><a name="index-udot_005fprodm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>udot_prod<var>m</var></samp>&rsquo;</dt>
+<dd><p>Compute the sum of the products of two signed/unsigned elements.
+Operand 1 and operand 2 are of the same mode. Their product, which is of a
+wider mode, is computed and added to operand 3. Operand 3 is of a mode equal or
+wider than the mode of the product. The result is placed in operand 0, which
+is of the same mode as operand 3.
+</p>
+<a name="index-ssadm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>ssad<var>m</var></samp>&rsquo;</dt>
+<dd><a name="index-usadm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>usad<var>m</var></samp>&rsquo;</dt>
+<dd><p>Compute the sum of absolute differences of two signed/unsigned elements.
+Operand 1 and operand 2 are of the same mode. Their absolute difference, which
+is of a wider mode, is computed and added to operand 3. Operand 3 is of a mode
+equal or wider than the mode of the absolute difference. The result is placed
+in operand 0, which is of the same mode as operand 3.
+</p>
+<a name="index-widen_005fssumm3-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>widen_ssum<var>m3</var></samp>&rsquo;</dt>
+<dd><a name="index-widen_005fusumm3-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>widen_usum<var>m3</var></samp>&rsquo;</dt>
+<dd><p>Operands 0 and 2 are of the same mode, which is wider than the mode of
+operand 1. Add operand 1 to operand 2 and place the widened result in
+operand 0. (This is used express accumulation of elements into an accumulator
+of a wider mode.)
+</p>
+<a name="index-vec_005fshl_005finsert_005fm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vec_shl_insert_<var>m</var></samp>&rsquo;</dt>
+<dd><p>Shift the elements in vector input operand 1 left one element (i.e.
+away from element 0) and fill the vacated element 0 with the scalar
+in operand 2.  Store the result in vector output operand 0.  Operands
+0 and 1 have mode <var>m</var> and operand 2 has the mode appropriate for
+one element of <var>m</var>.
+</p>
+<a name="index-vec_005fshr_005fm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vec_shr_<var>m</var></samp>&rsquo;</dt>
+<dd><p>Whole vector right shift in bits, i.e. towards element 0.
+Operand 1 is a vector to be shifted.
+Operand 2 is an integer shift amount in bits.
+Operand 0 is where the resulting shifted vector is stored.
+The output and input vectors should have the same modes.
+</p>
+<a name="index-vec_005fpack_005ftrunc_005fm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vec_pack_trunc_<var>m</var></samp>&rsquo;</dt>
+<dd><p>Narrow (demote) and merge the elements of two vectors. Operands 1 and 2
+are vectors of the same mode having N integral or floating point elements
+of size S.  Operand 0 is the resulting vector in which 2*N elements of
+size N/2 are concatenated after narrowing them down using truncation.
+</p>
+<a name="index-vec_005fpack_005fsbool_005ftrunc_005fm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vec_pack_sbool_trunc_<var>m</var></samp>&rsquo;</dt>
+<dd><p>Narrow and merge the elements of two vectors.  Operands 1 and 2 are vectors
+of the same type having N boolean elements.  Operand 0 is the resulting
+vector in which 2*N elements are concatenated.  The last operand (operand 3)
+is the number of elements in the output vector 2*N as a <code>CONST_INT</code>.
+This instruction pattern is used when all the vector input and output
+operands have the same scalar mode <var>m</var> and thus using
+<code>vec_pack_trunc_<var>m</var></code> would be ambiguous.
+</p>
+<a name="index-vec_005fpack_005fssat_005fm-instruction-pattern"></a>
+<a name="index-vec_005fpack_005fusat_005fm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vec_pack_ssat_<var>m</var></samp>&rsquo;, &lsquo;<samp>vec_pack_usat_<var>m</var></samp>&rsquo;</dt>
+<dd><p>Narrow (demote) and merge the elements of two vectors.  Operands 1 and 2
+are vectors of the same mode having N integral elements of size S.
+Operand 0 is the resulting vector in which the elements of the two input
+vectors are concatenated after narrowing them down using signed/unsigned
+saturating arithmetic.
+</p>
+<a name="index-vec_005fpack_005fsfix_005ftrunc_005fm-instruction-pattern"></a>
+<a name="index-vec_005fpack_005fufix_005ftrunc_005fm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vec_pack_sfix_trunc_<var>m</var></samp>&rsquo;, &lsquo;<samp>vec_pack_ufix_trunc_<var>m</var></samp>&rsquo;</dt>
+<dd><p>Narrow, convert to signed/unsigned integral type and merge the elements
+of two vectors.  Operands 1 and 2 are vectors of the same mode having N
+floating point elements of size S.  Operand 0 is the resulting vector
+in which 2*N elements of size N/2 are concatenated.
+</p>
+<a name="index-vec_005fpacks_005ffloat_005fm-instruction-pattern"></a>
+<a name="index-vec_005fpacku_005ffloat_005fm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vec_packs_float_<var>m</var></samp>&rsquo;, &lsquo;<samp>vec_packu_float_<var>m</var></samp>&rsquo;</dt>
+<dd><p>Narrow, convert to floating point type and merge the elements
+of two vectors.  Operands 1 and 2 are vectors of the same mode having N
+signed/unsigned integral elements of size S.  Operand 0 is the resulting vector
+in which 2*N elements of size N/2 are concatenated.
+</p>
+<a name="index-vec_005funpacks_005fhi_005fm-instruction-pattern"></a>
+<a name="index-vec_005funpacks_005flo_005fm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vec_unpacks_hi_<var>m</var></samp>&rsquo;, &lsquo;<samp>vec_unpacks_lo_<var>m</var></samp>&rsquo;</dt>
+<dd><p>Extract and widen (promote) the high/low part of a vector of signed
+integral or floating point elements.  The input vector (operand 1) has N
+elements of size S.  Widen (promote) the high/low elements of the vector
+using signed or floating point extension and place the resulting N/2
+values of size 2*S in the output vector (operand 0).
+</p>
+<a name="index-vec_005funpacku_005fhi_005fm-instruction-pattern"></a>
+<a name="index-vec_005funpacku_005flo_005fm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vec_unpacku_hi_<var>m</var></samp>&rsquo;, &lsquo;<samp>vec_unpacku_lo_<var>m</var></samp>&rsquo;</dt>
+<dd><p>Extract and widen (promote) the high/low part of a vector of unsigned
+integral elements.  The input vector (operand 1) has N elements of size S.
+Widen (promote) the high/low elements of the vector using zero extension and
+place the resulting N/2 values of size 2*S in the output vector (operand 0).
+</p>
+<a name="index-vec_005funpacks_005fsbool_005fhi_005fm-instruction-pattern"></a>
+<a name="index-vec_005funpacks_005fsbool_005flo_005fm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vec_unpacks_sbool_hi_<var>m</var></samp>&rsquo;, &lsquo;<samp>vec_unpacks_sbool_lo_<var>m</var></samp>&rsquo;</dt>
+<dd><p>Extract the high/low part of a vector of boolean elements that have scalar
+mode <var>m</var>.  The input vector (operand 1) has N elements, the output
+vector (operand 0) has N/2 elements.  The last operand (operand 2) is the
+number of elements of the input vector N as a <code>CONST_INT</code>.  These
+patterns are used if both the input and output vectors have the same scalar
+mode <var>m</var> and thus using <code>vec_unpacks_hi_<var>m</var></code> or
+<code>vec_unpacks_lo_<var>m</var></code> would be ambiguous.
+</p>
+<a name="index-vec_005funpacks_005ffloat_005fhi_005fm-instruction-pattern"></a>
+<a name="index-vec_005funpacks_005ffloat_005flo_005fm-instruction-pattern"></a>
+<a name="index-vec_005funpacku_005ffloat_005fhi_005fm-instruction-pattern"></a>
+<a name="index-vec_005funpacku_005ffloat_005flo_005fm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vec_unpacks_float_hi_<var>m</var></samp>&rsquo;, &lsquo;<samp>vec_unpacks_float_lo_<var>m</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>vec_unpacku_float_hi_<var>m</var></samp>&rsquo;, &lsquo;<samp>vec_unpacku_float_lo_<var>m</var></samp>&rsquo;</dt>
+<dd><p>Extract, convert to floating point type and widen the high/low part of a
+vector of signed/unsigned integral elements.  The input vector (operand 1)
+has N elements of size S.  Convert the high/low elements of the vector using
+floating point conversion and place the resulting N/2 values of size 2*S in
+the output vector (operand 0).
+</p>
+<a name="index-vec_005funpack_005fsfix_005ftrunc_005fhi_005fm-instruction-pattern"></a>
+<a name="index-vec_005funpack_005fsfix_005ftrunc_005flo_005fm-instruction-pattern"></a>
+<a name="index-vec_005funpack_005fufix_005ftrunc_005fhi_005fm-instruction-pattern"></a>
+<a name="index-vec_005funpack_005fufix_005ftrunc_005flo_005fm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vec_unpack_sfix_trunc_hi_<var>m</var></samp>&rsquo;,</dt>
+<dt>&lsquo;<samp>vec_unpack_sfix_trunc_lo_<var>m</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>vec_unpack_ufix_trunc_hi_<var>m</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>vec_unpack_ufix_trunc_lo_<var>m</var></samp>&rsquo;</dt>
+<dd><p>Extract, convert to signed/unsigned integer type and widen the high/low part of a
+vector of floating point elements.  The input vector (operand 1)
+has N elements of size S.  Convert the high/low elements of the vector
+to integers and place the resulting N/2 values of size 2*S in
+the output vector (operand 0).
+</p>
+<a name="index-vec_005fwiden_005fumult_005fhi_005fm-instruction-pattern"></a>
+<a name="index-vec_005fwiden_005fumult_005flo_005fm-instruction-pattern"></a>
+<a name="index-vec_005fwiden_005fsmult_005fhi_005fm-instruction-pattern"></a>
+<a name="index-vec_005fwiden_005fsmult_005flo_005fm-instruction-pattern"></a>
+<a name="index-vec_005fwiden_005fumult_005feven_005fm-instruction-pattern"></a>
+<a name="index-vec_005fwiden_005fumult_005fodd_005fm-instruction-pattern"></a>
+<a name="index-vec_005fwiden_005fsmult_005feven_005fm-instruction-pattern"></a>
+<a name="index-vec_005fwiden_005fsmult_005fodd_005fm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vec_widen_umult_hi_<var>m</var></samp>&rsquo;, &lsquo;<samp>vec_widen_umult_lo_<var>m</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>vec_widen_smult_hi_<var>m</var></samp>&rsquo;, &lsquo;<samp>vec_widen_smult_lo_<var>m</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>vec_widen_umult_even_<var>m</var></samp>&rsquo;, &lsquo;<samp>vec_widen_umult_odd_<var>m</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>vec_widen_smult_even_<var>m</var></samp>&rsquo;, &lsquo;<samp>vec_widen_smult_odd_<var>m</var></samp>&rsquo;</dt>
+<dd><p>Signed/Unsigned widening multiplication.  The two inputs (operands 1 and 2)
+are vectors with N signed/unsigned elements of size S.  Multiply the high/low
+or even/odd elements of the two vectors, and put the N/2 products of size 2*S
+in the output vector (operand 0). A target shouldn&rsquo;t implement even/odd pattern
+pair if it is less efficient than lo/hi one.
+</p>
+<a name="index-vec_005fwiden_005fushiftl_005fhi_005fm-instruction-pattern"></a>
+<a name="index-vec_005fwiden_005fushiftl_005flo_005fm-instruction-pattern"></a>
+<a name="index-vec_005fwiden_005fsshiftl_005fhi_005fm-instruction-pattern"></a>
+<a name="index-vec_005fwiden_005fsshiftl_005flo_005fm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vec_widen_ushiftl_hi_<var>m</var></samp>&rsquo;, &lsquo;<samp>vec_widen_ushiftl_lo_<var>m</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>vec_widen_sshiftl_hi_<var>m</var></samp>&rsquo;, &lsquo;<samp>vec_widen_sshiftl_lo_<var>m</var></samp>&rsquo;</dt>
+<dd><p>Signed/Unsigned widening shift left.  The first input (operand 1) is a vector
+with N signed/unsigned elements of size S.  Operand 2 is a constant.  Shift
+the high/low elements of operand 1, and put the N/2 results of size 2*S in the
+output vector (operand 0).
+</p>
+<a name="index-mulhisi3-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>mulhisi3</samp>&rsquo;</dt>
+<dd><p>Multiply operands 1 and 2, which have mode <code>HImode</code>, and store
+a <code>SImode</code> product in operand 0.
+</p>
+<a name="index-mulqihi3-instruction-pattern"></a>
+<a name="index-mulsidi3-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>mulqihi3</samp>&rsquo;, &lsquo;<samp>mulsidi3</samp>&rsquo;</dt>
+<dd><p>Similar widening-multiplication instructions of other widths.
+</p>
+<a name="index-umulqihi3-instruction-pattern"></a>
+<a name="index-umulhisi3-instruction-pattern"></a>
+<a name="index-umulsidi3-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>umulqihi3</samp>&rsquo;, &lsquo;<samp>umulhisi3</samp>&rsquo;, &lsquo;<samp>umulsidi3</samp>&rsquo;</dt>
+<dd><p>Similar widening-multiplication instructions that do unsigned
+multiplication.
+</p>
+<a name="index-usmulqihi3-instruction-pattern"></a>
+<a name="index-usmulhisi3-instruction-pattern"></a>
+<a name="index-usmulsidi3-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>usmulqihi3</samp>&rsquo;, &lsquo;<samp>usmulhisi3</samp>&rsquo;, &lsquo;<samp>usmulsidi3</samp>&rsquo;</dt>
+<dd><p>Similar widening-multiplication instructions that interpret the first
+operand as unsigned and the second operand as signed, then do a signed
+multiplication.
+</p>
+<a name="index-smulm3_005fhighpart-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>smul<var>m</var>3_highpart</samp>&rsquo;</dt>
+<dd><p>Perform a signed multiplication of operands 1 and 2, which have mode
+<var>m</var>, and store the most significant half of the product in operand 0.
+The least significant half of the product is discarded.
+</p>
+<a name="index-umulm3_005fhighpart-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>umul<var>m</var>3_highpart</samp>&rsquo;</dt>
+<dd><p>Similar, but the multiplication is unsigned.
+</p>
+<a name="index-maddmn4-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>madd<var>m</var><var>n</var>4</samp>&rsquo;</dt>
+<dd><p>Multiply operands 1 and 2, sign-extend them to mode <var>n</var>, add
+operand 3, and store the result in operand 0.  Operands 1 and 2
+have mode <var>m</var> and operands 0 and 3 have mode <var>n</var>.
+Both modes must be integer or fixed-point modes and <var>n</var> must be twice
+the size of <var>m</var>.
+</p>
+<p>In other words, <code>madd<var>m</var><var>n</var>4</code> is like
+<code>mul<var>m</var><var>n</var>3</code> except that it also adds operand 3.
+</p>
+<p>These instructions are not allowed to <code>FAIL</code>.
+</p>
+<a name="index-umaddmn4-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>umadd<var>m</var><var>n</var>4</samp>&rsquo;</dt>
+<dd><p>Like <code>madd<var>m</var><var>n</var>4</code>, but zero-extend the multiplication
+operands instead of sign-extending them.
+</p>
+<a name="index-ssmaddmn4-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>ssmadd<var>m</var><var>n</var>4</samp>&rsquo;</dt>
+<dd><p>Like <code>madd<var>m</var><var>n</var>4</code>, but all involved operations must be
+signed-saturating.
+</p>
+<a name="index-usmaddmn4-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>usmadd<var>m</var><var>n</var>4</samp>&rsquo;</dt>
+<dd><p>Like <code>umadd<var>m</var><var>n</var>4</code>, but all involved operations must be
+unsigned-saturating.
+</p>
+<a name="index-msubmn4-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>msub<var>m</var><var>n</var>4</samp>&rsquo;</dt>
+<dd><p>Multiply operands 1 and 2, sign-extend them to mode <var>n</var>, subtract the
+result from operand 3, and store the result in operand 0.  Operands 1 and 2
+have mode <var>m</var> and operands 0 and 3 have mode <var>n</var>.
+Both modes must be integer or fixed-point modes and <var>n</var> must be twice
+the size of <var>m</var>.
+</p>
+<p>In other words, <code>msub<var>m</var><var>n</var>4</code> is like
+<code>mul<var>m</var><var>n</var>3</code> except that it also subtracts the result
+from operand 3.
+</p>
+<p>These instructions are not allowed to <code>FAIL</code>.
+</p>
+<a name="index-umsubmn4-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>umsub<var>m</var><var>n</var>4</samp>&rsquo;</dt>
+<dd><p>Like <code>msub<var>m</var><var>n</var>4</code>, but zero-extend the multiplication
+operands instead of sign-extending them.
+</p>
+<a name="index-ssmsubmn4-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>ssmsub<var>m</var><var>n</var>4</samp>&rsquo;</dt>
+<dd><p>Like <code>msub<var>m</var><var>n</var>4</code>, but all involved operations must be
+signed-saturating.
+</p>
+<a name="index-usmsubmn4-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>usmsub<var>m</var><var>n</var>4</samp>&rsquo;</dt>
+<dd><p>Like <code>umsub<var>m</var><var>n</var>4</code>, but all involved operations must be
+unsigned-saturating.
+</p>
+<a name="index-divmodm4-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>divmod<var>m</var>4</samp>&rsquo;</dt>
+<dd><p>Signed division that produces both a quotient and a remainder.
+Operand 1 is divided by operand 2 to produce a quotient stored
+in operand 0 and a remainder stored in operand 3.
+</p>
+<p>For machines with an instruction that produces both a quotient and a
+remainder, provide a pattern for &lsquo;<samp>divmod<var>m</var>4</samp>&rsquo; but do not
+provide patterns for &lsquo;<samp>div<var>m</var>3</samp>&rsquo; and &lsquo;<samp>mod<var>m</var>3</samp>&rsquo;.  This
+allows optimization in the relatively common case when both the quotient
+and remainder are computed.
+</p>
+<p>If an instruction that just produces a quotient or just a remainder
+exists and is more efficient than the instruction that produces both,
+write the output routine of &lsquo;<samp>divmod<var>m</var>4</samp>&rsquo; to call
+<code>find_reg_note</code> and look for a <code>REG_UNUSED</code> note on the
+quotient or remainder and generate the appropriate instruction.
+</p>
+<a name="index-udivmodm4-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>udivmod<var>m</var>4</samp>&rsquo;</dt>
+<dd><p>Similar, but does unsigned division.
+</p>
+<a name="shift-patterns"></a><a name="index-ashlm3-instruction-pattern"></a>
+<a name="index-ssashlm3-instruction-pattern"></a>
+<a name="index-usashlm3-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>ashl<var>m</var>3</samp>&rsquo;, &lsquo;<samp>ssashl<var>m</var>3</samp>&rsquo;, &lsquo;<samp>usashl<var>m</var>3</samp>&rsquo;</dt>
+<dd><p>Arithmetic-shift operand 1 left by a number of bits specified by operand
+2, and store the result in operand 0.  Here <var>m</var> is the mode of
+operand 0 and operand 1; operand 2&rsquo;s mode is specified by the
+instruction pattern, and the compiler will convert the operand to that
+mode before generating the instruction.  The shift or rotate expander
+or instruction pattern should explicitly specify the mode of the operand 2,
+it should never be <code>VOIDmode</code>.  The meaning of out-of-range shift
+counts can optionally be specified by <code>TARGET_SHIFT_TRUNCATION_MASK</code>.
+See <a href="Misc.html#TARGET_005fSHIFT_005fTRUNCATION_005fMASK">TARGET_SHIFT_TRUNCATION_MASK</a>.  Operand 2 is always a scalar type.
+</p>
+<a name="index-ashrm3-instruction-pattern"></a>
+<a name="index-lshrm3-instruction-pattern"></a>
+<a name="index-rotlm3-instruction-pattern"></a>
+<a name="index-rotrm3-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>ashr<var>m</var>3</samp>&rsquo;, &lsquo;<samp>lshr<var>m</var>3</samp>&rsquo;, &lsquo;<samp>rotl<var>m</var>3</samp>&rsquo;, &lsquo;<samp>rotr<var>m</var>3</samp>&rsquo;</dt>
+<dd><p>Other shift and rotate instructions, analogous to the
+<code>ashl<var>m</var>3</code> instructions.  Operand 2 is always a scalar type.
+</p>
+<a name="index-vashlm3-instruction-pattern"></a>
+<a name="index-vashrm3-instruction-pattern"></a>
+<a name="index-vlshrm3-instruction-pattern"></a>
+<a name="index-vrotlm3-instruction-pattern"></a>
+<a name="index-vrotrm3-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>vashl<var>m</var>3</samp>&rsquo;, &lsquo;<samp>vashr<var>m</var>3</samp>&rsquo;, &lsquo;<samp>vlshr<var>m</var>3</samp>&rsquo;, &lsquo;<samp>vrotl<var>m</var>3</samp>&rsquo;, &lsquo;<samp>vrotr<var>m</var>3</samp>&rsquo;</dt>
+<dd><p>Vector shift and rotate instructions that take vectors as operand 2
+instead of a scalar type.
+</p>
+<a name="index-avgm3_005ffloor-instruction-pattern"></a>
+<a name="index-uavgm3_005ffloor-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>avg<var>m</var>3_floor</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>uavg<var>m</var>3_floor</samp>&rsquo;</dt>
+<dd><p>Signed and unsigned average instructions.  These instructions add
+operands 1 and 2 without truncation, divide the result by 2,
+round towards -Inf, and store the result in operand 0.  This is
+equivalent to the C code:
+</p><div class="smallexample">
+<pre class="smallexample">narrow op0, op1, op2;
+&hellip;
+op0 = (narrow) (((wide) op1 + (wide) op2) &gt;&gt; 1);
+</pre></div>
+<p>where the sign of &lsquo;<samp>narrow</samp>&rsquo; determines whether this is a signed
+or unsigned operation.
+</p>
+<a name="index-avgm3_005fceil-instruction-pattern"></a>
+<a name="index-uavgm3_005fceil-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>avg<var>m</var>3_ceil</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>uavg<var>m</var>3_ceil</samp>&rsquo;</dt>
+<dd><p>Like &lsquo;<samp>avg<var>m</var>3_floor</samp>&rsquo; and &lsquo;<samp>uavg<var>m</var>3_floor</samp>&rsquo;, but round
+towards +Inf.  This is equivalent to the C code:
+</p><div class="smallexample">
+<pre class="smallexample">narrow op0, op1, op2;
+&hellip;
+op0 = (narrow) (((wide) op1 + (wide) op2 + 1) &gt;&gt; 1);
+</pre></div>
+
+<a name="index-bswapm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>bswap<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Reverse the order of bytes of operand 1 and store the result in operand 0.
+</p>
+<a name="index-negm2-instruction-pattern"></a>
+<a name="index-ssnegm2-instruction-pattern"></a>
+<a name="index-usnegm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>neg<var>m</var>2</samp>&rsquo;, &lsquo;<samp>ssneg<var>m</var>2</samp>&rsquo;, &lsquo;<samp>usneg<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Negate operand 1 and store the result in operand 0.
+</p>
+<a name="index-negvm3-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>negv<var>m</var>3</samp>&rsquo;</dt>
+<dd><p>Like <code>neg<var>m</var>2</code> but takes a <code>code_label</code> as operand 2 and
+emits code to jump to it if signed overflow occurs during the negation.
+</p>
+<a name="index-absm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>abs<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Store the absolute value of operand 1 into operand 0.
+</p>
+<a name="index-sqrtm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>sqrt<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Store the square root of operand 1 into operand 0.  Both operands have
+mode <var>m</var>, which is a scalar or vector floating-point mode.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-rsqrtm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>rsqrt<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Store the reciprocal of the square root of operand 1 into operand 0.
+Both operands have mode <var>m</var>, which is a scalar or vector
+floating-point mode.
+</p>
+<p>On most architectures this pattern is only approximate, so either
+its C condition or the <code>TARGET_OPTAB_SUPPORTED_P</code> hook should
+check for the appropriate math flags.  (Using the C condition is
+more direct, but using <code>TARGET_OPTAB_SUPPORTED_P</code> can be useful
+if a target-specific built-in also uses the &lsquo;<samp>rsqrt<var>m</var>2</samp>&rsquo;
+pattern.)
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-fmodm3-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>fmod<var>m</var>3</samp>&rsquo;</dt>
+<dd><p>Store the remainder of dividing operand 1 by operand 2 into
+operand 0, rounded towards zero to an integer.  All operands have
+mode <var>m</var>, which is a scalar or vector floating-point mode.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-remainderm3-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>remainder<var>m</var>3</samp>&rsquo;</dt>
+<dd><p>Store the remainder of dividing operand 1 by operand 2 into
+operand 0, rounded to the nearest integer.  All operands have
+mode <var>m</var>, which is a scalar or vector floating-point mode.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-scalbm3-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>scalb<var>m</var>3</samp>&rsquo;</dt>
+<dd><p>Raise <code>FLT_RADIX</code> to the power of operand 2, multiply it by
+operand 1, and store the result in operand 0.  All operands have
+mode <var>m</var>, which is a scalar or vector floating-point mode.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-ldexpm3-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>ldexp<var>m</var>3</samp>&rsquo;</dt>
+<dd><p>Raise 2 to the power of operand 2, multiply it by operand 1, and store
+the result in operand 0.  Operands 0 and 1 have mode <var>m</var>, which is
+a scalar or vector floating-point mode.  Operand 2&rsquo;s mode has
+the same number of elements as <var>m</var> and each element is wide
+enough to store an <code>int</code>.  The integers are signed.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-cosm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>cos<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Store the cosine of operand 1 into operand 0.  Both operands have
+mode <var>m</var>, which is a scalar or vector floating-point mode.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-sinm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>sin<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Store the sine of operand 1 into operand 0.  Both operands have
+mode <var>m</var>, which is a scalar or vector floating-point mode.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-sincosm3-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>sincos<var>m</var>3</samp>&rsquo;</dt>
+<dd><p>Store the cosine of operand 2 into operand 0 and the sine of
+operand 2 into operand 1.  All operands have mode <var>m</var>,
+which is a scalar or vector floating-point mode.
+</p>
+<p>Targets that can calculate the sine and cosine simultaneously can
+implement this pattern as opposed to implementing individual
+<code>sin<var>m</var>2</code> and <code>cos<var>m</var>2</code> patterns.  The <code>sin</code>
+and <code>cos</code> built-in functions will then be expanded to the
+<code>sincos<var>m</var>3</code> pattern, with one of the output values
+left unused.
+</p>
+<a name="index-tanm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>tan<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Store the tangent of operand 1 into operand 0.  Both operands have
+mode <var>m</var>, which is a scalar or vector floating-point mode.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-asinm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>asin<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Store the arc sine of operand 1 into operand 0.  Both operands have
+mode <var>m</var>, which is a scalar or vector floating-point mode.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-acosm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>acos<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Store the arc cosine of operand 1 into operand 0.  Both operands have
+mode <var>m</var>, which is a scalar or vector floating-point mode.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-atanm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>atan<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Store the arc tangent of operand 1 into operand 0.  Both operands have
+mode <var>m</var>, which is a scalar or vector floating-point mode.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-expm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>exp<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Raise e (the base of natural logarithms) to the power of operand 1
+and store the result in operand 0.  Both operands have mode <var>m</var>,
+which is a scalar or vector floating-point mode.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-expm1m2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>expm1<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Raise e (the base of natural logarithms) to the power of operand 1,
+subtract 1, and store the result in operand 0.  Both operands have
+mode <var>m</var>, which is a scalar or vector floating-point mode.
+</p>
+<p>For inputs close to zero, the pattern is expected to be more
+accurate than a separate <code>exp<var>m</var>2</code> and <code>sub<var>m</var>3</code>
+would be.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-exp10m2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>exp10<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Raise 10 to the power of operand 1 and store the result in operand 0.
+Both operands have mode <var>m</var>, which is a scalar or vector
+floating-point mode.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-exp2m2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>exp2<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Raise 2 to the power of operand 1 and store the result in operand 0.
+Both operands have mode <var>m</var>, which is a scalar or vector
+floating-point mode.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-logm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>log<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Store the natural logarithm of operand 1 into operand 0.  Both operands
+have mode <var>m</var>, which is a scalar or vector floating-point mode.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-log1pm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>log1p<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Add 1 to operand 1, compute the natural logarithm, and store
+the result in operand 0.  Both operands have mode <var>m</var>, which is
+a scalar or vector floating-point mode.
+</p>
+<p>For inputs close to zero, the pattern is expected to be more
+accurate than a separate <code>add<var>m</var>3</code> and <code>log<var>m</var>2</code>
+would be.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-log10m2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>log10<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Store the base-10 logarithm of operand 1 into operand 0.  Both operands
+have mode <var>m</var>, which is a scalar or vector floating-point mode.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-log2m2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>log2<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Store the base-2 logarithm of operand 1 into operand 0.  Both operands
+have mode <var>m</var>, which is a scalar or vector floating-point mode.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-logbm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>logb<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Store the base-<code>FLT_RADIX</code> logarithm of operand 1 into operand 0.
+Both operands have mode <var>m</var>, which is a scalar or vector
+floating-point mode.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-significandm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>significand<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Store the significand of floating-point operand 1 in operand 0.
+Both operands have mode <var>m</var>, which is a scalar or vector
+floating-point mode.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-powm3-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>pow<var>m</var>3</samp>&rsquo;</dt>
+<dd><p>Store the value of operand 1 raised to the exponent operand 2
+into operand 0.  All operands have mode <var>m</var>, which is a scalar
+or vector floating-point mode.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-atan2m3-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>atan2<var>m</var>3</samp>&rsquo;</dt>
+<dd><p>Store the arc tangent (inverse tangent) of operand 1 divided by
+operand 2 into operand 0, using the signs of both arguments to
+determine the quadrant of the result.  All operands have mode
+<var>m</var>, which is a scalar or vector floating-point mode.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-floorm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>floor<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Store the largest integral value not greater than operand 1 in operand 0.
+Both operands have mode <var>m</var>, which is a scalar or vector
+floating-point mode.  If <samp>-ffp-int-builtin-inexact</samp> is in
+effect, the &ldquo;inexact&rdquo; exception may be raised for noninteger
+operands; otherwise, it may not.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-btruncm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>btrunc<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Round operand 1 to an integer, towards zero, and store the result in
+operand 0.  Both operands have mode <var>m</var>, which is a scalar or
+vector floating-point mode.  If <samp>-ffp-int-builtin-inexact</samp> is
+in effect, the &ldquo;inexact&rdquo; exception may be raised for noninteger
+operands; otherwise, it may not.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-roundm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>round<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Round operand 1 to the nearest integer, rounding away from zero in the
+event of a tie, and store the result in operand 0.  Both operands have
+mode <var>m</var>, which is a scalar or vector floating-point mode.  If
+<samp>-ffp-int-builtin-inexact</samp> is in effect, the &ldquo;inexact&rdquo;
+exception may be raised for noninteger operands; otherwise, it may
+not.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-ceilm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>ceil<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Store the smallest integral value not less than operand 1 in operand 0.
+Both operands have mode <var>m</var>, which is a scalar or vector
+floating-point mode.  If <samp>-ffp-int-builtin-inexact</samp> is in
+effect, the &ldquo;inexact&rdquo; exception may be raised for noninteger
+operands; otherwise, it may not.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-nearbyintm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>nearbyint<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Round operand 1 to an integer, using the current rounding mode, and
+store the result in operand 0.  Do not raise an inexact condition when
+the result is different from the argument.  Both operands have mode
+<var>m</var>, which is a scalar or vector floating-point mode.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-rintm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>rint<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Round operand 1 to an integer, using the current rounding mode, and
+store the result in operand 0.  Raise an inexact condition when
+the result is different from the argument.  Both operands have mode
+<var>m</var>, which is a scalar or vector floating-point mode.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-lrintmn2"></a>
+</dd>
+<dt>&lsquo;<samp>lrint<var>m</var><var>n</var>2</samp>&rsquo;</dt>
+<dd><p>Convert operand 1 (valid for floating point mode <var>m</var>) to fixed
+point mode <var>n</var> as a signed number according to the current
+rounding mode and store in operand 0 (which has mode <var>n</var>).
+</p>
+<a name="index-lroundmn2"></a>
+</dd>
+<dt>&lsquo;<samp>lround<var>m</var><var>n</var>2</samp>&rsquo;</dt>
+<dd><p>Convert operand 1 (valid for floating point mode <var>m</var>) to fixed
+point mode <var>n</var> as a signed number rounding to nearest and away
+from zero and store in operand 0 (which has mode <var>n</var>).
+</p>
+<a name="index-lfloormn2"></a>
+</dd>
+<dt>&lsquo;<samp>lfloor<var>m</var><var>n</var>2</samp>&rsquo;</dt>
+<dd><p>Convert operand 1 (valid for floating point mode <var>m</var>) to fixed
+point mode <var>n</var> as a signed number rounding down and store in
+operand 0 (which has mode <var>n</var>).
+</p>
+<a name="index-lceilmn2"></a>
+</dd>
+<dt>&lsquo;<samp>lceil<var>m</var><var>n</var>2</samp>&rsquo;</dt>
+<dd><p>Convert operand 1 (valid for floating point mode <var>m</var>) to fixed
+point mode <var>n</var> as a signed number rounding up and store in
+operand 0 (which has mode <var>n</var>).
+</p>
+<a name="index-copysignm3-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>copysign<var>m</var>3</samp>&rsquo;</dt>
+<dd><p>Store a value with the magnitude of operand 1 and the sign of operand
+2 into operand 0.  All operands have mode <var>m</var>, which is a scalar or
+vector floating-point mode.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-xorsignm3-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>xorsign<var>m</var>3</samp>&rsquo;</dt>
+<dd><p>Equivalent to &lsquo;<samp>op0 = op1 * copysign (1.0, op2)</samp>&rsquo;: store a value with
+the magnitude of operand 1 and the sign of operand 2 into operand 0.
+All operands have mode <var>m</var>, which is a scalar or vector
+floating-point mode.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-ffsm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>ffs<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Store into operand 0 one plus the index of the least significant 1-bit
+of operand 1.  If operand 1 is zero, store zero.
+</p>
+<p><var>m</var> is either a scalar or vector integer mode.  When it is a scalar,
+operand 1 has mode <var>m</var> but operand 0 can have whatever scalar
+integer mode is suitable for the target.  The compiler will insert
+conversion instructions as necessary (typically to convert the result
+to the same width as <code>int</code>).  When <var>m</var> is a vector, both
+operands must have mode <var>m</var>.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-clrsbm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>clrsb<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Count leading redundant sign bits.
+Store into operand 0 the number of redundant sign bits in operand 1, starting
+at the most significant bit position.
+A redundant sign bit is defined as any sign bit after the first. As such,
+this count will be one less than the count of leading sign bits.
+</p>
+<p><var>m</var> is either a scalar or vector integer mode.  When it is a scalar,
+operand 1 has mode <var>m</var> but operand 0 can have whatever scalar
+integer mode is suitable for the target.  The compiler will insert
+conversion instructions as necessary (typically to convert the result
+to the same width as <code>int</code>).  When <var>m</var> is a vector, both
+operands must have mode <var>m</var>.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-clzm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>clz<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Store into operand 0 the number of leading 0-bits in operand 1, starting
+at the most significant bit position.  If operand 1 is 0, the
+<code>CLZ_DEFINED_VALUE_AT_ZERO</code> (see <a href="Misc.html#Misc">Misc</a>) macro defines if
+the result is undefined or has a useful value.
+</p>
+<p><var>m</var> is either a scalar or vector integer mode.  When it is a scalar,
+operand 1 has mode <var>m</var> but operand 0 can have whatever scalar
+integer mode is suitable for the target.  The compiler will insert
+conversion instructions as necessary (typically to convert the result
+to the same width as <code>int</code>).  When <var>m</var> is a vector, both
+operands must have mode <var>m</var>.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-ctzm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>ctz<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Store into operand 0 the number of trailing 0-bits in operand 1, starting
+at the least significant bit position.  If operand 1 is 0, the
+<code>CTZ_DEFINED_VALUE_AT_ZERO</code> (see <a href="Misc.html#Misc">Misc</a>) macro defines if
+the result is undefined or has a useful value.
+</p>
+<p><var>m</var> is either a scalar or vector integer mode.  When it is a scalar,
+operand 1 has mode <var>m</var> but operand 0 can have whatever scalar
+integer mode is suitable for the target.  The compiler will insert
+conversion instructions as necessary (typically to convert the result
+to the same width as <code>int</code>).  When <var>m</var> is a vector, both
+operands must have mode <var>m</var>.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-popcountm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>popcount<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Store into operand 0 the number of 1-bits in operand 1.
+</p>
+<p><var>m</var> is either a scalar or vector integer mode.  When it is a scalar,
+operand 1 has mode <var>m</var> but operand 0 can have whatever scalar
+integer mode is suitable for the target.  The compiler will insert
+conversion instructions as necessary (typically to convert the result
+to the same width as <code>int</code>).  When <var>m</var> is a vector, both
+operands must have mode <var>m</var>.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-paritym2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>parity<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Store into operand 0 the parity of operand 1, i.e. the number of 1-bits
+in operand 1 modulo 2.
+</p>
+<p><var>m</var> is either a scalar or vector integer mode.  When it is a scalar,
+operand 1 has mode <var>m</var> but operand 0 can have whatever scalar
+integer mode is suitable for the target.  The compiler will insert
+conversion instructions as necessary (typically to convert the result
+to the same width as <code>int</code>).  When <var>m</var> is a vector, both
+operands must have mode <var>m</var>.
+</p>
+<p>This pattern is not allowed to <code>FAIL</code>.
+</p>
+<a name="index-one_005fcmplm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>one_cmpl<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Store the bitwise-complement of operand 1 into operand 0.
+</p>
+<a name="index-movmemm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>movmem<var>m</var></samp>&rsquo;</dt>
+<dd><p>Block move instruction.  The destination and source blocks of memory
+are the first two operands, and both are <code>mem:BLK</code>s with an
+address in mode <code>Pmode</code>.
+</p>
+<p>The number of bytes to move is the third operand, in mode <var>m</var>.
+Usually, you specify <code>Pmode</code> for <var>m</var>.  However, if you can
+generate better code knowing the range of valid lengths is smaller than
+those representable in a full Pmode pointer, you should provide
+a pattern with a
+mode corresponding to the range of values you can handle efficiently
+(e.g., <code>QImode</code> for values in the range 0&ndash;127; note we avoid numbers
+that appear negative) and also a pattern with <code>Pmode</code>.
+</p>
+<p>The fourth operand is the known shared alignment of the source and
+destination, in the form of a <code>const_int</code> rtx.  Thus, if the
+compiler knows that both source and destination are word-aligned,
+it may provide the value 4 for this operand.
+</p>
+<p>Optional operands 5 and 6 specify expected alignment and size of block
+respectively.  The expected alignment differs from alignment in operand 4
+in a way that the blocks are not required to be aligned according to it in
+all cases. This expected alignment is also in bytes, just like operand 4.
+Expected size, when unknown, is set to <code>(const_int -1)</code>.
+</p>
+<p>Descriptions of multiple <code>movmem<var>m</var></code> patterns can only be
+beneficial if the patterns for smaller modes have fewer restrictions
+on their first, second and fourth operands.  Note that the mode <var>m</var>
+in <code>movmem<var>m</var></code> does not impose any restriction on the mode of
+individually moved data units in the block.
+</p>
+<p>These patterns need not give special consideration to the possibility
+that the source and destination strings might overlap.
+</p>
+<a name="index-movstr-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>movstr</samp>&rsquo;</dt>
+<dd><p>String copy instruction, with <code>stpcpy</code> semantics.  Operand 0 is
+an output operand in mode <code>Pmode</code>.  The addresses of the
+destination and source strings are operands 1 and 2, and both are
+<code>mem:BLK</code>s with addresses in mode <code>Pmode</code>.  The execution of
+the expansion of this pattern should store in operand 0 the address in
+which the <code>NUL</code> terminator was stored in the destination string.
+</p>
+<p>This patern has also several optional operands that are same as in
+<code>setmem</code>.
+</p>
+<a name="index-setmemm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>setmem<var>m</var></samp>&rsquo;</dt>
+<dd><p>Block set instruction.  The destination string is the first operand,
+given as a <code>mem:BLK</code> whose address is in mode <code>Pmode</code>.  The
+number of bytes to set is the second operand, in mode <var>m</var>.  The value to
+initialize the memory with is the third operand. Targets that only support the
+clearing of memory should reject any value that is not the constant 0.  See
+&lsquo;<samp>movmem<var>m</var></samp>&rsquo; for a discussion of the choice of mode.
+</p>
+<p>The fourth operand is the known alignment of the destination, in the form
+of a <code>const_int</code> rtx.  Thus, if the compiler knows that the
+destination is word-aligned, it may provide the value 4 for this
+operand.
+</p>
+<p>Optional operands 5 and 6 specify expected alignment and size of block
+respectively.  The expected alignment differs from alignment in operand 4
+in a way that the blocks are not required to be aligned according to it in
+all cases. This expected alignment is also in bytes, just like operand 4.
+Expected size, when unknown, is set to <code>(const_int -1)</code>.
+Operand 7 is the minimal size of the block and operand 8 is the
+maximal size of the block (NULL if it cannot be represented as CONST_INT).
+Operand 9 is the probable maximal size (i.e. we cannot rely on it for
+correctness, but it can be used for choosing proper code sequence for a
+given size).
+</p>
+<p>The use for multiple <code>setmem<var>m</var></code> is as for <code>movmem<var>m</var></code>.
+</p>
+<a name="index-cmpstrnm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>cmpstrn<var>m</var></samp>&rsquo;</dt>
+<dd><p>String compare instruction, with five operands.  Operand 0 is the output;
+it has mode <var>m</var>.  The remaining four operands are like the operands
+of &lsquo;<samp>movmem<var>m</var></samp>&rsquo;.  The two memory blocks specified are compared
+byte by byte in lexicographic order starting at the beginning of each
+string.  The instruction is not allowed to prefetch more than one byte
+at a time since either string may end in the first byte and reading past
+that may access an invalid page or segment and cause a fault.  The
+comparison terminates early if the fetched bytes are different or if
+they are equal to zero.  The effect of the instruction is to store a
+value in operand 0 whose sign indicates the result of the comparison.
+</p>
+<a name="index-cmpstrm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>cmpstr<var>m</var></samp>&rsquo;</dt>
+<dd><p>String compare instruction, without known maximum length.  Operand 0 is the
+output; it has mode <var>m</var>.  The second and third operand are the blocks of
+memory to be compared; both are <code>mem:BLK</code> with an address in mode
+<code>Pmode</code>.
+</p>
+<p>The fourth operand is the known shared alignment of the source and
+destination, in the form of a <code>const_int</code> rtx.  Thus, if the
+compiler knows that both source and destination are word-aligned,
+it may provide the value 4 for this operand.
+</p>
+<p>The two memory blocks specified are compared byte by byte in lexicographic
+order starting at the beginning of each string.  The instruction is not allowed
+to prefetch more than one byte at a time since either string may end in the
+first byte and reading past that may access an invalid page or segment and
+cause a fault.  The comparison will terminate when the fetched bytes
+are different or if they are equal to zero.  The effect of the
+instruction is to store a value in operand 0 whose sign indicates the
+result of the comparison.
+</p>
+<a name="index-cmpmemm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>cmpmem<var>m</var></samp>&rsquo;</dt>
+<dd><p>Block compare instruction, with five operands like the operands
+of &lsquo;<samp>cmpstr<var>m</var></samp>&rsquo;.  The two memory blocks specified are compared
+byte by byte in lexicographic order starting at the beginning of each
+block.  Unlike &lsquo;<samp>cmpstr<var>m</var></samp>&rsquo; the instruction can prefetch
+any bytes in the two memory blocks.  Also unlike &lsquo;<samp>cmpstr<var>m</var></samp>&rsquo;
+the comparison will not stop if both bytes are zero.  The effect of
+the instruction is to store a value in operand 0 whose sign indicates
+the result of the comparison.
+</p>
+<a name="index-strlenm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>strlen<var>m</var></samp>&rsquo;</dt>
+<dd><p>Compute the length of a string, with three operands.
+Operand 0 is the result (of mode <var>m</var>), operand 1 is
+a <code>mem</code> referring to the first character of the string,
+operand 2 is the character to search for (normally zero),
+and operand 3 is a constant describing the known alignment
+of the beginning of the string.
+</p>
+<a name="index-floatmn2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>float<var>m</var><var>n</var>2</samp>&rsquo;</dt>
+<dd><p>Convert signed integer operand 1 (valid for fixed point mode <var>m</var>) to
+floating point mode <var>n</var> and store in operand 0 (which has mode
+<var>n</var>).
+</p>
+<a name="index-floatunsmn2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>floatuns<var>m</var><var>n</var>2</samp>&rsquo;</dt>
+<dd><p>Convert unsigned integer operand 1 (valid for fixed point mode <var>m</var>)
+to floating point mode <var>n</var> and store in operand 0 (which has mode
+<var>n</var>).
+</p>
+<a name="index-fixmn2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>fix<var>m</var><var>n</var>2</samp>&rsquo;</dt>
+<dd><p>Convert operand 1 (valid for floating point mode <var>m</var>) to fixed
+point mode <var>n</var> as a signed number and store in operand 0 (which
+has mode <var>n</var>).  This instruction&rsquo;s result is defined only when
+the value of operand 1 is an integer.
+</p>
+<p>If the machine description defines this pattern, it also needs to
+define the <code>ftrunc</code> pattern.
+</p>
+<a name="index-fixunsmn2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>fixuns<var>m</var><var>n</var>2</samp>&rsquo;</dt>
+<dd><p>Convert operand 1 (valid for floating point mode <var>m</var>) to fixed
+point mode <var>n</var> as an unsigned number and store in operand 0 (which
+has mode <var>n</var>).  This instruction&rsquo;s result is defined only when the
+value of operand 1 is an integer.
+</p>
+<a name="index-ftruncm2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>ftrunc<var>m</var>2</samp>&rsquo;</dt>
+<dd><p>Convert operand 1 (valid for floating point mode <var>m</var>) to an
+integer value, still represented in floating point mode <var>m</var>, and
+store it in operand 0 (valid for floating point mode <var>m</var>).
+</p>
+<a name="index-fix_005ftruncmn2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>fix_trunc<var>m</var><var>n</var>2</samp>&rsquo;</dt>
+<dd><p>Like &lsquo;<samp>fix<var>m</var><var>n</var>2</samp>&rsquo; but works for any floating point value
+of mode <var>m</var> by converting the value to an integer.
+</p>
+<a name="index-fixuns_005ftruncmn2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>fixuns_trunc<var>m</var><var>n</var>2</samp>&rsquo;</dt>
+<dd><p>Like &lsquo;<samp>fixuns<var>m</var><var>n</var>2</samp>&rsquo; but works for any floating point
+value of mode <var>m</var> by converting the value to an integer.
+</p>
+<a name="index-truncmn2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>trunc<var>m</var><var>n</var>2</samp>&rsquo;</dt>
+<dd><p>Truncate operand 1 (valid for mode <var>m</var>) to mode <var>n</var> and
+store in operand 0 (which has mode <var>n</var>).  Both modes must be fixed
+point or both floating point.
+</p>
+<a name="index-extendmn2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>extend<var>m</var><var>n</var>2</samp>&rsquo;</dt>
+<dd><p>Sign-extend operand 1 (valid for mode <var>m</var>) to mode <var>n</var> and
+store in operand 0 (which has mode <var>n</var>).  Both modes must be fixed
+point or both floating point.
+</p>
+<a name="index-zero_005fextendmn2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>zero_extend<var>m</var><var>n</var>2</samp>&rsquo;</dt>
+<dd><p>Zero-extend operand 1 (valid for mode <var>m</var>) to mode <var>n</var> and
+store in operand 0 (which has mode <var>n</var>).  Both modes must be fixed
+point.
+</p>
+<a name="index-fractmn2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>fract<var>m</var><var>n</var>2</samp>&rsquo;</dt>
+<dd><p>Convert operand 1 of mode <var>m</var> to mode <var>n</var> and store in
+operand 0 (which has mode <var>n</var>).  Mode <var>m</var> and mode <var>n</var>
+could be fixed-point to fixed-point, signed integer to fixed-point,
+fixed-point to signed integer, floating-point to fixed-point,
+or fixed-point to floating-point.
+When overflows or underflows happen, the results are undefined.
+</p>
+<a name="index-satfractmn2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>satfract<var>m</var><var>n</var>2</samp>&rsquo;</dt>
+<dd><p>Convert operand 1 of mode <var>m</var> to mode <var>n</var> and store in
+operand 0 (which has mode <var>n</var>).  Mode <var>m</var> and mode <var>n</var>
+could be fixed-point to fixed-point, signed integer to fixed-point,
+or floating-point to fixed-point.
+When overflows or underflows happen, the instruction saturates the
+results to the maximum or the minimum.
+</p>
+<a name="index-fractunsmn2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>fractuns<var>m</var><var>n</var>2</samp>&rsquo;</dt>
+<dd><p>Convert operand 1 of mode <var>m</var> to mode <var>n</var> and store in
+operand 0 (which has mode <var>n</var>).  Mode <var>m</var> and mode <var>n</var>
+could be unsigned integer to fixed-point, or
+fixed-point to unsigned integer.
+When overflows or underflows happen, the results are undefined.
+</p>
+<a name="index-satfractunsmn2-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>satfractuns<var>m</var><var>n</var>2</samp>&rsquo;</dt>
+<dd><p>Convert unsigned integer operand 1 of mode <var>m</var> to fixed-point mode
+<var>n</var> and store in operand 0 (which has mode <var>n</var>).
+When overflows or underflows happen, the instruction saturates the
+results to the maximum or the minimum.
+</p>
+<a name="index-extvm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>extv<var>m</var></samp>&rsquo;</dt>
+<dd><p>Extract a bit-field from register operand 1, sign-extend it, and store
+it in operand 0.  Operand 2 specifies the width of the field in bits
+and operand 3 the starting bit, which counts from the most significant
+bit if &lsquo;<samp>BITS_BIG_ENDIAN</samp>&rsquo; is true and from the least significant bit
+otherwise.
+</p>
+<p>Operands 0 and 1 both have mode <var>m</var>.  Operands 2 and 3 have a
+target-specific mode.
+</p>
+<a name="index-extvmisalignm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>extvmisalign<var>m</var></samp>&rsquo;</dt>
+<dd><p>Extract a bit-field from memory operand 1, sign extend it, and store
+it in operand 0.  Operand 2 specifies the width in bits and operand 3
+the starting bit.  The starting bit is always somewhere in the first byte of
+operand 1; it counts from the most significant bit if &lsquo;<samp>BITS_BIG_ENDIAN</samp>&rsquo;
+is true and from the least significant bit otherwise.
+</p>
+<p>Operand 0 has mode <var>m</var> while operand 1 has <code>BLK</code> mode.
+Operands 2 and 3 have a target-specific mode.
+</p>
+<p>The instruction must not read beyond the last byte of the bit-field.
+</p>
+<a name="index-extzvm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>extzv<var>m</var></samp>&rsquo;</dt>
+<dd><p>Like &lsquo;<samp>extv<var>m</var></samp>&rsquo; except that the bit-field value is zero-extended.
+</p>
+<a name="index-extzvmisalignm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>extzvmisalign<var>m</var></samp>&rsquo;</dt>
+<dd><p>Like &lsquo;<samp>extvmisalign<var>m</var></samp>&rsquo; except that the bit-field value is
+zero-extended.
+</p>
+<a name="index-insvm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>insv<var>m</var></samp>&rsquo;</dt>
+<dd><p>Insert operand 3 into a bit-field of register operand 0.  Operand 1
+specifies the width of the field in bits and operand 2 the starting bit,
+which counts from the most significant bit if &lsquo;<samp>BITS_BIG_ENDIAN</samp>&rsquo;
+is true and from the least significant bit otherwise.
+</p>
+<p>Operands 0 and 3 both have mode <var>m</var>.  Operands 1 and 2 have a
+target-specific mode.
+</p>
+<a name="index-insvmisalignm-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>insvmisalign<var>m</var></samp>&rsquo;</dt>
+<dd><p>Insert operand 3 into a bit-field of memory operand 0.  Operand 1
+specifies the width of the field in bits and operand 2 the starting bit.
+The starting bit is always somewhere in the first byte of operand 0;
+it counts from the most significant bit if &lsquo;<samp>BITS_BIG_ENDIAN</samp>&rsquo;
+is true and from the least significant bit otherwise.
+</p>
+<p>Operand 3 has mode <var>m</var> while operand 0 has <code>BLK</code> mode.
+Operands 1 and 2 have a target-specific mode.
+</p>
+<p>The instruction must not read or write beyond the last byte of the bit-field.
+</p>
+<a name="index-extv-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>extv</samp>&rsquo;</dt>
+<dd><p>Extract a bit-field from operand 1 (a register or memory operand), where
+operand 2 specifies the width in bits and operand 3 the starting bit,
+and store it in operand 0.  Operand 0 must have mode <code>word_mode</code>.
+Operand 1 may have mode <code>byte_mode</code> or <code>word_mode</code>; often
+<code>word_mode</code> is allowed only for registers.  Operands 2 and 3 must
+be valid for <code>word_mode</code>.
+</p>
+<p>The RTL generation pass generates this instruction only with constants
+for operands 2 and 3 and the constant is never zero for operand 2.
+</p>
+<p>The bit-field value is sign-extended to a full word integer
+before it is stored in operand 0.
+</p>
+<p>This pattern is deprecated; please use &lsquo;<samp>extv<var>m</var></samp>&rsquo; and
+<code>extvmisalign<var>m</var></code> instead.
+</p>
+<a name="index-extzv-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>extzv</samp>&rsquo;</dt>
+<dd><p>Like &lsquo;<samp>extv</samp>&rsquo; except that the bit-field value is zero-extended.
+</p>
+<p>This pattern is deprecated; please use &lsquo;<samp>extzv<var>m</var></samp>&rsquo; and
+<code>extzvmisalign<var>m</var></code> instead.
+</p>
+<a name="index-insv-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>insv</samp>&rsquo;</dt>
+<dd><p>Store operand 3 (which must be valid for <code>word_mode</code>) into a
+bit-field in operand 0, where operand 1 specifies the width in bits and
+operand 2 the starting bit.  Operand 0 may have mode <code>byte_mode</code> or
+<code>word_mode</code>; often <code>word_mode</code> is allowed only for registers.
+Operands 1 and 2 must be valid for <code>word_mode</code>.
+</p>
+<p>The RTL generation pass generates this instruction only with constants
+for operands 1 and 2 and the constant is never zero for operand 1.
+</p>
+<p>This pattern is deprecated; please use &lsquo;<samp>insv<var>m</var></samp>&rsquo; and
+<code>insvmisalign<var>m</var></code> instead.
+</p>
+<a name="index-movmodecc-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>mov<var>mode</var>cc</samp>&rsquo;</dt>
+<dd><p>Conditionally move operand 2 or operand 3 into operand 0 according to the
+comparison in operand 1.  If the comparison is true, operand 2 is moved
+into operand 0, otherwise operand 3 is moved.
+</p>
+<p>The mode of the operands being compared need not be the same as the operands
+being moved.  Some machines, sparc64 for example, have instructions that
+conditionally move an integer value based on the floating point condition
+codes and vice versa.
+</p>
+<p>If the machine does not have conditional move instructions, do not
+define these patterns.
+</p>
+<a name="index-addmodecc-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>add<var>mode</var>cc</samp>&rsquo;</dt>
+<dd><p>Similar to &lsquo;<samp>mov<var>mode</var>cc</samp>&rsquo; but for conditional addition.  Conditionally
+move operand 2 or (operands 2 + operand 3) into operand 0 according to the
+comparison in operand 1.  If the comparison is false, operand 2 is moved into
+operand 0, otherwise (operand 2 + operand 3) is moved.
+</p>
+<a name="index-cond_005faddmode-instruction-pattern"></a>
+<a name="index-cond_005fsubmode-instruction-pattern"></a>
+<a name="index-cond_005fmulmode-instruction-pattern"></a>
+<a name="index-cond_005fdivmode-instruction-pattern"></a>
+<a name="index-cond_005fudivmode-instruction-pattern"></a>
+<a name="index-cond_005fmodmode-instruction-pattern"></a>
+<a name="index-cond_005fumodmode-instruction-pattern"></a>
+<a name="index-cond_005fandmode-instruction-pattern"></a>
+<a name="index-cond_005fiormode-instruction-pattern"></a>
+<a name="index-cond_005fxormode-instruction-pattern"></a>
+<a name="index-cond_005fsminmode-instruction-pattern"></a>
+<a name="index-cond_005fsmaxmode-instruction-pattern"></a>
+<a name="index-cond_005fuminmode-instruction-pattern"></a>
+<a name="index-cond_005fumaxmode-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>cond_add<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>cond_sub<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>cond_mul<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>cond_div<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>cond_udiv<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>cond_mod<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>cond_umod<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>cond_and<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>cond_ior<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>cond_xor<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>cond_smin<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>cond_smax<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>cond_umin<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>cond_umax<var>mode</var></samp>&rsquo;</dt>
+<dd><p>When operand 1 is true, perform an operation on operands 2 and 3 and
+store the result in operand 0, otherwise store operand 4 in operand 0.
+The operation works elementwise if the operands are vectors.
+</p>
+<p>The scalar case is equivalent to:
+</p>
+<div class="smallexample">
+<pre class="smallexample">op0 = op1 ? op2 <var>op</var> op3 : op4;
+</pre></div>
+
+<p>while the vector case is equivalent to:
+</p>
+<div class="smallexample">
+<pre class="smallexample">for (i = 0; i &lt; GET_MODE_NUNITS (<var>m</var>); i++)
+  op0[i] = op1[i] ? op2[i] <var>op</var> op3[i] : op4[i];
+</pre></div>
+
+<p>where, for example, <var>op</var> is <code>+</code> for &lsquo;<samp>cond_add<var>mode</var></samp>&rsquo;.
+</p>
+<p>When defined for floating-point modes, the contents of &lsquo;<samp>op3[i]</samp>&rsquo;
+are not interpreted if &lsquo;<samp>op1[i]</samp>&rsquo; is false, just like they would not
+be in a normal C &lsquo;<samp>?:</samp>&rsquo; condition.
+</p>
+<p>Operands 0, 2, 3 and 4 all have mode <var>m</var>.  Operand 1 is a scalar
+integer if <var>m</var> is scalar, otherwise it has the mode returned by
+<code>TARGET_VECTORIZE_GET_MASK_MODE</code>.
+</p>
+<a name="index-cond_005ffmamode-instruction-pattern"></a>
+<a name="index-cond_005ffmsmode-instruction-pattern"></a>
+<a name="index-cond_005ffnmamode-instruction-pattern"></a>
+<a name="index-cond_005ffnmsmode-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>cond_fma<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>cond_fms<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>cond_fnma<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>cond_fnms<var>mode</var></samp>&rsquo;</dt>
+<dd><p>Like &lsquo;<samp>cond_add<var>m</var></samp>&rsquo;, except that the conditional operation
+takes 3 operands rather than two.  For example, the vector form of
+&lsquo;<samp>cond_fma<var>mode</var></samp>&rsquo; is equivalent to:
+</p>
+<div class="smallexample">
+<pre class="smallexample">for (i = 0; i &lt; GET_MODE_NUNITS (<var>m</var>); i++)
+  op0[i] = op1[i] ? fma (op2[i], op3[i], op4[i]) : op5[i];
+</pre></div>
+
+<a name="index-negmodecc-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>neg<var>mode</var>cc</samp>&rsquo;</dt>
+<dd><p>Similar to &lsquo;<samp>mov<var>mode</var>cc</samp>&rsquo; but for conditional negation.  Conditionally
+move the negation of operand 2 or the unchanged operand 3 into operand 0
+according to the comparison in operand 1.  If the comparison is true, the negation
+of operand 2 is moved into operand 0, otherwise operand 3 is moved.
+</p>
+<a name="index-notmodecc-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>not<var>mode</var>cc</samp>&rsquo;</dt>
+<dd><p>Similar to &lsquo;<samp>neg<var>mode</var>cc</samp>&rsquo; but for conditional complement.
+Conditionally move the bitwise complement of operand 2 or the unchanged
+operand 3 into operand 0 according to the comparison in operand 1.
+If the comparison is true, the complement of operand 2 is moved into
+operand 0, otherwise operand 3 is moved.
+</p>
+<a name="index-cstoremode4-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>cstore<var>mode</var>4</samp>&rsquo;</dt>
+<dd><p>Store zero or nonzero in operand 0 according to whether a comparison
+is true.  Operand 1 is a comparison operator.  Operand 2 and operand 3
+are the first and second operand of the comparison, respectively.
+You specify the mode that operand 0 must have when you write the
+<code>match_operand</code> expression.  The compiler automatically sees which
+mode you have used and supplies an operand of that mode.
+</p>
+<p>The value stored for a true condition must have 1 as its low bit, or
+else must be negative.  Otherwise the instruction is not suitable and
+you should omit it from the machine description.  You describe to the
+compiler exactly which value is stored by defining the macro
+<code>STORE_FLAG_VALUE</code> (see <a href="Misc.html#Misc">Misc</a>).  If a description cannot be
+found that can be used for all the possible comparison operators, you
+should pick one and use a <code>define_expand</code> to map all results
+onto the one you chose.
+</p>
+<p>These operations may <code>FAIL</code>, but should do so only in relatively
+uncommon cases; if they would <code>FAIL</code> for common cases involving
+integer comparisons, it is best to restrict the predicates to not
+allow these operands.  Likewise if a given comparison operator will
+always fail, independent of the operands (for floating-point modes, the
+<code>ordered_comparison_operator</code> predicate is often useful in this case).
+</p>
+<p>If this pattern is omitted, the compiler will generate a conditional
+branch&mdash;for example, it may copy a constant one to the target and branching
+around an assignment of zero to the target&mdash;or a libcall.  If the predicate
+for operand 1 only rejects some operators, it will also try reordering the
+operands and/or inverting the result value (e.g. by an exclusive OR).
+These possibilities could be cheaper or equivalent to the instructions
+used for the &lsquo;<samp>cstore<var>mode</var>4</samp>&rsquo; pattern followed by those required
+to convert a positive result from <code>STORE_FLAG_VALUE</code> to 1; in this
+case, you can and should make operand 1&rsquo;s predicate reject some operators
+in the &lsquo;<samp>cstore<var>mode</var>4</samp>&rsquo; pattern, or remove the pattern altogether
+from the machine description.
+</p>
+<a name="index-cbranchmode4-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>cbranch<var>mode</var>4</samp>&rsquo;</dt>
+<dd><p>Conditional branch instruction combined with a compare instruction.
+Operand 0 is a comparison operator.  Operand 1 and operand 2 are the
+first and second operands of the comparison, respectively.  Operand 3
+is the <code>code_label</code> to jump to.
+</p>
+<a name="index-jump-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>jump</samp>&rsquo;</dt>
+<dd><p>A jump inside a function; an unconditional branch.  Operand 0 is the
+<code>code_label</code> to jump to.  This pattern name is mandatory on all
+machines.
+</p>
+<a name="index-call-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>call</samp>&rsquo;</dt>
+<dd><p>Subroutine call instruction returning no value.  Operand 0 is the
+function to call; operand 1 is the number of bytes of arguments pushed
+as a <code>const_int</code>; operand 2 is the number of registers used as
+operands.
+</p>
+<p>On most machines, operand 2 is not actually stored into the RTL
+pattern.  It is supplied for the sake of some RISC machines which need
+to put this information into the assembler code; they can put it in
+the RTL instead of operand 1.
+</p>
+<p>Operand 0 should be a <code>mem</code> RTX whose address is the address of the
+function.  Note, however, that this address can be a <code>symbol_ref</code>
+expression even if it would not be a legitimate memory address on the
+target machine.  If it is also not a valid argument for a call
+instruction, the pattern for this operation should be a
+<code>define_expand</code> (see <a href="Expander-Definitions.html#Expander-Definitions">Expander Definitions</a>) that places the
+address into a register and uses that register in the call instruction.
+</p>
+<a name="index-call_005fvalue-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>call_value</samp>&rsquo;</dt>
+<dd><p>Subroutine call instruction returning a value.  Operand 0 is the hard
+register in which the value is returned.  There are three more
+operands, the same as the three operands of the &lsquo;<samp>call</samp>&rsquo;
+instruction (but with numbers increased by one).
+</p>
+<p>Subroutines that return <code>BLKmode</code> objects use the &lsquo;<samp>call</samp>&rsquo;
+insn.
+</p>
+<a name="index-call_005fpop-instruction-pattern"></a>
+<a name="index-call_005fvalue_005fpop-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>call_pop</samp>&rsquo;, &lsquo;<samp>call_value_pop</samp>&rsquo;</dt>
+<dd><p>Similar to &lsquo;<samp>call</samp>&rsquo; and &lsquo;<samp>call_value</samp>&rsquo;, except used if defined and
+if <code>RETURN_POPS_ARGS</code> is nonzero.  They should emit a <code>parallel</code>
+that contains both the function call and a <code>set</code> to indicate the
+adjustment made to the frame pointer.
+</p>
+<p>For machines where <code>RETURN_POPS_ARGS</code> can be nonzero, the use of these
+patterns increases the number of functions for which the frame pointer
+can be eliminated, if desired.
+</p>
+<a name="index-untyped_005fcall-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>untyped_call</samp>&rsquo;</dt>
+<dd><p>Subroutine call instruction returning a value of any type.  Operand 0 is
+the function to call; operand 1 is a memory location where the result of
+calling the function is to be stored; operand 2 is a <code>parallel</code>
+expression where each element is a <code>set</code> expression that indicates
+the saving of a function return value into the result block.
+</p>
+<p>This instruction pattern should be defined to support
+<code>__builtin_apply</code> on machines where special instructions are needed
+to call a subroutine with arbitrary arguments or to save the value
+returned.  This instruction pattern is required on machines that have
+multiple registers that can hold a return value
+(i.e. <code>FUNCTION_VALUE_REGNO_P</code> is true for more than one register).
+</p>
+<a name="index-return-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>return</samp>&rsquo;</dt>
+<dd><p>Subroutine return instruction.  This instruction pattern name should be
+defined only if a single instruction can do all the work of returning
+from a function.
+</p>
+<p>Like the &lsquo;<samp>mov<var>m</var></samp>&rsquo; patterns, this pattern is also used after the
+RTL generation phase.  In this case it is to support machines where
+multiple instructions are usually needed to return from a function, but
+some class of functions only requires one instruction to implement a
+return.  Normally, the applicable functions are those which do not need
+to save any registers or allocate stack space.
+</p>
+<p>It is valid for this pattern to expand to an instruction using
+<code>simple_return</code> if no epilogue is required.
+</p>
+<a name="index-simple_005freturn-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>simple_return</samp>&rsquo;</dt>
+<dd><p>Subroutine return instruction.  This instruction pattern name should be
+defined only if a single instruction can do all the work of returning
+from a function on a path where no epilogue is required.  This pattern
+is very similar to the <code>return</code> instruction pattern, but it is emitted
+only by the shrink-wrapping optimization on paths where the function
+prologue has not been executed, and a function return should occur without
+any of the effects of the epilogue.  Additional uses may be introduced on
+paths where both the prologue and the epilogue have executed.
+</p>
+<a name="index-reload_005fcompleted"></a>
+<a name="index-leaf_005ffunction_005fp"></a>
+<p>For such machines, the condition specified in this pattern should only
+be true when <code>reload_completed</code> is nonzero and the function&rsquo;s
+epilogue would only be a single instruction.  For machines with register
+windows, the routine <code>leaf_function_p</code> may be used to determine if
+a register window push is required.
+</p>
+<p>Machines that have conditional return instructions should define patterns
+such as
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_insn &quot;&quot;
+  [(set (pc)
+        (if_then_else (match_operator
+                         0 &quot;comparison_operator&quot;
+                         [(cc0) (const_int 0)])
+                      (return)
+                      (pc)))]
+  &quot;<var>condition</var>&quot;
+  &quot;&hellip;&quot;)
+</pre></div>
+
+<p>where <var>condition</var> would normally be the same condition specified on the
+named &lsquo;<samp>return</samp>&rsquo; pattern.
+</p>
+<a name="index-untyped_005freturn-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>untyped_return</samp>&rsquo;</dt>
+<dd><p>Untyped subroutine return instruction.  This instruction pattern should
+be defined to support <code>__builtin_return</code> on machines where special
+instructions are needed to return a value of any type.
+</p>
+<p>Operand 0 is a memory location where the result of calling a function
+with <code>__builtin_apply</code> is stored; operand 1 is a <code>parallel</code>
+expression where each element is a <code>set</code> expression that indicates
+the restoring of a function return value from the result block.
+</p>
+<a name="index-nop-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>nop</samp>&rsquo;</dt>
+<dd><p>No-op instruction.  This instruction pattern name should always be defined
+to output a no-op in assembler code.  <code>(const_int 0)</code> will do as an
+RTL pattern.
+</p>
+<a name="index-indirect_005fjump-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>indirect_jump</samp>&rsquo;</dt>
+<dd><p>An instruction to jump to an address which is operand zero.
+This pattern name is mandatory on all machines.
+</p>
+<a name="index-casesi-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>casesi</samp>&rsquo;</dt>
+<dd><p>Instruction to jump through a dispatch table, including bounds checking.
+This instruction takes five operands:
+</p>
+<ol>
+<li> The index to dispatch on, which has mode <code>SImode</code>.
+
+</li><li> The lower bound for indices in the table, an integer constant.
+
+</li><li> The total range of indices in the table&mdash;the largest index
+minus the smallest one (both inclusive).
+
+</li><li> A label that precedes the table itself.
+
+</li><li> A label to jump to if the index has a value outside the bounds.
+</li></ol>
+
+<p>The table is an <code>addr_vec</code> or <code>addr_diff_vec</code> inside of a
+<code>jump_table_data</code>.  The number of elements in the table is one plus the
+difference between the upper bound and the lower bound.
+</p>
+<a name="index-tablejump-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>tablejump</samp>&rsquo;</dt>
+<dd><p>Instruction to jump to a variable address.  This is a low-level
+capability which can be used to implement a dispatch table when there
+is no &lsquo;<samp>casesi</samp>&rsquo; pattern.
+</p>
+<p>This pattern requires two operands: the address or offset, and a label
+which should immediately precede the jump table.  If the macro
+<code>CASE_VECTOR_PC_RELATIVE</code> evaluates to a nonzero value then the first
+operand is an offset which counts from the address of the table; otherwise,
+it is an absolute address to jump to.  In either case, the first operand has
+mode <code>Pmode</code>.
+</p>
+<p>The &lsquo;<samp>tablejump</samp>&rsquo; insn is always the last insn before the jump
+table it uses.  Its assembler code normally has no need to use the
+second operand, but you should incorporate it in the RTL pattern so
+that the jump optimizer will not delete the table as unreachable code.
+</p>
+
+<a name="index-doloop_005fend-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>doloop_end</samp>&rsquo;</dt>
+<dd><p>Conditional branch instruction that decrements a register and
+jumps if the register is nonzero.  Operand 0 is the register to
+decrement and test; operand 1 is the label to jump to if the
+register is nonzero.
+See <a href="Looping-Patterns.html#Looping-Patterns">Looping Patterns</a>.
+</p>
+<p>This optional instruction pattern should be defined for machines with
+low-overhead looping instructions as the loop optimizer will try to
+modify suitable loops to utilize it.  The target hook
+<code>TARGET_CAN_USE_DOLOOP_P</code> controls the conditions under which
+low-overhead loops can be used.
+</p>
+<a name="index-doloop_005fbegin-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>doloop_begin</samp>&rsquo;</dt>
+<dd><p>Companion instruction to <code>doloop_end</code> required for machines that
+need to perform some initialization, such as loading a special counter
+register.  Operand 1 is the associated <code>doloop_end</code> pattern and
+operand 0 is the register that it decrements.
+</p>
+<p>If initialization insns do not always need to be emitted, use a
+<code>define_expand</code> (see <a href="Expander-Definitions.html#Expander-Definitions">Expander Definitions</a>) and make it fail.
+</p>
+<a name="index-canonicalize_005ffuncptr_005ffor_005fcompare-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>canonicalize_funcptr_for_compare</samp>&rsquo;</dt>
+<dd><p>Canonicalize the function pointer in operand 1 and store the result
+into operand 0.
+</p>
+<p>Operand 0 is always a <code>reg</code> and has mode <code>Pmode</code>; operand 1
+may be a <code>reg</code>, <code>mem</code>, <code>symbol_ref</code>, <code>const_int</code>, etc
+and also has mode <code>Pmode</code>.
+</p>
+<p>Canonicalization of a function pointer usually involves computing
+the address of the function which would be called if the function
+pointer were used in an indirect call.
+</p>
+<p>Only define this pattern if function pointers on the target machine
+can have different values but still call the same function when
+used in an indirect call.
+</p>
+<a name="index-save_005fstack_005fblock-instruction-pattern"></a>
+<a name="index-save_005fstack_005ffunction-instruction-pattern"></a>
+<a name="index-save_005fstack_005fnonlocal-instruction-pattern"></a>
+<a name="index-restore_005fstack_005fblock-instruction-pattern"></a>
+<a name="index-restore_005fstack_005ffunction-instruction-pattern"></a>
+<a name="index-restore_005fstack_005fnonlocal-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>save_stack_block</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>save_stack_function</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>save_stack_nonlocal</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>restore_stack_block</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>restore_stack_function</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>restore_stack_nonlocal</samp>&rsquo;</dt>
+<dd><p>Most machines save and restore the stack pointer by copying it to or
+from an object of mode <code>Pmode</code>.  Do not define these patterns on
+such machines.
+</p>
+<p>Some machines require special handling for stack pointer saves and
+restores.  On those machines, define the patterns corresponding to the
+non-standard cases by using a <code>define_expand</code> (see <a href="Expander-Definitions.html#Expander-Definitions">Expander Definitions</a>) that produces the required insns.  The three types of
+saves and restores are:
+</p>
+<ol>
+<li> &lsquo;<samp>save_stack_block</samp>&rsquo; saves the stack pointer at the start of a block
+that allocates a variable-sized object, and &lsquo;<samp>restore_stack_block</samp>&rsquo;
+restores the stack pointer when the block is exited.
+
+</li><li> &lsquo;<samp>save_stack_function</samp>&rsquo; and &lsquo;<samp>restore_stack_function</samp>&rsquo; do a
+similar job for the outermost block of a function and are used when the
+function allocates variable-sized objects or calls <code>alloca</code>.  Only
+the epilogue uses the restored stack pointer, allowing a simpler save or
+restore sequence on some machines.
+
+</li><li> &lsquo;<samp>save_stack_nonlocal</samp>&rsquo; is used in functions that contain labels
+branched to by nested functions.  It saves the stack pointer in such a
+way that the inner function can use &lsquo;<samp>restore_stack_nonlocal</samp>&rsquo; to
+restore the stack pointer.  The compiler generates code to restore the
+frame and argument pointer registers, but some machines require saving
+and restoring additional data such as register window information or
+stack backchains.  Place insns in these patterns to save and restore any
+such required data.
+</li></ol>
+
+<p>When saving the stack pointer, operand 0 is the save area and operand 1
+is the stack pointer.  The mode used to allocate the save area defaults
+to <code>Pmode</code> but you can override that choice by defining the
+<code>STACK_SAVEAREA_MODE</code> macro (see <a href="Storage-Layout.html#Storage-Layout">Storage Layout</a>).  You must
+specify an integral mode, or <code>VOIDmode</code> if no save area is needed
+for a particular type of save (either because no save is needed or
+because a machine-specific save area can be used).  Operand 0 is the
+stack pointer and operand 1 is the save area for restore operations.  If
+&lsquo;<samp>save_stack_block</samp>&rsquo; is defined, operand 0 must not be
+<code>VOIDmode</code> since these saves can be arbitrarily nested.
+</p>
+<p>A save area is a <code>mem</code> that is at a constant offset from
+<code>virtual_stack_vars_rtx</code> when the stack pointer is saved for use by
+nonlocal gotos and a <code>reg</code> in the other two cases.
+</p>
+<a name="index-allocate_005fstack-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>allocate_stack</samp>&rsquo;</dt>
+<dd><p>Subtract (or add if <code>STACK_GROWS_DOWNWARD</code> is undefined) operand 1 from
+the stack pointer to create space for dynamically allocated data.
+</p>
+<p>Store the resultant pointer to this space into operand 0.  If you
+are allocating space from the main stack, do this by emitting a
+move insn to copy <code>virtual_stack_dynamic_rtx</code> to operand 0.
+If you are allocating the space elsewhere, generate code to copy the
+location of the space to operand 0.  In the latter case, you must
+ensure this space gets freed when the corresponding space on the main
+stack is free.
+</p>
+<p>Do not define this pattern if all that must be done is the subtraction.
+Some machines require other operations such as stack probes or
+maintaining the back chain.  Define this pattern to emit those
+operations in addition to updating the stack pointer.
+</p>
+<a name="index-check_005fstack-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>check_stack</samp>&rsquo;</dt>
+<dd><p>If stack checking (see <a href="Stack-Checking.html#Stack-Checking">Stack Checking</a>) cannot be done on your system by
+probing the stack, define this pattern to perform the needed check and signal
+an error if the stack has overflowed.  The single operand is the address in
+the stack farthest from the current stack pointer that you need to validate.
+Normally, on platforms where this pattern is needed, you would obtain the
+stack limit from a global or thread-specific variable or register.
+</p>
+<a name="index-probe_005fstack_005faddress-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>probe_stack_address</samp>&rsquo;</dt>
+<dd><p>If stack checking (see <a href="Stack-Checking.html#Stack-Checking">Stack Checking</a>) can be done on your system by
+probing the stack but without the need to actually access it, define this
+pattern and signal an error if the stack has overflowed.  The single operand
+is the memory address in the stack that needs to be probed.
+</p>
+<a name="index-probe_005fstack-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>probe_stack</samp>&rsquo;</dt>
+<dd><p>If stack checking (see <a href="Stack-Checking.html#Stack-Checking">Stack Checking</a>) can be done on your system by
+probing the stack but doing it with a &ldquo;store zero&rdquo; instruction is not valid
+or optimal, define this pattern to do the probing differently and signal an
+error if the stack has overflowed.  The single operand is the memory reference
+in the stack that needs to be probed.
+</p>
+<a name="index-nonlocal_005fgoto-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>nonlocal_goto</samp>&rsquo;</dt>
+<dd><p>Emit code to generate a non-local goto, e.g., a jump from one function
+to a label in an outer function.  This pattern has four arguments,
+each representing a value to be used in the jump.  The first
+argument is to be loaded into the frame pointer, the second is
+the address to branch to (code to dispatch to the actual label),
+the third is the address of a location where the stack is saved,
+and the last is the address of the label, to be placed in the
+location for the incoming static chain.
+</p>
+<p>On most machines you need not define this pattern, since GCC will
+already generate the correct code, which is to load the frame pointer
+and static chain, restore the stack (using the
+&lsquo;<samp>restore_stack_nonlocal</samp>&rsquo; pattern, if defined), and jump indirectly
+to the dispatcher.  You need only define this pattern if this code will
+not work on your machine.
+</p>
+<a name="index-nonlocal_005fgoto_005freceiver-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>nonlocal_goto_receiver</samp>&rsquo;</dt>
+<dd><p>This pattern, if defined, contains code needed at the target of a
+nonlocal goto after the code already generated by GCC.  You will not
+normally need to define this pattern.  A typical reason why you might
+need this pattern is if some value, such as a pointer to a global table,
+must be restored when the frame pointer is restored.  Note that a nonlocal
+goto only occurs within a unit-of-translation, so a global table pointer
+that is shared by all functions of a given module need not be restored.
+There are no arguments.
+</p>
+<a name="index-exception_005freceiver-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>exception_receiver</samp>&rsquo;</dt>
+<dd><p>This pattern, if defined, contains code needed at the site of an
+exception handler that isn&rsquo;t needed at the site of a nonlocal goto.  You
+will not normally need to define this pattern.  A typical reason why you
+might need this pattern is if some value, such as a pointer to a global
+table, must be restored after control flow is branched to the handler of
+an exception.  There are no arguments.
+</p>
+<a name="index-builtin_005fsetjmp_005fsetup-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>builtin_setjmp_setup</samp>&rsquo;</dt>
+<dd><p>This pattern, if defined, contains additional code needed to initialize
+the <code>jmp_buf</code>.  You will not normally need to define this pattern.
+A typical reason why you might need this pattern is if some value, such
+as a pointer to a global table, must be restored.  Though it is
+preferred that the pointer value be recalculated if possible (given the
+address of a label for instance).  The single argument is a pointer to
+the <code>jmp_buf</code>.  Note that the buffer is five words long and that
+the first three are normally used by the generic mechanism.
+</p>
+<a name="index-builtin_005fsetjmp_005freceiver-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>builtin_setjmp_receiver</samp>&rsquo;</dt>
+<dd><p>This pattern, if defined, contains code needed at the site of a
+built-in setjmp that isn&rsquo;t needed at the site of a nonlocal goto.  You
+will not normally need to define this pattern.  A typical reason why you
+might need this pattern is if some value, such as a pointer to a global
+table, must be restored.  It takes one argument, which is the label
+to which builtin_longjmp transferred control; this pattern may be emitted
+at a small offset from that label.
+</p>
+<a name="index-builtin_005flongjmp-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>builtin_longjmp</samp>&rsquo;</dt>
+<dd><p>This pattern, if defined, performs the entire action of the longjmp.
+You will not normally need to define this pattern unless you also define
+<code>builtin_setjmp_setup</code>.  The single argument is a pointer to the
+<code>jmp_buf</code>.
+</p>
+<a name="index-eh_005freturn-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>eh_return</samp>&rsquo;</dt>
+<dd><p>This pattern, if defined, affects the way <code>__builtin_eh_return</code>,
+and thence the call frame exception handling library routines, are
+built.  It is intended to handle non-trivial actions needed along
+the abnormal return path.
+</p>
+<p>The address of the exception handler to which the function should return
+is passed as operand to this pattern.  It will normally need to copied by
+the pattern to some special register or memory location.
+If the pattern needs to determine the location of the target call
+frame in order to do so, it may use <code>EH_RETURN_STACKADJ_RTX</code>,
+if defined; it will have already been assigned.
+</p>
+<p>If this pattern is not defined, the default action will be to simply
+copy the return address to <code>EH_RETURN_HANDLER_RTX</code>.  Either
+that macro or this pattern needs to be defined if call frame exception
+handling is to be used.
+</p>
+<a name="index-prologue-instruction-pattern"></a>
+<a name="prologue-instruction-pattern"></a></dd>
+<dt>&lsquo;<samp>prologue</samp>&rsquo;</dt>
+<dd><p>This pattern, if defined, emits RTL for entry to a function.  The function
+entry is responsible for setting up the stack frame, initializing the frame
+pointer register, saving callee saved registers, etc.
+</p>
+<p>Using a prologue pattern is generally preferred over defining
+<code>TARGET_ASM_FUNCTION_PROLOGUE</code> to emit assembly code for the prologue.
+</p>
+<p>The <code>prologue</code> pattern is particularly useful for targets which perform
+instruction scheduling.
+</p>
+<a name="index-window_005fsave-instruction-pattern"></a>
+<a name="window_005fsave-instruction-pattern"></a></dd>
+<dt>&lsquo;<samp>window_save</samp>&rsquo;</dt>
+<dd><p>This pattern, if defined, emits RTL for a register window save.  It should
+be defined if the target machine has register windows but the window events
+are decoupled from calls to subroutines.  The canonical example is the SPARC
+architecture.
+</p>
+<a name="index-epilogue-instruction-pattern"></a>
+<a name="epilogue-instruction-pattern"></a></dd>
+<dt>&lsquo;<samp>epilogue</samp>&rsquo;</dt>
+<dd><p>This pattern emits RTL for exit from a function.  The function
+exit is responsible for deallocating the stack frame, restoring callee saved
+registers and emitting the return instruction.
+</p>
+<p>Using an epilogue pattern is generally preferred over defining
+<code>TARGET_ASM_FUNCTION_EPILOGUE</code> to emit assembly code for the epilogue.
+</p>
+<p>The <code>epilogue</code> pattern is particularly useful for targets which perform
+instruction scheduling or which have delay slots for their return instruction.
+</p>
+<a name="index-sibcall_005fepilogue-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>sibcall_epilogue</samp>&rsquo;</dt>
+<dd><p>This pattern, if defined, emits RTL for exit from a function without the final
+branch back to the calling function.  This pattern will be emitted before any
+sibling call (aka tail call) sites.
+</p>
+<p>The <code>sibcall_epilogue</code> pattern must not clobber any arguments used for
+parameter passing or any stack slots for arguments passed to the current
+function.
+</p>
+<a name="index-trap-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>trap</samp>&rsquo;</dt>
+<dd><p>This pattern, if defined, signals an error, typically by causing some
+kind of signal to be raised.
+</p>
+<a name="index-ctrapMM4-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>ctrap<var>MM</var>4</samp>&rsquo;</dt>
+<dd><p>Conditional trap instruction.  Operand 0 is a piece of RTL which
+performs a comparison, and operands 1 and 2 are the arms of the
+comparison.  Operand 3 is the trap code, an integer.
+</p>
+<p>A typical <code>ctrap</code> pattern looks like
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_insn &quot;ctrapsi4&quot;
+  [(trap_if (match_operator 0 &quot;trap_operator&quot;
+             [(match_operand 1 &quot;register_operand&quot;)
+              (match_operand 2 &quot;immediate_operand&quot;)])
+            (match_operand 3 &quot;const_int_operand&quot; &quot;i&quot;))]
+  &quot;&quot;
+  &quot;&hellip;&quot;)
+</pre></div>
+
+<a name="index-prefetch-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>prefetch</samp>&rsquo;</dt>
+<dd><p>This pattern, if defined, emits code for a non-faulting data prefetch
+instruction.  Operand 0 is the address of the memory to prefetch.  Operand 1
+is a constant 1 if the prefetch is preparing for a write to the memory
+address, or a constant 0 otherwise.  Operand 2 is the expected degree of
+temporal locality of the data and is a value between 0 and 3, inclusive; 0
+means that the data has no temporal locality, so it need not be left in the
+cache after the access; 3 means that the data has a high degree of temporal
+locality and should be left in all levels of cache possible;  1 and 2 mean,
+respectively, a low or moderate degree of temporal locality.
+</p>
+<p>Targets that do not support write prefetches or locality hints can ignore
+the values of operands 1 and 2.
+</p>
+<a name="index-blockage-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>blockage</samp>&rsquo;</dt>
+<dd><p>This pattern defines a pseudo insn that prevents the instruction
+scheduler and other passes from moving instructions and using register
+equivalences across the boundary defined by the blockage insn.
+This needs to be an UNSPEC_VOLATILE pattern or a volatile ASM.
+</p>
+<a name="index-memory_005fblockage-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>memory_blockage</samp>&rsquo;</dt>
+<dd><p>This pattern, if defined, represents a compiler memory barrier, and will be
+placed at points across which RTL passes may not propagate memory accesses.
+This instruction needs to read and write volatile BLKmode memory.  It does
+not need to generate any machine instruction.  If this pattern is not defined,
+the compiler falls back to emitting an instruction corresponding
+to <code>asm volatile (&quot;&quot; ::: &quot;memory&quot;)</code>.
+</p>
+<a name="index-memory_005fbarrier-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>memory_barrier</samp>&rsquo;</dt>
+<dd><p>If the target memory model is not fully synchronous, then this pattern
+should be defined to an instruction that orders both loads and stores
+before the instruction with respect to loads and stores after the instruction.
+This pattern has no operands.
+</p>
+<a name="index-speculation_005fbarrier-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>speculation_barrier</samp>&rsquo;</dt>
+<dd><p>If the target can support speculative execution, then this pattern should
+be defined to an instruction that will block subsequent execution until
+any prior speculation conditions has been resolved.  The pattern must also
+ensure that the compiler cannot move memory operations past the barrier,
+so it needs to be an UNSPEC_VOLATILE pattern.  The pattern has no
+operands.
+</p>
+<p>If this pattern is not defined then the default expansion of
+<code>__builtin_speculation_safe_value</code> will emit a warning.  You can
+suppress this warning by defining this pattern with a final condition
+of <code>0</code> (zero), which tells the compiler that a speculation
+barrier is not needed for this target.
+</p>
+<a name="index-sync_005fcompare_005fand_005fswapmode-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>sync_compare_and_swap<var>mode</var></samp>&rsquo;</dt>
+<dd><p>This pattern, if defined, emits code for an atomic compare-and-swap
+operation.  Operand 1 is the memory on which the atomic operation is
+performed.  Operand 2 is the &ldquo;old&rdquo; value to be compared against the
+current contents of the memory location.  Operand 3 is the &ldquo;new&rdquo; value
+to store in the memory if the compare succeeds.  Operand 0 is the result
+of the operation; it should contain the contents of the memory
+before the operation.  If the compare succeeds, this should obviously be
+a copy of operand 2.
+</p>
+<p>This pattern must show that both operand 0 and operand 1 are modified.
+</p>
+<p>This pattern must issue any memory barrier instructions such that all
+memory operations before the atomic operation occur before the atomic
+operation and all memory operations after the atomic operation occur
+after the atomic operation.
+</p>
+<p>For targets where the success or failure of the compare-and-swap
+operation is available via the status flags, it is possible to
+avoid a separate compare operation and issue the subsequent
+branch or store-flag operation immediately after the compare-and-swap.
+To this end, GCC will look for a <code>MODE_CC</code> set in the
+output of <code>sync_compare_and_swap<var>mode</var></code>; if the machine
+description includes such a set, the target should also define special
+<code>cbranchcc4</code> and/or <code>cstorecc4</code> instructions.  GCC will then
+be able to take the destination of the <code>MODE_CC</code> set and pass it
+to the <code>cbranchcc4</code> or <code>cstorecc4</code> pattern as the first
+operand of the comparison (the second will be <code>(const_int 0)</code>).
+</p>
+<p>For targets where the operating system may provide support for this
+operation via library calls, the <code>sync_compare_and_swap_optab</code>
+may be initialized to a function with the same interface as the
+<code>__sync_val_compare_and_swap_<var>n</var></code> built-in.  If the entire
+set of <var>__sync</var> builtins are supported via library calls, the
+target can initialize all of the optabs at once with
+<code>init_sync_libfuncs</code>.
+For the purposes of C++11 <code>std::atomic::is_lock_free</code>, it is
+assumed that these library calls do <em>not</em> use any kind of
+interruptable locking.
+</p>
+<a name="index-sync_005faddmode-instruction-pattern"></a>
+<a name="index-sync_005fsubmode-instruction-pattern"></a>
+<a name="index-sync_005fiormode-instruction-pattern"></a>
+<a name="index-sync_005fandmode-instruction-pattern"></a>
+<a name="index-sync_005fxormode-instruction-pattern"></a>
+<a name="index-sync_005fnandmode-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>sync_add<var>mode</var></samp>&rsquo;, &lsquo;<samp>sync_sub<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>sync_ior<var>mode</var></samp>&rsquo;, &lsquo;<samp>sync_and<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>sync_xor<var>mode</var></samp>&rsquo;, &lsquo;<samp>sync_nand<var>mode</var></samp>&rsquo;</dt>
+<dd><p>These patterns emit code for an atomic operation on memory.
+Operand 0 is the memory on which the atomic operation is performed.
+Operand 1 is the second operand to the binary operator.
+</p>
+<p>This pattern must issue any memory barrier instructions such that all
+memory operations before the atomic operation occur before the atomic
+operation and all memory operations after the atomic operation occur
+after the atomic operation.
+</p>
+<p>If these patterns are not defined, the operation will be constructed
+from a compare-and-swap operation, if defined.
+</p>
+<a name="index-sync_005fold_005faddmode-instruction-pattern"></a>
+<a name="index-sync_005fold_005fsubmode-instruction-pattern"></a>
+<a name="index-sync_005fold_005fiormode-instruction-pattern"></a>
+<a name="index-sync_005fold_005fandmode-instruction-pattern"></a>
+<a name="index-sync_005fold_005fxormode-instruction-pattern"></a>
+<a name="index-sync_005fold_005fnandmode-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>sync_old_add<var>mode</var></samp>&rsquo;, &lsquo;<samp>sync_old_sub<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>sync_old_ior<var>mode</var></samp>&rsquo;, &lsquo;<samp>sync_old_and<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>sync_old_xor<var>mode</var></samp>&rsquo;, &lsquo;<samp>sync_old_nand<var>mode</var></samp>&rsquo;</dt>
+<dd><p>These patterns emit code for an atomic operation on memory,
+and return the value that the memory contained before the operation.
+Operand 0 is the result value, operand 1 is the memory on which the
+atomic operation is performed, and operand 2 is the second operand
+to the binary operator.
+</p>
+<p>This pattern must issue any memory barrier instructions such that all
+memory operations before the atomic operation occur before the atomic
+operation and all memory operations after the atomic operation occur
+after the atomic operation.
+</p>
+<p>If these patterns are not defined, the operation will be constructed
+from a compare-and-swap operation, if defined.
+</p>
+<a name="index-sync_005fnew_005faddmode-instruction-pattern"></a>
+<a name="index-sync_005fnew_005fsubmode-instruction-pattern"></a>
+<a name="index-sync_005fnew_005fiormode-instruction-pattern"></a>
+<a name="index-sync_005fnew_005fandmode-instruction-pattern"></a>
+<a name="index-sync_005fnew_005fxormode-instruction-pattern"></a>
+<a name="index-sync_005fnew_005fnandmode-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>sync_new_add<var>mode</var></samp>&rsquo;, &lsquo;<samp>sync_new_sub<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>sync_new_ior<var>mode</var></samp>&rsquo;, &lsquo;<samp>sync_new_and<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>sync_new_xor<var>mode</var></samp>&rsquo;, &lsquo;<samp>sync_new_nand<var>mode</var></samp>&rsquo;</dt>
+<dd><p>These patterns are like their <code>sync_old_<var>op</var></code> counterparts,
+except that they return the value that exists in the memory location
+after the operation, rather than before the operation.
+</p>
+<a name="index-sync_005flock_005ftest_005fand_005fsetmode-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>sync_lock_test_and_set<var>mode</var></samp>&rsquo;</dt>
+<dd><p>This pattern takes two forms, based on the capabilities of the target.
+In either case, operand 0 is the result of the operand, operand 1 is
+the memory on which the atomic operation is performed, and operand 2
+is the value to set in the lock.
+</p>
+<p>In the ideal case, this operation is an atomic exchange operation, in
+which the previous value in memory operand is copied into the result
+operand, and the value operand is stored in the memory operand.
+</p>
+<p>For less capable targets, any value operand that is not the constant 1
+should be rejected with <code>FAIL</code>.  In this case the target may use
+an atomic test-and-set bit operation.  The result operand should contain
+1 if the bit was previously set and 0 if the bit was previously clear.
+The true contents of the memory operand are implementation defined.
+</p>
+<p>This pattern must issue any memory barrier instructions such that the
+pattern as a whole acts as an acquire barrier, that is all memory
+operations after the pattern do not occur until the lock is acquired.
+</p>
+<p>If this pattern is not defined, the operation will be constructed from
+a compare-and-swap operation, if defined.
+</p>
+<a name="index-sync_005flock_005freleasemode-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>sync_lock_release<var>mode</var></samp>&rsquo;</dt>
+<dd><p>This pattern, if defined, releases a lock set by
+<code>sync_lock_test_and_set<var>mode</var></code>.  Operand 0 is the memory
+that contains the lock; operand 1 is the value to store in the lock.
+</p>
+<p>If the target doesn&rsquo;t implement full semantics for
+<code>sync_lock_test_and_set<var>mode</var></code>, any value operand which is not
+the constant 0 should be rejected with <code>FAIL</code>, and the true contents
+of the memory operand are implementation defined.
+</p>
+<p>This pattern must issue any memory barrier instructions such that the
+pattern as a whole acts as a release barrier, that is the lock is
+released only after all previous memory operations have completed.
+</p>
+<p>If this pattern is not defined, then a <code>memory_barrier</code> pattern
+will be emitted, followed by a store of the value to the memory operand.
+</p>
+<a name="index-atomic_005fcompare_005fand_005fswapmode-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>atomic_compare_and_swap<var>mode</var></samp>&rsquo;</dt>
+<dd><p>This pattern, if defined, emits code for an atomic compare-and-swap
+operation with memory model semantics.  Operand 2 is the memory on which
+the atomic operation is performed.  Operand 0 is an output operand which
+is set to true or false based on whether the operation succeeded.  Operand
+1 is an output operand which is set to the contents of the memory before
+the operation was attempted.  Operand 3 is the value that is expected to
+be in memory.  Operand 4 is the value to put in memory if the expected
+value is found there.  Operand 5 is set to 1 if this compare and swap is to
+be treated as a weak operation.  Operand 6 is the memory model to be used
+if the operation is a success.  Operand 7 is the memory model to be used
+if the operation fails.
+</p>
+<p>If memory referred to in operand 2 contains the value in operand 3, then
+operand 4 is stored in memory pointed to by operand 2 and fencing based on
+the memory model in operand 6 is issued.  
+</p>
+<p>If memory referred to in operand 2 does not contain the value in operand 3,
+then fencing based on the memory model in operand 7 is issued.
+</p>
+<p>If a target does not support weak compare-and-swap operations, or the port
+elects not to implement weak operations, the argument in operand 5 can be
+ignored.  Note a strong implementation must be provided.
+</p>
+<p>If this pattern is not provided, the <code>__atomic_compare_exchange</code>
+built-in functions will utilize the legacy <code>sync_compare_and_swap</code>
+pattern with an <code>__ATOMIC_SEQ_CST</code> memory model.
+</p>
+<a name="index-atomic_005floadmode-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>atomic_load<var>mode</var></samp>&rsquo;</dt>
+<dd><p>This pattern implements an atomic load operation with memory model
+semantics.  Operand 1 is the memory address being loaded from.  Operand 0
+is the result of the load.  Operand 2 is the memory model to be used for
+the load operation.
+</p>
+<p>If not present, the <code>__atomic_load</code> built-in function will either
+resort to a normal load with memory barriers, or a compare-and-swap
+operation if a normal load would not be atomic.
+</p>
+<a name="index-atomic_005fstoremode-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>atomic_store<var>mode</var></samp>&rsquo;</dt>
+<dd><p>This pattern implements an atomic store operation with memory model
+semantics.  Operand 0 is the memory address being stored to.  Operand 1
+is the value to be written.  Operand 2 is the memory model to be used for
+the operation.
+</p>
+<p>If not present, the <code>__atomic_store</code> built-in function will attempt to
+perform a normal store and surround it with any required memory fences.  If
+the store would not be atomic, then an <code>__atomic_exchange</code> is
+attempted with the result being ignored.
+</p>
+<a name="index-atomic_005fexchangemode-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>atomic_exchange<var>mode</var></samp>&rsquo;</dt>
+<dd><p>This pattern implements an atomic exchange operation with memory model
+semantics.  Operand 1 is the memory location the operation is performed on.
+Operand 0 is an output operand which is set to the original value contained
+in the memory pointed to by operand 1.  Operand 2 is the value to be
+stored.  Operand 3 is the memory model to be used.
+</p>
+<p>If this pattern is not present, the built-in function
+<code>__atomic_exchange</code> will attempt to preform the operation with a
+compare and swap loop.
+</p>
+<a name="index-atomic_005faddmode-instruction-pattern"></a>
+<a name="index-atomic_005fsubmode-instruction-pattern"></a>
+<a name="index-atomic_005formode-instruction-pattern"></a>
+<a name="index-atomic_005fandmode-instruction-pattern"></a>
+<a name="index-atomic_005fxormode-instruction-pattern"></a>
+<a name="index-atomic_005fnandmode-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>atomic_add<var>mode</var></samp>&rsquo;, &lsquo;<samp>atomic_sub<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>atomic_or<var>mode</var></samp>&rsquo;, &lsquo;<samp>atomic_and<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>atomic_xor<var>mode</var></samp>&rsquo;, &lsquo;<samp>atomic_nand<var>mode</var></samp>&rsquo;</dt>
+<dd><p>These patterns emit code for an atomic operation on memory with memory
+model semantics. Operand 0 is the memory on which the atomic operation is
+performed.  Operand 1 is the second operand to the binary operator.
+Operand 2 is the memory model to be used by the operation.
+</p>
+<p>If these patterns are not defined, attempts will be made to use legacy
+<code>sync</code> patterns, or equivalent patterns which return a result.  If
+none of these are available a compare-and-swap loop will be used.
+</p>
+<a name="index-atomic_005ffetch_005faddmode-instruction-pattern"></a>
+<a name="index-atomic_005ffetch_005fsubmode-instruction-pattern"></a>
+<a name="index-atomic_005ffetch_005formode-instruction-pattern"></a>
+<a name="index-atomic_005ffetch_005fandmode-instruction-pattern"></a>
+<a name="index-atomic_005ffetch_005fxormode-instruction-pattern"></a>
+<a name="index-atomic_005ffetch_005fnandmode-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>atomic_fetch_add<var>mode</var></samp>&rsquo;, &lsquo;<samp>atomic_fetch_sub<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>atomic_fetch_or<var>mode</var></samp>&rsquo;, &lsquo;<samp>atomic_fetch_and<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>atomic_fetch_xor<var>mode</var></samp>&rsquo;, &lsquo;<samp>atomic_fetch_nand<var>mode</var></samp>&rsquo;</dt>
+<dd><p>These patterns emit code for an atomic operation on memory with memory
+model semantics, and return the original value. Operand 0 is an output 
+operand which contains the value of the memory location before the 
+operation was performed.  Operand 1 is the memory on which the atomic 
+operation is performed.  Operand 2 is the second operand to the binary
+operator.  Operand 3 is the memory model to be used by the operation.
+</p>
+<p>If these patterns are not defined, attempts will be made to use legacy
+<code>sync</code> patterns.  If none of these are available a compare-and-swap
+loop will be used.
+</p>
+<a name="index-atomic_005fadd_005ffetchmode-instruction-pattern"></a>
+<a name="index-atomic_005fsub_005ffetchmode-instruction-pattern"></a>
+<a name="index-atomic_005for_005ffetchmode-instruction-pattern"></a>
+<a name="index-atomic_005fand_005ffetchmode-instruction-pattern"></a>
+<a name="index-atomic_005fxor_005ffetchmode-instruction-pattern"></a>
+<a name="index-atomic_005fnand_005ffetchmode-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>atomic_add_fetch<var>mode</var></samp>&rsquo;, &lsquo;<samp>atomic_sub_fetch<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>atomic_or_fetch<var>mode</var></samp>&rsquo;, &lsquo;<samp>atomic_and_fetch<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>atomic_xor_fetch<var>mode</var></samp>&rsquo;, &lsquo;<samp>atomic_nand_fetch<var>mode</var></samp>&rsquo;</dt>
+<dd><p>These patterns emit code for an atomic operation on memory with memory
+model semantics and return the result after the operation is performed.
+Operand 0 is an output operand which contains the value after the
+operation.  Operand 1 is the memory on which the atomic operation is
+performed.  Operand 2 is the second operand to the binary operator.
+Operand 3 is the memory model to be used by the operation.
+</p>
+<p>If these patterns are not defined, attempts will be made to use legacy
+<code>sync</code> patterns, or equivalent patterns which return the result before
+the operation followed by the arithmetic operation required to produce the
+result.  If none of these are available a compare-and-swap loop will be
+used.
+</p>
+<a name="index-atomic_005ftest_005fand_005fset-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>atomic_test_and_set</samp>&rsquo;</dt>
+<dd><p>This pattern emits code for <code>__builtin_atomic_test_and_set</code>.
+Operand 0 is an output operand which is set to true if the previous
+previous contents of the byte was &quot;set&quot;, and false otherwise.  Operand 1
+is the <code>QImode</code> memory to be modified.  Operand 2 is the memory
+model to be used.
+</p>
+<p>The specific value that defines &quot;set&quot; is implementation defined, and
+is normally based on what is performed by the native atomic test and set
+instruction.
+</p>
+<a name="index-atomic_005fbit_005ftest_005fand_005fsetmode-instruction-pattern"></a>
+<a name="index-atomic_005fbit_005ftest_005fand_005fcomplementmode-instruction-pattern"></a>
+<a name="index-atomic_005fbit_005ftest_005fand_005fresetmode-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>atomic_bit_test_and_set<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>atomic_bit_test_and_complement<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>atomic_bit_test_and_reset<var>mode</var></samp>&rsquo;</dt>
+<dd><p>These patterns emit code for an atomic bitwise operation on memory with memory
+model semantics, and return the original value of the specified bit.
+Operand 0 is an output operand which contains the value of the specified bit
+from the memory location before the operation was performed.  Operand 1 is the
+memory on which the atomic operation is performed.  Operand 2 is the bit within
+the operand, starting with least significant bit.  Operand 3 is the memory model
+to be used by the operation.  Operand 4 is a flag - it is <code>const1_rtx</code>
+if operand 0 should contain the original value of the specified bit in the
+least significant bit of the operand, and <code>const0_rtx</code> if the bit should
+be in its original position in the operand.
+<code>atomic_bit_test_and_set<var>mode</var></code> atomically sets the specified bit after
+remembering its original value, <code>atomic_bit_test_and_complement<var>mode</var></code>
+inverts the specified bit and <code>atomic_bit_test_and_reset<var>mode</var></code> clears
+the specified bit.
+</p>
+<p>If these patterns are not defined, attempts will be made to use
+<code>atomic_fetch_or<var>mode</var></code>, <code>atomic_fetch_xor<var>mode</var></code> or
+<code>atomic_fetch_and<var>mode</var></code> instruction patterns, or their <code>sync</code>
+counterparts.  If none of these are available a compare-and-swap
+loop will be used.
+</p>
+<a name="index-mem_005fthread_005ffence-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>mem_thread_fence</samp>&rsquo;</dt>
+<dd><p>This pattern emits code required to implement a thread fence with
+memory model semantics.  Operand 0 is the memory model to be used.
+</p>
+<p>For the <code>__ATOMIC_RELAXED</code> model no instructions need to be issued
+and this expansion is not invoked.
+</p>
+<p>The compiler always emits a compiler memory barrier regardless of what
+expanding this pattern produced.
+</p>
+<p>If this pattern is not defined, the compiler falls back to expanding the
+<code>memory_barrier</code> pattern, then to emitting <code>__sync_synchronize</code>
+library call, and finally to just placing a compiler memory barrier.
+</p>
+<a name="index-get_005fthread_005fpointermode-instruction-pattern"></a>
+<a name="index-set_005fthread_005fpointermode-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>get_thread_pointer<var>mode</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>set_thread_pointer<var>mode</var></samp>&rsquo;</dt>
+<dd><p>These patterns emit code that reads/sets the TLS thread pointer. Currently,
+these are only needed if the target needs to support the
+<code>__builtin_thread_pointer</code> and <code>__builtin_set_thread_pointer</code>
+builtins.
+</p>
+<p>The get/set patterns have a single output/input operand respectively,
+with <var>mode</var> intended to be <code>Pmode</code>.
+</p>
+<a name="index-stack_005fprotect_005fcombined_005fset-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>stack_protect_combined_set</samp>&rsquo;</dt>
+<dd><p>This pattern, if defined, moves a <code>ptr_mode</code> value from an address
+whose declaration RTX is given in operand 1 to the memory in operand 0
+without leaving the value in a register afterward.  If several
+instructions are needed by the target to perform the operation (eg. to
+load the address from a GOT entry then load the <code>ptr_mode</code> value
+and finally store it), it is the backend&rsquo;s responsibility to ensure no
+intermediate result gets spilled.  This is to avoid leaking the value
+some place that an attacker might use to rewrite the stack guard slot
+after having clobbered it.
+</p>
+<p>If this pattern is not defined, then the address declaration is
+expanded first in the standard way and a <code>stack_protect_set</code>
+pattern is then generated to move the value from that address to the
+address in operand 0.
+</p>
+<a name="index-stack_005fprotect_005fset-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>stack_protect_set</samp>&rsquo;</dt>
+<dd><p>This pattern, if defined, moves a <code>ptr_mode</code> value from the valid
+memory location in operand 1 to the memory in operand 0 without leaving
+the value in a register afterward.  This is to avoid leaking the value
+some place that an attacker might use to rewrite the stack guard slot
+after having clobbered it.
+</p>
+<p>Note: on targets where the addressing modes do not allow to load
+directly from stack guard address, the address is expanded in a standard
+way first which could cause some spills.
+</p>
+<p>If this pattern is not defined, then a plain move pattern is generated.
+</p>
+<a name="index-stack_005fprotect_005fcombined_005ftest-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>stack_protect_combined_test</samp>&rsquo;</dt>
+<dd><p>This pattern, if defined, compares a <code>ptr_mode</code> value from an
+address whose declaration RTX is given in operand 1 with the memory in
+operand 0 without leaving the value in a register afterward and
+branches to operand 2 if the values were equal.  If several
+instructions are needed by the target to perform the operation (eg. to
+load the address from a GOT entry then load the <code>ptr_mode</code> value
+and finally store it), it is the backend&rsquo;s responsibility to ensure no
+intermediate result gets spilled.  This is to avoid leaking the value
+some place that an attacker might use to rewrite the stack guard slot
+after having clobbered it.
+</p>
+<p>If this pattern is not defined, then the address declaration is
+expanded first in the standard way and a <code>stack_protect_test</code>
+pattern is then generated to compare the value from that address to the
+value at the memory in operand 0.
+</p>
+<a name="index-stack_005fprotect_005ftest-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>stack_protect_test</samp>&rsquo;</dt>
+<dd><p>This pattern, if defined, compares a <code>ptr_mode</code> value from the
+valid memory location in operand 1 with the memory in operand 0 without
+leaving the value in a register afterward and branches to operand 2 if
+the values were equal.
+</p>
+<p>If this pattern is not defined, then a plain compare pattern and
+conditional branch pattern is used.
+</p>
+<a name="index-clear_005fcache-instruction-pattern"></a>
+</dd>
+<dt>&lsquo;<samp>clear_cache</samp>&rsquo;</dt>
+<dd><p>This pattern, if defined, flushes the instruction cache for a region of
+memory.  The region is bounded to by the Pmode pointers in operand 0
+inclusive and operand 1 exclusive.
+</p>
+<p>If this pattern is not defined, a call to the library function
+<code>__clear_cache</code> is used.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Pattern-Ordering.html#Pattern-Ordering" accesskey="n" rel="next">Pattern Ordering</a>, Previous: <a href="Constraints.html#Constraints" accesskey="p" rel="prev">Constraints</a>, Up: <a href="Machine-Desc.html#Machine-Desc" accesskey="u" rel="up">Machine Desc</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

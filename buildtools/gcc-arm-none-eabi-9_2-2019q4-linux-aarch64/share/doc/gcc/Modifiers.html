@@ -1,0 +1,160 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Modifiers</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Modifiers">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Modifiers">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Constraints.html#Constraints" rel="up" title="Constraints">
+<link href="Machine-Constraints.html#Machine-Constraints" rel="next" title="Machine Constraints">
+<link href="Multi_002dAlternative.html#Multi_002dAlternative" rel="prev" title="Multi-Alternative">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Modifiers"></a>
+<div class="header">
+<p>
+Next: <a href="Machine-Constraints.html#Machine-Constraints" accesskey="n" rel="next">Machine Constraints</a>, Previous: <a href="Multi_002dAlternative.html#Multi_002dAlternative" accesskey="p" rel="prev">Multi-Alternative</a>, Up: <a href="Constraints.html#Constraints" accesskey="u" rel="up">Constraints</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Constraint-Modifier-Characters"></a>
+<h4 class="subsubsection">6.47.3.3 Constraint Modifier Characters</h4>
+<a name="index-modifiers-in-constraints"></a>
+<a name="index-constraint-modifier-characters"></a>
+
+<p>Here are constraint modifier characters.
+</p>
+<dl compact="compact">
+<dd><a name="index-_003d-in-constraint"></a>
+</dd>
+<dt>&lsquo;<samp>=</samp>&rsquo;</dt>
+<dd><p>Means that this operand is written to by this instruction:
+the previous value is discarded and replaced by new data.
+</p>
+<a name="index-_002b-in-constraint"></a>
+</dd>
+<dt>&lsquo;<samp>+</samp>&rsquo;</dt>
+<dd><p>Means that this operand is both read and written by the instruction.
+</p>
+<p>When the compiler fixes up the operands to satisfy the constraints,
+it needs to know which operands are read by the instruction and
+which are written by it.  &lsquo;<samp>=</samp>&rsquo; identifies an operand which is only
+written; &lsquo;<samp>+</samp>&rsquo; identifies an operand that is both read and written; all
+other operands are assumed to only be read.
+</p>
+<p>If you specify &lsquo;<samp>=</samp>&rsquo; or &lsquo;<samp>+</samp>&rsquo; in a constraint, you put it in the
+first character of the constraint string.
+</p>
+<a name="index-_0026-in-constraint"></a>
+<a name="index-earlyclobber-operand"></a>
+</dd>
+<dt>&lsquo;<samp>&amp;</samp>&rsquo;</dt>
+<dd><p>Means (in a particular alternative) that this operand is an
+<em>earlyclobber</em> operand, which is written before the instruction is
+finished using the input operands.  Therefore, this operand may not lie
+in a register that is read by the instruction or as part of any memory
+address.
+</p>
+<p>&lsquo;<samp>&amp;</samp>&rsquo; applies only to the alternative in which it is written.  In
+constraints with multiple alternatives, sometimes one alternative
+requires &lsquo;<samp>&amp;</samp>&rsquo; while others do not.  See, for example, the
+&lsquo;<samp>movdf</samp>&rsquo; insn of the 68000.
+</p>
+<p>A operand which is read by the instruction can be tied to an earlyclobber
+operand if its only use as an input occurs before the early result is
+written.  Adding alternatives of this form often allows GCC to produce
+better code when only some of the read operands can be affected by the
+earlyclobber. See, for example, the &lsquo;<samp>mulsi3</samp>&rsquo; insn of the ARM.
+</p>
+<p>Furthermore, if the <em>earlyclobber</em> operand is also a read/write
+operand, then that operand is written only after it&rsquo;s used.
+</p>
+<p>&lsquo;<samp>&amp;</samp>&rsquo; does not obviate the need to write &lsquo;<samp>=</samp>&rsquo; or &lsquo;<samp>+</samp>&rsquo;.  As
+<em>earlyclobber</em> operands are always written, a read-only
+<em>earlyclobber</em> operand is ill-formed and will be rejected by the
+compiler.
+</p>
+<a name="index-_0025-in-constraint"></a>
+</dd>
+<dt>&lsquo;<samp>%</samp>&rsquo;</dt>
+<dd><p>Declares the instruction to be commutative for this operand and the
+following operand.  This means that the compiler may interchange the
+two operands if that is the cheapest way to make all operands fit the
+constraints.  &lsquo;<samp>%</samp>&rsquo; applies to all alternatives and must appear as
+the first character in the constraint.  Only read-only operands can use
+&lsquo;<samp>%</samp>&rsquo;.
+</p>
+<p>GCC can only handle one commutative pair in an asm; if you use more,
+the compiler may fail.  Note that you need not use the modifier if
+the two alternatives are strictly identical; this would only waste
+time in the reload pass.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Machine-Constraints.html#Machine-Constraints" accesskey="n" rel="next">Machine Constraints</a>, Previous: <a href="Multi_002dAlternative.html#Multi_002dAlternative" accesskey="p" rel="prev">Multi-Alternative</a>, Up: <a href="Constraints.html#Constraints" accesskey="u" rel="up">Constraints</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

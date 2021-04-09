@@ -1,0 +1,407 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Breakpoints In Guile</title>
+
+<meta name="description" content="Debugging with GDB: Breakpoints In Guile">
+<meta name="keywords" content="Debugging with GDB: Breakpoints In Guile">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Guile-API.html#Guile-API" rel="up" title="Guile API">
+<link href="Lazy-Strings-In-Guile.html#Lazy-Strings-In-Guile" rel="next" title="Lazy Strings In Guile">
+<link href="Symbol-Tables-In-Guile.html#Symbol-Tables-In-Guile" rel="prev" title="Symbol Tables In Guile">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Breakpoints-In-Guile"></a>
+<div class="header">
+<p>
+Next: <a href="Lazy-Strings-In-Guile.html#Lazy-Strings-In-Guile" accesskey="n" rel="next">Lazy Strings In Guile</a>, Previous: <a href="Symbol-Tables-In-Guile.html#Symbol-Tables-In-Guile" accesskey="p" rel="prev">Symbol Tables In Guile</a>, Up: <a href="Guile-API.html#Guile-API" accesskey="u" rel="up">Guile API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Manipulating-breakpoints-using-Guile"></a>
+<h4 class="subsubsection">23.3.3.19 Manipulating breakpoints using Guile</h4>
+
+<a name="index-breakpoints-in-guile"></a>
+<a name="index-_003cgdb_003abreakpoint_003e"></a>
+
+<p>Breakpoints in Guile are represented by objects of type
+<code>&lt;gdb:breakpoint&gt;</code>.  New breakpoints can be created with the
+<code>make-breakpoint</code> Guile function, and then added to <small>GDB</small> with the
+<code>register-breakpoint!</code> Guile function.
+This two-step approach is taken to separate out the side-effect of adding
+the breakpoint to <small>GDB</small> from <code>make-breakpoint</code>.
+</p>
+<p>Support is also provided to view and manipulate breakpoints created
+outside of Guile.
+</p>
+<p>The following breakpoint-related procedures are provided by the
+<code>(gdb)</code> module:
+</p>
+<dl>
+<dt><a name="index-make_002dbreakpoint"></a>Scheme Procedure: <strong>make-breakpoint</strong> <em>location <span class="roman">[</span>#:type type<span class="roman">]</span> <span class="roman">[</span>#:wp-class wp-class<span class="roman">]</span> <span class="roman">[</span>#:internal internal<span class="roman">]</span></em></dt>
+<dd><p>Create a new breakpoint at <var>location</var>, a string naming the
+location of the breakpoint, or an expression that defines a watchpoint.
+The contents can be any location recognized by the <code>break</code> command,
+or in the case of a watchpoint, by the <code>watch</code> command.
+</p>
+<p>The breakpoint is initially marked as &lsquo;<samp>invalid</samp>&rsquo;.
+The breakpoint is not usable until it has been registered with <small>GDB</small>
+with <code>register-breakpoint!</code>, at which point it becomes &lsquo;<samp>valid</samp>&rsquo;.
+The result is the <code>&lt;gdb:breakpoint&gt;</code> object representing the breakpoint.
+</p>
+<p>The optional <var>type</var> denotes the breakpoint to create.
+This argument can be either <code>BP_BREAKPOINT</code> or <code>BP_WATCHPOINT</code>,
+and defaults to <code>BP_BREAKPOINT</code>.
+</p>
+<p>The optional <var>wp-class</var> argument defines the class of watchpoint to
+create, if <var>type</var> is <code>BP_WATCHPOINT</code>.  If a watchpoint class is
+not provided, it is assumed to be a <code>WP_WRITE</code> class.
+</p>
+<p>The optional <var>internal</var> argument allows the breakpoint to become
+invisible to the user.  The breakpoint will neither be reported when
+registered, nor will it be listed in the output from <code>info breakpoints</code>
+(but will be listed with the <code>maint info breakpoints</code> command).
+If an internal flag is not provided, the breakpoint is visible
+(non-internal).
+</p>
+<p>When a watchpoint is created, <small>GDB</small> will try to create a
+hardware assisted watchpoint.  If successful, the type of the watchpoint
+is changed from <code>BP_WATCHPOINT</code> to <code>BP_HARDWARE_WATCHPOINT</code>
+for <code>WP_WRITE</code>, <code>BP_READ_WATCHPOINT</code> for <code>WP_READ</code>,
+and <code>BP_ACCESS_WATCHPOINT</code> for <code>WP_ACCESS</code>.
+If not successful, the type of the watchpoint is left as <code>WP_WATCHPOINT</code>.
+</p>
+<p>The available types are represented by constants defined in the <code>gdb</code>
+module:
+</p>
+<dl compact="compact">
+<dt><code>BP_BREAKPOINT</code>
+<a name="index-BP_005fBREAKPOINT-1"></a>
+</dt>
+<dd><p>Normal code breakpoint.
+</p>
+</dd>
+<dt><code>BP_WATCHPOINT</code>
+<a name="index-BP_005fWATCHPOINT-1"></a>
+</dt>
+<dd><p>Watchpoint breakpoint.
+</p>
+</dd>
+<dt><code>BP_HARDWARE_WATCHPOINT</code>
+<a name="index-BP_005fHARDWARE_005fWATCHPOINT-1"></a>
+</dt>
+<dd><p>Hardware assisted watchpoint.
+This value cannot be specified when creating the breakpoint.
+</p>
+</dd>
+<dt><code>BP_READ_WATCHPOINT</code>
+<a name="index-BP_005fREAD_005fWATCHPOINT-1"></a>
+</dt>
+<dd><p>Hardware assisted read watchpoint.
+This value cannot be specified when creating the breakpoint.
+</p>
+</dd>
+<dt><code>BP_ACCESS_WATCHPOINT</code>
+<a name="index-BP_005fACCESS_005fWATCHPOINT-1"></a>
+</dt>
+<dd><p>Hardware assisted access watchpoint.
+This value cannot be specified when creating the breakpoint.
+</p></dd>
+</dl>
+
+<p>The available watchpoint types represented by constants are defined in the
+<code>(gdb)</code> module:
+</p>
+<dl compact="compact">
+<dt><code>WP_READ</code>
+<a name="index-WP_005fREAD-1"></a>
+</dt>
+<dd><p>Read only watchpoint.
+</p>
+</dd>
+<dt><code>WP_WRITE</code>
+<a name="index-WP_005fWRITE-1"></a>
+</dt>
+<dd><p>Write only watchpoint.
+</p>
+</dd>
+<dt><code>WP_ACCESS</code>
+<a name="index-WP_005fACCESS-1"></a>
+</dt>
+<dd><p>Read/Write watchpoint.
+</p></dd>
+</dl>
+
+</dd></dl>
+
+<dl>
+<dt><a name="index-register_002dbreakpoint_0021"></a>Scheme Procedure: <strong>register-breakpoint!</strong> <em>breakpoint</em></dt>
+<dd><p>Add <var>breakpoint</var>, a <code>&lt;gdb:breakpoint&gt;</code> object, to <small>GDB</small>&rsquo;s
+list of breakpoints.  The breakpoint must have been created with
+<code>make-breakpoint</code>.  One cannot register breakpoints that have been
+created outside of Guile.  Once a breakpoint is registered it becomes
+&lsquo;<samp>valid</samp>&rsquo;.
+It is an error to register an already registered breakpoint.
+The result is unspecified.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-delete_002dbreakpoint_0021"></a>Scheme Procedure: <strong>delete-breakpoint!</strong> <em>breakpoint</em></dt>
+<dd><p>Remove <var>breakpoint</var> from <small>GDB</small>&rsquo;s list of breakpoints.
+This also invalidates the Guile <var>breakpoint</var> object.
+Any further attempt to access the object will throw an exception.
+</p>
+<p>If <var>breakpoint</var> was created from Guile with <code>make-breakpoint</code>
+it may be re-registered with <small>GDB</small>, in which case the breakpoint
+becomes valid again.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-breakpoints-1"></a>Scheme Procedure: <strong>breakpoints</strong></dt>
+<dd><p>Return a list of all breakpoints.
+Each element of the list is a <code>&lt;gdb:breakpoint&gt;</code> object.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-breakpoint_003f"></a>Scheme Procedure: <strong>breakpoint?</strong> <em>object</em></dt>
+<dd><p>Return <code>#t</code> if <var>object</var> is a <code>&lt;gdb:breakpoint&gt;</code> object,
+and <code>#f</code> otherwise.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-breakpoint_002dvalid_003f"></a>Scheme Procedure: <strong>breakpoint-valid?</strong> <em>breakpoint</em></dt>
+<dd><p>Return <code>#t</code> if <var>breakpoint</var> is valid, <code>#f</code> otherwise.
+Breakpoints created with <code>make-breakpoint</code> are marked as invalid
+until they are registered with <small>GDB</small> with <code>register-breakpoint!</code>.
+A <code>&lt;gdb:breakpoint&gt;</code> object can become invalid
+if the user deletes the breakpoint.  In this case, the object still
+exists, but the underlying breakpoint does not.  In the cases of
+watchpoint scope, the watchpoint remains valid even if execution of the
+inferior leaves the scope of that watchpoint.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-breakpoint_002dnumber"></a>Scheme Procedure: <strong>breakpoint-number</strong> <em>breakpoint</em></dt>
+<dd><p>Return the breakpoint&rsquo;s number &mdash; the identifier used by
+the user to manipulate the breakpoint.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-breakpoint_002dtype"></a>Scheme Procedure: <strong>breakpoint-type</strong> <em>breakpoint</em></dt>
+<dd><p>Return the breakpoint&rsquo;s type &mdash; the identifier used to
+determine the actual breakpoint type or use-case.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-breakpoint_002dvisible_003f"></a>Scheme Procedure: <strong>breakpoint-visible?</strong> <em>breakpoint</em></dt>
+<dd><p>Return <code>#t</code> if the breakpoint is visible to the user
+when hit, or when the &lsquo;<samp>info breakpoints</samp>&rsquo; command is run.
+Otherwise return <code>#f</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-breakpoint_002dlocation"></a>Scheme Procedure: <strong>breakpoint-location</strong> <em>breakpoint</em></dt>
+<dd><p>Return the location of the breakpoint, as specified by
+the user.  It is a string.  If the breakpoint does not have a location
+(that is, it is a watchpoint) return <code>#f</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-breakpoint_002dexpression"></a>Scheme Procedure: <strong>breakpoint-expression</strong> <em>breakpoint</em></dt>
+<dd><p>Return the breakpoint expression, as specified by the user.  It is a string.
+If the breakpoint does not have an expression (the breakpoint is not a
+watchpoint) return <code>#f</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-breakpoint_002denabled_003f"></a>Scheme Procedure: <strong>breakpoint-enabled?</strong> <em>breakpoint</em></dt>
+<dd><p>Return <code>#t</code> if the breakpoint is enabled, and <code>#f</code> otherwise.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-set_002dbreakpoint_002denabled_0021"></a>Scheme Procedure: <strong>set-breakpoint-enabled!</strong> <em>breakpoint flag</em></dt>
+<dd><p>Set the enabled state of <var>breakpoint</var> to <var>flag</var>.
+If flag is <code>#f</code> it is disabled, otherwise it is enabled.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-breakpoint_002dsilent_003f"></a>Scheme Procedure: <strong>breakpoint-silent?</strong> <em>breakpoint</em></dt>
+<dd><p>Return <code>#t</code> if the breakpoint is silent, and <code>#f</code> otherwise.
+</p>
+<p>Note that a breakpoint can also be silent if it has commands and the
+first command is <code>silent</code>.  This is not reported by the
+<code>silent</code> attribute.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-set_002dbreakpoint_002dsilent_0021"></a>Scheme Procedure: <strong>set-breakpoint-silent!</strong> <em>breakpoint flag</em></dt>
+<dd><p>Set the silent state of <var>breakpoint</var> to <var>flag</var>.
+If flag is <code>#f</code> the breakpoint is made silent,
+otherwise it is made non-silent (or noisy).
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-breakpoint_002dignore_002dcount"></a>Scheme Procedure: <strong>breakpoint-ignore-count</strong> <em>breakpoint</em></dt>
+<dd><p>Return the ignore count for <var>breakpoint</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-set_002dbreakpoint_002dignore_002dcount_0021"></a>Scheme Procedure: <strong>set-breakpoint-ignore-count!</strong> <em>breakpoint count</em></dt>
+<dd><p>Set the ignore count for <var>breakpoint</var> to <var>count</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-breakpoint_002dhit_002dcount"></a>Scheme Procedure: <strong>breakpoint-hit-count</strong> <em>breakpoint</em></dt>
+<dd><p>Return hit count of <var>breakpoint</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-set_002dbreakpoint_002dhit_002dcount_0021"></a>Scheme Procedure: <strong>set-breakpoint-hit-count!</strong> <em>breakpoint count</em></dt>
+<dd><p>Set the hit count of <var>breakpoint</var> to <var>count</var>.
+At present, <var>count</var> must be zero.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-breakpoint_002dthread"></a>Scheme Procedure: <strong>breakpoint-thread</strong> <em>breakpoint</em></dt>
+<dd><p>Return the global-thread-id for thread-specific breakpoint
+<var>breakpoint</var>.  Return #f if <var>breakpoint</var> is not
+thread-specific.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-set_002dbreakpoint_002dthread_0021"></a>Scheme Procedure: <strong>set-breakpoint-thread!</strong> <em>breakpoint global-thread-id|#f</em></dt>
+<dd><p>Set the thread-id for <var>breakpoint</var> to <var>global-thread-id</var> If
+set to <code>#f</code>, the breakpoint is no longer thread-specific.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-breakpoint_002dtask"></a>Scheme Procedure: <strong>breakpoint-task</strong> <em>breakpoint</em></dt>
+<dd><p>If the breakpoint is Ada task-specific, return the Ada task id.
+If the breakpoint is not task-specific (or the underlying
+language is not Ada), return <code>#f</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-set_002dbreakpoint_002dtask_0021"></a>Scheme Procedure: <strong>set-breakpoint-task!</strong> <em>breakpoint task</em></dt>
+<dd><p>Set the Ada task of <var>breakpoint</var> to <var>task</var>.
+If set to <code>#f</code>, the breakpoint is no longer task-specific.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-breakpoint_002dcondition"></a>Scheme Procedure: <strong>breakpoint-condition</strong> <em>breakpoint</em></dt>
+<dd><p>Return the condition of <var>breakpoint</var>, as specified by the user.
+It is a string.  If there is no condition, return <code>#f</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-set_002dbreakpoint_002dcondition_0021"></a>Scheme Procedure: <strong>set-breakpoint-condition!</strong> <em>breakpoint condition</em></dt>
+<dd><p>Set the condition of <var>breakpoint</var> to <var>condition</var>,
+which must be a string.  If set to <code>#f</code> then the breakpoint
+becomes unconditional.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-breakpoint_002dstop"></a>Scheme Procedure: <strong>breakpoint-stop</strong> <em>breakpoint</em></dt>
+<dd><p>Return the stop predicate of <var>breakpoint</var>.
+See <code>set-breakpoint-stop!</code> below in this section.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-set_002dbreakpoint_002dstop_0021"></a>Scheme Procedure: <strong>set-breakpoint-stop!</strong> <em>breakpoint procedure|#f</em></dt>
+<dd><p>Set the stop predicate of <var>breakpoint</var>.  The predicate
+<var>procedure</var> takes one argument: the &lt;gdb:breakpoint&gt; object.
+If this predicate is set to a procedure then it is invoked whenever
+the inferior reaches this breakpoint.  If it returns <code>#t</code>,
+or any non-<code>#f</code> value, then the inferior is stopped,
+otherwise the inferior will continue.
+</p>
+<p>If there are multiple breakpoints at the same location with a
+<code>stop</code> predicate, each one will be called regardless of the
+return status of the previous.  This ensures that all <code>stop</code>
+predicates have a chance to execute at that location.  In this scenario
+if one of the methods returns <code>#t</code> but the others return
+<code>#f</code>, the inferior will still be stopped.
+</p>
+<p>You should not alter the execution state of the inferior (i.e., step,
+next, etc.), alter the current frame context (i.e., change the current
+active frame), or alter, add or delete any breakpoint.  As a general
+rule, you should not alter any data within <small>GDB</small> or the inferior
+at this time.
+</p>
+<p>Example <code>stop</code> implementation:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define (my-stop? bkpt)
+  (let ((int-val (parse-and-eval &quot;foo&quot;)))
+    (value=? int-val 3)))
+(define bkpt (make-breakpoint &quot;main.c:42&quot;))
+(register-breakpoint! bkpt)
+(set-breakpoint-stop! bkpt my-stop?)
+</pre></div>
+</dd></dl>
+
+<dl>
+<dt><a name="index-breakpoint_002dcommands"></a>Scheme Procedure: <strong>breakpoint-commands</strong> <em>breakpoint</em></dt>
+<dd><p>Return the commands attached to <var>breakpoint</var> as a string,
+or <code>#f</code> if there are none.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Lazy-Strings-In-Guile.html#Lazy-Strings-In-Guile" accesskey="n" rel="next">Lazy Strings In Guile</a>, Previous: <a href="Symbol-Tables-In-Guile.html#Symbol-Tables-In-Guile" accesskey="p" rel="prev">Symbol Tables In Guile</a>, Up: <a href="Guile-API.html#Guile-API" accesskey="u" rel="up">Guile API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

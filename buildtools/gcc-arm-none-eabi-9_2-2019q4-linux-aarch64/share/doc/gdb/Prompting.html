@@ -1,0 +1,145 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Prompting</title>
+
+<meta name="description" content="Debugging with GDB: Prompting">
+<meta name="keywords" content="Debugging with GDB: Prompting">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Annotations.html#Annotations" rel="up" title="Annotations">
+<link href="Errors.html#Errors" rel="next" title="Errors">
+<link href="Server-Prefix.html#Server-Prefix" rel="prev" title="Server Prefix">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Prompting"></a>
+<div class="header">
+<p>
+Next: <a href="Errors.html#Errors" accesskey="n" rel="next">Errors</a>, Previous: <a href="Server-Prefix.html#Server-Prefix" accesskey="p" rel="prev">Server Prefix</a>, Up: <a href="Annotations.html#Annotations" accesskey="u" rel="up">Annotations</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Annotation-for-GDB-Input"></a>
+<h3 class="section">28.3 Annotation for <small>GDB</small> Input</h3>
+
+<a name="index-annotations-for-prompts"></a>
+<p>When <small>GDB</small> prompts for input, it annotates this fact so it is possible
+to know when to send output, when the output from a given command is
+over, etc.
+</p>
+<p>Different kinds of input each have a different <em>input type</em>.  Each
+input type has three annotations: a <code>pre-</code> annotation, which
+denotes the beginning of any prompt which is being output, a plain
+annotation, which denotes the end of the prompt, and then a <code>post-</code>
+annotation which denotes the end of any echo which may (or may not) be
+associated with the input.  For example, the <code>prompt</code> input type
+features the following annotations:
+</p>
+<div class="smallexample">
+<pre class="smallexample">^Z^Zpre-prompt
+^Z^Zprompt
+^Z^Zpost-prompt
+</pre></div>
+
+<p>The input types are
+</p>
+<dl compact="compact">
+<dd><a name="index-pre_002dprompt-annotation"></a>
+<a name="index-prompt-annotation"></a>
+<a name="index-post_002dprompt-annotation"></a>
+</dd>
+<dt><code>prompt</code></dt>
+<dd><p>When <small>GDB</small> is prompting for a command (the main <small>GDB</small> prompt).
+</p>
+<a name="index-pre_002dcommands-annotation"></a>
+<a name="index-commands-annotation"></a>
+<a name="index-post_002dcommands-annotation"></a>
+</dd>
+<dt><code>commands</code></dt>
+<dd><p>When <small>GDB</small> prompts for a set of commands, like in the <code>commands</code>
+command.  The annotations are repeated for each command which is input.
+</p>
+<a name="index-pre_002doverload_002dchoice-annotation"></a>
+<a name="index-overload_002dchoice-annotation"></a>
+<a name="index-post_002doverload_002dchoice-annotation"></a>
+</dd>
+<dt><code>overload-choice</code></dt>
+<dd><p>When <small>GDB</small> wants the user to select between various overloaded functions.
+</p>
+<a name="index-pre_002dquery-annotation"></a>
+<a name="index-query-annotation"></a>
+<a name="index-post_002dquery-annotation"></a>
+</dd>
+<dt><code>query</code></dt>
+<dd><p>When <small>GDB</small> wants the user to confirm a potentially dangerous operation.
+</p>
+<a name="index-pre_002dprompt_002dfor_002dcontinue-annotation"></a>
+<a name="index-prompt_002dfor_002dcontinue-annotation"></a>
+<a name="index-post_002dprompt_002dfor_002dcontinue-annotation"></a>
+</dd>
+<dt><code>prompt-for-continue</code></dt>
+<dd><p>When <small>GDB</small> is asking the user to press return to continue.  Note: Don&rsquo;t
+expect this to work well; instead use <code>set height 0</code> to disable
+prompting.  This is because the counting of lines is buggy in the
+presence of annotations.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Errors.html#Errors" accesskey="n" rel="next">Errors</a>, Previous: <a href="Server-Prefix.html#Server-Prefix" accesskey="p" rel="prev">Server Prefix</a>, Up: <a href="Annotations.html#Annotations" accesskey="u" rel="up">Annotations</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

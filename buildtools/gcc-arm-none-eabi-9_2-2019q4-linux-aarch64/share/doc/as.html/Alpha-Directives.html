@@ -1,0 +1,231 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: Alpha Directives</title>
+
+<meta name="description" content="Using as: Alpha Directives">
+<meta name="keywords" content="Using as: Alpha Directives">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Alpha_002dDependent.html#Alpha_002dDependent" rel="up" title="Alpha-Dependent">
+<link href="Alpha-Opcodes.html#Alpha-Opcodes" rel="next" title="Alpha Opcodes">
+<link href="Alpha-Floating-Point.html#Alpha-Floating-Point" rel="prev" title="Alpha Floating Point">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Alpha-Directives"></a>
+<div class="header">
+<p>
+Next: <a href="Alpha-Opcodes.html#Alpha-Opcodes" accesskey="n" rel="next">Alpha Opcodes</a>, Previous: <a href="Alpha-Floating-Point.html#Alpha-Floating-Point" accesskey="p" rel="prev">Alpha Floating Point</a>, Up: <a href="Alpha_002dDependent.html#Alpha_002dDependent" accesskey="u" rel="up">Alpha-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Alpha-Assembler-Directives"></a>
+<h4 class="subsection">9.2.5 Alpha Assembler Directives</h4>
+
+<p><code>as</code> for the Alpha supports many additional directives for
+compatibility with the native assembler.  This section describes them only
+briefly.
+</p>
+<a name="index-Alpha_002donly-directives"></a>
+<p>These are the additional directives in <code>as</code> for the Alpha:
+</p>
+<dl compact="compact">
+<dt><code>.arch <var>cpu</var></code></dt>
+<dd><p>Specifies the target processor.  This is equivalent to the
+<samp>-m<var>cpu</var></samp> command-line option.  See <a href="Alpha-Options.html#Alpha-Options">Options</a>,
+for a list of values for <var>cpu</var>.
+</p>
+</dd>
+<dt><code>.ent <var>function</var>[, <var>n</var>]</code></dt>
+<dd><p>Mark the beginning of <var>function</var>.  An optional number may follow for
+compatibility with the OSF/1 assembler, but is ignored.  When generating
+<code>.mdebug</code> information, this will create a procedure descriptor for
+the function.  In ELF, it will mark the symbol as a function a-la the
+generic <code>.type</code> directive.
+</p>
+</dd>
+<dt><code>.end <var>function</var></code></dt>
+<dd><p>Mark the end of <var>function</var>.  In ELF, it will set the size of the symbol
+a-la the generic <code>.size</code> directive.
+</p>
+</dd>
+<dt><code>.mask <var>mask</var>, <var>offset</var></code></dt>
+<dd><p>Indicate which of the integer registers are saved in the current
+function&rsquo;s stack frame.  <var>mask</var> is interpreted a bit mask in which
+bit <var>n</var> set indicates that register <var>n</var> is saved.  The registers
+are saved in a block located <var>offset</var> bytes from the <em>canonical
+frame address</em> (CFA) which is the value of the stack pointer on entry to
+the function.  The registers are saved sequentially, except that the
+return address register (normally <code>$26</code>) is saved first.
+</p>
+<p>This and the other directives that describe the stack frame are
+currently only used when generating <code>.mdebug</code> information.  They
+may in the future be used to generate DWARF2 <code>.debug_frame</code> unwind
+information for hand written assembly.
+</p>
+</dd>
+<dt><code>.fmask <var>mask</var>, <var>offset</var></code></dt>
+<dd><p>Indicate which of the floating-point registers are saved in the current
+stack frame.  The <var>mask</var> and <var>offset</var> parameters are interpreted
+as with <code>.mask</code>.
+</p>
+</dd>
+<dt><code>.frame <var>framereg</var>, <var>frameoffset</var>, <var>retreg</var>[, <var>argoffset</var>]</code></dt>
+<dd><p>Describes the shape of the stack frame.  The frame pointer in use is
+<var>framereg</var>; normally this is either <code>$fp</code> or <code>$sp</code>.  The
+frame pointer is <var>frameoffset</var> bytes below the CFA.  The return
+address is initially located in <var>retreg</var> until it is saved as
+indicated in <code>.mask</code>.  For compatibility with OSF/1 an optional
+<var>argoffset</var> parameter is accepted and ignored.  It is believed to
+indicate the offset from the CFA to the saved argument registers.
+</p>
+</dd>
+<dt><code>.prologue <var>n</var></code></dt>
+<dd><p>Indicate that the stack frame is set up and all registers have been
+spilled.  The argument <var>n</var> indicates whether and how the function
+uses the incoming <em>procedure vector</em> (the address of the called
+function) in <code>$27</code>.  0 indicates that <code>$27</code> is not used; 1
+indicates that the first two instructions of the function use <code>$27</code>
+to perform a load of the GP register; 2 indicates that <code>$27</code> is
+used in some non-standard way and so the linker cannot elide the load of
+the procedure vector during relaxation.
+</p>
+</dd>
+<dt><code>.usepv <var>function</var>, <var>which</var></code></dt>
+<dd><p>Used to indicate the use of the <code>$27</code> register, similar to
+<code>.prologue</code>, but without the other semantics of needing to
+be inside an open <code>.ent</code>/<code>.end</code> block.
+</p>
+<p>The <var>which</var> argument should be either <code>no</code>, indicating that
+<code>$27</code> is not used, or <code>std</code>, indicating that the first two
+instructions of the function perform a GP load.
+</p>
+<p>One might use this directive instead of <code>.prologue</code> if you are
+also using dwarf2 CFI directives.
+</p>
+</dd>
+<dt><code>.gprel32 <var>expression</var></code></dt>
+<dd><p>Computes the difference between the address in <var>expression</var> and the
+GP for the current object file, and stores it in 4 bytes.  In addition
+to being smaller than a full 8 byte address, this also does not require
+a dynamic relocation when used in a shared library.
+</p>
+</dd>
+<dt><code>.t_floating <var>expression</var></code></dt>
+<dd><p>Stores <var>expression</var> as an <small>IEEE</small> double precision value.
+</p>
+</dd>
+<dt><code>.s_floating <var>expression</var></code></dt>
+<dd><p>Stores <var>expression</var> as an <small>IEEE</small> single precision value.
+</p>
+</dd>
+<dt><code>.f_floating <var>expression</var></code></dt>
+<dd><p>Stores <var>expression</var> as a VAX F format value.
+</p>
+</dd>
+<dt><code>.g_floating <var>expression</var></code></dt>
+<dd><p>Stores <var>expression</var> as a VAX G format value.
+</p>
+</dd>
+<dt><code>.d_floating <var>expression</var></code></dt>
+<dd><p>Stores <var>expression</var> as a VAX D format value.
+</p>
+</dd>
+<dt><code>.set <var>feature</var></code></dt>
+<dd><p>Enables or disables various assembler features.  Using the positive
+name of the feature enables while using &lsquo;<samp>no<var>feature</var></samp>&rsquo; disables.
+</p>
+<dl compact="compact">
+<dt><code>at</code></dt>
+<dd><p>Indicates that macro expansions may clobber the <em>assembler
+temporary</em> (<code>$at</code> or <code>$28</code>) register.  Some macros may not be
+expanded without this and will generate an error message if <code>noat</code>
+is in effect.  When <code>at</code> is in effect, a warning will be generated
+if <code>$at</code> is used by the programmer.
+</p>
+</dd>
+<dt><code>macro</code></dt>
+<dd><p>Enables the expansion of macro instructions.  Note that variants of real
+instructions, such as <code>br label</code> vs <code>br $31,label</code> are
+considered alternate forms and not macros.
+</p>
+</dd>
+<dt><code>move</code></dt>
+<dt><code>reorder</code></dt>
+<dt><code>volatile</code></dt>
+<dd><p>These control whether and how the assembler may re-order instructions.
+Accepted for compatibility with the OSF/1 assembler, but <code>as</code>
+does not do instruction scheduling, so these features are ignored.
+</p></dd>
+</dl>
+</dd>
+</dl>
+
+<p>The following directives are recognized for compatibility with the OSF/1
+assembler but are ignored.
+</p>
+<div class="example">
+<pre class="example">.proc           .aproc
+.reguse         .livereg
+.option         .aent
+.ugen           .eflag
+.alias          .noalias
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Alpha-Opcodes.html#Alpha-Opcodes" accesskey="n" rel="next">Alpha Opcodes</a>, Previous: <a href="Alpha-Floating-Point.html#Alpha-Floating-Point" accesskey="p" rel="prev">Alpha Floating Point</a>, Up: <a href="Alpha_002dDependent.html#Alpha_002dDependent" accesskey="u" rel="up">Alpha-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

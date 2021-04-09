@@ -1,0 +1,200 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: User GC</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: User GC">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: User GC">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Type-Information.html#Type-Information" rel="up" title="Type Information">
+<link href="GGC-Roots.html#GGC-Roots" rel="next" title="GGC Roots">
+<link href="Inheritance-and-GTY.html#Inheritance-and-GTY" rel="prev" title="Inheritance and GTY">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="User-GC"></a>
+<div class="header">
+<p>
+Next: <a href="GGC-Roots.html#GGC-Roots" accesskey="n" rel="next">GGC Roots</a>, Previous: <a href="Inheritance-and-GTY.html#Inheritance-and-GTY" accesskey="p" rel="prev">Inheritance and GTY</a>, Up: <a href="Type-Information.html#Type-Information" accesskey="u" rel="up">Type Information</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Support-for-user_002dprovided-GC-marking-routines"></a>
+<h3 class="section">23.3 Support for user-provided GC marking routines</h3>
+<a name="index-user-gc"></a>
+<p>The garbage collector supports types for which no automatic marking
+code is generated.  For these types, the user is required to provide
+three functions: one to act as a marker for garbage collection, and
+two functions to act as marker and pointer walker for pre-compiled
+headers.
+</p>
+<p>Given a structure <code>struct GTY((user)) my_struct</code>, the following functions
+should be defined to mark <code>my_struct</code>:
+</p>
+<div class="smallexample">
+<pre class="smallexample">void gt_ggc_mx (my_struct *p)
+{
+  /* This marks field 'fld'.  */
+  gt_ggc_mx (p-&gt;fld);
+}
+
+void gt_pch_nx (my_struct *p)
+{
+  /* This marks field 'fld'.  */
+  gt_pch_nx (tp-&gt;fld);
+}
+
+void gt_pch_nx (my_struct *p, gt_pointer_operator op, void *cookie)
+{
+  /* For every field 'fld', call the given pointer operator.  */
+  op (&amp;(tp-&gt;fld), cookie);
+}
+</pre></div>
+
+<p>In general, each marker <code>M</code> should call <code>M</code> for every
+pointer field in the structure.  Fields that are not allocated in GC
+or are not pointers must be ignored.
+</p>
+<p>For embedded lists (e.g., structures with a <code>next</code> or <code>prev</code>
+pointer), the marker must follow the chain and mark every element in
+it.
+</p>
+<p>Note that the rules for the pointer walker <code>gt_pch_nx (my_struct
+*, gt_pointer_operator, void *)</code> are slightly different.  In this
+case, the operation <code>op</code> must be applied to the <em>address</em> of
+every pointer field.
+</p>
+<a name="User_002dprovided-marking-routines-for-template-types"></a>
+<h4 class="subsection">23.3.1 User-provided marking routines for template types</h4>
+<p>When a template type <code>TP</code> is marked with <code>GTY</code>, all
+instances of that type are considered user-provided types.  This means
+that the individual instances of <code>TP</code> do not need to be marked
+with <code>GTY</code>.  The user needs to provide template functions to mark
+all the fields of the type.
+</p>
+<p>The following code snippets represent all the functions that need to
+be provided. Note that type <code>TP</code> may reference to more than one
+type. In these snippets, there is only one type <code>T</code>, but there
+could be more.
+</p>
+<div class="smallexample">
+<pre class="smallexample">template&lt;typename T&gt;
+void gt_ggc_mx (TP&lt;T&gt; *tp)
+{
+  extern void gt_ggc_mx (T&amp;);
+
+  /* This marks field 'fld' of type 'T'.  */
+  gt_ggc_mx (tp-&gt;fld);
+}
+
+template&lt;typename T&gt;
+void gt_pch_nx (TP&lt;T&gt; *tp)
+{
+  extern void gt_pch_nx (T&amp;);
+
+  /* This marks field 'fld' of type 'T'.  */
+  gt_pch_nx (tp-&gt;fld);
+}
+
+template&lt;typename T&gt;
+void gt_pch_nx (TP&lt;T *&gt; *tp, gt_pointer_operator op, void *cookie)
+{
+  /* For every field 'fld' of 'tp' with type 'T *', call the given
+     pointer operator.  */
+  op (&amp;(tp-&gt;fld), cookie);
+}
+
+template&lt;typename T&gt;
+void gt_pch_nx (TP&lt;T&gt; *tp, gt_pointer_operator, void *cookie)
+{
+  extern void gt_pch_nx (T *, gt_pointer_operator, void *);
+
+  /* For every field 'fld' of 'tp' with type 'T', call the pointer
+     walker for all the fields of T.  */
+  gt_pch_nx (&amp;(tp-&gt;fld), op, cookie);
+}
+</pre></div>
+
+<p>Support for user-defined types is currently limited. The following
+restrictions apply:
+</p>
+<ol>
+<li> Type <code>TP</code> and all the argument types <code>T</code> must be
+marked with <code>GTY</code>.
+
+</li><li> Type <code>TP</code> can only have type names in its argument list.
+
+</li><li> The pointer walker functions are different for <code>TP&lt;T&gt;</code> and
+<code>TP&lt;T *&gt;</code>. In the case of <code>TP&lt;T&gt;</code>, references to
+<code>T</code> must be handled by calling <code>gt_pch_nx</code> (which
+will, in turn, walk all the pointers inside fields of <code>T</code>).
+In the case of <code>TP&lt;T *&gt;</code>, references to <code>T *</code> must be
+handled by calling the <code>op</code> function on the address of the
+pointer (see the code snippets above).
+</li></ol>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="GGC-Roots.html#GGC-Roots" accesskey="n" rel="next">GGC Roots</a>, Previous: <a href="Inheritance-and-GTY.html#Inheritance-and-GTY" accesskey="p" rel="prev">Inheritance and GTY</a>, Up: <a href="Type-Information.html#Type-Information" accesskey="u" rel="up">Type Information</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Explicit Locations</title>
+
+<meta name="description" content="Debugging with GDB: Explicit Locations">
+<meta name="keywords" content="Debugging with GDB: Explicit Locations">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Specify-Location.html#Specify-Location" rel="up" title="Specify Location">
+<link href="Address-Locations.html#Address-Locations" rel="next" title="Address Locations">
+<link href="Linespec-Locations.html#Linespec-Locations" rel="prev" title="Linespec Locations">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Explicit-Locations"></a>
+<div class="header">
+<p>
+Next: <a href="Address-Locations.html#Address-Locations" accesskey="n" rel="next">Address Locations</a>, Previous: <a href="Linespec-Locations.html#Linespec-Locations" accesskey="p" rel="prev">Linespec Locations</a>, Up: <a href="Specify-Location.html#Specify-Location" accesskey="u" rel="up">Specify Location</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Explicit-Locations-1"></a>
+<h4 class="subsection">9.2.2 Explicit Locations</h4>
+<a name="index-explicit-locations"></a>
+
+<p><em>Explicit locations</em> allow the user to directly specify the source
+location&rsquo;s parameters using option-value pairs.
+</p>
+<p>Explicit locations are useful when several functions, labels, or
+file names have the same name (base name for files) in the program&rsquo;s
+sources.  In these cases, explicit locations point to the source
+line you meant more accurately and unambiguously.  Also, using
+explicit locations might be faster in large programs.
+</p>
+<p>For example, the linespec &lsquo;<samp>foo:bar</samp>&rsquo; may refer to a function <code>bar</code>
+defined in the file named <samp>foo</samp> or the label <code>bar</code> in a function
+named <code>foo</code>.  <small>GDB</small> must search either the file system or
+the symbol table to know.
+</p>
+<p>The list of valid explicit location options is summarized in the
+following table:
+</p>
+<dl compact="compact">
+<dt><code>-source <var>filename</var></code></dt>
+<dd><p>The value specifies the source file name.  To differentiate between
+files with the same base name, prepend as many directories as is necessary
+to uniquely identify the desired file, e.g., <samp>foo/bar/baz.c</samp>.  Otherwise
+<small>GDB</small> will use the first file it finds with the given base
+name.   This option requires the use of either <code>-function</code> or <code>-line</code>.
+</p>
+</dd>
+<dt><code>-function <var>function</var></code></dt>
+<dd><p>The value specifies the name of a function.  Operations
+on function locations unmodified by other options (such as <code>-label</code>
+or <code>-line</code>) refer to the line that begins the body of the function.
+In C, for example, this is the line with the open brace.
+</p>
+<p>By default, in C<tt>++</tt> and Ada, <var>function</var> is interpreted as
+specifying all functions named <var>function</var> in all scopes.  For
+C<tt>++</tt>, this means in all namespaces and classes.  For Ada, this
+means in all packages.
+</p>
+<p>For example, assuming a program with C<tt>++</tt> symbols named
+<code>A::B::func</code> and <code>B::func</code>, both commands <kbd>break&nbsp;<span class="nolinebreak">-function</span>&nbsp;func</kbd><!-- /@w --> and <kbd>break&nbsp;<span class="nolinebreak">-function</span>&nbsp;B::func</kbd><!-- /@w --> set a
+breakpoint on both symbols.
+</p>
+<p>You can use the <kbd>-qualified</kbd> flag to override this (see below).
+</p>
+</dd>
+<dt><code>-qualified</code></dt>
+<dd>
+<p>This flag makes <small>GDB</small> interpret a function name specified with
+<kbd>-function</kbd> as a complete fully-qualified name.
+</p>
+<p>For example, assuming a C<tt>++</tt> program with symbols named
+<code>A::B::func</code> and <code>B::func</code>, the <kbd>break&nbsp;<span class="nolinebreak">-qualified</span>&nbsp;<span class="nolinebreak">-function</span>&nbsp;B::func</kbd><!-- /@w --> command sets a breakpoint on <code>B::func</code>, only.
+</p>
+<p>(Note: the <kbd>-qualified</kbd> option can precede a linespec as well
+(see <a href="Linespec-Locations.html#Linespec-Locations">Linespec Locations</a>), so the particular example above could be
+simplified as <kbd>break&nbsp;<span class="nolinebreak">-qualified</span>&nbsp;B::func</kbd><!-- /@w -->.)
+</p>
+</dd>
+<dt><code>-label <var>label</var></code></dt>
+<dd><p>The value specifies the name of a label.  When the function
+name is not specified, the label is searched in the function of the currently
+selected stack frame.
+</p>
+</dd>
+<dt><code>-line <var>number</var></code></dt>
+<dd><p>The value specifies a line offset for the location.  The offset may either
+be absolute (<code>-line 3</code>) or relative (<code>-line +3</code>), depending on
+the command.  When specified without any other options, the line offset is
+relative to the current line.
+</p></dd>
+</dl>
+
+<p>Explicit location options may be abbreviated by omitting any non-unique
+trailing characters from the option name, e.g., <kbd>break&nbsp;<span class="nolinebreak">-s</span>&nbsp;main.c&nbsp;<span class="nolinebreak">-li</span>&nbsp;3</kbd><!-- /@w -->.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Address-Locations.html#Address-Locations" accesskey="n" rel="next">Address Locations</a>, Previous: <a href="Linespec-Locations.html#Linespec-Locations" accesskey="p" rel="prev">Linespec Locations</a>, Up: <a href="Specify-Location.html#Specify-Location" accesskey="u" rel="up">Specify Location</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

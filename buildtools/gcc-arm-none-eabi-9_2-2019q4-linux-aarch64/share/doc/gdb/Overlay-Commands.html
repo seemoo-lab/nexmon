@@ -1,0 +1,202 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Overlay Commands</title>
+
+<meta name="description" content="Debugging with GDB: Overlay Commands">
+<meta name="keywords" content="Debugging with GDB: Overlay Commands">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Overlays.html#Overlays" rel="up" title="Overlays">
+<link href="Automatic-Overlay-Debugging.html#Automatic-Overlay-Debugging" rel="next" title="Automatic Overlay Debugging">
+<link href="How-Overlays-Work.html#How-Overlays-Work" rel="prev" title="How Overlays Work">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Overlay-Commands"></a>
+<div class="header">
+<p>
+Next: <a href="Automatic-Overlay-Debugging.html#Automatic-Overlay-Debugging" accesskey="n" rel="next">Automatic Overlay Debugging</a>, Previous: <a href="How-Overlays-Work.html#How-Overlays-Work" accesskey="p" rel="prev">How Overlays Work</a>, Up: <a href="Overlays.html#Overlays" accesskey="u" rel="up">Overlays</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Overlay-Commands-1"></a>
+<h3 class="section">14.2 Overlay Commands</h3>
+
+<p>To use <small>GDB</small>&rsquo;s overlay support, each overlay in your program must
+correspond to a separate section of the executable file.  The section&rsquo;s
+virtual memory address and load memory address must be the overlay&rsquo;s
+mapped and load addresses.  Identifying overlays with sections allows
+<small>GDB</small> to determine the appropriate address of a function or
+variable, depending on whether the overlay is mapped or not.
+</p>
+<p><small>GDB</small>&rsquo;s overlay commands all start with the word <code>overlay</code>;
+you can abbreviate this as <code>ov</code> or <code>ovly</code>.  The commands are:
+</p>
+<dl compact="compact">
+<dt><code>overlay off</code></dt>
+<dd><a name="index-overlay"></a>
+<p>Disable <small>GDB</small>&rsquo;s overlay support.  When overlay support is
+disabled, <small>GDB</small> assumes that all functions and variables are
+always present at their mapped addresses.  By default, <small>GDB</small>&rsquo;s
+overlay support is disabled.
+</p>
+</dd>
+<dt><code>overlay manual</code></dt>
+<dd><a name="index-manual-overlay-debugging"></a>
+<p>Enable <em>manual</em> overlay debugging.  In this mode, <small>GDB</small>
+relies on you to tell it which overlays are mapped, and which are not,
+using the <code>overlay map-overlay</code> and <code>overlay unmap-overlay</code>
+commands described below.
+</p>
+</dd>
+<dt><code>overlay map-overlay <var>overlay</var></code></dt>
+<dt><code>overlay map <var>overlay</var></code></dt>
+<dd><a name="index-map-an-overlay"></a>
+<p>Tell <small>GDB</small> that <var>overlay</var> is now mapped; <var>overlay</var> must
+be the name of the object file section containing the overlay.  When an
+overlay is mapped, <small>GDB</small> assumes it can find the overlay&rsquo;s
+functions and variables at their mapped addresses.  <small>GDB</small> assumes
+that any other overlays whose mapped ranges overlap that of
+<var>overlay</var> are now unmapped.
+</p>
+</dd>
+<dt><code>overlay unmap-overlay <var>overlay</var></code></dt>
+<dt><code>overlay unmap <var>overlay</var></code></dt>
+<dd><a name="index-unmap-an-overlay"></a>
+<p>Tell <small>GDB</small> that <var>overlay</var> is no longer mapped; <var>overlay</var>
+must be the name of the object file section containing the overlay.
+When an overlay is unmapped, <small>GDB</small> assumes it can find the
+overlay&rsquo;s functions and variables at their load addresses.
+</p>
+</dd>
+<dt><code>overlay auto</code></dt>
+<dd><p>Enable <em>automatic</em> overlay debugging.  In this mode, <small>GDB</small>
+consults a data structure the overlay manager maintains in the inferior
+to see which overlays are mapped.  For details, see <a href="Automatic-Overlay-Debugging.html#Automatic-Overlay-Debugging">Automatic Overlay Debugging</a>.
+</p>
+</dd>
+<dt><code>overlay load-target</code></dt>
+<dt><code>overlay load</code></dt>
+<dd><a name="index-reloading-the-overlay-table"></a>
+<p>Re-read the overlay table from the inferior.  Normally, <small>GDB</small>
+re-reads the table <small>GDB</small> automatically each time the inferior
+stops, so this command should only be necessary if you have changed the
+overlay mapping yourself using <small>GDB</small>.  This command is only
+useful when using automatic overlay debugging.
+</p>
+</dd>
+<dt><code>overlay list-overlays</code></dt>
+<dt><code>overlay list</code></dt>
+<dd><a name="index-listing-mapped-overlays"></a>
+<p>Display a list of the overlays currently mapped, along with their mapped
+addresses, load addresses, and sizes.
+</p>
+</dd>
+</dl>
+
+<p>Normally, when <small>GDB</small> prints a code address, it includes the name
+of the function the address falls in:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) print main
+$3 = {int ()} 0x11a0 &lt;main&gt;
+</pre></div>
+<p>When overlay debugging is enabled, <small>GDB</small> recognizes code in
+unmapped overlays, and prints the names of unmapped functions with
+asterisks around them.  For example, if <code>foo</code> is a function in an
+unmapped overlay, <small>GDB</small> prints it this way:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) overlay list
+No sections are mapped.
+(gdb) print foo
+$5 = {int (int)} 0x100000 &lt;*foo*&gt;
+</pre></div>
+<p>When <code>foo</code>&rsquo;s overlay is mapped, <small>GDB</small> prints the function&rsquo;s
+name normally:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) overlay list
+Section .ov.foo.text, loaded at 0x100000 - 0x100034,
+        mapped at 0x1016 - 0x104a
+(gdb) print foo
+$6 = {int (int)} 0x1016 &lt;foo&gt;
+</pre></div>
+
+<p>When overlay debugging is enabled, <small>GDB</small> can find the correct
+address for functions and variables in an overlay, whether or not the
+overlay is mapped.  This allows most <small>GDB</small> commands, like
+<code>break</code> and <code>disassemble</code>, to work normally, even on unmapped
+code.  However, <small>GDB</small>&rsquo;s breakpoint support has some limitations:
+</p>
+<ul>
+<li> <a name="index-breakpoints-in-overlays"></a>
+<a name="index-overlays_002c-setting-breakpoints-in"></a>
+You can set breakpoints in functions in unmapped overlays, as long as
+<small>GDB</small> can write to the overlay at its load address.
+</li><li> <small>GDB</small> can not set hardware or simulator-based breakpoints in
+unmapped overlays.  However, if you set a breakpoint at the end of your
+overlay manager (and tell <small>GDB</small> which overlays are now mapped, if
+you are using manual overlay management), <small>GDB</small> will re-set its
+breakpoints properly.
+</li></ul>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Automatic-Overlay-Debugging.html#Automatic-Overlay-Debugging" accesskey="n" rel="next">Automatic Overlay Debugging</a>, Previous: <a href="How-Overlays-Work.html#How-Overlays-Work" accesskey="p" rel="prev">How Overlays Work</a>, Up: <a href="Overlays.html#Overlays" accesskey="u" rel="up">Overlays</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

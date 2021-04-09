@@ -1,0 +1,895 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Top</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Top">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Top">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Contributing.html#Contributing" rel="next" title="Contributing">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<h1 class="settitle" align="center">GNU Compiler Collection (GCC) Internals</h1>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<p>This file documents the internals of the GNU compilers.
+</p><br>
+<p>Copyright &copy; 1988-2019 Free Software Foundation, Inc.
+</p>
+<p>Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being &ldquo;Funding Free Software&rdquo;, the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+&ldquo;GNU Free Documentation License&rdquo;.
+</p>
+<p>(a) The FSF&rsquo;s Front-Cover Text is:
+</p>
+<p>A GNU Manual
+</p>
+<p>(b) The FSF&rsquo;s Back-Cover Text is:
+</p>
+<p>You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development.
+</p>
+<br>
+
+<a name="SEC_Overview"></a>
+<h2 class="shortcontents-heading">Short Table of Contents</h2>
+
+<div class="shortcontents">
+<ul class="no-bullet">
+<li><a name="stoc-Contributing-to-GCC-Development" href="#toc-Contributing-to-GCC-Development">1 Contributing to GCC Development</a></li>
+<li><a name="stoc-GCC-and-Portability" href="#toc-GCC-and-Portability">2 GCC and Portability</a></li>
+<li><a name="stoc-Interfacing-to-GCC-Output" href="#toc-Interfacing-to-GCC-Output">3 Interfacing to GCC Output</a></li>
+<li><a name="stoc-The-GCC-low_002dlevel-runtime-library" href="#toc-The-GCC-low_002dlevel-runtime-library">4 The GCC low-level runtime library</a></li>
+<li><a name="stoc-Language-Front-Ends-in-GCC" href="#toc-Language-Front-Ends-in-GCC">5 Language Front Ends in GCC</a></li>
+<li><a name="stoc-Source-Tree-Structure-and-Build-System" href="#toc-Source-Tree-Structure-and-Build-System">6 Source Tree Structure and Build System</a></li>
+<li><a name="stoc-Testsuites-1" href="#toc-Testsuites-1">7 Testsuites</a></li>
+<li><a name="stoc-Option-specification-files" href="#toc-Option-specification-files">8 Option specification files</a></li>
+<li><a name="stoc-Passes-and-Files-of-the-Compiler" href="#toc-Passes-and-Files-of-the-Compiler">9 Passes and Files of the Compiler</a></li>
+<li><a name="stoc-Sizes-and-offsets-as-runtime-invariants" href="#toc-Sizes-and-offsets-as-runtime-invariants">10 Sizes and offsets as runtime invariants</a></li>
+<li><a name="stoc-GENERIC-1" href="#toc-GENERIC-1">11 GENERIC</a></li>
+<li><a name="stoc-GIMPLE-1" href="#toc-GIMPLE-1">12 GIMPLE</a></li>
+<li><a name="stoc-Analysis-and-Optimization-of-GIMPLE-tuples" href="#toc-Analysis-and-Optimization-of-GIMPLE-tuples">13 Analysis and Optimization of GIMPLE tuples</a></li>
+<li><a name="stoc-RTL-Representation" href="#toc-RTL-Representation">14 RTL Representation</a></li>
+<li><a name="stoc-Control-Flow-Graph" href="#toc-Control-Flow-Graph">15 Control Flow Graph</a></li>
+<li><a name="stoc-Analysis-and-Representation-of-Loops" href="#toc-Analysis-and-Representation-of-Loops">16 Analysis and Representation of Loops</a></li>
+<li><a name="stoc-Machine-Descriptions" href="#toc-Machine-Descriptions">17 Machine Descriptions</a></li>
+<li><a name="stoc-Target-Description-Macros-and-Functions" href="#toc-Target-Description-Macros-and-Functions">18 Target Description Macros and Functions</a></li>
+<li><a name="stoc-Host-Configuration" href="#toc-Host-Configuration">19 Host Configuration</a></li>
+<li><a name="stoc-Makefile-Fragments" href="#toc-Makefile-Fragments">20 Makefile Fragments</a></li>
+<li><a name="stoc-collect2" href="#toc-collect2">21 <code>collect2</code></a></li>
+<li><a name="stoc-Standard-Header-File-Directories" href="#toc-Standard-Header-File-Directories">22 Standard Header File Directories</a></li>
+<li><a name="stoc-Memory-Management-and-Type-Information" href="#toc-Memory-Management-and-Type-Information">23 Memory Management and Type Information</a></li>
+<li><a name="stoc-Plugins-1" href="#toc-Plugins-1">24 Plugins</a></li>
+<li><a name="stoc-Link-Time-Optimization" href="#toc-Link-Time-Optimization">25 Link Time Optimization</a></li>
+<li><a name="stoc-Match-and-Simplify-1" href="#toc-Match-and-Simplify-1">26 Match and Simplify</a></li>
+<li><a name="stoc-User-Experience-Guidelines-1" href="#toc-User-Experience-Guidelines-1">27 User Experience Guidelines</a></li>
+<li><a name="stoc-Funding-Free-Software" href="#toc-Funding-Free-Software">Funding Free Software</a></li>
+<li><a name="stoc-The-GNU-Project-and-GNU_002fLinux" href="#toc-The-GNU-Project-and-GNU_002fLinux">The GNU Project and GNU/Linux</a></li>
+<li><a name="stoc-GNU-General-Public-License" href="#toc-GNU-General-Public-License">GNU General Public License</a></li>
+<li><a name="stoc-GNU-Free-Documentation-License-1" href="#toc-GNU-Free-Documentation-License-1">GNU Free Documentation License</a></li>
+<li><a name="stoc-Contributors-to-GCC" href="#toc-Contributors-to-GCC">Contributors to GCC</a></li>
+<li><a name="stoc-Option-Index-1" href="#toc-Option-Index-1">Option Index</a></li>
+<li><a name="stoc-Concept-Index-1" href="#toc-Concept-Index-1">Concept Index</a></li>
+</ul>
+</div>
+
+<a name="SEC_Contents"></a>
+<h2 class="contents-heading">Table of Contents</h2>
+
+<div class="contents">
+
+<ul class="no-bullet">
+  <li><a name="toc-Contributing-to-GCC-Development" href="Contributing.html#Contributing">1 Contributing to GCC Development</a></li>
+  <li><a name="toc-GCC-and-Portability" href="Portability.html#Portability">2 GCC and Portability</a></li>
+  <li><a name="toc-Interfacing-to-GCC-Output" href="Interface.html#Interface">3 Interfacing to GCC Output</a></li>
+  <li><a name="toc-The-GCC-low_002dlevel-runtime-library" href="Libgcc.html#Libgcc">4 The GCC low-level runtime library</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Routines-for-integer-arithmetic" href="Integer-library-routines.html#Integer-library-routines">4.1 Routines for integer arithmetic</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Arithmetic-functions" href="Integer-library-routines.html#Arithmetic-functions">4.1.1 Arithmetic functions</a></li>
+      <li><a name="toc-Comparison-functions" href="Integer-library-routines.html#Comparison-functions">4.1.2 Comparison functions</a></li>
+      <li><a name="toc-Trapping-arithmetic-functions" href="Integer-library-routines.html#Trapping-arithmetic-functions">4.1.3 Trapping arithmetic functions</a></li>
+      <li><a name="toc-Bit-operations" href="Integer-library-routines.html#Bit-operations">4.1.4 Bit operations</a></li>
+    </ul></li>
+    <li><a name="toc-Routines-for-floating-point-emulation" href="Soft-float-library-routines.html#Soft-float-library-routines">4.2 Routines for floating point emulation</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Arithmetic-functions-1" href="Soft-float-library-routines.html#Arithmetic-functions-1">4.2.1 Arithmetic functions</a></li>
+      <li><a name="toc-Conversion-functions" href="Soft-float-library-routines.html#Conversion-functions">4.2.2 Conversion functions</a></li>
+      <li><a name="toc-Comparison-functions-1" href="Soft-float-library-routines.html#Comparison-functions-1">4.2.3 Comparison functions</a></li>
+      <li><a name="toc-Other-floating_002dpoint-functions" href="Soft-float-library-routines.html#Other-floating_002dpoint-functions">4.2.4 Other floating-point functions</a></li>
+    </ul></li>
+    <li><a name="toc-Routines-for-decimal-floating-point-emulation" href="Decimal-float-library-routines.html#Decimal-float-library-routines">4.3 Routines for decimal floating point emulation</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Arithmetic-functions-2" href="Decimal-float-library-routines.html#Arithmetic-functions-2">4.3.1 Arithmetic functions</a></li>
+      <li><a name="toc-Conversion-functions-1" href="Decimal-float-library-routines.html#Conversion-functions-1">4.3.2 Conversion functions</a></li>
+      <li><a name="toc-Comparison-functions-2" href="Decimal-float-library-routines.html#Comparison-functions-2">4.3.3 Comparison functions</a></li>
+    </ul></li>
+    <li><a name="toc-Routines-for-fixed_002dpoint-fractional-emulation" href="Fixed_002dpoint-fractional-library-routines.html#Fixed_002dpoint-fractional-library-routines">4.4 Routines for fixed-point fractional emulation</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Arithmetic-functions-3" href="Fixed_002dpoint-fractional-library-routines.html#Arithmetic-functions-3">4.4.1 Arithmetic functions</a></li>
+      <li><a name="toc-Comparison-functions-3" href="Fixed_002dpoint-fractional-library-routines.html#Comparison-functions-3">4.4.2 Comparison functions</a></li>
+      <li><a name="toc-Conversion-functions-2" href="Fixed_002dpoint-fractional-library-routines.html#Conversion-functions-2">4.4.3 Conversion functions</a></li>
+    </ul></li>
+    <li><a name="toc-Language_002dindependent-routines-for-exception-handling" href="Exception-handling-routines.html#Exception-handling-routines">4.5 Language-independent routines for exception handling</a></li>
+    <li><a name="toc-Miscellaneous-runtime-library-routines" href="Miscellaneous-routines.html#Miscellaneous-routines">4.6 Miscellaneous runtime library routines</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Cache-control-functions" href="Miscellaneous-routines.html#Cache-control-functions">4.6.1 Cache control functions</a></li>
+      <li><a name="toc-Split-stack-functions-and-variables" href="Miscellaneous-routines.html#Split-stack-functions-and-variables">4.6.2 Split stack functions and variables</a></li>
+    </ul></li>
+  </ul></li>
+  <li><a name="toc-Language-Front-Ends-in-GCC" href="Languages.html#Languages">5 Language Front Ends in GCC</a></li>
+  <li><a name="toc-Source-Tree-Structure-and-Build-System" href="Source-Tree.html#Source-Tree">6 Source Tree Structure and Build System</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Configure-Terms-and-History" href="Configure-Terms.html#Configure-Terms">6.1 Configure Terms and History</a></li>
+    <li><a name="toc-Top-Level-Source-Directory" href="Top-Level.html#Top-Level">6.2 Top Level Source Directory</a></li>
+    <li><a name="toc-The-gcc-Subdirectory" href="gcc-Directory.html#gcc-Directory">6.3 The <samp>gcc</samp> Subdirectory</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Subdirectories-of-gcc" href="Subdirectories.html#Subdirectories">6.3.1 Subdirectories of <samp>gcc</samp></a></li>
+      <li><a name="toc-Configuration-in-the-gcc-Directory" href="Configuration.html#Configuration">6.3.2 Configuration in the <samp>gcc</samp> Directory</a>
+      <ul class="no-bullet">
+        <li><a name="toc-Scripts-Used-by-configure" href="Config-Fragments.html#Config-Fragments">6.3.2.1 Scripts Used by <samp>configure</samp></a></li>
+        <li><a name="toc-The-config_002ebuild_003b-config_002ehost_003b-and-config_002egcc-Files" href="System-Config.html#System-Config">6.3.2.2 The <samp>config.build</samp>; <samp>config.host</samp>; and <samp>config.gcc</samp> Files</a></li>
+        <li><a name="toc-Files-Created-by-configure" href="Configuration-Files.html#Configuration-Files">6.3.2.3 Files Created by <code>configure</code></a></li>
+      </ul></li>
+      <li><a name="toc-Build-System-in-the-gcc-Directory" href="Build.html#Build">6.3.3 Build System in the <samp>gcc</samp> Directory</a></li>
+      <li><a name="toc-Makefile-Targets" href="Makefile.html#Makefile">6.3.4 Makefile Targets</a></li>
+      <li><a name="toc-Library-Source-Files-and-Headers-under-the-gcc-Directory" href="Library-Files.html#Library-Files">6.3.5 Library Source Files and Headers under the <samp>gcc</samp> Directory</a></li>
+      <li><a name="toc-Headers-Installed-by-GCC" href="Headers.html#Headers">6.3.6 Headers Installed by GCC</a></li>
+      <li><a name="toc-Building-Documentation" href="Documentation.html#Documentation">6.3.7 Building Documentation</a>
+      <ul class="no-bullet">
+        <li><a name="toc-Texinfo-Manuals-1" href="Texinfo-Manuals.html#Texinfo-Manuals">6.3.7.1 Texinfo Manuals</a></li>
+        <li><a name="toc-Man-Page-Generation-1" href="Man-Page-Generation.html#Man-Page-Generation">6.3.7.2 Man Page Generation</a></li>
+        <li><a name="toc-Miscellaneous-Documentation" href="Miscellaneous-Docs.html#Miscellaneous-Docs">6.3.7.3 Miscellaneous Documentation</a></li>
+      </ul></li>
+      <li><a name="toc-Anatomy-of-a-Language-Front-End" href="Front-End.html#Front-End">6.3.8 Anatomy of a Language Front End</a>
+      <ul class="no-bullet">
+        <li><a name="toc-The-Front-End-language-Directory" href="Front-End-Directory.html#Front-End-Directory">6.3.8.1 The Front End <samp><var>language</var></samp> Directory</a></li>
+        <li><a name="toc-The-Front-End-config_002dlang_002ein-File" href="Front-End-Config.html#Front-End-Config">6.3.8.2 The Front End <samp>config-lang.in</samp> File</a></li>
+        <li><a name="toc-The-Front-End-Make_002dlang_002ein-File" href="Front-End-Makefile.html#Front-End-Makefile">6.3.8.3 The Front End <samp>Make-lang.in</samp> File</a></li>
+      </ul></li>
+      <li><a name="toc-Anatomy-of-a-Target-Back-End" href="Back-End.html#Back-End">6.3.9 Anatomy of a Target Back End</a></li>
+    </ul></li>
+  </ul></li>
+  <li><a name="toc-Testsuites-1" href="Testsuites.html#Testsuites">7 Testsuites</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Idioms-Used-in-Testsuite-Code" href="Test-Idioms.html#Test-Idioms">7.1 Idioms Used in Testsuite Code</a></li>
+    <li><a name="toc-Directives-used-within-DejaGnu-tests" href="Test-Directives.html#Test-Directives">7.2 Directives used within DejaGnu tests</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Syntax-and-Descriptions-of-test-directives" href="Directives.html#Directives">7.2.1 Syntax and Descriptions of test directives</a>
+      <ul class="no-bullet">
+        <li><a name="toc-Specify-how-to-build-the-test" href="Directives.html#Specify-how-to-build-the-test">7.2.1.1 Specify how to build the test</a></li>
+        <li><a name="toc-Specify-additional-compiler-options" href="Directives.html#Specify-additional-compiler-options">7.2.1.2 Specify additional compiler options</a></li>
+        <li><a name="toc-Modify-the-test-timeout-value" href="Directives.html#Modify-the-test-timeout-value">7.2.1.3 Modify the test timeout value</a></li>
+        <li><a name="toc-Skip-a-test-for-some-targets" href="Directives.html#Skip-a-test-for-some-targets">7.2.1.4 Skip a test for some targets</a></li>
+        <li><a name="toc-Expect-a-test-to-fail-for-some-targets" href="Directives.html#Expect-a-test-to-fail-for-some-targets">7.2.1.5 Expect a test to fail for some targets</a></li>
+        <li><a name="toc-Expect-the-test-executable-to-fail" href="Directives.html#Expect-the-test-executable-to-fail">7.2.1.6 Expect the test executable to fail</a></li>
+        <li><a name="toc-Verify-compiler-messages" href="Directives.html#Verify-compiler-messages">7.2.1.7 Verify compiler messages</a></li>
+        <li><a name="toc-Verify-output-of-the-test-executable" href="Directives.html#Verify-output-of-the-test-executable">7.2.1.8 Verify output of the test executable</a></li>
+        <li><a name="toc-Specify-additional-files-for-a-test" href="Directives.html#Specify-additional-files-for-a-test">7.2.1.9 Specify additional files for a test</a></li>
+        <li><a name="toc-Add-checks-at-the-end-of-a-test" href="Directives.html#Add-checks-at-the-end-of-a-test">7.2.1.10 Add checks at the end of a test</a></li>
+      </ul></li>
+      <li><a name="toc-Selecting-targets-to-which-a-test-applies" href="Selectors.html#Selectors">7.2.2 Selecting targets to which a test applies</a></li>
+      <li><a name="toc-Keywords-describing-target-attributes" href="Effective_002dTarget-Keywords.html#Effective_002dTarget-Keywords">7.2.3 Keywords describing target attributes</a>
+      <ul class="no-bullet">
+        <li><a name="toc-Endianness" href="Effective_002dTarget-Keywords.html#Endianness">7.2.3.1 Endianness</a></li>
+        <li><a name="toc-Data-type-sizes" href="Effective_002dTarget-Keywords.html#Data-type-sizes">7.2.3.2 Data type sizes</a></li>
+        <li><a name="toc-Fortran_002dspecific-attributes" href="Effective_002dTarget-Keywords.html#Fortran_002dspecific-attributes">7.2.3.3 Fortran-specific attributes</a></li>
+        <li><a name="toc-Vector_002dspecific-attributes" href="Effective_002dTarget-Keywords.html#Vector_002dspecific-attributes">7.2.3.4 Vector-specific attributes</a></li>
+        <li><a name="toc-Thread-Local-Storage-attributes" href="Effective_002dTarget-Keywords.html#Thread-Local-Storage-attributes">7.2.3.5 Thread Local Storage attributes</a></li>
+        <li><a name="toc-Decimal-floating-point-attributes" href="Effective_002dTarget-Keywords.html#Decimal-floating-point-attributes">7.2.3.6 Decimal floating point attributes</a></li>
+        <li><a name="toc-ARM_002dspecific-attributes" href="Effective_002dTarget-Keywords.html#ARM_002dspecific-attributes">7.2.3.7 ARM-specific attributes</a></li>
+        <li><a name="toc-AArch64_002dspecific-attributes" href="Effective_002dTarget-Keywords.html#AArch64_002dspecific-attributes">7.2.3.8 AArch64-specific attributes</a></li>
+        <li><a name="toc-MIPS_002dspecific-attributes" href="Effective_002dTarget-Keywords.html#MIPS_002dspecific-attributes">7.2.3.9 MIPS-specific attributes</a></li>
+        <li><a name="toc-PowerPC_002dspecific-attributes" href="Effective_002dTarget-Keywords.html#PowerPC_002dspecific-attributes">7.2.3.10 PowerPC-specific attributes</a></li>
+        <li><a name="toc-Other-hardware-attributes" href="Effective_002dTarget-Keywords.html#Other-hardware-attributes">7.2.3.11 Other hardware attributes</a></li>
+        <li><a name="toc-Environment-attributes" href="Effective_002dTarget-Keywords.html#Environment-attributes">7.2.3.12 Environment attributes</a></li>
+        <li><a name="toc-Other-attributes" href="Effective_002dTarget-Keywords.html#Other-attributes">7.2.3.13 Other attributes</a></li>
+        <li><a name="toc-Local-to-tests-in-gcc_002etarget_002fi386" href="Effective_002dTarget-Keywords.html#Local-to-tests-in-gcc_002etarget_002fi386">7.2.3.14 Local to tests in <code>gcc.target/i386</code></a></li>
+        <li><a name="toc-Local-to-tests-in-gcc_002etarget_002fspu_002fea" href="Effective_002dTarget-Keywords.html#Local-to-tests-in-gcc_002etarget_002fspu_002fea">7.2.3.15 Local to tests in <code>gcc.target/spu/ea</code></a></li>
+        <li><a name="toc-Local-to-tests-in-gcc_002etest_002dframework" href="Effective_002dTarget-Keywords.html#Local-to-tests-in-gcc_002etest_002dframework">7.2.3.16 Local to tests in <code>gcc.test-framework</code></a></li>
+      </ul></li>
+      <li><a name="toc-Features-for-dg_002dadd_002doptions" href="Add-Options.html#Add-Options">7.2.4 Features for <code>dg-add-options</code></a></li>
+      <li><a name="toc-Variants-of-dg_002drequire_002dsupport" href="Require-Support.html#Require-Support">7.2.5 Variants of <code>dg-require-<var>support</var></code></a></li>
+      <li><a name="toc-Commands-for-use-in-dg_002dfinal" href="Final-Actions.html#Final-Actions">7.2.6 Commands for use in <code>dg-final</code></a>
+      <ul class="no-bullet">
+        <li><a name="toc-Scan-a-particular-file" href="Final-Actions.html#Scan-a-particular-file">7.2.6.1 Scan a particular file</a></li>
+        <li><a name="toc-Scan-the-assembly-output" href="Final-Actions.html#Scan-the-assembly-output">7.2.6.2 Scan the assembly output</a></li>
+        <li><a name="toc-Scan-optimization-dump-files" href="Final-Actions.html#Scan-optimization-dump-files">7.2.6.3 Scan optimization dump files</a></li>
+        <li><a name="toc-Check-for-output-files" href="Final-Actions.html#Check-for-output-files">7.2.6.4 Check for output files</a></li>
+        <li><a name="toc-Checks-for-gcov-tests" href="Final-Actions.html#Checks-for-gcov-tests">7.2.6.5 Checks for <code>gcov</code> tests</a></li>
+        <li><a name="toc-Clean-up-generated-test-files" href="Final-Actions.html#Clean-up-generated-test-files">7.2.6.6 Clean up generated test files</a></li>
+      </ul></li>
+    </ul></li>
+    <li><a name="toc-Ada-Language-Testsuites" href="Ada-Tests.html#Ada-Tests">7.3 Ada Language Testsuites</a></li>
+    <li><a name="toc-C-Language-Testsuites" href="C-Tests.html#C-Tests">7.4 C Language Testsuites</a></li>
+    <li><a name="toc-Support-for-testing-link_002dtime-optimizations" href="LTO-Testing.html#LTO-Testing">7.5 Support for testing link-time optimizations</a></li>
+    <li><a name="toc-Support-for-testing-gcov" href="gcov-Testing.html#gcov-Testing">7.6 Support for testing <code>gcov</code></a></li>
+    <li><a name="toc-Support-for-testing-profile_002ddirected-optimizations" href="profopt-Testing.html#profopt-Testing">7.7 Support for testing profile-directed optimizations</a></li>
+    <li><a name="toc-Support-for-testing-binary-compatibility" href="compat-Testing.html#compat-Testing">7.8 Support for testing binary compatibility</a></li>
+    <li><a name="toc-Support-for-torture-testing-using-multiple-options" href="Torture-Tests.html#Torture-Tests">7.9 Support for torture testing using multiple options</a></li>
+    <li><a name="toc-Support-for-testing-GIMPLE-passes" href="GIMPLE-Tests.html#GIMPLE-Tests">7.10 Support for testing GIMPLE passes</a></li>
+    <li><a name="toc-Support-for-testing-RTL-passes" href="RTL-Tests.html#RTL-Tests">7.11 Support for testing RTL passes</a></li>
+  </ul></li>
+  <li><a name="toc-Option-specification-files" href="Options.html#Options">8 Option specification files</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Option-file-format-1" href="Option-file-format.html#Option-file-format">8.1 Option file format</a></li>
+    <li><a name="toc-Option-properties-1" href="Option-properties.html#Option-properties">8.2 Option properties</a></li>
+  </ul></li>
+  <li><a name="toc-Passes-and-Files-of-the-Compiler" href="Passes.html#Passes">9 Passes and Files of the Compiler</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Parsing-pass-1" href="Parsing-pass.html#Parsing-pass">9.1 Parsing pass</a></li>
+    <li><a name="toc-Gimplification-pass-1" href="Gimplification-pass.html#Gimplification-pass">9.2 Gimplification pass</a></li>
+    <li><a name="toc-Pass-manager-1" href="Pass-manager.html#Pass-manager">9.3 Pass manager</a></li>
+    <li><a name="toc-Tree-SSA-passes-1" href="Tree-SSA-passes.html#Tree-SSA-passes">9.4 Tree SSA passes</a></li>
+    <li><a name="toc-RTL-passes-1" href="RTL-passes.html#RTL-passes">9.5 RTL passes</a></li>
+    <li><a name="toc-Optimization-info-1" href="Optimization-info.html#Optimization-info">9.6 Optimization info</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Dump-setup-1" href="Dump-setup.html#Dump-setup">9.6.1 Dump setup</a></li>
+      <li><a name="toc-Optimization-groups-1" href="Optimization-groups.html#Optimization-groups">9.6.2 Optimization groups</a></li>
+      <li><a name="toc-Dump-files-and-streams-1" href="Dump-files-and-streams.html#Dump-files-and-streams">9.6.3 Dump files and streams</a></li>
+      <li><a name="toc-Dump-output-verbosity-1" href="Dump-output-verbosity.html#Dump-output-verbosity">9.6.4 Dump output verbosity</a></li>
+      <li><a name="toc-Dump-types-1" href="Dump-types.html#Dump-types">9.6.5 Dump types</a></li>
+      <li><a name="toc-Dump-examples-1" href="Dump-examples.html#Dump-examples">9.6.6 Dump examples</a></li>
+    </ul></li>
+  </ul></li>
+  <li><a name="toc-Sizes-and-offsets-as-runtime-invariants" href="poly_005fint.html#poly_005fint">10 Sizes and offsets as runtime invariants</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Overview-of-poly_005fint-1" href="Overview-of-poly_005fint.html#Overview-of-poly_005fint">10.1 Overview of <code>poly_int</code></a></li>
+    <li><a name="toc-Consequences-of-using-poly_005fint-1" href="Consequences-of-using-poly_005fint.html#Consequences-of-using-poly_005fint">10.2 Consequences of using <code>poly_int</code></a></li>
+    <li><a name="toc-Comparisons-involving-poly_005fint-1" href="Comparisons-involving-poly_005fint.html#Comparisons-involving-poly_005fint">10.3 Comparisons involving <code>poly_int</code></a>
+    <ul class="no-bullet">
+      <li><a name="toc-Comparison-functions-for-poly_005fint-1" href="Comparison-functions-for-poly_005fint.html#Comparison-functions-for-poly_005fint">10.3.1 Comparison functions for <code>poly_int</code></a></li>
+      <li><a name="toc-Properties-of-the-poly_005fint-comparisons-1" href="Properties-of-the-poly_005fint-comparisons.html#Properties-of-the-poly_005fint-comparisons">10.3.2 Properties of the <code>poly_int</code> comparisons</a></li>
+      <li><a name="toc-Comparing-potentially_002dunordered-poly_005fints-1" href="Comparing-potentially_002dunordered-poly_005fints.html#Comparing-potentially_002dunordered-poly_005fints">10.3.3 Comparing potentially-unordered <code>poly_int</code>s</a></li>
+      <li><a name="toc-Comparing-ordered-poly_005fints-1" href="Comparing-ordered-poly_005fints.html#Comparing-ordered-poly_005fints">10.3.4 Comparing ordered <code>poly_int</code>s</a></li>
+      <li><a name="toc-Checking-for-a-poly_005fint-marker-value-1" href="Checking-for-a-poly_005fint-marker-value.html#Checking-for-a-poly_005fint-marker-value">10.3.5 Checking for a <code>poly_int</code> marker value</a></li>
+      <li><a name="toc-Range-checks-on-poly_005fints-1" href="Range-checks-on-poly_005fints.html#Range-checks-on-poly_005fints">10.3.6 Range checks on <code>poly_int</code>s</a></li>
+      <li><a name="toc-Sorting-poly_005fints-1" href="Sorting-poly_005fints.html#Sorting-poly_005fints">10.3.7 Sorting <code>poly_int</code>s</a></li>
+    </ul></li>
+    <li><a name="toc-Arithmetic-on-poly_005fints-1" href="Arithmetic-on-poly_005fints.html#Arithmetic-on-poly_005fints">10.4 Arithmetic on <code>poly_int</code>s</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Using-poly_005fint-with-C_002b_002b-arithmetic-operators-1" href="Using-poly_005fint-with-C_002b_002b-arithmetic-operators.html#Using-poly_005fint-with-C_002b_002b-arithmetic-operators">10.4.1 Using <code>poly_int</code> with C++ arithmetic operators</a></li>
+      <li><a name="toc-wi-arithmetic-on-poly_005fints-1" href="wi-arithmetic-on-poly_005fints.html#wi-arithmetic-on-poly_005fints">10.4.2 <code>wi</code> arithmetic on <code>poly_int</code>s</a></li>
+      <li><a name="toc-Division-of-poly_005fints-1" href="Division-of-poly_005fints.html#Division-of-poly_005fints">10.4.3 Division of <code>poly_int</code>s</a></li>
+      <li><a name="toc-Other-poly_005fint-arithmetic-1" href="Other-poly_005fint-arithmetic.html#Other-poly_005fint-arithmetic">10.4.4 Other <code>poly_int</code> arithmetic</a></li>
+    </ul></li>
+    <li><a name="toc-Alignment-of-poly_005fints-1" href="Alignment-of-poly_005fints.html#Alignment-of-poly_005fints">10.5 Alignment of <code>poly_int</code>s</a></li>
+    <li><a name="toc-Computing-bounds-on-poly_005fints-1" href="Computing-bounds-on-poly_005fints.html#Computing-bounds-on-poly_005fints">10.6 Computing bounds on <code>poly_int</code>s</a></li>
+    <li><a name="toc-Converting-poly_005fints-1" href="Converting-poly_005fints.html#Converting-poly_005fints">10.7 Converting <code>poly_int</code>s</a></li>
+    <li><a name="toc-Miscellaneous-poly_005fint-routines-1" href="Miscellaneous-poly_005fint-routines.html#Miscellaneous-poly_005fint-routines">10.8 Miscellaneous <code>poly_int</code> routines</a></li>
+    <li><a name="toc-Guidelines-for-using-poly_005fint-1" href="Guidelines-for-using-poly_005fint.html#Guidelines-for-using-poly_005fint">10.9 Guidelines for using <code>poly_int</code></a></li>
+  </ul></li>
+  <li><a name="toc-GENERIC-1" href="GENERIC.html#GENERIC">11 GENERIC</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Deficiencies-1" href="Deficiencies.html#Deficiencies">11.1 Deficiencies</a></li>
+    <li><a name="toc-Overview-1" href="Tree-overview.html#Tree-overview">11.2 Overview</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Trees" href="Macros-and-Functions.html#Macros-and-Functions">11.2.1 Trees</a></li>
+      <li><a name="toc-Identifiers-1" href="Identifiers.html#Identifiers">11.2.2 Identifiers</a></li>
+      <li><a name="toc-Containers-1" href="Containers.html#Containers">11.2.3 Containers</a></li>
+    </ul></li>
+    <li><a name="toc-Types-1" href="Types.html#Types">11.3 Types</a></li>
+    <li><a name="toc-Declarations-1" href="Declarations.html#Declarations">11.4 Declarations</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Working-with-declarations-1" href="Working-with-declarations.html#Working-with-declarations">11.4.1 Working with declarations</a></li>
+      <li><a name="toc-Internal-structure-1" href="Internal-structure.html#Internal-structure">11.4.2 Internal structure</a>
+      <ul class="no-bullet">
+        <li><a name="toc-Current-structure-hierarchy-1" href="Current-structure-hierarchy.html#Current-structure-hierarchy">11.4.2.1 Current structure hierarchy</a></li>
+        <li><a name="toc-Adding-new-DECL-node-types-1" href="Adding-new-DECL-node-types.html#Adding-new-DECL-node-types">11.4.2.2 Adding new DECL node types</a></li>
+      </ul></li>
+    </ul></li>
+    <li><a name="toc-Attributes-in-trees" href="Attributes.html#Attributes">11.5 Attributes in trees</a></li>
+    <li><a name="toc-Expressions-1" href="Expression-trees.html#Expression-trees">11.6 Expressions</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Constant-expressions-1" href="Constant-expressions.html#Constant-expressions">11.6.1 Constant expressions</a></li>
+      <li><a name="toc-References-to-storage" href="Storage-References.html#Storage-References">11.6.2 References to storage</a></li>
+      <li><a name="toc-Unary-and-Binary-Expressions-1" href="Unary-and-Binary-Expressions.html#Unary-and-Binary-Expressions">11.6.3 Unary and Binary Expressions</a></li>
+      <li><a name="toc-Vectors-1" href="Vectors.html#Vectors">11.6.4 Vectors</a></li>
+    </ul></li>
+    <li><a name="toc-Statements-1" href="Statements.html#Statements">11.7 Statements</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Basic-Statements-1" href="Basic-Statements.html#Basic-Statements">11.7.1 Basic Statements</a></li>
+      <li><a name="toc-Blocks-1" href="Blocks.html#Blocks">11.7.2 Blocks</a></li>
+      <li><a name="toc-Statement-Sequences-1" href="Statement-Sequences.html#Statement-Sequences">11.7.3 Statement Sequences</a></li>
+      <li><a name="toc-Empty-Statements-1" href="Empty-Statements.html#Empty-Statements">11.7.4 Empty Statements</a></li>
+      <li><a name="toc-Jumps-1" href="Jumps.html#Jumps">11.7.5 Jumps</a></li>
+      <li><a name="toc-Cleanups-1" href="Cleanups.html#Cleanups">11.7.6 Cleanups</a></li>
+      <li><a name="toc-OpenMP-1" href="OpenMP.html#OpenMP">11.7.7 OpenMP</a></li>
+      <li><a name="toc-OpenACC-1" href="OpenACC.html#OpenACC">11.7.8 OpenACC</a></li>
+    </ul></li>
+    <li><a name="toc-Functions-1" href="Functions.html#Functions">11.8 Functions</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Function-Basics-1" href="Function-Basics.html#Function-Basics">11.8.1 Function Basics</a></li>
+      <li><a name="toc-Function-Properties-1" href="Function-Properties.html#Function-Properties">11.8.2 Function Properties</a></li>
+    </ul></li>
+    <li><a name="toc-Language_002ddependent-trees-1" href="Language_002ddependent-trees.html#Language_002ddependent-trees">11.9 Language-dependent trees</a></li>
+    <li><a name="toc-C-and-C_002b_002b-Trees-1" href="C-and-C_002b_002b-Trees.html#C-and-C_002b_002b-Trees">11.10 C and C++ Trees</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Types-for-C_002b_002b-1" href="Types-for-C_002b_002b.html#Types-for-C_002b_002b">11.10.1 Types for C++</a></li>
+      <li><a name="toc-Namespaces-1" href="Namespaces.html#Namespaces">11.10.2 Namespaces</a></li>
+      <li><a name="toc-Classes-1" href="Classes.html#Classes">11.10.3 Classes</a></li>
+      <li><a name="toc-Functions-for-C_002b_002b-1" href="Functions-for-C_002b_002b.html#Functions-for-C_002b_002b">11.10.4 Functions for C++</a></li>
+      <li><a name="toc-Statements-for-C_002b_002b-1" href="Statements-for-C_002b_002b.html#Statements-for-C_002b_002b">11.10.5 Statements for C++</a>
+      <ul class="no-bullet">
+        <li><a name="toc-Statements-2" href="Statements-for-C_002b_002b.html#Statements-2">11.10.5.1 Statements</a></li>
+      </ul></li>
+      <li><a name="toc-C_002b_002b-Expressions-1" href="C_002b_002b-Expressions.html#C_002b_002b-Expressions">11.10.6 C++ Expressions</a></li>
+    </ul></li>
+    <li><a name="toc-Java-Trees-1" href="Java-Trees.html#Java-Trees">11.11 Java Trees</a></li>
+  </ul></li>
+  <li><a name="toc-GIMPLE-1" href="GIMPLE.html#GIMPLE">12 GIMPLE</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Tuple-representation-1" href="Tuple-representation.html#Tuple-representation">12.1 Tuple representation</a>
+    <ul class="no-bullet">
+      <li><a name="toc-gimple-_0028gsbase_0029" href="Tuple-representation.html#gimple-_0028gsbase_0029">12.1.1 <code>gimple</code> (gsbase)</a></li>
+      <li><a name="toc-gimple_005fstatement_005fwith_005fops" href="Tuple-representation.html#gimple_005fstatement_005fwith_005fops">12.1.2 <code>gimple_statement_with_ops</code></a></li>
+      <li><a name="toc-gimple_005fstatement_005fwith_005fmemory_005fops" href="Tuple-representation.html#gimple_005fstatement_005fwith_005fmemory_005fops">12.1.3 <code>gimple_statement_with_memory_ops</code></a></li>
+    </ul></li>
+    <li><a name="toc-Class-hierarchy-of-GIMPLE-statements-1" href="Class-hierarchy-of-GIMPLE-statements.html#Class-hierarchy-of-GIMPLE-statements">12.2 Class hierarchy of GIMPLE statements</a></li>
+    <li><a name="toc-GIMPLE-instruction-set-1" href="GIMPLE-instruction-set.html#GIMPLE-instruction-set">12.3 GIMPLE instruction set</a></li>
+    <li><a name="toc-Exception-Handling-1" href="GIMPLE-Exception-Handling.html#GIMPLE-Exception-Handling">12.4 Exception Handling</a></li>
+    <li><a name="toc-Temporaries-1" href="Temporaries.html#Temporaries">12.5 Temporaries</a></li>
+    <li><a name="toc-Operands-1" href="Operands.html#Operands">12.6 Operands</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Compound-Expressions-1" href="Compound-Expressions.html#Compound-Expressions">12.6.1 Compound Expressions</a></li>
+      <li><a name="toc-Compound-Lvalues-1" href="Compound-Lvalues.html#Compound-Lvalues">12.6.2 Compound Lvalues</a></li>
+      <li><a name="toc-Conditional-Expressions-1" href="Conditional-Expressions.html#Conditional-Expressions">12.6.3 Conditional Expressions</a></li>
+      <li><a name="toc-Logical-Operators-1" href="Logical-Operators.html#Logical-Operators">12.6.4 Logical Operators</a></li>
+      <li><a name="toc-Manipulating-operands" href="Logical-Operators.html#Manipulating-operands">12.6.5 Manipulating operands</a></li>
+      <li><a name="toc-Operand-vector-allocation" href="Logical-Operators.html#Operand-vector-allocation">12.6.6 Operand vector allocation</a></li>
+      <li><a name="toc-Operand-validation" href="Logical-Operators.html#Operand-validation">12.6.7 Operand validation</a></li>
+      <li><a name="toc-Statement-validation" href="Logical-Operators.html#Statement-validation">12.6.8 Statement validation</a></li>
+    </ul></li>
+    <li><a name="toc-Manipulating-GIMPLE-statements-1" href="Manipulating-GIMPLE-statements.html#Manipulating-GIMPLE-statements">12.7 Manipulating GIMPLE statements</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Common-accessors" href="Manipulating-GIMPLE-statements.html#Common-accessors">12.7.1 Common accessors</a></li>
+    </ul></li>
+    <li><a name="toc-Tuple-specific-accessors-1" href="Tuple-specific-accessors.html#Tuple-specific-accessors">12.8 Tuple specific accessors</a>
+    <ul class="no-bullet">
+      <li><a name="toc-GIMPLE_005fASM-1" href="GIMPLE_005fASM.html#GIMPLE_005fASM">12.8.1 <code>GIMPLE_ASM</code></a></li>
+      <li><a name="toc-GIMPLE_005fASSIGN-1" href="GIMPLE_005fASSIGN.html#GIMPLE_005fASSIGN">12.8.2 <code>GIMPLE_ASSIGN</code></a></li>
+      <li><a name="toc-GIMPLE_005fBIND-1" href="GIMPLE_005fBIND.html#GIMPLE_005fBIND">12.8.3 <code>GIMPLE_BIND</code></a></li>
+      <li><a name="toc-GIMPLE_005fCALL-1" href="GIMPLE_005fCALL.html#GIMPLE_005fCALL">12.8.4 <code>GIMPLE_CALL</code></a></li>
+      <li><a name="toc-GIMPLE_005fCATCH-1" href="GIMPLE_005fCATCH.html#GIMPLE_005fCATCH">12.8.5 <code>GIMPLE_CATCH</code></a></li>
+      <li><a name="toc-GIMPLE_005fCOND-1" href="GIMPLE_005fCOND.html#GIMPLE_005fCOND">12.8.6 <code>GIMPLE_COND</code></a></li>
+      <li><a name="toc-GIMPLE_005fDEBUG-1" href="GIMPLE_005fDEBUG.html#GIMPLE_005fDEBUG">12.8.7 <code>GIMPLE_DEBUG</code></a></li>
+      <li><a name="toc-GIMPLE_005fEH_005fFILTER-1" href="GIMPLE_005fEH_005fFILTER.html#GIMPLE_005fEH_005fFILTER">12.8.8 <code>GIMPLE_EH_FILTER</code></a></li>
+      <li><a name="toc-GIMPLE_005fLABEL-1" href="GIMPLE_005fLABEL.html#GIMPLE_005fLABEL">12.8.9 <code>GIMPLE_LABEL</code></a></li>
+      <li><a name="toc-GIMPLE_005fGOTO-1" href="GIMPLE_005fGOTO.html#GIMPLE_005fGOTO">12.8.10 <code>GIMPLE_GOTO</code></a></li>
+      <li><a name="toc-GIMPLE_005fNOP-1" href="GIMPLE_005fNOP.html#GIMPLE_005fNOP">12.8.11 <code>GIMPLE_NOP</code></a></li>
+      <li><a name="toc-GIMPLE_005fOMP_005fATOMIC_005fLOAD-1" href="GIMPLE_005fOMP_005fATOMIC_005fLOAD.html#GIMPLE_005fOMP_005fATOMIC_005fLOAD">12.8.12 <code>GIMPLE_OMP_ATOMIC_LOAD</code></a></li>
+      <li><a name="toc-GIMPLE_005fOMP_005fATOMIC_005fSTORE-1" href="GIMPLE_005fOMP_005fATOMIC_005fSTORE.html#GIMPLE_005fOMP_005fATOMIC_005fSTORE">12.8.13 <code>GIMPLE_OMP_ATOMIC_STORE</code></a></li>
+      <li><a name="toc-GIMPLE_005fOMP_005fCONTINUE-1" href="GIMPLE_005fOMP_005fCONTINUE.html#GIMPLE_005fOMP_005fCONTINUE">12.8.14 <code>GIMPLE_OMP_CONTINUE</code></a></li>
+      <li><a name="toc-GIMPLE_005fOMP_005fCRITICAL-1" href="GIMPLE_005fOMP_005fCRITICAL.html#GIMPLE_005fOMP_005fCRITICAL">12.8.15 <code>GIMPLE_OMP_CRITICAL</code></a></li>
+      <li><a name="toc-GIMPLE_005fOMP_005fFOR-1" href="GIMPLE_005fOMP_005fFOR.html#GIMPLE_005fOMP_005fFOR">12.8.16 <code>GIMPLE_OMP_FOR</code></a></li>
+      <li><a name="toc-GIMPLE_005fOMP_005fMASTER-1" href="GIMPLE_005fOMP_005fMASTER.html#GIMPLE_005fOMP_005fMASTER">12.8.17 <code>GIMPLE_OMP_MASTER</code></a></li>
+      <li><a name="toc-GIMPLE_005fOMP_005fORDERED-1" href="GIMPLE_005fOMP_005fORDERED.html#GIMPLE_005fOMP_005fORDERED">12.8.18 <code>GIMPLE_OMP_ORDERED</code></a></li>
+      <li><a name="toc-GIMPLE_005fOMP_005fPARALLEL-1" href="GIMPLE_005fOMP_005fPARALLEL.html#GIMPLE_005fOMP_005fPARALLEL">12.8.19 <code>GIMPLE_OMP_PARALLEL</code></a></li>
+      <li><a name="toc-GIMPLE_005fOMP_005fRETURN-1" href="GIMPLE_005fOMP_005fRETURN.html#GIMPLE_005fOMP_005fRETURN">12.8.20 <code>GIMPLE_OMP_RETURN</code></a></li>
+      <li><a name="toc-GIMPLE_005fOMP_005fSECTION-1" href="GIMPLE_005fOMP_005fSECTION.html#GIMPLE_005fOMP_005fSECTION">12.8.21 <code>GIMPLE_OMP_SECTION</code></a></li>
+      <li><a name="toc-GIMPLE_005fOMP_005fSECTIONS-1" href="GIMPLE_005fOMP_005fSECTIONS.html#GIMPLE_005fOMP_005fSECTIONS">12.8.22 <code>GIMPLE_OMP_SECTIONS</code></a></li>
+      <li><a name="toc-GIMPLE_005fOMP_005fSINGLE-1" href="GIMPLE_005fOMP_005fSINGLE.html#GIMPLE_005fOMP_005fSINGLE">12.8.23 <code>GIMPLE_OMP_SINGLE</code></a></li>
+      <li><a name="toc-GIMPLE_005fPHI-1" href="GIMPLE_005fPHI.html#GIMPLE_005fPHI">12.8.24 <code>GIMPLE_PHI</code></a></li>
+      <li><a name="toc-GIMPLE_005fRESX-1" href="GIMPLE_005fRESX.html#GIMPLE_005fRESX">12.8.25 <code>GIMPLE_RESX</code></a></li>
+      <li><a name="toc-GIMPLE_005fRETURN-1" href="GIMPLE_005fRETURN.html#GIMPLE_005fRETURN">12.8.26 <code>GIMPLE_RETURN</code></a></li>
+      <li><a name="toc-GIMPLE_005fSWITCH-1" href="GIMPLE_005fSWITCH.html#GIMPLE_005fSWITCH">12.8.27 <code>GIMPLE_SWITCH</code></a></li>
+      <li><a name="toc-GIMPLE_005fTRY-1" href="GIMPLE_005fTRY.html#GIMPLE_005fTRY">12.8.28 <code>GIMPLE_TRY</code></a></li>
+      <li><a name="toc-GIMPLE_005fWITH_005fCLEANUP_005fEXPR-1" href="GIMPLE_005fWITH_005fCLEANUP_005fEXPR.html#GIMPLE_005fWITH_005fCLEANUP_005fEXPR">12.8.29 <code>GIMPLE_WITH_CLEANUP_EXPR</code></a></li>
+    </ul></li>
+    <li><a name="toc-GIMPLE-sequences-1" href="GIMPLE-sequences.html#GIMPLE-sequences">12.9 GIMPLE sequences</a></li>
+    <li><a name="toc-Sequence-iterators-1" href="Sequence-iterators.html#Sequence-iterators">12.10 Sequence iterators</a></li>
+    <li><a name="toc-Adding-a-new-GIMPLE-statement-code-1" href="Adding-a-new-GIMPLE-statement-code.html#Adding-a-new-GIMPLE-statement-code">12.11 Adding a new GIMPLE statement code</a></li>
+    <li><a name="toc-Statement-and-operand-traversals-1" href="Statement-and-operand-traversals.html#Statement-and-operand-traversals">12.12 Statement and operand traversals</a></li>
+  </ul></li>
+  <li><a name="toc-Analysis-and-Optimization-of-GIMPLE-tuples" href="Tree-SSA.html#Tree-SSA">13 Analysis and Optimization of GIMPLE tuples</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Annotations-1" href="Annotations.html#Annotations">13.1 Annotations</a></li>
+    <li><a name="toc-SSA-Operands-1" href="SSA-Operands.html#SSA-Operands">13.2 SSA Operands</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Operand-Iterators-And-Access-Routines" href="SSA-Operands.html#Operand-Iterators-And-Access-Routines">13.2.1 Operand Iterators And Access Routines</a></li>
+      <li><a name="toc-Immediate-Uses" href="SSA-Operands.html#Immediate-Uses">13.2.2 Immediate Uses</a></li>
+    </ul></li>
+    <li><a name="toc-Static-Single-Assignment" href="SSA.html#SSA">13.3 Static Single Assignment</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Preserving-the-SSA-form" href="SSA.html#Preserving-the-SSA-form">13.3.1 Preserving the SSA form</a></li>
+      <li><a name="toc-Examining-SSA_005fNAME-nodes" href="SSA.html#Examining-SSA_005fNAME-nodes">13.3.2 Examining <code>SSA_NAME</code> nodes</a></li>
+      <li><a name="toc-Walking-the-dominator-tree" href="SSA.html#Walking-the-dominator-tree">13.3.3 Walking the dominator tree</a></li>
+    </ul></li>
+    <li><a name="toc-Alias-analysis-1" href="Alias-analysis.html#Alias-analysis">13.4 Alias analysis</a></li>
+    <li><a name="toc-Memory-model-1" href="Memory-model.html#Memory-model">13.5 Memory model</a></li>
+  </ul></li>
+  <li><a name="toc-RTL-Representation" href="RTL.html#RTL">14 RTL Representation</a>
+  <ul class="no-bullet">
+    <li><a name="toc-RTL-Object-Types" href="RTL-Objects.html#RTL-Objects">14.1 RTL Object Types</a></li>
+    <li><a name="toc-RTL-Classes-and-Formats" href="RTL-Classes.html#RTL-Classes">14.2 RTL Classes and Formats</a></li>
+    <li><a name="toc-Access-to-Operands" href="Accessors.html#Accessors">14.3 Access to Operands</a></li>
+    <li><a name="toc-Access-to-Special-Operands" href="Special-Accessors.html#Special-Accessors">14.4 Access to Special Operands</a></li>
+    <li><a name="toc-Flags-in-an-RTL-Expression" href="Flags.html#Flags">14.5 Flags in an RTL Expression</a></li>
+    <li><a name="toc-Machine-Modes-1" href="Machine-Modes.html#Machine-Modes">14.6 Machine Modes</a></li>
+    <li><a name="toc-Constant-Expression-Types" href="Constants.html#Constants">14.7 Constant Expression Types</a></li>
+    <li><a name="toc-Registers-and-Memory" href="Regs-and-Memory.html#Regs-and-Memory">14.8 Registers and Memory</a></li>
+    <li><a name="toc-RTL-Expressions-for-Arithmetic" href="Arithmetic.html#Arithmetic">14.9 RTL Expressions for Arithmetic</a></li>
+    <li><a name="toc-Comparison-Operations" href="Comparisons.html#Comparisons">14.10 Comparison Operations</a></li>
+    <li><a name="toc-Bit_002dFields-1" href="Bit_002dFields.html#Bit_002dFields">14.11 Bit-Fields</a></li>
+    <li><a name="toc-Vector-Operations-1" href="Vector-Operations.html#Vector-Operations">14.12 Vector Operations</a></li>
+    <li><a name="toc-Conversions-1" href="Conversions.html#Conversions">14.13 Conversions</a></li>
+    <li><a name="toc-Declarations-2" href="RTL-Declarations.html#RTL-Declarations">14.14 Declarations</a></li>
+    <li><a name="toc-Side-Effect-Expressions" href="Side-Effects.html#Side-Effects">14.15 Side Effect Expressions</a></li>
+    <li><a name="toc-Embedded-Side_002dEffects-on-Addresses" href="Incdec.html#Incdec">14.16 Embedded Side-Effects on Addresses</a></li>
+    <li><a name="toc-Assembler-Instructions-as-Expressions" href="Assembler.html#Assembler">14.17 Assembler Instructions as Expressions</a></li>
+    <li><a name="toc-Variable-Location-Debug-Information-in-RTL" href="Debug-Information.html#Debug-Information">14.18 Variable Location Debug Information in RTL</a></li>
+    <li><a name="toc-Insns-1" href="Insns.html#Insns">14.19 Insns</a></li>
+    <li><a name="toc-RTL-Representation-of-Function_002dCall-Insns" href="Calls.html#Calls">14.20 RTL Representation of Function-Call Insns</a></li>
+    <li><a name="toc-Structure-Sharing-Assumptions" href="Sharing.html#Sharing">14.21 Structure Sharing Assumptions</a></li>
+    <li><a name="toc-Reading-RTL-1" href="Reading-RTL.html#Reading-RTL">14.22 Reading RTL</a></li>
+  </ul></li>
+  <li><a name="toc-Control-Flow-Graph" href="Control-Flow.html#Control-Flow">15 Control Flow Graph</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Basic-Blocks-1" href="Basic-Blocks.html#Basic-Blocks">15.1 Basic Blocks</a></li>
+    <li><a name="toc-Edges-1" href="Edges.html#Edges">15.2 Edges</a></li>
+    <li><a name="toc-Profile-information-1" href="Profile-information.html#Profile-information">15.3 Profile information</a></li>
+    <li><a name="toc-Maintaining-the-CFG-1" href="Maintaining-the-CFG.html#Maintaining-the-CFG">15.4 Maintaining the CFG</a></li>
+    <li><a name="toc-Liveness-information-1" href="Liveness-information.html#Liveness-information">15.5 Liveness information</a></li>
+  </ul></li>
+  <li><a name="toc-Analysis-and-Representation-of-Loops" href="Loop-Analysis-and-Representation.html#Loop-Analysis-and-Representation">16 Analysis and Representation of Loops</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Loop-representation-1" href="Loop-representation.html#Loop-representation">16.1 Loop representation</a></li>
+    <li><a name="toc-Loop-querying-1" href="Loop-querying.html#Loop-querying">16.2 Loop querying</a></li>
+    <li><a name="toc-Loop-manipulation-1" href="Loop-manipulation.html#Loop-manipulation">16.3 Loop manipulation</a></li>
+    <li><a name="toc-Loop_002dclosed-SSA-form" href="LCSSA.html#LCSSA">16.4 Loop-closed SSA form</a></li>
+    <li><a name="toc-Scalar-evolutions-1" href="Scalar-evolutions.html#Scalar-evolutions">16.5 Scalar evolutions</a></li>
+    <li><a name="toc-IV-analysis-on-RTL" href="loop_002div.html#loop_002div">16.6 IV analysis on RTL</a></li>
+    <li><a name="toc-Number-of-iterations-analysis" href="Number-of-iterations.html#Number-of-iterations">16.7 Number of iterations analysis</a></li>
+    <li><a name="toc-Data-Dependency-Analysis" href="Dependency-analysis.html#Dependency-analysis">16.8 Data Dependency Analysis</a></li>
+  </ul></li>
+  <li><a name="toc-Machine-Descriptions" href="Machine-Desc.html#Machine-Desc">17 Machine Descriptions</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Overview-of-How-the-Machine-Description-is-Used" href="Overview.html#Overview">17.1 Overview of How the Machine Description is Used</a></li>
+    <li><a name="toc-Everything-about-Instruction-Patterns" href="Patterns.html#Patterns">17.2 Everything about Instruction Patterns</a></li>
+    <li><a name="toc-Example-of-define_005finsn" href="Example.html#Example">17.3 Example of <code>define_insn</code></a></li>
+    <li><a name="toc-RTL-Template-1" href="RTL-Template.html#RTL-Template">17.4 RTL Template</a></li>
+    <li><a name="toc-Output-Templates-and-Operand-Substitution" href="Output-Template.html#Output-Template">17.5 Output Templates and Operand Substitution</a></li>
+    <li><a name="toc-C-Statements-for-Assembler-Output" href="Output-Statement.html#Output-Statement">17.6 C Statements for Assembler Output</a></li>
+    <li><a name="toc-Predicates-1" href="Predicates.html#Predicates">17.7 Predicates</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Machine_002dIndependent-Predicates-1" href="Machine_002dIndependent-Predicates.html#Machine_002dIndependent-Predicates">17.7.1 Machine-Independent Predicates</a></li>
+      <li><a name="toc-Defining-Machine_002dSpecific-Predicates" href="Defining-Predicates.html#Defining-Predicates">17.7.2 Defining Machine-Specific Predicates</a></li>
+    </ul></li>
+    <li><a name="toc-Operand-Constraints" href="Constraints.html#Constraints">17.8 Operand Constraints</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Simple-Constraints-1" href="Simple-Constraints.html#Simple-Constraints">17.8.1 Simple Constraints</a></li>
+      <li><a name="toc-Multiple-Alternative-Constraints" href="Multi_002dAlternative.html#Multi_002dAlternative">17.8.2 Multiple Alternative Constraints</a></li>
+      <li><a name="toc-Register-Class-Preferences" href="Class-Preferences.html#Class-Preferences">17.8.3 Register Class Preferences</a></li>
+      <li><a name="toc-Constraint-Modifier-Characters" href="Modifiers.html#Modifiers">17.8.4 Constraint Modifier Characters</a></li>
+      <li><a name="toc-Constraints-for-Particular-Machines" href="Machine-Constraints.html#Machine-Constraints">17.8.5 Constraints for Particular Machines</a></li>
+      <li><a name="toc-Disable-insn-alternatives-using-the-enabled-attribute" href="Disable-Insn-Alternatives.html#Disable-Insn-Alternatives">17.8.6 Disable insn alternatives using the <code>enabled</code> attribute</a></li>
+      <li><a name="toc-Defining-Machine_002dSpecific-Constraints" href="Define-Constraints.html#Define-Constraints">17.8.7 Defining Machine-Specific Constraints</a></li>
+      <li><a name="toc-Testing-constraints-from-C" href="C-Constraint-Interface.html#C-Constraint-Interface">17.8.8 Testing constraints from C</a></li>
+    </ul></li>
+    <li><a name="toc-Standard-Pattern-Names-For-Generation" href="Standard-Names.html#Standard-Names">17.9 Standard Pattern Names For Generation</a></li>
+    <li><a name="toc-When-the-Order-of-Patterns-Matters" href="Pattern-Ordering.html#Pattern-Ordering">17.10 When the Order of Patterns Matters</a></li>
+    <li><a name="toc-Interdependence-of-Patterns" href="Dependent-Patterns.html#Dependent-Patterns">17.11 Interdependence of Patterns</a></li>
+    <li><a name="toc-Defining-Jump-Instruction-Patterns" href="Jump-Patterns.html#Jump-Patterns">17.12 Defining Jump Instruction Patterns</a></li>
+    <li><a name="toc-Defining-Looping-Instruction-Patterns" href="Looping-Patterns.html#Looping-Patterns">17.13 Defining Looping Instruction Patterns</a></li>
+    <li><a name="toc-Canonicalization-of-Instructions" href="Insn-Canonicalizations.html#Insn-Canonicalizations">17.14 Canonicalization of Instructions</a></li>
+    <li><a name="toc-Defining-RTL-Sequences-for-Code-Generation" href="Expander-Definitions.html#Expander-Definitions">17.15 Defining RTL Sequences for Code Generation</a></li>
+    <li><a name="toc-Defining-How-to-Split-Instructions" href="Insn-Splitting.html#Insn-Splitting">17.16 Defining How to Split Instructions</a></li>
+    <li><a name="toc-Including-Patterns-in-Machine-Descriptions_002e" href="Including-Patterns.html#Including-Patterns">17.17 Including Patterns in Machine Descriptions.</a>
+    <ul class="no-bullet">
+      <li><a name="toc-RTL-Generation-Tool-Options-for-Directory-Search" href="Including-Patterns.html#RTL-Generation-Tool-Options-for-Directory-Search">17.17.1 RTL Generation Tool Options for Directory Search</a></li>
+    </ul></li>
+    <li><a name="toc-Machine_002dSpecific-Peephole-Optimizers" href="Peephole-Definitions.html#Peephole-Definitions">17.18 Machine-Specific Peephole Optimizers</a>
+    <ul class="no-bullet">
+      <li><a name="toc-RTL-to-Text-Peephole-Optimizers" href="define_005fpeephole.html#define_005fpeephole">17.18.1 RTL to Text Peephole Optimizers</a></li>
+      <li><a name="toc-RTL-to-RTL-Peephole-Optimizers" href="define_005fpeephole2.html#define_005fpeephole2">17.18.2 RTL to RTL Peephole Optimizers</a></li>
+    </ul></li>
+    <li><a name="toc-Instruction-Attributes" href="Insn-Attributes.html#Insn-Attributes">17.19 Instruction Attributes</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Defining-Attributes-and-their-Values" href="Defining-Attributes.html#Defining-Attributes">17.19.1 Defining Attributes and their Values</a></li>
+      <li><a name="toc-Attribute-Expressions" href="Expressions.html#Expressions">17.19.2 Attribute Expressions</a></li>
+      <li><a name="toc-Assigning-Attribute-Values-to-Insns" href="Tagging-Insns.html#Tagging-Insns">17.19.3 Assigning Attribute Values to Insns</a></li>
+      <li><a name="toc-Example-of-Attribute-Specifications" href="Attr-Example.html#Attr-Example">17.19.4 Example of Attribute Specifications</a></li>
+      <li><a name="toc-Computing-the-Length-of-an-Insn" href="Insn-Lengths.html#Insn-Lengths">17.19.5 Computing the Length of an Insn</a></li>
+      <li><a name="toc-Constant-Attributes-1" href="Constant-Attributes.html#Constant-Attributes">17.19.6 Constant Attributes</a></li>
+      <li><a name="toc-Mnemonic-Attribute-1" href="Mnemonic-Attribute.html#Mnemonic-Attribute">17.19.7 Mnemonic Attribute</a></li>
+      <li><a name="toc-Delay-Slot-Scheduling" href="Delay-Slots.html#Delay-Slots">17.19.8 Delay Slot Scheduling</a></li>
+      <li><a name="toc-Specifying-processor-pipeline-description" href="Processor-pipeline-description.html#Processor-pipeline-description">17.19.9 Specifying processor pipeline description</a></li>
+    </ul></li>
+    <li><a name="toc-Conditional-Execution-1" href="Conditional-Execution.html#Conditional-Execution">17.20 Conditional Execution</a></li>
+    <li><a name="toc-RTL-Templates-Transformations" href="Define-Subst.html#Define-Subst">17.21 RTL Templates Transformations</a>
+    <ul class="no-bullet">
+      <li><a name="toc-define_005fsubst-Example" href="Define-Subst-Example.html#Define-Subst-Example">17.21.1 <code>define_subst</code> Example</a></li>
+      <li><a name="toc-Pattern-Matching-in-define_005fsubst" href="Define-Subst-Pattern-Matching.html#Define-Subst-Pattern-Matching">17.21.2 Pattern Matching in <code>define_subst</code></a></li>
+      <li><a name="toc-Generation-of-output-template-in-define_005fsubst" href="Define-Subst-Output-Template.html#Define-Subst-Output-Template">17.21.3 Generation of output template in <code>define_subst</code></a></li>
+    </ul></li>
+    <li><a name="toc-Constant-Definitions-1" href="Constant-Definitions.html#Constant-Definitions">17.22 Constant Definitions</a></li>
+    <li><a name="toc-Iterators-1" href="Iterators.html#Iterators">17.23 Iterators</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Mode-Iterators-1" href="Mode-Iterators.html#Mode-Iterators">17.23.1 Mode Iterators</a>
+      <ul class="no-bullet">
+        <li><a name="toc-Defining-Mode-Iterators-1" href="Defining-Mode-Iterators.html#Defining-Mode-Iterators">17.23.1.1 Defining Mode Iterators</a></li>
+        <li><a name="toc-Substitution-in-Mode-Iterators" href="Substitutions.html#Substitutions">17.23.1.2 Substitution in Mode Iterators</a></li>
+        <li><a name="toc-Mode-Iterator-Examples" href="Examples.html#Examples">17.23.1.3 Mode Iterator Examples</a></li>
+      </ul></li>
+      <li><a name="toc-Code-Iterators-1" href="Code-Iterators.html#Code-Iterators">17.23.2 Code Iterators</a></li>
+      <li><a name="toc-Int-Iterators-1" href="Int-Iterators.html#Int-Iterators">17.23.3 Int Iterators</a></li>
+      <li><a name="toc-Subst-Iterators-1" href="Subst-Iterators.html#Subst-Iterators">17.23.4 Subst Iterators</a></li>
+      <li><a name="toc-Parameterized-Names-1" href="Parameterized-Names.html#Parameterized-Names">17.23.5 Parameterized Names</a></li>
+    </ul></li>
+  </ul></li>
+  <li><a name="toc-Target-Description-Macros-and-Functions" href="Target-Macros.html#Target-Macros">18 Target Description Macros and Functions</a>
+  <ul class="no-bullet">
+    <li><a name="toc-The-Global-targetm-Variable" href="Target-Structure.html#Target-Structure">18.1 The Global <code>targetm</code> Variable</a></li>
+    <li><a name="toc-Controlling-the-Compilation-Driver_002c-gcc" href="Driver.html#Driver">18.2 Controlling the Compilation Driver, <samp>gcc</samp></a></li>
+    <li><a name="toc-Run_002dtime-Target-Specification" href="Run_002dtime-Target.html#Run_002dtime-Target">18.3 Run-time Target Specification</a></li>
+    <li><a name="toc-Defining-data-structures-for-per_002dfunction-information_002e" href="Per_002dFunction-Data.html#Per_002dFunction-Data">18.4 Defining data structures for per-function information.</a></li>
+    <li><a name="toc-Storage-Layout-1" href="Storage-Layout.html#Storage-Layout">18.5 Storage Layout</a></li>
+    <li><a name="toc-Layout-of-Source-Language-Data-Types" href="Type-Layout.html#Type-Layout">18.6 Layout of Source Language Data Types</a></li>
+    <li><a name="toc-Register-Usage" href="Registers.html#Registers">18.7 Register Usage</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Basic-Characteristics-of-Registers" href="Register-Basics.html#Register-Basics">18.7.1 Basic Characteristics of Registers</a></li>
+      <li><a name="toc-Order-of-Allocation-of-Registers" href="Allocation-Order.html#Allocation-Order">18.7.2 Order of Allocation of Registers</a></li>
+      <li><a name="toc-How-Values-Fit-in-Registers" href="Values-in-Registers.html#Values-in-Registers">18.7.3 How Values Fit in Registers</a></li>
+      <li><a name="toc-Handling-Leaf-Functions" href="Leaf-Functions.html#Leaf-Functions">18.7.4 Handling Leaf Functions</a></li>
+      <li><a name="toc-Registers-That-Form-a-Stack" href="Stack-Registers.html#Stack-Registers">18.7.5 Registers That Form a Stack</a></li>
+    </ul></li>
+    <li><a name="toc-Register-Classes-1" href="Register-Classes.html#Register-Classes">18.8 Register Classes</a></li>
+    <li><a name="toc-Stack-Layout-and-Calling-Conventions" href="Stack-and-Calling.html#Stack-and-Calling">18.9 Stack Layout and Calling Conventions</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Basic-Stack-Layout" href="Frame-Layout.html#Frame-Layout">18.9.1 Basic Stack Layout</a></li>
+      <li><a name="toc-Exception-Handling-Support" href="Exception-Handling.html#Exception-Handling">18.9.2 Exception Handling Support</a></li>
+      <li><a name="toc-Specifying-How-Stack-Checking-is-Done" href="Stack-Checking.html#Stack-Checking">18.9.3 Specifying How Stack Checking is Done</a></li>
+      <li><a name="toc-Registers-That-Address-the-Stack-Frame" href="Frame-Registers.html#Frame-Registers">18.9.4 Registers That Address the Stack Frame</a></li>
+      <li><a name="toc-Eliminating-Frame-Pointer-and-Arg-Pointer" href="Elimination.html#Elimination">18.9.5 Eliminating Frame Pointer and Arg Pointer</a></li>
+      <li><a name="toc-Passing-Function-Arguments-on-the-Stack" href="Stack-Arguments.html#Stack-Arguments">18.9.6 Passing Function Arguments on the Stack</a></li>
+      <li><a name="toc-Passing-Arguments-in-Registers" href="Register-Arguments.html#Register-Arguments">18.9.7 Passing Arguments in Registers</a></li>
+      <li><a name="toc-How-Scalar-Function-Values-Are-Returned" href="Scalar-Return.html#Scalar-Return">18.9.8 How Scalar Function Values Are Returned</a></li>
+      <li><a name="toc-How-Large-Values-Are-Returned" href="Aggregate-Return.html#Aggregate-Return">18.9.9 How Large Values Are Returned</a></li>
+      <li><a name="toc-Caller_002dSaves-Register-Allocation" href="Caller-Saves.html#Caller-Saves">18.9.10 Caller-Saves Register Allocation</a></li>
+      <li><a name="toc-Function-Entry-and-Exit" href="Function-Entry.html#Function-Entry">18.9.11 Function Entry and Exit</a></li>
+      <li><a name="toc-Generating-Code-for-Profiling" href="Profiling.html#Profiling">18.9.12 Generating Code for Profiling</a></li>
+      <li><a name="toc-Permitting-tail-calls" href="Tail-Calls.html#Tail-Calls">18.9.13 Permitting tail calls</a></li>
+      <li><a name="toc-Shrink_002dwrapping-separate-components-1" href="Shrink_002dwrapping-separate-components.html#Shrink_002dwrapping-separate-components">18.9.14 Shrink-wrapping separate components</a></li>
+      <li><a name="toc-Stack-smashing-protection" href="Stack-Smashing-Protection.html#Stack-Smashing-Protection">18.9.15 Stack smashing protection</a></li>
+      <li><a name="toc-Miscellaneous-register-hooks" href="Miscellaneous-Register-Hooks.html#Miscellaneous-Register-Hooks">18.9.16 Miscellaneous register hooks</a></li>
+    </ul></li>
+    <li><a name="toc-Implementing-the-Varargs-Macros" href="Varargs.html#Varargs">18.10 Implementing the Varargs Macros</a></li>
+    <li><a name="toc-Support-for-Nested-Functions" href="Trampolines.html#Trampolines">18.11 Support for Nested Functions</a></li>
+    <li><a name="toc-Implicit-Calls-to-Library-Routines" href="Library-Calls.html#Library-Calls">18.12 Implicit Calls to Library Routines</a></li>
+    <li><a name="toc-Addressing-Modes-1" href="Addressing-Modes.html#Addressing-Modes">18.13 Addressing Modes</a></li>
+    <li><a name="toc-Anchored-Addresses-1" href="Anchored-Addresses.html#Anchored-Addresses">18.14 Anchored Addresses</a></li>
+    <li><a name="toc-Condition-Code-Status" href="Condition-Code.html#Condition-Code">18.15 Condition Code Status</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Representation-of-condition-codes-using-_0028cc0_0029" href="CC0-Condition-Codes.html#CC0-Condition-Codes">18.15.1 Representation of condition codes using <code>(cc0)</code></a></li>
+      <li><a name="toc-Representation-of-condition-codes-using-registers" href="MODE_005fCC-Condition-Codes.html#MODE_005fCC-Condition-Codes">18.15.2 Representation of condition codes using registers</a></li>
+    </ul></li>
+    <li><a name="toc-Describing-Relative-Costs-of-Operations" href="Costs.html#Costs">18.16 Describing Relative Costs of Operations</a></li>
+    <li><a name="toc-Adjusting-the-Instruction-Scheduler" href="Scheduling.html#Scheduling">18.17 Adjusting the Instruction Scheduler</a></li>
+    <li><a name="toc-Dividing-the-Output-into-Sections-_0028Texts_002c-Data_002c-_2026_0029" href="Sections.html#Sections">18.18 Dividing the Output into Sections (Texts, Data, &hellip;)</a></li>
+    <li><a name="toc-Position-Independent-Code" href="PIC.html#PIC">18.19 Position Independent Code</a></li>
+    <li><a name="toc-Defining-the-Output-Assembler-Language" href="Assembler-Format.html#Assembler-Format">18.20 Defining the Output Assembler Language</a>
+    <ul class="no-bullet">
+      <li><a name="toc-The-Overall-Framework-of-an-Assembler-File" href="File-Framework.html#File-Framework">18.20.1 The Overall Framework of an Assembler File</a></li>
+      <li><a name="toc-Output-of-Data" href="Data-Output.html#Data-Output">18.20.2 Output of Data</a></li>
+      <li><a name="toc-Output-of-Uninitialized-Variables" href="Uninitialized-Data.html#Uninitialized-Data">18.20.3 Output of Uninitialized Variables</a></li>
+      <li><a name="toc-Output-and-Generation-of-Labels" href="Label-Output.html#Label-Output">18.20.4 Output and Generation of Labels</a></li>
+      <li><a name="toc-How-Initialization-Functions-Are-Handled" href="Initialization.html#Initialization">18.20.5 How Initialization Functions Are Handled</a></li>
+      <li><a name="toc-Macros-Controlling-Initialization-Routines" href="Macros-for-Initialization.html#Macros-for-Initialization">18.20.6 Macros Controlling Initialization Routines</a></li>
+      <li><a name="toc-Output-of-Assembler-Instructions" href="Instruction-Output.html#Instruction-Output">18.20.7 Output of Assembler Instructions</a></li>
+      <li><a name="toc-Output-of-Dispatch-Tables" href="Dispatch-Tables.html#Dispatch-Tables">18.20.8 Output of Dispatch Tables</a></li>
+      <li><a name="toc-Assembler-Commands-for-Exception-Regions" href="Exception-Region-Output.html#Exception-Region-Output">18.20.9 Assembler Commands for Exception Regions</a></li>
+      <li><a name="toc-Assembler-Commands-for-Alignment" href="Alignment-Output.html#Alignment-Output">18.20.10 Assembler Commands for Alignment</a></li>
+    </ul></li>
+    <li><a name="toc-Controlling-Debugging-Information-Format" href="Debugging-Info.html#Debugging-Info">18.21 Controlling Debugging Information Format</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Macros-Affecting-All-Debugging-Formats" href="All-Debuggers.html#All-Debuggers">18.21.1 Macros Affecting All Debugging Formats</a></li>
+      <li><a name="toc-Specific-Options-for-DBX-Output" href="DBX-Options.html#DBX-Options">18.21.2 Specific Options for DBX Output</a></li>
+      <li><a name="toc-Open_002dEnded-Hooks-for-DBX-Format" href="DBX-Hooks.html#DBX-Hooks">18.21.3 Open-Ended Hooks for DBX Format</a></li>
+      <li><a name="toc-File-Names-in-DBX-Format" href="File-Names-and-DBX.html#File-Names-and-DBX">18.21.4 File Names in DBX Format</a></li>
+      <li><a name="toc-Macros-for-DWARF-Output" href="DWARF.html#DWARF">18.21.5 Macros for DWARF Output</a></li>
+      <li><a name="toc-Macros-for-VMS-Debug-Format" href="VMS-Debug.html#VMS-Debug">18.21.6 Macros for VMS Debug Format</a></li>
+    </ul></li>
+    <li><a name="toc-Cross-Compilation-and-Floating-Point" href="Floating-Point.html#Floating-Point">18.22 Cross Compilation and Floating Point</a></li>
+    <li><a name="toc-Mode-Switching-Instructions" href="Mode-Switching.html#Mode-Switching">18.23 Mode Switching Instructions</a></li>
+    <li><a name="toc-Defining-target_002dspecific-uses-of-_005f_005fattribute_005f_005f" href="Target-Attributes.html#Target-Attributes">18.24 Defining target-specific uses of <code>__attribute__</code></a></li>
+    <li><a name="toc-Emulating-TLS" href="Emulated-TLS.html#Emulated-TLS">18.25 Emulating TLS</a></li>
+    <li><a name="toc-Defining-coprocessor-specifics-for-MIPS-targets_002e" href="MIPS-Coprocessors.html#MIPS-Coprocessors">18.26 Defining coprocessor specifics for MIPS targets.</a></li>
+    <li><a name="toc-Parameters-for-Precompiled-Header-Validity-Checking" href="PCH-Target.html#PCH-Target">18.27 Parameters for Precompiled Header Validity Checking</a></li>
+    <li><a name="toc-C_002b_002b-ABI-parameters" href="C_002b_002b-ABI.html#C_002b_002b-ABI">18.28 C++ ABI parameters</a></li>
+    <li><a name="toc-D-ABI-parameters" href="D-Language-and-ABI.html#D-Language-and-ABI">18.29 D ABI parameters</a></li>
+    <li><a name="toc-Adding-support-for-named-address-spaces" href="Named-Address-Spaces.html#Named-Address-Spaces">18.30 Adding support for named address spaces</a></li>
+    <li><a name="toc-Miscellaneous-Parameters" href="Misc.html#Misc">18.31 Miscellaneous Parameters</a></li>
+  </ul></li>
+  <li><a name="toc-Host-Configuration" href="Host-Config.html#Host-Config">19 Host Configuration</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Host-Common-1" href="Host-Common.html#Host-Common">19.1 Host Common</a></li>
+    <li><a name="toc-Host-Filesystem" href="Filesystem.html#Filesystem">19.2 Host Filesystem</a></li>
+    <li><a name="toc-Host-Misc-1" href="Host-Misc.html#Host-Misc">19.3 Host Misc</a></li>
+  </ul></li>
+  <li><a name="toc-Makefile-Fragments" href="Fragments.html#Fragments">20 Makefile Fragments</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Target-Makefile-Fragments" href="Target-Fragment.html#Target-Fragment">20.1 Target Makefile Fragments</a></li>
+    <li><a name="toc-Host-Makefile-Fragments" href="Host-Fragment.html#Host-Fragment">20.2 Host Makefile Fragments</a></li>
+  </ul></li>
+  <li><a name="toc-collect2" href="Collect2.html#Collect2">21 <code>collect2</code></a></li>
+  <li><a name="toc-Standard-Header-File-Directories" href="Header-Dirs.html#Header-Dirs">22 Standard Header File Directories</a></li>
+  <li><a name="toc-Memory-Management-and-Type-Information" href="Type-Information.html#Type-Information">23 Memory Management and Type Information</a>
+  <ul class="no-bullet">
+    <li><a name="toc-The-Inside-of-a-GTY_0028_0028_0029_0029" href="GTY-Options.html#GTY-Options">23.1 The Inside of a <code>GTY(())</code></a></li>
+    <li><a name="toc-Support-for-inheritance" href="Inheritance-and-GTY.html#Inheritance-and-GTY">23.2 Support for inheritance</a></li>
+    <li><a name="toc-Support-for-user_002dprovided-GC-marking-routines" href="User-GC.html#User-GC">23.3 Support for user-provided GC marking routines</a>
+    <ul class="no-bullet">
+      <li><a name="toc-User_002dprovided-marking-routines-for-template-types" href="User-GC.html#User_002dprovided-marking-routines-for-template-types">23.3.1 User-provided marking routines for template types</a></li>
+    </ul></li>
+    <li><a name="toc-Marking-Roots-for-the-Garbage-Collector" href="GGC-Roots.html#GGC-Roots">23.4 Marking Roots for the Garbage Collector</a></li>
+    <li><a name="toc-Source-Files-Containing-Type-Information" href="Files.html#Files">23.5 Source Files Containing Type Information</a></li>
+    <li><a name="toc-How-to-invoke-the-garbage-collector" href="Invoking-the-garbage-collector.html#Invoking-the-garbage-collector">23.6 How to invoke the garbage collector</a></li>
+    <li><a name="toc-Troubleshooting-the-garbage-collector" href="Troubleshooting.html#Troubleshooting">23.7 Troubleshooting the garbage collector</a></li>
+  </ul></li>
+  <li><a name="toc-Plugins-1" href="Plugins.html#Plugins">24 Plugins</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Loading-Plugins" href="Plugins-loading.html#Plugins-loading">24.1 Loading Plugins</a></li>
+    <li><a name="toc-Plugin-API-1" href="Plugin-API.html#Plugin-API">24.2 Plugin API</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Plugin-license-check" href="Plugin-API.html#Plugin-license-check">24.2.1 Plugin license check</a></li>
+      <li><a name="toc-Plugin-initialization" href="Plugin-API.html#Plugin-initialization">24.2.2 Plugin initialization</a></li>
+      <li><a name="toc-Plugin-callbacks" href="Plugin-API.html#Plugin-callbacks">24.2.3 Plugin callbacks</a></li>
+    </ul></li>
+    <li><a name="toc-Interacting-with-the-pass-manager" href="Plugins-pass.html#Plugins-pass">24.3 Interacting with the pass manager</a></li>
+    <li><a name="toc-Interacting-with-the-GCC-Garbage-Collector" href="Plugins-GC.html#Plugins-GC">24.4 Interacting with the GCC Garbage Collector</a></li>
+    <li><a name="toc-Giving-information-about-a-plugin" href="Plugins-description.html#Plugins-description">24.5 Giving information about a plugin</a></li>
+    <li><a name="toc-Registering-custom-attributes-or-pragmas" href="Plugins-attr.html#Plugins-attr">24.6 Registering custom attributes or pragmas</a></li>
+    <li><a name="toc-Recording-information-about-pass-execution" href="Plugins-recording.html#Plugins-recording">24.7 Recording information about pass execution</a></li>
+    <li><a name="toc-Controlling-which-passes-are-being-run" href="Plugins-gate.html#Plugins-gate">24.8 Controlling which passes are being run</a></li>
+    <li><a name="toc-Keeping-track-of-available-passes" href="Plugins-tracking.html#Plugins-tracking">24.9 Keeping track of available passes</a></li>
+    <li><a name="toc-Building-GCC-plugins" href="Plugins-building.html#Plugins-building">24.10 Building GCC plugins</a></li>
+  </ul></li>
+  <li><a name="toc-Link-Time-Optimization" href="LTO.html#LTO">25 Link Time Optimization</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Design-Overview" href="LTO-Overview.html#LTO-Overview">25.1 Design Overview</a>
+    <ul class="no-bullet">
+      <li><a name="toc-LTO-modes-of-operation" href="LTO-Overview.html#LTO-modes-of-operation">25.1.1 LTO modes of operation</a></li>
+    </ul></li>
+    <li><a name="toc-LTO-file-sections" href="LTO-object-file-layout.html#LTO-object-file-layout">25.2 LTO file sections</a></li>
+    <li><a name="toc-Using-summary-information-in-IPA-passes" href="IPA.html#IPA">25.3 Using summary information in IPA passes</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Virtual-clones" href="IPA.html#Virtual-clones">25.3.1 Virtual clones</a></li>
+      <li><a name="toc-IPA-references" href="IPA.html#IPA-references">25.3.2 IPA references</a></li>
+      <li><a name="toc-Jump-functions" href="IPA.html#Jump-functions">25.3.3 Jump functions</a></li>
+    </ul></li>
+    <li><a name="toc-Whole-program-assumptions_002c-linker-plugin-and-symbol-visibilities" href="WHOPR.html#WHOPR">25.4 Whole program assumptions, linker plugin and symbol visibilities</a></li>
+    <li><a name="toc-Internal-flags-controlling-lto1" href="Internal-flags.html#Internal-flags">25.5 Internal flags controlling <code>lto1</code></a></li>
+  </ul></li>
+  <li><a name="toc-Match-and-Simplify-1" href="Match-and-Simplify.html#Match-and-Simplify">26 Match and Simplify</a>
+  <ul class="no-bullet">
+    <li><a name="toc-GIMPLE-API-1" href="GIMPLE-API.html#GIMPLE-API">26.1 GIMPLE API</a></li>
+    <li><a name="toc-The-Language-1" href="The-Language.html#The-Language">26.2 The Language</a></li>
+  </ul></li>
+  <li><a name="toc-User-Experience-Guidelines-1" href="User-Experience-Guidelines.html#User-Experience-Guidelines">27 User Experience Guidelines</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Guidelines-for-Diagnostics-1" href="Guidelines-for-Diagnostics.html#Guidelines-for-Diagnostics">27.1 Guidelines for Diagnostics</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Talk-in-terms-of-the-user_0027s-code" href="Guidelines-for-Diagnostics.html#Talk-in-terms-of-the-user_0027s-code">27.1.1 Talk in terms of the user&rsquo;s code</a></li>
+      <li><a name="toc-Diagnostics-are-actionable" href="Guidelines-for-Diagnostics.html#Diagnostics-are-actionable">27.1.2 Diagnostics are actionable</a></li>
+      <li><a name="toc-The-user_0027s-attention-is-important" href="Guidelines-for-Diagnostics.html#The-user_0027s-attention-is-important">27.1.3 The user&rsquo;s attention is important</a></li>
+      <li><a name="toc-Precision-of-Wording" href="Guidelines-for-Diagnostics.html#Precision-of-Wording">27.1.4 Precision of Wording</a></li>
+      <li><a name="toc-Try-the-diagnostic-on-real_002dworld-code" href="Guidelines-for-Diagnostics.html#Try-the-diagnostic-on-real_002dworld-code">27.1.5 Try the diagnostic on real-world code</a></li>
+      <li><a name="toc-Make-mismatches-clear" href="Guidelines-for-Diagnostics.html#Make-mismatches-clear">27.1.6 Make mismatches clear</a></li>
+      <li><a name="toc-Location-Information" href="Guidelines-for-Diagnostics.html#Location-Information">27.1.7 Location Information</a></li>
+      <li><a name="toc-Coding-Conventions" href="Guidelines-for-Diagnostics.html#Coding-Conventions">27.1.8 Coding Conventions</a></li>
+      <li><a name="toc-Group-logically_002drelated-diagnostics" href="Guidelines-for-Diagnostics.html#Group-logically_002drelated-diagnostics">27.1.9 Group logically-related diagnostics</a></li>
+      <li><a name="toc-Quoting" href="Guidelines-for-Diagnostics.html#Quoting">27.1.10 Quoting</a></li>
+      <li><a name="toc-Spelling-and-Terminology" href="Guidelines-for-Diagnostics.html#Spelling-and-Terminology">27.1.11 Spelling and Terminology</a></li>
+      <li><a name="toc-Fix_002dit-hints" href="Guidelines-for-Diagnostics.html#Fix_002dit-hints">27.1.12 Fix-it hints</a>
+      <ul class="no-bullet">
+        <li><a name="toc-Fix_002dit-hints-should-work" href="Guidelines-for-Diagnostics.html#Fix_002dit-hints-should-work">27.1.12.1 Fix-it hints should work</a></li>
+        <li><a name="toc-Express-deletion-in-terms-of-deletion_002c-not-replacement" href="Guidelines-for-Diagnostics.html#Express-deletion-in-terms-of-deletion_002c-not-replacement">27.1.12.2 Express deletion in terms of deletion, not replacement</a></li>
+        <li><a name="toc-Multiple-suggestions" href="Guidelines-for-Diagnostics.html#Multiple-suggestions">27.1.12.3 Multiple suggestions</a></li>
+      </ul></li>
+    </ul></li>
+    <li><a name="toc-Guidelines-for-Options-1" href="Guidelines-for-Options.html#Guidelines-for-Options">27.2 Guidelines for Options</a></li>
+  </ul></li>
+  <li><a name="toc-Funding-Free-Software" href="Funding.html#Funding">Funding Free Software</a></li>
+  <li><a name="toc-The-GNU-Project-and-GNU_002fLinux" href="GNU-Project.html#GNU-Project">The GNU Project and GNU/Linux</a></li>
+  <li><a name="toc-GNU-General-Public-License" href="Copying.html#Copying">GNU General Public License</a></li>
+  <li><a name="toc-GNU-Free-Documentation-License-1" href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License">GNU Free Documentation License</a>
+  <ul class="no-bullet">
+    <li><a name="toc-ADDENDUM_003a-How-to-use-this-License-for-your-documents" href="GNU-Free-Documentation-License.html#ADDENDUM_003a-How-to-use-this-License-for-your-documents">ADDENDUM: How to use this License for your documents</a></li>
+  </ul></li>
+  <li><a name="toc-Contributors-to-GCC" href="Contributors.html#Contributors">Contributors to GCC</a></li>
+  <li><a name="toc-Option-Index-1" href="Option-Index.html#Option-Index">Option Index</a></li>
+  <li><a name="toc-Concept-Index-1" href="Concept-Index.html#Concept-Index">Concept Index</a></li>
+</ul>
+</div>
+
+
+<a name="Top"></a>
+<div class="header">
+<p>
+Next: <a href="Contributing.html#Contributing" accesskey="n" rel="next">Contributing</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Introduction"></a>
+<h1 class="top">Introduction</h1>
+<a name="index-introduction"></a>
+
+<p>This manual documents the internals of the GNU compilers, including
+how to port them to new targets and some information about how to
+write front ends for new languages.  It corresponds to the compilers
+(GNU Toolchain for the A-profile Architecture 9.2-2019.12 (arm-9.10))
+version 9.2.1.  The use of the GNU compilers is documented in a
+separate manual.  See <a href="http://gcc.gnu.org/onlinedocs/gcc/index.html#Top">Introduction</a> in <cite>Using the GNU
+Compiler Collection (GCC)</cite>.
+</p>
+<p>This manual is mainly a reference manual rather than a tutorial.  It
+discusses how to contribute to GCC (see <a href="Contributing.html#Contributing">Contributing</a>), the
+characteristics of the machines supported by GCC as hosts and targets
+(see <a href="Portability.html#Portability">Portability</a>), how GCC relates to the ABIs on such systems
+(see <a href="Interface.html#Interface">Interface</a>), and the characteristics of the languages for
+which GCC front ends are written (see <a href="Languages.html#Languages">Languages</a>).  It then
+describes the GCC source tree structure and build system, some of the
+interfaces to GCC front ends, and how support for a target system is
+implemented in GCC.
+</p>
+<p>Additional tutorial information is linked to from
+<a href="http://gcc.gnu.org/readings.html">http://gcc.gnu.org/readings.html</a>.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Contributing.html#Contributing" accesskey="1">Contributing</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How to contribute to testing and developing GCC.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Portability.html#Portability" accesskey="2">Portability</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Goals of GCC&rsquo;s portability features.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Interface.html#Interface" accesskey="3">Interface</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Function-call interface of GCC output.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Libgcc.html#Libgcc" accesskey="4">Libgcc</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Low-level runtime library used by GCC.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Languages.html#Languages" accesskey="5">Languages</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Languages for which GCC front ends are written.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Source-Tree.html#Source-Tree" accesskey="6">Source Tree</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">GCC source tree structure and build system.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Testsuites.html#Testsuites" accesskey="7">Testsuites</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">GCC testsuites.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Options.html#Options" accesskey="8">Options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Option specification files.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Passes.html#Passes" accesskey="9">Passes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Order of passes, what they do, and what each file is for.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="poly_005fint.html#poly_005fint">poly_int</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Representation of runtime sizes and offsets.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GENERIC.html#GENERIC">GENERIC</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Language-independent representation generated by Front Ends
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GIMPLE.html#GIMPLE">GIMPLE</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Tuple representation used by Tree SSA optimizers
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Tree-SSA.html#Tree-SSA">Tree SSA</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Analysis and optimization of GIMPLE
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="RTL.html#RTL">RTL</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Machine-dependent low-level intermediate representation.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Control-Flow.html#Control-Flow">Control Flow</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Maintaining and manipulating the control flow graph.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Loop-Analysis-and-Representation.html#Loop-Analysis-and-Representation">Loop Analysis and Representation</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Analysis and representation of loops
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Machine-Desc.html#Machine-Desc">Machine Desc</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How to write machine description instruction patterns.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Target-Macros.html#Target-Macros">Target Macros</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How to write the machine description C macros and functions.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Host-Config.html#Host-Config">Host Config</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Writing the <samp>xm-<var>machine</var>.h</samp> file.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Fragments.html#Fragments">Fragments</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Writing the <samp>t-<var>target</var></samp> and <samp>x-<var>host</var></samp> files.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Collect2.html#Collect2">Collect2</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How <code>collect2</code> works; how it finds <code>ld</code>.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Header-Dirs.html#Header-Dirs">Header Dirs</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Understanding the standard header file directories.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Type-Information.html#Type-Information">Type Information</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">GCC&rsquo;s memory management; generating type information.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Plugins.html#Plugins">Plugins</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Extending the compiler with plugins.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="LTO.html#LTO">LTO</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Using Link-Time Optimization.
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Match-and-Simplify.html#Match-and-Simplify">Match and Simplify</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How to write expression simplification patterns for GIMPLE and GENERIC
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="User-Experience-Guidelines.html#User-Experience-Guidelines">User Experience Guidelines</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Guidelines for implementing diagnostics and options.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Funding.html#Funding">Funding</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How to help assure funding for free software.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GNU-Project.html#GNU-Project">GNU Project</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">The GNU Project and GNU/Linux.
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Copying.html#Copying">Copying</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">GNU General Public License says
+                    how you can copy and share GCC.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License">GNU Free Documentation License</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How you can copy and share this manual.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Contributors.html#Contributors">Contributors</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">People who have contributed to GCC.
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Option-Index.html#Option-Index">Option Index</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Index to command line options.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Concept-Index.html#Concept-Index">Concept Index</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Index of concepts and symbol names.
+</td></tr>
+</table>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Contributing.html#Contributing" accesskey="n" rel="next">Contributing</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

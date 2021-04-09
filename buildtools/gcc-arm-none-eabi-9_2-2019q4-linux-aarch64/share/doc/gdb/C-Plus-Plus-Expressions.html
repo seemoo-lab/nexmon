@@ -1,0 +1,167 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: C Plus Plus Expressions</title>
+
+<meta name="description" content="Debugging with GDB: C Plus Plus Expressions">
+<meta name="keywords" content="Debugging with GDB: C Plus Plus Expressions">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C.html#C" rel="up" title="C">
+<link href="C-Defaults.html#C-Defaults" rel="next" title="C Defaults">
+<link href="C-Constants.html#C-Constants" rel="prev" title="C Constants">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="C-Plus-Plus-Expressions"></a>
+<div class="header">
+<p>
+Next: <a href="C-Defaults.html#C-Defaults" accesskey="n" rel="next">C Defaults</a>, Previous: <a href="C-Constants.html#C-Constants" accesskey="p" rel="prev">C Constants</a>, Up: <a href="C.html#C" accesskey="u" rel="up">C</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="C_002b_002b-Expressions"></a>
+<h4 class="subsubsection">15.4.1.3 C<tt>++</tt> Expressions</h4>
+
+<a name="index-expressions-in-C_002b_002b"></a>
+<p><small>GDB</small> expression handling can interpret most C<tt>++</tt> expressions.
+</p>
+<a name="index-debugging-C_002b_002b-programs"></a>
+<a name="index-C_002b_002b-compilers"></a>
+<a name="index-debug-formats-and-C_002b_002b"></a>
+<a name="index-GCC-and-C_002b_002b"></a>
+<blockquote>
+<p><em>Warning:</em> <small>GDB</small> can only debug C<tt>++</tt> code if you use
+the proper compiler and the proper debug format.  Currently,
+<small>GDB</small> works best when debugging C<tt>++</tt> code that is compiled
+with the most recent version of <small>GCC</small> possible.  The DWARF
+debugging format is preferred; <small>GCC</small> defaults to this on most
+popular platforms.  Other compilers and/or debug formats are likely to
+work badly or not at all when using <small>GDB</small> to debug C<tt>++</tt>
+code.  See <a href="Compilation.html#Compilation">Compilation</a>.
+</p></blockquote>
+
+<ol>
+<li> <a name="index-member-functions"></a>
+Member function calls are allowed; you can use expressions like
+
+<div class="smallexample">
+<pre class="smallexample">count = aml-&gt;GetOriginal(x, y)
+</pre></div>
+
+</li><li> <a name="index-this_002c-inside-C_002b_002b-member-functions"></a>
+<a name="index-namespace-in-C_002b_002b"></a>
+While a member function is active (in the selected stack frame), your
+expressions have the same namespace available as the member function;
+that is, <small>GDB</small> allows implicit references to the class instance
+pointer <code>this</code> following the same rules as C<tt>++</tt>.  <code>using</code>
+declarations in the current scope are also respected by <small>GDB</small>.
+
+</li><li> <a name="index-call-overloaded-functions"></a>
+<a name="index-overloaded-functions_002c-calling"></a>
+<a name="index-type-conversions-in-C_002b_002b"></a>
+You can call overloaded functions; <small>GDB</small> resolves the function
+call to the right definition, with some restrictions.  <small>GDB</small> does not
+perform overload resolution involving user-defined type conversions,
+calls to constructors, or instantiations of templates that do not exist
+in the program.  It also cannot handle ellipsis argument lists or
+default arguments.
+
+<p>It does perform integral conversions and promotions, floating-point
+promotions, arithmetic conversions, pointer conversions, conversions of
+class objects to base classes, and standard conversions such as those of
+functions or arrays to pointers; it requires an exact match on the
+number of function arguments.
+</p>
+<p>Overload resolution is always performed, unless you have specified
+<code>set overload-resolution off</code>.  See <a href="Debugging-C-Plus-Plus.html#Debugging-C-Plus-Plus"><small>GDB</small> Features for C<tt>++</tt></a>.
+</p>
+<p>You must specify <code>set overload-resolution off</code> in order to use an
+explicit function signature to call an overloaded function, as in
+</p><div class="smallexample">
+<pre class="smallexample">p 'foo(char,int)'('x', 13)
+</pre></div>
+
+<p>The <small>GDB</small> command-completion facility can simplify this;
+see <a href="Completion.html#Completion">Command Completion</a>.
+</p>
+</li><li> <a name="index-reference-declarations"></a>
+<small>GDB</small> understands variables declared as C<tt>++</tt> lvalue or rvalue
+references; you can use them in expressions just as you do in C<tt>++</tt>
+source&mdash;they are automatically dereferenced.
+
+<p>In the parameter list shown when <small>GDB</small> displays a frame, the values of
+reference variables are not displayed (unlike other variables); this
+avoids clutter, since references are often used for large structures.
+The <em>address</em> of a reference variable is always shown, unless
+you have specified &lsquo;<samp>set print address off</samp>&rsquo;.
+</p>
+</li><li> <small>GDB</small> supports the C<tt>++</tt> name resolution operator <code>::</code>&mdash;your
+expressions can use it just as expressions in your program do.  Since
+one scope may be defined in another, you can use <code>::</code> repeatedly if
+necessary, for example in an expression like
+&lsquo;<samp><var>scope1</var>::<var>scope2</var>::<var>name</var></samp>&rsquo;.  <small>GDB</small> also allows
+resolving name scope by reference to source files, in both C and C<tt>++</tt>
+debugging (see <a href="Variables.html#Variables">Program Variables</a>).
+
+</li><li> <small>GDB</small> performs argument-dependent lookup, following the C<tt>++</tt>
+specification.
+</li></ol>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="C-Defaults.html#C-Defaults" accesskey="n" rel="next">C Defaults</a>, Previous: <a href="C-Constants.html#C-Constants" accesskey="p" rel="prev">C Constants</a>, Up: <a href="C.html#C" accesskey="u" rel="up">C</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

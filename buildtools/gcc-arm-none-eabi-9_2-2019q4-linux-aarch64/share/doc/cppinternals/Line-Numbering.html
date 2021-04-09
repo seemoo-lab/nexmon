@@ -1,0 +1,158 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU C Preprocessor Internals: Line Numbering</title>
+
+<meta name="description" content="The GNU C Preprocessor Internals: Line Numbering">
+<meta name="keywords" content="The GNU C Preprocessor Internals: Line Numbering">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Guard-Macros.html#Guard-Macros" rel="next" title="Guard Macros">
+<link href="Token-Spacing.html#Token-Spacing" rel="prev" title="Token Spacing">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Line-Numbering"></a>
+<div class="header">
+<p>
+Next: <a href="Guard-Macros.html#Guard-Macros" accesskey="n" rel="next">Guard Macros</a>, Previous: <a href="Token-Spacing.html#Token-Spacing" accesskey="p" rel="prev">Token Spacing</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Line-numbering"></a>
+<h2 class="unnumbered">Line numbering</h2>
+<a name="index-line-numbers"></a>
+
+<a name="Just-which-line-number-anyway_003f"></a>
+<h3 class="section">Just which line number anyway?</h3>
+
+<p>There are three reasonable requirements a cpplib client might have for
+the line number of a token passed to it:
+</p>
+<ul>
+<li> The source line it was lexed on.
+</li><li> The line it is output on.  This can be different to the line it was
+lexed on if, for example, there are intervening escaped newlines or
+C-style comments.  For example:
+
+<div class="smallexample">
+<pre class="smallexample">foo /* <span class="roman">A long
+comment</span> */ bar \
+baz
+&rArr;
+foo bar baz
+</pre></div>
+
+</li><li> If the token results from a macro expansion, the line of the macro name,
+or possibly the line of the closing parenthesis in the case of
+function-like macro expansion.
+</li></ul>
+
+<p>The <code>cpp_token</code> structure contains <code>line</code> and <code>col</code>
+members.  The lexer fills these in with the line and column of the first
+character of the token.  Consequently, but maybe unexpectedly, a token
+from the replacement list of a macro expansion carries the location of
+the token within the <code>#define</code> directive, because cpplib expands a
+macro by returning pointers to the tokens in its replacement list.  The
+current implementation of cpplib assigns tokens created from built-in
+macros and the &lsquo;<samp>#</samp>&rsquo; and &lsquo;<samp>##</samp>&rsquo; operators the location of the most
+recently lexed token.  This is a because they are allocated from the
+lexer&rsquo;s token runs, and because of the way the diagnostic routines infer
+the appropriate location to report.
+</p>
+<p>The diagnostic routines in cpplib display the location of the most
+recently <em>lexed</em> token, unless they are passed a specific line and
+column to report.  For diagnostics regarding tokens that arise from
+macro expansions, it might also be helpful for the user to see the
+original location in the macro definition that the token came from.
+Since that is exactly the information each token carries, such an
+enhancement could be made relatively easily in future.
+</p>
+<p>The stand-alone preprocessor faces a similar problem when determining
+the correct line to output the token on: the position attached to a
+token is fairly useless if the token came from a macro expansion.  All
+tokens on a logical line should be output on its first physical line, so
+the token&rsquo;s reported location is also wrong if it is part of a physical
+line other than the first.
+</p>
+<p>To solve these issues, cpplib provides a callback that is generated
+whenever it lexes a preprocessing token that starts a new logical line
+other than a directive.  It passes this token (which may be a
+<code>CPP_EOF</code> token indicating the end of the translation unit) to the
+callback routine, which can then use the line and column of this token
+to produce correct output.
+</p>
+<a name="Representation-of-line-numbers"></a>
+<h3 class="section">Representation of line numbers</h3>
+
+<p>As mentioned above, cpplib stores with each token the line number that
+it was lexed on.  In fact, this number is not the number of the line in
+the source file, but instead bears more resemblance to the number of the
+line in the translation unit.
+</p>
+<p>The preprocessor maintains a monotonic increasing line count, which is
+incremented at every new line character (and also at the end of any
+buffer that does not end in a new line).  Since a line number of zero is
+useful to indicate certain special states and conditions, this variable
+starts counting from one.
+</p>
+<p>This variable therefore uniquely enumerates each line in the translation
+unit.  With some simple infrastructure, it is straight forward to map
+from this to the original source file and line number pair, saving space
+whenever line number information needs to be saved.  The code the
+implements this mapping lies in the files <samp>line-map.c</samp> and
+<samp>line-map.h</samp>.
+</p>
+<p>Command-line macros and assertions are implemented by pushing a buffer
+containing the right hand side of an equivalent <code>#define</code> or
+<code>#assert</code> directive.  Some built-in macros are handled similarly.
+Since these are all processed before the first line of the main input
+file, it will typically have an assigned line closer to twenty than to
+one.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Guard-Macros.html#Guard-Macros" accesskey="n" rel="next">Guard Macros</a>, Previous: <a href="Token-Spacing.html#Token-Spacing" accesskey="p" rel="prev">Token Spacing</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: ARM Features</title>
+
+<meta name="description" content="Debugging with GDB: ARM Features">
+<meta name="keywords" content="Debugging with GDB: ARM Features">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Standard-Target-Features.html#Standard-Target-Features" rel="up" title="Standard Target Features">
+<link href="i386-Features.html#i386-Features" rel="next" title="i386 Features">
+<link href="ARC-Features.html#ARC-Features" rel="prev" title="ARC Features">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="ARM-Features"></a>
+<div class="header">
+<p>
+Next: <a href="i386-Features.html#i386-Features" accesskey="n" rel="next">i386 Features</a>, Previous: <a href="ARC-Features.html#ARC-Features" accesskey="p" rel="prev">ARC Features</a>, Up: <a href="Standard-Target-Features.html#Standard-Target-Features" accesskey="u" rel="up">Standard Target Features</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="ARM-Features-1"></a>
+<h4 class="subsection">G.5.3 ARM Features</h4>
+<a name="index-target-descriptions_002c-ARM-features"></a>
+
+<p>The &lsquo;<samp>org.gnu.gdb.arm.core</samp>&rsquo; feature is required for non-M-profile
+ARM targets.
+It should contain registers &lsquo;<samp>r0</samp>&rsquo; through &lsquo;<samp>r13</samp>&rsquo;, &lsquo;<samp>sp</samp>&rsquo;,
+&lsquo;<samp>lr</samp>&rsquo;, &lsquo;<samp>pc</samp>&rsquo;, and &lsquo;<samp>cpsr</samp>&rsquo;.
+</p>
+<p>For M-profile targets (e.g. Cortex-M3), the &lsquo;<samp>org.gnu.gdb.arm.core</samp>&rsquo;
+feature is replaced by &lsquo;<samp>org.gnu.gdb.arm.m-profile</samp>&rsquo;.  It should contain
+registers &lsquo;<samp>r0</samp>&rsquo; through &lsquo;<samp>r13</samp>&rsquo;, &lsquo;<samp>sp</samp>&rsquo;, &lsquo;<samp>lr</samp>&rsquo;, &lsquo;<samp>pc</samp>&rsquo;,
+and &lsquo;<samp>xpsr</samp>&rsquo;.
+</p>
+<p>The &lsquo;<samp>org.gnu.gdb.arm.fpa</samp>&rsquo; feature is optional.  If present, it
+should contain registers &lsquo;<samp>f0</samp>&rsquo; through &lsquo;<samp>f7</samp>&rsquo; and &lsquo;<samp>fps</samp>&rsquo;.
+</p>
+<p>The &lsquo;<samp>org.gnu.gdb.xscale.iwmmxt</samp>&rsquo; feature is optional.  If present,
+it should contain at least registers &lsquo;<samp>wR0</samp>&rsquo; through &lsquo;<samp>wR15</samp>&rsquo; and
+&lsquo;<samp>wCGR0</samp>&rsquo; through &lsquo;<samp>wCGR3</samp>&rsquo;.  The &lsquo;<samp>wCID</samp>&rsquo;, &lsquo;<samp>wCon</samp>&rsquo;,
+&lsquo;<samp>wCSSF</samp>&rsquo;, and &lsquo;<samp>wCASF</samp>&rsquo; registers are optional.
+</p>
+<p>The &lsquo;<samp>org.gnu.gdb.arm.vfp</samp>&rsquo; feature is optional.  If present, it
+should contain at least registers &lsquo;<samp>d0</samp>&rsquo; through &lsquo;<samp>d15</samp>&rsquo;.  If
+they are present, &lsquo;<samp>d16</samp>&rsquo; through &lsquo;<samp>d31</samp>&rsquo; should also be included.
+<small>GDB</small> will synthesize the single-precision registers from
+halves of the double-precision registers.
+</p>
+<p>The &lsquo;<samp>org.gnu.gdb.arm.neon</samp>&rsquo; feature is optional.  It does not
+need to contain registers; it instructs <small>GDB</small> to display the
+VFP double-precision registers as vectors and to synthesize the
+quad-precision registers from pairs of double-precision registers.
+If this feature is present, &lsquo;<samp>org.gnu.gdb.arm.vfp</samp>&rsquo; must also
+be present and include 32 double-precision registers.
+</p>
+
+
+
+</body>
+</html>

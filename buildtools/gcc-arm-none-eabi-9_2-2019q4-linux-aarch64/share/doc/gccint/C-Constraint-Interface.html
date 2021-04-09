@@ -1,0 +1,174 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: C Constraint Interface</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: C Constraint Interface">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: C Constraint Interface">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Constraints.html#Constraints" rel="up" title="Constraints">
+<link href="Standard-Names.html#Standard-Names" rel="next" title="Standard Names">
+<link href="Define-Constraints.html#Define-Constraints" rel="prev" title="Define Constraints">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="C-Constraint-Interface"></a>
+<div class="header">
+<p>
+Previous: <a href="Define-Constraints.html#Define-Constraints" accesskey="p" rel="prev">Define Constraints</a>, Up: <a href="Constraints.html#Constraints" accesskey="u" rel="up">Constraints</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Testing-constraints-from-C"></a>
+<h4 class="subsection">17.8.8 Testing constraints from C</h4>
+<a name="index-testing-constraints"></a>
+<a name="index-constraints_002c-testing"></a>
+
+<p>It is occasionally useful to test a constraint from C code rather than
+implicitly via the constraint string in a <code>match_operand</code>.  The
+generated file <samp>tm_p.h</samp> declares a few interfaces for working
+with constraints.  At present these are defined for all constraints
+except <code>g</code> (which is equivalent to <code>general_operand</code>).
+</p>
+<p>Some valid constraint names are not valid C identifiers, so there is a
+mangling scheme for referring to them from C.  Constraint names that
+do not contain angle brackets or underscores are left unchanged.
+Underscores are doubled, each &lsquo;<samp>&lt;</samp>&rsquo; is replaced with &lsquo;<samp>_l</samp>&rsquo;, and
+each &lsquo;<samp>&gt;</samp>&rsquo; with &lsquo;<samp>_g</samp>&rsquo;.  Here are some examples:
+</p>
+<div class="example">
+<table>
+<tr><td><pre class="example"><strong>Original</strong></pre></td><td><pre class="example"><strong>Mangled</strong></pre></td></tr>
+<tr><td><pre class="example"><code>x</code></pre></td><td><pre class="example"><code>x</code></pre></td></tr>
+<tr><td><pre class="example"><code>P42x</code></pre></td><td><pre class="example"><code>P42x</code></pre></td></tr>
+<tr><td><pre class="example"><code>P4_x</code></pre></td><td><pre class="example"><code>P4__x</code></pre></td></tr>
+<tr><td><pre class="example"><code>P4&gt;x</code></pre></td><td><pre class="example"><code>P4_gx</code></pre></td></tr>
+<tr><td><pre class="example"><code>P4&gt;&gt;</code></pre></td><td><pre class="example"><code>P4_g_g</code></pre></td></tr>
+<tr><td><pre class="example"><code>P4_g&gt;</code></pre></td><td><pre class="example"><code>P4__g_g</code></pre></td></tr>
+</table>
+</div>
+
+<p>Throughout this section, the variable <var>c</var> is either a constraint
+in the abstract sense, or a constant from <code>enum constraint_num</code>;
+the variable <var>m</var> is a mangled constraint name (usually as part of
+a larger identifier).
+</p>
+<dl>
+<dt><a name="index-constraint_005fnum"></a>Enum: <strong>constraint_num</strong></dt>
+<dd><p>For each constraint except <code>g</code>, there is a corresponding
+enumeration constant: &lsquo;<samp>CONSTRAINT_</samp>&rsquo; plus the mangled name of the
+constraint.  Functions that take an <code>enum constraint_num</code> as an
+argument expect one of these constants.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-satisfies_005fconstraint_005f"></a>Function: <em>inline bool</em> <strong>satisfies_constraint_</strong> <em><var>m</var> (rtx <var>exp</var>)</em></dt>
+<dd><p>For each non-register constraint <var>m</var> except <code>g</code>, there is
+one of these functions; it returns <code>true</code> if <var>exp</var> satisfies the
+constraint.  These functions are only visible if <samp>rtl.h</samp> was included
+before <samp>tm_p.h</samp>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-constraint_005fsatisfied_005fp"></a>Function: <em>bool</em> <strong>constraint_satisfied_p</strong> <em>(rtx <var>exp</var>, enum constraint_num <var>c</var>)</em></dt>
+<dd><p>Like the <code>satisfies_constraint_<var>m</var></code> functions, but the
+constraint to test is given as an argument, <var>c</var>.  If <var>c</var>
+specifies a register constraint, this function will always return
+<code>false</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-reg_005fclass_005ffor_005fconstraint"></a>Function: <em>enum reg_class</em> <strong>reg_class_for_constraint</strong> <em>(enum constraint_num <var>c</var>)</em></dt>
+<dd><p>Returns the register class associated with <var>c</var>.  If <var>c</var> is not
+a register constraint, or those registers are not available for the
+currently selected subtarget, returns <code>NO_REGS</code>.
+</p></dd></dl>
+
+<p>Here is an example use of <code>satisfies_constraint_<var>m</var></code>.  In
+peephole optimizations (see <a href="Peephole-Definitions.html#Peephole-Definitions">Peephole Definitions</a>), operand
+constraint strings are ignored, so if there are relevant constraints,
+they must be tested in the C condition.  In the example, the
+optimization is applied if operand 2 does <em>not</em> satisfy the
+&lsquo;<samp>K</samp>&rsquo; constraint.  (This is a simplified version of a peephole
+definition from the i386 machine description.)
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_peephole2
+  [(match_scratch:SI 3 &quot;r&quot;)
+   (set (match_operand:SI 0 &quot;register_operand&quot; &quot;&quot;)
+        (mult:SI (match_operand:SI 1 &quot;memory_operand&quot; &quot;&quot;)
+                 (match_operand:SI 2 &quot;immediate_operand&quot; &quot;&quot;)))]
+
+  &quot;!satisfies_constraint_K (operands[2])&quot;
+
+  [(set (match_dup 3) (match_dup 1))
+   (set (match_dup 0) (mult:SI (match_dup 3) (match_dup 2)))]
+
+  &quot;&quot;)
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Define-Constraints.html#Define-Constraints" accesskey="p" rel="prev">Define Constraints</a>, Up: <a href="Constraints.html#Constraints" accesskey="u" rel="up">Constraints</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,213 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Looping Patterns</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Looping Patterns">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Looping Patterns">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Machine-Desc.html#Machine-Desc" rel="up" title="Machine Desc">
+<link href="Insn-Canonicalizations.html#Insn-Canonicalizations" rel="next" title="Insn Canonicalizations">
+<link href="Jump-Patterns.html#Jump-Patterns" rel="prev" title="Jump Patterns">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Looping-Patterns"></a>
+<div class="header">
+<p>
+Next: <a href="Insn-Canonicalizations.html#Insn-Canonicalizations" accesskey="n" rel="next">Insn Canonicalizations</a>, Previous: <a href="Jump-Patterns.html#Jump-Patterns" accesskey="p" rel="prev">Jump Patterns</a>, Up: <a href="Machine-Desc.html#Machine-Desc" accesskey="u" rel="up">Machine Desc</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Defining-Looping-Instruction-Patterns"></a>
+<h3 class="section">17.13 Defining Looping Instruction Patterns</h3>
+<a name="index-looping-instruction-patterns"></a>
+<a name="index-defining-looping-instruction-patterns"></a>
+
+<p>Some machines have special jump instructions that can be utilized to
+make loops more efficient.  A common example is the 68000 &lsquo;<samp>dbra</samp>&rsquo;
+instruction which performs a decrement of a register and a branch if the
+result was greater than zero.  Other machines, in particular digital
+signal processors (DSPs), have special block repeat instructions to
+provide low-overhead loop support.  For example, the TI TMS320C3x/C4x
+DSPs have a block repeat instruction that loads special registers to
+mark the top and end of a loop and to count the number of loop
+iterations.  This avoids the need for fetching and executing a
+&lsquo;<samp>dbra</samp>&rsquo;-like instruction and avoids pipeline stalls associated with
+the jump.
+</p>
+<p>GCC has two special named patterns to support low overhead looping.
+They are &lsquo;<samp>doloop_begin</samp>&rsquo; and &lsquo;<samp>doloop_end</samp>&rsquo;.  These are emitted
+by the loop optimizer for certain well-behaved loops with a finite
+number of loop iterations using information collected during strength
+reduction.
+</p>
+<p>The &lsquo;<samp>doloop_end</samp>&rsquo; pattern describes the actual looping instruction
+(or the implicit looping operation) and the &lsquo;<samp>doloop_begin</samp>&rsquo; pattern
+is an optional companion pattern that can be used for initialization
+needed for some low-overhead looping instructions.
+</p>
+<p>Note that some machines require the actual looping instruction to be
+emitted at the top of the loop (e.g., the TMS320C3x/C4x DSPs).  Emitting
+the true RTL for a looping instruction at the top of the loop can cause
+problems with flow analysis.  So instead, a dummy <code>doloop</code> insn is
+emitted at the end of the loop.  The machine dependent reorg pass checks
+for the presence of this <code>doloop</code> insn and then searches back to
+the top of the loop, where it inserts the true looping insn (provided
+there are no instructions in the loop which would cause problems).  Any
+additional labels can be emitted at this point.  In addition, if the
+desired special iteration counter register was not allocated, this
+machine dependent reorg pass could emit a traditional compare and jump
+instruction pair.
+</p>
+<p>For the &lsquo;<samp>doloop_end</samp>&rsquo; pattern, the loop optimizer allocates an
+additional pseudo register as an iteration counter.  This pseudo
+register cannot be used within the loop (i.e., general induction
+variables cannot be derived from it), however, in many cases the loop
+induction variable may become redundant and removed by the flow pass.
+</p>
+<p>The &lsquo;<samp>doloop_end</samp>&rsquo; pattern must have a specific structure to be
+handled correctly by GCC.  The example below is taken (slightly
+simplified) from the PDP-11 target:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_expand &quot;doloop_end&quot;
+  [(parallel [(set (pc)
+                   (if_then_else
+                    (ne (match_operand:HI 0 &quot;nonimmediate_operand&quot; &quot;+r,!m&quot;)
+                        (const_int 1))
+                    (label_ref (match_operand 1 &quot;&quot; &quot;&quot;))
+                    (pc)))
+              (set (match_dup 0)
+                   (plus:HI (match_dup 0)
+                         (const_int -1)))])]
+  &quot;&quot;
+  &quot;{
+    if (GET_MODE (operands[0]) != HImode)
+      FAIL;
+  }&quot;)
+
+(define_insn &quot;doloop_end_insn&quot;
+  [(set (pc)
+        (if_then_else
+         (ne (match_operand:HI 0 &quot;nonimmediate_operand&quot; &quot;+r,!m&quot;)
+             (const_int 1))
+         (label_ref (match_operand 1 &quot;&quot; &quot;&quot;))
+         (pc)))
+   (set (match_dup 0)
+        (plus:HI (match_dup 0)
+              (const_int -1)))]
+  &quot;&quot;
+  
+  {
+    if (which_alternative == 0)
+      return &quot;sob %0,%l1&quot;;
+
+    /* emulate sob */
+    output_asm_insn (&quot;dec %0&quot;, operands);
+    return &quot;bne %l1&quot;;
+  })
+</pre></div>
+
+<p>The first part of the pattern describes the branch condition.  GCC
+supports three cases for the way the target machine handles the loop
+counter:
+</p><ul>
+<li> Loop terminates when the loop register decrements to zero.  This
+is represented by a <code>ne</code> comparison of the register (its old value)
+with constant 1 (as in the example above).
+</li><li> Loop terminates when the loop register decrements to -1.
+This is represented by a <code>ne</code> comparison of the register with
+constant zero.
+</li><li> Loop terminates when the loop register decrements to a negative
+value.  This is represented by a <code>ge</code> comparison of the register
+with constant zero.  For this case, GCC will attach a <code>REG_NONNEG</code>
+note to the <code>doloop_end</code> insn if it can determine that the register
+will be non-negative.
+</li></ul>
+
+<p>Since the <code>doloop_end</code> insn is a jump insn that also has an output,
+the reload pass does not handle the output operand.  Therefore, the
+constraint must allow for that operand to be in memory rather than a
+register.  In the example shown above, that is handled (in the
+<code>doloop_end_insn</code> pattern) by using a loop instruction sequence
+that can handle memory operands when the memory alternative appears.
+</p>
+<p>GCC does not check the mode of the loop register operand when generating
+the <code>doloop_end</code> pattern.  If the pattern is only valid for some
+modes but not others, the pattern should be a <code>define_expand</code>
+pattern that checks the operand mode in the preparation code, and issues
+<code>FAIL</code> if an unsupported mode is found.  The example above does
+this, since the machine instruction to be used only exists for
+<code>HImode</code>.
+</p>
+<p>If the <code>doloop_end</code> pattern is a <code>define_expand</code>, there must
+also be a <code>define_insn</code> or <code>define_insn_and_split</code> matching
+the generated pattern.  Otherwise, the compiler will fail during loop
+optimization.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Insn-Canonicalizations.html#Insn-Canonicalizations" accesskey="n" rel="next">Insn Canonicalizations</a>, Previous: <a href="Jump-Patterns.html#Jump-Patterns" accesskey="p" rel="prev">Jump Patterns</a>, Up: <a href="Machine-Desc.html#Machine-Desc" accesskey="u" rel="up">Machine Desc</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

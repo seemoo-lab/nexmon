@@ -1,0 +1,277 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: GDB/MI Program Context</title>
+
+<meta name="description" content="Debugging with GDB: GDB/MI Program Context">
+<meta name="keywords" content="Debugging with GDB: GDB/MI Program Context">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="GDB_002fMI.html#GDB_002fMI" rel="up" title="GDB/MI">
+<link href="GDB_002fMI-Thread-Commands.html#GDB_002fMI-Thread-Commands" rel="next" title="GDB/MI Thread Commands">
+<link href="Ada-Exception-GDB_002fMI-Catchpoint-Commands.html#Ada-Exception-GDB_002fMI-Catchpoint-Commands" rel="prev" title="Ada Exception GDB/MI Catchpoint Commands">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="GDB_002fMI-Program-Context"></a>
+<div class="header">
+<p>
+Next: <a href="GDB_002fMI-Thread-Commands.html#GDB_002fMI-Thread-Commands" accesskey="n" rel="next">GDB/MI Thread Commands</a>, Previous: <a href="GDB_002fMI-Catchpoint-Commands.html#GDB_002fMI-Catchpoint-Commands" accesskey="p" rel="prev">GDB/MI Catchpoint Commands</a>, Up: <a href="GDB_002fMI.html#GDB_002fMI" accesskey="u" rel="up">GDB/MI</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="GDB_002fMI-Program-Context-1"></a>
+<h3 class="section">27.10 <small>GDB/MI</small>  Program Context</h3>
+
+<a name="The-_002dexec_002darguments-Command"></a>
+<h4 class="subheading">The <code>-exec-arguments</code> Command</h4>
+<a name="index-_002dexec_002darguments"></a>
+
+
+<a name="Synopsis-18"></a>
+<h4 class="subsubheading">Synopsis</h4>
+
+<div class="smallexample">
+<pre class="smallexample"> -exec-arguments <var>args</var>
+</pre></div>
+
+<p>Set the inferior program arguments, to be used in the next
+&lsquo;<samp>-exec-run</samp>&rsquo;.
+</p>
+<a name="GDB-Command-17"></a>
+<h4 class="subsubheading"><small>GDB</small> Command</h4>
+
+<p>The corresponding <small>GDB</small> command is &lsquo;<samp>set args</samp>&rsquo;.
+</p>
+<a name="Example-17"></a>
+<h4 class="subsubheading">Example</h4>
+
+<div class="smallexample">
+<pre class="smallexample">(gdb)
+-exec-arguments -v word
+^done
+(gdb)
+</pre></div>
+
+
+
+
+<a name="The-_002denvironment_002dcd-Command"></a>
+<h4 class="subheading">The <code>-environment-cd</code> Command</h4>
+<a name="index-_002denvironment_002dcd"></a>
+
+<a name="Synopsis-19"></a>
+<h4 class="subsubheading">Synopsis</h4>
+
+<div class="smallexample">
+<pre class="smallexample"> -environment-cd <var>pathdir</var>
+</pre></div>
+
+<p>Set <small>GDB</small>&rsquo;s working directory.
+</p>
+<a name="GDB-Command-18"></a>
+<h4 class="subsubheading"><small>GDB</small> Command</h4>
+
+<p>The corresponding <small>GDB</small> command is &lsquo;<samp>cd</samp>&rsquo;.
+</p>
+<a name="Example-18"></a>
+<h4 class="subsubheading">Example</h4>
+
+<div class="smallexample">
+<pre class="smallexample">(gdb)
+-environment-cd /kwikemart/marge/ezannoni/flathead-dev/devo/gdb
+^done
+(gdb)
+</pre></div>
+
+
+<a name="The-_002denvironment_002ddirectory-Command"></a>
+<h4 class="subheading">The <code>-environment-directory</code> Command</h4>
+<a name="index-_002denvironment_002ddirectory"></a>
+
+<a name="Synopsis-20"></a>
+<h4 class="subsubheading">Synopsis</h4>
+
+<div class="smallexample">
+<pre class="smallexample"> -environment-directory [ -r ] [ <var>pathdir</var> ]+
+</pre></div>
+
+<p>Add directories <var>pathdir</var> to beginning of search path for source files.
+If the &lsquo;<samp>-r</samp>&rsquo; option is used, the search path is reset to the default
+search path.  If directories <var>pathdir</var> are supplied in addition to the
+&lsquo;<samp>-r</samp>&rsquo; option, the search path is first reset and then addition
+occurs as normal.
+Multiple directories may be specified, separated by blanks.  Specifying
+multiple directories in a single command
+results in the directories added to the beginning of the
+search path in the same order they were presented in the command.
+If blanks are needed as
+part of a directory name, double-quotes should be used around
+the name.  In the command output, the path will show up separated
+by the system directory-separator character.  The directory-separator
+character must not be used
+in any directory name.
+If no directories are specified, the current search path is displayed.
+</p>
+<a name="GDB-Command-19"></a>
+<h4 class="subsubheading"><small>GDB</small> Command</h4>
+
+<p>The corresponding <small>GDB</small> command is &lsquo;<samp>dir</samp>&rsquo;.
+</p>
+<a name="Example-19"></a>
+<h4 class="subsubheading">Example</h4>
+
+<div class="smallexample">
+<pre class="smallexample">(gdb)
+-environment-directory /kwikemart/marge/ezannoni/flathead-dev/devo/gdb
+^done,source-path=&quot;/kwikemart/marge/ezannoni/flathead-dev/devo/gdb:$cdir:$cwd&quot;
+(gdb)
+-environment-directory &quot;&quot;
+^done,source-path=&quot;/kwikemart/marge/ezannoni/flathead-dev/devo/gdb:$cdir:$cwd&quot;
+(gdb)
+-environment-directory -r /home/jjohnstn/src/gdb /usr/src
+^done,source-path=&quot;/home/jjohnstn/src/gdb:/usr/src:$cdir:$cwd&quot;
+(gdb)
+-environment-directory -r
+^done,source-path=&quot;$cdir:$cwd&quot;
+(gdb)
+</pre></div>
+
+
+<a name="The-_002denvironment_002dpath-Command"></a>
+<h4 class="subheading">The <code>-environment-path</code> Command</h4>
+<a name="index-_002denvironment_002dpath"></a>
+
+<a name="Synopsis-21"></a>
+<h4 class="subsubheading">Synopsis</h4>
+
+<div class="smallexample">
+<pre class="smallexample"> -environment-path [ -r ] [ <var>pathdir</var> ]+
+</pre></div>
+
+<p>Add directories <var>pathdir</var> to beginning of search path for object files.
+If the &lsquo;<samp>-r</samp>&rsquo; option is used, the search path is reset to the original
+search path that existed at gdb start-up.  If directories <var>pathdir</var> are
+supplied in addition to the
+&lsquo;<samp>-r</samp>&rsquo; option, the search path is first reset and then addition
+occurs as normal.
+Multiple directories may be specified, separated by blanks.  Specifying
+multiple directories in a single command
+results in the directories added to the beginning of the
+search path in the same order they were presented in the command.
+If blanks are needed as
+part of a directory name, double-quotes should be used around
+the name.  In the command output, the path will show up separated
+by the system directory-separator character.  The directory-separator
+character must not be used
+in any directory name.
+If no directories are specified, the current path is displayed.
+</p>
+
+<a name="GDB-Command-20"></a>
+<h4 class="subsubheading"><small>GDB</small> Command</h4>
+
+<p>The corresponding <small>GDB</small> command is &lsquo;<samp>path</samp>&rsquo;.
+</p>
+<a name="Example-20"></a>
+<h4 class="subsubheading">Example</h4>
+
+<div class="smallexample">
+<pre class="smallexample">(gdb)
+-environment-path
+^done,path=&quot;/usr/bin&quot;
+(gdb)
+-environment-path /kwikemart/marge/ezannoni/flathead-dev/ppc-eabi/gdb /bin
+^done,path=&quot;/kwikemart/marge/ezannoni/flathead-dev/ppc-eabi/gdb:/bin:/usr/bin&quot;
+(gdb)
+-environment-path -r /usr/local/bin
+^done,path=&quot;/usr/local/bin:/usr/bin&quot;
+(gdb)
+</pre></div>
+
+
+<a name="The-_002denvironment_002dpwd-Command"></a>
+<h4 class="subheading">The <code>-environment-pwd</code> Command</h4>
+<a name="index-_002denvironment_002dpwd"></a>
+
+<a name="Synopsis-22"></a>
+<h4 class="subsubheading">Synopsis</h4>
+
+<div class="smallexample">
+<pre class="smallexample"> -environment-pwd
+</pre></div>
+
+<p>Show the current working directory.
+</p>
+<a name="GDB-Command-21"></a>
+<h4 class="subsubheading"><small>GDB</small> Command</h4>
+
+<p>The corresponding <small>GDB</small> command is &lsquo;<samp>pwd</samp>&rsquo;.
+</p>
+<a name="Example-21"></a>
+<h4 class="subsubheading">Example</h4>
+
+<div class="smallexample">
+<pre class="smallexample">(gdb)
+-environment-pwd
+^done,cwd=&quot;/kwikemart/marge/ezannoni/flathead-dev/devo/gdb&quot;
+(gdb)
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="GDB_002fMI-Thread-Commands.html#GDB_002fMI-Thread-Commands" accesskey="n" rel="next">GDB/MI Thread Commands</a>, Previous: <a href="GDB_002fMI-Catchpoint-Commands.html#GDB_002fMI-Catchpoint-Commands" accesskey="p" rel="prev">GDB/MI Catchpoint Commands</a>, Up: <a href="GDB_002fMI.html#GDB_002fMI" accesskey="u" rel="up">GDB/MI</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

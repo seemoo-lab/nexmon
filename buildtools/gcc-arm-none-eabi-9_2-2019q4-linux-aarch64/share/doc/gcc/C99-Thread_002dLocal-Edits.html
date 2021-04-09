@@ -1,0 +1,144 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): C99 Thread-Local Edits</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): C99 Thread-Local Edits">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): C99 Thread-Local Edits">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Thread_002dLocal.html#Thread_002dLocal" rel="up" title="Thread-Local">
+<link href="C_002b_002b98-Thread_002dLocal-Edits.html#C_002b_002b98-Thread_002dLocal-Edits" rel="next" title="C++98 Thread-Local Edits">
+<link href="Thread_002dLocal.html#Thread_002dLocal" rel="prev" title="Thread-Local">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="C99-Thread_002dLocal-Edits"></a>
+<div class="header">
+<p>
+Next: <a href="C_002b_002b98-Thread_002dLocal-Edits.html#C_002b_002b98-Thread_002dLocal-Edits" accesskey="n" rel="next">C++98 Thread-Local Edits</a>, Up: <a href="Thread_002dLocal.html#Thread_002dLocal" accesskey="u" rel="up">Thread-Local</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="ISO_002fIEC-9899_003a1999-Edits-for-Thread_002dLocal-Storage"></a>
+<h4 class="subsection">6.64.1 ISO/IEC 9899:1999 Edits for Thread-Local Storage</h4>
+
+<p>The following are a set of changes to ISO/IEC 9899:1999 (aka C99)
+that document the exact semantics of the language extension.
+</p>
+<ul>
+<li> <cite>5.1.2  Execution environments</cite>
+
+<p>Add new text after paragraph 1
+</p>
+<blockquote>
+<p>Within either execution environment, a <em>thread</em> is a flow of
+control within a program.  It is implementation defined whether
+or not there may be more than one thread associated with a program.
+It is implementation defined how threads beyond the first are
+created, the name and type of the function called at thread
+startup, and how threads may be terminated.  However, objects
+with thread storage duration shall be initialized before thread
+startup.
+</p></blockquote>
+
+</li><li> <cite>6.2.4  Storage durations of objects</cite>
+
+<p>Add new text before paragraph 3
+</p>
+<blockquote>
+<p>An object whose identifier is declared with the storage-class
+specifier <code><span class="nolinebreak">__thread</span></code><!-- /@w --> has <em>thread storage duration</em>.
+Its lifetime is the entire execution of the thread, and its
+stored value is initialized only once, prior to thread startup.
+</p></blockquote>
+
+</li><li> <cite>6.4.1  Keywords</cite>
+
+<p>Add <code>__thread</code>.
+</p>
+</li><li> <cite>6.7.1  Storage-class specifiers</cite>
+
+<p>Add <code>__thread</code> to the list of storage class specifiers in
+paragraph 1.
+</p>
+<p>Change paragraph 2 to
+</p>
+<blockquote>
+<p>With the exception of <code>__thread</code>, at most one storage-class
+specifier may be given [&hellip;].  The <code>__thread</code> specifier may
+be used alone, or immediately following <code>extern</code> or
+<code>static</code>.
+</p></blockquote>
+
+<p>Add new text after paragraph 6
+</p>
+<blockquote>
+<p>The declaration of an identifier for a variable that has
+block scope that specifies <code>__thread</code> shall also
+specify either <code>extern</code> or <code>static</code>.
+</p>
+<p>The <code>__thread</code> specifier shall be used only with
+variables.
+</p></blockquote>
+</li></ul>
+
+
+
+
+</body>
+</html>

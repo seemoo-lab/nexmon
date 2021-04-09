@@ -1,0 +1,147 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Debug Information</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Debug Information">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Debug Information">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="RTL.html#RTL" rel="up" title="RTL">
+<link href="Insns.html#Insns" rel="next" title="Insns">
+<link href="Assembler.html#Assembler" rel="prev" title="Assembler">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Debug-Information"></a>
+<div class="header">
+<p>
+Next: <a href="Insns.html#Insns" accesskey="n" rel="next">Insns</a>, Previous: <a href="Assembler.html#Assembler" accesskey="p" rel="prev">Assembler</a>, Up: <a href="RTL.html#RTL" accesskey="u" rel="up">RTL</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Variable-Location-Debug-Information-in-RTL"></a>
+<h3 class="section">14.18 Variable Location Debug Information in RTL</h3>
+<a name="index-Variable-Location-Debug-Information-in-RTL"></a>
+
+<p>Variable tracking relies on <code>MEM_EXPR</code> and <code>REG_EXPR</code>
+annotations to determine what user variables memory and register
+references refer to.
+</p>
+<p>Variable tracking at assignments uses these notes only when they refer
+to variables that live at fixed locations (e.g., addressable
+variables, global non-automatic variables).  For variables whose
+location may vary, it relies on the following types of notes.
+</p>
+<dl compact="compact">
+<dd><a name="index-var_005flocation"></a>
+</dd>
+<dt><code>(var_location:<var>mode</var> <var>var</var> <var>exp</var> <var>stat</var>)</code></dt>
+<dd><p>Binds variable <code>var</code>, a tree, to value <var>exp</var>, an RTL
+expression.  It appears only in <code>NOTE_INSN_VAR_LOCATION</code> and
+<code>DEBUG_INSN</code>s, with slightly different meanings.  <var>mode</var>, if
+present, represents the mode of <var>exp</var>, which is useful if it is a
+modeless expression.  <var>stat</var> is only meaningful in notes,
+indicating whether the variable is known to be initialized or
+uninitialized.
+</p>
+<a name="index-debug_005fexpr"></a>
+</dd>
+<dt><code>(debug_expr:<var>mode</var> <var>decl</var>)</code></dt>
+<dd><p>Stands for the value bound to the <code>DEBUG_EXPR_DECL</code> <var>decl</var>,
+that points back to it, within value expressions in
+<code>VAR_LOCATION</code> nodes.
+</p>
+<a name="index-debug_005fimplicit_005fptr"></a>
+</dd>
+<dt><code>(debug_implicit_ptr:<var>mode</var> <var>decl</var>)</code></dt>
+<dd><p>Stands for the location of a <var>decl</var> that is no longer addressable.
+</p>
+<a name="index-entry_005fvalue"></a>
+</dd>
+<dt><code>(entry_value:<var>mode</var> <var>decl</var>)</code></dt>
+<dd><p>Stands for the value a <var>decl</var> had at the entry point of the
+containing function.
+</p>
+<a name="index-debug_005fparameter_005fref"></a>
+</dd>
+<dt><code>(debug_parameter_ref:<var>mode</var> <var>decl</var>)</code></dt>
+<dd><p>Refers to a parameter that was completely optimized out.
+</p>
+<a name="index-debug_005fmarker"></a>
+</dd>
+<dt><code>(debug_marker:<var>mode</var>)</code></dt>
+<dd><p>Marks a program location.  With <code>VOIDmode</code>, it stands for the
+beginning of a statement, a recommended inspection point logically after
+all prior side effects, and before any subsequent side effects.  With
+<code>BLKmode</code>, it indicates an inline entry point: the lexical block
+encoded in the <code>INSN_LOCATION</code> is the enclosing block that encloses
+the inlined function.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Insns.html#Insns" accesskey="n" rel="next">Insns</a>, Previous: <a href="Assembler.html#Assembler" accesskey="p" rel="prev">Assembler</a>, Up: <a href="RTL.html#RTL" accesskey="u" rel="up">RTL</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

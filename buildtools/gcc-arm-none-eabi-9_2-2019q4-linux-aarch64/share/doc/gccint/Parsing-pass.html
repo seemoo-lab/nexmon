@@ -1,0 +1,164 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Parsing pass</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Parsing pass">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Parsing pass">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Passes.html#Passes" rel="up" title="Passes">
+<link href="Gimplification-pass.html#Gimplification-pass" rel="next" title="Gimplification pass">
+<link href="Passes.html#Passes" rel="prev" title="Passes">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Parsing-pass"></a>
+<div class="header">
+<p>
+Next: <a href="Gimplification-pass.html#Gimplification-pass" accesskey="n" rel="next">Gimplification pass</a>, Up: <a href="Passes.html#Passes" accesskey="u" rel="up">Passes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Parsing-pass-1"></a>
+<h3 class="section">9.1 Parsing pass</h3>
+<a name="index-GENERIC"></a>
+<a name="index-lang_005fhooks_002eparse_005ffile"></a>
+<p>The language front end is invoked only once, via
+<code>lang_hooks.parse_file</code>, to parse the entire input.  The language
+front end may use any intermediate language representation deemed
+appropriate.  The C front end uses GENERIC trees (see <a href="GENERIC.html#GENERIC">GENERIC</a>), plus
+a double handful of language specific tree codes defined in
+<samp>c-common.def</samp>.  The Fortran front end uses a completely different
+private representation.
+</p>
+<a name="index-GIMPLE"></a>
+<a name="index-gimplification"></a>
+<a name="index-gimplifier"></a>
+<a name="index-language_002dindependent-intermediate-representation"></a>
+<a name="index-intermediate-representation-lowering"></a>
+<a name="index-lowering_002c-language_002ddependent-intermediate-representation"></a>
+<p>At some point the front end must translate the representation used in the
+front end to a representation understood by the language-independent
+portions of the compiler.  Current practice takes one of two forms.
+The C front end manually invokes the gimplifier (see <a href="GIMPLE.html#GIMPLE">GIMPLE</a>) on each function,
+and uses the gimplifier callbacks to convert the language-specific tree
+nodes directly to GIMPLE before passing the function off to be compiled.
+The Fortran front end converts from a private representation to GENERIC,
+which is later lowered to GIMPLE when the function is compiled.  Which
+route to choose probably depends on how well GENERIC (plus extensions)
+can be made to match up with the source language and necessary parsing
+data structures.
+</p>
+<p>BUG: Gimplification must occur before nested function lowering,
+and nested function lowering must be done by the front end before
+passing the data off to cgraph.
+</p>
+<p>TODO: Cgraph should control nested function lowering.  It would
+only be invoked when it is certain that the outer-most function
+is used.
+</p>
+<p>TODO: Cgraph needs a gimplify_function callback.  It should be
+invoked when (1) it is certain that the function is used, (2)
+warning flags specified by the user require some amount of
+compilation in order to honor, (3) the language indicates that
+semantic analysis is not complete until gimplification occurs.
+Hum&hellip; this sounds overly complicated.  Perhaps we should just
+have the front end gimplify always; in most cases it&rsquo;s only one
+function call.
+</p>
+<p>The front end needs to pass all function definitions and top level
+declarations off to the middle-end so that they can be compiled and
+emitted to the object file.  For a simple procedural language, it is
+usually most convenient to do this as each top level declaration or
+definition is seen.  There is also a distinction to be made between
+generating functional code and generating complete debug information.
+The only thing that is absolutely required for functional code is that
+function and data <em>definitions</em> be passed to the middle-end.  For
+complete debug information, function, data and type declarations
+should all be passed as well.
+</p>
+<a name="index-rest_005fof_005fdecl_005fcompilation"></a>
+<a name="index-rest_005fof_005ftype_005fcompilation"></a>
+<a name="index-cgraph_005ffinalize_005ffunction"></a>
+<p>In any case, the front end needs each complete top-level function or
+data declaration, and each data definition should be passed to
+<code>rest_of_decl_compilation</code>.  Each complete type definition should
+be passed to <code>rest_of_type_compilation</code>.  Each function definition
+should be passed to <code>cgraph_finalize_function</code>.
+</p>
+<p>TODO: I know rest_of_compilation currently has all sorts of
+RTL generation semantics.  I plan to move all code generation
+bits (both Tree and RTL) to compile_function.  Should we hide
+cgraph from the front ends and move back to rest_of_compilation
+as the official interface?  Possibly we should rename all three
+interfaces such that the names match in some meaningful way and
+that is more descriptive than &quot;rest_of&quot;.
+</p>
+<p>The middle-end will, at its option, emit the function and data
+definitions immediately or queue them for later processing.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Gimplification-pass.html#Gimplification-pass" accesskey="n" rel="next">Gimplification pass</a>, Up: <a href="Passes.html#Passes" accesskey="u" rel="up">Passes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: C</title>
+
+<meta name="description" content="Debugging with GDB: C">
+<meta name="keywords" content="Debugging with GDB: C">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Supported-Languages.html#Supported-Languages" rel="up" title="Supported Languages">
+<link href="C-Operators.html#C-Operators" rel="next" title="C Operators">
+<link href="Supported-Languages.html#Supported-Languages" rel="prev" title="Supported Languages">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="C"></a>
+<div class="header">
+<p>
+Next: <a href="D.html#D" accesskey="n" rel="next">D</a>, Up: <a href="Supported-Languages.html#Supported-Languages" accesskey="u" rel="up">Supported Languages</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="C-and-C_002b_002b"></a>
+<h4 class="subsection">15.4.1 C and C<tt>++</tt></h4>
+
+<a name="index-C-and-C_002b_002b"></a>
+<a name="index-expressions-in-C-or-C_002b_002b"></a>
+
+<p>Since C and C<tt>++</tt> are so closely related, many features of <small>GDB</small> apply
+to both languages.  Whenever this is the case, we discuss those languages
+together.
+</p>
+<a name="index-C_002b_002b"></a>
+<a name="index-g_002b_002b_002c-GNU-C_002b_002b-compiler"></a>
+<a name="index-GNU-C_002b_002b"></a>
+<p>The C<tt>++</tt> debugging facilities are jointly implemented by the C<tt>++</tt>
+compiler and <small>GDB</small>.  Therefore, to debug your C<tt>++</tt> code
+effectively, you must compile your C<tt>++</tt> programs with a supported
+C<tt>++</tt> compiler, such as <small>GNU</small> <code>g++</code>, or the HP ANSI C<tt>++</tt>
+compiler (<code>aCC</code>).
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="C-Operators.html#C-Operators" accesskey="1">C Operators</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">C and C<tt>++</tt> operators
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="C-Constants.html#C-Constants" accesskey="2">C Constants</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">C and C<tt>++</tt> constants
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="C-Plus-Plus-Expressions.html#C-Plus-Plus-Expressions" accesskey="3">C Plus Plus Expressions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">C<tt>++</tt> expressions
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="C-Defaults.html#C-Defaults" accesskey="4">C Defaults</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Default settings for C and C<tt>++</tt>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="C-Checks.html#C-Checks" accesskey="5">C Checks</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">C and C<tt>++</tt> type and range checks
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Debugging-C.html#Debugging-C" accesskey="6">Debugging C</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><small>GDB</small> and C
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Debugging-C-Plus-Plus.html#Debugging-C-Plus-Plus" accesskey="7">Debugging C Plus Plus</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><small>GDB</small> features for C<tt>++</tt>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Decimal-Floating-Point.html#Decimal-Floating-Point" accesskey="8">Decimal Floating Point</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Numbers in Decimal Floating Point format
+</td></tr>
+</table>
+
+
+
+
+</body>
+</html>

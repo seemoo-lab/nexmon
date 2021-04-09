@@ -1,0 +1,194 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Integer Overflow Builtins</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Integer Overflow Builtins">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Integer Overflow Builtins">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C-Extensions.html#C-Extensions" rel="up" title="C Extensions">
+<link href="x86-specific-memory-model-extensions-for-transactional-memory.html#x86-specific-memory-model-extensions-for-transactional-memory" rel="next" title="x86 specific memory model extensions for transactional memory">
+<link href="_005f_005fatomic-Builtins.html#g_t_005f_005fatomic-Builtins" rel="prev" title="__atomic Builtins">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Integer-Overflow-Builtins"></a>
+<div class="header">
+<p>
+Next: <a href="x86-specific-memory-model-extensions-for-transactional-memory.html#x86-specific-memory-model-extensions-for-transactional-memory" accesskey="n" rel="next">x86 specific memory model extensions for transactional memory</a>, Previous: <a href="_005f_005fatomic-Builtins.html#g_t_005f_005fatomic-Builtins" accesskey="p" rel="prev">__atomic Builtins</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Built_002din-Functions-to-Perform-Arithmetic-with-Overflow-Checking"></a>
+<h3 class="section">6.56 Built-in Functions to Perform Arithmetic with Overflow Checking</h3>
+
+<p>The following built-in functions allow performing simple arithmetic operations
+together with checking whether the operations overflowed.
+</p>
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fadd_005foverflow"></a>Built-in Function: <em>bool</em> <strong>__builtin_add_overflow</strong> <em>(<var>type1</var> a, <var>type2</var> b, <var>type3</var> *res)</em></dt>
+<dt><a name="index-_005f_005fbuiltin_005fsadd_005foverflow"></a>Built-in Function: <em>bool</em> <strong>__builtin_sadd_overflow</strong> <em>(int a, int b, int *res)</em></dt>
+<dt><a name="index-_005f_005fbuiltin_005fsaddl_005foverflow"></a>Built-in Function: <em>bool</em> <strong>__builtin_saddl_overflow</strong> <em>(long int a, long int b, long int *res)</em></dt>
+<dt><a name="index-_005f_005fbuiltin_005fsaddll_005foverflow"></a>Built-in Function: <em>bool</em> <strong>__builtin_saddll_overflow</strong> <em>(long long int a, long long int b, long long int *res)</em></dt>
+<dt><a name="index-_005f_005fbuiltin_005fuadd_005foverflow"></a>Built-in Function: <em>bool</em> <strong>__builtin_uadd_overflow</strong> <em>(unsigned int a, unsigned int b, unsigned int *res)</em></dt>
+<dt><a name="index-_005f_005fbuiltin_005fuaddl_005foverflow"></a>Built-in Function: <em>bool</em> <strong>__builtin_uaddl_overflow</strong> <em>(unsigned long int a, unsigned long int b, unsigned long int *res)</em></dt>
+<dt><a name="index-_005f_005fbuiltin_005fuaddll_005foverflow"></a>Built-in Function: <em>bool</em> <strong>__builtin_uaddll_overflow</strong> <em>(unsigned long long int a, unsigned long long int b, unsigned long long int *res)</em></dt>
+<dd>
+<p>These built-in functions promote the first two operands into infinite precision signed
+type and perform addition on those promoted operands.  The result is then
+cast to the type the third pointer argument points to and stored there.
+If the stored result is equal to the infinite precision result, the built-in
+functions return <code>false</code>, otherwise they return <code>true</code>.  As the addition is
+performed in infinite signed precision, these built-in functions have fully defined
+behavior for all argument values.
+</p>
+<p>The first built-in function allows arbitrary integral types for operands and
+the result type must be pointer to some integral type other than enumerated or
+boolean type, the rest of the built-in functions have explicit integer types.
+</p>
+<p>The compiler will attempt to use hardware instructions to implement
+these built-in functions where possible, like conditional jump on overflow
+after addition, conditional jump on carry etc.
+</p>
+</dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fsub_005foverflow"></a>Built-in Function: <em>bool</em> <strong>__builtin_sub_overflow</strong> <em>(<var>type1</var> a, <var>type2</var> b, <var>type3</var> *res)</em></dt>
+<dt><a name="index-_005f_005fbuiltin_005fssub_005foverflow"></a>Built-in Function: <em>bool</em> <strong>__builtin_ssub_overflow</strong> <em>(int a, int b, int *res)</em></dt>
+<dt><a name="index-_005f_005fbuiltin_005fssubl_005foverflow"></a>Built-in Function: <em>bool</em> <strong>__builtin_ssubl_overflow</strong> <em>(long int a, long int b, long int *res)</em></dt>
+<dt><a name="index-_005f_005fbuiltin_005fssubll_005foverflow"></a>Built-in Function: <em>bool</em> <strong>__builtin_ssubll_overflow</strong> <em>(long long int a, long long int b, long long int *res)</em></dt>
+<dt><a name="index-_005f_005fbuiltin_005fusub_005foverflow"></a>Built-in Function: <em>bool</em> <strong>__builtin_usub_overflow</strong> <em>(unsigned int a, unsigned int b, unsigned int *res)</em></dt>
+<dt><a name="index-_005f_005fbuiltin_005fusubl_005foverflow"></a>Built-in Function: <em>bool</em> <strong>__builtin_usubl_overflow</strong> <em>(unsigned long int a, unsigned long int b, unsigned long int *res)</em></dt>
+<dt><a name="index-_005f_005fbuiltin_005fusubll_005foverflow"></a>Built-in Function: <em>bool</em> <strong>__builtin_usubll_overflow</strong> <em>(unsigned long long int a, unsigned long long int b, unsigned long long int *res)</em></dt>
+<dd>
+<p>These built-in functions are similar to the add overflow checking built-in
+functions above, except they perform subtraction, subtract the second argument
+from the first one, instead of addition.
+</p>
+</dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fmul_005foverflow"></a>Built-in Function: <em>bool</em> <strong>__builtin_mul_overflow</strong> <em>(<var>type1</var> a, <var>type2</var> b, <var>type3</var> *res)</em></dt>
+<dt><a name="index-_005f_005fbuiltin_005fsmul_005foverflow"></a>Built-in Function: <em>bool</em> <strong>__builtin_smul_overflow</strong> <em>(int a, int b, int *res)</em></dt>
+<dt><a name="index-_005f_005fbuiltin_005fsmull_005foverflow"></a>Built-in Function: <em>bool</em> <strong>__builtin_smull_overflow</strong> <em>(long int a, long int b, long int *res)</em></dt>
+<dt><a name="index-_005f_005fbuiltin_005fsmulll_005foverflow"></a>Built-in Function: <em>bool</em> <strong>__builtin_smulll_overflow</strong> <em>(long long int a, long long int b, long long int *res)</em></dt>
+<dt><a name="index-_005f_005fbuiltin_005fumul_005foverflow"></a>Built-in Function: <em>bool</em> <strong>__builtin_umul_overflow</strong> <em>(unsigned int a, unsigned int b, unsigned int *res)</em></dt>
+<dt><a name="index-_005f_005fbuiltin_005fumull_005foverflow"></a>Built-in Function: <em>bool</em> <strong>__builtin_umull_overflow</strong> <em>(unsigned long int a, unsigned long int b, unsigned long int *res)</em></dt>
+<dt><a name="index-_005f_005fbuiltin_005fumulll_005foverflow"></a>Built-in Function: <em>bool</em> <strong>__builtin_umulll_overflow</strong> <em>(unsigned long long int a, unsigned long long int b, unsigned long long int *res)</em></dt>
+<dd>
+<p>These built-in functions are similar to the add overflow checking built-in
+functions above, except they perform multiplication, instead of addition.
+</p>
+</dd></dl>
+
+<p>The following built-in functions allow checking if simple arithmetic operation
+would overflow.
+</p>
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fadd_005foverflow_005fp"></a>Built-in Function: <em>bool</em> <strong>__builtin_add_overflow_p</strong> <em>(<var>type1</var> a, <var>type2</var> b, <var>type3</var> c)</em></dt>
+<dt><a name="index-_005f_005fbuiltin_005fsub_005foverflow_005fp"></a>Built-in Function: <em>bool</em> <strong>__builtin_sub_overflow_p</strong> <em>(<var>type1</var> a, <var>type2</var> b, <var>type3</var> c)</em></dt>
+<dt><a name="index-_005f_005fbuiltin_005fmul_005foverflow_005fp"></a>Built-in Function: <em>bool</em> <strong>__builtin_mul_overflow_p</strong> <em>(<var>type1</var> a, <var>type2</var> b, <var>type3</var> c)</em></dt>
+<dd>
+<p>These built-in functions are similar to <code>__builtin_add_overflow</code>,
+<code>__builtin_sub_overflow</code>, or <code>__builtin_mul_overflow</code>, except that
+they don&rsquo;t store the result of the arithmetic operation anywhere and the
+last argument is not a pointer, but some expression with integral type other
+than enumerated or boolean type.
+</p>
+<p>The built-in functions promote the first two operands into infinite precision signed type
+and perform addition on those promoted operands. The result is then
+cast to the type of the third argument.  If the cast result is equal to the infinite
+precision result, the built-in functions return <code>false</code>, otherwise they return <code>true</code>.
+The value of the third argument is ignored, just the side effects in the third argument
+are evaluated, and no integral argument promotions are performed on the last argument.
+If the third argument is a bit-field, the type used for the result cast has the
+precision and signedness of the given bit-field, rather than precision and signedness
+of the underlying type.
+</p>
+<p>For example, the following macro can be used to portably check, at
+compile-time, whether or not adding two constant integers will overflow,
+and perform the addition only when it is known to be safe and not to trigger
+a <samp>-Woverflow</samp> warning.
+</p>
+<div class="smallexample">
+<pre class="smallexample">#define INT_ADD_OVERFLOW_P(a, b) \
+   __builtin_add_overflow_p (a, b, (__typeof__ ((a) + (b))) 0)
+
+enum {
+    A = INT_MAX, B = 3,
+    C = INT_ADD_OVERFLOW_P (A, B) ? 0 : A + B,
+    D = __builtin_add_overflow_p (1, SCHAR_MAX, (signed char) 0)
+};
+</pre></div>
+
+<p>The compiler will attempt to use hardware instructions to implement
+these built-in functions where possible, like conditional jump on overflow
+after addition, conditional jump on carry etc.
+</p> 
+</dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="x86-specific-memory-model-extensions-for-transactional-memory.html#x86-specific-memory-model-extensions-for-transactional-memory" accesskey="n" rel="next">x86 specific memory model extensions for transactional memory</a>, Previous: <a href="_005f_005fatomic-Builtins.html#g_t_005f_005fatomic-Builtins" accesskey="p" rel="prev">__atomic Builtins</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

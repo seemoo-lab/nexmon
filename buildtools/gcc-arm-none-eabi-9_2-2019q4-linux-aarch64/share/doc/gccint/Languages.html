@@ -1,0 +1,114 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Languages</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Languages">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Languages">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Source-Tree.html#Source-Tree" rel="next" title="Source Tree">
+<link href="Miscellaneous-routines.html#Miscellaneous-routines" rel="prev" title="Miscellaneous routines">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Languages"></a>
+<div class="header">
+<p>
+Next: <a href="Source-Tree.html#Source-Tree" accesskey="n" rel="next">Source Tree</a>, Previous: <a href="Libgcc.html#Libgcc" accesskey="p" rel="prev">Libgcc</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Language-Front-Ends-in-GCC"></a>
+<h2 class="chapter">5 Language Front Ends in GCC</h2>
+
+<p>The interface to front ends for languages in GCC, and in particular
+the <code>tree</code> structure (see <a href="GENERIC.html#GENERIC">GENERIC</a>), was initially designed for
+C, and many aspects of it are still somewhat biased towards C and
+C-like languages.  It is, however, reasonably well suited to other
+procedural languages, and front ends for many such languages have been
+written for GCC.
+</p>
+<p>Writing a compiler as a front end for GCC, rather than compiling
+directly to assembler or generating C code which is then compiled by
+GCC, has several advantages:
+</p>
+<ul>
+<li> GCC front ends benefit from the support for many different
+target machines already present in GCC.
+</li><li> GCC front ends benefit from all the optimizations in GCC.  Some
+of these, such as alias analysis, may work better when GCC is
+compiling directly from source code then when it is compiling from
+generated C code.
+</li><li> Better debugging information is generated when compiling
+directly from source code than when going via intermediate generated C
+code.
+</li></ul>
+
+<p>Because of the advantages of writing a compiler as a GCC front end,
+GCC front ends have also been created for languages very different
+from those for which GCC was designed, such as the declarative
+logic/functional language Mercury.  For these reasons, it may also be
+useful to implement compilers created for specialized purposes (for
+example, as part of a research project) as GCC front ends.
+</p>
+
+
+
+</body>
+</html>

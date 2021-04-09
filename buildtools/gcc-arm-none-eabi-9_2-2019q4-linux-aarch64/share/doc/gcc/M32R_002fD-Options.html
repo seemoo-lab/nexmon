@@ -1,0 +1,227 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): M32R/D Options</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): M32R/D Options">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): M32R/D Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Submodel-Options.html#Submodel-Options" rel="up" title="Submodel Options">
+<link href="M680x0-Options.html#M680x0-Options" rel="next" title="M680x0 Options">
+<link href="M32C-Options.html#M32C-Options" rel="prev" title="M32C Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="M32R_002fD-Options"></a>
+<div class="header">
+<p>
+Next: <a href="M680x0-Options.html#M680x0-Options" accesskey="n" rel="next">M680x0 Options</a>, Previous: <a href="M32C-Options.html#M32C-Options" accesskey="p" rel="prev">M32C Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="M32R_002fD-Options-1"></a>
+<h4 class="subsection">3.18.23 M32R/D Options</h4>
+<a name="index-M32R_002fD-options"></a>
+
+<p>These <samp>-m</samp> options are defined for Renesas M32R/D architectures:
+</p>
+<dl compact="compact">
+<dt><code>-m32r2</code></dt>
+<dd><a name="index-m32r2"></a>
+<p>Generate code for the M32R/2.
+</p>
+</dd>
+<dt><code>-m32rx</code></dt>
+<dd><a name="index-m32rx"></a>
+<p>Generate code for the M32R/X.
+</p>
+</dd>
+<dt><code>-m32r</code></dt>
+<dd><a name="index-m32r"></a>
+<p>Generate code for the M32R.  This is the default.
+</p>
+</dd>
+<dt><code>-mmodel=small</code></dt>
+<dd><a name="index-mmodel_003dsmall"></a>
+<p>Assume all objects live in the lower 16MB of memory (so that their addresses
+can be loaded with the <code>ld24</code> instruction), and assume all subroutines
+are reachable with the <code>bl</code> instruction.
+This is the default.
+</p>
+<p>The addressability of a particular object can be set with the
+<code>model</code> attribute.
+</p>
+</dd>
+<dt><code>-mmodel=medium</code></dt>
+<dd><a name="index-mmodel_003dmedium"></a>
+<p>Assume objects may be anywhere in the 32-bit address space (the compiler
+generates <code>seth/add3</code> instructions to load their addresses), and
+assume all subroutines are reachable with the <code>bl</code> instruction.
+</p>
+</dd>
+<dt><code>-mmodel=large</code></dt>
+<dd><a name="index-mmodel_003dlarge"></a>
+<p>Assume objects may be anywhere in the 32-bit address space (the compiler
+generates <code>seth/add3</code> instructions to load their addresses), and
+assume subroutines may not be reachable with the <code>bl</code> instruction
+(the compiler generates the much slower <code>seth/add3/jl</code>
+instruction sequence).
+</p>
+</dd>
+<dt><code>-msdata=none</code></dt>
+<dd><a name="index-msdata_003dnone-1"></a>
+<p>Disable use of the small data area.  Variables are put into
+one of <code>.data</code>, <code>.bss</code>, or <code>.rodata</code> (unless the
+<code>section</code> attribute has been specified).
+This is the default.
+</p>
+<p>The small data area consists of sections <code>.sdata</code> and <code>.sbss</code>.
+Objects may be explicitly put in the small data area with the
+<code>section</code> attribute using one of these sections.
+</p>
+</dd>
+<dt><code>-msdata=sdata</code></dt>
+<dd><a name="index-msdata_003dsdata"></a>
+<p>Put small global and static data in the small data area, but do not
+generate special code to reference them.
+</p>
+</dd>
+<dt><code>-msdata=use</code></dt>
+<dd><a name="index-msdata_003duse"></a>
+<p>Put small global and static data in the small data area, and generate
+special instructions to reference them.
+</p>
+</dd>
+<dt><code>-G <var>num</var></code></dt>
+<dd><a name="index-G-1"></a>
+<a name="index-smaller-data-references"></a>
+<p>Put global and static objects less than or equal to <var>num</var> bytes
+into the small data or BSS sections instead of the normal data or BSS
+sections.  The default value of <var>num</var> is 8.
+The <samp>-msdata</samp> option must be set to one of &lsquo;<samp>sdata</samp>&rsquo; or &lsquo;<samp>use</samp>&rsquo;
+for this option to have any effect.
+</p>
+<p>All modules should be compiled with the same <samp>-G <var>num</var></samp> value.
+Compiling with different values of <var>num</var> may or may not work; if it
+doesn&rsquo;t the linker gives an error message&mdash;incorrect code is not
+generated.
+</p>
+</dd>
+<dt><code>-mdebug</code></dt>
+<dd><a name="index-mdebug"></a>
+<p>Makes the M32R-specific code in the compiler display some statistics
+that might help in debugging programs.
+</p>
+</dd>
+<dt><code>-malign-loops</code></dt>
+<dd><a name="index-malign_002dloops"></a>
+<p>Align all loops to a 32-byte boundary.
+</p>
+</dd>
+<dt><code>-mno-align-loops</code></dt>
+<dd><a name="index-mno_002dalign_002dloops"></a>
+<p>Do not enforce a 32-byte alignment for loops.  This is the default.
+</p>
+</dd>
+<dt><code>-missue-rate=<var>number</var></code></dt>
+<dd><a name="index-missue_002drate_003dnumber"></a>
+<p>Issue <var>number</var> instructions per cycle.  <var>number</var> can only be 1
+or 2.
+</p>
+</dd>
+<dt><code>-mbranch-cost=<var>number</var></code></dt>
+<dd><a name="index-mbranch_002dcost_003dnumber"></a>
+<p><var>number</var> can only be 1 or 2.  If it is 1 then branches are
+preferred over conditional code, if it is 2, then the opposite applies.
+</p>
+</dd>
+<dt><code>-mflush-trap=<var>number</var></code></dt>
+<dd><a name="index-mflush_002dtrap_003dnumber"></a>
+<p>Specifies the trap number to use to flush the cache.  The default is
+12.  Valid numbers are between 0 and 15 inclusive.
+</p>
+</dd>
+<dt><code>-mno-flush-trap</code></dt>
+<dd><a name="index-mno_002dflush_002dtrap"></a>
+<p>Specifies that the cache cannot be flushed by using a trap.
+</p>
+</dd>
+<dt><code>-mflush-func=<var>name</var></code></dt>
+<dd><a name="index-mflush_002dfunc_003dname"></a>
+<p>Specifies the name of the operating system function to call to flush
+the cache.  The default is &lsquo;<samp>_flush_cache</samp>&rsquo;, but a function call
+is only used if a trap is not available.
+</p>
+</dd>
+<dt><code>-mno-flush-func</code></dt>
+<dd><a name="index-mno_002dflush_002dfunc"></a>
+<p>Indicates that there is no OS function for flushing the cache.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="M680x0-Options.html#M680x0-Options" accesskey="n" rel="next">M680x0 Options</a>, Previous: <a href="M32C-Options.html#M32C-Options" accesskey="p" rel="prev">M32C Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

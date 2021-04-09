@@ -1,0 +1,133 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Loop-Specific Pragmas</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Loop-Specific Pragmas">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Loop-Specific Pragmas">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Pragmas.html#Pragmas" rel="up" title="Pragmas">
+<link href="Unnamed-Fields.html#Unnamed-Fields" rel="next" title="Unnamed Fields">
+<link href="Function-Specific-Option-Pragmas.html#Function-Specific-Option-Pragmas" rel="prev" title="Function Specific Option Pragmas">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Loop_002dSpecific-Pragmas"></a>
+<div class="header">
+<p>
+Previous: <a href="Function-Specific-Option-Pragmas.html#Function-Specific-Option-Pragmas" accesskey="p" rel="prev">Function Specific Option Pragmas</a>, Up: <a href="Pragmas.html#Pragmas" accesskey="u" rel="up">Pragmas</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Loop_002dSpecific-Pragmas-1"></a>
+<h4 class="subsection">6.62.16 Loop-Specific Pragmas</h4>
+
+<dl compact="compact">
+<dt><code>#pragma GCC ivdep</code></dt>
+<dd><a name="index-pragma-GCC-ivdep"></a>
+
+<p>With this pragma, the programmer asserts that there are no loop-carried
+dependencies which would prevent consecutive iterations of
+the following loop from executing concurrently with SIMD
+(single instruction multiple data) instructions.
+</p>
+<p>For example, the compiler can only unconditionally vectorize the following
+loop with the pragma:
+</p>
+<div class="smallexample">
+<pre class="smallexample">void foo (int n, int *a, int *b, int *c)
+{
+  int i, j;
+#pragma GCC ivdep
+  for (i = 0; i &lt; n; ++i)
+    a[i] = b[i] + c[i];
+}
+</pre></div>
+
+<p>In this example, using the <code>restrict</code> qualifier had the same
+effect. In the following example, that would not be possible. Assume
+<em>k &lt; -m</em> or <em>k &gt;= m</em>. Only with the pragma, the compiler knows
+that it can unconditionally vectorize the following loop:
+</p>
+<div class="smallexample">
+<pre class="smallexample">void ignore_vec_dep (int *a, int k, int c, int m)
+{
+#pragma GCC ivdep
+  for (int i = 0; i &lt; m; i++)
+    a[i] = a[i + k] * c;
+}
+</pre></div>
+
+</dd>
+<dt><code>#pragma GCC unroll <var>n</var></code></dt>
+<dd><a name="index-pragma-GCC-unroll-n"></a>
+
+<p>You can use this pragma to control how many times a loop should be unrolled.
+It must be placed immediately before a <code>for</code>, <code>while</code> or <code>do</code>
+loop or a <code>#pragma GCC ivdep</code>, and applies only to the loop that follows.
+<var>n</var> is an integer constant expression specifying the unrolling factor.
+The values of <em>0</em> and <em>1</em> block any unrolling of the loop.
+</p>
+</dd>
+</dl>
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: TIC6X Options</title>
+
+<meta name="description" content="Using as: TIC6X Options">
+<meta name="keywords" content="Using as: TIC6X Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="TIC6X_002dDependent.html#TIC6X_002dDependent" rel="up" title="TIC6X-Dependent">
+<link href="TIC6X-Syntax.html#TIC6X-Syntax" rel="next" title="TIC6X Syntax">
+<link href="TIC6X_002dDependent.html#TIC6X_002dDependent" rel="prev" title="TIC6X-Dependent">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="TIC6X-Options"></a>
+<div class="header">
+<p>
+Next: <a href="TIC6X-Syntax.html#TIC6X-Syntax" accesskey="n" rel="next">TIC6X Syntax</a>, Up: <a href="TIC6X_002dDependent.html#TIC6X_002dDependent" accesskey="u" rel="up">TIC6X-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="TIC6X-Options-1"></a>
+<h4 class="subsection">9.46.1 TIC6X Options</h4>
+<a name="index-TIC6X-options"></a>
+<a name="index-options-for-TIC6X"></a>
+
+<dl compact="compact">
+<dd>
+<a name="index-_002dmarch_003d-command_002dline-option_002c-TIC6X"></a>
+</dd>
+<dt><code>-march=<var>arch</var></code></dt>
+<dd><p>Enable (only) instructions from architecture <var>arch</var>.  By default,
+all instructions are permitted.
+</p>
+<p>The following values of <var>arch</var> are accepted: <code>c62x</code>,
+<code>c64x</code>, <code>c64x+</code>, <code>c67x</code>, <code>c67x+</code>, <code>c674x</code>.
+</p>
+<a name="index-_002dmdsbt-command_002dline-option_002c-TIC6X"></a>
+<a name="index-_002dmno_002ddsbt-command_002dline-option_002c-TIC6X"></a>
+</dd>
+<dt><code>-mdsbt</code></dt>
+<dt><code>-mno-dsbt</code></dt>
+<dd><p>The <samp>-mdsbt</samp> option causes the assembler to generate the
+<code>Tag_ABI_DSBT</code> attribute with a value of 1, indicating that the
+code is using DSBT addressing.  The <samp>-mno-dsbt</samp> option, the
+default, causes the tag to have a value of 0, indicating that the code
+does not use DSBT addressing.  The linker will emit a warning if
+objects of different type (DSBT and non-DSBT) are linked together.
+</p>
+<a name="index-_002dmpid_003d-command_002dline-option_002c-TIC6X"></a>
+</dd>
+<dt><code>-mpid=no</code></dt>
+<dt><code>-mpid=near</code></dt>
+<dt><code>-mpid=far</code></dt>
+<dd><p>The <samp>-mpid=</samp> option causes the assembler to generate the
+<code>Tag_ABI_PID</code> attribute with a value indicating the form of data
+addressing used by the code.  <samp>-mpid=no</samp>, the default,
+indicates position-dependent data addressing, <samp>-mpid=near</samp>
+indicates position-independent addressing with GOT accesses using near
+DP addressing, and <samp>-mpid=far</samp> indicates position-independent
+addressing with GOT accesses using far DP addressing.  The linker will
+emit a warning if objects built with different settings of this option
+are linked together.
+</p>
+<a name="index-_002dmpic-command_002dline-option_002c-TIC6X"></a>
+<a name="index-_002dmno_002dpic-command_002dline-option_002c-TIC6X"></a>
+</dd>
+<dt><code>-mpic</code></dt>
+<dt><code>-mno-pic</code></dt>
+<dd><p>The <samp>-mpic</samp> option causes the assembler to generate the
+<code>Tag_ABI_PIC</code> attribute with a value of 1, indicating that the
+code is using position-independent code addressing,  The
+<code>-mno-pic</code> option, the default, causes the tag to have a value of
+0, indicating position-dependent code addressing.  The linker will
+emit a warning if objects of different type (position-dependent and
+position-independent) are linked together.
+</p>
+<a name="index-TIC6X-big_002dendian-output"></a>
+<a name="index-TIC6X-little_002dendian-output"></a>
+<a name="index-big_002dendian-output_002c-TIC6X"></a>
+<a name="index-little_002dendian-output_002c-TIC6X"></a>
+</dd>
+<dt><code>-mbig-endian</code></dt>
+<dt><code>-mlittle-endian</code></dt>
+<dd><p>Generate code for the specified endianness.  The default is
+little-endian.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="TIC6X-Syntax.html#TIC6X-Syntax" accesskey="n" rel="next">TIC6X Syntax</a>, Up: <a href="TIC6X_002dDependent.html#TIC6X_002dDependent" accesskey="u" rel="up">TIC6X-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

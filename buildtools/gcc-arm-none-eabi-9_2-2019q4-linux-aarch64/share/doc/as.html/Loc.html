@@ -1,0 +1,138 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: Loc</title>
+
+<meta name="description" content="Using as: Loc">
+<meta name="keywords" content="Using as: Loc">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Pseudo-Ops.html#Pseudo-Ops" rel="up" title="Pseudo Ops">
+<link href="Loc_005fmark_005flabels.html#Loc_005fmark_005flabels" rel="next" title="Loc_mark_labels">
+<link href="Ln.html#Ln" rel="prev" title="Ln">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Loc"></a>
+<div class="header">
+<p>
+Next: <a href="Loc_005fmark_005flabels.html#Loc_005fmark_005flabels" accesskey="n" rel="next">Loc_mark_labels</a>, Previous: <a href="Ln.html#Ln" accesskey="p" rel="prev">Ln</a>, Up: <a href="Pseudo-Ops.html#Pseudo-Ops" accesskey="u" rel="up">Pseudo Ops</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="g_t_002eloc-fileno-lineno-_005bcolumn_005d-_005boptions_005d"></a>
+<h3 class="section">7.57 <code>.loc <var>fileno</var> <var>lineno</var> [<var>column</var>] [<var>options</var>]</code></h3>
+<a name="index-loc-directive"></a>
+<p>When emitting DWARF2 line number information,
+the <code>.loc</code> directive will add a row to the <code>.debug_line</code> line
+number matrix corresponding to the immediately following assembly
+instruction.  The <var>fileno</var>, <var>lineno</var>, and optional <var>column</var>
+arguments will be applied to the <code>.debug_line</code> state machine before
+the row is added.
+</p>
+<p>The <var>options</var> are a sequence of the following tokens in any order:
+</p>
+<dl compact="compact">
+<dt><code>basic_block</code></dt>
+<dd><p>This option will set the <code>basic_block</code> register in the
+<code>.debug_line</code> state machine to <code>true</code>.
+</p>
+</dd>
+<dt><code>prologue_end</code></dt>
+<dd><p>This option will set the <code>prologue_end</code> register in the
+<code>.debug_line</code> state machine to <code>true</code>.
+</p>
+</dd>
+<dt><code>epilogue_begin</code></dt>
+<dd><p>This option will set the <code>epilogue_begin</code> register in the
+<code>.debug_line</code> state machine to <code>true</code>.
+</p>
+</dd>
+<dt><code>is_stmt <var>value</var></code></dt>
+<dd><p>This option will set the <code>is_stmt</code> register in the
+<code>.debug_line</code> state machine to <code>value</code>, which must be
+either 0 or 1.
+</p>
+</dd>
+<dt><code>isa <var>value</var></code></dt>
+<dd><p>This directive will set the <code>isa</code> register in the <code>.debug_line</code>
+state machine to <var>value</var>, which must be an unsigned integer.
+</p>
+</dd>
+<dt><code>discriminator <var>value</var></code></dt>
+<dd><p>This directive will set the <code>discriminator</code> register in the <code>.debug_line</code>
+state machine to <var>value</var>, which must be an unsigned integer.
+</p>
+</dd>
+<dt><code>view <var>value</var></code></dt>
+<dd><p>This option causes a row to be added to <code>.debug_line</code> in reference to the
+current address (which might not be the same as that of the following assembly
+instruction), and to associate <var>value</var> with the <code>view</code> register in the
+<code>.debug_line</code> state machine.  If <var>value</var> is a label, both the
+<code>view</code> register and the label are set to the number of prior <code>.loc</code>
+directives at the same program location.  If <var>value</var> is the literal
+<code>0</code>, the <code>view</code> register is set to zero, and the assembler asserts
+that there aren&rsquo;t any prior <code>.loc</code> directives at the same program
+location.  If <var>value</var> is the literal <code>-0</code>, the assembler arrange for
+the <code>view</code> register to be reset in this row, even if there are prior
+<code>.loc</code> directives at the same program location.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Loc_005fmark_005flabels.html#Loc_005fmark_005flabels" accesskey="n" rel="next">Loc_mark_labels</a>, Previous: <a href="Ln.html#Ln" accesskey="p" rel="prev">Ln</a>, Up: <a href="Pseudo-Ops.html#Pseudo-Ops" accesskey="u" rel="up">Pseudo Ops</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

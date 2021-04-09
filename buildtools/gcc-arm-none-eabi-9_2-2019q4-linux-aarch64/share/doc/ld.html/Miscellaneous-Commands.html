@@ -1,0 +1,247 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU linker LD
+(GNU Toolchain for the A-profile Architecture 9.2-2019.12 (arm-9.10))
+version 2.33.1.
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License". -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>LD: Miscellaneous Commands</title>
+
+<meta name="description" content="LD: Miscellaneous Commands">
+<meta name="keywords" content="LD: Miscellaneous Commands">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="LD-Index.html#LD-Index" rel="index" title="LD Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Simple-Commands.html#Simple-Commands" rel="up" title="Simple Commands">
+<link href="Assignments.html#Assignments" rel="next" title="Assignments">
+<link href="REGION_005fALIAS.html#REGION_005fALIAS" rel="prev" title="REGION_ALIAS">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Miscellaneous-Commands"></a>
+<div class="header">
+<p>
+Previous: <a href="REGION_005fALIAS.html#REGION_005fALIAS" accesskey="p" rel="prev">REGION_ALIAS</a>, Up: <a href="Simple-Commands.html#Simple-Commands" accesskey="u" rel="up">Simple Commands</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="LD-Index.html#LD-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Other-Linker-Script-Commands"></a>
+<h4 class="subsection">3.4.5 Other Linker Script Commands</h4>
+<p>There are a few other linker scripts commands.
+</p>
+<dl compact="compact">
+<dt><code>ASSERT(<var>exp</var>, <var>message</var>)</code></dt>
+<dd><a name="index-ASSERT"></a>
+<a name="index-assertion-in-linker-script"></a>
+<p>Ensure that <var>exp</var> is non-zero.  If it is zero, then exit the linker
+with an error code, and print <var>message</var>.
+</p>
+<p>Note that assertions are checked before the final stages of linking
+take place.  This means that expressions involving symbols PROVIDEd
+inside section definitions will fail if the user has not set values
+for those symbols.  The only exception to this rule is PROVIDEd
+symbols that just reference dot.  Thus an assertion like this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">  .stack :
+  {
+    PROVIDE (__stack = .);
+    PROVIDE (__stack_size = 0x100);
+    ASSERT ((__stack &gt; (_end + __stack_size)), &quot;Error: No room left for the stack&quot;);
+  }
+</pre></div>
+
+<p>will fail if <code>__stack_size</code> is not defined elsewhere.  Symbols
+PROVIDEd outside of section definitions are evaluated earlier, so they
+can be used inside ASSERTions.  Thus:
+</p>
+<div class="smallexample">
+<pre class="smallexample">  PROVIDE (__stack_size = 0x100);
+  .stack :
+  {
+    PROVIDE (__stack = .);
+    ASSERT ((__stack &gt; (_end + __stack_size)), &quot;Error: No room left for the stack&quot;);
+  }
+</pre></div>
+
+<p>will work.
+</p>
+</dd>
+<dt><code>EXTERN(<var>symbol</var> <var>symbol</var> &hellip;)</code></dt>
+<dd><a name="index-EXTERN"></a>
+<a name="index-undefined-symbol-in-linker-script"></a>
+<p>Force <var>symbol</var> to be entered in the output file as an undefined
+symbol.  Doing this may, for example, trigger linking of additional
+modules from standard libraries.  You may list several <var>symbol</var>s for
+each <code>EXTERN</code>, and you may use <code>EXTERN</code> multiple times.  This
+command has the same effect as the &lsquo;<samp>-u</samp>&rsquo; command-line option.
+</p>
+</dd>
+<dt><code>FORCE_COMMON_ALLOCATION</code></dt>
+<dd><a name="index-FORCE_005fCOMMON_005fALLOCATION"></a>
+<a name="index-common-allocation-in-linker-script"></a>
+<p>This command has the same effect as the &lsquo;<samp>-d</samp>&rsquo; command-line option:
+to make <code>ld</code> assign space to common symbols even if a relocatable
+output file is specified (&lsquo;<samp>-r</samp>&rsquo;).
+</p>
+</dd>
+<dt><code>INHIBIT_COMMON_ALLOCATION</code></dt>
+<dd><a name="index-INHIBIT_005fCOMMON_005fALLOCATION"></a>
+<a name="index-common-allocation-in-linker-script-1"></a>
+<p>This command has the same effect as the &lsquo;<samp>--no-define-common</samp>&rsquo;
+command-line option: to make <code>ld</code> omit the assignment of addresses
+to common symbols even for a non-relocatable output file.
+</p>
+</dd>
+<dt><code>FORCE_GROUP_ALLOCATION</code></dt>
+<dd><a name="index-FORCE_005fGROUP_005fALLOCATION"></a>
+<a name="index-group-allocation-in-linker-script-1"></a>
+<a name="index-section-groups-1"></a>
+<a name="index-COMDAT-1"></a>
+<p>This command has the same effect as the
+&lsquo;<samp>--force-group-allocation</samp>&rsquo; command-line option: to make
+<code>ld</code> place section group members like normal input sections,
+and to delete the section groups even if a relocatable output file is
+specified (&lsquo;<samp>-r</samp>&rsquo;).
+</p>
+</dd>
+<dt><code>INSERT [ AFTER | BEFORE ] <var>output_section</var></code></dt>
+<dd><a name="index-INSERT"></a>
+<a name="index-insert-user-script-into-default-script"></a>
+<p>This command is typically used in a script specified by &lsquo;<samp>-T</samp>&rsquo; to
+augment the default <code>SECTIONS</code> with, for example, overlays.  It
+inserts all prior linker script statements after (or before)
+<var>output_section</var>, and also causes &lsquo;<samp>-T</samp>&rsquo; to not override the
+default linker script.  The exact insertion point is as for orphan
+sections.  See <a href="Location-Counter.html#Location-Counter">Location Counter</a>.  The insertion happens after the
+linker has mapped input sections to output sections.  Prior to the
+insertion, since &lsquo;<samp>-T</samp>&rsquo; scripts are parsed before the default
+linker script, statements in the &lsquo;<samp>-T</samp>&rsquo; script occur before the
+default linker script statements in the internal linker representation
+of the script.  In particular, input section assignments will be made
+to &lsquo;<samp>-T</samp>&rsquo; output sections before those in the default script.  Here
+is an example of how a &lsquo;<samp>-T</samp>&rsquo; script using <code>INSERT</code> might look:
+</p>
+<div class="smallexample">
+<pre class="smallexample">SECTIONS
+{
+  OVERLAY :
+  {
+    .ov1 { ov1*(.text) }
+    .ov2 { ov2*(.text) }
+  }
+}
+INSERT AFTER .text;
+</pre></div>
+
+</dd>
+<dt><code>NOCROSSREFS(<var>section</var> <var>section</var> &hellip;)</code></dt>
+<dd><a name="index-NOCROSSREFS_0028sections_0029"></a>
+<a name="index-cross-references"></a>
+<p>This command may be used to tell <code>ld</code> to issue an error about any
+references among certain output sections.
+</p>
+<p>In certain types of programs, particularly on embedded systems when
+using overlays, when one section is loaded into memory, another section
+will not be.  Any direct references between the two sections would be
+errors.  For example, it would be an error if code in one section called
+a function defined in the other section.
+</p>
+<p>The <code>NOCROSSREFS</code> command takes a list of output section names.  If
+<code>ld</code> detects any cross references between the sections, it reports
+an error and returns a non-zero exit status.  Note that the
+<code>NOCROSSREFS</code> command uses output section names, not input section
+names.
+</p>
+</dd>
+<dt><code>NOCROSSREFS_TO(<var>tosection</var> <var>fromsection</var> &hellip;)</code></dt>
+<dd><a name="index-NOCROSSREFS_005fTO_0028tosection-fromsections_0029"></a>
+<a name="index-cross-references-1"></a>
+<p>This command may be used to tell <code>ld</code> to issue an error about any
+references to one section from a list of other sections.
+</p>
+<p>The <code>NOCROSSREFS</code> command is useful when ensuring that two or more
+output sections are entirely independent but there are situations where
+a one-way dependency is needed. For example, in a multi-core application
+there may be shared code that can be called from each core but for safety
+must never call back.
+</p>
+<p>The <code>NOCROSSREFS_TO</code> command takes a list of output section names.
+The first section can not be referenced from any of the other sections.
+If <code>ld</code> detects any references to the first section from any of
+the other sections, it reports an error and returns a non-zero exit
+status.  Note that the <code>NOCROSSREFS_TO</code> command uses output section
+names, not input section names.
+</p>
+</dd>
+<dt><code>OUTPUT_ARCH(<var>bfdarch</var>)</code></dt>
+<dd><a name="index-OUTPUT_005fARCH_0028bfdarch_0029"></a>
+<a name="index-machine-architecture"></a>
+<a name="index-architecture"></a>
+<p>Specify a particular output machine architecture.  The argument is one
+of the names used by the BFD library (see <a href="BFD.html#BFD">BFD</a>).  You can see the
+architecture of an object file by using the <code>objdump</code> program with
+the &lsquo;<samp>-f</samp>&rsquo; option.
+</p>
+</dd>
+<dt><code>LD_FEATURE(<var>string</var>)</code></dt>
+<dd><a name="index-LD_005fFEATURE_0028string_0029"></a>
+<p>This command may be used to modify <code>ld</code> behavior.  If
+<var>string</var> is <code>&quot;SANE_EXPR&quot;</code> then absolute symbols and numbers
+in a script are simply treated as numbers everywhere.
+See <a href="Expression-Section.html#Expression-Section">Expression Section</a>.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="REGION_005fALIAS.html#REGION_005fALIAS" accesskey="p" rel="prev">REGION_ALIAS</a>, Up: <a href="Simple-Commands.html#Simple-Commands" accesskey="u" rel="up">Simple Commands</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="LD-Index.html#LD-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

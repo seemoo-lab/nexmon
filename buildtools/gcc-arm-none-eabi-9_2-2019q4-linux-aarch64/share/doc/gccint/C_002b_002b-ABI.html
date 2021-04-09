@@ -1,0 +1,194 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: C++ ABI</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: C++ ABI">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: C++ ABI">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Target-Macros.html#Target-Macros" rel="up" title="Target Macros">
+<link href="D-Language-and-ABI.html#D-Language-and-ABI" rel="next" title="D Language and ABI">
+<link href="PCH-Target.html#PCH-Target" rel="prev" title="PCH Target">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="C_002b_002b-ABI"></a>
+<div class="header">
+<p>
+Next: <a href="D-Language-and-ABI.html#D-Language-and-ABI" accesskey="n" rel="next">D Language and ABI</a>, Previous: <a href="PCH-Target.html#PCH-Target" accesskey="p" rel="prev">PCH Target</a>, Up: <a href="Target-Macros.html#Target-Macros" accesskey="u" rel="up">Target Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="C_002b_002b-ABI-parameters"></a>
+<h3 class="section">18.28 C++ ABI parameters</h3>
+<a name="index-parameters_002c-c_002b_002b-abi"></a>
+
+<dl>
+<dt><a name="index-TARGET_005fCXX_005fGUARD_005fTYPE"></a>Target Hook: <em>tree</em> <strong>TARGET_CXX_GUARD_TYPE</strong> <em>(void)</em></dt>
+<dd><p>Define this hook to override the integer type used for guard variables.
+These are used to implement one-time construction of static objects.  The
+default is long_long_integer_type_node.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fCXX_005fGUARD_005fMASK_005fBIT"></a>Target Hook: <em>bool</em> <strong>TARGET_CXX_GUARD_MASK_BIT</strong> <em>(void)</em></dt>
+<dd><p>This hook determines how guard variables are used.  It should return
+<code>false</code> (the default) if the first byte should be used.  A return value of
+<code>true</code> indicates that only the least significant bit should be used.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fCXX_005fGET_005fCOOKIE_005fSIZE"></a>Target Hook: <em>tree</em> <strong>TARGET_CXX_GET_COOKIE_SIZE</strong> <em>(tree <var>type</var>)</em></dt>
+<dd><p>This hook returns the size of the cookie to use when allocating an array
+whose elements have the indicated <var>type</var>.  Assumes that it is already
+known that a cookie is needed.  The default is
+<code>max(sizeof (size_t), alignof(type))</code>, as defined in section 2.7 of the
+IA64/Generic C++ ABI.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fCXX_005fCOOKIE_005fHAS_005fSIZE"></a>Target Hook: <em>bool</em> <strong>TARGET_CXX_COOKIE_HAS_SIZE</strong> <em>(void)</em></dt>
+<dd><p>This hook should return <code>true</code> if the element size should be stored in
+array cookies.  The default is to return <code>false</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fCXX_005fIMPORT_005fEXPORT_005fCLASS"></a>Target Hook: <em>int</em> <strong>TARGET_CXX_IMPORT_EXPORT_CLASS</strong> <em>(tree <var>type</var>, int <var>import_export</var>)</em></dt>
+<dd><p>If defined by a backend this hook allows the decision made to export
+class <var>type</var> to be overruled.  Upon entry <var>import_export</var>
+will contain 1 if the class is going to be exported, -1 if it is going
+to be imported and 0 otherwise.  This function should return the
+modified value and perform any other actions necessary to support the
+backend&rsquo;s targeted operating system.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fCXX_005fCDTOR_005fRETURNS_005fTHIS"></a>Target Hook: <em>bool</em> <strong>TARGET_CXX_CDTOR_RETURNS_THIS</strong> <em>(void)</em></dt>
+<dd><p>This hook should return <code>true</code> if constructors and destructors return
+the address of the object created/destroyed.  The default is to return
+<code>false</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fCXX_005fKEY_005fMETHOD_005fMAY_005fBE_005fINLINE"></a>Target Hook: <em>bool</em> <strong>TARGET_CXX_KEY_METHOD_MAY_BE_INLINE</strong> <em>(void)</em></dt>
+<dd><p>This hook returns true if the key method for a class (i.e., the method
+which, if defined in the current translation unit, causes the virtual
+table to be emitted) may be an inline function.  Under the standard
+Itanium C++ ABI the key method may be an inline function so long as
+the function is not declared inline in the class definition.  Under
+some variants of the ABI, an inline function can never be the key
+method.  The default is to return <code>true</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fCXX_005fDETERMINE_005fCLASS_005fDATA_005fVISIBILITY"></a>Target Hook: <em>void</em> <strong>TARGET_CXX_DETERMINE_CLASS_DATA_VISIBILITY</strong> <em>(tree <var>decl</var>)</em></dt>
+<dd><p><var>decl</var> is a virtual table, virtual table table, typeinfo object, or other similar implicit class data object that will be emitted with external linkage in this translation unit.  No ELF visibility has been explicitly specified.  If the target needs to specify a visibility other than that of the containing class, use this hook to set <code>DECL_VISIBILITY</code> and <code>DECL_VISIBILITY_SPECIFIED</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fCXX_005fCLASS_005fDATA_005fALWAYS_005fCOMDAT"></a>Target Hook: <em>bool</em> <strong>TARGET_CXX_CLASS_DATA_ALWAYS_COMDAT</strong> <em>(void)</em></dt>
+<dd><p>This hook returns true (the default) if virtual tables and other
+similar implicit class data objects are always COMDAT if they have
+external linkage.  If this hook returns false, then class data for
+classes whose virtual table will be emitted in only one translation
+unit will not be COMDAT.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fCXX_005fLIBRARY_005fRTTI_005fCOMDAT"></a>Target Hook: <em>bool</em> <strong>TARGET_CXX_LIBRARY_RTTI_COMDAT</strong> <em>(void)</em></dt>
+<dd><p>This hook returns true (the default) if the RTTI information for
+the basic types which is defined in the C++ runtime should always
+be COMDAT, false if it should not be COMDAT.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fCXX_005fUSE_005fAEABI_005fATEXIT"></a>Target Hook: <em>bool</em> <strong>TARGET_CXX_USE_AEABI_ATEXIT</strong> <em>(void)</em></dt>
+<dd><p>This hook returns true if <code>__aeabi_atexit</code> (as defined by the ARM EABI)
+should be used to register static destructors when <samp>-fuse-cxa-atexit</samp>
+is in effect.  The default is to return false to use <code>__cxa_atexit</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fCXX_005fUSE_005fATEXIT_005fFOR_005fCXA_005fATEXIT"></a>Target Hook: <em>bool</em> <strong>TARGET_CXX_USE_ATEXIT_FOR_CXA_ATEXIT</strong> <em>(void)</em></dt>
+<dd><p>This hook returns true if the target <code>atexit</code> function can be used
+in the same manner as <code>__cxa_atexit</code> to register C++ static
+destructors. This requires that <code>atexit</code>-registered functions in
+shared libraries are run in the correct order when the libraries are
+unloaded. The default is to return false.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fCXX_005fADJUST_005fCLASS_005fAT_005fDEFINITION"></a>Target Hook: <em>void</em> <strong>TARGET_CXX_ADJUST_CLASS_AT_DEFINITION</strong> <em>(tree <var>type</var>)</em></dt>
+<dd><p><var>type</var> is a C++ class (i.e., RECORD_TYPE or UNION_TYPE) that has just been defined.  Use this hook to make adjustments to the class (eg, tweak visibility or perform any other required target modifications).
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fCXX_005fDECL_005fMANGLING_005fCONTEXT"></a>Target Hook: <em>tree</em> <strong>TARGET_CXX_DECL_MANGLING_CONTEXT</strong> <em>(const_tree <var>decl</var>)</em></dt>
+<dd><p>Return target-specific mangling context of <var>decl</var> or <code>NULL_TREE</code>.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="D-Language-and-ABI.html#D-Language-and-ABI" accesskey="n" rel="next">D Language and ABI</a>, Previous: <a href="PCH-Target.html#PCH-Target" accesskey="p" rel="prev">PCH Target</a>, Up: <a href="Target-Macros.html#Target-Macros" accesskey="u" rel="up">Target Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

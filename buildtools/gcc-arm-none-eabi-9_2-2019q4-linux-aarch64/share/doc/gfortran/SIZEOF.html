@@ -1,0 +1,142 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: SIZEOF</title>
+
+<meta name="description" content="The GNU Fortran Compiler: SIZEOF">
+<meta name="keywords" content="The GNU Fortran Compiler: SIZEOF">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Intrinsic-Procedures.html#Intrinsic-Procedures" rel="up" title="Intrinsic Procedures">
+<link href="SLEEP.html#SLEEP" rel="next" title="SLEEP">
+<link href="SIZE.html#SIZE" rel="prev" title="SIZE">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="SIZEOF"></a>
+<div class="header">
+<p>
+Next: <a href="SLEEP.html#SLEEP" accesskey="n" rel="next">SLEEP</a>, Previous: <a href="SIZE.html#SIZE" accesskey="p" rel="prev">SIZE</a>, Up: <a href="Intrinsic-Procedures.html#Intrinsic-Procedures" accesskey="u" rel="up">Intrinsic Procedures</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="SIZEOF-_002d_002d_002d-Size-in-bytes-of-an-expression"></a>
+<h3 class="section">9.254 <code>SIZEOF</code> &mdash; Size in bytes of an expression</h3>
+<a name="index-SIZEOF"></a>
+<a name="index-expression-size-1"></a>
+<a name="index-size-of-an-expression-1"></a>
+
+<dl compact="compact">
+<dt><em>Description</em>:</dt>
+<dd><p><code>SIZEOF(X)</code> calculates the number of bytes of storage the
+expression <code>X</code> occupies.
+</p>
+</dd>
+<dt><em>Standard</em>:</dt>
+<dd><p>GNU extension
+</p>
+</dd>
+<dt><em>Class</em>:</dt>
+<dd><p>Inquiry function
+</p>
+</dd>
+<dt><em>Syntax</em>:</dt>
+<dd><p><code>N = SIZEOF(X)</code>
+</p>
+</dd>
+<dt><em>Arguments</em>:</dt>
+<dd><table>
+<tr><td width="15%"><var>X</var></td><td width="70%">The argument shall be of any type, rank or shape.</td></tr>
+</table>
+
+</dd>
+<dt><em>Return value</em>:</dt>
+<dd><p>The return value is of type integer and of the system-dependent kind
+<var>C_SIZE_T</var> (from the <var>ISO_C_BINDING</var> module). Its value is the
+number of bytes occupied by the argument.  If the argument has the
+<code>POINTER</code> attribute, the number of bytes of the storage area pointed
+to is returned.  If the argument is of a derived type with <code>POINTER</code>
+or <code>ALLOCATABLE</code> components, the return value does not account for
+the sizes of the data pointed to by these components. If the argument is
+polymorphic, the size according to the dynamic type is returned. The argument
+may not be a procedure or procedure pointer. Note that the code assumes for
+arrays that those are contiguous; for contiguous arrays, it returns the
+storage or an array element multiplied by the size of the array.
+</p>
+</dd>
+<dt><em>Example</em>:</dt>
+<dd><div class="smallexample">
+<pre class="smallexample">   integer :: i
+   real :: r, s(5)
+   print *, (sizeof(s)/sizeof(r) == 5)
+   end
+</pre></div>
+<p>The example will print <code>.TRUE.</code> unless you are using a platform
+where default <code>REAL</code> variables are unusually padded.
+</p>
+</dd>
+<dt><em>See also</em>:</dt>
+<dd><p><a href="C_005fSIZEOF.html#C_005fSIZEOF">C_SIZEOF</a>, <a href="STORAGE_005fSIZE.html#STORAGE_005fSIZE">STORAGE_SIZE</a>
+</p></dd>
+</dl>
+
+
+
+
+
+</body>
+</html>

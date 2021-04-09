@@ -1,0 +1,269 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Adapteva Epiphany Options</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Adapteva Epiphany Options">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Adapteva Epiphany Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Submodel-Options.html#Submodel-Options" rel="up" title="Submodel Options">
+<link href="AMD-GCN-Options.html#AMD-GCN-Options" rel="next" title="AMD GCN Options">
+<link href="AArch64-Options.html#AArch64-Options" rel="prev" title="AArch64 Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Adapteva-Epiphany-Options"></a>
+<div class="header">
+<p>
+Next: <a href="AMD-GCN-Options.html#AMD-GCN-Options" accesskey="n" rel="next">AMD GCN Options</a>, Previous: <a href="AArch64-Options.html#AArch64-Options" accesskey="p" rel="prev">AArch64 Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Adapteva-Epiphany-Options-1"></a>
+<h4 class="subsection">3.18.2 Adapteva Epiphany Options</h4>
+
+<p>These &lsquo;<samp>-m</samp>&rsquo; options are defined for Adapteva Epiphany:
+</p>
+<dl compact="compact">
+<dt><code>-mhalf-reg-file</code></dt>
+<dd><a name="index-mhalf_002dreg_002dfile"></a>
+<p>Don&rsquo;t allocate any register in the range <code>r32</code>&hellip;<code>r63</code>.
+That allows code to run on hardware variants that lack these registers.
+</p>
+</dd>
+<dt><code>-mprefer-short-insn-regs</code></dt>
+<dd><a name="index-mprefer_002dshort_002dinsn_002dregs"></a>
+<p>Preferentially allocate registers that allow short instruction generation.
+This can result in increased instruction count, so this may either reduce or
+increase overall code size.
+</p>
+</dd>
+<dt><code>-mbranch-cost=<var>num</var></code></dt>
+<dd><a name="index-mbranch_002dcost"></a>
+<p>Set the cost of branches to roughly <var>num</var> &ldquo;simple&rdquo; instructions.
+This cost is only a heuristic and is not guaranteed to produce
+consistent results across releases.
+</p>
+</dd>
+<dt><code>-mcmove</code></dt>
+<dd><a name="index-mcmove"></a>
+<p>Enable the generation of conditional moves.
+</p>
+</dd>
+<dt><code>-mnops=<var>num</var></code></dt>
+<dd><a name="index-mnops"></a>
+<p>Emit <var>num</var> NOPs before every other generated instruction.
+</p>
+</dd>
+<dt><code>-mno-soft-cmpsf</code></dt>
+<dd><a name="index-mno_002dsoft_002dcmpsf"></a>
+<a name="index-msoft_002dcmpsf"></a>
+<p>For single-precision floating-point comparisons, emit an <code>fsub</code> instruction
+and test the flags.  This is faster than a software comparison, but can
+get incorrect results in the presence of NaNs, or when two different small
+numbers are compared such that their difference is calculated as zero.
+The default is <samp>-msoft-cmpsf</samp>, which uses slower, but IEEE-compliant,
+software comparisons.
+</p>
+</dd>
+<dt><code>-mstack-offset=<var>num</var></code></dt>
+<dd><a name="index-mstack_002doffset"></a>
+<p>Set the offset between the top of the stack and the stack pointer.
+E.g., a value of 8 means that the eight bytes in the range <code>sp+0&hellip;sp+7</code>
+can be used by leaf functions without stack allocation.
+Values other than &lsquo;<samp>8</samp>&rsquo; or &lsquo;<samp>16</samp>&rsquo; are untested and unlikely to work.
+Note also that this option changes the ABI; compiling a program with a
+different stack offset than the libraries have been compiled with
+generally does not work.
+This option can be useful if you want to evaluate if a different stack
+offset would give you better code, but to actually use a different stack
+offset to build working programs, it is recommended to configure the
+toolchain with the appropriate <samp>--with-stack-offset=<var>num</var></samp> option.
+</p>
+</dd>
+<dt><code>-mno-round-nearest</code></dt>
+<dd><a name="index-mno_002dround_002dnearest"></a>
+<a name="index-mround_002dnearest"></a>
+<p>Make the scheduler assume that the rounding mode has been set to
+truncating.  The default is <samp>-mround-nearest</samp>.
+</p>
+</dd>
+<dt><code>-mlong-calls</code></dt>
+<dd><a name="index-mlong_002dcalls"></a>
+<p>If not otherwise specified by an attribute, assume all calls might be beyond
+the offset range of the <code>b</code> / <code>bl</code> instructions, and therefore load the
+function address into a register before performing a (otherwise direct) call.
+This is the default.
+</p>
+</dd>
+<dt><code>-mshort-calls</code></dt>
+<dd><a name="index-short_002dcalls"></a>
+<p>If not otherwise specified by an attribute, assume all direct calls are
+in the range of the <code>b</code> / <code>bl</code> instructions, so use these instructions
+for direct calls.  The default is <samp>-mlong-calls</samp>.
+</p>
+</dd>
+<dt><code>-msmall16</code></dt>
+<dd><a name="index-msmall16"></a>
+<p>Assume addresses can be loaded as 16-bit unsigned values.  This does not
+apply to function addresses for which <samp>-mlong-calls</samp> semantics
+are in effect.
+</p>
+</dd>
+<dt><code>-mfp-mode=<var>mode</var></code></dt>
+<dd><a name="index-mfp_002dmode"></a>
+<p>Set the prevailing mode of the floating-point unit.
+This determines the floating-point mode that is provided and expected
+at function call and return time.  Making this mode match the mode you
+predominantly need at function start can make your programs smaller and
+faster by avoiding unnecessary mode switches.
+</p>
+<p><var>mode</var> can be set to one the following values:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>caller</samp>&rsquo;</dt>
+<dd><p>Any mode at function entry is valid, and retained or restored when
+the function returns, and when it calls other functions.
+This mode is useful for compiling libraries or other compilation units
+you might want to incorporate into different programs with different
+prevailing FPU modes, and the convenience of being able to use a single
+object file outweighs the size and speed overhead for any extra
+mode switching that might be needed, compared with what would be needed
+with a more specific choice of prevailing FPU mode.
+</p>
+</dd>
+<dt>&lsquo;<samp>truncate</samp>&rsquo;</dt>
+<dd><p>This is the mode used for floating-point calculations with
+truncating (i.e. round towards zero) rounding mode.  That includes
+conversion from floating point to integer.
+</p>
+</dd>
+<dt>&lsquo;<samp>round-nearest</samp>&rsquo;</dt>
+<dd><p>This is the mode used for floating-point calculations with
+round-to-nearest-or-even rounding mode.
+</p>
+</dd>
+<dt>&lsquo;<samp>int</samp>&rsquo;</dt>
+<dd><p>This is the mode used to perform integer calculations in the FPU, e.g.
+integer multiply, or integer multiply-and-accumulate.
+</p></dd>
+</dl>
+
+<p>The default is <samp>-mfp-mode=caller</samp>
+</p>
+</dd>
+<dt><code>-mno-split-lohi</code></dt>
+<dt><code>-mno-postinc</code></dt>
+<dt><code>-mno-postmodify</code></dt>
+<dd><a name="index-mno_002dsplit_002dlohi"></a>
+<a name="index-msplit_002dlohi"></a>
+<a name="index-mno_002dpostinc"></a>
+<a name="index-mpostinc"></a>
+<a name="index-mno_002dpostmodify"></a>
+<a name="index-mpostmodify"></a>
+<p>Code generation tweaks that disable, respectively, splitting of 32-bit
+loads, generation of post-increment addresses, and generation of
+post-modify addresses.  The defaults are <samp>msplit-lohi</samp>,
+<samp>-mpost-inc</samp>, and <samp>-mpost-modify</samp>.
+</p>
+</dd>
+<dt><code>-mnovect-double</code></dt>
+<dd><a name="index-mno_002dvect_002ddouble"></a>
+<a name="index-mvect_002ddouble"></a>
+<p>Change the preferred SIMD mode to SImode.  The default is
+<samp>-mvect-double</samp>, which uses DImode as preferred SIMD mode.
+</p>
+</dd>
+<dt><code>-max-vect-align=<var>num</var></code></dt>
+<dd><a name="index-max_002dvect_002dalign"></a>
+<p>The maximum alignment for SIMD vector mode types.
+<var>num</var> may be 4 or 8.  The default is 8.
+Note that this is an ABI change, even though many library function
+interfaces are unaffected if they don&rsquo;t use SIMD vector modes
+in places that affect size and/or alignment of relevant types.
+</p>
+</dd>
+<dt><code>-msplit-vecmove-early</code></dt>
+<dd><a name="index-msplit_002dvecmove_002dearly"></a>
+<p>Split vector moves into single word moves before reload.  In theory this
+can give better register allocation, but so far the reverse seems to be
+generally the case.
+</p>
+</dd>
+<dt><code>-m1reg-<var>reg</var></code></dt>
+<dd><a name="index-m1reg_002d"></a>
+<p>Specify a register to hold the constant -1, which makes loading small negative
+constants and certain bitmasks faster.
+Allowable values for <var>reg</var> are &lsquo;<samp>r43</samp>&rsquo; and &lsquo;<samp>r63</samp>&rsquo;,
+which specify use of that register as a fixed register,
+and &lsquo;<samp>none</samp>&rsquo;, which means that no register is used for this
+purpose.  The default is <samp>-m1reg-none</samp>.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="AMD-GCN-Options.html#AMD-GCN-Options" accesskey="n" rel="next">AMD GCN Options</a>, Previous: <a href="AArch64-Options.html#AArch64-Options" accesskey="p" rel="prev">AArch64 Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

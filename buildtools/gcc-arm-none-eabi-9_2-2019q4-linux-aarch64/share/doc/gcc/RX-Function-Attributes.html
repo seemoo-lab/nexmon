@@ -1,0 +1,151 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): RX Function Attributes</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): RX Function Attributes">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): RX Function Attributes">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Function-Attributes.html#Function-Attributes" rel="up" title="Function Attributes">
+<link href="S_002f390-Function-Attributes.html#S_002f390-Function-Attributes" rel="next" title="S/390 Function Attributes">
+<link href="RL78-Function-Attributes.html#RL78-Function-Attributes" rel="prev" title="RL78 Function Attributes">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="RX-Function-Attributes"></a>
+<div class="header">
+<p>
+Next: <a href="S_002f390-Function-Attributes.html#S_002f390-Function-Attributes" accesskey="n" rel="next">S/390 Function Attributes</a>, Previous: <a href="RL78-Function-Attributes.html#RL78-Function-Attributes" accesskey="p" rel="prev">RL78 Function Attributes</a>, Up: <a href="Function-Attributes.html#Function-Attributes" accesskey="u" rel="up">Function Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="RX-Function-Attributes-1"></a>
+<h4 class="subsection">6.33.28 RX Function Attributes</h4>
+
+<p>These function attributes are supported by the RX back end:
+</p>
+<dl compact="compact">
+<dt><code>fast_interrupt</code></dt>
+<dd><a name="index-fast_005finterrupt-function-attribute_002c-RX"></a>
+<p>Use this attribute on the RX port to indicate that the specified
+function is a fast interrupt handler.  This is just like the
+<code>interrupt</code> attribute, except that <code>freit</code> is used to return
+instead of <code>reit</code>.
+</p>
+</dd>
+<dt><code>interrupt</code></dt>
+<dd><a name="index-interrupt-function-attribute_002c-RX"></a>
+<p>Use this attribute to indicate
+that the specified function is an interrupt handler.  The compiler generates
+function entry and exit sequences suitable for use in an interrupt handler
+when this attribute is present.
+</p>
+<p>On RX and RL78 targets, you may specify one or more vector numbers as arguments
+to the attribute, as well as naming an alternate table name.
+Parameters are handled sequentially, so one handler can be assigned to
+multiple entries in multiple tables.  One may also pass the magic
+string <code>&quot;$default&quot;</code> which causes the function to be used for any
+unfilled slots in the current table.
+</p>
+<p>This example shows a simple assignment of a function to one vector in
+the default table (note that preprocessor macros may be used for
+chip-specific symbolic vector names):
+</p><div class="smallexample">
+<pre class="smallexample">void __attribute__ ((interrupt (5))) txd1_handler ();
+</pre></div>
+
+<p>This example assigns a function to two slots in the default table
+(using preprocessor macros defined elsewhere) and makes it the default
+for the <code>dct</code> table:
+</p><div class="smallexample">
+<pre class="smallexample">void __attribute__ ((interrupt (RXD1_VECT,RXD2_VECT,&quot;dct&quot;,&quot;$default&quot;)))
+	txd1_handler ();
+</pre></div>
+
+</dd>
+<dt><code>naked</code></dt>
+<dd><a name="index-naked-function-attribute_002c-RX"></a>
+<p>This attribute allows the compiler to construct the
+requisite function declaration, while allowing the body of the
+function to be assembly code. The specified function will not have
+prologue/epilogue sequences generated by the compiler. Only basic
+<code>asm</code> statements can safely be included in naked functions
+(see <a href="Basic-Asm.html#Basic-Asm">Basic Asm</a>). While using extended <code>asm</code> or a mixture of
+basic <code>asm</code> and C code may appear to work, they cannot be
+depended upon to work reliably and are not supported.
+</p>
+</dd>
+<dt><code>vector</code></dt>
+<dd><a name="index-vector-function-attribute_002c-RX"></a>
+<p>This RX attribute is similar to the <code>interrupt</code> attribute, including its
+parameters, but does not make the function an interrupt-handler type
+function (i.e. it retains the normal C function calling ABI).  See the
+<code>interrupt</code> attribute for a description of its arguments.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="S_002f390-Function-Attributes.html#S_002f390-Function-Attributes" accesskey="n" rel="next">S/390 Function Attributes</a>, Previous: <a href="RL78-Function-Attributes.html#RL78-Function-Attributes" accesskey="p" rel="prev">RL78 Function Attributes</a>, Up: <a href="Function-Attributes.html#Function-Attributes" accesskey="u" rel="up">Function Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

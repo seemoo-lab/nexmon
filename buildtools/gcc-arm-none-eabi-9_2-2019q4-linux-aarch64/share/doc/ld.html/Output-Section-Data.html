@@ -1,0 +1,154 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU linker LD
+(GNU Toolchain for the A-profile Architecture 9.2-2019.12 (arm-9.10))
+version 2.33.1.
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License". -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>LD: Output Section Data</title>
+
+<meta name="description" content="LD: Output Section Data">
+<meta name="keywords" content="LD: Output Section Data">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="LD-Index.html#LD-Index" rel="index" title="LD Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="SECTIONS.html#SECTIONS" rel="up" title="SECTIONS">
+<link href="Output-Section-Keywords.html#Output-Section-Keywords" rel="next" title="Output Section Keywords">
+<link href="Input-Section-Example.html#Input-Section-Example" rel="prev" title="Input Section Example">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Output-Section-Data"></a>
+<div class="header">
+<p>
+Next: <a href="Output-Section-Keywords.html#Output-Section-Keywords" accesskey="n" rel="next">Output Section Keywords</a>, Previous: <a href="Input-Section.html#Input-Section" accesskey="p" rel="prev">Input Section</a>, Up: <a href="SECTIONS.html#SECTIONS" accesskey="u" rel="up">SECTIONS</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="LD-Index.html#LD-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Output-Section-Data-1"></a>
+<h4 class="subsection">3.6.5 Output Section Data</h4>
+<a name="index-data"></a>
+<a name="index-section-data"></a>
+<a name="index-output-section-data"></a>
+<a name="index-BYTE_0028expression_0029"></a>
+<a name="index-SHORT_0028expression_0029"></a>
+<a name="index-LONG_0028expression_0029"></a>
+<a name="index-QUAD_0028expression_0029"></a>
+<a name="index-SQUAD_0028expression_0029"></a>
+<p>You can include explicit bytes of data in an output section by using
+<code>BYTE</code>, <code>SHORT</code>, <code>LONG</code>, <code>QUAD</code>, or <code>SQUAD</code> as
+an output section command.  Each keyword is followed by an expression in
+parentheses providing the value to store (see <a href="Expressions.html#Expressions">Expressions</a>).  The
+value of the expression is stored at the current value of the location
+counter.
+</p>
+<p>The <code>BYTE</code>, <code>SHORT</code>, <code>LONG</code>, and <code>QUAD</code> commands
+store one, two, four, and eight bytes (respectively).  After storing the
+bytes, the location counter is incremented by the number of bytes
+stored.
+</p>
+<p>For example, this will store the byte 1 followed by the four byte value
+of the symbol &lsquo;<samp>addr</samp>&rsquo;:
+</p><div class="smallexample">
+<pre class="smallexample">BYTE(1)
+LONG(addr)
+</pre></div>
+
+<p>When using a 64 bit host or target, <code>QUAD</code> and <code>SQUAD</code> are the
+same; they both store an 8 byte, or 64 bit, value.  When both host and
+target are 32 bits, an expression is computed as 32 bits.  In this case
+<code>QUAD</code> stores a 32 bit value zero extended to 64 bits, and
+<code>SQUAD</code> stores a 32 bit value sign extended to 64 bits.
+</p>
+<p>If the object file format of the output file has an explicit endianness,
+which is the normal case, the value will be stored in that endianness.
+When the object file format does not have an explicit endianness, as is
+true of, for example, S-records, the value will be stored in the
+endianness of the first input object file.
+</p>
+<p>Note&mdash;these commands only work inside a section description and not
+between them, so the following will produce an error from the linker:
+</p><div class="smallexample">
+<pre class="smallexample">SECTIONS {&nbsp;.text : {&nbsp;*(.text) }&nbsp;LONG(1) .data : {&nbsp;*(.data) }&nbsp;}&nbsp;</pre></div>
+<p>whereas this will work:
+</p><div class="smallexample">
+<pre class="smallexample">SECTIONS {&nbsp;.text : {&nbsp;*(.text) ; LONG(1) }&nbsp;.data : {&nbsp;*(.data) }&nbsp;}&nbsp;</pre></div>
+
+<a name="index-FILL_0028expression_0029"></a>
+<a name="index-holes_002c-filling"></a>
+<a name="index-unspecified-memory"></a>
+<p>You may use the <code>FILL</code> command to set the fill pattern for the
+current section.  It is followed by an expression in parentheses.  Any
+otherwise unspecified regions of memory within the section (for example,
+gaps left due to the required alignment of input sections) are filled
+with the value of the expression, repeated as
+necessary.  A <code>FILL</code> statement covers memory locations after the
+point at which it occurs in the section definition; by including more
+than one <code>FILL</code> statement, you can have different fill patterns in
+different parts of an output section.
+</p>
+<p>This example shows how to fill unspecified regions of memory with the
+value &lsquo;<samp>0x90</samp>&rsquo;:
+</p><div class="smallexample">
+<pre class="smallexample">FILL(0x90909090)
+</pre></div>
+
+<p>The <code>FILL</code> command is similar to the &lsquo;<samp>=<var>fillexp</var></samp>&rsquo; output
+section attribute, but it only affects the
+part of the section following the <code>FILL</code> command, rather than the
+entire section.  If both are used, the <code>FILL</code> command takes
+precedence.  See <a href="Output-Section-Fill.html#Output-Section-Fill">Output Section Fill</a>, for details on the fill
+expression.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Output-Section-Keywords.html#Output-Section-Keywords" accesskey="n" rel="next">Output Section Keywords</a>, Previous: <a href="Input-Section.html#Input-Section" accesskey="p" rel="prev">Input Section</a>, Up: <a href="SECTIONS.html#SECTIONS" accesskey="u" rel="up">SECTIONS</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="LD-Index.html#LD-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

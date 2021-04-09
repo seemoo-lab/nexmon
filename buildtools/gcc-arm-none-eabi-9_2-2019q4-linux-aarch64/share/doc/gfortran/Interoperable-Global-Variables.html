@@ -1,0 +1,108 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: Interoperable Global Variables</title>
+
+<meta name="description" content="The GNU Fortran Compiler: Interoperable Global Variables">
+<meta name="keywords" content="The GNU Fortran Compiler: Interoperable Global Variables">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Interoperability-with-C.html#Interoperability-with-C" rel="up" title="Interoperability with C">
+<link href="Interoperable-Subroutines-and-Functions.html#Interoperable-Subroutines-and-Functions" rel="next" title="Interoperable Subroutines and Functions">
+<link href="Derived-Types-and-struct.html#Derived-Types-and-struct" rel="prev" title="Derived Types and struct">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Interoperable-Global-Variables"></a>
+<div class="header">
+<p>
+Next: <a href="Interoperable-Subroutines-and-Functions.html#Interoperable-Subroutines-and-Functions" accesskey="n" rel="next">Interoperable Subroutines and Functions</a>, Previous: <a href="Derived-Types-and-struct.html#Derived-Types-and-struct" accesskey="p" rel="prev">Derived Types and struct</a>, Up: <a href="Interoperability-with-C.html#Interoperability-with-C" accesskey="u" rel="up">Interoperability with C</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Interoperable-Global-Variables-1"></a>
+<h4 class="subsection">7.1.3 Interoperable Global Variables</h4>
+
+<p>Variables can be made accessible from C using the C binding attribute,
+optionally together with specifying a binding name.  Those variables
+have to be declared in the declaration part of a <code>MODULE</code>,
+be of interoperable type, and have neither the <code>pointer</code> nor
+the <code>allocatable</code> attribute.
+</p>
+<div class="smallexample">
+<pre class="smallexample">  MODULE m
+    USE myType_module
+    USE ISO_C_BINDING
+    integer(C_INT), bind(C, name=&quot;_MyProject_flags&quot;) :: global_flag
+    type(myType), bind(C) :: tp
+  END MODULE
+</pre></div>
+
+<p>Here, <code>_MyProject_flags</code> is the case-sensitive name of the variable
+as seen from C programs while <code>global_flag</code> is the case-insensitive
+name as seen from Fortran.  If no binding name is specified, as for
+<var>tp</var>, the C binding name is the (lowercase) Fortran binding name.
+If a binding name is specified, only a single variable may be after the
+double colon.  Note of warning: You cannot use a global variable to
+access <var>errno</var> of the C library as the C standard allows it to be
+a macro.  Use the <code>IERRNO</code> intrinsic (GNU extension) instead.
+</p>
+
+
+
+</body>
+</html>

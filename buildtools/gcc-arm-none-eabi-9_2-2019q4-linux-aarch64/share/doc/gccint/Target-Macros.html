@@ -1,0 +1,172 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Target Macros</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Target Macros">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Target Macros">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Target-Structure.html#Target-Structure" rel="next" title="Target Structure">
+<link href="Parameterized-Names.html#Parameterized-Names" rel="prev" title="Parameterized Names">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Target-Macros"></a>
+<div class="header">
+<p>
+Next: <a href="Host-Config.html#Host-Config" accesskey="n" rel="next">Host Config</a>, Previous: <a href="Machine-Desc.html#Machine-Desc" accesskey="p" rel="prev">Machine Desc</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Target-Description-Macros-and-Functions"></a>
+<h2 class="chapter">18 Target Description Macros and Functions</h2>
+<a name="index-machine-description-macros"></a>
+<a name="index-target-description-macros"></a>
+<a name="index-macros_002c-target-description"></a>
+<a name="index-tm_002eh-macros"></a>
+
+<p>In addition to the file <samp><var>machine</var>.md</samp>, a machine description
+includes a C header file conventionally given the name
+<samp><var>machine</var>.h</samp> and a C source file named <samp><var>machine</var>.c</samp>.
+The header file defines numerous macros that convey the information
+about the target machine that does not fit into the scheme of the
+<samp>.md</samp> file.  The file <samp>tm.h</samp> should be a link to
+<samp><var>machine</var>.h</samp>.  The header file <samp>config.h</samp> includes
+<samp>tm.h</samp> and most compiler source files include <samp>config.h</samp>.  The
+source file defines a variable <code>targetm</code>, which is a structure
+containing pointers to functions and data relating to the target
+machine.  <samp><var>machine</var>.c</samp> should also contain their definitions,
+if they are not defined elsewhere in GCC, and other functions called
+through the macros defined in the <samp>.h</samp> file.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Target-Structure.html#Target-Structure" accesskey="1">Target Structure</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">The <code>targetm</code> variable.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Driver.html#Driver" accesskey="2">Driver</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Controlling how the driver runs the compilation passes.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Run_002dtime-Target.html#Run_002dtime-Target" accesskey="3">Run-time Target</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Defining &lsquo;<samp>-m</samp>&rsquo; options like <samp>-m68000</samp> and <samp>-m68020</samp>.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Per_002dFunction-Data.html#Per_002dFunction-Data" accesskey="4">Per-Function Data</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Defining data structures for per-function information.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Storage-Layout.html#Storage-Layout" accesskey="5">Storage Layout</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Defining sizes and alignments of data.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Type-Layout.html#Type-Layout" accesskey="6">Type Layout</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Defining sizes and properties of basic user data types.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Registers.html#Registers" accesskey="7">Registers</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Naming and describing the hardware registers.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Register-Classes.html#Register-Classes" accesskey="8">Register Classes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Defining the classes of hardware registers.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Stack-and-Calling.html#Stack-and-Calling" accesskey="9">Stack and Calling</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Defining which way the stack grows and by how much.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Varargs.html#Varargs">Varargs</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Defining the varargs macros.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Trampolines.html#Trampolines">Trampolines</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Code set up at run time to enter a nested function.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Library-Calls.html#Library-Calls">Library Calls</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Controlling how library routines are implicitly called.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Addressing-Modes.html#Addressing-Modes">Addressing Modes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Defining addressing modes valid for memory operands.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Anchored-Addresses.html#Anchored-Addresses">Anchored Addresses</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Defining how <samp>-fsection-anchors</samp> should work.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Condition-Code.html#Condition-Code">Condition Code</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Defining how insns update the condition code.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Costs.html#Costs">Costs</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Defining relative costs of different operations.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Scheduling.html#Scheduling">Scheduling</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Adjusting the behavior of the instruction scheduler.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Sections.html#Sections">Sections</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Dividing storage into text, data, and other sections.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="PIC.html#PIC">PIC</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Macros for position independent code.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Assembler-Format.html#Assembler-Format">Assembler Format</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Defining how to write insns and pseudo-ops to output.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Debugging-Info.html#Debugging-Info">Debugging Info</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Defining the format of debugging output.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Floating-Point.html#Floating-Point">Floating Point</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Handling floating point for cross-compilers.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Mode-Switching.html#Mode-Switching">Mode Switching</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Insertion of mode-switching instructions.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Target-Attributes.html#Target-Attributes">Target Attributes</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Defining target-specific uses of <code>__attribute__</code>.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Emulated-TLS.html#Emulated-TLS">Emulated TLS</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Emulated TLS support.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="MIPS-Coprocessors.html#MIPS-Coprocessors">MIPS Coprocessors</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">MIPS coprocessor support and how to customize it.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="PCH-Target.html#PCH-Target">PCH Target</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Validity checking for precompiled headers.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="C_002b_002b-ABI.html#C_002b_002b-ABI">C++ ABI</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Controlling C++ ABI changes.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="D-Language-and-ABI.html#D-Language-and-ABI">D Language and ABI</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Controlling D ABI changes.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Named-Address-Spaces.html#Named-Address-Spaces">Named Address Spaces</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Adding support for named address spaces
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Misc.html#Misc">Misc</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Everything else.
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Host-Config.html#Host-Config" accesskey="n" rel="next">Host Config</a>, Previous: <a href="Machine-Desc.html#Machine-Desc" accesskey="p" rel="prev">Machine Desc</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

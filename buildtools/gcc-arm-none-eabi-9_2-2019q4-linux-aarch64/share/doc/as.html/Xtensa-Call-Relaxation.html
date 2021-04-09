@@ -1,0 +1,115 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: Xtensa Call Relaxation</title>
+
+<meta name="description" content="Using as: Xtensa Call Relaxation">
+<meta name="keywords" content="Using as: Xtensa Call Relaxation">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Xtensa-Relaxation.html#Xtensa-Relaxation" rel="up" title="Xtensa Relaxation">
+<link href="Xtensa-Jump-Relaxation.html#Xtensa-Jump-Relaxation" rel="next" title="Xtensa Jump Relaxation">
+<link href="Xtensa-Branch-Relaxation.html#Xtensa-Branch-Relaxation" rel="prev" title="Xtensa Branch Relaxation">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Xtensa-Call-Relaxation"></a>
+<div class="header">
+<p>
+Next: <a href="Xtensa-Jump-Relaxation.html#Xtensa-Jump-Relaxation" accesskey="n" rel="next">Xtensa Jump Relaxation</a>, Previous: <a href="Xtensa-Branch-Relaxation.html#Xtensa-Branch-Relaxation" accesskey="p" rel="prev">Xtensa Branch Relaxation</a>, Up: <a href="Xtensa-Relaxation.html#Xtensa-Relaxation" accesskey="u" rel="up">Xtensa Relaxation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Function-Call-Relaxation"></a>
+<h4 class="subsubsection">9.55.4.2 Function Call Relaxation</h4>
+<a name="index-relaxation-of-call-instructions"></a>
+<a name="index-call-instructions_002c-relaxation"></a>
+
+<p>Function calls may require relaxation because the Xtensa immediate call
+instructions (<code>CALL0</code>, <code>CALL4</code>, <code>CALL8</code> and
+<code>CALL12</code>) provide a PC-relative offset of only 512 Kbytes in either
+direction.  For larger programs, it may be necessary to use indirect
+calls (<code>CALLX0</code>, <code>CALLX4</code>, <code>CALLX8</code> and <code>CALLX12</code>)
+where the target address is specified in a register.  The Xtensa
+assembler can automatically relax immediate call instructions into
+indirect call instructions.  This relaxation is done by loading the
+address of the called function into the callee&rsquo;s return address register
+and then using a <code>CALLX</code> instruction.  So, for example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">    call8 func
+</pre></div>
+
+<p>might be relaxed to:
+</p>
+<div class="smallexample">
+<pre class="smallexample">    .literal .L1, func
+    l32r    a8, .L1
+    callx8  a8
+</pre></div>
+
+<p>Because the addresses of targets of function calls are not generally
+known until link-time, the assembler must assume the worst and relax all
+the calls to functions in other source files, not just those that really
+will be out of range.  The linker can recognize calls that were
+unnecessarily relaxed, and it will remove the overhead introduced by the
+assembler for those cases where direct calls are sufficient.
+</p>
+<p>Call relaxation is disabled by default because it can have a negative
+effect on both code size and performance, although the linker can
+usually eliminate the unnecessary overhead.  If a program is too large
+and some of the calls are out of range, function call relaxation can be
+enabled using the &lsquo;<samp>--longcalls</samp>&rsquo; command-line option or the
+<code>longcalls</code> directive (see <a href="Longcalls-Directive.html#Longcalls-Directive">longcalls</a>).
+</p>
+
+
+
+</body>
+</html>

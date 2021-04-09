@@ -1,0 +1,141 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1992-2019 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License". -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>STABS: Methods</title>
+
+<meta name="description" content="STABS: Methods">
+<meta name="keywords" content="STABS: Methods">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Symbol-Types-Index.html#Symbol-Types-Index" rel="index" title="Symbol Types Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Cplusplus.html#Cplusplus" rel="up" title="Cplusplus">
+<link href="Method-Type-Descriptor.html#Method-Type-Descriptor" rel="next" title="Method Type Descriptor">
+<link href="Class-Instance.html#Class-Instance" rel="prev" title="Class Instance">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Methods"></a>
+<div class="header">
+<p>
+Next: <a href="Method-Type-Descriptor.html#Method-Type-Descriptor" accesskey="n" rel="next">Method Type Descriptor</a>, Previous: <a href="Class-Instance.html#Class-Instance" accesskey="p" rel="prev">Class Instance</a>, Up: <a href="Cplusplus.html#Cplusplus" accesskey="u" rel="up">Cplusplus</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Symbol-Types-Index.html#Symbol-Types-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Method-Definition"></a>
+<h3 class="section">8.6 Method Definition</h3>
+
+<p>The class definition shown above declares Ameth.  The C<tt>++</tt> source below
+defines Ameth:
+</p>
+<div class="example">
+<pre class="example">int
+baseA::Ameth(int in, char other)
+{
+        return in;
+};
+</pre></div>
+
+
+<p>This method definition yields three stabs following the code of the
+method.  One stab describes the method itself and following two describe
+its parameters.  Although there is only one formal argument all methods
+have an implicit argument which is the <code>this</code> pointer.  The <code>this</code>
+pointer is a pointer to the object on which the method was called.  Note
+that the method name is mangled to encode the class name and argument
+types.  Name mangling is described in the <small>ARM</small> (<cite>The Annotated
+C++ Reference Manual</cite>, by Ellis and Stroustrup, <small>ISBN</small>
+0-201-51459-1); <samp>gpcompare.texi</samp> in Cygnus GCC distributions
+describes the differences between GNU mangling and <small>ARM</small>
+mangling.
+</p>
+<div class="example">
+<pre class="example">.stabs &quot;name:symbol_descriptor(global function)return_type(int)&quot;,
+        N_FUN, NIL, NIL, code_addr_of_method_start
+
+.stabs &quot;Ameth__5baseAic:F1&quot;,36,0,0,_Ameth__5baseAic
+</pre></div>
+
+<p>Here is the stab for the <code>this</code> pointer implicit argument.  The
+name of the <code>this</code> pointer is always <code>this</code>.  Type 19, the
+<code>this</code> pointer is defined as a pointer to type 20, <code>baseA</code>,
+but a stab defining <code>baseA</code> has not yet been emitted.  Since the
+compiler knows it will be emitted shortly, here it just outputs a cross
+reference to the undefined symbol, by prefixing the symbol name with
+&lsquo;<samp>xs</samp>&rsquo;.
+</p>
+<div class="example">
+<pre class="example">.stabs &quot;name:sym_desc(register param)type_def(19)=
+        type_desc(ptr to)type_ref(baseA)=
+        type_desc(cross-reference to)baseA:&quot;,N_RSYM,NIL,NIL,register_number
+
+.stabs &quot;this:P19=*20=xsbaseA:&quot;,64,0,0,8
+</pre></div>
+
+<p>The stab for the explicit integer argument looks just like a parameter
+to a C function.  The last field of the stab is the offset from the
+argument pointer, which in most systems is the same as the frame
+pointer.
+</p>
+<div class="example">
+<pre class="example">.stabs &quot;name:sym_desc(value parameter)type_ref(int)&quot;,
+        N_PSYM,NIL,NIL,offset_from_arg_ptr
+
+.stabs &quot;in:p1&quot;,160,0,0,72
+</pre></div>
+
+<p>&lt;&lt; The examples that follow are based on A1.C &gt;&gt;
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Method-Type-Descriptor.html#Method-Type-Descriptor" accesskey="n" rel="next">Method Type Descriptor</a>, Previous: <a href="Class-Instance.html#Class-Instance" accesskey="p" rel="prev">Class Instance</a>, Up: <a href="Cplusplus.html#Cplusplus" accesskey="u" rel="up">Cplusplus</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Symbol-Types-Index.html#Symbol-Types-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

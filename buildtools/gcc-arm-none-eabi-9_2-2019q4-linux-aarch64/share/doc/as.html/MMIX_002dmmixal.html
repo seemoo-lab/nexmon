@@ -1,0 +1,174 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: MMIX-mmixal</title>
+
+<meta name="description" content="Using as: MMIX-mmixal">
+<meta name="keywords" content="Using as: MMIX-mmixal">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="MMIX_002dDependent.html#MMIX_002dDependent" rel="up" title="MMIX-Dependent">
+<link href="MSP430_002dDependent.html#MSP430_002dDependent" rel="next" title="MSP430-Dependent">
+<link href="MMIX_002dPseudos.html#MMIX_002dPseudos" rel="prev" title="MMIX-Pseudos">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="MMIX_002dmmixal"></a>
+<div class="header">
+<p>
+Previous: <a href="MMIX_002dSyntax.html#MMIX_002dSyntax" accesskey="p" rel="prev">MMIX-Syntax</a>, Up: <a href="MMIX_002dDependent.html#MMIX_002dDependent" accesskey="u" rel="up">MMIX-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Differences-to-mmixal"></a>
+<h4 class="subsection">9.28.4 Differences to <code>mmixal</code></h4>
+<a name="index-mmixal-differences"></a>
+<a name="index-differences_002c-mmixal"></a>
+
+<p>The binutils <code>as</code> and <code>ld</code> combination has a few
+differences in function compared to <code>mmixal</code> (see <a href="MMIX_002dSyntax.html#mmixsite">mmixsite</a>).
+</p>
+<p>The replacement of a symbol with a GREG-allocated register
+(see <a href="MMIX_002dPseudos.html#GREG_002dbase">GREG-base</a>) is not handled the exactly same way in
+<code>as</code> as in <code>mmixal</code>.  This is apparent in the
+<code>mmixal</code> example file <code>inout.mms</code>, where different registers
+with different offsets, eventually yielding the same address, are used in
+the first instruction.  This type of difference should however not affect
+the function of any program unless it has specific assumptions about the
+allocated register number.
+</p>
+<p>Line numbers (in the &lsquo;<samp>mmo</samp>&rsquo; object format) are currently not
+supported.
+</p>
+<p>Expression operator precedence is not that of mmixal: operator precedence
+is that of the C programming language.  It&rsquo;s recommended to use
+parentheses to explicitly specify wanted operator precedence whenever more
+than one type of operators are used.
+</p>
+<p>The serialize unary operator <code>&amp;</code>, the fractional division operator
+&lsquo;<samp>//</samp>&rsquo;, the logical not operator <code>!</code> and the modulus operator
+&lsquo;<samp>%</samp>&rsquo; are not available.
+</p>
+<p>Symbols are not global by default, unless the option
+&lsquo;<samp>--globalize-symbols</samp>&rsquo; is passed.  Use the &lsquo;<samp>.global</samp>&rsquo; directive to
+globalize symbols (see <a href="Global.html#Global">Global</a>).
+</p>
+<p>Operand syntax is a bit stricter with <code>as</code> than
+<code>mmixal</code>.  For example, you can&rsquo;t say <code>addu 1,2,3</code>, instead you
+must write <code>addu $1,$2,3</code>.
+</p>
+<p>You can&rsquo;t LOC to a lower address than those already visited
+(i.e., &ldquo;backwards&rdquo;).
+</p>
+<p>A LOC directive must come before any emitted code.
+</p>
+<p>Predefined symbols are visible as file-local symbols after use.  (In the
+ELF file, that is&mdash;the linked mmo file has no notion of a file-local
+symbol.)
+</p>
+<p>Some mapping of constant expressions to sections in LOC expressions is
+attempted, but that functionality is easily confused and should be avoided
+unless compatibility with <code>mmixal</code> is required.  A LOC expression to
+&lsquo;<samp>0x2000000000000000</samp>&rsquo; or higher, maps to the &lsquo;<samp>.data</samp>&rsquo; section and
+lower addresses map to the &lsquo;<samp>.text</samp>&rsquo; section (see <a href="MMIX_002dPseudos.html#MMIX_002dloc">MMIX-loc</a>).
+</p>
+<p>The code and data areas are each contiguous.  Sparse programs with
+far-away LOC directives will take up the same amount of space as a
+contiguous program with zeros filled in the gaps between the LOC
+directives.  If you need sparse programs, you might try and get the wanted
+effect with a linker script and splitting up the code parts into sections
+(see <a href="Section.html#Section">Section</a>).  Assembly code for this, to be compatible with
+<code>mmixal</code>, would look something like:
+</p><div class="smallexample">
+<pre class="smallexample"> .if 0
+ LOC away_expression
+ .else
+ .section away,&quot;ax&quot;
+ .fi
+</pre></div>
+<p><code>as</code> will not execute the LOC directive and <code>mmixal</code>
+ignores the lines with <code>.</code>.  This construct can be used generally to
+help compatibility.
+</p>
+<p>Symbols can&rsquo;t be defined twice&ndash;not even to the same value.
+</p>
+<p>Instruction mnemonics are recognized case-insensitive, though the
+&lsquo;<samp>IS</samp>&rsquo; and &lsquo;<samp>GREG</samp>&rsquo; pseudo-operations must be specified in
+upper-case characters.
+</p>
+<p>There&rsquo;s no unicode support.
+</p>
+<p>The following is a list of programs in &lsquo;<samp>mmix.tar.gz</samp>&rsquo;, available at
+<a href="http://www-cs-faculty.stanford.edu/~knuth/mmix-news.html">http://www-cs-faculty.stanford.edu/~knuth/mmix-news.html</a>, last
+checked with the version dated 2001-08-25 (md5sum
+c393470cfc86fac040487d22d2bf0172) that assemble with <code>mmixal</code> but do
+not assemble with <code>as</code>:
+</p>
+<dl compact="compact">
+<dt><code>silly.mms</code></dt>
+<dd><p>LOC to a previous address.
+</p></dd>
+<dt><code>sim.mms</code></dt>
+<dd><p>Redefines symbol &lsquo;<samp>Done</samp>&rsquo;.
+</p></dd>
+<dt><code>test.mms</code></dt>
+<dd><p>Uses the serial operator &lsquo;<samp>&amp;</samp>&rsquo;.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="MMIX_002dSyntax.html#MMIX_002dSyntax" accesskey="p" rel="prev">MMIX-Syntax</a>, Up: <a href="MMIX_002dDependent.html#MMIX_002dDependent" accesskey="u" rel="up">MMIX-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

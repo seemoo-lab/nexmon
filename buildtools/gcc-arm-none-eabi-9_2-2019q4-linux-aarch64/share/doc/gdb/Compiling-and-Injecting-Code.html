@@ -1,0 +1,453 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Compiling and Injecting Code</title>
+
+<meta name="description" content="Debugging with GDB: Compiling and Injecting Code">
+<meta name="keywords" content="Debugging with GDB: Compiling and Injecting Code">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Altering.html#Altering" rel="up" title="Altering">
+<link href="GDB-Files.html#GDB-Files" rel="next" title="GDB Files">
+<link href="Patching.html#Patching" rel="prev" title="Patching">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Compiling-and-Injecting-Code"></a>
+<div class="header">
+<p>
+Previous: <a href="Patching.html#Patching" accesskey="p" rel="prev">Patching</a>, Up: <a href="Altering.html#Altering" accesskey="u" rel="up">Altering</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Compiling-and-injecting-code-in-GDB"></a>
+<h3 class="section">17.7 Compiling and injecting code in <small>GDB</small></h3>
+<a name="index-injecting-code"></a>
+<a name="index-writing-into-executables-1"></a>
+<a name="index-compiling-code"></a>
+
+<p><small>GDB</small> supports on-demand compilation and code injection into
+programs running under <small>GDB</small>.  GCC 5.0 or higher built with
+<samp>libcc1.so</samp> must be installed for this functionality to be enabled.
+This functionality is implemented with the following commands.
+</p>
+<dl compact="compact">
+<dd><a name="index-compile-code"></a>
+</dd>
+<dt><code>compile code <var>source-code</var></code></dt>
+<dt><code>compile code -raw <var>--</var> <var>source-code</var></code></dt>
+<dd><p>Compile <var>source-code</var> with the compiler language found as the current
+language in <small>GDB</small> (see <a href="Languages.html#Languages">Languages</a>).  If compilation and
+injection is not supported with the current language specified in
+<small>GDB</small>, or the compiler does not support this feature, an error
+message will be printed.  If <var>source-code</var> compiles and links
+successfully, <small>GDB</small> will load the object-code emitted,
+and execute it within the context of the currently selected inferior.
+It is important to note that the compiled code is executed immediately.
+After execution, the compiled code is removed from <small>GDB</small> and any
+new types or variables you have defined will be deleted.
+</p>
+<p>The command allows you to specify <var>source-code</var> in two ways.
+The simplest method is to provide a single line of code to the command.
+E.g.:
+</p>
+<div class="smallexample">
+<pre class="smallexample">compile code printf (&quot;hello world\n&quot;);
+</pre></div>
+
+<p>If you specify options on the command line as well as source code, they
+may conflict.  The &lsquo;<samp>--</samp>&rsquo; delimiter can be used to separate options
+from actual source code.  E.g.:
+</p>
+<div class="smallexample">
+<pre class="smallexample">compile code -r -- printf (&quot;hello world\n&quot;);
+</pre></div>
+
+<p>Alternatively you can enter source code as multiple lines of text.  To
+enter this mode, invoke the &lsquo;<samp>compile code</samp>&rsquo; command without any text
+following the command.  This will start the multiple-line editor and
+allow you to type as many lines of source code as required.  When you
+have completed typing, enter &lsquo;<samp>end</samp>&rsquo; on its own line to exit the
+editor.
+</p>
+<div class="smallexample">
+<pre class="smallexample">compile code
+&gt;printf (&quot;hello\n&quot;);
+&gt;printf (&quot;world\n&quot;);
+&gt;end
+</pre></div>
+
+<p>Specifying &lsquo;<samp>-raw</samp>&rsquo;, prohibits <small>GDB</small> from wrapping the
+provided <var>source-code</var> in a callable scope.  In this case, you must
+specify the entry point of the code by defining a function named
+<code>_gdb_expr_</code>.  The &lsquo;<samp>-raw</samp>&rsquo; code cannot access variables of the
+inferior.  Using &lsquo;<samp>-raw</samp>&rsquo; option may be needed for example when
+<var>source-code</var> requires &lsquo;<samp>#include</samp>&rsquo; lines which may conflict with
+inferior symbols otherwise.
+</p>
+<a name="index-compile-file"></a>
+</dd>
+<dt><code>compile file <var>filename</var></code></dt>
+<dt><code>compile file -raw <var>filename</var></code></dt>
+<dd><p>Like <code>compile code</code>, but take the source code from <var>filename</var>.
+</p>
+<div class="smallexample">
+<pre class="smallexample">compile file /home/user/example.c
+</pre></div>
+</dd>
+</dl>
+
+<dl compact="compact">
+<dt><code>compile print <var>expr</var></code></dt>
+<dt><code>compile print /<var>f</var> <var>expr</var></code></dt>
+<dd><p>Compile and execute <var>expr</var> with the compiler language found as the
+current language in <small>GDB</small> (see <a href="Languages.html#Languages">Languages</a>).  By default the
+value of <var>expr</var> is printed in a format appropriate to its data type;
+you can choose a different format by specifying &lsquo;<samp>/<var>f</var></samp>&rsquo;, where
+<var>f</var> is a letter specifying the format; see <a href="Output-Formats.html#Output-Formats">Output
+Formats</a>.
+</p>
+</dd>
+<dt><code>compile print</code></dt>
+<dt><code>compile print /<var>f</var></code></dt>
+<dd><a name="index-reprint-the-last-value-1"></a>
+<p>Alternatively you can enter the expression (source code producing it) as
+multiple lines of text.  To enter this mode, invoke the &lsquo;<samp>compile print</samp>&rsquo;
+command without any text following the command.  This will start the
+multiple-line editor.
+</p></dd>
+</dl>
+
+<p>The process of compiling and injecting the code can be inspected using:
+</p>
+<dl compact="compact">
+<dd><a name="set-debug-compile"></a></dd>
+<dt><code>set debug compile</code></dt>
+<dd><a name="index-compile-command-debugging-info"></a>
+<p>Turns on or off display of <small>GDB</small> process of compiling and
+injecting the code.  The default is off.
+</p>
+</dd>
+<dt><code>show debug compile</code></dt>
+<dd><p>Displays the current state of displaying <small>GDB</small> process of
+compiling and injecting the code.
+</p>
+<a name="set-debug-compile_002dcplus_002dtypes"></a></dd>
+<dt><code>set debug compile-cplus-types</code></dt>
+<dd><a name="index-compile-C_002b_002b-type-conversion"></a>
+<p>Turns on or off the display of C<tt>++</tt> type conversion debugging information.
+The default is off.
+</p>
+</dd>
+<dt><code>show debug compile-cplus-types</code></dt>
+<dd><p>Displays the current state of displaying debugging information for
+C<tt>++</tt> type conversion.
+</p></dd>
+</dl>
+
+<a name="Compilation-options-for-the-compile-command"></a>
+<h4 class="subsection">17.7.1 Compilation options for the <code>compile</code> command</h4>
+
+<p><small>GDB</small> needs to specify the right compilation options for the code
+to be injected, in part to make its ABI compatible with the inferior
+and in part to make the injected code compatible with <small>GDB</small>&rsquo;s
+injecting process.
+</p>
+<p>The options used, in increasing precedence:
+</p>
+<dl compact="compact">
+<dt>target architecture and OS options (<code>gdbarch</code>)</dt>
+<dd><p>These options depend on target processor type and target operating
+system, usually they specify at least 32-bit (<code>-m32</code>) or 64-bit
+(<code>-m64</code>) compilation option.
+</p>
+</dd>
+<dt>compilation options recorded in the target</dt>
+<dd><p><small>GCC</small> (since version 4.7) stores the options used for compilation
+into <code>DW_AT_producer</code> part of DWARF debugging information according
+to the <small>GCC</small> option <code>-grecord-gcc-switches</code>.  One has to
+explicitly specify <code>-g</code> during inferior compilation otherwise
+<small>GCC</small> produces no DWARF.  This feature is only relevant for
+platforms where <code>-g</code> produces DWARF by default, otherwise one may
+try to enforce DWARF by using <code>-gdwarf-4</code>.
+</p>
+</dd>
+<dt>compilation options set by <code>set compile-args</code></dt>
+</dl>
+
+<p>You can override compilation options using the following command:
+</p>
+<dl compact="compact">
+<dt><code>set compile-args</code></dt>
+<dd><a name="index-compile-command-options-override"></a>
+<p>Set compilation options used for compiling and injecting code with the
+<code>compile</code> commands.  These options override any conflicting ones
+from the target architecture and/or options stored during inferior
+compilation.
+</p>
+</dd>
+<dt><code>show compile-args</code></dt>
+<dd><p>Displays the current state of compilation options override.
+This does not show all the options actually used during compilation,
+use <a href="#set-debug-compile">set debug compile</a> for that.
+</p></dd>
+</dl>
+
+<a name="Caveats-when-using-the-compile-command"></a>
+<h4 class="subsection">17.7.2 Caveats when using the <code>compile</code> command</h4>
+
+<p>There are a few caveats to keep in mind when using the <code>compile</code>
+command.  As the caveats are different per language, the table below
+highlights specific issues on a per language basis.
+</p>
+<dl compact="compact">
+<dt>C code examples and caveats</dt>
+<dd><p>When the language in <small>GDB</small> is set to &lsquo;<samp>C</samp>&rsquo;, the compiler will
+attempt to compile the source code with a &lsquo;<samp>C</samp>&rsquo; compiler.  The source
+code provided to the <code>compile</code> command will have much the same
+access to variables and types as it normally would if it were part of
+the program currently being debugged in <small>GDB</small>.
+</p>
+<p>Below is a sample program that forms the basis of the examples that
+follow.  This program has been compiled and loaded into <small>GDB</small>,
+much like any other normal debugging session.
+</p>
+<div class="smallexample">
+<pre class="smallexample">void function1 (void)
+{
+   int i = 42;
+   printf (&quot;function 1\n&quot;);
+}
+
+void function2 (void)
+{
+   int j = 12;
+   function1 ();
+}
+
+int main(void)
+{
+   int k = 6;
+   int *p;
+   function2 ();
+   return 0;
+}
+</pre></div>
+
+<p>For the purposes of the examples in this section, the program above has
+been compiled, loaded into <small>GDB</small>, stopped at the function
+<code>main</code>, and <small>GDB</small> is awaiting input from the user.
+</p>
+<p>To access variables and types for any program in <small>GDB</small>, the
+program must be compiled and packaged with debug information.  The
+<code>compile</code> command is not an exception to this rule.  Without debug
+information, you can still use the <code>compile</code> command, but you will
+be very limited in what variables and types you can access.
+</p>
+<p>So with that in mind, the example above has been compiled with debug
+information enabled.  The <code>compile</code> command will have access to
+all variables and types (except those that may have been optimized
+out).  Currently, as <small>GDB</small> has stopped the program in the
+<code>main</code> function, the <code>compile</code> command would have access to
+the variable <code>k</code>.  You could invoke the <code>compile</code> command
+and type some source code to set the value of <code>k</code>.  You can also
+read it, or do anything with that variable you would normally do in
+<code>C</code>.  Be aware that changes to inferior variables in the
+<code>compile</code> command are persistent.  In the following example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">compile code k = 3;
+</pre></div>
+
+<p>the variable <code>k</code> is now 3.  It will retain that value until
+something else in the example program changes it, or another
+<code>compile</code> command changes it.
+</p>
+<p>Normal scope and access rules apply to source code compiled and
+injected by the <code>compile</code> command.  In the example, the variables
+<code>j</code> and <code>k</code> are not accessible yet, because the program is
+currently stopped in the <code>main</code> function, where these variables
+are not in scope.  Therefore, the following command
+</p>
+<div class="smallexample">
+<pre class="smallexample">compile code j = 3;
+</pre></div>
+
+<p>will result in a compilation error message.
+</p>
+<p>Once the program is continued, execution will bring these variables in
+scope, and they will become accessible; then the code you specify via
+the <code>compile</code> command will be able to access them.
+</p>
+<p>You can create variables and types with the <code>compile</code> command as
+part of your source code.  Variables and types that are created as part
+of the <code>compile</code> command are not visible to the rest of the program for
+the duration of its run.  This example is valid:
+</p>
+<div class="smallexample">
+<pre class="smallexample">compile code int ff = 5; printf (&quot;ff is %d\n&quot;, ff);
+</pre></div>
+
+<p>However, if you were to type the following into <small>GDB</small> after that
+command has completed:
+</p>
+<div class="smallexample">
+<pre class="smallexample">compile code printf (&quot;ff is %d\n'', ff);
+</pre></div>
+
+<p>a compiler error would be raised as the variable <code>ff</code> no longer
+exists.  Object code generated and injected by the <code>compile</code>
+command is removed when its execution ends.  Caution is advised
+when assigning to program variables values of variables created by the
+code submitted to the <code>compile</code> command.  This example is valid:
+</p>
+<div class="smallexample">
+<pre class="smallexample">compile code int ff = 5; k = ff;
+</pre></div>
+
+<p>The value of the variable <code>ff</code> is assigned to <code>k</code>.  The variable
+<code>k</code> does not require the existence of <code>ff</code> to maintain the value
+it has been assigned.  However, pointers require particular care in
+assignment.  If the source code compiled with the <code>compile</code> command
+changed the address of a pointer in the example program, perhaps to a
+variable created in the <code>compile</code> command, that pointer would point
+to an invalid location when the command exits.  The following example
+would likely cause issues with your debugged program:
+</p>
+<div class="smallexample">
+<pre class="smallexample">compile code int ff = 5; p = &amp;ff;
+</pre></div>
+
+<p>In this example, <code>p</code> would point to <code>ff</code> when the
+<code>compile</code> command is executing the source code provided to it.
+However, as variables in the (example) program persist with their
+assigned values, the variable <code>p</code> would point to an invalid
+location when the command exists.  A general rule should be followed
+in that you should either assign <code>NULL</code> to any assigned pointers,
+or restore a valid location to the pointer before the command exits.
+</p>
+<p>Similar caution must be exercised with any structs, unions, and typedefs
+defined in <code>compile</code> command.  Types defined in the <code>compile</code>
+command will no longer be available in the next <code>compile</code> command.
+Therefore, if you cast a variable to a type defined in the
+<code>compile</code> command, care must be taken to ensure that any future
+need to resolve the type can be achieved.
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) compile code static struct a { int a; } v = { 42 }; argv = &amp;v;
+(gdb) compile code printf (&quot;%d\n&quot;, ((struct a *) argv)-&gt;a);
+gdb command line:1:36: error: dereferencing pointer to incomplete type âstruct aâ
+Compilation failed.
+(gdb) compile code struct a { int a; }; printf (&quot;%d\n&quot;, ((struct a *) argv)-&gt;a);
+42
+</pre></div>
+
+<p>Variables that have been optimized away by the compiler are not
+accessible to the code submitted to the <code>compile</code> command.
+Access to those variables will generate a compiler error which <small>GDB</small>
+will print to the console.
+</p></dd>
+</dl>
+
+<a name="Compiler-search-for-the-compile-command"></a>
+<h4 class="subsection">17.7.3 Compiler search for the <code>compile</code> command</h4>
+
+<p><small>GDB</small> needs to find <small>GCC</small> for the inferior being debugged
+which may not be obvious for remote targets of different architecture
+than where <small>GDB</small> is running.  Environment variable <code>PATH</code> on
+<small>GDB</small> host is searched for <small>GCC</small> binary matching the
+target architecture and operating system.  This search can be overriden
+by <code>set compile-gcc</code> <small>GDB</small> command below.  <code>PATH</code> is
+taken from shell that executed <small>GDB</small>, it is not the value set by
+<small>GDB</small> command <code>set environment</code>).  See <a href="Environment.html#Environment">Environment</a>.
+</p>
+
+<p>Specifically <code>PATH</code> is searched for binaries matching regular expression
+<code><var>arch</var>(-[^-]*)?-<var>os</var>-gcc</code> according to the inferior target being
+debugged.  <var>arch</var> is processor name &mdash; multiarch is supported, so for
+example both <code>i386</code> and <code>x86_64</code> targets look for pattern
+<code>(x86_64|i.86)</code> and both <code>s390</code> and <code>s390x</code> targets look
+for pattern <code>s390x?</code>.  <var>os</var> is currently supported only for
+pattern <code>linux(-gnu)?</code>.
+</p>
+<p>On Posix hosts the compiler driver <small>GDB</small> needs to find also
+shared library <samp>libcc1.so</samp> from the compiler.  It is searched in
+default shared library search path (overridable with usual environment
+variable <code>LD_LIBRARY_PATH</code>), unrelated to <code>PATH</code> or <code>set
+compile-gcc</code> settings.  Contrary to it <samp>libcc1plugin.so</samp> is found
+according to the installation of the found compiler &mdash; as possibly
+specified by the <code>set compile-gcc</code> command.
+</p>
+<dl compact="compact">
+<dt><code>set compile-gcc</code></dt>
+<dd><a name="index-compile-command-driver-filename-override"></a>
+<p>Set compilation command used for compiling and injecting code with the
+<code>compile</code> commands.  If this option is not set (it is set to
+an empty string), the search described above will occur &mdash; that is the
+default.
+</p>
+</dd>
+<dt><code>show compile-gcc</code></dt>
+<dd><p>Displays the current compile command <small>GCC</small> driver filename.
+If set, it is the main command <code>gcc</code>, found usually for example
+under name <samp>x86_64-linux-gnu-gcc</samp>.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Patching.html#Patching" accesskey="p" rel="prev">Patching</a>, Up: <a href="Altering.html#Altering" accesskey="u" rel="up">Altering</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU linker LD
+(GNU Toolchain for the A-profile Architecture 9.2-2019.12 (arm-9.10))
+version 2.33.1.
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License". -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>LD: Simple Example</title>
+
+<meta name="description" content="LD: Simple Example">
+<meta name="keywords" content="LD: Simple Example">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="LD-Index.html#LD-Index" rel="index" title="LD Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Scripts.html#Scripts" rel="up" title="Scripts">
+<link href="Simple-Commands.html#Simple-Commands" rel="next" title="Simple Commands">
+<link href="Script-Format.html#Script-Format" rel="prev" title="Script Format">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Simple-Example"></a>
+<div class="header">
+<p>
+Next: <a href="Simple-Commands.html#Simple-Commands" accesskey="n" rel="next">Simple Commands</a>, Previous: <a href="Script-Format.html#Script-Format" accesskey="p" rel="prev">Script Format</a>, Up: <a href="Scripts.html#Scripts" accesskey="u" rel="up">Scripts</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="LD-Index.html#LD-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Simple-Linker-Script-Example"></a>
+<h3 class="section">3.3 Simple Linker Script Example</h3>
+<a name="index-linker-script-example"></a>
+<a name="index-example-of-linker-script"></a>
+<p>Many linker scripts are fairly simple.
+</p>
+<p>The simplest possible linker script has just one command:
+&lsquo;<samp>SECTIONS</samp>&rsquo;.  You use the &lsquo;<samp>SECTIONS</samp>&rsquo; command to describe the
+memory layout of the output file.
+</p>
+<p>The &lsquo;<samp>SECTIONS</samp>&rsquo; command is a powerful command.  Here we will
+describe a simple use of it.  Let&rsquo;s assume your program consists only of
+code, initialized data, and uninitialized data.  These will be in the
+&lsquo;<samp>.text</samp>&rsquo;, &lsquo;<samp>.data</samp>&rsquo;, and &lsquo;<samp>.bss</samp>&rsquo; sections, respectively.
+Let&rsquo;s assume further that these are the only sections which appear in
+your input files.
+</p>
+<p>For this example, let&rsquo;s say that the code should be loaded at address
+0x10000, and that the data should start at address 0x8000000.  Here is a
+linker script which will do that:
+</p><div class="smallexample">
+<pre class="smallexample">SECTIONS
+{
+  . = 0x10000;
+  .text : { *(.text) }
+  . = 0x8000000;
+  .data : { *(.data) }
+  .bss : { *(.bss) }
+}
+</pre></div>
+
+<p>You write the &lsquo;<samp>SECTIONS</samp>&rsquo; command as the keyword &lsquo;<samp>SECTIONS</samp>&rsquo;,
+followed by a series of symbol assignments and output section
+descriptions enclosed in curly braces.
+</p>
+<p>The first line inside the &lsquo;<samp>SECTIONS</samp>&rsquo; command of the above example
+sets the value of the special symbol &lsquo;<samp>.</samp>&rsquo;, which is the location
+counter.  If you do not specify the address of an output section in some
+other way (other ways are described later), the address is set from the
+current value of the location counter.  The location counter is then
+incremented by the size of the output section.  At the start of the
+&lsquo;<samp>SECTIONS</samp>&rsquo; command, the location counter has the value &lsquo;<samp>0</samp>&rsquo;.
+</p>
+<p>The second line defines an output section, &lsquo;<samp>.text</samp>&rsquo;.  The colon is
+required syntax which may be ignored for now.  Within the curly braces
+after the output section name, you list the names of the input sections
+which should be placed into this output section.  The &lsquo;<samp>*</samp>&rsquo; is a
+wildcard which matches any file name.  The expression &lsquo;<samp>*(.text)</samp>&rsquo;
+means all &lsquo;<samp>.text</samp>&rsquo; input sections in all input files.
+</p>
+<p>Since the location counter is &lsquo;<samp>0x10000</samp>&rsquo; when the output section
+&lsquo;<samp>.text</samp>&rsquo; is defined, the linker will set the address of the
+&lsquo;<samp>.text</samp>&rsquo; section in the output file to be &lsquo;<samp>0x10000</samp>&rsquo;.
+</p>
+<p>The remaining lines define the &lsquo;<samp>.data</samp>&rsquo; and &lsquo;<samp>.bss</samp>&rsquo; sections in
+the output file.  The linker will place the &lsquo;<samp>.data</samp>&rsquo; output section
+at address &lsquo;<samp>0x8000000</samp>&rsquo;.  After the linker places the &lsquo;<samp>.data</samp>&rsquo;
+output section, the value of the location counter will be
+&lsquo;<samp>0x8000000</samp>&rsquo; plus the size of the &lsquo;<samp>.data</samp>&rsquo; output section.  The
+effect is that the linker will place the &lsquo;<samp>.bss</samp>&rsquo; output section
+immediately after the &lsquo;<samp>.data</samp>&rsquo; output section in memory.
+</p>
+<p>The linker will ensure that each output section has the required
+alignment, by increasing the location counter if necessary.  In this
+example, the specified addresses for the &lsquo;<samp>.text</samp>&rsquo; and &lsquo;<samp>.data</samp>&rsquo;
+sections will probably satisfy any alignment constraints, but the linker
+may have to create a small gap between the &lsquo;<samp>.data</samp>&rsquo; and &lsquo;<samp>.bss</samp>&rsquo;
+sections.
+</p>
+<p>That&rsquo;s it!  That&rsquo;s a simple and complete linker script.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Simple-Commands.html#Simple-Commands" accesskey="n" rel="next">Simple Commands</a>, Previous: <a href="Script-Format.html#Script-Format" accesskey="p" rel="prev">Script Format</a>, Up: <a href="Scripts.html#Scripts" accesskey="u" rel="up">Scripts</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="LD-Index.html#LD-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

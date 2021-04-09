@@ -1,0 +1,197 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: ARM</title>
+
+<meta name="description" content="Debugging with GDB: ARM">
+<meta name="keywords" content="Debugging with GDB: ARM">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Embedded-Processors.html#Embedded-Processors" rel="up" title="Embedded Processors">
+<link href="M68K.html#M68K" rel="next" title="M68K">
+<link href="ARC.html#ARC" rel="prev" title="ARC">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="ARM"></a>
+<div class="header">
+<p>
+Next: <a href="M68K.html#M68K" accesskey="n" rel="next">M68K</a>, Previous: <a href="ARC.html#ARC" accesskey="p" rel="prev">ARC</a>, Up: <a href="Embedded-Processors.html#Embedded-Processors" accesskey="u" rel="up">Embedded Processors</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="ARM-1"></a>
+<h4 class="subsection">21.3.2 ARM</h4>
+
+<p><small>GDB</small> provides the following ARM-specific commands:
+</p>
+<dl compact="compact">
+<dt><code>set arm disassembler</code></dt>
+<dd><a name="index-set-arm"></a>
+<p>This commands selects from a list of disassembly styles.  The
+<code>&quot;std&quot;</code> style is the standard style.
+</p>
+</dd>
+<dt><code>show arm disassembler</code></dt>
+<dd><a name="index-show-arm"></a>
+<p>Show the current disassembly style.
+</p>
+</dd>
+<dt><code>set arm apcs32</code></dt>
+<dd><a name="index-ARM-32_002dbit-mode"></a>
+<p>This command toggles ARM operation mode between 32-bit and 26-bit.
+</p>
+</dd>
+<dt><code>show arm apcs32</code></dt>
+<dd><p>Display the current usage of the ARM 32-bit mode.
+</p>
+</dd>
+<dt><code>set arm fpu <var>fputype</var></code></dt>
+<dd><p>This command sets the ARM floating-point unit (FPU) type.  The
+argument <var>fputype</var> can be one of these:
+</p>
+<dl compact="compact">
+<dt><code>auto</code></dt>
+<dd><p>Determine the FPU type by querying the OS ABI.
+</p></dd>
+<dt><code>softfpa</code></dt>
+<dd><p>Software FPU, with mixed-endian doubles on little-endian ARM
+processors.
+</p></dd>
+<dt><code>fpa</code></dt>
+<dd><p>GCC-compiled FPA co-processor.
+</p></dd>
+<dt><code>softvfp</code></dt>
+<dd><p>Software FPU with pure-endian doubles.
+</p></dd>
+<dt><code>vfp</code></dt>
+<dd><p>VFP co-processor.
+</p></dd>
+</dl>
+
+</dd>
+<dt><code>show arm fpu</code></dt>
+<dd><p>Show the current type of the FPU.
+</p>
+</dd>
+<dt><code>set arm abi</code></dt>
+<dd><p>This command forces <small>GDB</small> to use the specified ABI.
+</p>
+</dd>
+<dt><code>show arm abi</code></dt>
+<dd><p>Show the currently used ABI.
+</p>
+</dd>
+<dt><code>set arm fallback-mode (arm|thumb|auto)</code></dt>
+<dd><p><small>GDB</small> uses the symbol table, when available, to determine
+whether instructions are ARM or Thumb.  This command controls
+<small>GDB</small>&rsquo;s default behavior when the symbol table is not
+available.  The default is &lsquo;<samp>auto</samp>&rsquo;, which causes <small>GDB</small> to
+use the current execution mode (from the <code>T</code> bit in the <code>CPSR</code>
+register).
+</p>
+</dd>
+<dt><code>show arm fallback-mode</code></dt>
+<dd><p>Show the current fallback instruction mode.
+</p>
+</dd>
+<dt><code>set arm force-mode (arm|thumb|auto)</code></dt>
+<dd><p>This command overrides use of the symbol table to determine whether
+instructions are ARM or Thumb.  The default is &lsquo;<samp>auto</samp>&rsquo;, which
+causes <small>GDB</small> to use the symbol table and then the setting
+of &lsquo;<samp>set arm fallback-mode</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>show arm force-mode</code></dt>
+<dd><p>Show the current forced instruction mode.
+</p>
+</dd>
+<dt><code>set debug arm</code></dt>
+<dd><p>Toggle whether to display ARM-specific debugging messages from the ARM
+target support subsystem.
+</p>
+</dd>
+<dt><code>show debug arm</code></dt>
+<dd><p>Show whether ARM-specific debugging messages are enabled.
+</p></dd>
+</dl>
+
+<dl compact="compact">
+<dt><code>target sim <span class="roman">[</span><var>simargs</var><span class="roman">]</span> &hellip;</code></dt>
+<dd><p>The <small>GDB</small> ARM simulator accepts the following optional arguments.
+</p>
+<dl compact="compact">
+<dt><code>--swi-support=<var>type</var></code></dt>
+<dd><p>Tell the simulator which SWI interfaces to support.  The argument
+<var>type</var> may be a comma separated list of the following values.
+The default value is <code>all</code>.
+</p>
+<dl compact="compact">
+<dt><code>none</code></dt>
+<dt><code>demon</code></dt>
+<dt><code>angel</code></dt>
+<dt><code>redboot</code></dt>
+<dt><code>all</code></dt>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="M68K.html#M68K" accesskey="n" rel="next">M68K</a>, Previous: <a href="ARC.html#ARC" accesskey="p" rel="prev">ARC</a>, Up: <a href="Embedded-Processors.html#Embedded-Processors" accesskey="u" rel="up">Embedded Processors</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

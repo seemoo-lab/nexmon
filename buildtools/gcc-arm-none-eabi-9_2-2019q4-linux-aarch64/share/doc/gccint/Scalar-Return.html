@@ -1,0 +1,237 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Scalar Return</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Scalar Return">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Scalar Return">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Stack-and-Calling.html#Stack-and-Calling" rel="up" title="Stack and Calling">
+<link href="Aggregate-Return.html#Aggregate-Return" rel="next" title="Aggregate Return">
+<link href="Register-Arguments.html#Register-Arguments" rel="prev" title="Register Arguments">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Scalar-Return"></a>
+<div class="header">
+<p>
+Next: <a href="Aggregate-Return.html#Aggregate-Return" accesskey="n" rel="next">Aggregate Return</a>, Previous: <a href="Register-Arguments.html#Register-Arguments" accesskey="p" rel="prev">Register Arguments</a>, Up: <a href="Stack-and-Calling.html#Stack-and-Calling" accesskey="u" rel="up">Stack and Calling</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="How-Scalar-Function-Values-Are-Returned"></a>
+<h4 class="subsection">18.9.8 How Scalar Function Values Are Returned</h4>
+<a name="index-return-values-in-registers"></a>
+<a name="index-values_002c-returned-by-functions"></a>
+<a name="index-scalars_002c-returned-as-values"></a>
+
+<p>This section discusses the macros that control returning scalars as
+values&mdash;values that can fit in registers.
+</p>
+<dl>
+<dt><a name="index-TARGET_005fFUNCTION_005fVALUE"></a>Target Hook: <em>rtx</em> <strong>TARGET_FUNCTION_VALUE</strong> <em>(const_tree <var>ret_type</var>, const_tree <var>fn_decl_or_type</var>, bool <var>outgoing</var>)</em></dt>
+<dd>
+<p>Define this to return an RTX representing the place where a function
+returns or receives a value of data type <var>ret_type</var>, a tree node
+representing a data type.  <var>fn_decl_or_type</var> is a tree node
+representing <code>FUNCTION_DECL</code> or <code>FUNCTION_TYPE</code> of a
+function being called.  If <var>outgoing</var> is false, the hook should
+compute the register in which the caller will see the return value.
+Otherwise, the hook should return an RTX representing the place where
+a function returns a value.
+</p>
+<p>On many machines, only <code>TYPE_MODE (<var>ret_type</var>)</code> is relevant.
+(Actually, on most machines, scalar values are returned in the same
+place regardless of mode.)  The value of the expression is usually a
+<code>reg</code> RTX for the hard register where the return value is stored.
+The value can also be a <code>parallel</code> RTX, if the return value is in
+multiple places.  See <code>TARGET_FUNCTION_ARG</code> for an explanation of the
+<code>parallel</code> form.   Note that the callee will populate every
+location specified in the <code>parallel</code>, but if the first element of
+the <code>parallel</code> contains the whole return value, callers will use
+that element as the canonical location and ignore the others.  The m68k
+port uses this type of <code>parallel</code> to return pointers in both
+&lsquo;<samp>%a0</samp>&rsquo; (the canonical location) and &lsquo;<samp>%d0</samp>&rsquo;.
+</p>
+<p>If <code>TARGET_PROMOTE_FUNCTION_RETURN</code> returns true, you must apply
+the same promotion rules specified in <code>PROMOTE_MODE</code> if
+<var>valtype</var> is a scalar type.
+</p>
+<p>If the precise function being called is known, <var>func</var> is a tree
+node (<code>FUNCTION_DECL</code>) for it; otherwise, <var>func</var> is a null
+pointer.  This makes it possible to use a different value-returning
+convention for specific functions when all their calls are
+known.
+</p>
+<p>Some target machines have &ldquo;register windows&rdquo; so that the register in
+which a function returns its value is not the same as the one in which
+the caller sees the value.  For such machines, you should return
+different RTX depending on <var>outgoing</var>.
+</p>
+<p><code>TARGET_FUNCTION_VALUE</code> is not used for return values with
+aggregate data types, because these are returned in another way.  See
+<code>TARGET_STRUCT_VALUE_RTX</code> and related macros, below.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-FUNCTION_005fVALUE"></a>Macro: <strong>FUNCTION_VALUE</strong> <em>(<var>valtype</var>, <var>func</var>)</em></dt>
+<dd><p>This macro has been deprecated.  Use <code>TARGET_FUNCTION_VALUE</code> for
+a new target instead.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-LIBCALL_005fVALUE"></a>Macro: <strong>LIBCALL_VALUE</strong> <em>(<var>mode</var>)</em></dt>
+<dd><p>A C expression to create an RTX representing the place where a library
+function returns a value of mode <var>mode</var>.
+</p>
+<p>Note that &ldquo;library function&rdquo; in this context means a compiler
+support routine, used to perform arithmetic, whose name is known
+specially by the compiler and was not mentioned in the C code being
+compiled.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fLIBCALL_005fVALUE"></a>Target Hook: <em>rtx</em> <strong>TARGET_LIBCALL_VALUE</strong> <em>(machine_mode <var>mode</var>, const_rtx <var>fun</var>)</em></dt>
+<dd><p>Define this hook if the back-end needs to know the name of the libcall
+function in order to determine where the result should be returned.
+</p>
+<p>The mode of the result is given by <var>mode</var> and the name of the called
+library function is given by <var>fun</var>.  The hook should return an RTX
+representing the place where the library function result will be returned.
+</p>
+<p>If this hook is not defined, then LIBCALL_VALUE will be used.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-FUNCTION_005fVALUE_005fREGNO_005fP"></a>Macro: <strong>FUNCTION_VALUE_REGNO_P</strong> <em>(<var>regno</var>)</em></dt>
+<dd><p>A C expression that is nonzero if <var>regno</var> is the number of a hard
+register in which the values of called function may come back.
+</p>
+<p>A register whose use for returning values is limited to serving as the
+second of a pair (for a value of type <code>double</code>, say) need not be
+recognized by this macro.  So for most machines, this definition
+suffices:
+</p>
+<div class="smallexample">
+<pre class="smallexample">#define FUNCTION_VALUE_REGNO_P(N) ((N) == 0)
+</pre></div>
+
+<p>If the machine has register windows, so that the caller and the called
+function use different registers for the return value, this macro
+should recognize only the caller&rsquo;s register numbers.
+</p>
+<p>This macro has been deprecated.  Use <code>TARGET_FUNCTION_VALUE_REGNO_P</code>
+for a new target instead.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fFUNCTION_005fVALUE_005fREGNO_005fP"></a>Target Hook: <em>bool</em> <strong>TARGET_FUNCTION_VALUE_REGNO_P</strong> <em>(const unsigned int <var>regno</var>)</em></dt>
+<dd><p>A target hook that return <code>true</code> if <var>regno</var> is the number of a hard
+register in which the values of called function may come back.
+</p>
+<p>A register whose use for returning values is limited to serving as the
+second of a pair (for a value of type <code>double</code>, say) need not be
+recognized by this target hook.
+</p>
+<p>If the machine has register windows, so that the caller and the called
+function use different registers for the return value, this target hook
+should recognize only the caller&rsquo;s register numbers.
+</p>
+<p>If this hook is not defined, then FUNCTION_VALUE_REGNO_P will be used.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-APPLY_005fRESULT_005fSIZE"></a>Macro: <strong>APPLY_RESULT_SIZE</strong></dt>
+<dd><p>Define this macro if &lsquo;<samp>untyped_call</samp>&rsquo; and &lsquo;<samp>untyped_return</samp>&rsquo;
+need more space than is implied by <code>FUNCTION_VALUE_REGNO_P</code> for
+saving and restoring an arbitrary return value.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fOMIT_005fSTRUCT_005fRETURN_005fREG"></a>Target Hook: <em>bool</em> <strong>TARGET_OMIT_STRUCT_RETURN_REG</strong></dt>
+<dd><p>Normally, when a function returns a structure by memory, the address
+is passed as an invisible pointer argument, but the compiler also
+arranges to return the address from the function like it would a normal
+pointer return value.  Define this to true if that behavior is
+undesirable on your target.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fRETURN_005fIN_005fMSB"></a>Target Hook: <em>bool</em> <strong>TARGET_RETURN_IN_MSB</strong> <em>(const_tree <var>type</var>)</em></dt>
+<dd><p>This hook should return true if values of type <var>type</var> are returned
+at the most significant end of a register (in other words, if they are
+padded at the least significant end).  You can assume that <var>type</var>
+is returned in a register; the caller is required to check this.
+</p>
+<p>Note that the register provided by <code>TARGET_FUNCTION_VALUE</code> must
+be able to hold the complete return value.  For example, if a 1-, 2-
+or 3-byte structure is returned at the most significant end of a
+4-byte register, <code>TARGET_FUNCTION_VALUE</code> should provide an
+<code>SImode</code> rtx.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Aggregate-Return.html#Aggregate-Return" accesskey="n" rel="next">Aggregate Return</a>, Previous: <a href="Register-Arguments.html#Register-Arguments" accesskey="p" rel="prev">Register Arguments</a>, Up: <a href="Stack-and-Calling.html#Stack-and-Calling" accesskey="u" rel="up">Stack and Calling</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

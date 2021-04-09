@@ -1,0 +1,159 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): MIPS SIMD Architecture (MSA) Support</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): MIPS SIMD Architecture (MSA) Support">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): MIPS SIMD Architecture (MSA) Support">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Target-Builtins.html#Target-Builtins" rel="up" title="Target Builtins">
+<link href="MIPS-SIMD-Architecture-Built_002din-Functions.html#MIPS-SIMD-Architecture-Built_002din-Functions" rel="next" title="MIPS SIMD Architecture Built-in Functions">
+<link href="MIPS_002d3D-Built_002din-Functions.html#MIPS_002d3D-Built_002din-Functions" rel="prev" title="MIPS-3D Built-in Functions">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="MIPS-SIMD-Architecture-_0028MSA_0029-Support"></a>
+<div class="header">
+<p>
+Next: <a href="Other-MIPS-Built_002din-Functions.html#Other-MIPS-Built_002din-Functions" accesskey="n" rel="next">Other MIPS Built-in Functions</a>, Previous: <a href="MIPS-Loongson-Built_002din-Functions.html#MIPS-Loongson-Built_002din-Functions" accesskey="p" rel="prev">MIPS Loongson Built-in Functions</a>, Up: <a href="Target-Builtins.html#Target-Builtins" accesskey="u" rel="up">Target Builtins</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="MIPS-SIMD-Architecture-_0028MSA_0029-Support-1"></a>
+<h4 class="subsection">6.60.16 MIPS SIMD Architecture (MSA) Support</h4>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="MIPS-SIMD-Architecture-Built_002din-Functions.html#MIPS-SIMD-Architecture-Built_002din-Functions" accesskey="1">MIPS SIMD Architecture Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+<p>GCC provides intrinsics to access the SIMD instructions provided by the
+MSA MIPS SIMD Architecture.  The interface is made available by including
+<code>&lt;msa.h&gt;</code> and using <samp>-mmsa -mhard-float -mfp64 -mnan=2008</samp>.
+For each <code>__builtin_msa_*</code>, there is a shortened name of the intrinsic,
+<code>__msa_*</code>.
+</p>
+<p>MSA implements 128-bit wide vector registers, operating on 8-, 16-, 32- and
+64-bit integer, 16- and 32-bit fixed-point, or 32- and 64-bit floating point
+data elements.  The following vectors typedefs are included in <code>msa.h</code>:
+</p><ul>
+<li> <code>v16i8</code>, a vector of sixteen signed 8-bit integers;
+</li><li> <code>v16u8</code>, a vector of sixteen unsigned 8-bit integers;
+</li><li> <code>v8i16</code>, a vector of eight signed 16-bit integers;
+</li><li> <code>v8u16</code>, a vector of eight unsigned 16-bit integers;
+</li><li> <code>v4i32</code>, a vector of four signed 32-bit integers;
+</li><li> <code>v4u32</code>, a vector of four unsigned 32-bit integers;
+</li><li> <code>v2i64</code>, a vector of two signed 64-bit integers;
+</li><li> <code>v2u64</code>, a vector of two unsigned 64-bit integers;
+</li><li> <code>v4f32</code>, a vector of four 32-bit floats;
+</li><li> <code>v2f64</code>, a vector of two 64-bit doubles.
+</li></ul>
+
+<p>Instructions and corresponding built-ins may have additional restrictions and/or
+input/output values manipulated:
+</p><ul>
+<li> <code>imm0_1</code>, an integer literal in range 0 to 1;
+</li><li> <code>imm0_3</code>, an integer literal in range 0 to 3;
+</li><li> <code>imm0_7</code>, an integer literal in range 0 to 7;
+</li><li> <code>imm0_15</code>, an integer literal in range 0 to 15;
+</li><li> <code>imm0_31</code>, an integer literal in range 0 to 31;
+</li><li> <code>imm0_63</code>, an integer literal in range 0 to 63;
+</li><li> <code>imm0_255</code>, an integer literal in range 0 to 255;
+</li><li> <code>imm_n16_15</code>, an integer literal in range -16 to 15;
+</li><li> <code>imm_n512_511</code>, an integer literal in range -512 to 511;
+</li><li> <code>imm_n1024_1022</code>, an integer literal in range -512 to 511 left
+shifted by 1 bit, i.e., -1024, -1022, &hellip;, 1020, 1022;
+</li><li> <code>imm_n2048_2044</code>, an integer literal in range -512 to 511 left
+shifted by 2 bits, i.e., -2048, -2044, &hellip;, 2040, 2044;
+</li><li> <code>imm_n4096_4088</code>, an integer literal in range -512 to 511 left
+shifted by 3 bits, i.e., -4096, -4088, &hellip;, 4080, 4088;
+</li><li> <code>imm1_4</code>, an integer literal in range 1 to 4;
+</li><li> <code>i32, i64, u32, u64, f32, f64</code>, defined as follows:
+</li></ul>
+
+<div class="smallexample">
+<pre class="smallexample">{
+typedef int i32;
+#if __LONG_MAX__ == __LONG_LONG_MAX__
+typedef long i64;
+#else
+typedef long long i64;
+#endif
+
+typedef unsigned int u32;
+#if __LONG_MAX__ == __LONG_LONG_MAX__
+typedef unsigned long u64;
+#else
+typedef unsigned long long u64;
+#endif
+
+typedef double f64;
+typedef float f32;
+}
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Other-MIPS-Built_002din-Functions.html#Other-MIPS-Built_002din-Functions" accesskey="n" rel="next">Other MIPS Built-in Functions</a>, Previous: <a href="MIPS-Loongson-Built_002din-Functions.html#MIPS-Loongson-Built_002din-Functions" accesskey="p" rel="prev">MIPS Loongson Built-in Functions</a>, Up: <a href="Target-Builtins.html#Target-Builtins" accesskey="u" rel="up">Target Builtins</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

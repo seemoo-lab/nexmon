@@ -1,0 +1,164 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: D30V-Chars</title>
+
+<meta name="description" content="Using as: D30V-Chars">
+<meta name="keywords" content="Using as: D30V-Chars">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="D30V_002dSyntax.html#D30V_002dSyntax" rel="up" title="D30V-Syntax">
+<link href="D30V_002dGuarded.html#D30V_002dGuarded" rel="next" title="D30V-Guarded">
+<link href="D30V_002dSubs.html#D30V_002dSubs" rel="prev" title="D30V-Subs">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="D30V_002dChars"></a>
+<div class="header">
+<p>
+Next: <a href="D30V_002dGuarded.html#D30V_002dGuarded" accesskey="n" rel="next">D30V-Guarded</a>, Previous: <a href="D30V_002dSubs.html#D30V_002dSubs" accesskey="p" rel="prev">D30V-Subs</a>, Up: <a href="D30V_002dSyntax.html#D30V_002dSyntax" accesskey="u" rel="up">D30V-Syntax</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Special-Characters-9"></a>
+<h4 class="subsubsection">9.12.2.3 Special Characters</h4>
+<a name="index-line-comment-character_002c-D30V"></a>
+<a name="index-D30V-line-comment-character"></a>
+<p>A semicolon (&lsquo;<samp>;</samp>&rsquo;) can be used anywhere on a line to start a
+comment that extends to the end of the line.
+</p>
+<p>If a &lsquo;<samp>#</samp>&rsquo; appears as the first character of a line, the whole line
+is treated as a comment, but in this case the line could also be a
+logical line number directive (see <a href="Comments.html#Comments">Comments</a>) or a preprocessor
+control command (see <a href="Preprocessing.html#Preprocessing">Preprocessing</a>).
+</p>
+<a name="index-sub_002dinstruction-ordering_002c-D30V"></a>
+<a name="index-D30V-sub_002dinstruction-ordering"></a>
+<p>Sub-instructions may be executed in order, in reverse-order, or in parallel.
+Instructions listed in the standard one-per-line format will be executed
+sequentially unless you use the &lsquo;<samp>-O</samp>&rsquo; option.
+</p>
+<p>To specify the executing order, use the following symbols:
+</p><dl compact="compact">
+<dt>&lsquo;<samp>-&gt;</samp>&rsquo;</dt>
+<dd><p>Sequential with instruction on the left first.
+</p>
+</dd>
+<dt>&lsquo;<samp>&lt;-</samp>&rsquo;</dt>
+<dd><p>Sequential with instruction on the right first.
+</p>
+</dd>
+<dt>&lsquo;<samp>||</samp>&rsquo;</dt>
+<dd><p>Parallel
+</p></dd>
+</dl>
+
+<p>The D30V syntax allows either one instruction per line, one instruction per line with
+the execution symbol, or two instructions per line.  For example
+</p><dl compact="compact">
+<dt><code>abs r2,r3 -&gt; abs r4,r5</code></dt>
+<dd><p>Execute these sequentially.  The instruction on the right is in the right
+container and is executed second.
+</p>
+</dd>
+<dt><code>abs r2,r3 &lt;- abs r4,r5</code></dt>
+<dd><p>Execute these reverse-sequentially.  The instruction on the right is in the right
+container, and is executed first.
+</p>
+</dd>
+<dt><code>abs r2,r3 || abs r4,r5</code></dt>
+<dd><p>Execute these in parallel.
+</p>
+</dd>
+<dt><code>ldw r2,@(r3,r4) ||</code></dt>
+<dt><code>mulx r6,r8,r9</code></dt>
+<dd><p>Two-line format. Execute these in parallel.
+</p>
+</dd>
+<dt><code>mulx a0,r8,r9</code></dt>
+<dt><code>stw r2,@(r3,r4)</code></dt>
+<dd><p>Two-line format. Execute these sequentially unless &lsquo;<samp>-O</samp>&rsquo; option is
+used.  If the &lsquo;<samp>-O</samp>&rsquo; option is used, the assembler will determine if
+the instructions could be done in parallel (the above two instructions
+can be done in parallel), and if so, emit them as parallel instructions.
+The assembler will put them in the proper containers.  In the above
+example, the assembler will put the &lsquo;<samp>stw</samp>&rsquo; instruction in left
+container and the &lsquo;<samp>mulx</samp>&rsquo; instruction in the right container.
+</p>
+</dd>
+<dt><code>stw r2,@(r3,r4) -&gt;</code></dt>
+<dt><code>mulx a0,r8,r9</code></dt>
+<dd><p>Two-line format.  Execute the &lsquo;<samp>stw</samp>&rsquo; instruction followed by the
+&lsquo;<samp>mulx</samp>&rsquo; instruction sequentially.  The first instruction goes in the
+left container and the second instruction goes into right container.
+The assembler will give an error if the machine ordering constraints are
+violated.
+</p>
+</dd>
+<dt><code>stw r2,@(r3,r4) &lt;-</code></dt>
+<dt><code>mulx a0,r8,r9</code></dt>
+<dd><p>Same as previous example, except that the &lsquo;<samp>mulx</samp>&rsquo; instruction is
+executed before the &lsquo;<samp>stw</samp>&rsquo; instruction.
+</p></dd>
+</dl>
+
+<a name="index-symbol-names_002c-_0024-in-1"></a>
+<a name="index-_0024-in-symbol-names-1"></a>
+<p>Since &lsquo;<samp>$</samp>&rsquo; has no special meaning, you may use it in symbol names.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="D30V_002dGuarded.html#D30V_002dGuarded" accesskey="n" rel="next">D30V-Guarded</a>, Previous: <a href="D30V_002dSubs.html#D30V_002dSubs" accesskey="p" rel="prev">D30V-Subs</a>, Up: <a href="D30V_002dSyntax.html#D30V_002dSyntax" accesskey="u" rel="up">D30V-Syntax</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

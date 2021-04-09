@@ -1,0 +1,1515 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Effective-Target Keywords</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Effective-Target Keywords">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Effective-Target Keywords">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Test-Directives.html#Test-Directives" rel="up" title="Test Directives">
+<link href="Add-Options.html#Add-Options" rel="next" title="Add Options">
+<link href="Selectors.html#Selectors" rel="prev" title="Selectors">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Effective_002dTarget-Keywords"></a>
+<div class="header">
+<p>
+Next: <a href="Add-Options.html#Add-Options" accesskey="n" rel="next">Add Options</a>, Previous: <a href="Selectors.html#Selectors" accesskey="p" rel="prev">Selectors</a>, Up: <a href="Test-Directives.html#Test-Directives" accesskey="u" rel="up">Test Directives</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Keywords-describing-target-attributes"></a>
+<h4 class="subsection">7.2.3 Keywords describing target attributes</h4>
+
+<p>Effective-target keywords identify sets of targets that support
+particular functionality.  They are used to limit tests to be run only
+for particular targets, or to specify that particular sets of targets
+are expected to fail some tests.
+</p>
+<p>Effective-target keywords are defined in <samp>lib/target-supports.exp</samp> in
+the GCC testsuite, with the exception of those that are documented as
+being local to a particular test directory.
+</p>
+<p>The &lsquo;<samp>effective target</samp>&rsquo; takes into account all of the compiler options
+with which the test will be compiled, including the multilib options.
+By convention, keywords ending in <code>_nocache</code> can also include options
+specified for the particular test in an earlier <code>dg-options</code> or
+<code>dg-add-options</code> directive.
+</p>
+<a name="Endianness"></a>
+<h4 class="subsubsection">7.2.3.1 Endianness</h4>
+
+<dl compact="compact">
+<dt><code>be</code></dt>
+<dd><p>Target uses big-endian memory order for multi-byte and multi-word data.
+</p>
+</dd>
+<dt><code>le</code></dt>
+<dd><p>Target uses little-endian memory order for multi-byte and multi-word data.
+</p></dd>
+</dl>
+
+<a name="Data-type-sizes"></a>
+<h4 class="subsubsection">7.2.3.2 Data type sizes</h4>
+
+<dl compact="compact">
+<dt><code>ilp32</code></dt>
+<dd><p>Target has 32-bit <code>int</code>, <code>long</code>, and pointers.
+</p>
+</dd>
+<dt><code>lp64</code></dt>
+<dd><p>Target has 32-bit <code>int</code>, 64-bit <code>long</code> and pointers.
+</p>
+</dd>
+<dt><code>llp64</code></dt>
+<dd><p>Target has 32-bit <code>int</code> and <code>long</code>, 64-bit <code>long long</code>
+and pointers.
+</p>
+</dd>
+<dt><code>double64</code></dt>
+<dd><p>Target has 64-bit <code>double</code>.
+</p>
+</dd>
+<dt><code>double64plus</code></dt>
+<dd><p>Target has <code>double</code> that is 64 bits or longer.
+</p>
+</dd>
+<dt><code>longdouble128</code></dt>
+<dd><p>Target has 128-bit <code>long double</code>.
+</p>
+</dd>
+<dt><code>int32plus</code></dt>
+<dd><p>Target has <code>int</code> that is at 32 bits or longer.
+</p>
+</dd>
+<dt><code>int16</code></dt>
+<dd><p>Target has <code>int</code> that is 16 bits or shorter.
+</p>
+</dd>
+<dt><code>long_neq_int</code></dt>
+<dd><p>Target has <code>int</code> and <code>long</code> with different sizes.
+</p>
+</dd>
+<dt><code>int_eq_float</code></dt>
+<dd><p>Target has <code>int</code> and <code>float</code> with the same size.
+</p>
+</dd>
+<dt><code>ptr_eq_long</code></dt>
+<dd><p>Target has pointers (<code>void *</code>) and <code>long</code> with the same size.
+</p>
+</dd>
+<dt><code>large_double</code></dt>
+<dd><p>Target supports <code>double</code> that is longer than <code>float</code>.
+</p>
+</dd>
+<dt><code>large_long_double</code></dt>
+<dd><p>Target supports <code>long double</code> that is longer than <code>double</code>.
+</p>
+</dd>
+<dt><code>ptr32plus</code></dt>
+<dd><p>Target has pointers that are 32 bits or longer.
+</p>
+</dd>
+<dt><code>size20plus</code></dt>
+<dd><p>Target has a 20-bit or larger address space, so at least supports
+16-bit array and structure sizes.
+</p>
+</dd>
+<dt><code>size32plus</code></dt>
+<dd><p>Target has a 32-bit or larger address space, so at least supports
+24-bit array and structure sizes.
+</p>
+</dd>
+<dt><code>4byte_wchar_t</code></dt>
+<dd><p>Target has <code>wchar_t</code> that is at least 4 bytes.
+</p>
+</dd>
+<dt><code>float<var>n</var></code></dt>
+<dd><p>Target has the <code>_Float<var>n</var></code> type.
+</p>
+</dd>
+<dt><code>float<var>n</var>x</code></dt>
+<dd><p>Target has the <code>_Float<var>n</var>x</code> type.
+</p>
+</dd>
+<dt><code>float<var>n</var>_runtime</code></dt>
+<dd><p>Target has the <code>_Float<var>n</var></code> type, including runtime support
+for any options added with <code>dg-add-options</code>.
+</p>
+</dd>
+<dt><code>float<var>n</var>x_runtime</code></dt>
+<dd><p>Target has the <code>_Float<var>n</var>x</code> type, including runtime support
+for any options added with <code>dg-add-options</code>.
+</p>
+</dd>
+<dt><code>floatn_nx_runtime</code></dt>
+<dd><p>Target has runtime support for any options added with
+<code>dg-add-options</code> for any <code>_Float<var>n</var></code> or
+<code>_Float<var>n</var>x</code> type.
+</p>
+</dd>
+<dt><code>inf</code></dt>
+<dd><p>Target supports floating point infinite (<code>inf</code>) for type
+<code>double</code>.
+</p></dd>
+</dl>
+<a name="Fortran_002dspecific-attributes"></a>
+<h4 class="subsubsection">7.2.3.3 Fortran-specific attributes</h4>
+
+<dl compact="compact">
+<dt><code>fortran_integer_16</code></dt>
+<dd><p>Target supports Fortran <code>integer</code> that is 16 bytes or longer.
+</p>
+</dd>
+<dt><code>fortran_real_10</code></dt>
+<dd><p>Target supports Fortran <code>real</code> that is 10 bytes or longer.
+</p>
+</dd>
+<dt><code>fortran_real_16</code></dt>
+<dd><p>Target supports Fortran <code>real</code> that is 16 bytes or longer.
+</p>
+</dd>
+<dt><code>fortran_large_int</code></dt>
+<dd><p>Target supports Fortran <code>integer</code> kinds larger than <code>integer(8)</code>.
+</p>
+</dd>
+<dt><code>fortran_large_real</code></dt>
+<dd><p>Target supports Fortran <code>real</code> kinds larger than <code>real(8)</code>.
+</p></dd>
+</dl>
+
+<a name="Vector_002dspecific-attributes"></a>
+<h4 class="subsubsection">7.2.3.4 Vector-specific attributes</h4>
+
+<dl compact="compact">
+<dt><code>vect_align_stack_vars</code></dt>
+<dd><p>The target&rsquo;s ABI allows stack variables to be aligned to the preferred
+vector alignment.
+</p>
+</dd>
+<dt><code>vect_avg_qi</code></dt>
+<dd><p>Target supports both signed and unsigned averaging operations on vectors
+of bytes.
+</p>
+</dd>
+<dt><code>vect_condition</code></dt>
+<dd><p>Target supports vector conditional operations.
+</p>
+</dd>
+<dt><code>vect_cond_mixed</code></dt>
+<dd><p>Target supports vector conditional operations where comparison operands
+have different type from the value operands.
+</p>
+</dd>
+<dt><code>vect_double</code></dt>
+<dd><p>Target supports hardware vectors of <code>double</code>.
+</p>
+</dd>
+<dt><code>vect_double_cond_arith</code></dt>
+<dd><p>Target supports conditional addition, subtraction, multiplication,
+division, minimum and maximum on vectors of <code>double</code>, via the
+<code>cond_</code> optabs.
+</p>
+</dd>
+<dt><code>vect_element_align_preferred</code></dt>
+<dd><p>The target&rsquo;s preferred vector alignment is the same as the element
+alignment.
+</p>
+</dd>
+<dt><code>vect_float</code></dt>
+<dd><p>Target supports hardware vectors of <code>float</code> when
+<samp>-funsafe-math-optimizations</samp> is in effect.
+</p>
+</dd>
+<dt><code>vect_float_strict</code></dt>
+<dd><p>Target supports hardware vectors of <code>float</code> when
+<samp>-funsafe-math-optimizations</samp> is not in effect.
+This implies <code>vect_float</code>.
+</p>
+</dd>
+<dt><code>vect_int</code></dt>
+<dd><p>Target supports hardware vectors of <code>int</code>.
+</p>
+</dd>
+<dt><code>vect_long</code></dt>
+<dd><p>Target supports hardware vectors of <code>long</code>.
+</p>
+</dd>
+<dt><code>vect_long_long</code></dt>
+<dd><p>Target supports hardware vectors of <code>long long</code>.
+</p>
+</dd>
+<dt><code>vect_fully_masked</code></dt>
+<dd><p>Target supports fully-masked (also known as fully-predicated) loops,
+so that vector loops can handle partial as well as full vectors.
+</p>
+</dd>
+<dt><code>vect_masked_store</code></dt>
+<dd><p>Target supports vector masked stores.
+</p>
+</dd>
+<dt><code>vect_scatter_store</code></dt>
+<dd><p>Target supports vector scatter stores.
+</p>
+</dd>
+<dt><code>vect_aligned_arrays</code></dt>
+<dd><p>Target aligns arrays to vector alignment boundary.
+</p>
+</dd>
+<dt><code>vect_hw_misalign</code></dt>
+<dd><p>Target supports a vector misalign access.
+</p>
+</dd>
+<dt><code>vect_no_align</code></dt>
+<dd><p>Target does not support a vector alignment mechanism.
+</p>
+</dd>
+<dt><code>vect_peeling_profitable</code></dt>
+<dd><p>Target might require to peel loops for alignment purposes.
+</p>
+</dd>
+<dt><code>vect_no_int_min_max</code></dt>
+<dd><p>Target does not support a vector min and max instruction on <code>int</code>.
+</p>
+</dd>
+<dt><code>vect_no_int_add</code></dt>
+<dd><p>Target does not support a vector add instruction on <code>int</code>.
+</p>
+</dd>
+<dt><code>vect_no_bitwise</code></dt>
+<dd><p>Target does not support vector bitwise instructions.
+</p>
+</dd>
+<dt><code>vect_char_mult</code></dt>
+<dd><p>Target supports <code>vector char</code> multiplication.
+</p>
+</dd>
+<dt><code>vect_short_mult</code></dt>
+<dd><p>Target supports <code>vector short</code> multiplication.
+</p>
+</dd>
+<dt><code>vect_int_mult</code></dt>
+<dd><p>Target supports <code>vector int</code> multiplication.
+</p>
+</dd>
+<dt><code>vect_long_mult</code></dt>
+<dd><p>Target supports 64 bit <code>vector long</code> multiplication.
+</p>
+</dd>
+<dt><code>vect_extract_even_odd</code></dt>
+<dd><p>Target supports vector even/odd element extraction.
+</p>
+</dd>
+<dt><code>vect_extract_even_odd_wide</code></dt>
+<dd><p>Target supports vector even/odd element extraction of vectors with elements
+<code>SImode</code> or larger.
+</p>
+</dd>
+<dt><code>vect_interleave</code></dt>
+<dd><p>Target supports vector interleaving.
+</p>
+</dd>
+<dt><code>vect_strided</code></dt>
+<dd><p>Target supports vector interleaving and extract even/odd.
+</p>
+</dd>
+<dt><code>vect_strided_wide</code></dt>
+<dd><p>Target supports vector interleaving and extract even/odd for wide
+element types.
+</p>
+</dd>
+<dt><code>vect_perm</code></dt>
+<dd><p>Target supports vector permutation.
+</p>
+</dd>
+<dt><code>vect_perm_byte</code></dt>
+<dd><p>Target supports permutation of vectors with 8-bit elements.
+</p>
+</dd>
+<dt><code>vect_perm_short</code></dt>
+<dd><p>Target supports permutation of vectors with 16-bit elements.
+</p>
+</dd>
+<dt><code>vect_perm3_byte</code></dt>
+<dd><p>Target supports permutation of vectors with 8-bit elements, and for the
+default vector length it is possible to permute:
+</p><div class="example">
+<pre class="example">{ a0, a1, a2, b0, b1, b2, &hellip; }
+</pre></div>
+<p>to:
+</p><div class="example">
+<pre class="example">{ a0, a0, a0, b0, b0, b0, &hellip; }
+{ a1, a1, a1, b1, b1, b1, &hellip; }
+{ a2, a2, a2, b2, b2, b2, &hellip; }
+</pre></div>
+<p>using only two-vector permutes, regardless of how long the sequence is.
+</p>
+</dd>
+<dt><code>vect_perm3_int</code></dt>
+<dd><p>Like <code>vect_perm3_byte</code>, but for 32-bit elements.
+</p>
+</dd>
+<dt><code>vect_perm3_short</code></dt>
+<dd><p>Like <code>vect_perm3_byte</code>, but for 16-bit elements.
+</p>
+</dd>
+<dt><code>vect_shift</code></dt>
+<dd><p>Target supports a hardware vector shift operation.
+</p>
+</dd>
+<dt><code>vect_unaligned_possible</code></dt>
+<dd><p>Target prefers vectors to have an alignment greater than element
+alignment, but also allows unaligned vector accesses in some
+circumstances.
+</p>
+</dd>
+<dt><code>vect_variable_length</code></dt>
+<dd><p>Target has variable-length vectors.
+</p>
+</dd>
+<dt><code>vect_widen_sum_hi_to_si</code></dt>
+<dd><p>Target supports a vector widening summation of <code>short</code> operands
+into <code>int</code> results, or can promote (unpack) from <code>short</code>
+to <code>int</code>.
+</p>
+</dd>
+<dt><code>vect_widen_sum_qi_to_hi</code></dt>
+<dd><p>Target supports a vector widening summation of <code>char</code> operands
+into <code>short</code> results, or can promote (unpack) from <code>char</code>
+to <code>short</code>.
+</p>
+</dd>
+<dt><code>vect_widen_sum_qi_to_si</code></dt>
+<dd><p>Target supports a vector widening summation of <code>char</code> operands
+into <code>int</code> results.
+</p>
+</dd>
+<dt><code>vect_widen_mult_qi_to_hi</code></dt>
+<dd><p>Target supports a vector widening multiplication of <code>char</code> operands
+into <code>short</code> results, or can promote (unpack) from <code>char</code> to
+<code>short</code> and perform non-widening multiplication of <code>short</code>.
+</p>
+</dd>
+<dt><code>vect_widen_mult_hi_to_si</code></dt>
+<dd><p>Target supports a vector widening multiplication of <code>short</code> operands
+into <code>int</code> results, or can promote (unpack) from <code>short</code> to
+<code>int</code> and perform non-widening multiplication of <code>int</code>.
+</p>
+</dd>
+<dt><code>vect_widen_mult_si_to_di_pattern</code></dt>
+<dd><p>Target supports a vector widening multiplication of <code>int</code> operands
+into <code>long</code> results.
+</p>
+</dd>
+<dt><code>vect_sdot_qi</code></dt>
+<dd><p>Target supports a vector dot-product of <code>signed char</code>.
+</p>
+</dd>
+<dt><code>vect_udot_qi</code></dt>
+<dd><p>Target supports a vector dot-product of <code>unsigned char</code>.
+</p>
+</dd>
+<dt><code>vect_sdot_hi</code></dt>
+<dd><p>Target supports a vector dot-product of <code>signed short</code>.
+</p>
+</dd>
+<dt><code>vect_udot_hi</code></dt>
+<dd><p>Target supports a vector dot-product of <code>unsigned short</code>.
+</p>
+</dd>
+<dt><code>vect_pack_trunc</code></dt>
+<dd><p>Target supports a vector demotion (packing) of <code>short</code> to <code>char</code>
+and from <code>int</code> to <code>short</code> using modulo arithmetic.
+</p>
+</dd>
+<dt><code>vect_unpack</code></dt>
+<dd><p>Target supports a vector promotion (unpacking) of <code>char</code> to <code>short</code>
+and from <code>char</code> to <code>int</code>.
+</p>
+</dd>
+<dt><code>vect_intfloat_cvt</code></dt>
+<dd><p>Target supports conversion from <code>signed int</code> to <code>float</code>.
+</p>
+</dd>
+<dt><code>vect_uintfloat_cvt</code></dt>
+<dd><p>Target supports conversion from <code>unsigned int</code> to <code>float</code>.
+</p>
+</dd>
+<dt><code>vect_floatint_cvt</code></dt>
+<dd><p>Target supports conversion from <code>float</code> to <code>signed int</code>.
+</p>
+</dd>
+<dt><code>vect_floatuint_cvt</code></dt>
+<dd><p>Target supports conversion from <code>float</code> to <code>unsigned int</code>.
+</p>
+</dd>
+<dt><code>vect_intdouble_cvt</code></dt>
+<dd><p>Target supports conversion from <code>signed int</code> to <code>double</code>.
+</p>
+</dd>
+<dt><code>vect_doubleint_cvt</code></dt>
+<dd><p>Target supports conversion from <code>double</code> to <code>signed int</code>.
+</p>
+</dd>
+<dt><code>vect_max_reduc</code></dt>
+<dd><p>Target supports max reduction for vectors.
+</p>
+</dd>
+<dt><code>vect_sizes_16B_8B</code></dt>
+<dd><p>Target supports 16- and 8-bytes vectors.
+</p>
+</dd>
+<dt><code>vect_sizes_32B_16B</code></dt>
+<dd><p>Target supports 32- and 16-bytes vectors.
+</p>
+</dd>
+<dt><code>vect_logical_reduc</code></dt>
+<dd><p>Target supports AND, IOR and XOR reduction on vectors.
+</p>
+</dd>
+<dt><code>vect_fold_extract_last</code></dt>
+<dd><p>Target supports the <code>fold_extract_last</code> optab.
+</p></dd>
+</dl>
+
+<a name="Thread-Local-Storage-attributes"></a>
+<h4 class="subsubsection">7.2.3.5 Thread Local Storage attributes</h4>
+
+<dl compact="compact">
+<dt><code>tls</code></dt>
+<dd><p>Target supports thread-local storage.
+</p>
+</dd>
+<dt><code>tls_native</code></dt>
+<dd><p>Target supports native (rather than emulated) thread-local storage.
+</p>
+</dd>
+<dt><code>tls_runtime</code></dt>
+<dd><p>Test system supports executing TLS executables.
+</p></dd>
+</dl>
+
+<a name="Decimal-floating-point-attributes"></a>
+<h4 class="subsubsection">7.2.3.6 Decimal floating point attributes</h4>
+
+<dl compact="compact">
+<dt><code>dfp</code></dt>
+<dd><p>Targets supports compiling decimal floating point extension to C.
+</p>
+</dd>
+<dt><code>dfp_nocache</code></dt>
+<dd><p>Including the options used to compile this particular test, the
+target supports compiling decimal floating point extension to C.
+</p>
+</dd>
+<dt><code>dfprt</code></dt>
+<dd><p>Test system can execute decimal floating point tests.
+</p>
+</dd>
+<dt><code>dfprt_nocache</code></dt>
+<dd><p>Including the options used to compile this particular test, the
+test system can execute decimal floating point tests.
+</p>
+</dd>
+<dt><code>hard_dfp</code></dt>
+<dd><p>Target generates decimal floating point instructions with current options.
+</p></dd>
+</dl>
+
+<a name="ARM_002dspecific-attributes"></a>
+<h4 class="subsubsection">7.2.3.7 ARM-specific attributes</h4>
+
+<dl compact="compact">
+<dt><code>arm32</code></dt>
+<dd><p>ARM target generates 32-bit code.
+</p>
+</dd>
+<dt><code>arm_eabi</code></dt>
+<dd><p>ARM target adheres to the ABI for the ARM Architecture.
+</p>
+</dd>
+<dt><code>arm_fp_ok</code></dt>
+<dd><a name="arm_005ffp_005fok"></a><p>ARM target defines <code>__ARM_FP</code> using <code>-mfloat-abi=softfp</code> or
+equivalent options.  Some multilibs may be incompatible with these
+options.
+</p>
+</dd>
+<dt><code>arm_hf_eabi</code></dt>
+<dd><p>ARM target adheres to the VFP and Advanced SIMD Register Arguments
+variant of the ABI for the ARM Architecture (as selected with
+<code>-mfloat-abi=hard</code>).
+</p>
+</dd>
+<dt><code>arm_softfloat</code></dt>
+<dd><p>ARM target uses the soft-float ABI with no floating-point instructions
+used whatsoever (as selected with <code>-mfloat-abi=soft</code>).
+</p>
+</dd>
+<dt><code>arm_hard_vfp_ok</code></dt>
+<dd><p>ARM target supports <code>-mfpu=vfp -mfloat-abi=hard</code>.
+Some multilibs may be incompatible with these options.
+</p>
+</dd>
+<dt><code>arm_iwmmxt_ok</code></dt>
+<dd><p>ARM target supports <code>-mcpu=iwmmxt</code>.
+Some multilibs may be incompatible with this option.
+</p>
+</dd>
+<dt><code>arm_neon</code></dt>
+<dd><p>ARM target supports generating NEON instructions.
+</p>
+</dd>
+<dt><code>arm_tune_string_ops_prefer_neon</code></dt>
+<dd><p>Test CPU tune supports inlining string operations with NEON instructions.
+</p>
+</dd>
+<dt><code>arm_neon_hw</code></dt>
+<dd><p>Test system supports executing NEON instructions.
+</p>
+</dd>
+<dt><code>arm_neonv2_hw</code></dt>
+<dd><p>Test system supports executing NEON v2 instructions.
+</p>
+</dd>
+<dt><code>arm_neon_ok</code></dt>
+<dd><a name="arm_005fneon_005fok"></a><p>ARM Target supports <code>-mfpu=neon -mfloat-abi=softfp</code> or compatible
+options.  Some multilibs may be incompatible with these options.
+</p>
+</dd>
+<dt><code>arm_neon_ok_no_float_abi</code></dt>
+<dd><a name="arm_005fneon_005fok_005fno_005ffloat_005fabi"></a><p>ARM Target supports NEON with <code>-mfpu=neon</code>, but without any
+-mfloat-abi= option.  Some multilibs may be incompatible with this
+option.
+</p>
+</dd>
+<dt><code>arm_neonv2_ok</code></dt>
+<dd><a name="arm_005fneonv2_005fok"></a><p>ARM Target supports <code>-mfpu=neon-vfpv4 -mfloat-abi=softfp</code> or compatible
+options.  Some multilibs may be incompatible with these options.
+</p>
+</dd>
+<dt><code>arm_fp16_ok</code></dt>
+<dd><a name="arm_005ffp16_005fok"></a><p>Target supports options to generate VFP half-precision floating-point
+instructions.  Some multilibs may be incompatible with these
+options.  This test is valid for ARM only.
+</p>
+</dd>
+<dt><code>arm_fp16_hw</code></dt>
+<dd><p>Target supports executing VFP half-precision floating-point
+instructions.  This test is valid for ARM only.
+</p>
+</dd>
+<dt><code>arm_neon_fp16_ok</code></dt>
+<dd><a name="arm_005fneon_005ffp16_005fok"></a><p>ARM Target supports <code>-mfpu=neon-fp16 -mfloat-abi=softfp</code> or compatible
+options, including <code>-mfp16-format=ieee</code> if necessary to obtain the
+<code>__fp16</code> type.  Some multilibs may be incompatible with these options.
+</p>
+</dd>
+<dt><code>arm_neon_fp16_hw</code></dt>
+<dd><p>Test system supports executing Neon half-precision float instructions.
+(Implies previous.)
+</p>
+</dd>
+<dt><code>arm_fp16_alternative_ok</code></dt>
+<dd><p>ARM target supports the ARM FP16 alternative format.  Some multilibs
+may be incompatible with the options needed.
+</p>
+</dd>
+<dt><code>arm_fp16_none_ok</code></dt>
+<dd><p>ARM target supports specifying none as the ARM FP16 format.
+</p>
+</dd>
+<dt><code>arm_thumb1_ok</code></dt>
+<dd><p>ARM target generates Thumb-1 code for <code>-mthumb</code>.
+</p>
+</dd>
+<dt><code>arm_thumb2_ok</code></dt>
+<dd><p>ARM target generates Thumb-2 code for <code>-mthumb</code>.
+</p>
+</dd>
+<dt><code>arm_vfp_ok</code></dt>
+<dd><p>ARM target supports <code>-mfpu=vfp -mfloat-abi=softfp</code>.
+Some multilibs may be incompatible with these options.
+</p>
+</dd>
+<dt><code>arm_vfp3_ok</code></dt>
+<dd><a name="arm_005fvfp3_005fok"></a><p>ARM target supports <code>-mfpu=vfp3 -mfloat-abi=softfp</code>.
+Some multilibs may be incompatible with these options.
+</p>
+</dd>
+<dt><code>arm_v8_vfp_ok</code></dt>
+<dd><p>ARM target supports <code>-mfpu=fp-armv8 -mfloat-abi=softfp</code>.
+Some multilibs may be incompatible with these options.
+</p>
+</dd>
+<dt><code>arm_v8_neon_ok</code></dt>
+<dd><p>ARM target supports <code>-mfpu=neon-fp-armv8 -mfloat-abi=softfp</code>.
+Some multilibs may be incompatible with these options.
+</p>
+</dd>
+<dt><code>arm_v8_1a_neon_ok</code></dt>
+<dd><a name="arm_005fv8_005f1a_005fneon_005fok"></a><p>ARM target supports options to generate ARMv8.1-A Adv.SIMD instructions.
+Some multilibs may be incompatible with these options.
+</p>
+</dd>
+<dt><code>arm_v8_1a_neon_hw</code></dt>
+<dd><p>ARM target supports executing ARMv8.1-A Adv.SIMD instructions.  Some
+multilibs may be incompatible with the options needed.  Implies
+arm_v8_1a_neon_ok.
+</p>
+</dd>
+<dt><code>arm_acq_rel</code></dt>
+<dd><p>ARM target supports acquire-release instructions.
+</p>
+</dd>
+<dt><code>arm_v8_2a_fp16_scalar_ok</code></dt>
+<dd><a name="arm_005fv8_005f2a_005ffp16_005fscalar_005fok"></a><p>ARM target supports options to generate instructions for ARMv8.2-A and
+scalar instructions from the FP16 extension.  Some multilibs may be
+incompatible with these options.
+</p>
+</dd>
+<dt><code>arm_v8_2a_fp16_scalar_hw</code></dt>
+<dd><p>ARM target supports executing instructions for ARMv8.2-A and scalar
+instructions from the FP16 extension.  Some multilibs may be
+incompatible with these options.  Implies arm_v8_2a_fp16_neon_ok.
+</p>
+</dd>
+<dt><code>arm_v8_2a_fp16_neon_ok</code></dt>
+<dd><a name="arm_005fv8_005f2a_005ffp16_005fneon_005fok"></a><p>ARM target supports options to generate instructions from ARMv8.2-A with
+the FP16 extension.  Some multilibs may be incompatible with these
+options.  Implies arm_v8_2a_fp16_scalar_ok.
+</p>
+</dd>
+<dt><code>arm_v8_2a_fp16_neon_hw</code></dt>
+<dd><p>ARM target supports executing instructions from ARMv8.2-A with the FP16
+extension.  Some multilibs may be incompatible with these options.
+Implies arm_v8_2a_fp16_neon_ok and arm_v8_2a_fp16_scalar_hw.
+</p>
+</dd>
+<dt><code>arm_v8_2a_dotprod_neon_ok</code></dt>
+<dd><a name="arm_005fv8_005f2a_005fdotprod_005fneon_005fok"></a><p>ARM target supports options to generate instructions from ARMv8.2-A with
+the Dot Product extension. Some multilibs may be incompatible with these
+options.
+</p>
+</dd>
+<dt><code>arm_v8_2a_dotprod_neon_hw</code></dt>
+<dd><p>ARM target supports executing instructions from ARMv8.2-A with the Dot
+Product extension. Some multilibs may be incompatible with these options.
+Implies arm_v8_2a_dotprod_neon_ok.
+</p>
+</dd>
+<dt><code>arm_fp16fml_neon_ok</code></dt>
+<dd><a name="arm_005ffp16fml_005fneon_005fok"></a><p>ARM target supports extensions to generate the <code>VFMAL</code> and <code>VFMLS</code>
+half-precision floating-point instructions available from ARMv8.2-A and
+onwards.  Some multilibs may be incompatible with these options.
+</p>
+</dd>
+<dt><code>arm_prefer_ldrd_strd</code></dt>
+<dd><p>ARM target prefers <code>LDRD</code> and <code>STRD</code> instructions over
+<code>LDM</code> and <code>STM</code> instructions.
+</p>
+</dd>
+<dt><code>arm_thumb1_movt_ok</code></dt>
+<dd><p>ARM target generates Thumb-1 code for <code>-mthumb</code> with <code>MOVW</code>
+and <code>MOVT</code> instructions available.
+</p>
+</dd>
+<dt><code>arm_thumb1_cbz_ok</code></dt>
+<dd><p>ARM target generates Thumb-1 code for <code>-mthumb</code> with
+<code>CBZ</code> and <code>CBNZ</code> instructions available.
+</p>
+</dd>
+<dt><code>arm_divmod_simode</code></dt>
+<dd><p>ARM target for which divmod transform is disabled, if it supports hardware
+div instruction.
+</p>
+</dd>
+<dt><code>arm_cmse_ok</code></dt>
+<dd><p>ARM target supports ARMv8-M Security Extensions, enabled by the <code>-mcmse</code>
+option.
+</p>
+</dd>
+<dt><code>arm_coproc1_ok</code></dt>
+<dd><a name="arm_005fcoproc1_005fok"></a><p>ARM target supports the following coprocessor instructions: <code>CDP</code>,
+<code>LDC</code>, <code>STC</code>, <code>MCR</code> and <code>MRC</code>.
+</p>
+</dd>
+<dt><code>arm_coproc2_ok</code></dt>
+<dd><a name="arm_005fcoproc2_005fok"></a><p>ARM target supports all the coprocessor instructions also listed as supported
+in <a href="#arm_005fcoproc1_005fok">arm_coproc1_ok</a> in addition to the following: <code>CDP2</code>, <code>LDC2</code>,
+<code>LDC2l</code>, <code>STC2</code>, <code>STC2l</code>, <code>MCR2</code> and <code>MRC2</code>.
+</p>
+</dd>
+<dt><code>arm_coproc3_ok</code></dt>
+<dd><a name="arm_005fcoproc3_005fok"></a><p>ARM target supports all the coprocessor instructions also listed as supported
+in <a href="#arm_005fcoproc2_005fok">arm_coproc2_ok</a> in addition the following: <code>MCRR</code> and <code>MRRC</code>.
+</p>
+</dd>
+<dt><code>arm_coproc4_ok</code></dt>
+<dd><p>ARM target supports all the coprocessor instructions also listed as supported
+in <a href="#arm_005fcoproc3_005fok">arm_coproc3_ok</a> in addition the following: <code>MCRR2</code> and <code>MRRC2</code>.
+</p></dd>
+</dl>
+
+<a name="AArch64_002dspecific-attributes"></a>
+<h4 class="subsubsection">7.2.3.8 AArch64-specific attributes</h4>
+
+<dl compact="compact">
+<dt><code>aarch64_asm_&lt;ext&gt;_ok</code></dt>
+<dd><p>AArch64 assembler supports the architecture extension <code>ext</code> via the
+<code>.arch_extension</code> pseudo-op.
+</p></dd>
+<dt><code>aarch64_tiny</code></dt>
+<dd><p>AArch64 target which generates instruction sequences for tiny memory model.
+</p></dd>
+<dt><code>aarch64_small</code></dt>
+<dd><p>AArch64 target which generates instruction sequences for small memory model.
+</p></dd>
+<dt><code>aarch64_large</code></dt>
+<dd><p>AArch64 target which generates instruction sequences for large memory model.
+</p></dd>
+<dt><code>aarch64_little_endian</code></dt>
+<dd><p>AArch64 target which generates instruction sequences for little endian.
+</p></dd>
+<dt><code>aarch64_big_endian</code></dt>
+<dd><p>AArch64 target which generates instruction sequences for big endian.
+</p></dd>
+<dt><code>aarch64_small_fpic</code></dt>
+<dd><p>Binutils installed on test system supports relocation types required by -fpic
+for AArch64 small memory model.
+</p>
+</dd>
+</dl>
+
+<a name="MIPS_002dspecific-attributes"></a>
+<h4 class="subsubsection">7.2.3.9 MIPS-specific attributes</h4>
+
+<dl compact="compact">
+<dt><code>mips64</code></dt>
+<dd><p>MIPS target supports 64-bit instructions.
+</p>
+</dd>
+<dt><code>nomips16</code></dt>
+<dd><p>MIPS target does not produce MIPS16 code.
+</p>
+</dd>
+<dt><code>mips16_attribute</code></dt>
+<dd><p>MIPS target can generate MIPS16 code.
+</p>
+</dd>
+<dt><code>mips_loongson</code></dt>
+<dd><p>MIPS target is a Loongson-2E or -2F target using an ABI that supports
+the Loongson vector modes.
+</p>
+</dd>
+<dt><code>mips_msa</code></dt>
+<dd><p>MIPS target supports <code>-mmsa</code>, MIPS SIMD Architecture (MSA).
+</p>
+</dd>
+<dt><code>mips_newabi_large_long_double</code></dt>
+<dd><p>MIPS target supports <code>long double</code> larger than <code>double</code>
+when using the new ABI.
+</p>
+</dd>
+<dt><code>mpaired_single</code></dt>
+<dd><p>MIPS target supports <code>-mpaired-single</code>.
+</p></dd>
+</dl>
+
+<a name="PowerPC_002dspecific-attributes"></a>
+<h4 class="subsubsection">7.2.3.10 PowerPC-specific attributes</h4>
+
+<dl compact="compact">
+<dt><code>dfp_hw</code></dt>
+<dd><p>PowerPC target supports executing hardware DFP instructions.
+</p>
+</dd>
+<dt><code>p8vector_hw</code></dt>
+<dd><p>PowerPC target supports executing VSX instructions (ISA 2.07).
+</p>
+</dd>
+<dt><code>powerpc64</code></dt>
+<dd><p>Test system supports executing 64-bit instructions.
+</p>
+</dd>
+<dt><code>powerpc_altivec</code></dt>
+<dd><p>PowerPC target supports AltiVec.
+</p>
+</dd>
+<dt><code>powerpc_altivec_ok</code></dt>
+<dd><p>PowerPC target supports <code>-maltivec</code>.
+</p>
+</dd>
+<dt><code>powerpc_eabi_ok</code></dt>
+<dd><p>PowerPC target supports <code>-meabi</code>.
+</p>
+</dd>
+<dt><code>powerpc_elfv2</code></dt>
+<dd><p>PowerPC target supports <code>-mabi=elfv2</code>.
+</p>
+</dd>
+<dt><code>powerpc_fprs</code></dt>
+<dd><p>PowerPC target supports floating-point registers.
+</p>
+</dd>
+<dt><code>powerpc_hard_double</code></dt>
+<dd><p>PowerPC target supports hardware double-precision floating-point.
+</p>
+</dd>
+<dt><code>powerpc_htm_ok</code></dt>
+<dd><p>PowerPC target supports <code>-mhtm</code>
+</p>
+</dd>
+<dt><code>powerpc_p8vector_ok</code></dt>
+<dd><p>PowerPC target supports <code>-mpower8-vector</code>
+</p>
+</dd>
+<dt><code>powerpc_popcntb_ok</code></dt>
+<dd><p>PowerPC target supports the <code>popcntb</code> instruction, indicating
+that this target supports <code>-mcpu=power5</code>.
+</p>
+</dd>
+<dt><code>powerpc_ppu_ok</code></dt>
+<dd><p>PowerPC target supports <code>-mcpu=cell</code>.
+</p>
+</dd>
+<dt><code>powerpc_spe</code></dt>
+<dd><p>PowerPC target supports PowerPC SPE.
+</p>
+</dd>
+<dt><code>powerpc_spe_nocache</code></dt>
+<dd><p>Including the options used to compile this particular test, the
+PowerPC target supports PowerPC SPE.
+</p>
+</dd>
+<dt><code>powerpc_spu</code></dt>
+<dd><p>PowerPC target supports PowerPC SPU.
+</p>
+</dd>
+<dt><code>powerpc_vsx_ok</code></dt>
+<dd><p>PowerPC target supports <code>-mvsx</code>.
+</p>
+</dd>
+<dt><code>powerpc_405_nocache</code></dt>
+<dd><p>Including the options used to compile this particular test, the
+PowerPC target supports PowerPC 405.
+</p>
+</dd>
+<dt><code>ppc_recip_hw</code></dt>
+<dd><p>PowerPC target supports executing reciprocal estimate instructions.
+</p>
+</dd>
+<dt><code>spu_auto_overlay</code></dt>
+<dd><p>SPU target has toolchain that supports automatic overlay generation.
+</p>
+</dd>
+<dt><code>vmx_hw</code></dt>
+<dd><p>PowerPC target supports executing AltiVec instructions.
+</p>
+</dd>
+<dt><code>vsx_hw</code></dt>
+<dd><p>PowerPC target supports executing VSX instructions (ISA 2.06).
+</p></dd>
+</dl>
+
+<a name="Other-hardware-attributes"></a>
+<h4 class="subsubsection">7.2.3.11 Other hardware attributes</h4>
+
+<dl compact="compact">
+<dt><code>autoincdec</code></dt>
+<dd><p>Target supports autoincrement/decrement addressing.
+</p>
+</dd>
+<dt><code>avx</code></dt>
+<dd><p>Target supports compiling <code>avx</code> instructions.
+</p>
+</dd>
+<dt><code>avx_runtime</code></dt>
+<dd><p>Target supports the execution of <code>avx</code> instructions.
+</p>
+</dd>
+<dt><code>avx2</code></dt>
+<dd><p>Target supports compiling <code>avx2</code> instructions.
+</p>
+</dd>
+<dt><code>avx2_runtime</code></dt>
+<dd><p>Target supports the execution of <code>avx2</code> instructions.
+</p>
+</dd>
+<dt><code>avx512f</code></dt>
+<dd><p>Target supports compiling <code>avx512f</code> instructions.
+</p>
+</dd>
+<dt><code>avx512f_runtime</code></dt>
+<dd><p>Target supports the execution of <code>avx512f</code> instructions.
+</p>
+</dd>
+<dt><code>cell_hw</code></dt>
+<dd><p>Test system can execute AltiVec and Cell PPU instructions.
+</p>
+</dd>
+<dt><code>coldfire_fpu</code></dt>
+<dd><p>Target uses a ColdFire FPU.
+</p>
+</dd>
+<dt><code>divmod</code></dt>
+<dd><p>Target supporting hardware divmod insn or divmod libcall.
+</p>
+</dd>
+<dt><code>divmod_simode</code></dt>
+<dd><p>Target supporting hardware divmod insn or divmod libcall for SImode.
+</p>
+</dd>
+<dt><code>hard_float</code></dt>
+<dd><p>Target supports FPU instructions.
+</p>
+</dd>
+<dt><code>non_strict_align</code></dt>
+<dd><p>Target does not require strict alignment.
+</p>
+</dd>
+<dt><code>pie_copyreloc</code></dt>
+<dd><p>The x86-64 target linker supports PIE with copy reloc.
+</p>
+</dd>
+<dt><code>rdrand</code></dt>
+<dd><p>Target supports x86 <code>rdrand</code> instruction.
+</p>
+</dd>
+<dt><code>sqrt_insn</code></dt>
+<dd><p>Target has a square root instruction that the compiler can generate.
+</p>
+</dd>
+<dt><code>sse</code></dt>
+<dd><p>Target supports compiling <code>sse</code> instructions.
+</p>
+</dd>
+<dt><code>sse_runtime</code></dt>
+<dd><p>Target supports the execution of <code>sse</code> instructions.
+</p>
+</dd>
+<dt><code>sse2</code></dt>
+<dd><p>Target supports compiling <code>sse2</code> instructions.
+</p>
+</dd>
+<dt><code>sse2_runtime</code></dt>
+<dd><p>Target supports the execution of <code>sse2</code> instructions.
+</p>
+</dd>
+<dt><code>sync_char_short</code></dt>
+<dd><p>Target supports atomic operations on <code>char</code> and <code>short</code>.
+</p>
+</dd>
+<dt><code>sync_int_long</code></dt>
+<dd><p>Target supports atomic operations on <code>int</code> and <code>long</code>.
+</p>
+</dd>
+<dt><code>ultrasparc_hw</code></dt>
+<dd><p>Test environment appears to run executables on a simulator that
+accepts only <code>EM_SPARC</code> executables and chokes on <code>EM_SPARC32PLUS</code>
+or <code>EM_SPARCV9</code> executables.
+</p>
+</dd>
+<dt><code>vect_cmdline_needed</code></dt>
+<dd><p>Target requires a command line argument to enable a SIMD instruction set.
+</p>
+</dd>
+<dt><code>xorsign</code></dt>
+<dd><p>Target supports the xorsign optab expansion.
+</p>
+</dd>
+</dl>
+
+<a name="Environment-attributes"></a>
+<h4 class="subsubsection">7.2.3.12 Environment attributes</h4>
+
+<dl compact="compact">
+<dt><code>c</code></dt>
+<dd><p>The language for the compiler under test is C.
+</p>
+</dd>
+<dt><code>c++</code></dt>
+<dd><p>The language for the compiler under test is C++.
+</p>
+</dd>
+<dt><code>c99_runtime</code></dt>
+<dd><p>Target provides a full C99 runtime.
+</p>
+</dd>
+<dt><code>correct_iso_cpp_string_wchar_protos</code></dt>
+<dd><p>Target <code>string.h</code> and <code>wchar.h</code> headers provide C++ required
+overloads for <code>strchr</code> etc. functions.
+</p>
+</dd>
+<dt><code>d_runtime</code></dt>
+<dd><p>Target provides the D runtime.
+</p>
+</dd>
+<dt><code>dummy_wcsftime</code></dt>
+<dd><p>Target uses a dummy <code>wcsftime</code> function that always returns zero.
+</p>
+</dd>
+<dt><code>fd_truncate</code></dt>
+<dd><p>Target can truncate a file from a file descriptor, as used by
+<samp>libgfortran/io/unix.c:fd_truncate</samp>; i.e. <code>ftruncate</code> or
+<code>chsize</code>.
+</p>
+</dd>
+<dt><code>fenv</code></dt>
+<dd><p>Target provides <samp>fenv.h</samp> include file.
+</p>
+</dd>
+<dt><code>fenv_exceptions</code></dt>
+<dd><p>Target supports <samp>fenv.h</samp> with all the standard IEEE exceptions
+and floating-point exceptions are raised by arithmetic operations.
+</p>
+</dd>
+<dt><code>freestanding</code></dt>
+<dd><p>Target is &lsquo;<samp>freestanding</samp>&rsquo; as defined in section 4 of the C99 standard.
+Effectively, it is a target which supports no extra headers or libraries
+other than what is considered essential.
+</p>
+</dd>
+<dt><code>gettimeofday</code></dt>
+<dd><p>Target supports <code>gettimeofday</code>.
+</p>
+</dd>
+<dt><code>init_priority</code></dt>
+<dd><p>Target supports constructors with initialization priority arguments.
+</p>
+</dd>
+<dt><code>inttypes_types</code></dt>
+<dd><p>Target has the basic signed and unsigned types in <code>inttypes.h</code>.
+This is for tests that GCC&rsquo;s notions of these types agree with those
+in the header, as some systems have only <code>inttypes.h</code>.
+</p>
+</dd>
+<dt><code>lax_strtofp</code></dt>
+<dd><p>Target might have errors of a few ULP in string to floating-point
+conversion functions and overflow is not always detected correctly by
+those functions.
+</p>
+</dd>
+<dt><code>mempcpy</code></dt>
+<dd><p>Target provides <code>mempcpy</code> function.
+</p>
+</dd>
+<dt><code>mmap</code></dt>
+<dd><p>Target supports <code>mmap</code>.
+</p>
+</dd>
+<dt><code>newlib</code></dt>
+<dd><p>Target supports Newlib.
+</p>
+</dd>
+<dt><code>newlib_nano_io</code></dt>
+<dd><p>GCC was configured with <code>--enable-newlib-nano-formatted-io</code>, which reduces
+the code size of Newlib formatted I/O functions.
+</p>
+</dd>
+<dt><code>pow10</code></dt>
+<dd><p>Target provides <code>pow10</code> function.
+</p>
+</dd>
+<dt><code>pthread</code></dt>
+<dd><p>Target can compile using <code>pthread.h</code> with no errors or warnings.
+</p>
+</dd>
+<dt><code>pthread_h</code></dt>
+<dd><p>Target has <code>pthread.h</code>.
+</p>
+</dd>
+<dt><code>run_expensive_tests</code></dt>
+<dd><p>Expensive testcases (usually those that consume excessive amounts of CPU
+time) should be run on this target.  This can be enabled by setting the
+<code>GCC_TEST_RUN_EXPENSIVE</code> environment variable to a non-empty string.
+</p>
+</dd>
+<dt><code>simulator</code></dt>
+<dd><p>Test system runs executables on a simulator (i.e. slowly) rather than
+hardware (i.e. fast).
+</p>
+</dd>
+<dt><code>signal</code></dt>
+<dd><p>Target has <code>signal.h</code>.
+</p>
+</dd>
+<dt><code>stabs</code></dt>
+<dd><p>Target supports the stabs debugging format.
+</p>
+</dd>
+<dt><code>stdint_types</code></dt>
+<dd><p>Target has the basic signed and unsigned C types in <code>stdint.h</code>.
+This will be obsolete when GCC ensures a working <code>stdint.h</code> for
+all targets.
+</p>
+</dd>
+<dt><code>stpcpy</code></dt>
+<dd><p>Target provides <code>stpcpy</code> function.
+</p>
+</dd>
+<dt><code>trampolines</code></dt>
+<dd><p>Target supports trampolines.
+</p>
+</dd>
+<dt><code>uclibc</code></dt>
+<dd><p>Target supports uClibc.
+</p>
+</dd>
+<dt><code>unwrapped</code></dt>
+<dd><p>Target does not use a status wrapper.
+</p>
+</dd>
+<dt><code>vxworks_kernel</code></dt>
+<dd><p>Target is a VxWorks kernel.
+</p>
+</dd>
+<dt><code>vxworks_rtp</code></dt>
+<dd><p>Target is a VxWorks RTP.
+</p>
+</dd>
+<dt><code>wchar</code></dt>
+<dd><p>Target supports wide characters.
+</p></dd>
+</dl>
+
+<a name="Other-attributes"></a>
+<h4 class="subsubsection">7.2.3.13 Other attributes</h4>
+
+<dl compact="compact">
+<dt><code>automatic_stack_alignment</code></dt>
+<dd><p>Target supports automatic stack alignment.
+</p>
+</dd>
+<dt><code>branch_cost</code></dt>
+<dd><p>Target supports <samp>-branch-cost=N</samp>.
+</p>
+</dd>
+<dt><code>cxa_atexit</code></dt>
+<dd><p>Target uses <code>__cxa_atexit</code>.
+</p>
+</dd>
+<dt><code>default_packed</code></dt>
+<dd><p>Target has packed layout of structure members by default.
+</p>
+</dd>
+<dt><code>exceptions</code></dt>
+<dd><p>Target supports exceptions.
+</p>
+</dd>
+<dt><code>fgraphite</code></dt>
+<dd><p>Target supports Graphite optimizations.
+</p>
+</dd>
+<dt><code>fixed_point</code></dt>
+<dd><p>Target supports fixed-point extension to C.
+</p>
+</dd>
+<dt><code>fopenacc</code></dt>
+<dd><p>Target supports OpenACC via <samp>-fopenacc</samp>.
+</p>
+</dd>
+<dt><code>fopenmp</code></dt>
+<dd><p>Target supports OpenMP via <samp>-fopenmp</samp>.
+</p>
+</dd>
+<dt><code>fpic</code></dt>
+<dd><p>Target supports <samp>-fpic</samp> and <samp>-fPIC</samp>.
+</p>
+</dd>
+<dt><code>freorder</code></dt>
+<dd><p>Target supports <samp>-freorder-blocks-and-partition</samp>.
+</p>
+</dd>
+<dt><code>fstack_protector</code></dt>
+<dd><p>Target supports <samp>-fstack-protector</samp>.
+</p>
+</dd>
+<dt><code>gas</code></dt>
+<dd><p>Target uses GNU <code>as</code>.
+</p>
+</dd>
+<dt><code>gc_sections</code></dt>
+<dd><p>Target supports <samp>--gc-sections</samp>.
+</p>
+</dd>
+<dt><code>gld</code></dt>
+<dd><p>Target uses GNU <code>ld</code>.
+</p>
+</dd>
+<dt><code>keeps_null_pointer_checks</code></dt>
+<dd><p>Target keeps null pointer checks, either due to the use of
+<samp>-fno-delete-null-pointer-checks</samp> or hardwired into the target.
+</p>
+</dd>
+<dt><code>llvm_binutils</code></dt>
+<dd><p>Target is using an LLVM assembler and/or linker, instead of GNU Binutils.
+</p>
+</dd>
+<dt><code>lto</code></dt>
+<dd><p>Compiler has been configured to support link-time optimization (LTO).
+</p>
+</dd>
+<dt><code>lto_incremental</code></dt>
+<dd><p>Compiler and linker support link-time optimization relocatable linking
+with <samp>-r</samp> and <samp>-flto</samp> options.
+</p>
+</dd>
+<dt><code>naked_functions</code></dt>
+<dd><p>Target supports the <code>naked</code> function attribute.
+</p>
+</dd>
+<dt><code>named_sections</code></dt>
+<dd><p>Target supports named sections.
+</p>
+</dd>
+<dt><code>natural_alignment_32</code></dt>
+<dd><p>Target uses natural alignment (aligned to type size) for types of
+32 bits or less.
+</p>
+</dd>
+<dt><code>target_natural_alignment_64</code></dt>
+<dd><p>Target uses natural alignment (aligned to type size) for types of
+64 bits or less.
+</p>
+</dd>
+<dt><code>nonpic</code></dt>
+<dd><p>Target does not generate PIC by default.
+</p>
+</dd>
+<dt><code>offload_gcn</code></dt>
+<dd><p>Target has been configured for OpenACC/OpenMP offloading on AMD GCN.
+</p>
+</dd>
+<dt><code>pie_enabled</code></dt>
+<dd><p>Target generates PIE by default.
+</p>
+</dd>
+<dt><code>pcc_bitfield_type_matters</code></dt>
+<dd><p>Target defines <code>PCC_BITFIELD_TYPE_MATTERS</code>.
+</p>
+</dd>
+<dt><code>pe_aligned_commons</code></dt>
+<dd><p>Target supports <samp>-mpe-aligned-commons</samp>.
+</p>
+</dd>
+<dt><code>pie</code></dt>
+<dd><p>Target supports <samp>-pie</samp>, <samp>-fpie</samp> and <samp>-fPIE</samp>.
+</p>
+</dd>
+<dt><code>rdynamic</code></dt>
+<dd><p>Target supports <samp>-rdynamic</samp>.
+</p>
+</dd>
+<dt><code>scalar_all_fma</code></dt>
+<dd><p>Target supports all four fused multiply-add optabs for both <code>float</code>
+and <code>double</code>.  These optabs are: <code>fma_optab</code>, <code>fms_optab</code>,
+<code>fnma_optab</code> and <code>fnms_optab</code>.
+</p>
+</dd>
+<dt><code>section_anchors</code></dt>
+<dd><p>Target supports section anchors.
+</p>
+</dd>
+<dt><code>short_enums</code></dt>
+<dd><p>Target defaults to short enums.
+</p>
+</dd>
+<dt><code>stack_size</code></dt>
+<dd><a name="stack_005fsize_005fet"></a><p>Target has limited stack size.  The stack size limit can be obtained using the
+STACK_SIZE macro defined by <a href="Add-Options.html#stack_005fsize_005fao"><code>dg-add-options</code> feature
+<code>stack_size</code></a>.
+</p>
+</dd>
+<dt><code>static</code></dt>
+<dd><p>Target supports <samp>-static</samp>.
+</p>
+</dd>
+<dt><code>static_libgfortran</code></dt>
+<dd><p>Target supports statically linking &lsquo;<samp>libgfortran</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>string_merging</code></dt>
+<dd><p>Target supports merging string constants at link time.
+</p>
+</dd>
+<dt><code>ucn</code></dt>
+<dd><p>Target supports compiling and assembling UCN.
+</p>
+</dd>
+<dt><code>ucn_nocache</code></dt>
+<dd><p>Including the options used to compile this particular test, the
+target supports compiling and assembling UCN.
+</p>
+</dd>
+<dt><code>unaligned_stack</code></dt>
+<dd><p>Target does not guarantee that its <code>STACK_BOUNDARY</code> is greater than
+or equal to the required vector alignment.
+</p>
+</dd>
+<dt><code>vector_alignment_reachable</code></dt>
+<dd><p>Vector alignment is reachable for types of 32 bits or less.
+</p>
+</dd>
+<dt><code>vector_alignment_reachable_for_64bit</code></dt>
+<dd><p>Vector alignment is reachable for types of 64 bits or less.
+</p>
+</dd>
+<dt><code>wchar_t_char16_t_compatible</code></dt>
+<dd><p>Target supports <code>wchar_t</code> that is compatible with <code>char16_t</code>.
+</p>
+</dd>
+<dt><code>wchar_t_char32_t_compatible</code></dt>
+<dd><p>Target supports <code>wchar_t</code> that is compatible with <code>char32_t</code>.
+</p>
+</dd>
+<dt><code>comdat_group</code></dt>
+<dd><p>Target uses comdat groups.
+</p></dd>
+</dl>
+
+<a name="Local-to-tests-in-gcc_002etarget_002fi386"></a>
+<h4 class="subsubsection">7.2.3.14 Local to tests in <code>gcc.target/i386</code></h4>
+
+<dl compact="compact">
+<dt><code>3dnow</code></dt>
+<dd><p>Target supports compiling <code>3dnow</code> instructions.
+</p>
+</dd>
+<dt><code>aes</code></dt>
+<dd><p>Target supports compiling <code>aes</code> instructions.
+</p>
+</dd>
+<dt><code>fma4</code></dt>
+<dd><p>Target supports compiling <code>fma4</code> instructions.
+</p>
+</dd>
+<dt><code>mfentry</code></dt>
+<dd><p>Target supports the <code>-mfentry</code> option that alters the
+position of profiling calls such that they precede the prologue.
+</p>
+</dd>
+<dt><code>ms_hook_prologue</code></dt>
+<dd><p>Target supports attribute <code>ms_hook_prologue</code>.
+</p>
+</dd>
+<dt><code>pclmul</code></dt>
+<dd><p>Target supports compiling <code>pclmul</code> instructions.
+</p>
+</dd>
+<dt><code>sse3</code></dt>
+<dd><p>Target supports compiling <code>sse3</code> instructions.
+</p>
+</dd>
+<dt><code>sse4</code></dt>
+<dd><p>Target supports compiling <code>sse4</code> instructions.
+</p>
+</dd>
+<dt><code>sse4a</code></dt>
+<dd><p>Target supports compiling <code>sse4a</code> instructions.
+</p>
+</dd>
+<dt><code>ssse3</code></dt>
+<dd><p>Target supports compiling <code>ssse3</code> instructions.
+</p>
+</dd>
+<dt><code>vaes</code></dt>
+<dd><p>Target supports compiling <code>vaes</code> instructions.
+</p>
+</dd>
+<dt><code>vpclmul</code></dt>
+<dd><p>Target supports compiling <code>vpclmul</code> instructions.
+</p>
+</dd>
+<dt><code>xop</code></dt>
+<dd><p>Target supports compiling <code>xop</code> instructions.
+</p></dd>
+</dl>
+
+<a name="Local-to-tests-in-gcc_002etarget_002fspu_002fea"></a>
+<h4 class="subsubsection">7.2.3.15 Local to tests in <code>gcc.target/spu/ea</code></h4>
+
+<dl compact="compact">
+<dt><code>ealib</code></dt>
+<dd><p>Target <code>__ea</code> library functions are available.
+</p></dd>
+</dl>
+
+<a name="Local-to-tests-in-gcc_002etest_002dframework"></a>
+<h4 class="subsubsection">7.2.3.16 Local to tests in <code>gcc.test-framework</code></h4>
+
+<dl compact="compact">
+<dt><code>no</code></dt>
+<dd><p>Always returns 0.
+</p>
+</dd>
+<dt><code>yes</code></dt>
+<dd><p>Always returns 1.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Add-Options.html#Add-Options" accesskey="n" rel="next">Add Options</a>, Previous: <a href="Selectors.html#Selectors" accesskey="p" rel="prev">Selectors</a>, Up: <a href="Test-Directives.html#Test-Directives" accesskey="u" rel="up">Test Directives</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: CTIME</title>
+
+<meta name="description" content="The GNU Fortran Compiler: CTIME">
+<meta name="keywords" content="The GNU Fortran Compiler: CTIME">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Intrinsic-Procedures.html#Intrinsic-Procedures" rel="up" title="Intrinsic Procedures">
+<link href="DATE_005fAND_005fTIME.html#DATE_005fAND_005fTIME" rel="next" title="DATE_AND_TIME">
+<link href="CSHIFT.html#CSHIFT" rel="prev" title="CSHIFT">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="CTIME"></a>
+<div class="header">
+<p>
+Next: <a href="DATE_005fAND_005fTIME.html#DATE_005fAND_005fTIME" accesskey="n" rel="next">DATE_AND_TIME</a>, Previous: <a href="CSHIFT.html#CSHIFT" accesskey="p" rel="prev">CSHIFT</a>, Up: <a href="Intrinsic-Procedures.html#Intrinsic-Procedures" accesskey="u" rel="up">Intrinsic Procedures</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="CTIME-_002d_002d_002d-Convert-a-time-into-a-string"></a>
+<h3 class="section">9.81 <code>CTIME</code> &mdash; Convert a time into a string</h3>
+<a name="index-CTIME"></a>
+<a name="index-time_002c-conversion-to-string"></a>
+<a name="index-conversion_002c-to-string"></a>
+
+<dl compact="compact">
+<dt><em>Description</em>:</dt>
+<dd><p><code>CTIME</code> converts a system time value, such as returned by
+<a href="TIME8.html#TIME8">TIME8</a>, to a string. The output will be of the form &lsquo;<samp>Sat
+Aug 19 18:13:14 1995</samp>&rsquo;.
+</p>
+<p>This intrinsic is provided in both subroutine and function forms; however,
+only one form can be used in any given program unit.
+</p>
+</dd>
+<dt><em>Standard</em>:</dt>
+<dd><p>GNU extension
+</p>
+</dd>
+<dt><em>Class</em>:</dt>
+<dd><p>Subroutine, function
+</p>
+</dd>
+<dt><em>Syntax</em>:</dt>
+<dd><table>
+<tr><td width="80%"><code>CALL CTIME(TIME, RESULT)</code>.</td></tr>
+<tr><td width="80%"><code>RESULT = CTIME(TIME)</code>.</td></tr>
+</table>
+
+</dd>
+<dt><em>Arguments</em>:</dt>
+<dd><table>
+<tr><td width="15%"><var>TIME</var></td><td width="70%">The type shall be of type <code>INTEGER</code>.</td></tr>
+<tr><td width="15%"><var>RESULT</var></td><td width="70%">The type shall be of type <code>CHARACTER</code> and
+of default kind. It is an <code>INTENT(OUT)</code> argument. If the length
+of this variable is too short for the time and date string to fit
+completely, it will be blank on procedure return.</td></tr>
+</table>
+
+</dd>
+<dt><em>Return value</em>:</dt>
+<dd><p>The converted date and time as a string. 
+</p>
+</dd>
+<dt><em>Example</em>:</dt>
+<dd><div class="smallexample">
+<pre class="smallexample">program test_ctime
+    integer(8) :: i
+    character(len=30) :: date
+    i = time8()
+
+    ! Do something, main part of the program
+    
+    call ctime(i,date)
+    print *, 'Program was started on ', date
+end program test_ctime
+</pre></div>
+
+</dd>
+<dt><em>See Also</em>:</dt>
+<dd><p><a href="DATE_005fAND_005fTIME.html#DATE_005fAND_005fTIME">DATE_AND_TIME</a>, <a href="GMTIME.html#GMTIME">GMTIME</a>, <a href="LTIME.html#LTIME">LTIME</a>, <a href="TIME.html#TIME">TIME</a>, <a href="TIME8.html#TIME8">TIME8</a>
+</p></dd>
+</dl>
+
+
+
+
+
+
+</body>
+</html>

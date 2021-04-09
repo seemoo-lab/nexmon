@@ -1,0 +1,247 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: ARC Options</title>
+
+<meta name="description" content="Using as: ARC Options">
+<meta name="keywords" content="Using as: ARC Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="ARC_002dDependent.html#ARC_002dDependent" rel="up" title="ARC-Dependent">
+<link href="ARC-Syntax.html#ARC-Syntax" rel="next" title="ARC Syntax">
+<link href="ARC_002dDependent.html#ARC_002dDependent" rel="prev" title="ARC-Dependent">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="ARC-Options"></a>
+<div class="header">
+<p>
+Next: <a href="ARC-Syntax.html#ARC-Syntax" accesskey="n" rel="next">ARC Syntax</a>, Up: <a href="ARC_002dDependent.html#ARC_002dDependent" accesskey="u" rel="up">ARC-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Options-2"></a>
+<h4 class="subsection">9.3.1 Options</h4>
+<a name="index-ARC-options"></a>
+<a name="index-options-for-ARC"></a>
+
+<p>The following options control the type of CPU for which code is
+assembled, and generic constraints on the code generated:
+</p>
+<dl compact="compact">
+<dt><code>-mcpu=<var>cpu</var></code></dt>
+<dd><a name="index-_002dmcpu_003dcpu-command_002dline-option_002c-ARC"></a>
+<p>Set architecture type and register usage for <var>cpu</var>.  There are
+also shortcut alias options available for backward compatibility and
+convenience.  Supported values for <var>cpu</var> are
+</p>
+<dl compact="compact">
+<dd><a name="index-mA6-command_002dline-option_002c-ARC"></a>
+<a name="index-marc600-command_002dline-option_002c-ARC"></a>
+</dd>
+<dt><code>arc600</code></dt>
+<dd><p>Assemble for ARC 600.  Aliases: <code>-mA6</code>, <code>-mARC600</code>.
+</p>
+</dd>
+<dt><code>arc600_norm</code></dt>
+<dd><p>Assemble for ARC 600 with norm instructions.
+</p>
+</dd>
+<dt><code>arc600_mul64</code></dt>
+<dd><p>Assemble for ARC 600 with mul64 instructions.
+</p>
+</dd>
+<dt><code>arc600_mul32x16</code></dt>
+<dd><p>Assemble for ARC 600 with mul32x16 instructions.
+</p>
+</dd>
+<dt><code>arc601</code></dt>
+<dd><a name="index-mARC601-command_002dline-option_002c-ARC"></a>
+<p>Assemble for ARC 601.  Alias: <code>-mARC601</code>.
+</p>
+</dd>
+<dt><code>arc601_norm</code></dt>
+<dd><p>Assemble for ARC 601 with norm instructions.
+</p>
+</dd>
+<dt><code>arc601_mul64</code></dt>
+<dd><p>Assemble for ARC 601 with mul64 instructions.
+</p>
+</dd>
+<dt><code>arc601_mul32x16</code></dt>
+<dd><p>Assemble for ARC 601 with mul32x16 instructions.
+</p>
+</dd>
+<dt><code>arc700</code></dt>
+<dd><a name="index-mA7-command_002dline-option_002c-ARC"></a>
+<a name="index-mARC700-command_002dline-option_002c-ARC"></a>
+<p>Assemble for ARC 700.  Aliases: <code>-mA7</code>, <code>-mARC700</code>.
+</p>
+</dd>
+<dt><code>arcem</code></dt>
+<dd><a name="index-mEM-command_002dline-option_002c-ARC"></a>
+<p>Assemble for ARC EM.  Aliases: <code>-mEM</code>
+</p>
+</dd>
+<dt><code>em</code></dt>
+<dd><p>Assemble for ARC EM, identical as arcem variant.
+</p>
+</dd>
+<dt><code>em4</code></dt>
+<dd><p>Assemble for ARC EM with code-density instructions.
+</p>
+</dd>
+<dt><code>em4_dmips</code></dt>
+<dd><p>Assemble for ARC EM with code-density instructions.
+</p>
+</dd>
+<dt><code>em4_fpus</code></dt>
+<dd><p>Assemble for ARC EM with code-density instructions.
+</p>
+</dd>
+<dt><code>em4_fpuda</code></dt>
+<dd><p>Assemble for ARC EM with code-density, and double-precision assist
+instructions.
+</p>
+</dd>
+<dt><code>quarkse_em</code></dt>
+<dd><p>Assemble for QuarkSE-EM cpu.
+</p>
+</dd>
+<dt><code>archs</code></dt>
+<dd><a name="index-mHS-command_002dline-option_002c-ARC"></a>
+<p>Assemble for ARC HS.  Aliases: <code>-mHS</code>, <code>-mav2hs</code>.
+</p>
+</dd>
+<dt><code>hs</code></dt>
+<dd><p>Assemble for ARC HS.
+</p>
+</dd>
+<dt><code>hs34</code></dt>
+<dd><p>Assemble for ARC HS34.
+</p>
+</dd>
+<dt><code>hs38</code></dt>
+<dd><p>Assemble for ARC HS38.
+</p>
+</dd>
+<dt><code>hs38_linux</code></dt>
+<dd><p>Assemble for ARC HS38 with floating point support on.
+</p>
+</dd>
+<dt><code>nps400</code></dt>
+<dd><a name="index-mnps400-command_002dline-option_002c-ARC"></a>
+<p>Assemble for ARC 700 with NPS-400 extended instructions.
+</p>
+</dd>
+</dl>
+
+<p>Note: the <code>.cpu</code> directive (see <a href="ARC-Directives.html#ARC-Directives">ARC Directives</a>) can
+to be used to select a core variant from within assembly code.
+</p>
+<a name="index-_002dEB-command_002dline-option_002c-ARC"></a>
+</dd>
+<dt><code>-EB</code></dt>
+<dd><p>This option specifies that the output generated by the assembler should
+be marked as being encoded for a big-endian processor.
+</p>
+<a name="index-_002dEL-command_002dline-option_002c-ARC"></a>
+</dd>
+<dt><code>-EL</code></dt>
+<dd><p>This option specifies that the output generated by the assembler should
+be marked as being encoded for a little-endian processor - this is the
+default.
+</p>
+<a name="index-_002dmcode_002ddensity-command_002dline-option_002c-ARC"></a>
+</dd>
+<dt><code>-mcode-density</code></dt>
+<dd><p>This option turns on Code Density instructions.  Only valid for ARC EM
+processors.
+</p>
+<a name="index-_002dmrelax-command_002dline-option_002c-ARC"></a>
+</dd>
+<dt><code>-mrelax</code></dt>
+<dd><p>Enable support for assembly-time relaxation.  The assembler will
+replace a longer version of an instruction with a shorter one,
+whenever it is possible.
+</p>
+<a name="index-_002dmnps400-command_002dline-option_002c-ARC"></a>
+</dd>
+<dt><code>-mnps400</code></dt>
+<dd><p>Enable support for NPS-400 extended instructions.
+</p>
+<a name="index-_002dmspfp-command_002dline-option_002c-ARC"></a>
+</dd>
+<dt><code>-mspfp</code></dt>
+<dd><p>Enable support for single-precision floating point instructions.
+</p>
+<a name="index-_002dmdpfp-command_002dline-option_002c-ARC"></a>
+</dd>
+<dt><code>-mdpfp</code></dt>
+<dd><p>Enable support for double-precision floating point instructions.
+</p>
+<a name="index-_002dmfpuda-command_002dline-option_002c-ARC"></a>
+</dd>
+<dt><code>-mfpuda</code></dt>
+<dd><p>Enable support for double-precision assist floating point instructions.
+Only valid for ARC EM processors.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="ARC-Syntax.html#ARC-Syntax" accesskey="n" rel="next">ARC Syntax</a>, Up: <a href="ARC_002dDependent.html#ARC_002dDependent" accesskey="u" rel="up">ARC-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

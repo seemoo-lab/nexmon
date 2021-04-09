@@ -1,0 +1,160 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Anchored Addresses</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Anchored Addresses">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Anchored Addresses">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Target-Macros.html#Target-Macros" rel="up" title="Target Macros">
+<link href="Condition-Code.html#Condition-Code" rel="next" title="Condition Code">
+<link href="Addressing-Modes.html#Addressing-Modes" rel="prev" title="Addressing Modes">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Anchored-Addresses"></a>
+<div class="header">
+<p>
+Next: <a href="Condition-Code.html#Condition-Code" accesskey="n" rel="next">Condition Code</a>, Previous: <a href="Addressing-Modes.html#Addressing-Modes" accesskey="p" rel="prev">Addressing Modes</a>, Up: <a href="Target-Macros.html#Target-Macros" accesskey="u" rel="up">Target Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Anchored-Addresses-1"></a>
+<h3 class="section">18.14 Anchored Addresses</h3>
+<a name="index-anchored-addresses"></a>
+<a name="index-_002dfsection_002danchors-1"></a>
+
+<p>GCC usually addresses every static object as a separate entity.
+For example, if we have:
+</p>
+<div class="smallexample">
+<pre class="smallexample">static int a, b, c;
+int foo (void) { return a + b + c; }
+</pre></div>
+
+<p>the code for <code>foo</code> will usually calculate three separate symbolic
+addresses: those of <code>a</code>, <code>b</code> and <code>c</code>.  On some targets,
+it would be better to calculate just one symbolic address and access
+the three variables relative to it.  The equivalent pseudocode would
+be something like:
+</p>
+<div class="smallexample">
+<pre class="smallexample">int foo (void)
+{
+  register int *xr = &amp;x;
+  return xr[&amp;a - &amp;x] + xr[&amp;b - &amp;x] + xr[&amp;c - &amp;x];
+}
+</pre></div>
+
+<p>(which isn&rsquo;t valid C).  We refer to shared addresses like <code>x</code> as
+&ldquo;section anchors&rdquo;.  Their use is controlled by <samp>-fsection-anchors</samp>.
+</p>
+<p>The hooks below describe the target properties that GCC needs to know
+in order to make effective use of section anchors.  It won&rsquo;t use
+section anchors at all unless either <code>TARGET_MIN_ANCHOR_OFFSET</code>
+or <code>TARGET_MAX_ANCHOR_OFFSET</code> is set to a nonzero value.
+</p>
+<dl>
+<dt><a name="index-TARGET_005fMIN_005fANCHOR_005fOFFSET"></a>Target Hook: <em>HOST_WIDE_INT</em> <strong>TARGET_MIN_ANCHOR_OFFSET</strong></dt>
+<dd><p>The minimum offset that should be applied to a section anchor.
+On most targets, it should be the smallest offset that can be
+applied to a base register while still giving a legitimate address
+for every mode.  The default value is 0.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fMAX_005fANCHOR_005fOFFSET"></a>Target Hook: <em>HOST_WIDE_INT</em> <strong>TARGET_MAX_ANCHOR_OFFSET</strong></dt>
+<dd><p>Like <code>TARGET_MIN_ANCHOR_OFFSET</code>, but the maximum (inclusive)
+offset that should be applied to section anchors.  The default
+value is 0.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fASM_005fOUTPUT_005fANCHOR"></a>Target Hook: <em>void</em> <strong>TARGET_ASM_OUTPUT_ANCHOR</strong> <em>(rtx <var>x</var>)</em></dt>
+<dd><p>Write the assembly code to define section anchor <var>x</var>, which is a
+<code>SYMBOL_REF</code> for which &lsquo;<samp>SYMBOL_REF_ANCHOR_P (<var>x</var>)</samp>&rsquo; is true.
+The hook is called with the assembly output position set to the beginning
+of <code>SYMBOL_REF_BLOCK (<var>x</var>)</code>.
+</p>
+<p>If <code>ASM_OUTPUT_DEF</code> is available, the hook&rsquo;s default definition uses
+it to define the symbol as &lsquo;<samp>. + SYMBOL_REF_BLOCK_OFFSET (<var>x</var>)</samp>&rsquo;.
+If <code>ASM_OUTPUT_DEF</code> is not available, the hook&rsquo;s default definition
+is <code>NULL</code>, which disables the use of section anchors altogether.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fUSE_005fANCHORS_005fFOR_005fSYMBOL_005fP"></a>Target Hook: <em>bool</em> <strong>TARGET_USE_ANCHORS_FOR_SYMBOL_P</strong> <em>(const_rtx <var>x</var>)</em></dt>
+<dd><p>Return true if GCC should attempt to use anchors to access <code>SYMBOL_REF</code>
+<var>x</var>.  You can assume &lsquo;<samp>SYMBOL_REF_HAS_BLOCK_INFO_P (<var>x</var>)</samp>&rsquo; and
+&lsquo;<samp>!SYMBOL_REF_ANCHOR_P (<var>x</var>)</samp>&rsquo;.
+</p>
+<p>The default version is correct for most targets, but you might need to
+intercept this hook to handle things like target-specific attributes
+or target-specific sections.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Condition-Code.html#Condition-Code" accesskey="n" rel="next">Condition Code</a>, Previous: <a href="Addressing-Modes.html#Addressing-Modes" accesskey="p" rel="prev">Addressing Modes</a>, Up: <a href="Target-Macros.html#Target-Macros" accesskey="u" rel="up">Target Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

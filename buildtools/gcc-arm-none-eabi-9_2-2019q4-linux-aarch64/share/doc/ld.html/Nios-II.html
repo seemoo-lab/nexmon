@@ -1,0 +1,103 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU linker LD
+(GNU Toolchain for the A-profile Architecture 9.2-2019.12 (arm-9.10))
+version 2.33.1.
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License". -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>LD: Nios II</title>
+
+<meta name="description" content="LD: Nios II">
+<meta name="keywords" content="LD: Nios II">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="LD-Index.html#LD-Index" rel="index" title="LD Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Machine-Dependent.html#Machine-Dependent" rel="up" title="Machine Dependent">
+<link href="PowerPC-ELF32.html#PowerPC-ELF32" rel="next" title="PowerPC ELF32">
+<link href="NDS32.html#NDS32" rel="prev" title="NDS32">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Nios-II"></a>
+<div class="header">
+<p>
+Next: <a href="PowerPC-ELF32.html#PowerPC-ELF32" accesskey="n" rel="next">PowerPC ELF32</a>, Previous: <a href="NDS32.html#NDS32" accesskey="p" rel="prev">NDS32</a>, Up: <a href="Machine-Dependent.html#Machine-Dependent" accesskey="u" rel="up">Machine Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="LD-Index.html#LD-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="ld-and-the-Altera-Nios-II"></a>
+<h3 class="section">4.10 <code>ld</code> and the Altera Nios II</h3>
+<a name="index-Nios-II-call-relaxation"></a>
+<a name="index-_002d_002drelax-on-Nios-II"></a>
+
+<p>Call and immediate jump instructions on Nios II processors are limited to
+transferring control to addresses in the same 256MB memory segment,
+which may result in <code>ld</code> giving
+&lsquo;<samp>relocation truncated to fit</samp>&rsquo; errors with very large programs.
+The command-line option <samp>--relax</samp> enables the generation of
+trampolines that can access the entire 32-bit address space for calls
+outside the normal <code>call</code> and <code>jmpi</code> address range.  These
+trampolines are inserted at section boundaries, so may not themselves
+be reachable if an input section and its associated call trampolines are
+larger than 256MB.
+</p>
+<p>The <samp>--relax</samp> option is enabled by default unless <samp>-r</samp>
+is also specified.  You can disable trampoline generation by using the
+<samp>--no-relax</samp> linker option.  You can also disable this optimization
+locally by using the &lsquo;<samp>set .noat</samp>&rsquo; directive in assembly-language
+source files, as the linker-inserted trampolines use the <code>at</code>
+register as a temporary.
+</p>
+<p>Note that the linker <samp>--relax</samp> option is independent of assembler
+relaxation options, and that using the GNU assembler&rsquo;s <samp>-relax-all</samp>
+option interferes with the linker&rsquo;s more selective call instruction relaxation.
+</p>
+
+
+
+
+
+</body>
+</html>

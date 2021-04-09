@@ -1,0 +1,419 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Basic Python</title>
+
+<meta name="description" content="Debugging with GDB: Basic Python">
+<meta name="keywords" content="Debugging with GDB: Basic Python">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Python-API.html#Python-API" rel="up" title="Python API">
+<link href="Exception-Handling.html#Exception-Handling" rel="next" title="Exception Handling">
+<link href="Python-API.html#Python-API" rel="prev" title="Python API">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Basic-Python"></a>
+<div class="header">
+<p>
+Next: <a href="Exception-Handling.html#Exception-Handling" accesskey="n" rel="next">Exception Handling</a>, Up: <a href="Python-API.html#Python-API" accesskey="u" rel="up">Python API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Basic-Python-1"></a>
+<h4 class="subsubsection">23.2.2.1 Basic Python</h4>
+
+<a name="index-python-stdout"></a>
+<a name="index-python-pagination"></a>
+<p>At startup, <small>GDB</small> overrides Python&rsquo;s <code>sys.stdout</code> and
+<code>sys.stderr</code> to print using <small>GDB</small>&rsquo;s output-paging streams.
+A Python program which outputs to one of these streams may have its
+output interrupted by the user (see <a href="Screen-Size.html#Screen-Size">Screen Size</a>).  In this
+situation, a Python <code>KeyboardInterrupt</code> exception is thrown.
+</p>
+<p>Some care must be taken when writing Python code to run in
+<small>GDB</small>.  Two things worth noting in particular:
+</p>
+<ul>
+<li> <small>GDB</small> install handlers for <code>SIGCHLD</code> and <code>SIGINT</code>.
+Python code must not override these, or even change the options using
+<code>sigaction</code>.  If your program changes the handling of these
+signals, <small>GDB</small> will most likely stop working correctly.  Note
+that it is unfortunately common for GUI toolkits to install a
+<code>SIGCHLD</code> handler.
+
+</li><li> <small>GDB</small> takes care to mark its internal file descriptors as
+close-on-exec.  However, this cannot be done in a thread-safe way on
+all platforms.  Your Python programs should be aware of this and
+should both create new file descriptors with the close-on-exec flag
+set and arrange to close unneeded file descriptors before starting a
+child process.
+</li></ul>
+
+<a name="index-python-functions"></a>
+<a name="index-python-module"></a>
+<a name="index-gdb-module"></a>
+<p><small>GDB</small> introduces a new Python module, named <code>gdb</code>.  All
+methods and classes added by <small>GDB</small> are placed in this module.
+<small>GDB</small> automatically <code>import</code>s the <code>gdb</code> module for
+use in all scripts evaluated by the <code>python</code> command.
+</p>
+<p>Some types of the <code>gdb</code> module come with a textual representation
+(accessible through the <code>repr</code> or <code>str</code> functions).  These are
+offered for debugging purposes only, expect them to change over time.
+</p>
+<a name="index-gdb_002ePYTHONDIR"></a>
+<dl>
+<dt><a name="index-gdb_002ePYTHONDIR-1"></a>Variable: <strong>gdb.PYTHONDIR</strong></dt>
+<dd><p>A string containing the python directory (see <a href="Python.html#Python">Python</a>).
+</p></dd></dl>
+
+<a name="index-gdb_002eexecute"></a>
+<dl>
+<dt><a name="index-gdb_002eexecute-1"></a>Function: <strong>gdb.execute</strong> <em>(command <span class="roman">[</span>, from_tty <span class="roman">[</span>, to_string<span class="roman">]]</span>)</em></dt>
+<dd><p>Evaluate <var>command</var>, a string, as a <small>GDB</small> CLI command.
+If a GDB exception happens while <var>command</var> runs, it is
+translated as described in <a href="Exception-Handling.html#Exception-Handling">Exception Handling</a>.
+</p>
+<p>The <var>from_tty</var> flag specifies whether <small>GDB</small> ought to consider this
+command as having originated from the user invoking it interactively.
+It must be a boolean value.  If omitted, it defaults to <code>False</code>.
+</p>
+<p>By default, any output produced by <var>command</var> is sent to
+<small>GDB</small>&rsquo;s standard output (and to the log output if logging is
+turned on).  If the <var>to_string</var> parameter is
+<code>True</code>, then output will be collected by <code>gdb.execute</code> and
+returned as a string.  The default is <code>False</code>, in which case the
+return value is <code>None</code>.  If <var>to_string</var> is <code>True</code>, the
+<small>GDB</small> virtual terminal will be temporarily set to unlimited width
+and height, and its pagination will be disabled; see <a href="Screen-Size.html#Screen-Size">Screen Size</a>.
+</p></dd></dl>
+
+<a name="index-gdb_002ebreakpoints"></a>
+<dl>
+<dt><a name="index-gdb_002ebreakpoints-1"></a>Function: <strong>gdb.breakpoints</strong> <em>()</em></dt>
+<dd><p>Return a sequence holding all of <small>GDB</small>&rsquo;s breakpoints.
+See <a href="Breakpoints-In-Python.html#Breakpoints-In-Python">Breakpoints In Python</a>, for more information.  In <small>GDB</small>
+version 7.11 and earlier, this function returned <code>None</code> if there
+were no breakpoints.  This peculiarity was subsequently fixed, and now
+<code>gdb.breakpoints</code> returns an empty sequence in this case.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gdb_002erbreak"></a>Function: <strong>gdb.rbreak</strong> <em>(regex <span class="roman">[</span>, minsyms <span class="roman">[</span>, throttle, <span class="roman">[</span>, symtabs <span class="roman">]]]</span>)</em></dt>
+<dd><p>Return a Python list holding a collection of newly set
+<code>gdb.Breakpoint</code> objects matching function names defined by the
+<var>regex</var> pattern.  If the <var>minsyms</var> keyword is <code>True</code>, all
+system functions (those not explicitly defined in the inferior) will
+also be included in the match.  The <var>throttle</var> keyword takes an
+integer that defines the maximum number of pattern matches for
+functions matched by the <var>regex</var> pattern.  If the number of
+matches exceeds the integer value of <var>throttle</var>, a
+<code>RuntimeError</code> will be raised and no breakpoints will be created.
+If <var>throttle</var> is not defined then there is no imposed limit on the
+maximum number of matches and breakpoints to be created.  The
+<var>symtabs</var> keyword takes a Python iterable that yields a collection
+of <code>gdb.Symtab</code> objects and will restrict the search to those
+functions only contained within the <code>gdb.Symtab</code> objects.
+</p></dd></dl>
+
+<a name="index-gdb_002eparameter"></a>
+<dl>
+<dt><a name="index-gdb_002eparameter-1"></a>Function: <strong>gdb.parameter</strong> <em>(parameter)</em></dt>
+<dd><p>Return the value of a <small>GDB</small> <var>parameter</var> given by its name,
+a string; the parameter name string may contain spaces if the parameter has a
+multi-part name.  For example, &lsquo;<samp>print object</samp>&rsquo; is a valid
+parameter name.
+</p>
+<p>If the named parameter does not exist, this function throws a
+<code>gdb.error</code> (see <a href="Exception-Handling.html#Exception-Handling">Exception Handling</a>).  Otherwise, the
+parameter&rsquo;s value is converted to a Python value of the appropriate
+type, and returned.
+</p></dd></dl>
+
+<a name="index-gdb_002ehistory"></a>
+<dl>
+<dt><a name="index-gdb_002ehistory-1"></a>Function: <strong>gdb.history</strong> <em>(number)</em></dt>
+<dd><p>Return a value from <small>GDB</small>&rsquo;s value history (see <a href="Value-History.html#Value-History">Value History</a>).  The <var>number</var> argument indicates which history element to return.
+If <var>number</var> is negative, then <small>GDB</small> will take its absolute value
+and count backward from the last element (i.e., the most recent element) to
+find the value to return.  If <var>number</var> is zero, then <small>GDB</small> will
+return the most recent element.  If the element specified by <var>number</var>
+doesn&rsquo;t exist in the value history, a <code>gdb.error</code> exception will be
+raised.
+</p>
+<p>If no exception is raised, the return value is always an instance of
+<code>gdb.Value</code> (see <a href="Values-From-Inferior.html#Values-From-Inferior">Values From Inferior</a>).
+</p></dd></dl>
+
+<a name="index-gdb_002econvenience_005fvariable"></a>
+<dl>
+<dt><a name="index-gdb_002econvenience_005fvariable-1"></a>Function: <strong>gdb.convenience_variable</strong> <em>(name)</em></dt>
+<dd><p>Return the value of the convenience variable (see <a href="Convenience-Vars.html#Convenience-Vars">Convenience Vars</a>) named <var>name</var>.  <var>name</var> must be a string.  The name
+should not include the &lsquo;<samp>$</samp>&rsquo; that is used to mark a convenience
+variable in an expression.  If the convenience variable does not
+exist, then <code>None</code> is returned.
+</p></dd></dl>
+
+<a name="index-gdb_002eset_005fconvenience_005fvariable"></a>
+<dl>
+<dt><a name="index-gdb_002eset_005fconvenience_005fvariable-1"></a>Function: <strong>gdb.set_convenience_variable</strong> <em>(name, value)</em></dt>
+<dd><p>Set the value of the convenience variable (see <a href="Convenience-Vars.html#Convenience-Vars">Convenience Vars</a>)
+named <var>name</var>.  <var>name</var> must be a string.  The name should not
+include the &lsquo;<samp>$</samp>&rsquo; that is used to mark a convenience variable in an
+expression.  If <var>value</var> is <code>None</code>, then the convenience
+variable is removed.  Otherwise, if <var>value</var> is not a
+<code>gdb.Value</code> (see <a href="Values-From-Inferior.html#Values-From-Inferior">Values From Inferior</a>), it is is converted
+using the <code>gdb.Value</code> constructor.
+</p></dd></dl>
+
+<a name="index-gdb_002eparse_005fand_005feval"></a>
+<dl>
+<dt><a name="index-gdb_002eparse_005fand_005feval-1"></a>Function: <strong>gdb.parse_and_eval</strong> <em>(expression)</em></dt>
+<dd><p>Parse <var>expression</var>, which must be a string, as an expression in
+the current language, evaluate it, and return the result as a
+<code>gdb.Value</code>.
+</p>
+<p>This function can be useful when implementing a new command
+(see <a href="Commands-In-Python.html#Commands-In-Python">Commands In Python</a>), as it provides a way to parse the
+command&rsquo;s argument as an expression.  It is also useful simply to
+compute values.
+</p></dd></dl>
+
+<a name="index-gdb_002efind_005fpc_005fline"></a>
+<dl>
+<dt><a name="index-gdb_002efind_005fpc_005fline-1"></a>Function: <strong>gdb.find_pc_line</strong> <em>(pc)</em></dt>
+<dd><p>Return the <code>gdb.Symtab_and_line</code> object corresponding to the
+<var>pc</var> value.  See <a href="Symbol-Tables-In-Python.html#Symbol-Tables-In-Python">Symbol Tables In Python</a>.  If an invalid
+value of <var>pc</var> is passed as an argument, then the <code>symtab</code> and
+<code>line</code> attributes of the returned <code>gdb.Symtab_and_line</code> object
+will be <code>None</code> and 0 respectively.  This is identical to
+<code>gdb.current_progspace().find_pc_line(pc)</code> and is included for
+historical compatibility.
+</p></dd></dl>
+
+<a name="index-gdb_002epost_005fevent"></a>
+<dl>
+<dt><a name="index-gdb_002epost_005fevent-1"></a>Function: <strong>gdb.post_event</strong> <em>(event)</em></dt>
+<dd><p>Put <var>event</var>, a callable object taking no arguments, into
+<small>GDB</small>&rsquo;s internal event queue.  This callable will be invoked at
+some later point, during <small>GDB</small>&rsquo;s event processing.  Events
+posted using <code>post_event</code> will be run in the order in which they
+were posted; however, there is no way to know when they will be
+processed relative to other events inside <small>GDB</small>.
+</p>
+<p><small>GDB</small> is not thread-safe.  If your Python program uses multiple
+threads, you must be careful to only call <small>GDB</small>-specific
+functions in the <small>GDB</small> thread.  <code>post_event</code> ensures
+this.  For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) python
+&gt;import threading
+&gt;
+&gt;class Writer():
+&gt; def __init__(self, message):
+&gt;        self.message = message;
+&gt; def __call__(self):
+&gt;        gdb.write(self.message)
+&gt;
+&gt;class MyThread1 (threading.Thread):
+&gt; def run (self):
+&gt;        gdb.post_event(Writer(&quot;Hello &quot;))
+&gt;
+&gt;class MyThread2 (threading.Thread):
+&gt; def run (self):
+&gt;        gdb.post_event(Writer(&quot;World\n&quot;))
+&gt;
+&gt;MyThread1().start()
+&gt;MyThread2().start()
+&gt;end
+(gdb) Hello World
+</pre></div>
+</dd></dl>
+
+<a name="index-gdb_002ewrite"></a>
+<dl>
+<dt><a name="index-gdb_002ewrite-1"></a>Function: <strong>gdb.write</strong> <em>(string <span class="roman">[</span>, stream])</em></dt>
+<dd><p>Print a string to <small>GDB</small>&rsquo;s paginated output stream.  The
+optional <var>stream</var> determines the stream to print to.  The default
+stream is <small>GDB</small>&rsquo;s standard output stream.  Possible stream
+values are:
+</p>
+<dl compact="compact">
+<dd><a name="index-STDOUT"></a>
+<a name="index-gdb_002eSTDOUT"></a>
+</dd>
+<dt><code>gdb.STDOUT</code></dt>
+<dd><p><small>GDB</small>&rsquo;s standard output stream.
+</p>
+<a name="index-STDERR"></a>
+<a name="index-gdb_002eSTDERR"></a>
+</dd>
+<dt><code>gdb.STDERR</code></dt>
+<dd><p><small>GDB</small>&rsquo;s standard error stream.
+</p>
+<a name="index-STDLOG"></a>
+<a name="index-gdb_002eSTDLOG"></a>
+</dd>
+<dt><code>gdb.STDLOG</code></dt>
+<dd><p><small>GDB</small>&rsquo;s log stream (see <a href="Logging-Output.html#Logging-Output">Logging Output</a>).
+</p></dd>
+</dl>
+
+<p>Writing to <code>sys.stdout</code> or <code>sys.stderr</code> will automatically
+call this function and will automatically direct the output to the
+relevant stream.
+</p></dd></dl>
+
+<a name="index-gdb_002eflush"></a>
+<dl>
+<dt><a name="index-gdb_002eflush-1"></a>Function: <strong>gdb.flush</strong> <em>()</em></dt>
+<dd><p>Flush the buffer of a <small>GDB</small> paginated stream so that the
+contents are displayed immediately.  <small>GDB</small> will flush the
+contents of a stream automatically when it encounters a newline in the
+buffer.  The optional <var>stream</var> determines the stream to flush.  The
+default stream is <small>GDB</small>&rsquo;s standard output stream.  Possible
+stream values are: 
+</p>
+<dl compact="compact">
+<dd><a name="index-STDOUT-1"></a>
+<a name="index-gdb_002eSTDOUT-1"></a>
+</dd>
+<dt><code>gdb.STDOUT</code></dt>
+<dd><p><small>GDB</small>&rsquo;s standard output stream.
+</p>
+<a name="index-STDERR-1"></a>
+<a name="index-gdb_002eSTDERR-1"></a>
+</dd>
+<dt><code>gdb.STDERR</code></dt>
+<dd><p><small>GDB</small>&rsquo;s standard error stream.
+</p>
+<a name="index-STDLOG-1"></a>
+<a name="index-gdb_002eSTDLOG-1"></a>
+</dd>
+<dt><code>gdb.STDLOG</code></dt>
+<dd><p><small>GDB</small>&rsquo;s log stream (see <a href="Logging-Output.html#Logging-Output">Logging Output</a>).
+</p>
+</dd>
+</dl>
+
+<p>Flushing <code>sys.stdout</code> or <code>sys.stderr</code> will automatically
+call this function for the relevant stream.
+</p></dd></dl>
+
+<a name="index-gdb_002etarget_005fcharset"></a>
+<dl>
+<dt><a name="index-gdb_002etarget_005fcharset-1"></a>Function: <strong>gdb.target_charset</strong> <em>()</em></dt>
+<dd><p>Return the name of the current target character set (see <a href="Character-Sets.html#Character-Sets">Character Sets</a>).  This differs from <code>gdb.parameter('target-charset')</code> in
+that &lsquo;<samp>auto</samp>&rsquo; is never returned.
+</p></dd></dl>
+
+<a name="index-gdb_002etarget_005fwide_005fcharset"></a>
+<dl>
+<dt><a name="index-gdb_002etarget_005fwide_005fcharset-1"></a>Function: <strong>gdb.target_wide_charset</strong> <em>()</em></dt>
+<dd><p>Return the name of the current target wide character set
+(see <a href="Character-Sets.html#Character-Sets">Character Sets</a>).  This differs from
+<code>gdb.parameter('target-wide-charset')</code> in that &lsquo;<samp>auto</samp>&rsquo; is
+never returned.
+</p></dd></dl>
+
+<a name="index-gdb_002esolib_005fname"></a>
+<dl>
+<dt><a name="index-gdb_002esolib_005fname-1"></a>Function: <strong>gdb.solib_name</strong> <em>(address)</em></dt>
+<dd><p>Return the name of the shared library holding the given <var>address</var>
+as a string, or <code>None</code>.  This is identical to
+<code>gdb.current_progspace().solib_name(address)</code> and is included for
+historical compatibility.
+</p></dd></dl>
+
+<a name="index-gdb_002edecode_005fline"></a>
+<dl>
+<dt><a name="index-gdb_002edecode_005fline-1"></a>Function: <strong>gdb.decode_line</strong> <em>(<span class="roman">[</span>expression<span class="roman">]</span>)</em></dt>
+<dd><p>Return locations of the line specified by <var>expression</var>, or of the
+current line if no argument was given.  This function returns a Python
+tuple containing two elements.  The first element contains a string
+holding any unparsed section of <var>expression</var> (or <code>None</code> if
+the expression has been fully parsed).  The second element contains
+either <code>None</code> or another tuple that contains all the locations
+that match the expression represented as <code>gdb.Symtab_and_line</code>
+objects (see <a href="Symbol-Tables-In-Python.html#Symbol-Tables-In-Python">Symbol Tables In Python</a>).  If <var>expression</var> is
+provided, it is decoded the way that <small>GDB</small>&rsquo;s inbuilt
+<code>break</code> or <code>edit</code> commands do (see <a href="Specify-Location.html#Specify-Location">Specify Location</a>).
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gdb_002eprompt_005fhook"></a>Function: <strong>gdb.prompt_hook</strong> <em>(current_prompt)</em></dt>
+<dd><a name="prompt_005fhook"></a>
+<p>If <var>prompt_hook</var> is callable, <small>GDB</small> will call the method
+assigned to this operation before a prompt is displayed by
+<small>GDB</small>.
+</p>
+<p>The parameter <code>current_prompt</code> contains the current <small>GDB</small> 
+prompt.  This method must return a Python string, or <code>None</code>.  If
+a string is returned, the <small>GDB</small> prompt will be set to that
+string.  If <code>None</code> is returned, <small>GDB</small> will continue to use
+the current prompt.
+</p>
+<p>Some prompts cannot be substituted in <small>GDB</small>.  Secondary prompts
+such as those used by readline for command input, and annotation
+related prompts are prohibited from being changed.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Exception-Handling.html#Exception-Handling" accesskey="n" rel="next">Exception Handling</a>, Up: <a href="Python-API.html#Python-API" accesskey="u" rel="up">Python API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

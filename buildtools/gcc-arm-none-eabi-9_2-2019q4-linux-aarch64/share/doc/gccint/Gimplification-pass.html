@@ -1,0 +1,125 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Gimplification pass</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Gimplification pass">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Gimplification pass">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Passes.html#Passes" rel="up" title="Passes">
+<link href="Pass-manager.html#Pass-manager" rel="next" title="Pass manager">
+<link href="Parsing-pass.html#Parsing-pass" rel="prev" title="Parsing pass">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Gimplification-pass"></a>
+<div class="header">
+<p>
+Next: <a href="Pass-manager.html#Pass-manager" accesskey="n" rel="next">Pass manager</a>, Previous: <a href="Parsing-pass.html#Parsing-pass" accesskey="p" rel="prev">Parsing pass</a>, Up: <a href="Passes.html#Passes" accesskey="u" rel="up">Passes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Gimplification-pass-1"></a>
+<h3 class="section">9.2 Gimplification pass</h3>
+
+<a name="index-gimplification-1"></a>
+<a name="index-GIMPLE-1"></a>
+<p><em>Gimplification</em> is a whimsical term for the process of converting
+the intermediate representation of a function into the GIMPLE language
+(see <a href="GIMPLE.html#GIMPLE">GIMPLE</a>).  The term stuck, and so words like &ldquo;gimplification&rdquo;,
+&ldquo;gimplify&rdquo;, &ldquo;gimplifier&rdquo; and the like are sprinkled throughout this
+section of code.
+</p>
+<p>While a front end may certainly choose to generate GIMPLE directly if
+it chooses, this can be a moderately complex process unless the
+intermediate language used by the front end is already fairly simple.
+Usually it is easier to generate GENERIC trees plus extensions
+and let the language-independent gimplifier do most of the work.
+</p>
+<a name="index-gimplify_005ffunction_005ftree"></a>
+<a name="index-gimplify_005fexpr"></a>
+<a name="index-lang_005fhooks_002egimplify_005fexpr"></a>
+<p>The main entry point to this pass is <code>gimplify_function_tree</code>
+located in <samp>gimplify.c</samp>.  From here we process the entire
+function gimplifying each statement in turn.  The main workhorse
+for this pass is <code>gimplify_expr</code>.  Approximately everything
+passes through here at least once, and it is from here that we
+invoke the <code>lang_hooks.gimplify_expr</code> callback.
+</p>
+<p>The callback should examine the expression in question and return
+<code>GS_UNHANDLED</code> if the expression is not a language specific
+construct that requires attention.  Otherwise it should alter the
+expression in some way to such that forward progress is made toward
+producing valid GIMPLE.  If the callback is certain that the
+transformation is complete and the expression is valid GIMPLE, it
+should return <code>GS_ALL_DONE</code>.  Otherwise it should return
+<code>GS_OK</code>, which will cause the expression to be processed again.
+If the callback encounters an error during the transformation (because
+the front end is relying on the gimplification process to finish
+semantic checks), it should return <code>GS_ERROR</code>.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Pass-manager.html#Pass-manager" accesskey="n" rel="next">Pass manager</a>, Previous: <a href="Parsing-pass.html#Parsing-pass" accesskey="p" rel="prev">Parsing pass</a>, Up: <a href="Passes.html#Passes" accesskey="u" rel="up">Passes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

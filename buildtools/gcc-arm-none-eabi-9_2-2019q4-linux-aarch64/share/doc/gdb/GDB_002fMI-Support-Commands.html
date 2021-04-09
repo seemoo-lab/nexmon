@@ -1,0 +1,277 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: GDB/MI Support Commands</title>
+
+<meta name="description" content="Debugging with GDB: GDB/MI Support Commands">
+<meta name="keywords" content="Debugging with GDB: GDB/MI Support Commands">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="GDB_002fMI.html#GDB_002fMI" rel="up" title="GDB/MI">
+<link href="GDB_002fMI-Miscellaneous-Commands.html#GDB_002fMI-Miscellaneous-Commands" rel="next" title="GDB/MI Miscellaneous Commands">
+<link href="GDB_002fMI-Ada-Exceptions-Commands.html#GDB_002fMI-Ada-Exceptions-Commands" rel="prev" title="GDB/MI Ada Exceptions Commands">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="GDB_002fMI-Support-Commands"></a>
+<div class="header">
+<p>
+Next: <a href="GDB_002fMI-Miscellaneous-Commands.html#GDB_002fMI-Miscellaneous-Commands" accesskey="n" rel="next">GDB/MI Miscellaneous Commands</a>, Previous: <a href="GDB_002fMI-Ada-Exceptions-Commands.html#GDB_002fMI-Ada-Exceptions-Commands" accesskey="p" rel="prev">GDB/MI Ada Exceptions Commands</a>, Up: <a href="GDB_002fMI.html#GDB_002fMI" accesskey="u" rel="up">GDB/MI</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="GDB_002fMI-Support-Commands-1"></a>
+<h3 class="section">27.23 <small>GDB/MI</small> Support Commands</h3>
+
+<p>Since new commands and features get regularly added to <small>GDB/MI</small>,
+some commands are available to help front-ends query the debugger
+about support for these capabilities.  Similarly, it is also possible
+to query <small>GDB</small> about target support of certain features.
+</p>
+<a name="The-_002dinfo_002dgdb_002dmi_002dcommand-Command"></a>
+<h4 class="subheading">The <code>-info-gdb-mi-command</code> Command</h4>
+<a name="index-_002dinfo_002dgdb_002dmi_002dcommand"></a>
+<a name="index-_002dinfo_002dgdb_002dmi_002dcommand-1"></a>
+
+<a name="Synopsis-94"></a>
+<h4 class="subsubheading">Synopsis</h4>
+
+<div class="smallexample">
+<pre class="smallexample"> -info-gdb-mi-command <var>cmd_name</var>
+</pre></div>
+
+<p>Query support for the <small>GDB/MI</small> command named <var>cmd_name</var>.
+</p>
+<p>Note that the dash (<code>-</code>) starting all <small>GDB/MI</small> commands
+is technically not part of the command name (see <a href="GDB_002fMI-Input-Syntax.html#GDB_002fMI-Input-Syntax">GDB/MI Input Syntax</a>), and thus should be omitted in <var>cmd_name</var>.  However,
+for ease of use, this command also accepts the form with the leading
+dash.
+</p>
+<a name="GDB-Command-76"></a>
+<h4 class="subsubheading"><small>GDB</small> Command</h4>
+
+<p>There is no corresponding <small>GDB</small> command.
+</p>
+<a name="Result-8"></a>
+<h4 class="subsubheading">Result</h4>
+
+<p>The result is a tuple.  There is currently only one field:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>exists</samp>&rsquo;</dt>
+<dd><p>This field is equal to <code>&quot;true&quot;</code> if the <small>GDB/MI</small> command exists,
+<code>&quot;false&quot;</code> otherwise.
+</p>
+</dd>
+</dl>
+
+<a name="Example-76"></a>
+<h4 class="subsubheading">Example</h4>
+
+<p>Here is an example where the <small>GDB/MI</small> command does not exist:
+</p>
+<div class="smallexample">
+<pre class="smallexample">-info-gdb-mi-command unsupported-command
+^done,command={exists=&quot;false&quot;}
+</pre></div>
+
+<p>And here is an example where the <small>GDB/MI</small> command is known
+to the debugger:
+</p>
+<div class="smallexample">
+<pre class="smallexample">-info-gdb-mi-command symbol-list-lines
+^done,command={exists=&quot;true&quot;}
+</pre></div>
+
+<a name="The-_002dlist_002dfeatures-Command"></a>
+<h4 class="subheading">The <code>-list-features</code> Command</h4>
+<a name="index-_002dlist_002dfeatures"></a>
+<a name="index-supported-GDB_002fMI-features_002c-list"></a>
+
+<p>Returns a list of particular features of the MI protocol that
+this version of gdb implements.  A feature can be a command,
+or a new field in an output of some command, or even an
+important bugfix.  While a frontend can sometimes detect presence
+of a feature at runtime, it is easier to perform detection at debugger
+startup.
+</p>
+<p>The command returns a list of strings, with each string naming an
+available feature.  Each returned string is just a name, it does not
+have any internal structure.  The list of possible feature names
+is given below.
+</p>
+<p>Example output:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) -list-features
+^done,result=[&quot;feature1&quot;,&quot;feature2&quot;]
+</pre></div>
+
+<p>The current list of features is:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>frozen-varobjs</samp>&rsquo;
+<a name="index-frozen_002dvarobjs"></a>
+</dt>
+<dd><p>Indicates support for the <code>-var-set-frozen</code> command, as well
+as possible presense of the <code>frozen</code> field in the output
+of <code>-varobj-create</code>.
+</p></dd>
+<dt>&lsquo;<samp>pending-breakpoints</samp>&rsquo;
+<a name="index-pending_002dbreakpoints"></a>
+</dt>
+<dd><p>Indicates support for the <samp>-f</samp> option to the <code>-break-insert</code>
+command.
+</p></dd>
+<dt>&lsquo;<samp>python</samp>&rsquo;
+<a name="index-python"></a>
+</dt>
+<dd><p>Indicates Python scripting support, Python-based
+pretty-printing commands, and possible presence of the
+&lsquo;<samp>display_hint</samp>&rsquo; field in the output of <code>-var-list-children</code>
+</p></dd>
+<dt>&lsquo;<samp>thread-info</samp>&rsquo;
+<a name="index-thread_002dinfo"></a>
+</dt>
+<dd><p>Indicates support for the <code>-thread-info</code> command.
+</p></dd>
+<dt>&lsquo;<samp>data-read-memory-bytes</samp>&rsquo;
+<a name="index-data_002dread_002dmemory_002dbytes"></a>
+</dt>
+<dd><p>Indicates support for the <code>-data-read-memory-bytes</code> and the
+<code>-data-write-memory-bytes</code> commands.
+</p></dd>
+<dt>&lsquo;<samp>breakpoint-notifications</samp>&rsquo;
+<a name="index-breakpoint_002dnotifications"></a>
+</dt>
+<dd><p>Indicates that changes to breakpoints and breakpoints created via the
+CLI will be announced via async records.
+</p></dd>
+<dt>&lsquo;<samp>ada-task-info</samp>&rsquo;
+<a name="index-ada_002dtask_002dinfo"></a>
+</dt>
+<dd><p>Indicates support for the <code>-ada-task-info</code> command.
+</p></dd>
+<dt>&lsquo;<samp>language-option</samp>&rsquo;
+<a name="index-language_002doption"></a>
+</dt>
+<dd><p>Indicates that all <small>GDB/MI</small> commands accept the <samp>--language</samp>
+option (see <a href="Context-management.html#Context-management">Context management</a>).
+</p></dd>
+<dt>&lsquo;<samp>info-gdb-mi-command</samp>&rsquo;
+<a name="index-info_002dgdb_002dmi_002dcommand"></a>
+</dt>
+<dd><p>Indicates support for the <code>-info-gdb-mi-command</code> command.
+</p></dd>
+<dt>&lsquo;<samp>undefined-command-error-code</samp>&rsquo;
+<a name="index-undefined_002dcommand_002derror_002dcode"></a>
+</dt>
+<dd><p>Indicates support for the &quot;undefined-command&quot; error code in error result
+records, produced when trying to execute an undefined <small>GDB/MI</small> command
+(see <a href="GDB_002fMI-Result-Records.html#GDB_002fMI-Result-Records">GDB/MI Result Records</a>).
+</p></dd>
+<dt>&lsquo;<samp>exec-run-start-option</samp>&rsquo;
+<a name="index-exec_002drun_002dstart_002doption"></a>
+</dt>
+<dd><p>Indicates that the <code>-exec-run</code> command supports the <samp>--start</samp>
+option (see <a href="GDB_002fMI-Program-Execution.html#GDB_002fMI-Program-Execution">GDB/MI Program Execution</a>).
+</p></dd>
+<dt>&lsquo;<samp>data-disassemble-a-option</samp>&rsquo;
+<a name="index-data_002ddisassemble_002da_002doption"></a>
+</dt>
+<dd><p>Indicates that the <code>-data-disassemble</code> command supports the <samp>-a</samp>
+option (see <a href="GDB_002fMI-Data-Manipulation.html#GDB_002fMI-Data-Manipulation">GDB/MI Data Manipulation</a>).
+</p></dd>
+</dl>
+
+<a name="The-_002dlist_002dtarget_002dfeatures-Command"></a>
+<h4 class="subheading">The <code>-list-target-features</code> Command</h4>
+<a name="index-_002dlist_002dtarget_002dfeatures"></a>
+
+<p>Returns a list of particular features that are supported by the
+target.  Those features affect the permitted MI commands, but 
+unlike the features reported by the <code>-list-features</code> command, the
+features depend on which target GDB is using at the moment.  Whenever
+a target can change, due to commands such as <code>-target-select</code>,
+<code>-target-attach</code> or <code>-exec-run</code>, the list of target features
+may change, and the frontend should obtain it again.
+Example output:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) -list-target-features
+^done,result=[&quot;async&quot;]
+</pre></div>
+
+<p>The current list of features is:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>async</samp>&rsquo;</dt>
+<dd><p>Indicates that the target is capable of asynchronous command
+execution, which means that <small>GDB</small> will accept further commands
+while the target is running.
+</p>
+</dd>
+<dt>&lsquo;<samp>reverse</samp>&rsquo;</dt>
+<dd><p>Indicates that the target is capable of reverse execution.
+See <a href="Reverse-Execution.html#Reverse-Execution">Reverse Execution</a>, for more information.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="GDB_002fMI-Miscellaneous-Commands.html#GDB_002fMI-Miscellaneous-Commands" accesskey="n" rel="next">GDB/MI Miscellaneous Commands</a>, Previous: <a href="GDB_002fMI-Ada-Exceptions-Commands.html#GDB_002fMI-Ada-Exceptions-Commands" accesskey="p" rel="prev">GDB/MI Ada Exceptions Commands</a>, Up: <a href="GDB_002fMI.html#GDB_002fMI" accesskey="u" rel="up">GDB/MI</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

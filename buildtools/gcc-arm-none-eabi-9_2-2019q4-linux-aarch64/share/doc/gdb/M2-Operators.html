@@ -1,0 +1,214 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: M2 Operators</title>
+
+<meta name="description" content="Debugging with GDB: M2 Operators">
+<meta name="keywords" content="Debugging with GDB: M2 Operators">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Modula_002d2.html#Modula_002d2" rel="up" title="Modula-2">
+<link href="Built_002dIn-Func_002fProc.html#Built_002dIn-Func_002fProc" rel="next" title="Built-In Func/Proc">
+<link href="Modula_002d2.html#Modula_002d2" rel="prev" title="Modula-2">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="M2-Operators"></a>
+<div class="header">
+<p>
+Next: <a href="Built_002dIn-Func_002fProc.html#Built_002dIn-Func_002fProc" accesskey="n" rel="next">Built-In Func/Proc</a>, Up: <a href="Modula_002d2.html#Modula_002d2" accesskey="u" rel="up">Modula-2</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Operators"></a>
+<h4 class="subsubsection">15.4.9.1 Operators</h4>
+<a name="index-Modula_002d2-operators"></a>
+
+<p>Operators must be defined on values of specific types.  For instance,
+<code>+</code> is defined on numbers, but not on structures.  Operators are
+often defined on groups of types.  For the purposes of Modula-2, the
+following definitions hold:
+</p>
+<ul>
+<li> <em>Integral types</em> consist of <code>INTEGER</code>, <code>CARDINAL</code>, and
+their subranges.
+
+</li><li> <em>Character types</em> consist of <code>CHAR</code> and its subranges.
+
+</li><li> <em>Floating-point types</em> consist of <code>REAL</code>.
+
+</li><li> <em>Pointer types</em> consist of anything declared as <code>POINTER TO
+<var>type</var></code>.
+
+</li><li> <em>Scalar types</em> consist of all of the above.
+
+</li><li> <em>Set types</em> consist of <code>SET</code> and <code>BITSET</code> types.
+
+</li><li> <em>Boolean types</em> consist of <code>BOOLEAN</code>.
+</li></ul>
+
+<p>The following operators are supported, and appear in order of
+increasing precedence:
+</p>
+<dl compact="compact">
+<dt><code>,</code></dt>
+<dd><p>Function argument or array index separator.
+</p>
+</dd>
+<dt><code>:=</code></dt>
+<dd><p>Assignment.  The value of <var>var</var> <code>:=</code> <var>value</var> is
+<var>value</var>.
+</p>
+</dd>
+<dt><code>&lt;<span class="roman">, </span>&gt;</code></dt>
+<dd><p>Less than, greater than on integral, floating-point, or enumerated
+types.
+</p>
+</dd>
+<dt><code>&lt;=<span class="roman">, </span>&gt;=</code></dt>
+<dd><p>Less than or equal to, greater than or equal to
+on integral, floating-point and enumerated types, or set inclusion on
+set types.  Same precedence as <code>&lt;</code>.
+</p>
+</dd>
+<dt><code>=<span class="roman">, </span>&lt;&gt;<span class="roman">, </span>#</code></dt>
+<dd><p>Equality and two ways of expressing inequality, valid on scalar types.
+Same precedence as <code>&lt;</code>.  In <small>GDB</small> scripts, only <code>&lt;&gt;</code> is
+available for inequality, since <code>#</code> conflicts with the script
+comment character.
+</p>
+</dd>
+<dt><code>IN</code></dt>
+<dd><p>Set membership.  Defined on set types and the types of their members.
+Same precedence as <code>&lt;</code>.
+</p>
+</dd>
+<dt><code>OR</code></dt>
+<dd><p>Boolean disjunction.  Defined on boolean types.
+</p>
+</dd>
+<dt><code>AND<span class="roman">, </span>&amp;</code></dt>
+<dd><p>Boolean conjunction.  Defined on boolean types.
+</p>
+</dd>
+<dt><code>@</code></dt>
+<dd><p>The <small>GDB</small> &ldquo;artificial array&rdquo; operator (see <a href="Expressions.html#Expressions">Expressions</a>).
+</p>
+</dd>
+<dt><code>+<span class="roman">, </span>-</code></dt>
+<dd><p>Addition and subtraction on integral and floating-point types, or union
+and difference on set types.
+</p>
+</dd>
+<dt><code>*</code></dt>
+<dd><p>Multiplication on integral and floating-point types, or set intersection
+on set types.
+</p>
+</dd>
+<dt><code>/</code></dt>
+<dd><p>Division on floating-point types, or symmetric set difference on set
+types.  Same precedence as <code>*</code>.
+</p>
+</dd>
+<dt><code>DIV<span class="roman">, </span>MOD</code></dt>
+<dd><p>Integer division and remainder.  Defined on integral types.  Same
+precedence as <code>*</code>.
+</p>
+</dd>
+<dt><code>-</code></dt>
+<dd><p>Negative.  Defined on <code>INTEGER</code> and <code>REAL</code> data.
+</p>
+</dd>
+<dt><code>^</code></dt>
+<dd><p>Pointer dereferencing.  Defined on pointer types.
+</p>
+</dd>
+<dt><code>NOT</code></dt>
+<dd><p>Boolean negation.  Defined on boolean types.  Same precedence as
+<code>^</code>.
+</p>
+</dd>
+<dt><code>.</code></dt>
+<dd><p><code>RECORD</code> field selector.  Defined on <code>RECORD</code> data.  Same
+precedence as <code>^</code>.
+</p>
+</dd>
+<dt><code>[]</code></dt>
+<dd><p>Array indexing.  Defined on <code>ARRAY</code> data.  Same precedence as <code>^</code>.
+</p>
+</dd>
+<dt><code>()</code></dt>
+<dd><p>Procedure argument list.  Defined on <code>PROCEDURE</code> objects.  Same precedence
+as <code>^</code>.
+</p>
+</dd>
+<dt><code>::<span class="roman">, </span>.</code></dt>
+<dd><p><small>GDB</small> and Modula-2 scope operators.
+</p></dd>
+</dl>
+
+<blockquote>
+<p><em>Warning:</em> Set expressions and their operations are not yet supported, so <small>GDB</small>
+treats the use of the operator <code>IN</code>, or the use of operators
+<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>=</code>, , <code>&lt;&gt;</code>, <code>#</code>,
+<code>&lt;=</code>, and <code>&gt;=</code> on sets as an error.
+</p></blockquote>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Built_002dIn-Func_002fProc.html#Built_002dIn-Func_002fProc" accesskey="n" rel="next">Built-In Func/Proc</a>, Up: <a href="Modula_002d2.html#Modula_002d2" accesskey="u" rel="up">Modula-2</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

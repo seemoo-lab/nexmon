@@ -1,0 +1,149 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1987-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation.  A copy of
+the license is included in the
+section entitled "GNU Free Documentation License".
+
+This manual contains no Invariant Sections.  The Front-Cover Texts are
+(a) (see below), and the Back-Cover Texts are (b) (see below).
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The C Preprocessor: Swallowing the Semicolon</title>
+
+<meta name="description" content="The C Preprocessor: Swallowing the Semicolon">
+<meta name="keywords" content="The C Preprocessor: Swallowing the Semicolon">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Index-of-Directives.html#Index-of-Directives" rel="index" title="Index of Directives">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Macro-Pitfalls.html#Macro-Pitfalls" rel="up" title="Macro Pitfalls">
+<link href="Duplication-of-Side-Effects.html#Duplication-of-Side-Effects" rel="next" title="Duplication of Side Effects">
+<link href="Operator-Precedence-Problems.html#Operator-Precedence-Problems" rel="prev" title="Operator Precedence Problems">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Swallowing-the-Semicolon"></a>
+<div class="header">
+<p>
+Next: <a href="Duplication-of-Side-Effects.html#Duplication-of-Side-Effects" accesskey="n" rel="next">Duplication of Side Effects</a>, Previous: <a href="Operator-Precedence-Problems.html#Operator-Precedence-Problems" accesskey="p" rel="prev">Operator Precedence Problems</a>, Up: <a href="Macro-Pitfalls.html#Macro-Pitfalls" accesskey="u" rel="up">Macro Pitfalls</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index-of-Directives.html#Index-of-Directives" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Swallowing-the-Semicolon-1"></a>
+<h4 class="subsection">3.10.3 Swallowing the Semicolon</h4>
+<a name="index-semicolons-_0028after-macro-calls_0029"></a>
+
+<p>Often it is desirable to define a macro that expands into a compound
+statement.  Consider, for example, the following macro, that advances a
+pointer (the argument <code>p</code> says where to find it) across whitespace
+characters:
+</p>
+<div class="smallexample">
+<pre class="smallexample">#define SKIP_SPACES(p, limit)  \
+{ char *lim = (limit);         \
+  while (p &lt; lim) {            \
+    if (*p++ != ' ') {         \
+      p--; break; }}}
+</pre></div>
+
+<p>Here backslash-newline is used to split the macro definition, which must
+be a single logical line, so that it resembles the way such code would
+be laid out if not part of a macro definition.
+</p>
+<p>A call to this macro might be <code>SKIP_SPACES (p, lim)</code>.  Strictly
+speaking, the call expands to a compound statement, which is a complete
+statement with no need for a semicolon to end it.  However, since it
+looks like a function call, it minimizes confusion if you can use it
+like a function call, writing a semicolon afterward, as in
+<code>SKIP_SPACES (p, lim);</code>
+</p>
+<p>This can cause trouble before <code>else</code> statements, because the
+semicolon is actually a null statement.  Suppose you write
+</p>
+<div class="smallexample">
+<pre class="smallexample">if (*p != 0)
+  SKIP_SPACES (p, lim);
+else &hellip;
+</pre></div>
+
+<p>The presence of two statements&mdash;the compound statement and a null
+statement&mdash;in between the <code>if</code> condition and the <code>else</code>
+makes invalid C code.
+</p>
+<p>The definition of the macro <code>SKIP_SPACES</code> can be altered to solve
+this problem, using a <code>do &hellip; while</code> statement.  Here is how:
+</p>
+<div class="smallexample">
+<pre class="smallexample">#define SKIP_SPACES(p, limit)     \
+do { char *lim = (limit);         \
+     while (p &lt; lim) {            \
+       if (*p++ != ' ') {         \
+         p--; break; }}}          \
+while (0)
+</pre></div>
+
+<p>Now <code>SKIP_SPACES (p, lim);</code> expands into
+</p>
+<div class="smallexample">
+<pre class="smallexample">do {&hellip;} while (0);
+</pre></div>
+
+<p>which is one statement.  The loop executes exactly once; most compilers
+generate no extra code for it.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Duplication-of-Side-Effects.html#Duplication-of-Side-Effects" accesskey="n" rel="next">Duplication of Side Effects</a>, Previous: <a href="Operator-Precedence-Problems.html#Operator-Precedence-Problems" accesskey="p" rel="prev">Operator Precedence Problems</a>, Up: <a href="Macro-Pitfalls.html#Macro-Pitfalls" accesskey="u" rel="up">Macro Pitfalls</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index-of-Directives.html#Index-of-Directives" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: GDB/MI Ada Tasking Commands</title>
+
+<meta name="description" content="Debugging with GDB: GDB/MI Ada Tasking Commands">
+<meta name="keywords" content="Debugging with GDB: GDB/MI Ada Tasking Commands">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="GDB_002fMI.html#GDB_002fMI" rel="up" title="GDB/MI">
+<link href="GDB_002fMI-Program-Execution.html#GDB_002fMI-Program-Execution" rel="next" title="GDB/MI Program Execution">
+<link href="GDB_002fMI-Thread-Commands.html#GDB_002fMI-Thread-Commands" rel="prev" title="GDB/MI Thread Commands">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="GDB_002fMI-Ada-Tasking-Commands"></a>
+<div class="header">
+<p>
+Next: <a href="GDB_002fMI-Program-Execution.html#GDB_002fMI-Program-Execution" accesskey="n" rel="next">GDB/MI Program Execution</a>, Previous: <a href="GDB_002fMI-Thread-Commands.html#GDB_002fMI-Thread-Commands" accesskey="p" rel="prev">GDB/MI Thread Commands</a>, Up: <a href="GDB_002fMI.html#GDB_002fMI" accesskey="u" rel="up">GDB/MI</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="GDB_002fMI-Ada-Tasking-Commands-1"></a>
+<h3 class="section">27.12 <small>GDB/MI</small> Ada Tasking Commands</h3>
+
+<a name="The-_002dada_002dtask_002dinfo-Command"></a>
+<h4 class="subheading">The <code>-ada-task-info</code> Command</h4>
+<a name="index-_002dada_002dtask_002dinfo"></a>
+
+<a name="Synopsis-26"></a>
+<h4 class="subsubheading">Synopsis</h4>
+
+<div class="smallexample">
+<pre class="smallexample"> -ada-task-info [ <var>task-id</var> ]
+</pre></div>
+
+<p>Reports information about either a specific Ada task, if the
+<var>task-id</var> parameter is present, or about all Ada tasks.
+</p>
+<a name="GDB-Command-25"></a>
+<h4 class="subsubheading"><small>GDB</small> Command</h4>
+
+<p>The &lsquo;<samp>info tasks</samp>&rsquo; command prints the same information
+about all Ada tasks (see <a href="Ada-Tasks.html#Ada-Tasks">Ada Tasks</a>).
+</p>
+<a name="Result-4"></a>
+<h4 class="subsubheading">Result</h4>
+
+<p>The result is a table of Ada tasks.  The following columns are
+defined for each Ada task:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>current</samp>&rsquo;</dt>
+<dd><p>This field exists only for the current thread.  It has the value &lsquo;<samp>*</samp>&rsquo;.
+</p>
+</dd>
+<dt>&lsquo;<samp>id</samp>&rsquo;</dt>
+<dd><p>The identifier that <small>GDB</small> uses to refer to the Ada task.
+</p>
+</dd>
+<dt>&lsquo;<samp>task-id</samp>&rsquo;</dt>
+<dd><p>The identifier that the target uses to refer to the Ada task.
+</p>
+</dd>
+<dt>&lsquo;<samp>thread-id</samp>&rsquo;</dt>
+<dd><p>The global thread identifier of the thread corresponding to the Ada
+task.
+</p>
+<p>This field should always exist, as Ada tasks are always implemented
+on top of a thread.  But if <small>GDB</small> cannot find this corresponding
+thread for any reason, the field is omitted.
+</p>
+</dd>
+<dt>&lsquo;<samp>parent-id</samp>&rsquo;</dt>
+<dd><p>This field exists only when the task was created by another task.
+In this case, it provides the ID of the parent task.
+</p>
+</dd>
+<dt>&lsquo;<samp>priority</samp>&rsquo;</dt>
+<dd><p>The base priority of the task.
+</p>
+</dd>
+<dt>&lsquo;<samp>state</samp>&rsquo;</dt>
+<dd><p>The current state of the task.  For a detailed description of the
+possible states, see <a href="Ada-Tasks.html#Ada-Tasks">Ada Tasks</a>.
+</p>
+</dd>
+<dt>&lsquo;<samp>name</samp>&rsquo;</dt>
+<dd><p>The name of the task.
+</p>
+</dd>
+</dl>
+
+<a name="Example-25"></a>
+<h4 class="subsubheading">Example</h4>
+
+<div class="smallexample">
+<pre class="smallexample">-ada-task-info
+^done,tasks={nr_rows=&quot;3&quot;,nr_cols=&quot;8&quot;,
+hdr=[{width=&quot;1&quot;,alignment=&quot;-1&quot;,col_name=&quot;current&quot;,colhdr=&quot;&quot;},
+{width=&quot;3&quot;,alignment=&quot;1&quot;,col_name=&quot;id&quot;,colhdr=&quot;ID&quot;},
+{width=&quot;9&quot;,alignment=&quot;1&quot;,col_name=&quot;task-id&quot;,colhdr=&quot;TID&quot;},
+{width=&quot;4&quot;,alignment=&quot;1&quot;,col_name=&quot;thread-id&quot;,colhdr=&quot;&quot;},
+{width=&quot;4&quot;,alignment=&quot;1&quot;,col_name=&quot;parent-id&quot;,colhdr=&quot;P-ID&quot;},
+{width=&quot;3&quot;,alignment=&quot;1&quot;,col_name=&quot;priority&quot;,colhdr=&quot;Pri&quot;},
+{width=&quot;22&quot;,alignment=&quot;-1&quot;,col_name=&quot;state&quot;,colhdr=&quot;State&quot;},
+{width=&quot;1&quot;,alignment=&quot;2&quot;,col_name=&quot;name&quot;,colhdr=&quot;Name&quot;}],
+body=[{current=&quot;*&quot;,id=&quot;1&quot;,task-id=&quot;   644010&quot;,thread-id=&quot;1&quot;,priority=&quot;48&quot;,
+state=&quot;Child Termination Wait&quot;,name=&quot;main_task&quot;}]}
+(gdb)
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="GDB_002fMI-Program-Execution.html#GDB_002fMI-Program-Execution" accesskey="n" rel="next">GDB/MI Program Execution</a>, Previous: <a href="GDB_002fMI-Thread-Commands.html#GDB_002fMI-Thread-Commands" accesskey="p" rel="prev">GDB/MI Thread Commands</a>, Up: <a href="GDB_002fMI.html#GDB_002fMI" accesskey="u" rel="up">GDB/MI</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: GETARG</title>
+
+<meta name="description" content="The GNU Fortran Compiler: GETARG">
+<meta name="keywords" content="The GNU Fortran Compiler: GETARG">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Intrinsic-Procedures.html#Intrinsic-Procedures" rel="up" title="Intrinsic Procedures">
+<link href="GET_005fCOMMAND.html#GET_005fCOMMAND" rel="next" title="GET_COMMAND">
+<link href="GERROR.html#GERROR" rel="prev" title="GERROR">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="GETARG"></a>
+<div class="header">
+<p>
+Next: <a href="GET_005fCOMMAND.html#GET_005fCOMMAND" accesskey="n" rel="next">GET_COMMAND</a>, Previous: <a href="GERROR.html#GERROR" accesskey="p" rel="prev">GERROR</a>, Up: <a href="Intrinsic-Procedures.html#Intrinsic-Procedures" accesskey="u" rel="up">Intrinsic Procedures</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="GETARG-_002d_002d_002d-Get-command-line-arguments"></a>
+<h3 class="section">9.121 <code>GETARG</code> &mdash; Get command line arguments</h3>
+<a name="index-GETARG"></a>
+<a name="index-command_002dline-arguments-1"></a>
+<a name="index-arguments_002c-to-program-1"></a>
+
+<dl compact="compact">
+<dt><em>Description</em>:</dt>
+<dd><p>Retrieve the <var>POS</var>-th argument that was passed on the
+command line when the containing program was invoked.
+</p>
+<p>This intrinsic routine is provided for backwards compatibility with 
+GNU Fortran 77.  In new code, programmers should consider the use of 
+the <a href="GET_005fCOMMAND_005fARGUMENT.html#GET_005fCOMMAND_005fARGUMENT">GET_COMMAND_ARGUMENT</a> intrinsic defined by the Fortran 2003 
+standard.
+</p>
+</dd>
+<dt><em>Standard</em>:</dt>
+<dd><p>GNU extension
+</p>
+</dd>
+<dt><em>Class</em>:</dt>
+<dd><p>Subroutine
+</p>
+</dd>
+<dt><em>Syntax</em>:</dt>
+<dd><p><code>CALL GETARG(POS, VALUE)</code>
+</p>
+</dd>
+<dt><em>Arguments</em>:</dt>
+<dd><table>
+<tr><td width="15%"><var>POS</var></td><td width="70%">Shall be of type <code>INTEGER</code> and not wider than
+the default integer kind; <em><var>POS</var> \geq 0</em></td></tr>
+<tr><td width="15%"><var>VALUE</var></td><td width="70%">Shall be of type <code>CHARACTER</code> and of default
+kind.</td></tr>
+<tr><td width="15%"><var>VALUE</var></td><td width="70%">Shall be of type <code>CHARACTER</code>.</td></tr>
+</table>
+
+</dd>
+<dt><em>Return value</em>:</dt>
+<dd><p>After <code>GETARG</code> returns, the <var>VALUE</var> argument holds the
+<var>POS</var>th command line argument. If <var>VALUE</var> cannot hold the
+argument, it is truncated to fit the length of <var>VALUE</var>. If there are
+less than <var>POS</var> arguments specified at the command line, <var>VALUE</var>
+will be filled with blanks. If <em><var>POS</var> = 0</em>, <var>VALUE</var> is set
+to the name of the program (on systems that support this feature).
+</p>
+</dd>
+<dt><em>Example</em>:</dt>
+<dd><div class="smallexample">
+<pre class="smallexample">PROGRAM test_getarg
+  INTEGER :: i
+  CHARACTER(len=32) :: arg
+
+  DO i = 1, iargc()
+    CALL getarg(i, arg)
+    WRITE (*,*) arg
+  END DO
+END PROGRAM
+</pre></div>
+
+</dd>
+<dt><em>See also</em>:</dt>
+<dd><p>GNU Fortran 77 compatibility function: <a href="IARGC.html#IARGC">IARGC</a>
+</p>
+<p>Fortran 2003 functions and subroutines: <a href="GET_005fCOMMAND.html#GET_005fCOMMAND">GET_COMMAND</a>,
+<a href="GET_005fCOMMAND_005fARGUMENT.html#GET_005fCOMMAND_005fARGUMENT">GET_COMMAND_ARGUMENT</a>, <a href="COMMAND_005fARGUMENT_005fCOUNT.html#COMMAND_005fARGUMENT_005fCOUNT">COMMAND_ARGUMENT_COUNT</a>
+</p></dd>
+</dl>
+
+
+
+
+
+
+</body>
+</html>

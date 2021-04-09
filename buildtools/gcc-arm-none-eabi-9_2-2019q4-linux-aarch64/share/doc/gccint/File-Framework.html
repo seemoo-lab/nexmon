@@ -1,0 +1,344 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: File Framework</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: File Framework">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: File Framework">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Assembler-Format.html#Assembler-Format" rel="up" title="Assembler Format">
+<link href="Data-Output.html#Data-Output" rel="next" title="Data Output">
+<link href="Assembler-Format.html#Assembler-Format" rel="prev" title="Assembler Format">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="File-Framework"></a>
+<div class="header">
+<p>
+Next: <a href="Data-Output.html#Data-Output" accesskey="n" rel="next">Data Output</a>, Up: <a href="Assembler-Format.html#Assembler-Format" accesskey="u" rel="up">Assembler Format</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="The-Overall-Framework-of-an-Assembler-File"></a>
+<h4 class="subsection">18.20.1 The Overall Framework of an Assembler File</h4>
+<a name="index-assembler-format"></a>
+<a name="index-output-of-assembler-code"></a>
+
+<p>This describes the overall framework of an assembly file.
+</p>
+<a name="index-default_005ffile_005fstart"></a>
+<dl>
+<dt><a name="index-TARGET_005fASM_005fFILE_005fSTART"></a>Target Hook: <em>void</em> <strong>TARGET_ASM_FILE_START</strong> <em>(void)</em></dt>
+<dd><p>Output to <code>asm_out_file</code> any text which the assembler expects to
+find at the beginning of a file.  The default behavior is controlled
+by two flags, documented below.  Unless your target&rsquo;s assembler is
+quite unusual, if you override the default, you should call
+<code>default_file_start</code> at some point in your target hook.  This
+lets other target files rely on these variables.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fASM_005fFILE_005fSTART_005fAPP_005fOFF"></a>Target Hook: <em>bool</em> <strong>TARGET_ASM_FILE_START_APP_OFF</strong></dt>
+<dd><p>If this flag is true, the text of the macro <code>ASM_APP_OFF</code> will be
+printed as the very first line in the assembly file, unless
+<samp>-fverbose-asm</samp> is in effect.  (If that macro has been defined
+to the empty string, this variable has no effect.)  With the normal
+definition of <code>ASM_APP_OFF</code>, the effect is to notify the GNU
+assembler that it need not bother stripping comments or extra
+whitespace from its input.  This allows it to work a bit faster.
+</p>
+<p>The default is false.  You should not set it to true unless you have
+verified that your port does not generate any extra whitespace or
+comments that will cause GAS to issue errors in NO_APP mode.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fASM_005fFILE_005fSTART_005fFILE_005fDIRECTIVE"></a>Target Hook: <em>bool</em> <strong>TARGET_ASM_FILE_START_FILE_DIRECTIVE</strong></dt>
+<dd><p>If this flag is true, <code>output_file_directive</code> will be called
+for the primary source file, immediately after printing
+<code>ASM_APP_OFF</code> (if that is enabled).  Most ELF assemblers expect
+this to be done.  The default is false.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fASM_005fFILE_005fEND"></a>Target Hook: <em>void</em> <strong>TARGET_ASM_FILE_END</strong> <em>(void)</em></dt>
+<dd><p>Output to <code>asm_out_file</code> any text which the assembler expects
+to find at the end of a file.  The default is to output nothing.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-file_005fend_005findicate_005fexec_005fstack"></a>Function: <em>void</em> <strong>file_end_indicate_exec_stack</strong> <em>()</em></dt>
+<dd><p>Some systems use a common convention, the &lsquo;<samp>.note.GNU-stack</samp>&rsquo;
+special section, to indicate whether or not an object file relies on
+the stack being executable.  If your system uses this convention, you
+should define <code>TARGET_ASM_FILE_END</code> to this function.  If you
+need to do other things in that hook, have your hook function call
+this function.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fASM_005fLTO_005fSTART"></a>Target Hook: <em>void</em> <strong>TARGET_ASM_LTO_START</strong> <em>(void)</em></dt>
+<dd><p>Output to <code>asm_out_file</code> any text which the assembler expects
+to find at the start of an LTO section.  The default is to output
+nothing.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fASM_005fLTO_005fEND"></a>Target Hook: <em>void</em> <strong>TARGET_ASM_LTO_END</strong> <em>(void)</em></dt>
+<dd><p>Output to <code>asm_out_file</code> any text which the assembler expects
+to find at the end of an LTO section.  The default is to output
+nothing.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fASM_005fCODE_005fEND"></a>Target Hook: <em>void</em> <strong>TARGET_ASM_CODE_END</strong> <em>(void)</em></dt>
+<dd><p>Output to <code>asm_out_file</code> any text which is needed before emitting
+unwind info and debug info at the end of a file.  Some targets emit
+here PIC setup thunks that cannot be emitted at the end of file,
+because they couldn&rsquo;t have unwind info then.  The default is to output
+nothing.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-ASM_005fCOMMENT_005fSTART"></a>Macro: <strong>ASM_COMMENT_START</strong></dt>
+<dd><p>A C string constant describing how to begin a comment in the target
+assembler language.  The compiler assumes that the comment will end at
+the end of the line.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-ASM_005fAPP_005fON"></a>Macro: <strong>ASM_APP_ON</strong></dt>
+<dd><p>A C string constant for text to be output before each <code>asm</code>
+statement or group of consecutive ones.  Normally this is
+<code>&quot;#APP&quot;</code>, which is a comment that has no effect on most
+assemblers but tells the GNU assembler that it must check the lines
+that follow for all valid assembler constructs.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-ASM_005fAPP_005fOFF"></a>Macro: <strong>ASM_APP_OFF</strong></dt>
+<dd><p>A C string constant for text to be output after each <code>asm</code>
+statement or group of consecutive ones.  Normally this is
+<code>&quot;#NO_APP&quot;</code>, which tells the GNU assembler to resume making the
+time-saving assumptions that are valid for ordinary compiler output.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-ASM_005fOUTPUT_005fSOURCE_005fFILENAME"></a>Macro: <strong>ASM_OUTPUT_SOURCE_FILENAME</strong> <em>(<var>stream</var>, <var>name</var>)</em></dt>
+<dd><p>A C statement to output COFF information or DWARF debugging information
+which indicates that filename <var>name</var> is the current source file to
+the stdio stream <var>stream</var>.
+</p>
+<p>This macro need not be defined if the standard form of output
+for the file format in use is appropriate.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fASM_005fOUTPUT_005fSOURCE_005fFILENAME"></a>Target Hook: <em>void</em> <strong>TARGET_ASM_OUTPUT_SOURCE_FILENAME</strong> <em>(FILE *<var>file</var>, const char *<var>name</var>)</em></dt>
+<dd><p>Output DWARF debugging information which indicates that filename <var>name</var> is the current source file to the stdio stream <var>file</var>.
+</p> 
+<p>This target hook need not be defined if the standard form of output for the file format in use is appropriate.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fASM_005fOUTPUT_005fIDENT"></a>Target Hook: <em>void</em> <strong>TARGET_ASM_OUTPUT_IDENT</strong> <em>(const char *<var>name</var>)</em></dt>
+<dd><p>Output a string based on <var>name</var>, suitable for the &lsquo;<samp>#ident</samp>&rsquo;  directive, or the equivalent directive or pragma in non-C-family languages.  If this hook is not defined, nothing is output for the &lsquo;<samp>#ident</samp>&rsquo;  directive.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-OUTPUT_005fQUOTED_005fSTRING"></a>Macro: <strong>OUTPUT_QUOTED_STRING</strong> <em>(<var>stream</var>, <var>string</var>)</em></dt>
+<dd><p>A C statement to output the string <var>string</var> to the stdio stream
+<var>stream</var>.  If you do not call the function <code>output_quoted_string</code>
+in your config files, GCC will only call it to output filenames to
+the assembler source.  So you can use it to canonicalize the format
+of the filename using this macro.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fASM_005fNAMED_005fSECTION"></a>Target Hook: <em>void</em> <strong>TARGET_ASM_NAMED_SECTION</strong> <em>(const char *<var>name</var>, unsigned int <var>flags</var>, tree <var>decl</var>)</em></dt>
+<dd><p>Output assembly directives to switch to section <var>name</var>.  The section
+should have attributes as specified by <var>flags</var>, which is a bit mask
+of the <code>SECTION_*</code> flags defined in <samp>output.h</samp>.  If <var>decl</var>
+is non-NULL, it is the <code>VAR_DECL</code> or <code>FUNCTION_DECL</code> with which
+this section is associated.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fASM_005fELF_005fFLAGS_005fNUMERIC"></a>Target Hook: <em>bool</em> <strong>TARGET_ASM_ELF_FLAGS_NUMERIC</strong> <em>(unsigned int <var>flags</var>, unsigned int *<var>num</var>)</em></dt>
+<dd><p>This hook can be used to encode ELF section flags for which no letter
+code has been defined in the assembler.  It is called by
+<code>default_asm_named_section</code> whenever the section flags need to be
+emitted in the assembler output.  If the hook returns true, then the
+numerical value for ELF section flags should be calculated from
+<var>flags</var> and saved in <var>*num</var>; the value is printed out instead of the
+normal sequence of letter codes.  If the hook is not defined, or if it
+returns false, then <var>num</var> is ignored and the traditional letter sequence
+is emitted.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fASM_005fFUNCTION_005fSECTION"></a>Target Hook: <em>section *</em> <strong>TARGET_ASM_FUNCTION_SECTION</strong> <em>(tree <var>decl</var>, enum node_frequency <var>freq</var>, bool <var>startup</var>, bool <var>exit</var>)</em></dt>
+<dd><p>Return preferred text (sub)section for function <var>decl</var>.
+Main purpose of this function is to separate cold, normal and hot
+functions. <var>startup</var> is true when function is known to be used only
+at startup (from static constructors or it is <code>main()</code>).
+<var>exit</var> is true when function is known to be used only at exit
+(from static destructors).
+Return NULL if function should go to default text section.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fASM_005fFUNCTION_005fSWITCHED_005fTEXT_005fSECTIONS"></a>Target Hook: <em>void</em> <strong>TARGET_ASM_FUNCTION_SWITCHED_TEXT_SECTIONS</strong> <em>(FILE *<var>file</var>, tree <var>decl</var>, bool <var>new_is_cold</var>)</em></dt>
+<dd><p>Used by the target to emit any assembler directives or additional  labels needed when a function is partitioned between different  sections.  Output should be written to <var>file</var>.  The function  decl is available as <var>decl</var> and the new section is &lsquo;cold&rsquo; if  <var>new_is_cold</var> is <code>true</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fHAVE_005fNAMED_005fSECTIONS"></a>Common Target Hook: <em>bool</em> <strong>TARGET_HAVE_NAMED_SECTIONS</strong></dt>
+<dd><p>This flag is true if the target supports <code>TARGET_ASM_NAMED_SECTION</code>.
+It must not be modified by command-line option processing.
+</p></dd></dl>
+
+<a name="TARGET_005fHAVE_005fSWITCHABLE_005fBSS_005fSECTIONS"></a><dl>
+<dt><a name="index-TARGET_005fHAVE_005fSWITCHABLE_005fBSS_005fSECTIONS"></a>Target Hook: <em>bool</em> <strong>TARGET_HAVE_SWITCHABLE_BSS_SECTIONS</strong></dt>
+<dd><p>This flag is true if we can create zeroed data by switching to a BSS
+section and then using <code>ASM_OUTPUT_SKIP</code> to allocate the space.
+This is true on most ELF targets.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fSECTION_005fTYPE_005fFLAGS"></a>Target Hook: <em>unsigned int</em> <strong>TARGET_SECTION_TYPE_FLAGS</strong> <em>(tree <var>decl</var>, const char *<var>name</var>, int <var>reloc</var>)</em></dt>
+<dd><p>Choose a set of section attributes for use by <code>TARGET_ASM_NAMED_SECTION</code>
+based on a variable or function decl, a section name, and whether or not the
+declaration&rsquo;s initializer may contain runtime relocations.  <var>decl</var> may be
+null, in which case read-write data should be assumed.
+</p>
+<p>The default version of this function handles choosing code vs data,
+read-only vs read-write data, and <code>flag_pic</code>.  You should only
+need to override this if your target has special flags that might be
+set via <code>__attribute__</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fASM_005fRECORD_005fGCC_005fSWITCHES"></a>Target Hook: <em>int</em> <strong>TARGET_ASM_RECORD_GCC_SWITCHES</strong> <em>(print_switch_type <var>type</var>, const char *<var>text</var>)</em></dt>
+<dd><p>Provides the target with the ability to record the gcc command line
+switches that have been passed to the compiler, and options that are
+enabled.  The <var>type</var> argument specifies what is being recorded.
+It can take the following values:
+</p>
+<dl compact="compact">
+<dt><code>SWITCH_TYPE_PASSED</code></dt>
+<dd><p><var>text</var> is a command line switch that has been set by the user.
+</p>
+</dd>
+<dt><code>SWITCH_TYPE_ENABLED</code></dt>
+<dd><p><var>text</var> is an option which has been enabled.  This might be as a
+direct result of a command line switch, or because it is enabled by
+default or because it has been enabled as a side effect of a different
+command line switch.  For example, the <samp>-O2</samp> switch enables
+various different individual optimization passes.
+</p>
+</dd>
+<dt><code>SWITCH_TYPE_DESCRIPTIVE</code></dt>
+<dd><p><var>text</var> is either NULL or some descriptive text which should be
+ignored.  If <var>text</var> is NULL then it is being used to warn the
+target hook that either recording is starting or ending.  The first
+time <var>type</var> is SWITCH_TYPE_DESCRIPTIVE and <var>text</var> is NULL, the
+warning is for start up and the second time the warning is for
+wind down.  This feature is to allow the target hook to make any
+necessary preparations before it starts to record switches and to
+perform any necessary tidying up after it has finished recording
+switches.
+</p>
+</dd>
+<dt><code>SWITCH_TYPE_LINE_START</code></dt>
+<dd><p>This option can be ignored by this target hook.
+</p>
+</dd>
+<dt><code>SWITCH_TYPE_LINE_END</code></dt>
+<dd><p>This option can be ignored by this target hook.
+</p></dd>
+</dl>
+
+<p>The hook&rsquo;s return value must be zero.  Other return values may be
+supported in the future.
+</p>
+<p>By default this hook is set to NULL, but an example implementation is
+provided for ELF based targets.  Called <var>elf_record_gcc_switches</var>,
+it records the switches as ASCII text inside a new, string mergeable
+section in the assembler output file.  The name of the new section is
+provided by the <code>TARGET_ASM_RECORD_GCC_SWITCHES_SECTION</code> target
+hook.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fASM_005fRECORD_005fGCC_005fSWITCHES_005fSECTION"></a>Target Hook: <em>const char *</em> <strong>TARGET_ASM_RECORD_GCC_SWITCHES_SECTION</strong></dt>
+<dd><p>This is the name of the section that will be created by the example
+ELF implementation of the <code>TARGET_ASM_RECORD_GCC_SWITCHES</code> target
+hook.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Data-Output.html#Data-Output" accesskey="n" rel="next">Data Output</a>, Up: <a href="Assembler-Format.html#Assembler-Format" accesskey="u" rel="up">Assembler Format</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

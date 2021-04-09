@@ -1,0 +1,153 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1987-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation.  A copy of
+the license is included in the
+section entitled "GNU Free Documentation License".
+
+This manual contains no Invariant Sections.  The Front-Cover Texts are
+(a) (see below), and the Back-Cover Texts are (b) (see below).
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The C Preprocessor: Operator Precedence Problems</title>
+
+<meta name="description" content="The C Preprocessor: Operator Precedence Problems">
+<meta name="keywords" content="The C Preprocessor: Operator Precedence Problems">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Index-of-Directives.html#Index-of-Directives" rel="index" title="Index of Directives">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Macro-Pitfalls.html#Macro-Pitfalls" rel="up" title="Macro Pitfalls">
+<link href="Swallowing-the-Semicolon.html#Swallowing-the-Semicolon" rel="next" title="Swallowing the Semicolon">
+<link href="Misnesting.html#Misnesting" rel="prev" title="Misnesting">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Operator-Precedence-Problems"></a>
+<div class="header">
+<p>
+Next: <a href="Swallowing-the-Semicolon.html#Swallowing-the-Semicolon" accesskey="n" rel="next">Swallowing the Semicolon</a>, Previous: <a href="Misnesting.html#Misnesting" accesskey="p" rel="prev">Misnesting</a>, Up: <a href="Macro-Pitfalls.html#Macro-Pitfalls" accesskey="u" rel="up">Macro Pitfalls</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index-of-Directives.html#Index-of-Directives" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Operator-Precedence-Problems-1"></a>
+<h4 class="subsection">3.10.2 Operator Precedence Problems</h4>
+<a name="index-parentheses-in-macro-bodies"></a>
+
+<p>You may have noticed that in most of the macro definition examples shown
+above, each occurrence of a macro argument name had parentheses around
+it.  In addition, another pair of parentheses usually surround the
+entire macro definition.  Here is why it is best to write macros that
+way.
+</p>
+<p>Suppose you define a macro as follows,
+</p>
+<div class="smallexample">
+<pre class="smallexample">#define ceil_div(x, y) (x + y - 1) / y
+</pre></div>
+
+<p>whose purpose is to divide, rounding up.  (One use for this operation is
+to compute how many <code>int</code> objects are needed to hold a certain
+number of <code>char</code> objects.)  Then suppose it is used as follows:
+</p>
+<div class="smallexample">
+<pre class="smallexample">a = ceil_div (b &amp; c, sizeof (int));
+     &rarr; a = (b &amp; c + sizeof (int) - 1) / sizeof (int);
+</pre></div>
+
+<p>This does not do what is intended.  The operator-precedence rules of
+C make it equivalent to this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">a = (b &amp; (c + sizeof (int) - 1)) / sizeof (int);
+</pre></div>
+
+<p>What we want is this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">a = ((b &amp; c) + sizeof (int) - 1)) / sizeof (int);
+</pre></div>
+
+<p>Defining the macro as
+</p>
+<div class="smallexample">
+<pre class="smallexample">#define ceil_div(x, y) ((x) + (y) - 1) / (y)
+</pre></div>
+
+<p>provides the desired result.
+</p>
+<p>Unintended grouping can result in another way.  Consider <code>sizeof
+ceil_div(1, 2)</code>.  That has the appearance of a C expression that would
+compute the size of the type of <code>ceil_div (1, 2)</code>, but in fact it
+means something very different.  Here is what it expands to:
+</p>
+<div class="smallexample">
+<pre class="smallexample">sizeof ((1) + (2) - 1) / (2)
+</pre></div>
+
+<p>This would take the size of an integer and divide it by two.  The
+precedence rules have put the division outside the <code>sizeof</code> when it
+was intended to be inside.
+</p>
+<p>Parentheses around the entire macro definition prevent such problems.
+Here, then, is the recommended way to define <code>ceil_div</code>:
+</p>
+<div class="smallexample">
+<pre class="smallexample">#define ceil_div(x, y) (((x) + (y) - 1) / (y))
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Swallowing-the-Semicolon.html#Swallowing-the-Semicolon" accesskey="n" rel="next">Swallowing the Semicolon</a>, Previous: <a href="Misnesting.html#Misnesting" accesskey="p" rel="prev">Misnesting</a>, Up: <a href="Macro-Pitfalls.html#Macro-Pitfalls" accesskey="u" rel="up">Macro Pitfalls</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Index-of-Directives.html#Index-of-Directives" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

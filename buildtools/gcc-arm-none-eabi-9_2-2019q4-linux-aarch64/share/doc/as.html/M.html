@@ -1,0 +1,184 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: M</title>
+
+<meta name="description" content="Using as: M">
+<meta name="keywords" content="Using as: M">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Invoking.html#Invoking" rel="up" title="Invoking">
+<link href="MD.html#MD" rel="next" title="MD">
+<link href="listing.html#listing" rel="prev" title="listing">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="M"></a>
+<div class="header">
+<p>
+Next: <a href="MD.html#MD" accesskey="n" rel="next">MD</a>, Previous: <a href="listing.html#listing" accesskey="p" rel="prev">listing</a>, Up: <a href="Invoking.html#Invoking" accesskey="u" rel="up">Invoking</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Assemble-in-MRI-Compatibility-Mode_003a-_002dM"></a>
+<h3 class="section">2.9 Assemble in MRI Compatibility Mode: <samp>-M</samp></h3>
+
+<a name="index-_002dM"></a>
+<a name="index-MRI-compatibility-mode"></a>
+<p>The <samp>-M</samp> or <samp>--mri</samp> option selects MRI compatibility mode.  This
+changes the syntax and pseudo-op handling of <code>as</code> to make it
+compatible with the <code>ASM68K</code> assembler from Microtec Research.
+The exact nature of the
+MRI syntax will not be documented here; see the MRI manuals for more
+information.  Note in particular that the handling of macros and macro
+arguments is somewhat different.  The purpose of this option is to permit
+assembling existing MRI assembler code using <code>as</code>.
+</p>
+<p>The MRI compatibility is not complete.  Certain operations of the MRI assembler
+depend upon its object file format, and can not be supported using other object
+file formats.  Supporting these would require enhancing each object file format
+individually.  These are:
+</p>
+<ul>
+<li> global symbols in common section
+
+<p>The m68k MRI assembler supports common sections which are merged by the linker.
+Other object file formats do not support this.  <code>as</code> handles
+common sections by treating them as a single common symbol.  It permits local
+symbols to be defined within a common section, but it can not support global
+symbols, since it has no way to describe them.
+</p>
+</li><li> complex relocations
+
+<p>The MRI assemblers support relocations against a negated section address, and
+relocations which combine the start addresses of two or more sections.  These
+are not support by other object file formats.
+</p>
+</li><li> <code>END</code> pseudo-op specifying start address
+
+<p>The MRI <code>END</code> pseudo-op permits the specification of a start address.
+This is not supported by other object file formats.  The start address may
+instead be specified using the <samp>-e</samp> option to the linker, or in a linker
+script.
+</p>
+</li><li> <code>IDNT</code>, <code>.ident</code> and <code>NAME</code> pseudo-ops
+
+<p>The MRI <code>IDNT</code>, <code>.ident</code> and <code>NAME</code> pseudo-ops assign a module
+name to the output file.  This is not supported by other object file formats.
+</p>
+</li><li> <code>ORG</code> pseudo-op
+
+<p>The m68k MRI <code>ORG</code> pseudo-op begins an absolute section at a given
+address.  This differs from the usual <code>as</code> <code>.org</code> pseudo-op,
+which changes the location within the current section.  Absolute sections are
+not supported by other object file formats.  The address of a section may be
+assigned within a linker script.
+</p></li></ul>
+
+<p>There are some other features of the MRI assembler which are not supported by
+<code>as</code>, typically either because they are difficult or because they
+seem of little consequence.  Some of these may be supported in future releases.
+</p>
+<ul>
+<li> EBCDIC strings
+
+<p>EBCDIC strings are not supported.
+</p>
+</li><li> packed binary coded decimal
+
+<p>Packed binary coded decimal is not supported.  This means that the <code>DC.P</code>
+and <code>DCB.P</code> pseudo-ops are not supported.
+</p>
+</li><li> <code>FEQU</code> pseudo-op
+
+<p>The m68k <code>FEQU</code> pseudo-op is not supported.
+</p>
+</li><li> <code>NOOBJ</code> pseudo-op
+
+<p>The m68k <code>NOOBJ</code> pseudo-op is not supported.
+</p>
+</li><li> <code>OPT</code> branch control options
+
+<p>The m68k <code>OPT</code> branch control options&mdash;<code>B</code>, <code>BRS</code>, <code>BRB</code>,
+<code>BRL</code>, and <code>BRW</code>&mdash;are ignored.  <code>as</code> automatically
+relaxes all branches, whether forward or backward, to an appropriate size, so
+these options serve no purpose.
+</p>
+</li><li> <code>OPT</code> list control options
+
+<p>The following m68k <code>OPT</code> list control options are ignored: <code>C</code>,
+<code>CEX</code>, <code>CL</code>, <code>CRE</code>, <code>E</code>, <code>G</code>, <code>I</code>, <code>M</code>,
+<code>MEX</code>, <code>MC</code>, <code>MD</code>, <code>X</code>.
+</p>
+</li><li> other <code>OPT</code> options
+
+<p>The following m68k <code>OPT</code> options are ignored: <code>NEST</code>, <code>O</code>,
+<code>OLD</code>, <code>OP</code>, <code>P</code>, <code>PCO</code>, <code>PCR</code>, <code>PCS</code>, <code>R</code>.
+</p>
+</li><li> <code>OPT</code> <code>D</code> option is default
+
+<p>The m68k <code>OPT</code> <code>D</code> option is the default, unlike the MRI assembler.
+<code>OPT NOD</code> may be used to turn it off.
+</p>
+</li><li> <code>XREF</code> pseudo-op.
+
+<p>The m68k <code>XREF</code> pseudo-op is ignored.
+</p>
+</li></ul>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="MD.html#MD" accesskey="n" rel="next">MD</a>, Previous: <a href="listing.html#listing" accesskey="p" rel="prev">listing</a>, Up: <a href="Invoking.html#Invoking" accesskey="u" rel="up">Invoking</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,763 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): PowerPC AltiVec Built-in Functions Available on ISA 3.0</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): PowerPC AltiVec Built-in Functions Available on ISA 3.0">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): PowerPC AltiVec Built-in Functions Available on ISA 3.0">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="PowerPC-AltiVec_002fVSX-Built_002din-Functions.html#PowerPC-AltiVec_002fVSX-Built_002din-Functions" rel="up" title="PowerPC AltiVec/VSX Built-in Functions">
+<link href="PowerPC-Hardware-Transactional-Memory-Built_002din-Functions.html#PowerPC-Hardware-Transactional-Memory-Built_002din-Functions" rel="next" title="PowerPC Hardware Transactional Memory Built-in Functions">
+<link href="PowerPC-AltiVec-Built_002din-Functions-Available-on-ISA-2_002e07.html#PowerPC-AltiVec-Built_002din-Functions-Available-on-ISA-2_002e07" rel="prev" title="PowerPC AltiVec Built-in Functions Available on ISA 2.07">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="PowerPC-AltiVec-Built_002din-Functions-Available-on-ISA-3_002e0"></a>
+<div class="header">
+<p>
+Previous: <a href="PowerPC-AltiVec-Built_002din-Functions-Available-on-ISA-2_002e07.html#PowerPC-AltiVec-Built_002din-Functions-Available-on-ISA-2_002e07" accesskey="p" rel="prev">PowerPC AltiVec Built-in Functions Available on ISA 2.07</a>, Up: <a href="PowerPC-AltiVec_002fVSX-Built_002din-Functions.html#PowerPC-AltiVec_002fVSX-Built_002din-Functions" accesskey="u" rel="up">PowerPC AltiVec/VSX Built-in Functions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="PowerPC-AltiVec-Built_002din-Functions-Available-on-ISA-3_002e0-1"></a>
+<h4 class="subsubsection">6.60.22.4 PowerPC AltiVec Built-in Functions Available on ISA 3.0</h4>
+
+<p>The following additional built-in functions are also available for the
+PowerPC family of processors, starting with ISA 3.0
+(<samp>-mcpu=power9</samp>) or later:
+</p><div class="smallexample">
+<pre class="smallexample">unsigned int scalar_extract_exp (double source);
+unsigned long long int scalar_extract_exp (__ieee128 source);
+
+unsigned long long int scalar_extract_sig (double source);
+unsigned __int128 scalar_extract_sig (__ieee128 source);
+
+double scalar_insert_exp (unsigned long long int significand,
+                          unsigned long long int exponent);
+double scalar_insert_exp (double significand, unsigned long long int exponent);
+
+ieee_128 scalar_insert_exp (unsigned __int128 significand,
+                            unsigned long long int exponent);
+ieee_128 scalar_insert_exp (ieee_128 significand, unsigned long long int exponent);
+
+int scalar_cmp_exp_gt (double arg1, double arg2);
+int scalar_cmp_exp_lt (double arg1, double arg2);
+int scalar_cmp_exp_eq (double arg1, double arg2);
+int scalar_cmp_exp_unordered (double arg1, double arg2);
+
+bool scalar_test_data_class (float source, const int condition);
+bool scalar_test_data_class (double source, const int condition);
+bool scalar_test_data_class (__ieee128 source, const int condition);
+
+bool scalar_test_neg (float source);
+bool scalar_test_neg (double source);
+bool scalar_test_neg (__ieee128 source);
+</pre></div>
+
+<p>The <code>scalar_extract_exp</code> and <code>scalar_extract_sig</code>
+functions require a 64-bit environment supporting ISA 3.0 or later.
+The <code>scalar_extract_exp</code> and <code>scalar_extract_sig</code> built-in
+functions return the significand and the biased exponent value
+respectively of their <code>source</code> arguments.
+When supplied with a 64-bit <code>source</code> argument, the
+result returned by <code>scalar_extract_sig</code> has
+the <code>0x0010000000000000</code> bit set if the
+function&rsquo;s <code>source</code> argument is in normalized form.
+Otherwise, this bit is set to 0.
+When supplied with a 128-bit <code>source</code> argument, the
+<code>0x00010000000000000000000000000000</code> bit of the result is
+treated similarly.
+Note that the sign of the significand is not represented in the result
+returned from the <code>scalar_extract_sig</code> function.  Use the
+<code>scalar_test_neg</code> function to test the sign of its <code>double</code>
+argument.
+</p>
+<p>The <code>scalar_insert_exp</code>
+functions require a 64-bit environment supporting ISA 3.0 or later.
+When supplied with a 64-bit first argument, the
+<code>scalar_insert_exp</code> built-in function returns a double-precision
+floating point value that is constructed by assembling the values of its
+<code>significand</code> and <code>exponent</code> arguments.  The sign of the
+result is copied from the most significant bit of the
+<code>significand</code> argument.  The significand and exponent components
+of the result are composed of the least significant 11 bits of the
+<code>exponent</code> argument and the least significant 52 bits of the
+<code>significand</code> argument respectively.
+</p>
+<p>When supplied with a 128-bit first argument, the
+<code>scalar_insert_exp</code> built-in function returns a quad-precision
+ieee floating point value.  The sign bit of the result is copied from
+the most significant bit of the <code>significand</code> argument.
+The significand and exponent components of the result are composed of
+the least significant 15 bits of the <code>exponent</code> argument and the
+least significant 112 bits of the <code>significand</code> argument respectively.
+</p>
+<p>The <code>scalar_cmp_exp_gt</code>, <code>scalar_cmp_exp_lt</code>,
+<code>scalar_cmp_exp_eq</code>, and <code>scalar_cmp_exp_unordered</code> built-in
+functions return a non-zero value if <code>arg1</code> is greater than, less
+than, equal to, or not comparable to <code>arg2</code> respectively.  The
+arguments are not comparable if one or the other equals NaN (not a
+number). 
+</p>
+<p>The <code>scalar_test_data_class</code> built-in function returns 1
+if any of the condition tests enabled by the value of the
+<code>condition</code> variable are true, and 0 otherwise.  The
+<code>condition</code> argument must be a compile-time constant integer with
+value not exceeding 127.  The
+<code>condition</code> argument is encoded as a bitmask with each bit
+enabling the testing of a different condition, as characterized by the
+following:
+</p><div class="smallexample">
+<pre class="smallexample">0x40    Test for NaN
+0x20    Test for +Infinity
+0x10    Test for -Infinity
+0x08    Test for +Zero
+0x04    Test for -Zero
+0x02    Test for +Denormal
+0x01    Test for -Denormal
+</pre></div>
+
+<p>The <code>scalar_test_neg</code> built-in function returns 1 if its
+<code>source</code> argument holds a negative value, 0 otherwise.
+</p>
+<p>The following built-in functions are also available for the PowerPC family
+of processors, starting with ISA 3.0 or later
+(<samp>-mcpu=power9</samp>).  These string functions are described
+separately in order to group the descriptions closer to the function
+prototypes:
+</p><div class="smallexample">
+<pre class="smallexample">int vec_all_nez (vector signed char, vector signed char);
+int vec_all_nez (vector unsigned char, vector unsigned char);
+int vec_all_nez (vector signed short, vector signed short);
+int vec_all_nez (vector unsigned short, vector unsigned short);
+int vec_all_nez (vector signed int, vector signed int);
+int vec_all_nez (vector unsigned int, vector unsigned int);
+
+int vec_any_eqz (vector signed char, vector signed char);
+int vec_any_eqz (vector unsigned char, vector unsigned char);
+int vec_any_eqz (vector signed short, vector signed short);
+int vec_any_eqz (vector unsigned short, vector unsigned short);
+int vec_any_eqz (vector signed int, vector signed int);
+int vec_any_eqz (vector unsigned int, vector unsigned int);
+
+vector bool char vec_cmpnez (vector signed char arg1, vector signed char arg2);
+vector bool char vec_cmpnez (vector unsigned char arg1, vector unsigned char arg2);
+vector bool short vec_cmpnez (vector signed short arg1, vector signed short arg2);
+vector bool short vec_cmpnez (vector unsigned short arg1, vector unsigned short arg2);
+vector bool int vec_cmpnez (vector signed int arg1, vector signed int arg2);
+vector bool int vec_cmpnez (vector unsigned int, vector unsigned int);
+
+vector signed char vec_cnttz (vector signed char);
+vector unsigned char vec_cnttz (vector unsigned char);
+vector signed short vec_cnttz (vector signed short);
+vector unsigned short vec_cnttz (vector unsigned short);
+vector signed int vec_cnttz (vector signed int);
+vector unsigned int vec_cnttz (vector unsigned int);
+vector signed long long vec_cnttz (vector signed long long);
+vector unsigned long long vec_cnttz (vector unsigned long long);
+
+signed int vec_cntlz_lsbb (vector signed char);
+signed int vec_cntlz_lsbb (vector unsigned char);
+
+signed int vec_cnttz_lsbb (vector signed char);
+signed int vec_cnttz_lsbb (vector unsigned char);
+
+unsigned int vec_first_match_index (vector signed char, vector signed char);
+unsigned int vec_first_match_index (vector unsigned char, vector unsigned char);
+unsigned int vec_first_match_index (vector signed int, vector signed int);
+unsigned int vec_first_match_index (vector unsigned int, vector unsigned int);
+unsigned int vec_first_match_index (vector signed short, vector signed short);
+unsigned int vec_first_match_index (vector unsigned short, vector unsigned short);
+unsigned int vec_first_match_or_eos_index (vector signed char, vector signed char);
+unsigned int vec_first_match_or_eos_index (vector unsigned char, vector unsigned char);
+unsigned int vec_first_match_or_eos_index (vector signed int, vector signed int);
+unsigned int vec_first_match_or_eos_index (vector unsigned int, vector unsigned int);
+unsigned int vec_first_match_or_eos_index (vector signed short, vector signed short);
+unsigned int vec_first_match_or_eos_index (vector unsigned short,
+                                           vector unsigned short);
+unsigned int vec_first_mismatch_index (vector signed char, vector signed char);
+unsigned int vec_first_mismatch_index (vector unsigned char, vector unsigned char);
+unsigned int vec_first_mismatch_index (vector signed int, vector signed int);
+unsigned int vec_first_mismatch_index (vector unsigned int, vector unsigned int);
+unsigned int vec_first_mismatch_index (vector signed short, vector signed short);
+unsigned int vec_first_mismatch_index (vector unsigned short, vector unsigned short);
+unsigned int vec_first_mismatch_or_eos_index (vector signed char, vector signed char);
+unsigned int vec_first_mismatch_or_eos_index (vector unsigned char,
+                                              vector unsigned char);
+unsigned int vec_first_mismatch_or_eos_index (vector signed int, vector signed int);
+unsigned int vec_first_mismatch_or_eos_index (vector unsigned int, vector unsigned int);
+unsigned int vec_first_mismatch_or_eos_index (vector signed short, vector signed short);
+unsigned int vec_first_mismatch_or_eos_index (vector unsigned short,
+                                              vector unsigned short);
+
+vector unsigned short vec_pack_to_short_fp32 (vector float, vector float);
+
+vector signed char vec_xl_be (signed long long, signed char *);
+vector unsigned char vec_xl_be (signed long long, unsigned char *);
+vector signed int vec_xl_be (signed long long, signed int *);
+vector unsigned int vec_xl_be (signed long long, unsigned int *);
+vector signed __int128 vec_xl_be (signed long long, signed __int128 *);
+vector unsigned __int128 vec_xl_be (signed long long, unsigned __int128 *);
+vector signed long long vec_xl_be (signed long long, signed long long *);
+vector unsigned long long vec_xl_be (signed long long, unsigned long long *);
+vector signed short vec_xl_be (signed long long, signed short *);
+vector unsigned short vec_xl_be (signed long long, unsigned short *);
+vector double vec_xl_be (signed long long, double *);
+vector float vec_xl_be (signed long long, float *);
+
+vector signed char vec_xl_len (signed char *addr, size_t len);
+vector unsigned char vec_xl_len (unsigned char *addr, size_t len);
+vector signed int vec_xl_len (signed int *addr, size_t len);
+vector unsigned int vec_xl_len (unsigned int *addr, size_t len);
+vector signed __int128 vec_xl_len (signed __int128 *addr, size_t len);
+vector unsigned __int128 vec_xl_len (unsigned __int128 *addr, size_t len);
+vector signed long long vec_xl_len (signed long long *addr, size_t len);
+vector unsigned long long vec_xl_len (unsigned long long *addr, size_t len);
+vector signed short vec_xl_len (signed short *addr, size_t len);
+vector unsigned short vec_xl_len (unsigned short *addr, size_t len);
+vector double vec_xl_len (double *addr, size_t len);
+vector float vec_xl_len (float *addr, size_t len);
+
+vector unsigned char vec_xl_len_r (unsigned char *addr, size_t len);
+
+void vec_xst_len (vector signed char data, signed char *addr, size_t len);
+void vec_xst_len (vector unsigned char data, unsigned char *addr, size_t len);
+void vec_xst_len (vector signed int data, signed int *addr, size_t len);
+void vec_xst_len (vector unsigned int data, unsigned int *addr, size_t len);
+void vec_xst_len (vector unsigned __int128 data, unsigned __int128 *addr, size_t len);
+void vec_xst_len (vector signed long long data, signed long long *addr, size_t len);
+void vec_xst_len (vector unsigned long long data, unsigned long long *addr, size_t len);
+void vec_xst_len (vector signed short data, signed short *addr, size_t len);
+void vec_xst_len (vector unsigned short data, unsigned short *addr, size_t len);
+void vec_xst_len (vector signed __int128 data, signed __int128 *addr, size_t len);
+void vec_xst_len (vector double data, double *addr, size_t len);
+void vec_xst_len (vector float data, float *addr, size_t len);
+
+void vec_xst_len_r (vector unsigned char data, unsigned char *addr, size_t len);
+
+signed char vec_xlx (unsigned int index, vector signed char data);
+unsigned char vec_xlx (unsigned int index, vector unsigned char data);
+signed short vec_xlx (unsigned int index, vector signed short data);
+unsigned short vec_xlx (unsigned int index, vector unsigned short data);
+signed int vec_xlx (unsigned int index, vector signed int data);
+unsigned int vec_xlx (unsigned int index, vector unsigned int data);
+float vec_xlx (unsigned int index, vector float data);
+
+signed char vec_xrx (unsigned int index, vector signed char data);
+unsigned char vec_xrx (unsigned int index, vector unsigned char data);
+signed short vec_xrx (unsigned int index, vector signed short data);
+unsigned short vec_xrx (unsigned int index, vector unsigned short data);
+signed int vec_xrx (unsigned int index, vector signed int data);
+unsigned int vec_xrx (unsigned int index, vector unsigned int data);
+float vec_xrx (unsigned int index, vector float data);
+</pre></div>
+
+<p>The <code>vec_all_nez</code>, <code>vec_any_eqz</code>, and <code>vec_cmpnez</code>
+perform pairwise comparisons between the elements at the same
+positions within their two vector arguments.
+The <code>vec_all_nez</code> function returns a
+non-zero value if and only if all pairwise comparisons are not
+equal and no element of either vector argument contains a zero.
+The <code>vec_any_eqz</code> function returns a
+non-zero value if and only if at least one pairwise comparison is equal
+or if at least one element of either vector argument contains a zero.
+The <code>vec_cmpnez</code> function returns a vector of the same type as
+its two arguments, within which each element consists of all ones to
+denote that either the corresponding elements of the incoming arguments are
+not equal or that at least one of the corresponding elements contains
+zero.  Otherwise, the element of the returned vector contains all zeros.
+</p>
+<p>The <code>vec_cntlz_lsbb</code> function returns the count of the number of
+consecutive leading byte elements (starting from position 0 within the
+supplied vector argument) for which the least-significant bit
+equals zero.  The <code>vec_cnttz_lsbb</code> function returns the count of
+the number of consecutive trailing byte elements (starting from
+position 15 and counting backwards within the supplied vector
+argument) for which the least-significant bit equals zero.
+</p>
+<p>The <code>vec_xl_len</code> and <code>vec_xst_len</code> functions require a
+64-bit environment supporting ISA 3.0 or later.  The <code>vec_xl_len</code>
+function loads a variable length vector from memory.  The
+<code>vec_xst_len</code> function stores a variable length vector to memory.
+With both the <code>vec_xl_len</code> and <code>vec_xst_len</code> functions, the
+<code>addr</code> argument represents the memory address to or from which
+data will be transferred, and the
+<code>len</code> argument represents the number of bytes to be
+transferred, as computed by the C expression <code>min((len &amp; 0xff), 16)</code>.
+If this expression&rsquo;s value is not a multiple of the vector element&rsquo;s
+size, the behavior of this function is undefined.
+In the case that the underlying computer is configured to run in
+big-endian mode, the data transfer moves bytes 0 to <code>(len - 1)</code> of
+the corresponding vector.  In little-endian mode, the data transfer
+moves bytes <code>(16 - len)</code> to <code>15</code> of the corresponding
+vector.  For the load function, any bytes of the result vector that
+are not loaded from memory are set to zero.
+The value of the <code>addr</code> argument need not be aligned on a
+multiple of the vector&rsquo;s element size.
+</p>
+<p>The <code>vec_xlx</code> and <code>vec_xrx</code> functions extract the single
+element selected by the <code>index</code> argument from the vector
+represented by the <code>data</code> argument.  The <code>index</code> argument
+always specifies a byte offset, regardless of the size of the vector
+element.  With <code>vec_xlx</code>, <code>index</code> is the offset of the first
+byte of the element to be extracted.  With <code>vec_xrx</code>, <code>index</code>
+represents the last byte of the element to be extracted, measured
+from the right end of the vector.  In other words, the last byte of
+the element to be extracted is found at position <code>(15 - index)</code>.
+There is no requirement that <code>index</code> be a multiple of the vector
+element size.  However, if the size of the vector element added to
+<code>index</code> is greater than 15, the content of the returned value is
+undefined.
+</p>
+<p>If the ISA 3.0 instruction set additions (<samp>-mcpu=power9</samp>)
+are available:
+</p>
+<div class="smallexample">
+<pre class="smallexample">vector unsigned long long vec_bperm (vector unsigned long long, vector unsigned char);
+
+vector bool char vec_cmpne (vector bool char, vector bool char);
+vector bool char vec_cmpne (vector signed char, vector signed char);
+vector bool char vec_cmpne (vector unsigned char, vector unsigned char);
+vector bool int vec_cmpne (vector bool int, vector bool int);
+vector bool int vec_cmpne (vector signed int, vector signed int);
+vector bool int vec_cmpne (vector unsigned int, vector unsigned int);
+vector bool long long vec_cmpne (vector bool long long, vector bool long long);
+vector bool long long vec_cmpne (vector signed long long, vector signed long long);
+vector bool long long vec_cmpne (vector unsigned long long, vector unsigned long long);
+vector bool short vec_cmpne (vector bool short, vector bool short);
+vector bool short vec_cmpne (vector signed short, vector signed short);
+vector bool short vec_cmpne (vector unsigned short, vector unsigned short);
+vector bool long long vec_cmpne (vector double, vector double);
+vector bool int vec_cmpne (vector float, vector float);
+
+vector float vec_extract_fp32_from_shorth (vector unsigned short);
+vector float vec_extract_fp32_from_shortl (vector unsigned short);
+
+vector long long vec_vctz (vector long long);
+vector unsigned long long vec_vctz (vector unsigned long long);
+vector int vec_vctz (vector int);
+vector unsigned int vec_vctz (vector int);
+vector short vec_vctz (vector short);
+vector unsigned short vec_vctz (vector unsigned short);
+vector signed char vec_vctz (vector signed char);
+vector unsigned char vec_vctz (vector unsigned char);
+
+vector signed char vec_vctzb (vector signed char);
+vector unsigned char vec_vctzb (vector unsigned char);
+
+vector long long vec_vctzd (vector long long);
+vector unsigned long long vec_vctzd (vector unsigned long long);
+
+vector short vec_vctzh (vector short);
+vector unsigned short vec_vctzh (vector unsigned short);
+
+vector int vec_vctzw (vector int);
+vector unsigned int vec_vctzw (vector int);
+
+vector unsigned long long vec_extract4b (vector unsigned char, const int);
+
+vector unsigned char vec_insert4b (vector signed int, vector unsigned char,
+                                   const int);
+vector unsigned char vec_insert4b (vector unsigned int, vector unsigned char,
+                                   const int);
+
+vector unsigned int vec_parity_lsbb (vector signed int);
+vector unsigned int vec_parity_lsbb (vector unsigned int);
+vector unsigned __int128 vec_parity_lsbb (vector signed __int128);
+vector unsigned __int128 vec_parity_lsbb (vector unsigned __int128);
+vector unsigned long long vec_parity_lsbb (vector signed long long);
+vector unsigned long long vec_parity_lsbb (vector unsigned long long);
+
+vector int vec_vprtyb (vector int);
+vector unsigned int vec_vprtyb (vector unsigned int);
+vector long long vec_vprtyb (vector long long);
+vector unsigned long long vec_vprtyb (vector unsigned long long);
+
+vector int vec_vprtybw (vector int);
+vector unsigned int vec_vprtybw (vector unsigned int);
+
+vector long long vec_vprtybd (vector long long);
+vector unsigned long long vec_vprtybd (vector unsigned long long);
+</pre></div>
+
+<p>On 64-bit targets, if the ISA 3.0 additions (<samp>-mcpu=power9</samp>)
+are available:
+</p>
+<div class="smallexample">
+<pre class="smallexample">vector long vec_vprtyb (vector long);
+vector unsigned long vec_vprtyb (vector unsigned long);
+vector __int128 vec_vprtyb (vector __int128);
+vector __uint128 vec_vprtyb (vector __uint128);
+
+vector long vec_vprtybd (vector long);
+vector unsigned long vec_vprtybd (vector unsigned long);
+
+vector __int128 vec_vprtybq (vector __int128);
+vector __uint128 vec_vprtybd (vector __uint128);
+</pre></div>
+
+<p>The following built-in vector functions are available for the PowerPC family
+of processors, starting with ISA 3.0 or later (<samp>-mcpu=power9</samp>):
+</p><div class="smallexample">
+<pre class="smallexample">__vector unsigned char
+vec_slv (__vector unsigned char src, __vector unsigned char shift_distance);
+__vector unsigned char
+vec_srv (__vector unsigned char src, __vector unsigned char shift_distance);
+</pre></div>
+
+<p>The <code>vec_slv</code> and <code>vec_srv</code> functions operate on
+all of the bytes of their <code>src</code> and <code>shift_distance</code>
+arguments in parallel.  The behavior of the <code>vec_slv</code> is as if
+there existed a temporary array of 17 unsigned characters
+<code>slv_array</code> within which elements 0 through 15 are the same as
+the entries in the <code>src</code> array and element 16 equals 0.  The
+result returned from the <code>vec_slv</code> function is a
+<code>__vector</code> of 16 unsigned characters within which element
+<code>i</code> is computed using the C expression
+<code>0xff &amp; (*((unsigned short *)(slv_array + i)) &lt;&lt; (0x07 &amp;
+shift_distance[i]))</code>,
+with this resulting value coerced to the <code>unsigned char</code> type.
+The behavior of the <code>vec_srv</code> is as if
+there existed a temporary array of 17 unsigned characters
+<code>srv_array</code> within which element 0 equals zero and
+elements 1 through 16 equal the elements 0 through 15 of
+the <code>src</code> array.  The
+result returned from the <code>vec_srv</code> function is a
+<code>__vector</code> of 16 unsigned characters within which element
+<code>i</code> is computed using the C expression
+<code>0xff &amp; (*((unsigned short *)(srv_array + i)) &gt;&gt;
+(0x07 &amp; shift_distance[i]))</code>,
+with this resulting value coerced to the <code>unsigned char</code> type.
+</p>
+<p>The following built-in functions are available for the PowerPC family
+of processors, starting with ISA 3.0 or later (<samp>-mcpu=power9</samp>):
+</p><div class="smallexample">
+<pre class="smallexample">__vector unsigned char
+vec_absd (__vector unsigned char arg1, __vector unsigned char arg2);
+__vector unsigned short
+vec_absd (__vector unsigned short arg1, __vector unsigned short arg2);
+__vector unsigned int
+vec_absd (__vector unsigned int arg1, __vector unsigned int arg2);
+
+__vector unsigned char
+vec_absdb (__vector unsigned char arg1, __vector unsigned char arg2);
+__vector unsigned short
+vec_absdh (__vector unsigned short arg1, __vector unsigned short arg2);
+__vector unsigned int
+vec_absdw (__vector unsigned int arg1, __vector unsigned int arg2);
+</pre></div>
+
+<p>The <code>vec_absd</code>, <code>vec_absdb</code>, <code>vec_absdh</code>, and
+<code>vec_absdw</code> built-in functions each computes the absolute
+differences of the pairs of vector elements supplied in its two vector
+arguments, placing the absolute differences into the corresponding
+elements of the vector result.
+</p>
+<p>The following built-in functions are available for the PowerPC family
+of processors, starting with ISA 3.0 or later (<samp>-mcpu=power9</samp>):
+</p><div class="smallexample">
+<pre class="smallexample">__vector unsigned int vec_extract_exp (__vector float source);
+__vector unsigned long long int vec_extract_exp (__vector double source);
+
+__vector unsigned int vec_extract_sig (__vector float source);
+__vector unsigned long long int vec_extract_sig (__vector double source);
+
+__vector float vec_insert_exp (__vector unsigned int significands,
+                               __vector unsigned int exponents);
+__vector float vec_insert_exp (__vector unsigned float significands,
+                               __vector unsigned int exponents);
+__vector double vec_insert_exp (__vector unsigned long long int significands,
+                                __vector unsigned long long int exponents);
+__vector double vec_insert_exp (__vector unsigned double significands,
+                                __vector unsigned long long int exponents);
+
+__vector bool int vec_test_data_class (__vector float source, const int condition);
+__vector bool long long int vec_test_data_class (__vector double source,
+                                                 const int condition);
+</pre></div>
+
+<p>The <code>vec_extract_sig</code> and <code>vec_extract_exp</code> built-in
+functions return vectors representing the significands and biased
+exponent values of their <code>source</code> arguments respectively.
+Within the result vector returned by <code>vec_extract_sig</code>, the
+<code>0x800000</code> bit of each vector element returned when the
+function&rsquo;s <code>source</code> argument is of type <code>float</code> is set to 1
+if the corresponding floating point value is in normalized form.
+Otherwise, this bit is set to 0.  When the <code>source</code> argument is
+of type <code>double</code>, the <code>0x10000000000000</code> bit within each of
+the result vector&rsquo;s elements is set according to the same rules.
+Note that the sign of the significand is not represented in the result
+returned from the <code>vec_extract_sig</code> function.  To extract the
+sign bits, use the
+<code>vec_cpsgn</code> function, which returns a new vector within which all
+of the sign bits of its second argument vector are overwritten with the
+sign bits copied from the coresponding elements of its first argument
+vector, and all other (non-sign) bits of the second argument vector
+are copied unchanged into the result vector.
+</p>
+<p>The <code>vec_insert_exp</code> built-in functions return a vector of
+single- or double-precision floating
+point values constructed by assembling the values of their
+<code>significands</code> and <code>exponents</code> arguments into the
+corresponding elements of the returned vector.
+The sign of each
+element of the result is copied from the most significant bit of the
+corresponding entry within the <code>significands</code> argument.
+Note that the relevant
+bits of the <code>significands</code> argument are the same, for both integer
+and floating point types.
+The
+significand and exponent components of each element of the result are
+composed of the least significant bits of the corresponding
+<code>significands</code> element and the least significant bits of the
+corresponding <code>exponents</code> element.
+</p>
+<p>The <code>vec_test_data_class</code> built-in function returns a vector
+representing the results of testing the <code>source</code> vector for the
+condition selected by the <code>condition</code> argument.  The
+<code>condition</code> argument must be a compile-time constant integer with
+value not exceeding 127.  The
+<code>condition</code> argument is encoded as a bitmask with each bit
+enabling the testing of a different condition, as characterized by the
+following:
+</p><div class="smallexample">
+<pre class="smallexample">0x40    Test for NaN
+0x20    Test for +Infinity
+0x10    Test for -Infinity
+0x08    Test for +Zero
+0x04    Test for -Zero
+0x02    Test for +Denormal
+0x01    Test for -Denormal
+</pre></div>
+
+<p>If any of the enabled test conditions is true, the corresponding entry
+in the result vector is -1.  Otherwise (all of the enabled test
+conditions are false), the corresponding entry of the result vector is 0.
+</p>
+<p>The following built-in functions are available for the PowerPC family
+of processors, starting with ISA 3.0 or later (<samp>-mcpu=power9</samp>):
+</p><div class="smallexample">
+<pre class="smallexample">vector unsigned int vec_rlmi (vector unsigned int, vector unsigned int,
+                              vector unsigned int);
+vector unsigned long long vec_rlmi (vector unsigned long long,
+                                    vector unsigned long long,
+                                    vector unsigned long long);
+vector unsigned int vec_rlnm (vector unsigned int, vector unsigned int,
+                              vector unsigned int);
+vector unsigned long long vec_rlnm (vector unsigned long long,
+                                    vector unsigned long long,
+                                    vector unsigned long long);
+vector unsigned int vec_vrlnm (vector unsigned int, vector unsigned int);
+vector unsigned long long vec_vrlnm (vector unsigned long long,
+                                     vector unsigned long long);
+</pre></div>
+
+<p>The result of <code>vec_rlmi</code> is obtained by rotating each element of
+the first argument vector left and inserting it under mask into the
+second argument vector.  The third argument vector contains the mask
+beginning in bits 11:15, the mask end in bits 19:23, and the shift
+count in bits 27:31, of each element.
+</p>
+<p>The result of <code>vec_rlnm</code> is obtained by rotating each element of
+the first argument vector left and ANDing it with a mask specified by
+the second and third argument vectors.  The second argument vector
+contains the shift count for each element in the low-order byte.  The
+third argument vector contains the mask end for each element in the
+low-order byte, with the mask begin in the next higher byte.
+</p>
+<p>The result of <code>vec_vrlnm</code> is obtained by rotating each element
+of the first argument vector left and ANDing it with a mask.  The
+second argument vector contains the mask  beginning in bits 11:15,
+the mask end in bits 19:23, and the shift count in bits 27:31,
+of each element.
+</p>
+<p>If the ISA 3.0 instruction set additions (<samp>-mcpu=power9</samp>)
+are available:
+</p><div class="smallexample">
+<pre class="smallexample">vector signed bool char vec_revb (vector signed char);
+vector signed char vec_revb (vector signed char);
+vector unsigned char vec_revb (vector unsigned char);
+vector bool short vec_revb (vector bool short);
+vector short vec_revb (vector short);
+vector unsigned short vec_revb (vector unsigned short);
+vector bool int vec_revb (vector bool int);
+vector int vec_revb (vector int);
+vector unsigned int vec_revb (vector unsigned int);
+vector float vec_revb (vector float);
+vector bool long long vec_revb (vector bool long long);
+vector long long vec_revb (vector long long);
+vector unsigned long long vec_revb (vector unsigned long long);
+vector double vec_revb (vector double);
+</pre></div>
+
+<p>On 64-bit targets, if the ISA 3.0 additions (<samp>-mcpu=power9</samp>)
+are available:
+</p><div class="smallexample">
+<pre class="smallexample">vector long vec_revb (vector long);
+vector unsigned long vec_revb (vector unsigned long);
+vector __int128 vec_revb (vector __int128);
+vector __uint128 vec_revb (vector __uint128);
+</pre></div>
+
+<p>The <code>vec_revb</code> built-in function reverses the bytes on an element
+by element basis.  A vector of <code>vector unsigned char</code> or
+<code>vector signed char</code> reverses the bytes in the whole word.
+</p>
+<p>If the cryptographic instructions are enabled (<samp>-mcrypto</samp> or
+<samp>-mcpu=power8</samp>), the following builtins are enabled.
+</p>
+<div class="smallexample">
+<pre class="smallexample">vector unsigned long long __builtin_crypto_vsbox (vector unsigned long long);
+
+vector unsigned char vec_sbox_be (vector unsigned char);
+
+vector unsigned long long __builtin_crypto_vcipher (vector unsigned long long,
+                                                    vector unsigned long long);
+
+vector unsigned char vec_cipher_be (vector unsigned char, vector unsigned char);
+
+vector unsigned long long __builtin_crypto_vcipherlast
+                                     (vector unsigned long long,
+                                      vector unsigned long long);
+
+vector unsigned char vec_cipherlast_be (vector unsigned char,
+                                        vector unsigned char);
+
+vector unsigned long long __builtin_crypto_vncipher (vector unsigned long long,
+                                                     vector unsigned long long);
+
+vector unsigned char vec_ncipher_be (vector unsigned char,
+                                     vector unsigned char);
+
+vector unsigned long long __builtin_crypto_vncipherlast (vector unsigned long long,
+                                                         vector unsigned long long);
+
+vector unsigned char vec_ncipherlast_be (vector unsigned char,
+                                         vector unsigned char);
+
+vector unsigned char __builtin_crypto_vpermxor (vector unsigned char,
+                                                vector unsigned char,
+                                                vector unsigned char);
+
+vector unsigned short __builtin_crypto_vpermxor (vector unsigned short,
+                                                 vector unsigned short,
+                                                 vector unsigned short);
+
+vector unsigned int __builtin_crypto_vpermxor (vector unsigned int,
+                                               vector unsigned int,
+                                               vector unsigned int);
+
+vector unsigned long long __builtin_crypto_vpermxor (vector unsigned long long,
+                                                     vector unsigned long long,
+                                                     vector unsigned long long);
+
+vector unsigned char __builtin_crypto_vpmsumb (vector unsigned char,
+                                               vector unsigned char);
+
+vector unsigned short __builtin_crypto_vpmsumb (vector unsigned short,
+                                                vector unsigned short);
+
+vector unsigned int __builtin_crypto_vpmsumb (vector unsigned int,
+                                              vector unsigned int);
+
+vector unsigned long long __builtin_crypto_vpmsumb (vector unsigned long long,
+                                                    vector unsigned long long);
+
+vector unsigned long long __builtin_crypto_vshasigmad (vector unsigned long long,
+                                                       int, int);
+
+vector unsigned int __builtin_crypto_vshasigmaw (vector unsigned int, int, int);
+</pre></div>
+
+<p>The second argument to <var>__builtin_crypto_vshasigmad</var> and
+<var>__builtin_crypto_vshasigmaw</var> must be a constant
+integer that is 0 or 1.  The third argument to these built-in functions
+must be a constant integer in the range of 0 to 15.
+</p>
+<p>If the ISA 3.0 instruction set additions 
+are enabled (<samp>-mcpu=power9</samp>), the following additional
+functions are available for both 32-bit and 64-bit targets.
+</p><div class="smallexample">
+<pre class="smallexample">vector short vec_xl (int, vector short *);
+vector short vec_xl (int, short *);
+vector unsigned short vec_xl (int, vector unsigned short *);
+vector unsigned short vec_xl (int, unsigned short *);
+vector char vec_xl (int, vector char *);
+vector char vec_xl (int, char *);
+vector unsigned char vec_xl (int, vector unsigned char *);
+vector unsigned char vec_xl (int, unsigned char *);
+
+void vec_xst (vector short, int, vector short *);
+void vec_xst (vector short, int, short *);
+void vec_xst (vector unsigned short, int, vector unsigned short *);
+void vec_xst (vector unsigned short, int, unsigned short *);
+void vec_xst (vector char, int, vector char *);
+void vec_xst (vector char, int, char *);
+void vec_xst (vector unsigned char, int, vector unsigned char *);
+void vec_xst (vector unsigned char, int, unsigned char *);
+</pre></div>
+<hr>
+<div class="header">
+<p>
+Previous: <a href="PowerPC-AltiVec-Built_002din-Functions-Available-on-ISA-2_002e07.html#PowerPC-AltiVec-Built_002din-Functions-Available-on-ISA-2_002e07" accesskey="p" rel="prev">PowerPC AltiVec Built-in Functions Available on ISA 2.07</a>, Up: <a href="PowerPC-AltiVec_002fVSX-Built_002din-Functions.html#PowerPC-AltiVec_002fVSX-Built_002din-Functions" accesskey="u" rel="up">PowerPC AltiVec/VSX Built-in Functions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

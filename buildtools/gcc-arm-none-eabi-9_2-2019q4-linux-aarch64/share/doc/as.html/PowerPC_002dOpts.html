@@ -1,0 +1,298 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: PowerPC-Opts</title>
+
+<meta name="description" content="Using as: PowerPC-Opts">
+<meta name="keywords" content="Using as: PowerPC-Opts">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="PPC_002dDependent.html#PPC_002dDependent" rel="up" title="PPC-Dependent">
+<link href="PowerPC_002dPseudo.html#PowerPC_002dPseudo" rel="next" title="PowerPC-Pseudo">
+<link href="PPC_002dDependent.html#PPC_002dDependent" rel="prev" title="PPC-Dependent">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="PowerPC_002dOpts"></a>
+<div class="header">
+<p>
+Next: <a href="PowerPC_002dPseudo.html#PowerPC_002dPseudo" accesskey="n" rel="next">PowerPC-Pseudo</a>, Up: <a href="PPC_002dDependent.html#PPC_002dDependent" accesskey="u" rel="up">PPC-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Options-19"></a>
+<h4 class="subsection">9.36.1 Options</h4>
+
+<a name="index-options-for-PowerPC"></a>
+<a name="index-PowerPC-options"></a>
+<a name="index-architectures_002c-PowerPC"></a>
+<a name="index-PowerPC-architectures"></a>
+<p>The PowerPC chip family includes several successive levels, using the same
+core instruction set, but including a few additional instructions at
+each level.  There are exceptions to this however.  For details on what
+instructions each variant supports, please see the chip&rsquo;s architecture
+reference manual.
+</p>
+<p>The following table lists all available PowerPC options.
+</p>
+<dl compact="compact">
+<dt><code>-a32</code></dt>
+<dd><p>Generate ELF32 or XCOFF32.
+</p>
+</dd>
+<dt><code>-a64</code></dt>
+<dd><p>Generate ELF64 or XCOFF64.
+</p>
+</dd>
+<dt><code>-K PIC</code></dt>
+<dd><p>Set EF_PPC_RELOCATABLE_LIB in ELF flags.
+</p>
+</dd>
+<dt><code>-mpwrx | -mpwr2</code></dt>
+<dd><p>Generate code for POWER/2 (RIOS2).
+</p>
+</dd>
+<dt><code>-mpwr</code></dt>
+<dd><p>Generate code for POWER (RIOS1)
+</p>
+</dd>
+<dt><code>-m601</code></dt>
+<dd><p>Generate code for PowerPC 601.
+</p>
+</dd>
+<dt><code>-mppc, -mppc32, -m603, -m604</code></dt>
+<dd><p>Generate code for PowerPC 603/604.
+</p>
+</dd>
+<dt><code>-m403, -m405</code></dt>
+<dd><p>Generate code for PowerPC 403/405.
+</p>
+</dd>
+<dt><code>-m440</code></dt>
+<dd><p>Generate code for PowerPC 440.  BookE and some 405 instructions.
+</p>
+</dd>
+<dt><code>-m464</code></dt>
+<dd><p>Generate code for PowerPC 464.
+</p>
+</dd>
+<dt><code>-m476</code></dt>
+<dd><p>Generate code for PowerPC 476.
+</p>
+</dd>
+<dt><code>-m7400, -m7410, -m7450, -m7455</code></dt>
+<dd><p>Generate code for PowerPC 7400/7410/7450/7455.
+</p>
+</dd>
+<dt><code>-m750cl, -mgekko, -mbroadway</code></dt>
+<dd><p>Generate code for PowerPC 750CL/Gekko/Broadway.
+</p>
+</dd>
+<dt><code>-m821, -m850, -m860</code></dt>
+<dd><p>Generate code for PowerPC 821/850/860.
+</p>
+</dd>
+<dt><code>-mppc64, -m620</code></dt>
+<dd><p>Generate code for PowerPC 620/625/630.
+</p>
+</dd>
+<dt><code>-me500, -me500x2</code></dt>
+<dd><p>Generate code for Motorola e500 core complex.
+</p>
+</dd>
+<dt><code>-me500mc</code></dt>
+<dd><p>Generate code for Freescale e500mc core complex.
+</p>
+</dd>
+<dt><code>-me500mc64</code></dt>
+<dd><p>Generate code for Freescale e500mc64 core complex.
+</p>
+</dd>
+<dt><code>-me5500</code></dt>
+<dd><p>Generate code for Freescale e5500 core complex.
+</p>
+</dd>
+<dt><code>-me6500</code></dt>
+<dd><p>Generate code for Freescale e6500 core complex.
+</p>
+</dd>
+<dt><code>-mspe</code></dt>
+<dd><p>Generate code for Motorola SPE instructions.
+</p>
+</dd>
+<dt><code>-mspe2</code></dt>
+<dd><p>Generate code for Freescale SPE2 instructions.
+</p>
+</dd>
+<dt><code>-mtitan</code></dt>
+<dd><p>Generate code for AppliedMicro Titan core complex.
+</p>
+</dd>
+<dt><code>-mppc64bridge</code></dt>
+<dd><p>Generate code for PowerPC 64, including bridge insns.
+</p>
+</dd>
+<dt><code>-mbooke</code></dt>
+<dd><p>Generate code for 32-bit BookE.
+</p>
+</dd>
+<dt><code>-ma2</code></dt>
+<dd><p>Generate code for A2 architecture.
+</p>
+</dd>
+<dt><code>-me300</code></dt>
+<dd><p>Generate code for PowerPC e300 family.
+</p>
+</dd>
+<dt><code>-maltivec</code></dt>
+<dd><p>Generate code for processors with AltiVec instructions.
+</p>
+</dd>
+<dt><code>-mvle</code></dt>
+<dd><p>Generate code for Freescale PowerPC VLE instructions.
+</p>
+</dd>
+<dt><code>-mvsx</code></dt>
+<dd><p>Generate code for processors with Vector-Scalar (VSX) instructions.
+</p>
+</dd>
+<dt><code>-mhtm</code></dt>
+<dd><p>Generate code for processors with Hardware Transactional Memory instructions.
+</p>
+</dd>
+<dt><code>-mpower4, -mpwr4</code></dt>
+<dd><p>Generate code for Power4 architecture.
+</p>
+</dd>
+<dt><code>-mpower5, -mpwr5, -mpwr5x</code></dt>
+<dd><p>Generate code for Power5 architecture.
+</p>
+</dd>
+<dt><code>-mpower6, -mpwr6</code></dt>
+<dd><p>Generate code for Power6 architecture.
+</p>
+</dd>
+<dt><code>-mpower7, -mpwr7</code></dt>
+<dd><p>Generate code for Power7 architecture.
+</p>
+</dd>
+<dt><code>-mpower8, -mpwr8</code></dt>
+<dd><p>Generate code for Power8 architecture.
+</p>
+</dd>
+<dt><code>-mpower9, -mpwr9</code></dt>
+<dd><p>Generate code for Power9 architecture.
+</p>
+</dd>
+<dt><code>-mcell</code></dt>
+<dt><code>-mcell</code></dt>
+<dd><p>Generate code for Cell Broadband Engine architecture.
+</p>
+</dd>
+<dt><code>-mcom</code></dt>
+<dd><p>Generate code Power/PowerPC common instructions.
+</p>
+</dd>
+<dt><code>-many</code></dt>
+<dd><p>Generate code for any architecture (PWR/PWRX/PPC).
+</p>
+</dd>
+<dt><code>-mregnames</code></dt>
+<dd><p>Allow symbolic names for registers.
+</p>
+</dd>
+<dt><code>-mno-regnames</code></dt>
+<dd><p>Do not allow symbolic names for registers.
+</p>
+</dd>
+<dt><code>-mrelocatable</code></dt>
+<dd><p>Support for GCC&rsquo;s -mrelocatable option.
+</p>
+</dd>
+<dt><code>-mrelocatable-lib</code></dt>
+<dd><p>Support for GCC&rsquo;s -mrelocatable-lib option.
+</p>
+</dd>
+<dt><code>-memb</code></dt>
+<dd><p>Set PPC_EMB bit in ELF flags.
+</p>
+</dd>
+<dt><code>-mlittle, -mlittle-endian, -le</code></dt>
+<dd><p>Generate code for a little endian machine.
+</p>
+</dd>
+<dt><code>-mbig, -mbig-endian, -be</code></dt>
+<dd><p>Generate code for a big endian machine.
+</p>
+</dd>
+<dt><code>-msolaris</code></dt>
+<dd><p>Generate code for Solaris.
+</p>
+</dd>
+<dt><code>-mno-solaris</code></dt>
+<dd><p>Do not generate code for Solaris.
+</p>
+</dd>
+<dt><code>-nops=<var>count</var></code></dt>
+<dd><p>If an alignment directive inserts more than <var>count</var> nops, put a
+branch at the beginning to skip execution of the nops.
+</p></dd>
+</dl>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="PowerPC_002dPseudo.html#PowerPC_002dPseudo" accesskey="n" rel="next">PowerPC-Pseudo</a>, Up: <a href="PPC_002dDependent.html#PPC_002dDependent" accesskey="u" rel="up">PPC-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

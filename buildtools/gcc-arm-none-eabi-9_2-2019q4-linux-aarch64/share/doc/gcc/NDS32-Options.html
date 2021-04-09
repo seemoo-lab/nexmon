@@ -1,0 +1,220 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): NDS32 Options</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): NDS32 Options">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): NDS32 Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Submodel-Options.html#Submodel-Options" rel="up" title="Submodel Options">
+<link href="Nios-II-Options.html#Nios-II-Options" rel="next" title="Nios II Options">
+<link href="MSP430-Options.html#MSP430-Options" rel="prev" title="MSP430 Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="NDS32-Options"></a>
+<div class="header">
+<p>
+Next: <a href="Nios-II-Options.html#Nios-II-Options" accesskey="n" rel="next">Nios II Options</a>, Previous: <a href="MSP430-Options.html#MSP430-Options" accesskey="p" rel="prev">MSP430 Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="NDS32-Options-1"></a>
+<h4 class="subsection">3.18.33 NDS32 Options</h4>
+<a name="index-NDS32-Options"></a>
+
+<p>These options are defined for NDS32 implementations:
+</p>
+<dl compact="compact">
+<dt><code>-mbig-endian</code></dt>
+<dd><a name="index-mbig_002dendian-8"></a>
+<p>Generate code in big-endian mode.
+</p>
+</dd>
+<dt><code>-mlittle-endian</code></dt>
+<dd><a name="index-mlittle_002dendian-8"></a>
+<p>Generate code in little-endian mode.
+</p>
+</dd>
+<dt><code>-mreduced-regs</code></dt>
+<dd><a name="index-mreduced_002dregs"></a>
+<p>Use reduced-set registers for register allocation.
+</p>
+</dd>
+<dt><code>-mfull-regs</code></dt>
+<dd><a name="index-mfull_002dregs"></a>
+<p>Use full-set registers for register allocation.
+</p>
+</dd>
+<dt><code>-mcmov</code></dt>
+<dd><a name="index-mcmov"></a>
+<p>Generate conditional move instructions.
+</p>
+</dd>
+<dt><code>-mno-cmov</code></dt>
+<dd><a name="index-mno_002dcmov"></a>
+<p>Do not generate conditional move instructions.
+</p>
+</dd>
+<dt><code>-mext-perf</code></dt>
+<dd><a name="index-mext_002dperf"></a>
+<p>Generate performance extension instructions.
+</p>
+</dd>
+<dt><code>-mno-ext-perf</code></dt>
+<dd><a name="index-mno_002dext_002dperf"></a>
+<p>Do not generate performance extension instructions.
+</p>
+</dd>
+<dt><code>-mext-perf2</code></dt>
+<dd><a name="index-mext_002dperf2"></a>
+<p>Generate performance extension 2 instructions.
+</p>
+</dd>
+<dt><code>-mno-ext-perf2</code></dt>
+<dd><a name="index-mno_002dext_002dperf2"></a>
+<p>Do not generate performance extension 2 instructions.
+</p>
+</dd>
+<dt><code>-mext-string</code></dt>
+<dd><a name="index-mext_002dstring"></a>
+<p>Generate string extension instructions.
+</p>
+</dd>
+<dt><code>-mno-ext-string</code></dt>
+<dd><a name="index-mno_002dext_002dstring"></a>
+<p>Do not generate string extension instructions.
+</p>
+</dd>
+<dt><code>-mv3push</code></dt>
+<dd><a name="index-mv3push"></a>
+<p>Generate v3 push25/pop25 instructions.
+</p>
+</dd>
+<dt><code>-mno-v3push</code></dt>
+<dd><a name="index-mno_002dv3push"></a>
+<p>Do not generate v3 push25/pop25 instructions.
+</p>
+</dd>
+<dt><code>-m16-bit</code></dt>
+<dd><a name="index-m16_002dbit-1"></a>
+<p>Generate 16-bit instructions.
+</p>
+</dd>
+<dt><code>-mno-16-bit</code></dt>
+<dd><a name="index-mno_002d16_002dbit"></a>
+<p>Do not generate 16-bit instructions.
+</p>
+</dd>
+<dt><code>-misr-vector-size=<var>num</var></code></dt>
+<dd><a name="index-misr_002dvector_002dsize"></a>
+<p>Specify the size of each interrupt vector, which must be 4 or 16.
+</p>
+</dd>
+<dt><code>-mcache-block-size=<var>num</var></code></dt>
+<dd><a name="index-mcache_002dblock_002dsize"></a>
+<p>Specify the size of each cache block,
+which must be a power of 2 between 4 and 512.
+</p>
+</dd>
+<dt><code>-march=<var>arch</var></code></dt>
+<dd><a name="index-march-9"></a>
+<p>Specify the name of the target architecture.
+</p>
+</dd>
+<dt><code>-mcmodel=<var>code-model</var></code></dt>
+<dd><a name="index-mcmodel"></a>
+<p>Set the code model to one of
+</p><dl compact="compact">
+<dt>&lsquo;<samp>small</samp>&rsquo;</dt>
+<dd><p>All the data and read-only data segments must be within 512KB addressing space.
+The text segment must be within 16MB addressing space.
+</p></dd>
+<dt>&lsquo;<samp>medium</samp>&rsquo;</dt>
+<dd><p>The data segment must be within 512KB while the read-only data segment can be
+within 4GB addressing space.  The text segment should be still within 16MB
+addressing space.
+</p></dd>
+<dt>&lsquo;<samp>large</samp>&rsquo;</dt>
+<dd><p>All the text and data segments can be within 4GB addressing space.
+</p></dd>
+</dl>
+
+</dd>
+<dt><code>-mctor-dtor</code></dt>
+<dd><a name="index-mctor_002ddtor"></a>
+<p>Enable constructor/destructor feature.
+</p>
+</dd>
+<dt><code>-mrelax</code></dt>
+<dd><a name="index-mrelax-4"></a>
+<p>Guide linker to relax instructions.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Nios-II-Options.html#Nios-II-Options" accesskey="n" rel="next">Nios II Options</a>, Previous: <a href="MSP430-Options.html#MSP430-Options" accesskey="p" rel="prev">MSP430 Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

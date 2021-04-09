@@ -1,0 +1,145 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: s390 Mnemonics</title>
+
+<meta name="description" content="Using as: s390 Mnemonics">
+<meta name="keywords" content="Using as: s390 Mnemonics">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="s390-Syntax.html#s390-Syntax" rel="up" title="s390 Syntax">
+<link href="s390-Operands.html#s390-Operands" rel="next" title="s390 Operands">
+<link href="s390-Register.html#s390-Register" rel="prev" title="s390 Register">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="s390-Mnemonics"></a>
+<div class="header">
+<p>
+Next: <a href="s390-Operands.html#s390-Operands" accesskey="n" rel="next">s390 Operands</a>, Previous: <a href="s390-Register.html#s390-Register" accesskey="p" rel="prev">s390 Register</a>, Up: <a href="s390-Syntax.html#s390-Syntax" accesskey="u" rel="up">s390 Syntax</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Instruction-Mnemonics"></a>
+<h4 class="subsubsection">9.41.3.2 Instruction Mnemonics</h4>
+<a name="index-instruction-mnemonics_002c-s390"></a>
+<a name="index-s390-instruction-mnemonics"></a>
+
+<p>All instructions documented in the Principles of Operation are supported
+with the mnemonic and order of operands as described.
+The instruction mnemonic identifies the instruction format
+(<a href="s390-Formats.html#s390-Formats">s390 Formats</a>) and the specific operation code for the instruction.
+For example, the &lsquo;<samp>lr</samp>&rsquo; mnemonic denotes the instruction format &lsquo;<samp>RR</samp>&rsquo;
+with the operation code &lsquo;<samp>0x18</samp>&rsquo;.
+</p>
+<p>The definition of the various mnemonics follows a scheme, where the first
+character usually hint at the type of the instruction:
+</p>
+<div class="display">
+<table>
+<tr><td><pre class="display">a</pre></td><td><pre class="display">add instruction, for example &lsquo;<samp>al</samp>&rsquo; for add logical 32-bit</pre></td></tr>
+<tr><td><pre class="display">b</pre></td><td><pre class="display">branch instruction, for example &lsquo;<samp>bc</samp>&rsquo; for branch on condition</pre></td></tr>
+<tr><td><pre class="display">c</pre></td><td><pre class="display">compare or convert instruction, for example &lsquo;<samp>cr</samp>&rsquo; for compare
+register 32-bit</pre></td></tr>
+<tr><td><pre class="display">d</pre></td><td><pre class="display">divide instruction, for example &lsquo;<samp>dlr</samp>&rsquo; devide logical register
+64-bit to 32-bit</pre></td></tr>
+<tr><td><pre class="display">i</pre></td><td><pre class="display">insert instruction, for example &lsquo;<samp>ic</samp>&rsquo; insert character</pre></td></tr>
+<tr><td><pre class="display">l</pre></td><td><pre class="display">load instruction, for example &lsquo;<samp>ltr</samp>&rsquo; load and test register</pre></td></tr>
+<tr><td><pre class="display">mv</pre></td><td><pre class="display">move instruction, for example &lsquo;<samp>mvc</samp>&rsquo; move character</pre></td></tr>
+<tr><td><pre class="display">m</pre></td><td><pre class="display">multiply instruction, for example &lsquo;<samp>mh</samp>&rsquo; multiply halfword</pre></td></tr>
+<tr><td><pre class="display">n</pre></td><td><pre class="display">and instruction, for example &lsquo;<samp>ni</samp>&rsquo; and immediate</pre></td></tr>
+<tr><td><pre class="display">o</pre></td><td><pre class="display">or instruction, for example &lsquo;<samp>oc</samp>&rsquo; or character</pre></td></tr>
+<tr><td><pre class="display">sla, sll</pre></td><td><pre class="display">shift left single instruction</pre></td></tr>
+<tr><td><pre class="display">sra, srl</pre></td><td><pre class="display">shift right single instruction</pre></td></tr>
+<tr><td><pre class="display">st</pre></td><td><pre class="display">store instruction, for example &lsquo;<samp>stm</samp>&rsquo; store multiple</pre></td></tr>
+<tr><td><pre class="display">s</pre></td><td><pre class="display">subtract instruction, for example &lsquo;<samp>slr</samp>&rsquo; subtract
+logical 32-bit</pre></td></tr>
+<tr><td><pre class="display">t</pre></td><td><pre class="display">test or translate instruction, of example &lsquo;<samp>tm</samp>&rsquo; test under mask</pre></td></tr>
+<tr><td><pre class="display">x</pre></td><td><pre class="display">exclusive or instruction, for example &lsquo;<samp>xc</samp>&rsquo; exclusive or
+character</pre></td></tr>
+</table>
+</div>
+
+<p>Certain characters at the end of the mnemonic may describe a property
+of the instruction:
+</p>
+<div class="display">
+<table>
+<tr><td><pre class="display">c</pre></td><td><pre class="display">the instruction uses a 8-bit character operand</pre></td></tr>
+<tr><td><pre class="display">f</pre></td><td><pre class="display">the instruction extends a 32-bit operand to 64 bit</pre></td></tr>
+<tr><td><pre class="display">g</pre></td><td><pre class="display">the operands are treated as 64-bit values</pre></td></tr>
+<tr><td><pre class="display">h</pre></td><td><pre class="display">the operand uses a 16-bit halfword operand</pre></td></tr>
+<tr><td><pre class="display">i</pre></td><td><pre class="display">the instruction uses an immediate operand</pre></td></tr>
+<tr><td><pre class="display">l</pre></td><td><pre class="display">the instruction uses unsigned, logical operands</pre></td></tr>
+<tr><td><pre class="display">m</pre></td><td><pre class="display">the instruction uses a mask or operates on multiple values</pre></td></tr>
+<tr><td><pre class="display">r</pre></td><td><pre class="display">if r is the last character, the instruction operates on registers</pre></td></tr>
+<tr><td><pre class="display">y</pre></td><td><pre class="display">the instruction uses 20-bit displacements</pre></td></tr>
+</table>
+</div>
+
+<p>There are many exceptions to the scheme outlined in the above lists, in
+particular for the privileged instructions. For non-privileged
+instruction it works quite well, for example the instruction &lsquo;<samp>clgfr</samp>&rsquo;
+c: compare instruction, l: unsigned operands, g: 64-bit operands,
+f: 32- to 64-bit extension, r: register operands. The instruction compares
+an 64-bit value in a register with the zero extended 32-bit value from
+a second register.
+For a complete list of all mnemonics see appendix B in the Principles
+of Operation.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="s390-Operands.html#s390-Operands" accesskey="n" rel="next">s390 Operands</a>, Previous: <a href="s390-Register.html#s390-Register" accesskey="p" rel="prev">s390 Register</a>, Up: <a href="s390-Syntax.html#s390-Syntax" accesskey="u" rel="up">s390 Syntax</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

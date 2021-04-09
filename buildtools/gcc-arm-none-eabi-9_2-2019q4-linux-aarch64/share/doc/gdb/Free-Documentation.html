@@ -1,0 +1,170 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Free Documentation</title>
+
+<meta name="description" content="Debugging with GDB: Free Documentation">
+<meta name="keywords" content="Debugging with GDB: Free Documentation">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Summary.html#Summary" rel="up" title="Summary">
+<link href="Contributors.html#Contributors" rel="next" title="Contributors">
+<link href="Free-Software.html#Free-Software" rel="prev" title="Free Software">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Free-Documentation"></a>
+<div class="header">
+<p>
+Next: <a href="Contributors.html#Contributors" accesskey="n" rel="next">Contributors</a>, Previous: <a href="Free-Software.html#Free-Software" accesskey="p" rel="prev">Free Software</a>, Up: <a href="Summary.html#Summary" accesskey="u" rel="up">Summary</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Free-Software-Needs-Free-Documentation"></a>
+<h3 class="unnumberedsec">Free Software Needs Free Documentation</h3>
+
+<p>The biggest deficiency in the free software community today is not in
+the software&mdash;it is the lack of good free documentation that we can
+include with the free software.  Many of our most important
+programs do not come with free reference manuals and free introductory
+texts.  Documentation is an essential part of any software package;
+when an important free software package does not come with a free
+manual and a free tutorial, that is a major gap.  We have many such
+gaps today.
+</p>
+<p>Consider Perl, for instance.  The tutorial manuals that people
+normally use are non-free.  How did this come about?  Because the
+authors of those manuals published them with restrictive terms&mdash;no
+copying, no modification, source files not available&mdash;which exclude
+them from the free software world.
+</p>
+<p>That wasn&rsquo;t the first time this sort of thing happened, and it was far
+from the last.  Many times we have heard a GNU user eagerly describe a
+manual that he is writing, his intended contribution to the community,
+only to learn that he had ruined everything by signing a publication
+contract to make it non-free.
+</p>
+<p>Free documentation, like free software, is a matter of freedom, not
+price.  The problem with the non-free manual is not that publishers
+charge a price for printed copies&mdash;that in itself is fine.  (The Free
+Software Foundation sells printed copies of manuals, too.)  The
+problem is the restrictions on the use of the manual.  Free manuals
+are available in source code form, and give you permission to copy and
+modify.  Non-free manuals do not allow this.
+</p>
+<p>The criteria of freedom for a free manual are roughly the same as for
+free software.  Redistribution (including the normal kinds of
+commercial redistribution) must be permitted, so that the manual can
+accompany every copy of the program, both on-line and on paper.
+</p>
+<p>Permission for modification of the technical content is crucial too.
+When people modify the software, adding or changing features, if they
+are conscientious they will change the manual too&mdash;so they can
+provide accurate and clear documentation for the modified program.  A
+manual that leaves you no choice but to write a new manual to document
+a changed version of the program is not really available to our
+community.
+</p>
+<p>Some kinds of limits on the way modification is handled are
+acceptable.  For example, requirements to preserve the original
+author&rsquo;s copyright notice, the distribution terms, or the list of
+authors, are ok.  It is also no problem to require modified versions
+to include notice that they were modified.  Even entire sections that
+may not be deleted or changed are acceptable, as long as they deal
+with nontechnical topics (like this one).  These kinds of restrictions
+are acceptable because they don&rsquo;t obstruct the community&rsquo;s normal use
+of the manual.
+</p>
+<p>However, it must be possible to modify all the <em>technical</em>
+content of the manual, and then distribute the result in all the usual
+media, through all the usual channels.  Otherwise, the restrictions
+obstruct the use of the manual, it is not free, and we need another
+manual to replace it.
+</p>
+<p>Please spread the word about this issue.  Our community continues to
+lose manuals to proprietary publishing.  If we spread the word that
+free software needs free reference manuals and free tutorials, perhaps
+the next person who wants to contribute by writing documentation will
+realize, before it is too late, that only free manuals contribute to
+the free software community.
+</p>
+<p>If you are writing documentation, please insist on publishing it under
+the GNU Free Documentation License or another free documentation
+license.  Remember that this decision requires your approval&mdash;you
+don&rsquo;t have to let the publisher decide.  Some commercial publishers
+will use a free license if you insist, but they will not propose the
+option; it is up to you to raise the issue and say firmly that this is
+what you want.  If the publisher you are dealing with refuses, please
+try other publishers.  If you&rsquo;re not sure whether a proposed license
+is free, write to <a href="mailto:licensing@gnu.org">licensing@gnu.org</a>.
+</p>
+<p>You can encourage commercial publishers to sell more free, copylefted
+manuals and tutorials by buying them, and particularly by buying
+copies from the publishers that paid for their writing or for major
+improvements.  Meanwhile, try to avoid buying non-free documentation
+at all.  Check the distribution terms of a manual before you buy it,
+and insist that whoever seeks your business must respect your freedom.
+Check the history of the book, and try to reward the publishers that
+have paid or pay the authors to work on it.
+</p>
+<p>The Free Software Foundation maintains a list of free documentation
+published by other publishers, at
+<a href="http://www.fsf.org/doc/other-free-books.html">http://www.fsf.org/doc/other-free-books.html</a>.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Contributors.html#Contributors" accesskey="n" rel="next">Contributors</a>, Previous: <a href="Free-Software.html#Free-Software" accesskey="p" rel="prev">Free Software</a>, Up: <a href="Summary.html#Summary" accesskey="u" rel="up">Summary</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

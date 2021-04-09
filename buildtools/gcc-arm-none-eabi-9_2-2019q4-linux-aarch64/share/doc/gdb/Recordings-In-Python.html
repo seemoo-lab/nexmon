@@ -1,0 +1,346 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Recordings In Python</title>
+
+<meta name="description" content="Debugging with GDB: Recordings In Python">
+<meta name="keywords" content="Debugging with GDB: Recordings In Python">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Python-API.html#Python-API" rel="up" title="Python API">
+<link href="Commands-In-Python.html#Commands-In-Python" rel="next" title="Commands In Python">
+<link href="Threads-In-Python.html#Threads-In-Python" rel="prev" title="Threads In Python">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Recordings-In-Python"></a>
+<div class="header">
+<p>
+Next: <a href="Commands-In-Python.html#Commands-In-Python" accesskey="n" rel="next">Commands In Python</a>, Previous: <a href="Threads-In-Python.html#Threads-In-Python" accesskey="p" rel="prev">Threads In Python</a>, Up: <a href="Python-API.html#Python-API" accesskey="u" rel="up">Python API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Recordings-In-Python-1"></a>
+<h4 class="subsubsection">23.2.2.19 Recordings In Python</h4>
+<a name="index-recordings-in-python"></a>
+
+<p>The following recordings-related functions
+(see <a href="Process-Record-and-Replay.html#Process-Record-and-Replay">Process Record and Replay</a>) are available in the <code>gdb</code>
+module:
+</p>
+<dl>
+<dt><a name="index-gdb_002estart_005frecording"></a>Function: <strong>gdb.start_recording</strong> <em>(<span class="roman">[</span>method<span class="roman">]</span>, <span class="roman">[</span>format<span class="roman">]</span>)</em></dt>
+<dd><p>Start a recording using the given <var>method</var> and <var>format</var>.  If
+no <var>format</var> is given, the default format for the recording method
+is used.  If no <var>method</var> is given, the default method will be used.
+Returns a <code>gdb.Record</code> object on success.  Throw an exception on
+failure.
+</p>
+<p>The following strings can be passed as <var>method</var>:
+</p>
+<ul>
+<li> <code>&quot;full&quot;</code>
+</li><li> <code>&quot;btrace&quot;</code>: Possible values for <var>format</var>: <code>&quot;pt&quot;</code>,
+<code>&quot;bts&quot;</code> or leave out for default format.
+</li></ul>
+</dd></dl>
+
+<dl>
+<dt><a name="index-gdb_002ecurrent_005frecording"></a>Function: <strong>gdb.current_recording</strong> <em>()</em></dt>
+<dd><p>Access a currently running recording.  Return a <code>gdb.Record</code>
+object on success.  Return <code>None</code> if no recording is currently
+active.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-gdb_002estop_005frecording"></a>Function: <strong>gdb.stop_recording</strong> <em>()</em></dt>
+<dd><p>Stop the current recording.  Throw an exception if no recording is
+currently active.  All record objects become invalid after this call.
+</p></dd></dl>
+
+<p>A <code>gdb.Record</code> object has the following attributes:
+</p>
+<dl>
+<dt><a name="index-Record_002emethod"></a>Variable: <strong>Record.method</strong></dt>
+<dd><p>A string with the current recording method, e.g. <code>full</code> or
+<code>btrace</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Record_002eformat"></a>Variable: <strong>Record.format</strong></dt>
+<dd><p>A string with the current recording format, e.g. <code>bt</code>, <code>pts</code> or
+<code>None</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Record_002ebegin"></a>Variable: <strong>Record.begin</strong></dt>
+<dd><p>A method specific instruction object representing the first instruction
+in this recording.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Record_002eend"></a>Variable: <strong>Record.end</strong></dt>
+<dd><p>A method specific instruction object representing the current
+instruction, that is not actually part of the recording.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Record_002ereplay_005fposition"></a>Variable: <strong>Record.replay_position</strong></dt>
+<dd><p>The instruction representing the current replay position.  If there is
+no replay active, this will be <code>None</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Record_002einstruction_005fhistory"></a>Variable: <strong>Record.instruction_history</strong></dt>
+<dd><p>A list with all recorded instructions.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Record_002efunction_005fcall_005fhistory"></a>Variable: <strong>Record.function_call_history</strong></dt>
+<dd><p>A list with all recorded function call segments.
+</p></dd></dl>
+
+<p>A <code>gdb.Record</code> object has the following methods:
+</p>
+<dl>
+<dt><a name="index-Record_002egoto"></a>Function: <strong>Record.goto</strong> <em>(instruction)</em></dt>
+<dd><p>Move the replay position to the given <var>instruction</var>.
+</p></dd></dl>
+
+<p>The common <code>gdb.Instruction</code> class that recording method specific
+instruction objects inherit from, has the following attributes:
+</p>
+<dl>
+<dt><a name="index-Instruction_002epc"></a>Variable: <strong>Instruction.pc</strong></dt>
+<dd><p>An integer representing this instruction&rsquo;s address.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Instruction_002edata"></a>Variable: <strong>Instruction.data</strong></dt>
+<dd><p>A buffer with the raw instruction data.  In Python 3, the return value is a
+<code>memoryview</code> object.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Instruction_002edecoded"></a>Variable: <strong>Instruction.decoded</strong></dt>
+<dd><p>A human readable string with the disassembled instruction.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-Instruction_002esize"></a>Variable: <strong>Instruction.size</strong></dt>
+<dd><p>The size of the instruction in bytes.
+</p></dd></dl>
+
+<p>Additionally <code>gdb.RecordInstruction</code> has the following attributes:
+</p>
+<dl>
+<dt><a name="index-RecordInstruction_002enumber"></a>Variable: <strong>RecordInstruction.number</strong></dt>
+<dd><p>An integer identifying this instruction.  <code>number</code> corresponds to
+the numbers seen in <code>record instruction-history</code>
+(see <a href="Process-Record-and-Replay.html#Process-Record-and-Replay">Process Record and Replay</a>).
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-RecordInstruction_002esal"></a>Variable: <strong>RecordInstruction.sal</strong></dt>
+<dd><p>A <code>gdb.Symtab_and_line</code> object representing the associated symtab
+and line of this instruction.  May be <code>None</code> if no debug information is
+available.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-RecordInstruction_002eis_005fspeculative"></a>Variable: <strong>RecordInstruction.is_speculative</strong></dt>
+<dd><p>A boolean indicating whether the instruction was executed speculatively.
+</p></dd></dl>
+
+<p>If an error occured during recording or decoding a recording, this error is
+represented by a <code>gdb.RecordGap</code> object in the instruction list.  It has
+the following attributes:
+</p>
+<dl>
+<dt><a name="index-RecordGap_002enumber"></a>Variable: <strong>RecordGap.number</strong></dt>
+<dd><p>An integer identifying this gap.  <code>number</code> corresponds to the numbers seen
+in <code>record instruction-history</code> (see <a href="Process-Record-and-Replay.html#Process-Record-and-Replay">Process Record and Replay</a>).
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-RecordGap_002eerror_005fcode"></a>Variable: <strong>RecordGap.error_code</strong></dt>
+<dd><p>A numerical representation of the reason for the gap.  The value is specific to
+the current recording method.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-RecordGap_002eerror_005fstring"></a>Variable: <strong>RecordGap.error_string</strong></dt>
+<dd><p>A human readable string with the reason for the gap.
+</p></dd></dl>
+
+<p>A <code>gdb.RecordFunctionSegment</code> object has the following attributes:
+</p>
+<dl>
+<dt><a name="index-RecordFunctionSegment_002enumber"></a>Variable: <strong>RecordFunctionSegment.number</strong></dt>
+<dd><p>An integer identifying this function segment.  <code>number</code> corresponds to
+the numbers seen in <code>record function-call-history</code>
+(see <a href="Process-Record-and-Replay.html#Process-Record-and-Replay">Process Record and Replay</a>).
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-RecordFunctionSegment_002esymbol"></a>Variable: <strong>RecordFunctionSegment.symbol</strong></dt>
+<dd><p>A <code>gdb.Symbol</code> object representing the associated symbol.  May be
+<code>None</code> if no debug information is available.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-RecordFunctionSegment_002elevel"></a>Variable: <strong>RecordFunctionSegment.level</strong></dt>
+<dd><p>An integer representing the function call&rsquo;s stack level.  May be
+<code>None</code> if the function call is a gap.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-RecordFunctionSegment_002einstructions"></a>Variable: <strong>RecordFunctionSegment.instructions</strong></dt>
+<dd><p>A list of <code>gdb.RecordInstruction</code> or <code>gdb.RecordGap</code> objects
+associated with this function call.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-RecordFunctionSegment_002eup"></a>Variable: <strong>RecordFunctionSegment.up</strong></dt>
+<dd><p>A <code>gdb.RecordFunctionSegment</code> object representing the caller&rsquo;s
+function segment.  If the call has not been recorded, this will be the
+function segment to which control returns.  If neither the call nor the
+return have been recorded, this will be <code>None</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-RecordFunctionSegment_002eprev"></a>Variable: <strong>RecordFunctionSegment.prev</strong></dt>
+<dd><p>A <code>gdb.RecordFunctionSegment</code> object representing the previous
+segment of this function call.  May be <code>None</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-RecordFunctionSegment_002enext"></a>Variable: <strong>RecordFunctionSegment.next</strong></dt>
+<dd><p>A <code>gdb.RecordFunctionSegment</code> object representing the next segment of
+this function call.  May be <code>None</code>.
+</p></dd></dl>
+
+<p>The following example demonstrates the usage of these objects and
+functions to create a function that will rewind a record to the last
+time a function in a different file was executed.  This would typically
+be used to track the execution of user provided callback functions in a
+library which typically are not visible in a back trace.
+</p>
+<div class="smallexample">
+<pre class="smallexample">def bringback ():
+    rec = gdb.current_recording ()
+    if not rec:
+        return
+
+    insn = rec.instruction_history
+    if len (insn) == 0:
+        return
+
+    try:
+        position = insn.index (rec.replay_position)
+    except:
+        position = -1
+    try:
+        filename = insn[position].sal.symtab.fullname ()
+    except:
+        filename = None
+
+    for i in reversed (insn[:position]):
+	try:
+            current = i.sal.symtab.fullname ()
+	except:
+            current = None
+
+        if filename == current:
+            continue
+
+        rec.goto (i)
+        return
+</pre></div>
+
+<p>Another possible application is to write a function that counts the
+number of code executions in a given line range.  This line range can
+contain parts of functions or span across several functions and is not
+limited to be contiguous.
+</p>
+<div class="smallexample">
+<pre class="smallexample">def countrange (filename, linerange):
+    count = 0
+
+    def filter_only (file_name):
+        for call in gdb.current_recording ().function_call_history:
+            try:
+                if file_name in call.symbol.symtab.fullname ():
+                    yield call
+            except:
+                pass
+
+    for c in filter_only (filename):
+        for i in c.instructions:
+            try:
+                if i.sal.line in linerange:
+                    count += 1
+                    break;
+            except:
+                    pass
+
+    return count
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Commands-In-Python.html#Commands-In-Python" accesskey="n" rel="next">Commands In Python</a>, Previous: <a href="Threads-In-Python.html#Threads-In-Python" accesskey="p" rel="prev">Threads In Python</a>, Up: <a href="Python-API.html#Python-API" accesskey="u" rel="up">Python API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

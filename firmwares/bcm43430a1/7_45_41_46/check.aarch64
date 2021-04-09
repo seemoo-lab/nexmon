@@ -1,0 +1,6 @@
+diff -y --suppress-common-lines flashpatches.c /opt/nexmon.new/firmwares/bcm43430a1/7_45_41_46/flashpatches.c | wc -l
+# RESULT = 0 -> OK
+cmp -l templateram.bin /opt/nexmon.new/firmwares/bcm43430a1/7_45_41_46/templateram.bin | wc -l
+# RESULT = 0 -> OK
+cmp -l ucode.bin /opt/nexmon.new/firmwares/bcm43430a1/7_45_41_46/ucode.bin | wc -l
+# RESULT = 0 -> OK

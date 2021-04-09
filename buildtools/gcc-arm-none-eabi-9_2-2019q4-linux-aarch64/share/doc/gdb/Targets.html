@@ -1,0 +1,127 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Targets</title>
+
+<meta name="description" content="Debugging with GDB: Targets">
+<meta name="keywords" content="Debugging with GDB: Targets">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Active-Targets.html#Active-Targets" rel="next" title="Active Targets">
+<link href="Data-Files.html#Data-Files" rel="prev" title="Data Files">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Targets"></a>
+<div class="header">
+<p>
+Next: <a href="Remote-Debugging.html#Remote-Debugging" accesskey="n" rel="next">Remote Debugging</a>, Previous: <a href="GDB-Files.html#GDB-Files" accesskey="p" rel="prev">GDB Files</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Specifying-a-Debugging-Target"></a>
+<h2 class="chapter">19 Specifying a Debugging Target</h2>
+
+<a name="index-debugging-target"></a>
+<p>A <em>target</em> is the execution environment occupied by your program.
+</p>
+<p>Often, <small>GDB</small> runs in the same host environment as your program;
+in that case, the debugging target is specified as a side effect when
+you use the <code>file</code> or <code>core</code> commands.  When you need more
+flexibility&mdash;for example, running <small>GDB</small> on a physically separate
+host, or controlling a standalone system over a serial port or a
+realtime system over a TCP/IP connection&mdash;you can use the <code>target</code>
+command to specify one of the target types configured for <small>GDB</small>
+(see <a href="Target-Commands.html#Target-Commands">Commands for Managing Targets</a>).
+</p>
+<a name="index-target-architecture"></a>
+<p>It is possible to build <small>GDB</small> for several different <em>target
+architectures</em>.  When <small>GDB</small> is built like that, you can choose
+one of the available architectures with the <kbd>set architecture</kbd>
+command.
+</p>
+<dl compact="compact">
+<dd><a name="index-set-architecture"></a>
+<a name="index-show-architecture"></a>
+</dd>
+<dt><code>set architecture <var>arch</var></code></dt>
+<dd><p>This command sets the current target architecture to <var>arch</var>.  The
+value of <var>arch</var> can be <code>&quot;auto&quot;</code>, in addition to one of the
+supported architectures.
+</p>
+</dd>
+<dt><code>show architecture</code></dt>
+<dd><p>Show the current target architecture.
+</p>
+</dd>
+<dt><code>set processor</code></dt>
+<dt><code>processor</code></dt>
+<dd><a name="index-set-processor"></a>
+<a name="index-show-processor"></a>
+<p>These are alias commands for, respectively, <code>set architecture</code>
+and <code>show architecture</code>.
+</p></dd>
+</dl>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Active-Targets.html#Active-Targets" accesskey="1">Active Targets</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Active targets
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Target-Commands.html#Target-Commands" accesskey="2">Target Commands</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Commands for managing targets
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Byte-Order.html#Byte-Order" accesskey="3">Byte Order</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Choosing target byte order
+</td></tr>
+</table>
+
+
+
+
+</body>
+</html>

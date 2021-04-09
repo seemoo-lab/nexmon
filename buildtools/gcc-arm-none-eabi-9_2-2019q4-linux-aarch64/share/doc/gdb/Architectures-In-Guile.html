@@ -1,0 +1,272 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Architectures In Guile</title>
+
+<meta name="description" content="Debugging with GDB: Architectures In Guile">
+<meta name="keywords" content="Debugging with GDB: Architectures In Guile">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Guile-API.html#Guile-API" rel="up" title="Guile API">
+<link href="Disassembly-In-Guile.html#Disassembly-In-Guile" rel="next" title="Disassembly In Guile">
+<link href="Lazy-Strings-In-Guile.html#Lazy-Strings-In-Guile" rel="prev" title="Lazy Strings In Guile">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Architectures-In-Guile"></a>
+<div class="header">
+<p>
+Next: <a href="Disassembly-In-Guile.html#Disassembly-In-Guile" accesskey="n" rel="next">Disassembly In Guile</a>, Previous: <a href="Lazy-Strings-In-Guile.html#Lazy-Strings-In-Guile" accesskey="p" rel="prev">Lazy Strings In Guile</a>, Up: <a href="Guile-API.html#Guile-API" accesskey="u" rel="up">Guile API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Guile-representation-of-architectures"></a>
+<h4 class="subsubsection">23.3.3.21 Guile representation of architectures</h4>
+
+<a name="index-guile-architectures"></a>
+<a name="index-_003cgdb_003aarch_003e"></a>
+
+<p><small>GDB</small> uses architecture specific parameters and artifacts in a
+number of its various computations.  An architecture is represented
+by an instance of the <code>&lt;gdb:arch&gt;</code> class.
+</p>
+<p>The following architecture-related procedures are provided by the
+<code>(gdb)</code> module:
+</p>
+<dl>
+<dt><a name="index-arch_003f"></a>Scheme Procedure: <strong>arch?</strong> <em>object</em></dt>
+<dd><p>Return <code>#t</code> if <var>object</var> is an object of type <code>&lt;gdb:arch&gt;</code>.
+Otherwise return <code>#f</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-current_002darch"></a>Scheme Procedure: <strong>current-arch</strong></dt>
+<dd><p>Return the current architecture as a <code>&lt;gdb:arch&gt;</code> object.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-arch_002dname"></a>Scheme Procedure: <strong>arch-name</strong> <em>arch</em></dt>
+<dd><p>Return the name (string value) of <code>&lt;gdb:arch&gt;</code> <var>arch</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-arch_002dcharset"></a>Scheme Procedure: <strong>arch-charset</strong> <em>arch</em></dt>
+<dd><p>Return name of target character set of <code>&lt;gdb:arch&gt;</code> <var>arch</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-arch_002dwide_002dcharset"></a>Scheme Procedure: <strong>arch-wide-charset</strong></dt>
+<dd><p>Return name of target wide character set of <code>&lt;gdb:arch&gt;</code> <var>arch</var>.
+</p></dd></dl>
+
+<p>Each architecture provides a set of predefined types, obtained by
+the following functions.
+</p>
+<dl>
+<dt><a name="index-arch_002dvoid_002dtype"></a>Scheme Procedure: <strong>arch-void-type</strong> <em>arch</em></dt>
+<dd><p>Return the <code>&lt;gdb:type&gt;</code> object for a <code>void</code> type
+of architecture <var>arch</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-arch_002dchar_002dtype"></a>Scheme Procedure: <strong>arch-char-type</strong> <em>arch</em></dt>
+<dd><p>Return the <code>&lt;gdb:type&gt;</code> object for a <code>char</code> type
+of architecture <var>arch</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-arch_002dshort_002dtype"></a>Scheme Procedure: <strong>arch-short-type</strong> <em>arch</em></dt>
+<dd><p>Return the <code>&lt;gdb:type&gt;</code> object for a <code>short</code> type
+of architecture <var>arch</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-arch_002dint_002dtype"></a>Scheme Procedure: <strong>arch-int-type</strong> <em>arch</em></dt>
+<dd><p>Return the <code>&lt;gdb:type&gt;</code> object for an <code>int</code> type
+of architecture <var>arch</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-arch_002dlong_002dtype"></a>Scheme Procedure: <strong>arch-long-type</strong> <em>arch</em></dt>
+<dd><p>Return the <code>&lt;gdb:type&gt;</code> object for a <code>long</code> type
+of architecture <var>arch</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-arch_002dschar_002dtype"></a>Scheme Procedure: <strong>arch-schar-type</strong> <em>arch</em></dt>
+<dd><p>Return the <code>&lt;gdb:type&gt;</code> object for a <code>signed char</code> type
+of architecture <var>arch</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-arch_002duchar_002dtype"></a>Scheme Procedure: <strong>arch-uchar-type</strong> <em>arch</em></dt>
+<dd><p>Return the <code>&lt;gdb:type&gt;</code> object for an <code>unsigned char</code> type
+of architecture <var>arch</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-arch_002dushort_002dtype"></a>Scheme Procedure: <strong>arch-ushort-type</strong> <em>arch</em></dt>
+<dd><p>Return the <code>&lt;gdb:type&gt;</code> object for an <code>unsigned short</code> type
+of architecture <var>arch</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-arch_002duint_002dtype"></a>Scheme Procedure: <strong>arch-uint-type</strong> <em>arch</em></dt>
+<dd><p>Return the <code>&lt;gdb:type&gt;</code> object for an <code>unsigned int</code> type
+of architecture <var>arch</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-arch_002dulong_002dtype"></a>Scheme Procedure: <strong>arch-ulong-type</strong> <em>arch</em></dt>
+<dd><p>Return the <code>&lt;gdb:type&gt;</code> object for an <code>unsigned long</code> type
+of architecture <var>arch</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-arch_002dfloat_002dtype"></a>Scheme Procedure: <strong>arch-float-type</strong> <em>arch</em></dt>
+<dd><p>Return the <code>&lt;gdb:type&gt;</code> object for a <code>float</code> type
+of architecture <var>arch</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-arch_002ddouble_002dtype"></a>Scheme Procedure: <strong>arch-double-type</strong> <em>arch</em></dt>
+<dd><p>Return the <code>&lt;gdb:type&gt;</code> object for a <code>double</code> type
+of architecture <var>arch</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-arch_002dlongdouble_002dtype"></a>Scheme Procedure: <strong>arch-longdouble-type</strong> <em>arch</em></dt>
+<dd><p>Return the <code>&lt;gdb:type&gt;</code> object for a <code>long double</code> type
+of architecture <var>arch</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-arch_002dbool_002dtype"></a>Scheme Procedure: <strong>arch-bool-type</strong> <em>arch</em></dt>
+<dd><p>Return the <code>&lt;gdb:type&gt;</code> object for a <code>bool</code> type
+of architecture <var>arch</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-arch_002dlonglong_002dtype"></a>Scheme Procedure: <strong>arch-longlong-type</strong> <em>arch</em></dt>
+<dd><p>Return the <code>&lt;gdb:type&gt;</code> object for a <code>long long</code> type
+of architecture <var>arch</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-arch_002dulonglong_002dtype"></a>Scheme Procedure: <strong>arch-ulonglong-type</strong> <em>arch</em></dt>
+<dd><p>Return the <code>&lt;gdb:type&gt;</code> object for an <code>unsigned long long</code> type
+of architecture <var>arch</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-arch_002dint8_002dtype"></a>Scheme Procedure: <strong>arch-int8-type</strong> <em>arch</em></dt>
+<dd><p>Return the <code>&lt;gdb:type&gt;</code> object for an <code>int8</code> type
+of architecture <var>arch</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-arch_002duint8_002dtype"></a>Scheme Procedure: <strong>arch-uint8-type</strong> <em>arch</em></dt>
+<dd><p>Return the <code>&lt;gdb:type&gt;</code> object for a <code>uint8</code> type
+of architecture <var>arch</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-arch_002dint16_002dtype"></a>Scheme Procedure: <strong>arch-int16-type</strong> <em>arch</em></dt>
+<dd><p>Return the <code>&lt;gdb:type&gt;</code> object for an <code>int16</code> type
+of architecture <var>arch</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-arch_002duint16_002dtype"></a>Scheme Procedure: <strong>arch-uint16-type</strong> <em>arch</em></dt>
+<dd><p>Return the <code>&lt;gdb:type&gt;</code> object for a <code>uint16</code> type
+of architecture <var>arch</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-arch_002dint32_002dtype"></a>Scheme Procedure: <strong>arch-int32-type</strong> <em>arch</em></dt>
+<dd><p>Return the <code>&lt;gdb:type&gt;</code> object for an <code>int32</code> type
+of architecture <var>arch</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-arch_002duint32_002dtype"></a>Scheme Procedure: <strong>arch-uint32-type</strong> <em>arch</em></dt>
+<dd><p>Return the <code>&lt;gdb:type&gt;</code> object for a <code>uint32</code> type
+of architecture <var>arch</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-arch_002dint64_002dtype"></a>Scheme Procedure: <strong>arch-int64-type</strong> <em>arch</em></dt>
+<dd><p>Return the <code>&lt;gdb:type&gt;</code> object for an <code>int64</code> type
+of architecture <var>arch</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-arch_002duint64_002dtype"></a>Scheme Procedure: <strong>arch-uint64-type</strong> <em>arch</em></dt>
+<dd><p>Return the <code>&lt;gdb:type&gt;</code> object for a <code>uint64</code> type
+of architecture <var>arch</var>.
+</p></dd></dl>
+
+<p>Example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) guile (type-name (arch-uchar-type (current-arch)))
+&quot;unsigned char&quot;
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Disassembly-In-Guile.html#Disassembly-In-Guile" accesskey="n" rel="next">Disassembly In Guile</a>, Previous: <a href="Lazy-Strings-In-Guile.html#Lazy-Strings-In-Guile" accesskey="p" rel="prev">Lazy Strings In Guile</a>, Up: <a href="Guile-API.html#Guile-API" accesskey="u" rel="up">Guile API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

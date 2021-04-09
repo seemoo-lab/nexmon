@@ -1,0 +1,138 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Identifiers</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Identifiers">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Identifiers">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Tree-overview.html#Tree-overview" rel="up" title="Tree overview">
+<link href="Containers.html#Containers" rel="next" title="Containers">
+<link href="Macros-and-Functions.html#Macros-and-Functions" rel="prev" title="Macros and Functions">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Identifiers"></a>
+<div class="header">
+<p>
+Next: <a href="Containers.html#Containers" accesskey="n" rel="next">Containers</a>, Previous: <a href="Macros-and-Functions.html#Macros-and-Functions" accesskey="p" rel="prev">Macros and Functions</a>, Up: <a href="Tree-overview.html#Tree-overview" accesskey="u" rel="up">Tree overview</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Identifiers-1"></a>
+<h4 class="subsection">11.2.2 Identifiers</h4>
+<a name="index-identifier"></a>
+<a name="index-name"></a>
+<a name="index-IDENTIFIER_005fNODE"></a>
+
+<p>An <code>IDENTIFIER_NODE</code> represents a slightly more general concept
+than the standard C or C++ concept of identifier.  In particular, an
+<code>IDENTIFIER_NODE</code> may contain a &lsquo;<samp>$</samp>&rsquo;, or other extraordinary
+characters.
+</p>
+<p>There are never two distinct <code>IDENTIFIER_NODE</code>s representing the
+same identifier.  Therefore, you may use pointer equality to compare
+<code>IDENTIFIER_NODE</code>s, rather than using a routine like
+<code>strcmp</code>.  Use <code>get_identifier</code> to obtain the unique
+<code>IDENTIFIER_NODE</code> for a supplied string.
+</p>
+<p>You can use the following macros to access identifiers:
+</p><dl compact="compact">
+<dt><code>IDENTIFIER_POINTER</code>
+<a name="index-IDENTIFIER_005fPOINTER"></a>
+</dt>
+<dd><p>The string represented by the identifier, represented as a
+<code>char*</code>.  This string is always <code>NUL</code>-terminated, and contains
+no embedded <code>NUL</code> characters.
+</p>
+</dd>
+<dt><code>IDENTIFIER_LENGTH</code>
+<a name="index-IDENTIFIER_005fLENGTH"></a>
+</dt>
+<dd><p>The length of the string returned by <code>IDENTIFIER_POINTER</code>, not
+including the trailing <code>NUL</code>.  This value of
+<code>IDENTIFIER_LENGTH (x)</code> is always the same as <code>strlen
+(IDENTIFIER_POINTER (x))</code>.
+</p>
+</dd>
+<dt><code>IDENTIFIER_OPNAME_P</code>
+<a name="index-IDENTIFIER_005fOPNAME_005fP"></a>
+</dt>
+<dd><p>This predicate holds if the identifier represents the name of an
+overloaded operator.  In this case, you should not depend on the
+contents of either the <code>IDENTIFIER_POINTER</code> or the
+<code>IDENTIFIER_LENGTH</code>.
+</p>
+</dd>
+<dt><code>IDENTIFIER_TYPENAME_P</code>
+<a name="index-IDENTIFIER_005fTYPENAME_005fP"></a>
+</dt>
+<dd><p>This predicate holds if the identifier represents the name of a
+user-defined conversion operator.  In this case, the <code>TREE_TYPE</code> of
+the <code>IDENTIFIER_NODE</code> holds the type to which the conversion
+operator converts.
+</p>
+</dd>
+</dl>
+
+
+
+
+
+</body>
+</html>

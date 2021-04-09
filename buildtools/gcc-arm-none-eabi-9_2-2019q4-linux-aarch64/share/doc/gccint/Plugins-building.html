@@ -1,0 +1,176 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Plugins building</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Plugins building">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Plugins building">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Plugins.html#Plugins" rel="up" title="Plugins">
+<link href="LTO.html#LTO" rel="next" title="LTO">
+<link href="Plugins-tracking.html#Plugins-tracking" rel="prev" title="Plugins tracking">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Plugins-building"></a>
+<div class="header">
+<p>
+Previous: <a href="Plugins-tracking.html#Plugins-tracking" accesskey="p" rel="prev">Plugins tracking</a>, Up: <a href="Plugins.html#Plugins" accesskey="u" rel="up">Plugins</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Building-GCC-plugins"></a>
+<h3 class="section">24.10 Building GCC plugins</h3>
+
+<p>If plugins are enabled, GCC installs the headers needed to build a
+plugin (somewhere in the installation tree, e.g. under
+<samp>/usr/local</samp>).  In particular a <samp>plugin/include</samp> directory
+is installed, containing all the header files needed to build plugins.
+</p>
+<p>On most systems, you can query this <code>plugin</code> directory by
+invoking <code>gcc -print-file-name=plugin</code> (replace if needed
+<code>gcc</code> with the appropriate program path).
+</p>
+<p>Inside plugins, this <code>plugin</code> directory name can be queried by
+calling <code>default_plugin_dir_name ()</code>.
+</p>
+<p>Plugins may know, when they are compiled, the GCC version for which
+<samp>plugin-version.h</samp> is provided.  The constant macros
+<code>GCCPLUGIN_VERSION_MAJOR</code>, <code>GCCPLUGIN_VERSION_MINOR</code>,
+<code>GCCPLUGIN_VERSION_PATCHLEVEL</code>, <code>GCCPLUGIN_VERSION</code> are
+integer numbers, so a plugin could ensure it is built for GCC 4.7 with 
+</p><div class="smallexample">
+<pre class="smallexample">#if GCCPLUGIN_VERSION != 4007
+#error this GCC plugin is for GCC 4.7
+#endif
+</pre></div>
+
+<p>The following GNU Makefile excerpt shows how to build a simple plugin:
+</p>
+<div class="smallexample">
+<pre class="smallexample">HOST_GCC=g++
+TARGET_GCC=gcc
+PLUGIN_SOURCE_FILES= plugin1.c plugin2.cc
+GCCPLUGINS_DIR:= $(shell $(TARGET_GCC) -print-file-name=plugin)
+CXXFLAGS+= -I$(GCCPLUGINS_DIR)/include -fPIC -fno-rtti -O2
+
+plugin.so: $(PLUGIN_SOURCE_FILES)
+   $(HOST_GCC) -shared $(CXXFLAGS) $^ -o $@
+</pre></div>
+
+<p>A single source file plugin may be built with <code>g++ -I`gcc
+-print-file-name=plugin`/include -fPIC -shared -fno-rtti -O2 plugin.c -o
+plugin.so</code>, using backquote shell syntax to query the <samp>plugin</samp>
+directory.
+</p>
+<p>Plugin support on Windows/MinGW has a number of limitations and
+additional requirements. When building a plugin on Windows we have to
+link an import library for the corresponding backend executable, for
+example, <samp>cc1.exe</samp>, <samp>cc1plus.exe</samp>, etc., in order to gain
+access to the symbols provided by GCC. This means that on Windows a
+plugin is language-specific, for example, for C, C++, etc. If you wish
+to use your plugin with multiple languages, then you will need to
+build multiple plugin libraries and either instruct your users on how
+to load the correct version or provide a compiler wrapper that does
+this automatically.
+</p>
+<p>Additionally, on Windows the plugin library has to export the
+<code>plugin_is_GPL_compatible</code> and <code>plugin_init</code> symbols. If you
+do not wish to modify the source code of your plugin, then you can use
+the <samp>-Wl,--export-all-symbols</samp> option or provide a suitable DEF
+file. Alternatively, you can export just these two symbols by decorating
+them with <code>__declspec(dllexport)</code>, for example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int plugin_is_GPL_compatible;
+
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int plugin_init (plugin_name_args *, plugin_gcc_version *)
+</pre></div>
+
+<p>The import libraries are installed into the <code>plugin</code> directory
+and their names are derived by appending the <code>.a</code> extension to
+the backend executable names, for example, <samp>cc1.exe.a</samp>,
+<samp>cc1plus.exe.a</samp>, etc. The following command line shows how to
+build the single source file plugin on Windows to be used with the C++
+compiler:
+</p>
+<div class="smallexample">
+<pre class="smallexample">g++ -I`gcc -print-file-name=plugin`/include -shared -Wl,--export-all-symbols \
+-o plugin.dll plugin.c `gcc -print-file-name=plugin`/cc1plus.exe.a
+</pre></div>
+
+<p>When a plugin needs to use <code>gengtype</code>, be sure that both
+<samp>gengtype</samp> and <samp>gtype.state</samp> have the same version as the
+GCC for which the plugin is built.
+</p>
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Plugins-tracking.html#Plugins-tracking" accesskey="p" rel="prev">Plugins tracking</a>, Up: <a href="Plugins.html#Plugins" accesskey="u" rel="up">Plugins</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

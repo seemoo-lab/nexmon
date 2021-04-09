@@ -1,0 +1,147 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: GDB/MI Development and Front Ends</title>
+
+<meta name="description" content="Debugging with GDB: GDB/MI Development and Front Ends">
+<meta name="keywords" content="Debugging with GDB: GDB/MI Development and Front Ends">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="GDB_002fMI.html#GDB_002fMI" rel="up" title="GDB/MI">
+<link href="GDB_002fMI-Output-Records.html#GDB_002fMI-Output-Records" rel="next" title="GDB/MI Output Records">
+<link href="GDB_002fMI-Compatibility-with-CLI.html#GDB_002fMI-Compatibility-with-CLI" rel="prev" title="GDB/MI Compatibility with CLI">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="GDB_002fMI-Development-and-Front-Ends"></a>
+<div class="header">
+<p>
+Next: <a href="GDB_002fMI-Output-Records.html#GDB_002fMI-Output-Records" accesskey="n" rel="next">GDB/MI Output Records</a>, Previous: <a href="GDB_002fMI-Compatibility-with-CLI.html#GDB_002fMI-Compatibility-with-CLI" accesskey="p" rel="prev">GDB/MI Compatibility with CLI</a>, Up: <a href="GDB_002fMI.html#GDB_002fMI" accesskey="u" rel="up">GDB/MI</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="GDB_002fMI-Development-and-Front-Ends-1"></a>
+<h3 class="section">27.4 <small>GDB/MI</small> Development and Front Ends</h3>
+<a name="index-GDB_002fMI-development"></a>
+
+<p>The application which takes the MI output and presents the state of the
+program being debugged to the user is called a <em>front end</em>.
+</p>
+<p>Since <small>GDB/MI</small> is used by a variety of front ends to <small>GDB</small>, changes
+to the MI interface may break existing usage.  This section describes how the
+protocol changes and how to request previous version of the protocol when it
+does.
+</p>
+<p>Some changes in MI need not break a carefully designed front end, and
+for these the MI version will remain unchanged.  The following is a
+list of changes that may occur within one level, so front ends should
+parse MI output in a way that can handle them:
+</p>
+<ul>
+<li> New MI commands may be added.
+
+</li><li> New fields may be added to the output of any MI command.
+
+</li><li> The range of values for fields with specified values, e.g.,
+<code>in_scope</code> (see <a href="GDB_002fMI-Variable-Objects.html#g_t_002dvar_002dupdate">-var-update</a>) may be extended.
+
+
+</li></ul>
+
+<p>If the changes are likely to break front ends, the MI version level
+will be increased by one.  The new versions of the MI protocol are not compatible
+with the old versions.  Old versions of MI remain available, allowing front ends
+to keep using them until they are modified to use the latest MI version.
+</p>
+<p>Since <code>--interpreter=mi</code> always points to the latest MI version, it is
+recommended that front ends request a specific version of MI when launching
+<small>GDB</small> (e.g. <code>--interpreter=mi2</code>) to make sure they get an
+interpreter with the MI version they expect.
+</p>
+<p>The following table gives a summary of the the released versions of the MI
+interface: the version number, the version of GDB in which it first appeared
+and the breaking changes compared to the previous version.
+</p>
+<table>
+<thead><tr><th width="5%">MI version</th><th width="5%">GDB version</th><th width="90%">Breaking changes</th></tr></thead>
+<tr><td width="5%"><div align="center">1
+</div></td><td width="5%"><div align="center">5.1
+</div></td><td width="90%">None</td></tr>
+<tr><td width="5%"><div align="center">2
+</div></td><td width="5%"><div align="center">6.0
+</div></td><td width="90%"><ul>
+<li> The <code>-environment-pwd</code>, <code>-environment-directory</code> and
+<code>-environment-path</code> commands now returns values using the MI output
+syntax, rather than CLI output syntax.
+
+</li><li> <code>-var-list-children</code>&rsquo;s <code>children</code> result field is now a list, rather
+than a tuple.
+
+</li><li> <code>-var-update</code>&rsquo;s <code>changelist</code> result field is now a list, rather than
+a tuple.
+</li></ul></td></tr>
+</table>
+
+<p>The best way to avoid unexpected changes in MI that might break your front
+end is to make your project known to <small>GDB</small> developers and
+follow development on <a href="mailto:gdb@sourceware.org">gdb@sourceware.org</a> and
+<a href="mailto:gdb-patches@sourceware.org">gdb-patches@sourceware.org</a>.
+<a name="index-mailing-lists"></a>
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="GDB_002fMI-Output-Records.html#GDB_002fMI-Output-Records" accesskey="n" rel="next">GDB/MI Output Records</a>, Previous: <a href="GDB_002fMI-Compatibility-with-CLI.html#GDB_002fMI-Compatibility-with-CLI" accesskey="p" rel="prev">GDB/MI Compatibility with CLI</a>, Up: <a href="GDB_002fMI.html#GDB_002fMI" accesskey="u" rel="up">GDB/MI</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

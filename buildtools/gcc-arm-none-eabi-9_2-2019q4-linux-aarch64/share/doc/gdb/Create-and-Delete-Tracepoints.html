@@ -1,0 +1,249 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Create and Delete Tracepoints</title>
+
+<meta name="description" content="Debugging with GDB: Create and Delete Tracepoints">
+<meta name="keywords" content="Debugging with GDB: Create and Delete Tracepoints">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Set-Tracepoints.html#Set-Tracepoints" rel="up" title="Set Tracepoints">
+<link href="Enable-and-Disable-Tracepoints.html#Enable-and-Disable-Tracepoints" rel="next" title="Enable and Disable Tracepoints">
+<link href="Set-Tracepoints.html#Set-Tracepoints" rel="prev" title="Set Tracepoints">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Create-and-Delete-Tracepoints"></a>
+<div class="header">
+<p>
+Next: <a href="Enable-and-Disable-Tracepoints.html#Enable-and-Disable-Tracepoints" accesskey="n" rel="next">Enable and Disable Tracepoints</a>, Up: <a href="Set-Tracepoints.html#Set-Tracepoints" accesskey="u" rel="up">Set Tracepoints</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Create-and-Delete-Tracepoints-1"></a>
+<h4 class="subsection">13.1.1 Create and Delete Tracepoints</h4>
+
+<dl compact="compact">
+<dd><a name="index-set-tracepoint"></a>
+<a name="index-trace"></a>
+</dd>
+<dt><code>trace <var>location</var></code></dt>
+<dd><p>The <code>trace</code> command is very similar to the <code>break</code> command.
+Its argument <var>location</var> can be any valid location.
+See <a href="Specify-Location.html#Specify-Location">Specify Location</a>.  The <code>trace</code> command defines a tracepoint,
+which is a point in the target program where the debugger will briefly stop,
+collect some data, and then allow the program to continue.  Setting a tracepoint
+or changing its actions takes effect immediately if the remote stub
+supports the &lsquo;<samp>InstallInTrace</samp>&rsquo; feature (see <a href="General-Query-Packets.html#install-tracepoint-in-tracing">install tracepoint in tracing</a>).
+If remote stub doesn&rsquo;t support the &lsquo;<samp>InstallInTrace</samp>&rsquo; feature, all
+these changes don&rsquo;t take effect until the next <code>tstart</code>
+command, and once a trace experiment is running, further changes will
+not have any effect until the next trace experiment starts.  In addition,
+<small>GDB</small> supports <em>pending tracepoints</em>&mdash;tracepoints whose
+address is not yet resolved.  (This is similar to pending breakpoints.)
+Pending tracepoints are not downloaded to the target and not installed
+until they are resolved.  The resolution of pending tracepoints requires
+<small>GDB</small> support&mdash;when debugging with the remote target, and
+<small>GDB</small> disconnects from the remote stub (see <a href="Starting-and-Stopping-Trace-Experiments.html#disconnected-tracing">disconnected tracing</a>), pending tracepoints can not be resolved (and downloaded to
+the remote stub) while <small>GDB</small> is disconnected.
+</p>
+<p>Here are some examples of using the <code>trace</code> command:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) <b>trace foo.c:121</b>    // a source file and line number
+
+(gdb) <b>trace +2</b>           // 2 lines forward
+
+(gdb) <b>trace my_function</b>  // first source line of function
+
+(gdb) <b>trace *my_function</b> // EXACT start address of function
+
+(gdb) <b>trace *0x2117c4</b>    // an address
+</pre></div>
+
+<p>You can abbreviate <code>trace</code> as <code>tr</code>.
+</p>
+</dd>
+<dt><code>trace <var>location</var> if <var>cond</var></code></dt>
+<dd><p>Set a tracepoint with condition <var>cond</var>; evaluate the expression
+<var>cond</var> each time the tracepoint is reached, and collect data only
+if the value is nonzero&mdash;that is, if <var>cond</var> evaluates as true.
+See <a href="Tracepoint-Conditions.html#Tracepoint-Conditions">Tracepoint Conditions</a>, for more
+information on tracepoint conditions.
+</p>
+</dd>
+<dt><code>ftrace <var>location</var> [ if <var>cond</var> ]</code></dt>
+<dd><a name="index-set-fast-tracepoint"></a>
+<a name="index-fast-tracepoints_002c-setting"></a>
+<a name="index-ftrace"></a>
+<p>The <code>ftrace</code> command sets a fast tracepoint.  For targets that
+support them, fast tracepoints will use a more efficient but possibly
+less general technique to trigger data collection, such as a jump
+instruction instead of a trap, or some sort of hardware support.  It
+may not be possible to create a fast tracepoint at the desired
+location, in which case the command will exit with an explanatory
+message.
+</p>
+<p><small>GDB</small> handles arguments to <code>ftrace</code> exactly as for
+<code>trace</code>.
+</p>
+<p>On 32-bit x86-architecture systems, fast tracepoints normally need to
+be placed at an instruction that is 5 bytes or longer, but can be
+placed at 4-byte instructions if the low 64K of memory of the target
+program is available to install trampolines.  Some Unix-type systems,
+such as <small>GNU</small>/Linux, exclude low addresses from the program&rsquo;s
+address space; but for instance with the Linux kernel it is possible
+to let <small>GDB</small> use this area by doing a <code>sysctl</code> command
+to set the <code>mmap_min_addr</code> kernel parameter, as in
+</p>
+<div class="example">
+<pre class="example">sudo sysctl -w vm.mmap_min_addr=32768
+</pre></div>
+
+<p>which sets the low address to 32K, which leaves plenty of room for
+trampolines.  The minimum address should be set to a page boundary.
+</p>
+</dd>
+<dt><code>strace <var>location</var> [ if <var>cond</var> ]</code></dt>
+<dd><a name="index-set-static-tracepoint"></a>
+<a name="index-static-tracepoints_002c-setting"></a>
+<a name="index-probe-static-tracepoint-marker"></a>
+<a name="index-strace"></a>
+<p>The <code>strace</code> command sets a static tracepoint.  For targets that
+support it, setting a static tracepoint probes a static
+instrumentation point, or marker, found at <var>location</var>.  It may not
+be possible to set a static tracepoint at the desired location, in
+which case the command will exit with an explanatory message.
+</p>
+<p><small>GDB</small> handles arguments to <code>strace</code> exactly as for
+<code>trace</code>, with the addition that the user can also specify
+<code>-m <var>marker</var></code> as <var>location</var>.  This probes the marker
+identified by the <var>marker</var> string identifier.  This identifier
+depends on the static tracepoint backend library your program is
+using.  You can find all the marker identifiers in the &lsquo;<samp>ID</samp>&rsquo; field
+of the <code>info static-tracepoint-markers</code> command output.
+See <a href="Listing-Static-Tracepoint-Markers.html#Listing-Static-Tracepoint-Markers">Listing Static Tracepoint
+Markers</a>.  For example, in the following small program using the UST
+tracing engine:
+</p>
+<div class="smallexample">
+<pre class="smallexample">main ()
+{
+  trace_mark(ust, bar33, &quot;str %s&quot;, &quot;FOOBAZ&quot;);
+}
+</pre></div>
+
+<p>the marker id is composed of joining the first two arguments to the
+<code>trace_mark</code> call with a slash, which translates to:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) info static-tracepoint-markers
+Cnt Enb ID         Address            What
+1   n   ust/bar33  0x0000000000400ddc in main at stexample.c:22
+         Data: &quot;str %s&quot;
+[etc...]
+</pre></div>
+
+<p>so you may probe the marker above with:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) strace -m ust/bar33
+</pre></div>
+
+<p>Static tracepoints accept an extra collect action &mdash; <code>collect
+$_sdata</code>.  This collects arbitrary user data passed in the probe point
+call to the tracing library.  In the UST example above, you&rsquo;ll see
+that the third argument to <code>trace_mark</code> is a printf-like format
+string.  The user data is then the result of running that formating
+string against the following arguments.  Note that <code>info
+static-tracepoint-markers</code> command output lists that format string in
+the &lsquo;<samp>Data:</samp>&rsquo; field.
+</p>
+<p>You can inspect this data when analyzing the trace buffer, by printing
+the $_sdata variable like any other variable available to
+<small>GDB</small>.  See <a href="Tracepoint-Actions.html#Tracepoint-Actions">Tracepoint Action Lists</a>.
+</p>
+<a name="index-_0024tpnum"></a>
+<a name="index-last-tracepoint-number"></a>
+<a name="index-recent-tracepoint-number"></a>
+<a name="index-tracepoint-number"></a>
+<p>The convenience variable <code>$tpnum</code> records the tracepoint number
+of the most recently set tracepoint.
+</p>
+<a name="index-delete-tracepoint"></a>
+<a name="index-tracepoint-deletion"></a>
+</dd>
+<dt><code>delete tracepoint <span class="roman">[</span><var>num</var><span class="roman">]</span></code></dt>
+<dd><p>Permanently delete one or more tracepoints.  With no argument, the
+default is to delete all tracepoints.  Note that the regular
+<code>delete</code> command can remove tracepoints also.
+</p>
+<p>Examples:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) <b>delete trace 1 2 3</b> // remove three tracepoints
+
+(gdb) <b>delete trace</b>       // remove all tracepoints
+</pre></div>
+
+<p>You can abbreviate this command as <code>del tr</code>.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Enable-and-Disable-Tracepoints.html#Enable-and-Disable-Tracepoints" accesskey="n" rel="next">Enable and Disable Tracepoints</a>, Up: <a href="Set-Tracepoints.html#Set-Tracepoints" accesskey="u" rel="up">Set Tracepoints</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: i386 Features</title>
+
+<meta name="description" content="Debugging with GDB: i386 Features">
+<meta name="keywords" content="Debugging with GDB: i386 Features">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Standard-Target-Features.html#Standard-Target-Features" rel="up" title="Standard Target Features">
+<link href="MicroBlaze-Features.html#MicroBlaze-Features" rel="next" title="MicroBlaze Features">
+<link href="ARM-Features.html#ARM-Features" rel="prev" title="ARM Features">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="i386-Features"></a>
+<div class="header">
+<p>
+Next: <a href="MicroBlaze-Features.html#MicroBlaze-Features" accesskey="n" rel="next">MicroBlaze Features</a>, Previous: <a href="ARM-Features.html#ARM-Features" accesskey="p" rel="prev">ARM Features</a>, Up: <a href="Standard-Target-Features.html#Standard-Target-Features" accesskey="u" rel="up">Standard Target Features</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="i386-Features-1"></a>
+<h4 class="subsection">G.5.4 i386 Features</h4>
+<a name="index-target-descriptions_002c-i386-features"></a>
+
+<p>The &lsquo;<samp>org.gnu.gdb.i386.core</samp>&rsquo; feature is required for i386/amd64
+targets.  It should describe the following registers:
+</p>
+<ul class="no-bullet">
+<li>- &lsquo;<samp>eax</samp>&rsquo; through &lsquo;<samp>edi</samp>&rsquo; plus &lsquo;<samp>eip</samp>&rsquo; for i386
+</li><li>- &lsquo;<samp>rax</samp>&rsquo; through &lsquo;<samp>r15</samp>&rsquo; plus &lsquo;<samp>rip</samp>&rsquo; for amd64
+</li><li>- &lsquo;<samp>eflags</samp>&rsquo;, &lsquo;<samp>cs</samp>&rsquo;, &lsquo;<samp>ss</samp>&rsquo;, &lsquo;<samp>ds</samp>&rsquo;, &lsquo;<samp>es</samp>&rsquo;,
+&lsquo;<samp>fs</samp>&rsquo;, &lsquo;<samp>gs</samp>&rsquo;
+</li><li>- &lsquo;<samp>st0</samp>&rsquo; through &lsquo;<samp>st7</samp>&rsquo;
+</li><li>- &lsquo;<samp>fctrl</samp>&rsquo;, &lsquo;<samp>fstat</samp>&rsquo;, &lsquo;<samp>ftag</samp>&rsquo;, &lsquo;<samp>fiseg</samp>&rsquo;, &lsquo;<samp>fioff</samp>&rsquo;,
+&lsquo;<samp>foseg</samp>&rsquo;, &lsquo;<samp>fooff</samp>&rsquo; and &lsquo;<samp>fop</samp>&rsquo;
+</li></ul>
+
+<p>The register sets may be different, depending on the target.
+</p>
+<p>The &lsquo;<samp>org.gnu.gdb.i386.sse</samp>&rsquo; feature is optional.  It should
+describe registers:
+</p>
+<ul class="no-bullet">
+<li>- &lsquo;<samp>xmm0</samp>&rsquo; through &lsquo;<samp>xmm7</samp>&rsquo; for i386
+</li><li>- &lsquo;<samp>xmm0</samp>&rsquo; through &lsquo;<samp>xmm15</samp>&rsquo; for amd64
+</li><li>- &lsquo;<samp>mxcsr</samp>&rsquo;
+</li></ul>
+
+<p>The &lsquo;<samp>org.gnu.gdb.i386.avx</samp>&rsquo; feature is optional and requires the
+&lsquo;<samp>org.gnu.gdb.i386.sse</samp>&rsquo; feature.  It should
+describe the upper 128 bits of <small>YMM</small> registers:
+</p>
+<ul class="no-bullet">
+<li>- &lsquo;<samp>ymm0h</samp>&rsquo; through &lsquo;<samp>ymm7h</samp>&rsquo; for i386
+</li><li>- &lsquo;<samp>ymm0h</samp>&rsquo; through &lsquo;<samp>ymm15h</samp>&rsquo; for amd64
+</li></ul>
+
+<p>The &lsquo;<samp>org.gnu.gdb.i386.mpx</samp>&rsquo; is an optional feature representing Intel
+Memory Protection Extension (MPX).  It should describe the following registers:
+</p>
+<ul class="no-bullet">
+<li>- &lsquo;<samp>bnd0raw</samp>&rsquo; through &lsquo;<samp>bnd3raw</samp>&rsquo; for i386 and amd64.
+</li><li>- &lsquo;<samp>bndcfgu</samp>&rsquo; and &lsquo;<samp>bndstatus</samp>&rsquo; for i386 and amd64.
+</li></ul>
+
+<p>The &lsquo;<samp>org.gnu.gdb.i386.linux</samp>&rsquo; feature is optional.  It should
+describe a single register, &lsquo;<samp>orig_eax</samp>&rsquo;.
+</p>
+<p>The &lsquo;<samp>org.gnu.gdb.i386.segments</samp>&rsquo; feature is optional.  It should
+describe two system registers: &lsquo;<samp>fs_base</samp>&rsquo; and &lsquo;<samp>gs_base</samp>&rsquo;.
+</p>
+<p>The &lsquo;<samp>org.gnu.gdb.i386.avx512</samp>&rsquo; feature is optional and requires the
+&lsquo;<samp>org.gnu.gdb.i386.avx</samp>&rsquo; feature.  It should
+describe additional <small>XMM</small> registers:
+</p>
+<ul class="no-bullet">
+<li>- &lsquo;<samp>xmm16h</samp>&rsquo; through &lsquo;<samp>xmm31h</samp>&rsquo;, only valid for amd64.
+</li></ul>
+
+<p>It should describe the upper 128 bits of additional <small>YMM</small> registers:
+</p>
+<ul class="no-bullet">
+<li>- &lsquo;<samp>ymm16h</samp>&rsquo; through &lsquo;<samp>ymm31h</samp>&rsquo;, only valid for amd64.
+</li></ul>
+
+<p>It should
+describe the upper 256 bits of <small>ZMM</small> registers:
+</p>
+<ul class="no-bullet">
+<li>- &lsquo;<samp>zmm0h</samp>&rsquo; through &lsquo;<samp>zmm7h</samp>&rsquo; for i386.
+</li><li>- &lsquo;<samp>zmm0h</samp>&rsquo; through &lsquo;<samp>zmm15h</samp>&rsquo; for amd64.
+</li></ul>
+
+<p>It should
+describe the additional <small>ZMM</small> registers:
+</p>
+<ul class="no-bullet">
+<li>- &lsquo;<samp>zmm16h</samp>&rsquo; through &lsquo;<samp>zmm31h</samp>&rsquo;, only valid for amd64.
+</li></ul>
+
+<p>The &lsquo;<samp>org.gnu.gdb.i386.pkeys</samp>&rsquo; feature is optional.  It should
+describe a single register, &lsquo;<samp>pkru</samp>&rsquo;.  It is a 32-bit register
+valid for i386 and amd64.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="MicroBlaze-Features.html#MicroBlaze-Features" accesskey="n" rel="next">MicroBlaze Features</a>, Previous: <a href="ARM-Features.html#ARM-Features" accesskey="p" rel="prev">ARM Features</a>, Up: <a href="Standard-Target-Features.html#Standard-Target-Features" accesskey="u" rel="up">Standard Target Features</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

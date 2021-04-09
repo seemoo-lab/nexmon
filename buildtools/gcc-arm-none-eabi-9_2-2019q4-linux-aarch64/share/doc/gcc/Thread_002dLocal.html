@@ -1,0 +1,142 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Thread-Local</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Thread-Local">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Thread-Local">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C-Extensions.html#C-Extensions" rel="up" title="C Extensions">
+<link href="C99-Thread_002dLocal-Edits.html#C99-Thread_002dLocal-Edits" rel="next" title="C99 Thread-Local Edits">
+<link href="Unnamed-Fields.html#Unnamed-Fields" rel="prev" title="Unnamed Fields">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Thread_002dLocal"></a>
+<div class="header">
+<p>
+Next: <a href="Binary-constants.html#Binary-constants" accesskey="n" rel="next">Binary constants</a>, Previous: <a href="Unnamed-Fields.html#Unnamed-Fields" accesskey="p" rel="prev">Unnamed Fields</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Thread_002dLocal-Storage"></a>
+<h3 class="section">6.64 Thread-Local Storage</h3>
+<a name="index-Thread_002dLocal-Storage"></a>
+<a name="index-TLS"></a>
+<a name="index-_005f_005fthread"></a>
+
+<p>Thread-local storage (<acronym>TLS</acronym>) is a mechanism by which variables
+are allocated such that there is one instance of the variable per extant
+thread.  The runtime model GCC uses to implement this originates
+in the IA-64 processor-specific ABI, but has since been migrated
+to other processors as well.  It requires significant support from
+the linker (<code>ld</code>), dynamic linker (<code>ld.so</code>), and
+system libraries (<samp>libc.so</samp> and <samp>libpthread.so</samp>), so it
+is not available everywhere.
+</p>
+<p>At the user level, the extension is visible with a new storage
+class keyword: <code>__thread</code>.  For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">__thread int i;
+extern __thread struct state s;
+static __thread char *p;
+</pre></div>
+
+<p>The <code>__thread</code> specifier may be used alone, with the <code>extern</code>
+or <code>static</code> specifiers, but with no other storage class specifier.
+When used with <code>extern</code> or <code>static</code>, <code>__thread</code> must appear
+immediately after the other storage class specifier.
+</p>
+<p>The <code>__thread</code> specifier may be applied to any global, file-scoped
+static, function-scoped static, or static data member of a class.  It may
+not be applied to block-scoped automatic or non-static data member.
+</p>
+<p>When the address-of operator is applied to a thread-local variable, it is
+evaluated at run time and returns the address of the current thread&rsquo;s
+instance of that variable.  An address so obtained may be used by any
+thread.  When a thread terminates, any pointers to thread-local variables
+in that thread become invalid.
+</p>
+<p>No static initialization may refer to the address of a thread-local variable.
+</p>
+<p>In C++, if an initializer is present for a thread-local variable, it must
+be a <var>constant-expression</var>, as defined in 5.19.2 of the ANSI/ISO C++
+standard.
+</p>
+<p>See <a href="https://www.akkadia.org/drepper/tls.pdf">ELF Handling For Thread-Local Storage</a> for a detailed explanation of
+the four thread-local storage addressing models, and how the runtime
+is expected to function.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="C99-Thread_002dLocal-Edits.html#C99-Thread_002dLocal-Edits" accesskey="1">C99 Thread-Local Edits</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="C_002b_002b98-Thread_002dLocal-Edits.html#C_002b_002b98-Thread_002dLocal-Edits" accesskey="2">C++98 Thread-Local Edits</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Binary-constants.html#Binary-constants" accesskey="n" rel="next">Binary constants</a>, Previous: <a href="Unnamed-Fields.html#Unnamed-Fields" accesskey="p" rel="prev">Unnamed Fields</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

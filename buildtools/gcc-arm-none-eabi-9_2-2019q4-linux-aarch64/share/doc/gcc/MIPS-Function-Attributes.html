@@ -1,0 +1,221 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): MIPS Function Attributes</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): MIPS Function Attributes">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): MIPS Function Attributes">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Function-Attributes.html#Function-Attributes" rel="up" title="Function Attributes">
+<link href="MSP430-Function-Attributes.html#MSP430-Function-Attributes" rel="next" title="MSP430 Function Attributes">
+<link href="Microsoft-Windows-Function-Attributes.html#Microsoft-Windows-Function-Attributes" rel="prev" title="Microsoft Windows Function Attributes">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="MIPS-Function-Attributes"></a>
+<div class="header">
+<p>
+Next: <a href="MSP430-Function-Attributes.html#MSP430-Function-Attributes" accesskey="n" rel="next">MSP430 Function Attributes</a>, Previous: <a href="Microsoft-Windows-Function-Attributes.html#Microsoft-Windows-Function-Attributes" accesskey="p" rel="prev">Microsoft Windows Function Attributes</a>, Up: <a href="Function-Attributes.html#Function-Attributes" accesskey="u" rel="up">Function Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="MIPS-Function-Attributes-1"></a>
+<h4 class="subsection">6.33.20 MIPS Function Attributes</h4>
+
+<p>These function attributes are supported by the MIPS back end:
+</p>
+<dl compact="compact">
+<dt><code>interrupt</code></dt>
+<dd><a name="index-interrupt-function-attribute_002c-MIPS"></a>
+<p>Use this attribute to indicate that the specified function is an interrupt
+handler.  The compiler generates function entry and exit sequences suitable
+for use in an interrupt handler when this attribute is present.
+An optional argument is supported for the interrupt attribute which allows
+the interrupt mode to be described.  By default GCC assumes the external
+interrupt controller (EIC) mode is in use, this can be explicitly set using
+<code>eic</code>.  When interrupts are non-masked then the requested Interrupt
+Priority Level (IPL) is copied to the current IPL which has the effect of only
+enabling higher priority interrupts.  To use vectored interrupt mode use
+the argument <code>vector=[sw0|sw1|hw0|hw1|hw2|hw3|hw4|hw5]</code>, this will change
+the behavior of the non-masked interrupt support and GCC will arrange to mask
+all interrupts from sw0 up to and including the specified interrupt vector.
+</p>
+<p>You can use the following attributes to modify the behavior
+of an interrupt handler:
+</p><dl compact="compact">
+<dt><code>use_shadow_register_set</code></dt>
+<dd><a name="index-use_005fshadow_005fregister_005fset-function-attribute_002c-MIPS"></a>
+<p>Assume that the handler uses a shadow register set, instead of
+the main general-purpose registers.  An optional argument <code>intstack</code> is
+supported to indicate that the shadow register set contains a valid stack
+pointer.
+</p>
+</dd>
+<dt><code>keep_interrupts_masked</code></dt>
+<dd><a name="index-keep_005finterrupts_005fmasked-function-attribute_002c-MIPS"></a>
+<p>Keep interrupts masked for the whole function.  Without this attribute,
+GCC tries to reenable interrupts for as much of the function as it can.
+</p>
+</dd>
+<dt><code>use_debug_exception_return</code></dt>
+<dd><a name="index-use_005fdebug_005fexception_005freturn-function-attribute_002c-MIPS"></a>
+<p>Return using the <code>deret</code> instruction.  Interrupt handlers that don&rsquo;t
+have this attribute return using <code>eret</code> instead.
+</p></dd>
+</dl>
+
+<p>You can use any combination of these attributes, as shown below:
+</p><div class="smallexample">
+<pre class="smallexample">void __attribute__ ((interrupt)) v0 ();
+void __attribute__ ((interrupt, use_shadow_register_set)) v1 ();
+void __attribute__ ((interrupt, keep_interrupts_masked)) v2 ();
+void __attribute__ ((interrupt, use_debug_exception_return)) v3 ();
+void __attribute__ ((interrupt, use_shadow_register_set,
+                     keep_interrupts_masked)) v4 ();
+void __attribute__ ((interrupt, use_shadow_register_set,
+                     use_debug_exception_return)) v5 ();
+void __attribute__ ((interrupt, keep_interrupts_masked,
+                     use_debug_exception_return)) v6 ();
+void __attribute__ ((interrupt, use_shadow_register_set,
+                     keep_interrupts_masked,
+                     use_debug_exception_return)) v7 ();
+void __attribute__ ((interrupt(&quot;eic&quot;))) v8 ();
+void __attribute__ ((interrupt(&quot;vector=hw3&quot;))) v9 ();
+</pre></div>
+
+</dd>
+<dt><code>long_call</code></dt>
+<dt><code>short_call</code></dt>
+<dt><code>near</code></dt>
+<dt><code>far</code></dt>
+<dd><a name="index-indirect-calls_002c-MIPS"></a>
+<a name="index-long_005fcall-function-attribute_002c-MIPS"></a>
+<a name="index-short_005fcall-function-attribute_002c-MIPS"></a>
+<a name="index-near-function-attribute_002c-MIPS"></a>
+<a name="index-far-function-attribute_002c-MIPS"></a>
+<p>These attributes specify how a particular function is called on MIPS.
+The attributes override the <samp>-mlong-calls</samp> (see <a href="MIPS-Options.html#MIPS-Options">MIPS Options</a>)
+command-line switch.  The <code>long_call</code> and <code>far</code> attributes are
+synonyms, and cause the compiler to always call
+the function by first loading its address into a register, and then using
+the contents of that register.  The <code>short_call</code> and <code>near</code>
+attributes are synonyms, and have the opposite
+effect; they specify that non-PIC calls should be made using the more
+efficient <code>jal</code> instruction.
+</p>
+</dd>
+<dt><code>mips16</code></dt>
+<dt><code>nomips16</code></dt>
+<dd><a name="index-mips16-function-attribute_002c-MIPS"></a>
+<a name="index-nomips16-function-attribute_002c-MIPS"></a>
+
+<p>On MIPS targets, you can use the <code>mips16</code> and <code>nomips16</code>
+function attributes to locally select or turn off MIPS16 code generation.
+A function with the <code>mips16</code> attribute is emitted as MIPS16 code,
+while MIPS16 code generation is disabled for functions with the
+<code>nomips16</code> attribute.  These attributes override the
+<samp>-mips16</samp> and <samp>-mno-mips16</samp> options on the command line
+(see <a href="MIPS-Options.html#MIPS-Options">MIPS Options</a>).
+</p>
+<p>When compiling files containing mixed MIPS16 and non-MIPS16 code, the
+preprocessor symbol <code>__mips16</code> reflects the setting on the command line,
+not that within individual functions.  Mixed MIPS16 and non-MIPS16 code
+may interact badly with some GCC extensions such as <code>__builtin_apply</code>
+(see <a href="Constructing-Calls.html#Constructing-Calls">Constructing Calls</a>).
+</p>
+</dd>
+<dt><code>micromips, MIPS</code></dt>
+<dt><code>nomicromips, MIPS</code></dt>
+<dd><a name="index-micromips-function-attribute"></a>
+<a name="index-nomicromips-function-attribute"></a>
+
+<p>On MIPS targets, you can use the <code>micromips</code> and <code>nomicromips</code>
+function attributes to locally select or turn off microMIPS code generation.
+A function with the <code>micromips</code> attribute is emitted as microMIPS code,
+while microMIPS code generation is disabled for functions with the
+<code>nomicromips</code> attribute.  These attributes override the
+<samp>-mmicromips</samp> and <samp>-mno-micromips</samp> options on the command line
+(see <a href="MIPS-Options.html#MIPS-Options">MIPS Options</a>).
+</p>
+<p>When compiling files containing mixed microMIPS and non-microMIPS code, the
+preprocessor symbol <code>__mips_micromips</code> reflects the setting on the
+command line,
+not that within individual functions.  Mixed microMIPS and non-microMIPS code
+may interact badly with some GCC extensions such as <code>__builtin_apply</code>
+(see <a href="Constructing-Calls.html#Constructing-Calls">Constructing Calls</a>).
+</p>
+</dd>
+<dt><code>nocompression</code></dt>
+<dd><a name="index-nocompression-function-attribute_002c-MIPS"></a>
+<p>On MIPS targets, you can use the <code>nocompression</code> function attribute
+to locally turn off MIPS16 and microMIPS code generation.  This attribute
+overrides the <samp>-mips16</samp> and <samp>-mmicromips</samp> options on the
+command line (see <a href="MIPS-Options.html#MIPS-Options">MIPS Options</a>).
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="MSP430-Function-Attributes.html#MSP430-Function-Attributes" accesskey="n" rel="next">MSP430 Function Attributes</a>, Previous: <a href="Microsoft-Windows-Function-Attributes.html#Microsoft-Windows-Function-Attributes" accesskey="p" rel="prev">Microsoft Windows Function Attributes</a>, Up: <a href="Function-Attributes.html#Function-Attributes" accesskey="u" rel="up">Function Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

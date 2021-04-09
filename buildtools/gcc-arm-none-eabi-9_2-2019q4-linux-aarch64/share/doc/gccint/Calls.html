@@ -1,0 +1,151 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Calls</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Calls">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Calls">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="RTL.html#RTL" rel="up" title="RTL">
+<link href="Sharing.html#Sharing" rel="next" title="Sharing">
+<link href="Insns.html#Insns" rel="prev" title="Insns">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Calls"></a>
+<div class="header">
+<p>
+Next: <a href="Sharing.html#Sharing" accesskey="n" rel="next">Sharing</a>, Previous: <a href="Insns.html#Insns" accesskey="p" rel="prev">Insns</a>, Up: <a href="RTL.html#RTL" accesskey="u" rel="up">RTL</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="RTL-Representation-of-Function_002dCall-Insns"></a>
+<h3 class="section">14.20 RTL Representation of Function-Call Insns</h3>
+<a name="index-calling-functions-in-RTL"></a>
+<a name="index-RTL-function_002dcall-insns"></a>
+<a name="index-function_002dcall-insns"></a>
+
+<p>Insns that call subroutines have the RTL expression code <code>call_insn</code>.
+These insns must satisfy special rules, and their bodies must use a special
+RTL expression code, <code>call</code>.
+</p>
+<a name="index-call-usage"></a>
+<p>A <code>call</code> expression has two operands, as follows:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(call (mem:<var>fm</var> <var>addr</var>) <var>nbytes</var>)
+</pre></div>
+
+<p>Here <var>nbytes</var> is an operand that represents the number of bytes of
+argument data being passed to the subroutine, <var>fm</var> is a machine mode
+(which must equal as the definition of the <code>FUNCTION_MODE</code> macro in
+the machine description) and <var>addr</var> represents the address of the
+subroutine.
+</p>
+<p>For a subroutine that returns no value, the <code>call</code> expression as
+shown above is the entire body of the insn, except that the insn might
+also contain <code>use</code> or <code>clobber</code> expressions.
+</p>
+<a name="index-BLKmode_002c-and-function-return-values"></a>
+<p>For a subroutine that returns a value whose mode is not <code>BLKmode</code>,
+the value is returned in a hard register.  If this register&rsquo;s number is
+<var>r</var>, then the body of the call insn looks like this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(set (reg:<var>m</var> <var>r</var>)
+     (call (mem:<var>fm</var> <var>addr</var>) <var>nbytes</var>))
+</pre></div>
+
+<p>This RTL expression makes it clear (to the optimizer passes) that the
+appropriate register receives a useful value in this insn.
+</p>
+<p>When a subroutine returns a <code>BLKmode</code> value, it is handled by
+passing to the subroutine the address of a place to store the value.
+So the call insn itself does not &ldquo;return&rdquo; any value, and it has the
+same RTL form as a call that returns nothing.
+</p>
+<p>On some machines, the call instruction itself clobbers some register,
+for example to contain the return address.  <code>call_insn</code> insns
+on these machines should have a body which is a <code>parallel</code>
+that contains both the <code>call</code> expression and <code>clobber</code>
+expressions that indicate which registers are destroyed.  Similarly,
+if the call instruction requires some register other than the stack
+pointer that is not explicitly mentioned in its RTL, a <code>use</code>
+subexpression should mention that register.
+</p>
+<p>Functions that are called are assumed to modify all registers listed in
+the configuration macro <code>CALL_USED_REGISTERS</code> (see <a href="Register-Basics.html#Register-Basics">Register Basics</a>) and, with the exception of <code>const</code> functions and library
+calls, to modify all of memory.
+</p>
+<p>Insns containing just <code>use</code> expressions directly precede the
+<code>call_insn</code> insn to indicate which registers contain inputs to the
+function.  Similarly, if registers other than those in
+<code>CALL_USED_REGISTERS</code> are clobbered by the called function, insns
+containing a single <code>clobber</code> follow immediately after the call to
+indicate which registers.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Sharing.html#Sharing" accesskey="n" rel="next">Sharing</a>, Previous: <a href="Insns.html#Insns" accesskey="p" rel="prev">Insns</a>, Up: <a href="RTL.html#RTL" accesskey="u" rel="up">RTL</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

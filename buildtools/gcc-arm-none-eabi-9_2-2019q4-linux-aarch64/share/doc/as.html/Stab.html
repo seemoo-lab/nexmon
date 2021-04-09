@@ -1,0 +1,150 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: Stab</title>
+
+<meta name="description" content="Using as: Stab">
+<meta name="keywords" content="Using as: Stab">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Pseudo-Ops.html#Pseudo-Ops" rel="up" title="Pseudo Ops">
+<link href="String.html#String" rel="next" title="String">
+<link href="Space.html#Space" rel="prev" title="Space">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Stab"></a>
+<div class="header">
+<p>
+Next: <a href="String.html#String" accesskey="n" rel="next">String</a>, Previous: <a href="Space.html#Space" accesskey="p" rel="prev">Space</a>, Up: <a href="Pseudo-Ops.html#Pseudo-Ops" accesskey="u" rel="up">Pseudo Ops</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="g_t_002estabd_002c-_002estabn_002c-_002estabs"></a>
+<h3 class="section">7.90 <code>.stabd, .stabn, .stabs</code></h3>
+
+<a name="index-symbolic-debuggers_002c-information-for"></a>
+<a name="index-stabx-directives"></a>
+<p>There are three directives that begin &lsquo;<samp>.stab</samp>&rsquo;.
+All emit symbols (see <a href="Symbols.html#Symbols">Symbols</a>), for use by symbolic debuggers.
+The symbols are not entered in the <code>as</code> hash table: they
+cannot be referenced elsewhere in the source file.
+Up to five fields are required:
+</p>
+<dl compact="compact">
+<dt><var>string</var></dt>
+<dd><p>This is the symbol&rsquo;s name.  It may contain any character except
+&lsquo;<samp>\000</samp>&rsquo;, so is more general than ordinary symbol names.  Some
+debuggers used to code arbitrarily complex structures into symbol names
+using this field.
+</p>
+</dd>
+<dt><var>type</var></dt>
+<dd><p>An absolute expression.  The symbol&rsquo;s type is set to the low 8 bits of
+this expression.  Any bit pattern is permitted, but <code>ld</code>
+and debuggers choke on silly bit patterns.
+</p>
+</dd>
+<dt><var>other</var></dt>
+<dd><p>An absolute expression.  The symbol&rsquo;s &ldquo;other&rdquo; attribute is set to the
+low 8 bits of this expression.
+</p>
+</dd>
+<dt><var>desc</var></dt>
+<dd><p>An absolute expression.  The symbol&rsquo;s descriptor is set to the low 16
+bits of this expression.
+</p>
+</dd>
+<dt><var>value</var></dt>
+<dd><p>An absolute expression which becomes the symbol&rsquo;s value.
+</p></dd>
+</dl>
+
+<p>If a warning is detected while reading a <code>.stabd</code>, <code>.stabn</code>,
+or <code>.stabs</code> statement, the symbol has probably already been created;
+you get a half-formed symbol in your object file.  This is
+compatible with earlier assemblers!
+</p>
+<dl compact="compact">
+<dd><a name="index-stabd-directive"></a>
+</dd>
+<dt><code>.stabd <var>type</var> , <var>other</var> , <var>desc</var></code></dt>
+<dd>
+<p>The &ldquo;name&rdquo; of the symbol generated is not even an empty string.
+It is a null pointer, for compatibility.  Older assemblers used a
+null pointer so they didn&rsquo;t waste space in object files with empty
+strings.
+</p>
+<p>The symbol&rsquo;s value is set to the location counter,
+relocatably.  When your program is linked, the value of this symbol
+is the address of the location counter when the <code>.stabd</code> was
+assembled.
+</p>
+<a name="index-stabn-directive"></a>
+</dd>
+<dt><code>.stabn <var>type</var> , <var>other</var> , <var>desc</var> , <var>value</var></code></dt>
+<dd><p>The name of the symbol is set to the empty string <code>&quot;&quot;</code>.
+</p>
+<a name="index-stabs-directive"></a>
+</dd>
+<dt><code>.stabs <var>string</var> ,  <var>type</var> , <var>other</var> , <var>desc</var> , <var>value</var></code></dt>
+<dd><p>All five fields are specified.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="String.html#String" accesskey="n" rel="next">String</a>, Previous: <a href="Space.html#Space" accesskey="p" rel="prev">Space</a>, Up: <a href="Pseudo-Ops.html#Pseudo-Ops" accesskey="u" rel="up">Pseudo Ops</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

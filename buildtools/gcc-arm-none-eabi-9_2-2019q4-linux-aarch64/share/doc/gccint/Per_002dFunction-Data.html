@@ -1,0 +1,144 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Per-Function Data</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Per-Function Data">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Per-Function Data">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Target-Macros.html#Target-Macros" rel="up" title="Target Macros">
+<link href="Storage-Layout.html#Storage-Layout" rel="next" title="Storage Layout">
+<link href="Run_002dtime-Target.html#Run_002dtime-Target" rel="prev" title="Run-time Target">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Per_002dFunction-Data"></a>
+<div class="header">
+<p>
+Next: <a href="Storage-Layout.html#Storage-Layout" accesskey="n" rel="next">Storage Layout</a>, Previous: <a href="Run_002dtime-Target.html#Run_002dtime-Target" accesskey="p" rel="prev">Run-time Target</a>, Up: <a href="Target-Macros.html#Target-Macros" accesskey="u" rel="up">Target Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Defining-data-structures-for-per_002dfunction-information_002e"></a>
+<h3 class="section">18.4 Defining data structures for per-function information.</h3>
+<a name="index-per_002dfunction-data"></a>
+<a name="index-data-structures"></a>
+
+<p>If the target needs to store information on a per-function basis, GCC
+provides a macro and a couple of variables to allow this.  Note, just
+using statics to store the information is a bad idea, since GCC supports
+nested functions, so you can be halfway through encoding one function
+when another one comes along.
+</p>
+<p>GCC defines a data structure called <code>struct function</code> which
+contains all of the data specific to an individual function.  This
+structure contains a field called <code>machine</code> whose type is
+<code>struct machine_function *</code>, which can be used by targets to point
+to their own specific data.
+</p>
+<p>If a target needs per-function specific data it should define the type
+<code>struct machine_function</code> and also the macro <code>INIT_EXPANDERS</code>.
+This macro should be used to initialize the function pointer
+<code>init_machine_status</code>.  This pointer is explained below.
+</p>
+<p>One typical use of per-function, target specific data is to create an
+RTX to hold the register containing the function&rsquo;s return address.  This
+RTX can then be used to implement the <code>__builtin_return_address</code>
+function, for level 0.
+</p>
+<p>Note&mdash;earlier implementations of GCC used a single data area to hold
+all of the per-function information.  Thus when processing of a nested
+function began the old per-function data had to be pushed onto a
+stack, and when the processing was finished, it had to be popped off the
+stack.  GCC used to provide function pointers called
+<code>save_machine_status</code> and <code>restore_machine_status</code> to handle
+the saving and restoring of the target specific information.  Since the
+single data area approach is no longer used, these pointers are no
+longer supported.
+</p>
+<dl>
+<dt><a name="index-INIT_005fEXPANDERS"></a>Macro: <strong>INIT_EXPANDERS</strong></dt>
+<dd><p>Macro called to initialize any target specific information.  This macro
+is called once per function, before generation of any RTL has begun.
+The intention of this macro is to allow the initialization of the
+function pointer <code>init_machine_status</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-init_005fmachine_005fstatus"></a>Variable: <em>void (*)(struct function *)</em> <strong>init_machine_status</strong></dt>
+<dd><p>If this function pointer is non-<code>NULL</code> it will be called once per
+function, before function compilation starts, in order to allow the
+target to perform any target specific initialization of the
+<code>struct function</code> structure.  It is intended that this would be
+used to initialize the <code>machine</code> of that structure.
+</p>
+<p><code>struct machine_function</code> structures are expected to be freed by GC.
+Generally, any memory that they reference must be allocated by using
+GC allocation, including the structure itself.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Storage-Layout.html#Storage-Layout" accesskey="n" rel="next">Storage Layout</a>, Previous: <a href="Run_002dtime-Target.html#Run_002dtime-Target" accesskey="p" rel="prev">Run-time Target</a>, Up: <a href="Target-Macros.html#Target-Macros" accesskey="u" rel="up">Target Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

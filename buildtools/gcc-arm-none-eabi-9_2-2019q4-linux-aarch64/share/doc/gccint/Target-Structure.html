@@ -1,0 +1,145 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Target Structure</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Target Structure">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Target Structure">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Target-Macros.html#Target-Macros" rel="up" title="Target Macros">
+<link href="Driver.html#Driver" rel="next" title="Driver">
+<link href="Target-Macros.html#Target-Macros" rel="prev" title="Target Macros">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Target-Structure"></a>
+<div class="header">
+<p>
+Next: <a href="Driver.html#Driver" accesskey="n" rel="next">Driver</a>, Up: <a href="Target-Macros.html#Target-Macros" accesskey="u" rel="up">Target Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="The-Global-targetm-Variable"></a>
+<h3 class="section">18.1 The Global <code>targetm</code> Variable</h3>
+<a name="index-target-hooks"></a>
+<a name="index-target-functions"></a>
+
+<dl>
+<dt><a name="index-targetm"></a>Variable: <em>struct gcc_target</em> <strong>targetm</strong></dt>
+<dd><p>The target <samp>.c</samp> file must define the global <code>targetm</code> variable
+which contains pointers to functions and data relating to the target
+machine.  The variable is declared in <samp>target.h</samp>;
+<samp>target-def.h</samp> defines the macro <code>TARGET_INITIALIZER</code> which is
+used to initialize the variable, and macros for the default initializers
+for elements of the structure.  The <samp>.c</samp> file should override those
+macros for which the default definition is inappropriate.  For example:
+</p><div class="smallexample">
+<pre class="smallexample">#include &quot;target.h&quot;
+#include &quot;target-def.h&quot;
+
+/* <span class="roman">Initialize the GCC target structure.</span>  */
+
+#undef TARGET_COMP_TYPE_ATTRIBUTES
+#define TARGET_COMP_TYPE_ATTRIBUTES <var>machine</var>_comp_type_attributes
+
+struct gcc_target targetm = TARGET_INITIALIZER;
+</pre></div>
+</dd></dl>
+
+<p>Where a macro should be defined in the <samp>.c</samp> file in this manner to
+form part of the <code>targetm</code> structure, it is documented below as a
+&ldquo;Target Hook&rdquo; with a prototype.  Many macros will change in future
+from being defined in the <samp>.h</samp> file to being part of the
+<code>targetm</code> structure.
+</p>
+<p>Similarly, there is a <code>targetcm</code> variable for hooks that are
+specific to front ends for C-family languages, documented as &ldquo;C
+Target Hook&rdquo;.  This is declared in <samp>c-family/c-target.h</samp>, the
+initializer <code>TARGETCM_INITIALIZER</code> in
+<samp>c-family/c-target-def.h</samp>.  If targets initialize <code>targetcm</code>
+themselves, they should set <code>target_has_targetcm=yes</code> in
+<samp>config.gcc</samp>; otherwise a default definition is used.
+</p>
+<p>Similarly, there is a <code>targetm_common</code> variable for hooks that
+are shared between the compiler driver and the compilers proper,
+documented as &ldquo;Common Target Hook&rdquo;.  This is declared in
+<samp>common/common-target.h</samp>, the initializer
+<code>TARGETM_COMMON_INITIALIZER</code> in
+<samp>common/common-target-def.h</samp>.  If targets initialize
+<code>targetm_common</code> themselves, they should set
+<code>target_has_targetm_common=yes</code> in <samp>config.gcc</samp>; otherwise a
+default definition is used.
+</p>
+<p>Similarly, there is a <code>targetdm</code> variable for hooks that are
+specific to the D language front end, documented as &ldquo;D Target Hook&rdquo;.
+This is declared in <samp>d/d-target.h</samp>, the initializer
+<code>TARGETDM_INITIALIZER</code> in <samp>d/d-target-def.h</samp>.  If targets
+initialize <code>targetdm</code> themselves, they should set
+<code>target_has_targetdm=yes</code> in <samp>config.gcc</samp>; otherwise a default
+definition is used.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Driver.html#Driver" accesskey="n" rel="next">Driver</a>, Up: <a href="Target-Macros.html#Target-Macros" accesskey="u" rel="up">Target Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

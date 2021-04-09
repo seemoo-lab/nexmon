@@ -1,0 +1,143 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Nonlocal Gotos</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Nonlocal Gotos">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Nonlocal Gotos">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C-Extensions.html#C-Extensions" rel="up" title="C Extensions">
+<link href="Constructing-Calls.html#Constructing-Calls" rel="next" title="Constructing Calls">
+<link href="Nested-Functions.html#Nested-Functions" rel="prev" title="Nested Functions">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Nonlocal-Gotos"></a>
+<div class="header">
+<p>
+Next: <a href="Constructing-Calls.html#Constructing-Calls" accesskey="n" rel="next">Constructing Calls</a>, Previous: <a href="Nested-Functions.html#Nested-Functions" accesskey="p" rel="prev">Nested Functions</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Nonlocal-Gotos-1"></a>
+<h3 class="section">6.5 Nonlocal Gotos</h3>
+<a name="index-nonlocal-gotos"></a>
+
+<p>GCC provides the built-in functions <code>__builtin_setjmp</code> and
+<code>__builtin_longjmp</code> which are similar to, but not interchangeable
+with, the C library functions <code>setjmp</code> and <code>longjmp</code>.  
+The built-in versions are used internally by GCC&rsquo;s libraries
+to implement exception handling on some targets.  You should use the 
+standard C library functions declared in <code>&lt;setjmp.h&gt;</code> in user code
+instead of the builtins.
+</p>
+<p>The built-in versions of these functions use GCC&rsquo;s normal
+mechanisms to save and restore registers using the stack on function
+entry and exit.  The jump buffer argument <var>buf</var> holds only the
+information needed to restore the stack frame, rather than the entire 
+set of saved register values.  
+</p>
+<p>An important caveat is that GCC arranges to save and restore only
+those registers known to the specific architecture variant being
+compiled for.  This can make <code>__builtin_setjmp</code> and
+<code>__builtin_longjmp</code> more efficient than their library
+counterparts in some cases, but it can also cause incorrect and
+mysterious behavior when mixing with code that uses the full register
+set.
+</p>
+<p>You should declare the jump buffer argument <var>buf</var> to the
+built-in functions as:
+</p>
+<div class="smallexample">
+<pre class="smallexample">#include &lt;stdint.h&gt;
+intptr_t <var>buf</var>[5];
+</pre></div>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fsetjmp"></a>Built-in Function: <em>int</em> <strong>__builtin_setjmp</strong> <em>(intptr_t *<var>buf</var>)</em></dt>
+<dd><p>This function saves the current stack context in <var>buf</var>.  
+<code>__builtin_setjmp</code> returns 0 when returning directly,
+and 1 when returning from <code>__builtin_longjmp</code> using the same
+<var>buf</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005flongjmp"></a>Built-in Function: <em>void</em> <strong>__builtin_longjmp</strong> <em>(intptr_t *<var>buf</var>, int <var>val</var>)</em></dt>
+<dd><p>This function restores the stack context in <var>buf</var>, 
+saved by a previous call to <code>__builtin_setjmp</code>.  After
+<code>__builtin_longjmp</code> is finished, the program resumes execution as
+if the matching <code>__builtin_setjmp</code> returns the value <var>val</var>,
+which must be 1.
+</p>
+<p>Because <code>__builtin_longjmp</code> depends on the function return
+mechanism to restore the stack context, it cannot be called
+from the same function calling <code>__builtin_setjmp</code> to
+initialize <var>buf</var>.  It can only be called from a function called
+(directly or indirectly) from the function calling <code>__builtin_setjmp</code>.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Constructing-Calls.html#Constructing-Calls" accesskey="n" rel="next">Constructing Calls</a>, Previous: <a href="Nested-Functions.html#Nested-Functions" accesskey="p" rel="prev">Nested Functions</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

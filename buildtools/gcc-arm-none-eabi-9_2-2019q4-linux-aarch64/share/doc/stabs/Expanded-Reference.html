@@ -1,0 +1,130 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1992-2019 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License". -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>STABS: Expanded Reference</title>
+
+<meta name="description" content="STABS: Expanded Reference">
+<meta name="keywords" content="STABS: Expanded Reference">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Symbol-Types-Index.html#Symbol-Types-Index" rel="index" title="Symbol Types Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="N_005fPC.html#N_005fPC" rel="next" title="N_PC">
+<link href="Type-Descriptors.html#Type-Descriptors" rel="prev" title="Type Descriptors">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Expanded-Reference"></a>
+<div class="header">
+<p>
+Next: <a href="Questions.html#Questions" accesskey="n" rel="next">Questions</a>, Previous: <a href="Type-Descriptors.html#Type-Descriptors" accesskey="p" rel="prev">Type Descriptors</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Symbol-Types-Index.html#Symbol-Types-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Expanded-Reference-by-Stab-Type"></a>
+<h2 class="appendix">Appendix D Expanded Reference by Stab Type</h2>
+
+
+<p>For a full list of stab types, and cross-references to where they are
+described, see <a href="Stab-Types.html#Stab-Types">Stab Types</a>.  This appendix just covers certain
+stabs which are not yet described in the main body of this document;
+eventually the information will all be in one place.
+</p>
+<p>Format of an entry:
+</p>
+<p>The first line is the symbol type (see <samp>include/aout/stab.def</samp>).
+</p>
+<p>The second line describes the language constructs the symbol type
+represents.
+</p>
+<p>The third line is the stab format with the significant stab fields
+named and the rest NIL.
+</p>
+<p>Subsequent lines expand upon the meaning and possible values for each
+significant stab field.
+</p>
+<p>Finally, any further information.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="N_005fPC.html#N_005fPC" accesskey="1">N_PC</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Pascal global symbol
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="N_005fNSYMS.html#N_005fNSYMS" accesskey="2">N_NSYMS</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Number of symbols
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="N_005fNOMAP.html#N_005fNOMAP" accesskey="3">N_NOMAP</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">No DST map
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="N_005fM2C.html#N_005fM2C" accesskey="4">N_M2C</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Modula-2 compilation unit
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="N_005fBROWS.html#N_005fBROWS" accesskey="5">N_BROWS</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Path to .cb file for Sun source code browser
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="N_005fDEFD.html#N_005fDEFD" accesskey="6">N_DEFD</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">GNU Modula2 definition module dependency
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="N_005fEHDECL.html#N_005fEHDECL" accesskey="7">N_EHDECL</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">GNU C++ exception variable
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="N_005fMOD2.html#N_005fMOD2" accesskey="8">N_MOD2</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Modula2 information &quot;for imc&quot;
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="N_005fCATCH.html#N_005fCATCH" accesskey="9">N_CATCH</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">GNU C++ &quot;catch&quot; clause
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="N_005fSSYM.html#N_005fSSYM">N_SSYM</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Structure or union element
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="N_005fSCOPE.html#N_005fSCOPE">N_SCOPE</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Modula2 scope information (Sun only)
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Gould.html#Gould">Gould</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">non-base register symbols used on Gould systems
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="N_005fLENG.html#N_005fLENG">N_LENG</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Length of preceding entry
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Questions.html#Questions" accesskey="n" rel="next">Questions</a>, Previous: <a href="Type-Descriptors.html#Type-Descriptors" accesskey="p" rel="prev">Type Descriptors</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Symbol-Types-Index.html#Symbol-Types-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

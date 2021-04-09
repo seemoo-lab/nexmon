@@ -1,0 +1,212 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: S12Z Addressing Modes</title>
+
+<meta name="description" content="Using as: S12Z Addressing Modes">
+<meta name="keywords" content="Using as: S12Z Addressing Modes">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="S12Z-Syntax.html#S12Z-Syntax" rel="up" title="S12Z Syntax">
+<link href="S12Z-Register-Notation.html#S12Z-Register-Notation" rel="next" title="S12Z Register Notation">
+<link href="S12Z-Syntax-Overview.html#S12Z-Syntax-Overview" rel="prev" title="S12Z Syntax Overview">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="S12Z-Addressing-Modes"></a>
+<div class="header">
+<p>
+Next: <a href="S12Z-Register-Notation.html#S12Z-Register-Notation" accesskey="n" rel="next">S12Z Register Notation</a>, Previous: <a href="S12Z-Syntax-Overview.html#S12Z-Syntax-Overview" accesskey="p" rel="prev">S12Z Syntax Overview</a>, Up: <a href="S12Z-Syntax.html#S12Z-Syntax" accesskey="u" rel="up">S12Z Syntax</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Addressing-Modes-3"></a>
+<h4 class="subsubsection">9.24.2.2 Addressing Modes</h4>
+<a name="index-S12Z-addressing-modes"></a>
+<a name="index-addressing-modes_002c-S12Z"></a>
+
+<p>The following addressing modes are understood for the S12Z.
+</p><dl compact="compact">
+<dt><em>Immediate</em></dt>
+<dd><p>&lsquo;<samp>#<var>number</var></samp>&rsquo;
+</p>
+</dd>
+<dt><em>Immediate Bit Field</em></dt>
+<dd><p>&lsquo;<samp>#<var>width</var>:<var>offset</var></samp>&rsquo;
+</p>
+<p>Bit field instructions in the immediate mode require the width and offset to
+be specified.
+The <var>width</var> parameter specifies the number of bits in the field.
+It should be a number in the range [1,32].
+<var>Offset</var> determines the position within the field where the operation
+should start.
+It should be a number in the range [0,31].
+</p>
+</dd>
+<dt><em>Relative</em></dt>
+<dd><p>&lsquo;<samp>*<var>symbol</var></samp>&rsquo;, or &lsquo;<samp>*[+-]<var>digits</var></samp>&rsquo;
+</p>
+<p>Program counter relative addresses have a width of 15 bits.
+Thus, they must be within the range [-32768, 32767].
+</p>
+</dd>
+<dt><em>Register</em></dt>
+<dd><p>&lsquo;<samp><var>reg</var></samp>&rsquo;
+</p>
+<a name="index-register-names_002c-S12Z"></a>
+<p>Some instructions accept a register as an operand.
+In general, <var>reg</var> may be a
+data register (&lsquo;<samp>D0</samp>&rsquo;, &lsquo;<samp>D1</samp>&rsquo; &hellip; &lsquo;<samp>D7</samp>&rsquo;),
+the &lsquo;<samp>X</samp>&rsquo; register or the &lsquo;<samp>Y</samp>&rsquo; register.
+</p>
+<p>A few instructions accept as an argument the stack pointer
+register (&lsquo;<samp>S</samp>&rsquo;), and/or the program counter (&lsquo;<samp>P</samp>&rsquo;).
+</p>
+<p>Some very special instructions accept arguments which refer to the
+condition code register.  For these arguments the  syntax is
+&lsquo;<samp>CCR</samp>&rsquo;, &lsquo;<samp>CCH</samp>&rsquo; or &lsquo;<samp>CCL</samp>&rsquo; which refer to the complete
+condition code register, the condition code register high byte
+and the condition code register low byte respectively.
+</p>
+
+</dd>
+<dt><em>Absolute Direct</em></dt>
+<dd><p>&lsquo;<samp><var>symbol</var></samp>&rsquo;, or &lsquo;<samp><var>digits</var></samp>&rsquo;
+</p>
+</dd>
+<dt><em>Absolute Indirect</em></dt>
+<dd><p>&lsquo;<samp>[<var>symbol</var></samp>&rsquo;, or &lsquo;<samp><var>digits</var>]</samp>&rsquo;
+</p>
+
+</dd>
+<dt><em>Constant Offset Indexed</em></dt>
+<dd><p>&lsquo;<samp>(<var>number</var>,<var>reg</var>)</samp>&rsquo;
+</p>
+<p><var>Reg</var> may be either &lsquo;<samp>X</samp>&rsquo;, &lsquo;<samp>Y</samp>&rsquo;, &lsquo;<samp>S</samp>&rsquo; or
+&lsquo;<samp>P</samp>&rsquo; or one of the data registers &lsquo;<samp>D0</samp>&rsquo;, &lsquo;<samp>D1</samp>&rsquo; &hellip;
+&lsquo;<samp>D7</samp>&rsquo;.
+If any of the registers &lsquo;<samp>D2</samp>&rsquo; &hellip; &lsquo;<samp>D5</samp>&rsquo; are specified, then the
+register value is treated as a signed value.
+Otherwise it is treated as unsigned.
+<var>Number</var> may be any integer in the range [-8388608,8388607].
+</p>
+</dd>
+<dt><em>Offset Indexed Indirect</em></dt>
+<dd><p>&lsquo;<samp>[<var>number</var>,<var>reg</var>]</samp>&rsquo;
+</p>
+<p><var>Reg</var> may be either &lsquo;<samp>X</samp>&rsquo;, &lsquo;<samp>Y</samp>&rsquo;, &lsquo;<samp>S</samp>&rsquo; or
+&lsquo;<samp>P</samp>&rsquo;.
+<var>Number</var> may be any integer in the range [-8388608,8388607].
+</p>
+</dd>
+<dt><em>Auto Pre-Increment/Pre-Decrement/Post-Increment/Post-Decrement</em></dt>
+<dd><p>&lsquo;<samp>-<var>reg</var></samp>&rsquo;,
+&lsquo;<samp>+<var>reg</var></samp>&rsquo;,
+&lsquo;<samp><var>reg</var>-</samp>&rsquo; or
+&lsquo;<samp><var>reg</var>+</samp>&rsquo;
+</p>
+<p>This addressing mode is typically used to access a value at an address,
+and simultaneously to increment/decrement the register pointing to that
+address.
+Thus <var>reg</var> may be any of the 24 bit registers &lsquo;<samp>X</samp>&rsquo;, &lsquo;<samp>Y</samp>&rsquo;, or
+&lsquo;<samp>S</samp>&rsquo;.
+Pre-increment and post-decrement are not available for
+register &lsquo;<samp>S</samp>&rsquo; (only post-increment and pre-decrement are available).
+</p>
+</dd>
+<dt><em>Register Offset Direct</em></dt>
+<dd><p>&lsquo;<samp>(<var>data-reg</var>,<var>reg</var>)</samp>&rsquo;
+</p>
+<p><var>Reg</var> can be either &lsquo;<samp>X</samp>&rsquo;, &lsquo;<samp>Y</samp>&rsquo;, or &lsquo;<samp>S</samp>&rsquo;.
+<var>Data-reg</var>
+must be one of the data registers &lsquo;<samp>D0</samp>&rsquo;, &lsquo;<samp>D1</samp>&rsquo; &hellip; &lsquo;<samp>D7</samp>&rsquo;.
+If any of the registers &lsquo;<samp>D2</samp>&rsquo; &hellip; &lsquo;<samp>D5</samp>&rsquo; are specified, then
+the register value is treated as a signed value.
+Otherwise it is treated as unsigned.
+</p>
+</dd>
+<dt><em>Register Offset Indirect</em></dt>
+<dd><p>&lsquo;<samp>[<var>data-reg</var>,<var>reg</var>]</samp>&rsquo;
+</p>
+<p><var>Reg</var> can be either &lsquo;<samp>X</samp>&rsquo; or &lsquo;<samp>Y</samp>&rsquo;.
+<var>Data-reg</var>
+must be one of the data registers &lsquo;<samp>D0</samp>&rsquo;, &lsquo;<samp>D1</samp>&rsquo; &hellip; &lsquo;<samp>D7</samp>&rsquo;.
+If any of the registers &lsquo;<samp>D2</samp>&rsquo; &hellip; &lsquo;<samp>D5</samp>&rsquo; are specified, then
+the register value is treated as a signed value.
+Otherwise it is treated as unsigned.
+</p></dd>
+</dl>
+
+<p>For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">	trap    #197        ;; Immediate mode
+	bra     *+49        ;; Relative mode
+	bra     .L0         ;;     ditto
+	jmp     0xFE0034    ;; Absolute direct mode
+	jmp     [0xFD0012]  ;; Absolute indirect mode
+	inc.b   (4,x)       ;; Constant offset indexed mode
+	jsr     (45, d0)    ;;     ditto
+	dec.w   [4,y]       ;; Constant offset indexed indirect mode
+	clr.p   (-s)        ;; Pre-decrement mode
+	neg.l   (d0, s)     ;; Register offset direct mode
+	com.b   [d1, x]     ;; Register offset indirect mode
+	psh     cch         ;; Register mode
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="S12Z-Register-Notation.html#S12Z-Register-Notation" accesskey="n" rel="next">S12Z Register Notation</a>, Previous: <a href="S12Z-Syntax-Overview.html#S12Z-Syntax-Overview" accesskey="p" rel="prev">S12Z Syntax Overview</a>, Up: <a href="S12Z-Syntax.html#S12Z-Syntax" accesskey="u" rel="up">S12Z Syntax</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

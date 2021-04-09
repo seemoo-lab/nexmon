@@ -1,0 +1,157 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): ARC Function Attributes</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): ARC Function Attributes">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): ARC Function Attributes">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Function-Attributes.html#Function-Attributes" rel="up" title="Function Attributes">
+<link href="ARM-Function-Attributes.html#ARM-Function-Attributes" rel="next" title="ARM Function Attributes">
+<link href="AMD-GCN-Function-Attributes.html#AMD-GCN-Function-Attributes" rel="prev" title="AMD GCN Function Attributes">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="ARC-Function-Attributes"></a>
+<div class="header">
+<p>
+Next: <a href="ARM-Function-Attributes.html#ARM-Function-Attributes" accesskey="n" rel="next">ARM Function Attributes</a>, Previous: <a href="AMD-GCN-Function-Attributes.html#AMD-GCN-Function-Attributes" accesskey="p" rel="prev">AMD GCN Function Attributes</a>, Up: <a href="Function-Attributes.html#Function-Attributes" accesskey="u" rel="up">Function Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="ARC-Function-Attributes-1"></a>
+<h4 class="subsection">6.33.4 ARC Function Attributes</h4>
+
+<p>These function attributes are supported by the ARC back end:
+</p>
+<dl compact="compact">
+<dt><code>interrupt</code></dt>
+<dd><a name="index-interrupt-function-attribute_002c-ARC"></a>
+<p>Use this attribute to indicate
+that the specified function is an interrupt handler.  The compiler generates
+function entry and exit sequences suitable for use in an interrupt handler
+when this attribute is present.
+</p>
+<p>On the ARC, you must specify the kind of interrupt to be handled
+in a parameter to the interrupt attribute like this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">void f () __attribute__ ((interrupt (&quot;ilink1&quot;)));
+</pre></div>
+
+<p>Permissible values for this parameter are: <code>ilink1</code><!-- /@w --> and
+<code>ilink2</code><!-- /@w -->.
+</p>
+</dd>
+<dt><code>long_call</code></dt>
+<dt><code>medium_call</code></dt>
+<dt><code>short_call</code></dt>
+<dd><a name="index-long_005fcall-function-attribute_002c-ARC"></a>
+<a name="index-medium_005fcall-function-attribute_002c-ARC"></a>
+<a name="index-short_005fcall-function-attribute_002c-ARC"></a>
+<a name="index-indirect-calls_002c-ARC"></a>
+<p>These attributes specify how a particular function is called.
+These attributes override the
+<samp>-mlong-calls</samp> and <samp>-mmedium-calls</samp> (see <a href="ARC-Options.html#ARC-Options">ARC Options</a>)
+command-line switches and <code>#pragma long_calls</code> settings.
+</p>
+<p>For ARC, a function marked with the <code>long_call</code> attribute is
+always called using register-indirect jump-and-link instructions,
+thereby enabling the called function to be placed anywhere within the
+32-bit address space.  A function marked with the <code>medium_call</code>
+attribute will always be close enough to be called with an unconditional
+branch-and-link instruction, which has a 25-bit offset from
+the call site.  A function marked with the <code>short_call</code>
+attribute will always be close enough to be called with a conditional
+branch-and-link instruction, which has a 21-bit offset from
+the call site.
+</p>
+</dd>
+<dt><code>jli_always</code></dt>
+<dd><a name="index-jli_005falways-function-attribute_002c-ARC"></a>
+<p>Forces a particular function to be called using <code>jli</code>
+instruction.  The <code>jli</code> instruction makes use of a table stored
+into <code>.jlitab</code> section, which holds the location of the functions
+which are addressed using this instruction.
+</p>
+</dd>
+<dt><code>jli_fixed</code></dt>
+<dd><a name="index-jli_005ffixed-function-attribute_002c-ARC"></a>
+<p>Identical like the above one, but the location of the function in the
+<code>jli</code> table is known and given as an attribute parameter.
+</p>
+</dd>
+<dt><code>secure_call</code></dt>
+<dd><a name="index-secure_005fcall-function-attribute_002c-ARC"></a>
+<p>This attribute allows one to mark secure-code functions that are
+callable from normal mode.  The location of the secure call function
+into the <code>sjli</code> table needs to be passed as argument.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="ARM-Function-Attributes.html#ARM-Function-Attributes" accesskey="n" rel="next">ARM Function Attributes</a>, Previous: <a href="AMD-GCN-Function-Attributes.html#AMD-GCN-Function-Attributes" accesskey="p" rel="prev">AMD GCN Function Attributes</a>, Up: <a href="Function-Attributes.html#Function-Attributes" accesskey="u" rel="up">Function Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

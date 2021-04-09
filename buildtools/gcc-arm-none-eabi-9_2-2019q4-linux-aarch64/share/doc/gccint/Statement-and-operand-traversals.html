@@ -1,0 +1,147 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Statement and operand traversals</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Statement and operand traversals">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Statement and operand traversals">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="GIMPLE.html#GIMPLE" rel="up" title="GIMPLE">
+<link href="Tree-SSA.html#Tree-SSA" rel="next" title="Tree SSA">
+<link href="Adding-a-new-GIMPLE-statement-code.html#Adding-a-new-GIMPLE-statement-code" rel="prev" title="Adding a new GIMPLE statement code">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Statement-and-operand-traversals"></a>
+<div class="header">
+<p>
+Previous: <a href="Adding-a-new-GIMPLE-statement-code.html#Adding-a-new-GIMPLE-statement-code" accesskey="p" rel="prev">Adding a new GIMPLE statement code</a>, Up: <a href="GIMPLE.html#GIMPLE" accesskey="u" rel="up">GIMPLE</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Statement-and-operand-traversals-1"></a>
+<h3 class="section">12.12 Statement and operand traversals</h3>
+<a name="index-Statement-and-operand-traversals"></a>
+
+<p>There are two functions available for walking statements and
+sequences: <code>walk_gimple_stmt</code> and <code>walk_gimple_seq</code>,
+accordingly, and a third function for walking the operands in a
+statement: <code>walk_gimple_op</code>.
+</p>
+<dl>
+<dt><a name="index-walk_005fgimple_005fstmt"></a>GIMPLE function: <em>tree</em> <strong>walk_gimple_stmt</strong> <em>(gimple_stmt_iterator *gsi,   walk_stmt_fn callback_stmt, walk_tree_fn callback_op, struct walk_stmt_info *wi)</em></dt>
+<dd><p>This function is used to walk the current statement in <code>GSI</code>,
+optionally using traversal state stored in <code>WI</code>.  If <code>WI</code> is <code>NULL</code>, no
+state is kept during the traversal.
+</p>
+<p>The callback <code>CALLBACK_STMT</code> is called.  If <code>CALLBACK_STMT</code> returns
+true, it means that the callback function has handled all the
+operands of the statement and it is not necessary to walk its
+operands.
+</p>
+<p>If <code>CALLBACK_STMT</code> is <code>NULL</code> or it returns false, <code>CALLBACK_OP</code> is
+called on each operand of the statement via <code>walk_gimple_op</code>.  If
+<code>walk_gimple_op</code> returns non-<code>NULL</code> for any operand, the remaining
+operands are not scanned.
+</p>
+<p>The return value is that returned by the last call to
+<code>walk_gimple_op</code>, or <code>NULL_TREE</code> if no <code>CALLBACK_OP</code> is specified.
+</p></dd></dl>
+
+
+<dl>
+<dt><a name="index-walk_005fgimple_005fop"></a>GIMPLE function: <em>tree</em> <strong>walk_gimple_op</strong> <em>(gimple stmt,   walk_tree_fn callback_op, struct walk_stmt_info *wi)</em></dt>
+<dd><p>Use this function to walk the operands of statement <code>STMT</code>.  Every
+operand is walked via <code>walk_tree</code> with optional state information
+in <code>WI</code>.
+</p>
+<p><code>CALLBACK_OP</code> is called on each operand of <code>STMT</code> via <code>walk_tree</code>.
+Additional parameters to <code>walk_tree</code> must be stored in <code>WI</code>.  For
+each operand <code>OP</code>, <code>walk_tree</code> is called as:
+</p>
+<div class="smallexample">
+<pre class="smallexample">walk_tree (&amp;<code>OP</code>, <code>CALLBACK_OP</code>, <code>WI</code>, <code>PSET</code>)
+</pre></div>
+
+<p>If <code>CALLBACK_OP</code> returns non-<code>NULL</code> for an operand, the remaining
+operands are not scanned.  The return value is that returned by
+the last call to <code>walk_tree</code>, or <code>NULL_TREE</code> if no <code>CALLBACK_OP</code> is
+specified.
+</p></dd></dl>
+
+
+<dl>
+<dt><a name="index-walk_005fgimple_005fseq"></a>GIMPLE function: <em>tree</em> <strong>walk_gimple_seq</strong> <em>(gimple_seq seq,   walk_stmt_fn callback_stmt, walk_tree_fn callback_op, struct walk_stmt_info *wi)</em></dt>
+<dd><p>This function walks all the statements in the sequence <code>SEQ</code>
+calling <code>walk_gimple_stmt</code> on each one.  <code>WI</code> is as in
+<code>walk_gimple_stmt</code>.  If <code>walk_gimple_stmt</code> returns non-<code>NULL</code>, the walk
+is stopped and the value returned.  Otherwise, all the statements
+are walked and <code>NULL_TREE</code> returned.
+</p></dd></dl>
+
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Adding-a-new-GIMPLE-statement-code.html#Adding-a-new-GIMPLE-statement-code" accesskey="p" rel="prev">Adding a new GIMPLE statement code</a>, Up: <a href="GIMPLE.html#GIMPLE" accesskey="u" rel="up">GIMPLE</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

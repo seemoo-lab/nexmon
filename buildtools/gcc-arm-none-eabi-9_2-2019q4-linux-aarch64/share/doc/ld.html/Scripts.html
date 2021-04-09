@@ -1,0 +1,133 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU linker LD
+(GNU Toolchain for the A-profile Architecture 9.2-2019.12 (arm-9.10))
+version 2.33.1.
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License". -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>LD: Scripts</title>
+
+<meta name="description" content="LD: Scripts">
+<meta name="keywords" content="LD: Scripts">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="LD-Index.html#LD-Index" rel="index" title="LD Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Basic-Script-Concepts.html#Basic-Script-Concepts" rel="next" title="Basic Script Concepts">
+<link href="Environment.html#Environment" rel="prev" title="Environment">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Scripts"></a>
+<div class="header">
+<p>
+Next: <a href="Machine-Dependent.html#Machine-Dependent" accesskey="n" rel="next">Machine Dependent</a>, Previous: <a href="Invocation.html#Invocation" accesskey="p" rel="prev">Invocation</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="LD-Index.html#LD-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Linker-Scripts"></a>
+<h2 class="chapter">3 Linker Scripts</h2>
+
+<a name="index-scripts"></a>
+<a name="index-linker-scripts"></a>
+<a name="index-command-files"></a>
+<p>Every link is controlled by a <em>linker script</em>.  This script is
+written in the linker command language.
+</p>
+<p>The main purpose of the linker script is to describe how the sections in
+the input files should be mapped into the output file, and to control
+the memory layout of the output file.  Most linker scripts do nothing
+more than this.  However, when necessary, the linker script can also
+direct the linker to perform many other operations, using the commands
+described below.
+</p>
+<p>The linker always uses a linker script.  If you do not supply one
+yourself, the linker will use a default script that is compiled into the
+linker executable.  You can use the &lsquo;<samp>--verbose</samp>&rsquo; command-line option
+to display the default linker script.  Certain command-line options,
+such as &lsquo;<samp>-r</samp>&rsquo; or &lsquo;<samp>-N</samp>&rsquo;, will affect the default linker script.
+</p>
+<p>You may supply your own linker script by using the &lsquo;<samp>-T</samp>&rsquo; command
+line option.  When you do this, your linker script will replace the
+default linker script.
+</p>
+<p>You may also use linker scripts implicitly by naming them as input files
+to the linker, as though they were files to be linked.  See <a href="Implicit-Linker-Scripts.html#Implicit-Linker-Scripts">Implicit Linker Scripts</a>.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Basic-Script-Concepts.html#Basic-Script-Concepts" accesskey="1">Basic Script Concepts</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Basic Linker Script Concepts
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Script-Format.html#Script-Format" accesskey="2">Script Format</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Linker Script Format
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Simple-Example.html#Simple-Example" accesskey="3">Simple Example</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Simple Linker Script Example
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Simple-Commands.html#Simple-Commands" accesskey="4">Simple Commands</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Simple Linker Script Commands
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Assignments.html#Assignments" accesskey="5">Assignments</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Assigning Values to Symbols
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="SECTIONS.html#SECTIONS" accesskey="6">SECTIONS</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">SECTIONS Command
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="MEMORY.html#MEMORY" accesskey="7">MEMORY</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">MEMORY Command
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="PHDRS.html#PHDRS" accesskey="8">PHDRS</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">PHDRS Command
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="VERSION.html#VERSION" accesskey="9">VERSION</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">VERSION Command
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Expressions.html#Expressions">Expressions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Expressions in Linker Scripts
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Implicit-Linker-Scripts.html#Implicit-Linker-Scripts">Implicit Linker Scripts</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Implicit Linker Scripts
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Machine-Dependent.html#Machine-Dependent" accesskey="n" rel="next">Machine Dependent</a>, Previous: <a href="Invocation.html#Invocation" accesskey="p" rel="prev">Invocation</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="LD-Index.html#LD-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

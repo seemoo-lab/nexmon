@@ -1,0 +1,148 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: All Debuggers</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: All Debuggers">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: All Debuggers">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Debugging-Info.html#Debugging-Info" rel="up" title="Debugging Info">
+<link href="DBX-Options.html#DBX-Options" rel="next" title="DBX Options">
+<link href="Debugging-Info.html#Debugging-Info" rel="prev" title="Debugging Info">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="All-Debuggers"></a>
+<div class="header">
+<p>
+Next: <a href="DBX-Options.html#DBX-Options" accesskey="n" rel="next">DBX Options</a>, Up: <a href="Debugging-Info.html#Debugging-Info" accesskey="u" rel="up">Debugging Info</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Macros-Affecting-All-Debugging-Formats"></a>
+<h4 class="subsection">18.21.1 Macros Affecting All Debugging Formats</h4>
+
+<p>These macros affect all debugging formats.
+</p>
+<dl>
+<dt><a name="index-DBX_005fREGISTER_005fNUMBER"></a>Macro: <strong>DBX_REGISTER_NUMBER</strong> <em>(<var>regno</var>)</em></dt>
+<dd><p>A C expression that returns the DBX register number for the compiler
+register number <var>regno</var>.  In the default macro provided, the value
+of this expression will be <var>regno</var> itself.  But sometimes there are
+some registers that the compiler knows about and DBX does not, or vice
+versa.  In such cases, some register may need to have one number in the
+compiler and another for DBX.
+</p>
+<p>If two registers have consecutive numbers inside GCC, and they can be
+used as a pair to hold a multiword value, then they <em>must</em> have
+consecutive numbers after renumbering with <code>DBX_REGISTER_NUMBER</code>.
+Otherwise, debuggers will be unable to access such a pair, because they
+expect register pairs to be consecutive in their own numbering scheme.
+</p>
+<p>If you find yourself defining <code>DBX_REGISTER_NUMBER</code> in way that
+does not preserve register pairs, then what you must do instead is
+redefine the actual register numbering scheme.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-DEBUGGER_005fAUTO_005fOFFSET"></a>Macro: <strong>DEBUGGER_AUTO_OFFSET</strong> <em>(<var>x</var>)</em></dt>
+<dd><p>A C expression that returns the integer offset value for an automatic
+variable having address <var>x</var> (an RTL expression).  The default
+computation assumes that <var>x</var> is based on the frame-pointer and
+gives the offset from the frame-pointer.  This is required for targets
+that produce debugging output for DBX and allow the frame-pointer to be
+eliminated when the <samp>-g</samp> option is used.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-DEBUGGER_005fARG_005fOFFSET"></a>Macro: <strong>DEBUGGER_ARG_OFFSET</strong> <em>(<var>offset</var>, <var>x</var>)</em></dt>
+<dd><p>A C expression that returns the integer offset value for an argument
+having address <var>x</var> (an RTL expression).  The nominal offset is
+<var>offset</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-PREFERRED_005fDEBUGGING_005fTYPE"></a>Macro: <strong>PREFERRED_DEBUGGING_TYPE</strong></dt>
+<dd><p>A C expression that returns the type of debugging output GCC should
+produce when the user specifies just <samp>-g</samp>.  Define
+this if you have arranged for GCC to support more than one format of
+debugging output.  Currently, the allowable values are <code>DBX_DEBUG</code>,
+<code>DWARF2_DEBUG</code>, <code>XCOFF_DEBUG</code>, <code>VMS_DEBUG</code>,
+and <code>VMS_AND_DWARF2_DEBUG</code>.
+</p>
+<p>When the user specifies <samp>-ggdb</samp>, GCC normally also uses the
+value of this macro to select the debugging output format, but with two
+exceptions.  If <code>DWARF2_DEBUGGING_INFO</code> is defined, GCC uses the
+value <code>DWARF2_DEBUG</code>.  Otherwise, if <code>DBX_DEBUGGING_INFO</code> is
+defined, GCC uses <code>DBX_DEBUG</code>.
+</p>
+<p>The value of this macro only affects the default debugging output; the
+user can always get a specific type of output by using <samp>-gstabs</samp>,
+<samp>-gdwarf-2</samp>, <samp>-gxcoff</samp>, or <samp>-gvms</samp>.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="DBX-Options.html#DBX-Options" accesskey="n" rel="next">DBX Options</a>, Up: <a href="Debugging-Info.html#Debugging-Info" accesskey="u" rel="up">Debugging Info</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

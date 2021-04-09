@@ -1,0 +1,143 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Bug Criteria</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Bug Criteria">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Bug Criteria">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Bugs.html#Bugs" rel="up" title="Bugs">
+<link href="Bug-Reporting.html#Bug-Reporting" rel="next" title="Bug Reporting">
+<link href="Bugs.html#Bugs" rel="prev" title="Bugs">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Bug-Criteria"></a>
+<div class="header">
+<p>
+Next: <a href="Bug-Reporting.html#Bug-Reporting" accesskey="n" rel="next">Bug Reporting</a>, Up: <a href="Bugs.html#Bugs" accesskey="u" rel="up">Bugs</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Have-You-Found-a-Bug_003f"></a>
+<h3 class="section">14.1 Have You Found a Bug?</h3>
+<a name="index-bug-criteria"></a>
+
+<p>If you are not sure whether you have found a bug, here are some guidelines:
+</p>
+<ul>
+<li> <a name="index-fatal-signal"></a>
+<a name="index-core-dump"></a>
+If the compiler gets a fatal signal, for any input whatever, that is a
+compiler bug.  Reliable compilers never crash.
+
+</li><li> <a name="index-invalid-assembly-code"></a>
+<a name="index-assembly-code_002c-invalid"></a>
+If the compiler produces invalid assembly code, for any input whatever
+(except an <code>asm</code> statement), that is a compiler bug, unless the
+compiler reports errors (not just warnings) which would ordinarily
+prevent the assembler from being run.
+
+</li><li> <a name="index-undefined-behavior"></a>
+<a name="index-undefined-function-value"></a>
+<a name="index-increment-operators"></a>
+If the compiler produces valid assembly code that does not correctly
+execute the input source code, that is a compiler bug.
+
+<p>However, you must double-check to make sure, because you may have a
+program whose behavior is undefined, which happened by chance to give
+the desired results with another C or C++ compiler.
+</p>
+<p>For example, in many nonoptimizing compilers, you can write &lsquo;<samp>x;</samp>&rsquo;
+at the end of a function instead of &lsquo;<samp>return x;</samp>&rsquo;, with the same
+results.  But the value of the function is undefined if <code>return</code>
+is omitted; it is not a bug when GCC produces different results.
+</p>
+<p>Problems often result from expressions with two increment operators,
+as in <code>f (*p++, *p++)</code>.  Your previous compiler might have
+interpreted that expression the way you intended; GCC might
+interpret it another way.  Neither compiler is wrong.  The bug is
+in your code.
+</p>
+<p>After you have localized the error to a single source line, it should
+be easy to check for these things.  If your program is correct and
+well defined, you have found a compiler bug.
+</p>
+</li><li> If the compiler produces an error message for valid input, that is a
+compiler bug.
+
+</li><li> <a name="index-invalid-input"></a>
+If the compiler does not produce an error message for invalid input,
+that is a compiler bug.  However, you should note that your idea of
+&ldquo;invalid input&rdquo; might be someone else&rsquo;s idea of &ldquo;an extension&rdquo; or
+&ldquo;support for traditional practice&rdquo;.
+
+</li><li> If you are an experienced user of one of the languages GCC supports, your
+suggestions for improvement of GCC are welcome in any case.
+</li></ul>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Bug-Reporting.html#Bug-Reporting" accesskey="n" rel="next">Bug Reporting</a>, Up: <a href="Bugs.html#Bugs" accesskey="u" rel="up">Bugs</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

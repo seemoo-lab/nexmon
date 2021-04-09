@@ -1,0 +1,708 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: Top</title>
+
+<meta name="description" content="The GNU Fortran Compiler: Top">
+<meta name="keywords" content="The GNU Fortran Compiler: Top">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="../dir/index.html" rel="up" title="(dir)">
+<link href="Introduction.html#Introduction" rel="next" title="Introduction">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<h1 class="settitle" align="center">The GNU Fortran Compiler</h1>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<a name="SEC_Overview"></a>
+<h2 class="shortcontents-heading">Short Table of Contents</h2>
+
+<div class="shortcontents">
+<ul class="no-bullet">
+<li><a name="stoc-Introduction-2" href="#toc-Introduction-2">1 Introduction</a></li>
+<li><a name="stoc-GNU-Fortran-Command-Options" href="#toc-GNU-Fortran-Command-Options">2 GNU Fortran Command Options</a></li>
+<li><a name="stoc-Runtime_003a-Influencing-runtime-behavior-with-environment-variables" href="#toc-Runtime_003a-Influencing-runtime-behavior-with-environment-variables">3 Runtime:  Influencing runtime behavior with environment variables</a></li>
+<li><a name="stoc-Fortran-standards-status-1" href="#toc-Fortran-standards-status-1">4 Fortran standards status</a></li>
+<li><a name="stoc-Compiler-Characteristics-1" href="#toc-Compiler-Characteristics-1">5 Compiler Characteristics</a></li>
+<li><a name="stoc-Extensions-1" href="#toc-Extensions-1">6 Extensions</a></li>
+<li><a name="stoc-Mixed_002dLanguage-Programming-1" href="#toc-Mixed_002dLanguage-Programming-1">7 Mixed-Language Programming</a></li>
+<li><a name="stoc-Coarray-Programming-1" href="#toc-Coarray-Programming-1">8 Coarray Programming</a></li>
+<li><a name="stoc-Intrinsic-Procedures-1" href="#toc-Intrinsic-Procedures-1">9 Intrinsic Procedures</a></li>
+<li><a name="stoc-Intrinsic-Modules-1" href="#toc-Intrinsic-Modules-1">10 Intrinsic Modules</a></li>
+<li><a name="stoc-Contributing-1" href="#toc-Contributing-1">Contributing</a></li>
+<li><a name="stoc-GNU-General-Public-License" href="#toc-GNU-General-Public-License">GNU General Public License</a></li>
+<li><a name="stoc-GNU-Free-Documentation-License-1" href="#toc-GNU-Free-Documentation-License-1">GNU Free Documentation License</a></li>
+<li><a name="stoc-Funding-Free-Software" href="#toc-Funding-Free-Software">Funding Free Software</a></li>
+<li><a name="stoc-Option-Index-1" href="#toc-Option-Index-1">Option Index</a></li>
+<li><a name="stoc-Keyword-Index-1" href="#toc-Keyword-Index-1">Keyword Index</a></li>
+</ul>
+</div>
+
+
+<a name="SEC_Contents"></a>
+<h2 class="contents-heading">Table of Contents</h2>
+
+<div class="contents">
+
+<ul class="no-bullet">
+  <li><a name="toc-Introduction-2" href="Introduction.html#Introduction">1 Introduction</a>
+  <ul class="no-bullet">
+    <li><a name="toc-About-GNU-Fortran-1" href="About-GNU-Fortran.html#About-GNU-Fortran">1.1 About GNU Fortran</a></li>
+    <li><a name="toc-GNU-Fortran-and-GCC-1" href="GNU-Fortran-and-GCC.html#GNU-Fortran-and-GCC">1.2 GNU Fortran and GCC</a></li>
+    <li><a name="toc-Preprocessing-and-conditional-compilation-1" href="Preprocessing-and-conditional-compilation.html#Preprocessing-and-conditional-compilation">1.3 Preprocessing and conditional compilation</a></li>
+    <li><a name="toc-GNU-Fortran-and-G77-1" href="GNU-Fortran-and-G77.html#GNU-Fortran-and-G77">1.4 GNU Fortran and G77</a></li>
+    <li><a name="toc-Project-Status-1" href="Project-Status.html#Project-Status">1.5 Project Status</a></li>
+    <li><a name="toc-Standards-1" href="Standards.html#Standards">1.6 Standards</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Varying-Length-Character-Strings-1" href="Varying-Length-Character-Strings.html#Varying-Length-Character-Strings">1.6.1 Varying Length Character Strings</a></li>
+    </ul></li>
+  </ul></li>
+  <li><a name="toc-GNU-Fortran-Command-Options" href="Invoking-GNU-Fortran.html#Invoking-GNU-Fortran">2 GNU Fortran Command Options</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Option-summary" href="Option-Summary.html#Option-Summary">2.1 Option summary</a></li>
+    <li><a name="toc-Options-controlling-Fortran-dialect" href="Fortran-Dialect-Options.html#Fortran-Dialect-Options">2.2 Options controlling Fortran dialect</a></li>
+    <li><a name="toc-Enable-and-customize-preprocessing" href="Preprocessing-Options.html#Preprocessing-Options">2.3 Enable and customize preprocessing</a></li>
+    <li><a name="toc-Options-to-request-or-suppress-errors-and-warnings" href="Error-and-Warning-Options.html#Error-and-Warning-Options">2.4 Options to request or suppress errors and warnings</a></li>
+    <li><a name="toc-Options-for-debugging-your-program-or-GNU-Fortran" href="Debugging-Options.html#Debugging-Options">2.5 Options for debugging your program or GNU Fortran</a></li>
+    <li><a name="toc-Options-for-directory-search" href="Directory-Options.html#Directory-Options">2.6 Options for directory search</a></li>
+    <li><a name="toc-Influencing-the-linking-step" href="Link-Options.html#Link-Options">2.7 Influencing the linking step</a></li>
+    <li><a name="toc-Influencing-runtime-behavior" href="Runtime-Options.html#Runtime-Options">2.8 Influencing runtime behavior</a></li>
+    <li><a name="toc-Options-for-code-generation-conventions" href="Code-Gen-Options.html#Code-Gen-Options">2.9 Options for code generation conventions</a></li>
+    <li><a name="toc-Options-for-interoperability-with-other-languages" href="Interoperability-Options.html#Interoperability-Options">2.10 Options for interoperability with other languages</a></li>
+    <li><a name="toc-Environment-variables-affecting-gfortran" href="Environment-Variables.html#Environment-Variables">2.11 Environment variables affecting <code>gfortran</code></a></li>
+  </ul></li>
+  <li><a name="toc-Runtime_003a-Influencing-runtime-behavior-with-environment-variables" href="Runtime.html#Runtime">3 Runtime:  Influencing runtime behavior with environment variables</a>
+  <ul class="no-bullet">
+    <li><a name="toc-TMPDIR_002d_002d_002dDirectory-for-scratch-files" href="TMPDIR.html#TMPDIR">3.1 <code>TMPDIR</code>&mdash;Directory for scratch files</a></li>
+    <li><a name="toc-GFORTRAN_005fSTDIN_005fUNIT_002d_002d_002dUnit-number-for-standard-input" href="GFORTRAN_005fSTDIN_005fUNIT.html#GFORTRAN_005fSTDIN_005fUNIT">3.2 <code>GFORTRAN_STDIN_UNIT</code>&mdash;Unit number for standard input</a></li>
+    <li><a name="toc-GFORTRAN_005fSTDOUT_005fUNIT_002d_002d_002dUnit-number-for-standard-output" href="GFORTRAN_005fSTDOUT_005fUNIT.html#GFORTRAN_005fSTDOUT_005fUNIT">3.3 <code>GFORTRAN_STDOUT_UNIT</code>&mdash;Unit number for standard output</a></li>
+    <li><a name="toc-GFORTRAN_005fSTDERR_005fUNIT_002d_002d_002dUnit-number-for-standard-error" href="GFORTRAN_005fSTDERR_005fUNIT.html#GFORTRAN_005fSTDERR_005fUNIT">3.4 <code>GFORTRAN_STDERR_UNIT</code>&mdash;Unit number for standard error</a></li>
+    <li><a name="toc-GFORTRAN_005fUNBUFFERED_005fALL_002d_002d_002dDo-not-buffer-I_002fO-on-all-units" href="GFORTRAN_005fUNBUFFERED_005fALL.html#GFORTRAN_005fUNBUFFERED_005fALL">3.5 <code>GFORTRAN_UNBUFFERED_ALL</code>&mdash;Do not buffer I/O on all units</a></li>
+    <li><a name="toc-GFORTRAN_005fUNBUFFERED_005fPRECONNECTED_002d_002d_002dDo-not-buffer-I_002fO-on-preconnected-units" href="GFORTRAN_005fUNBUFFERED_005fPRECONNECTED.html#GFORTRAN_005fUNBUFFERED_005fPRECONNECTED">3.6 <code>GFORTRAN_UNBUFFERED_PRECONNECTED</code>&mdash;Do not buffer I/O on preconnected units</a></li>
+    <li><a name="toc-GFORTRAN_005fSHOW_005fLOCUS_002d_002d_002dShow-location-for-runtime-errors" href="GFORTRAN_005fSHOW_005fLOCUS.html#GFORTRAN_005fSHOW_005fLOCUS">3.7 <code>GFORTRAN_SHOW_LOCUS</code>&mdash;Show location for runtime errors</a></li>
+    <li><a name="toc-GFORTRAN_005fOPTIONAL_005fPLUS_002d_002d_002dPrint-leading-_002b-where-permitted" href="GFORTRAN_005fOPTIONAL_005fPLUS.html#GFORTRAN_005fOPTIONAL_005fPLUS">3.8 <code>GFORTRAN_OPTIONAL_PLUS</code>&mdash;Print leading + where permitted</a></li>
+    <li><a name="toc-GFORTRAN_005fLIST_005fSEPARATOR_002d_002d_002dSeparator-for-list-output" href="GFORTRAN_005fLIST_005fSEPARATOR.html#GFORTRAN_005fLIST_005fSEPARATOR">3.9 <code>GFORTRAN_LIST_SEPARATOR</code>&mdash;Separator for list output</a></li>
+    <li><a name="toc-GFORTRAN_005fCONVERT_005fUNIT_002d_002d_002dSet-endianness-for-unformatted-I_002fO" href="GFORTRAN_005fCONVERT_005fUNIT.html#GFORTRAN_005fCONVERT_005fUNIT">3.10 <code>GFORTRAN_CONVERT_UNIT</code>&mdash;Set endianness for unformatted I/O</a></li>
+    <li><a name="toc-GFORTRAN_005fERROR_005fBACKTRACE_002d_002d_002dShow-backtrace-on-run_002dtime-errors" href="GFORTRAN_005fERROR_005fBACKTRACE.html#GFORTRAN_005fERROR_005fBACKTRACE">3.11 <code>GFORTRAN_ERROR_BACKTRACE</code>&mdash;Show backtrace on run-time errors</a></li>
+    <li><a name="toc-GFORTRAN_005fFORMATTED_005fBUFFER_005fSIZE_002d_002d_002dSet-buffer-size-for-formatted-I_002fO" href="GFORTRAN_005fFORMATTED_005fBUFFER_005fSIZE.html#GFORTRAN_005fFORMATTED_005fBUFFER_005fSIZE">3.12 <code>GFORTRAN_FORMATTED_BUFFER_SIZE</code>&mdash;Set buffer size for formatted I/O</a></li>
+    <li><a name="toc-GFORTRAN_005fUNFORMATTED_005fBUFFER_005fSIZE_002d_002d_002dSet-buffer-size-for-unformatted-I_002fO" href="GFORTRAN_005fUNFORMATTED_005fBUFFER_005fSIZE.html#GFORTRAN_005fUNFORMATTED_005fBUFFER_005fSIZE">3.13 <code>GFORTRAN_UNFORMATTED_BUFFER_SIZE</code>&mdash;Set buffer size for unformatted I/O</a></li>
+  </ul></li>
+  <li><a name="toc-Fortran-standards-status-1" href="Fortran-standards-status.html#Fortran-standards-status">4 Fortran standards status</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Fortran-2003-status-1" href="Fortran-2003-status.html#Fortran-2003-status">4.1 Fortran 2003 status</a></li>
+    <li><a name="toc-Fortran-2008-status-1" href="Fortran-2008-status.html#Fortran-2008-status">4.2 Fortran 2008 status</a></li>
+    <li><a name="toc-Status-of-Fortran-2018-support" href="Fortran-2018-status.html#Fortran-2018-status">4.3 Status of Fortran 2018 support</a>
+    <ul class="no-bullet">
+      <li><a name="toc-TS-29113-Status-_0028Further-Interoperability-with-C_0029" href="Fortran-2018-status.html#TS-29113-Status-_0028Further-Interoperability-with-C_0029">4.3.1 TS 29113 Status (Further Interoperability with C)</a></li>
+      <li><a name="toc-TS-18508-Status-_0028Additional-Parallel-Features_0029" href="Fortran-2018-status.html#TS-18508-Status-_0028Additional-Parallel-Features_0029">4.3.2 TS 18508 Status (Additional Parallel Features)</a></li>
+    </ul></li>
+  </ul></li>
+  <li><a name="toc-Compiler-Characteristics-1" href="Compiler-Characteristics.html#Compiler-Characteristics">5 Compiler Characteristics</a>
+  <ul class="no-bullet">
+    <li><a name="toc-KIND-Type-Parameters-1" href="KIND-Type-Parameters.html#KIND-Type-Parameters">5.1 KIND Type Parameters</a></li>
+    <li><a name="toc-Internal-representation-of-LOGICAL-variables-1" href="Internal-representation-of-LOGICAL-variables.html#Internal-representation-of-LOGICAL-variables">5.2 Internal representation of LOGICAL variables</a></li>
+    <li><a name="toc-Evaluation-of-logical-expressions-1" href="Evaluation-of-logical-expressions.html#Evaluation-of-logical-expressions">5.3 Evaluation of logical expressions</a></li>
+    <li><a name="toc-MAX-and-MIN-intrinsics-with-REAL-NaN-arguments-1" href="MAX-and-MIN-intrinsics-with-REAL-NaN-arguments.html#MAX-and-MIN-intrinsics-with-REAL-NaN-arguments">5.4 MAX and MIN intrinsics with REAL NaN arguments</a></li>
+    <li><a name="toc-Thread_002dsafety-of-the-runtime-library-1" href="Thread_002dsafety-of-the-runtime-library.html#Thread_002dsafety-of-the-runtime-library">5.5 Thread-safety of the runtime library</a></li>
+    <li><a name="toc-Data-consistency-and-durability-1" href="Data-consistency-and-durability.html#Data-consistency-and-durability">5.6 Data consistency and durability</a></li>
+    <li><a name="toc-Files-opened-without-an-explicit-ACTION_003d-specifier-1" href="Files-opened-without-an-explicit-ACTION_003d-specifier.html#Files-opened-without-an-explicit-ACTION_003d-specifier">5.7 Files opened without an explicit ACTION= specifier</a></li>
+    <li><a name="toc-File-operations-on-symbolic-links-1" href="File-operations-on-symbolic-links.html#File-operations-on-symbolic-links">5.8 File operations on symbolic links</a></li>
+    <li><a name="toc-File-format-of-unformatted-sequential-files-1" href="File-format-of-unformatted-sequential-files.html#File-format-of-unformatted-sequential-files">5.9 File format of unformatted sequential files</a></li>
+    <li><a name="toc-Asynchronous-I_002fO-1" href="Asynchronous-I_002fO.html#Asynchronous-I_002fO">5.10 Asynchronous I/O</a></li>
+  </ul></li>
+  <li><a name="toc-Extensions-1" href="Extensions.html#Extensions">6 Extensions</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Extensions-implemented-in-GNU-Fortran-1" href="Extensions-implemented-in-GNU-Fortran.html#Extensions-implemented-in-GNU-Fortran">6.1 Extensions implemented in GNU Fortran</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Old_002dstyle-kind-specifications-1" href="Old_002dstyle-kind-specifications.html#Old_002dstyle-kind-specifications">6.1.1 Old-style kind specifications</a></li>
+      <li><a name="toc-Old_002dstyle-variable-initialization-1" href="Old_002dstyle-variable-initialization.html#Old_002dstyle-variable-initialization">6.1.2 Old-style variable initialization</a></li>
+      <li><a name="toc-Extensions-to-namelist-1" href="Extensions-to-namelist.html#Extensions-to-namelist">6.1.3 Extensions to namelist</a></li>
+      <li><a name="toc-X-format-descriptor-without-count-field-1" href="X-format-descriptor-without-count-field.html#X-format-descriptor-without-count-field">6.1.4 <code>X</code> format descriptor without count field</a></li>
+      <li><a name="toc-Commas-in-FORMAT-specifications-1" href="Commas-in-FORMAT-specifications.html#Commas-in-FORMAT-specifications">6.1.5 Commas in <code>FORMAT</code> specifications</a></li>
+      <li><a name="toc-Missing-period-in-FORMAT-specifications-1" href="Missing-period-in-FORMAT-specifications.html#Missing-period-in-FORMAT-specifications">6.1.6 Missing period in <code>FORMAT</code> specifications</a></li>
+      <li><a name="toc-I_002fO-item-lists-1" href="I_002fO-item-lists.html#I_002fO-item-lists">6.1.7 I/O item lists</a></li>
+      <li><a name="toc-Q-exponent_002dletter-1" href="Q-exponent_002dletter.html#Q-exponent_002dletter">6.1.8 <code>Q</code> exponent-letter</a></li>
+      <li><a name="toc-BOZ-literal-constants-1" href="BOZ-literal-constants.html#BOZ-literal-constants">6.1.9 BOZ literal constants</a></li>
+      <li><a name="toc-Real-array-indices-1" href="Real-array-indices.html#Real-array-indices">6.1.10 Real array indices</a></li>
+      <li><a name="toc-Unary-operators-1" href="Unary-operators.html#Unary-operators">6.1.11 Unary operators</a></li>
+      <li><a name="toc-Implicitly-convert-LOGICAL-and-INTEGER-values-1" href="Implicitly-convert-LOGICAL-and-INTEGER-values.html#Implicitly-convert-LOGICAL-and-INTEGER-values">6.1.12 Implicitly convert <code>LOGICAL</code> and <code>INTEGER</code> values</a></li>
+      <li><a name="toc-Hollerith-constants-support-1" href="Hollerith-constants-support.html#Hollerith-constants-support">6.1.13 Hollerith constants support</a></li>
+      <li><a name="toc-Cray-pointers-1" href="Cray-pointers.html#Cray-pointers">6.1.14 Cray pointers</a></li>
+      <li><a name="toc-CONVERT-specifier-1" href="CONVERT-specifier.html#CONVERT-specifier">6.1.15 <code>CONVERT</code> specifier</a></li>
+      <li><a name="toc-OpenMP-1" href="OpenMP.html#OpenMP">6.1.16 OpenMP</a></li>
+      <li><a name="toc-OpenACC-1" href="OpenACC.html#OpenACC">6.1.17 OpenACC</a></li>
+      <li><a name="toc-Argument-list-functions-_0025VAL_002c-_0025REF-and-_0025LOC" href="Argument-list-functions.html#Argument-list-functions">6.1.18 Argument list functions <code>%VAL</code>, <code>%REF</code> and <code>%LOC</code></a></li>
+      <li><a name="toc-Read_002fWrite-after-EOF-marker-1" href="Read_002fWrite-after-EOF-marker.html#Read_002fWrite-after-EOF-marker">6.1.19 Read/Write after EOF marker</a></li>
+      <li><a name="toc-STRUCTURE-and-RECORD-1" href="STRUCTURE-and-RECORD.html#STRUCTURE-and-RECORD">6.1.20 <code>STRUCTURE</code> and <code>RECORD</code></a></li>
+      <li><a name="toc-UNION-and-MAP-1" href="UNION-and-MAP.html#UNION-and-MAP">6.1.21 <code>UNION</code> and <code>MAP</code></a></li>
+      <li><a name="toc-Type-variants-for-integer-intrinsics-1" href="Type-variants-for-integer-intrinsics.html#Type-variants-for-integer-intrinsics">6.1.22 Type variants for integer intrinsics</a></li>
+      <li><a name="toc-AUTOMATIC-and-STATIC-attributes-1" href="AUTOMATIC-and-STATIC-attributes.html#AUTOMATIC-and-STATIC-attributes">6.1.23 <code>AUTOMATIC</code> and <code>STATIC</code> attributes</a></li>
+      <li><a name="toc-Extended-math-intrinsics-1" href="Extended-math-intrinsics.html#Extended-math-intrinsics">6.1.24 Extended math intrinsics</a></li>
+      <li><a name="toc-Form-feed-as-whitespace-1" href="Form-feed-as-whitespace.html#Form-feed-as-whitespace">6.1.25 Form feed as whitespace</a></li>
+      <li><a name="toc-TYPE-as-an-alias-for-PRINT-1" href="TYPE-as-an-alias-for-PRINT.html#TYPE-as-an-alias-for-PRINT">6.1.26 TYPE as an alias for PRINT</a></li>
+      <li><a name="toc-_0025LOC-as-an-rvalue-1" href="_0025LOC-as-an-rvalue.html#g_t_0025LOC-as-an-rvalue">6.1.27 %LOC as an rvalue</a></li>
+      <li><a name="toc-_002eXOR_002e-operator-1" href="_002eXOR_002e-operator.html#g_t_002eXOR_002e-operator">6.1.28 .XOR. operator</a></li>
+      <li><a name="toc-Bitwise-logical-operators-1" href="Bitwise-logical-operators.html#Bitwise-logical-operators">6.1.29 Bitwise logical operators</a></li>
+      <li><a name="toc-Extended-I_002fO-specifiers-1" href="Extended-I_002fO-specifiers.html#Extended-I_002fO-specifiers">6.1.30 Extended I/O specifiers</a></li>
+      <li><a name="toc-Legacy-PARAMETER-statements-1" href="Legacy-PARAMETER-statements.html#Legacy-PARAMETER-statements">6.1.31 Legacy PARAMETER statements</a></li>
+      <li><a name="toc-Default-exponents-1" href="Default-exponents.html#Default-exponents">6.1.32 Default exponents</a></li>
+    </ul></li>
+    <li><a name="toc-Extensions-not-implemented-in-GNU-Fortran-1" href="Extensions-not-implemented-in-GNU-Fortran.html#Extensions-not-implemented-in-GNU-Fortran">6.2 Extensions not implemented in GNU Fortran</a>
+    <ul class="no-bullet">
+      <li><a name="toc-ENCODE-and-DECODE-statements-1" href="ENCODE-and-DECODE-statements.html#ENCODE-and-DECODE-statements">6.2.1 <code>ENCODE</code> and <code>DECODE</code> statements</a></li>
+      <li><a name="toc-Variable-FORMAT-expressions-1" href="Variable-FORMAT-expressions.html#Variable-FORMAT-expressions">6.2.2 Variable <code>FORMAT</code> expressions</a></li>
+      <li><a name="toc-Alternate-complex-function-syntax-1" href="Alternate-complex-function-syntax.html#Alternate-complex-function-syntax">6.2.3 Alternate complex function syntax</a></li>
+      <li><a name="toc-Volatile-COMMON-blocks-1" href="Volatile-COMMON-blocks.html#Volatile-COMMON-blocks">6.2.4 Volatile <code>COMMON</code> blocks</a></li>
+      <li><a name="toc-OPEN_0028-_002e_002e_002e-NAME_003d_0029-1" href="OPEN_0028-_002e_002e_002e-NAME_003d_0029.html#OPEN_0028-_002e_002e_002e-NAME_003d_0029">6.2.5 <code>OPEN( ... NAME=)</code></a></li>
+      <li><a name="toc-Q-edit-descriptor-1" href="Q-edit-descriptor.html#Q-edit-descriptor">6.2.6 <code>Q</code> edit descriptor</a></li>
+    </ul></li>
+  </ul></li>
+  <li><a name="toc-Mixed_002dLanguage-Programming-1" href="Mixed_002dLanguage-Programming.html#Mixed_002dLanguage-Programming">7 Mixed-Language Programming</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Interoperability-with-C-1" href="Interoperability-with-C.html#Interoperability-with-C">7.1 Interoperability with C</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Intrinsic-Types-1" href="Intrinsic-Types.html#Intrinsic-Types">7.1.1 Intrinsic Types</a></li>
+      <li><a name="toc-Derived-Types-and-struct-1" href="Derived-Types-and-struct.html#Derived-Types-and-struct">7.1.2 Derived Types and struct</a></li>
+      <li><a name="toc-Interoperable-Global-Variables-1" href="Interoperable-Global-Variables.html#Interoperable-Global-Variables">7.1.3 Interoperable Global Variables</a></li>
+      <li><a name="toc-Interoperable-Subroutines-and-Functions-1" href="Interoperable-Subroutines-and-Functions.html#Interoperable-Subroutines-and-Functions">7.1.4 Interoperable Subroutines and Functions</a></li>
+      <li><a name="toc-Working-with-Pointers-1" href="Working-with-Pointers.html#Working-with-Pointers">7.1.5 Working with Pointers</a></li>
+      <li><a name="toc-Further-Interoperability-of-Fortran-with-C-1" href="Further-Interoperability-of-Fortran-with-C.html#Further-Interoperability-of-Fortran-with-C">7.1.6 Further Interoperability of Fortran with C</a></li>
+    </ul></li>
+    <li><a name="toc-GNU-Fortran-Compiler-Directives-1" href="GNU-Fortran-Compiler-Directives.html#GNU-Fortran-Compiler-Directives">7.2 GNU Fortran Compiler Directives</a>
+    <ul class="no-bullet">
+      <li><a name="toc-ATTRIBUTES-directive-1" href="ATTRIBUTES-directive.html#ATTRIBUTES-directive">7.2.1 ATTRIBUTES directive</a></li>
+      <li><a name="toc-UNROLL-directive-1" href="UNROLL-directive.html#UNROLL-directive">7.2.2 UNROLL directive</a></li>
+      <li><a name="toc-BUILTIN-directive-1" href="BUILTIN-directive.html#BUILTIN-directive">7.2.3 BUILTIN directive</a></li>
+      <li><a name="toc-IVDEP-directive-1" href="IVDEP-directive.html#IVDEP-directive">7.2.4 IVDEP directive</a></li>
+      <li><a name="toc-VECTOR-directive-1" href="VECTOR-directive.html#VECTOR-directive">7.2.5 VECTOR directive</a></li>
+      <li><a name="toc-NOVECTOR-directive-1" href="NOVECTOR-directive.html#NOVECTOR-directive">7.2.6 NOVECTOR directive</a></li>
+    </ul></li>
+    <li><a name="toc-Non_002dFortran-Main-Program-1" href="Non_002dFortran-Main-Program.html#Non_002dFortran-Main-Program">7.3 Non-Fortran Main Program</a>
+    <ul class="no-bullet">
+      <li><a name="toc-_005fgfortran_005fset_005fargs-_002d_002d_002d-Save-command_002dline-arguments" href="_005fgfortran_005fset_005fargs.html#g_t_005fgfortran_005fset_005fargs">7.3.1 <code>_gfortran_set_args</code> &mdash; Save command-line arguments</a></li>
+      <li><a name="toc-_005fgfortran_005fset_005foptions-_002d_002d_002d-Set-library-option-flags" href="_005fgfortran_005fset_005foptions.html#g_t_005fgfortran_005fset_005foptions">7.3.2 <code>_gfortran_set_options</code> &mdash; Set library option flags</a></li>
+      <li><a name="toc-_005fgfortran_005fset_005fconvert-_002d_002d_002d-Set-endian-conversion" href="_005fgfortran_005fset_005fconvert.html#g_t_005fgfortran_005fset_005fconvert">7.3.3 <code>_gfortran_set_convert</code> &mdash; Set endian conversion</a></li>
+      <li><a name="toc-_005fgfortran_005fset_005frecord_005fmarker-_002d_002d_002d-Set-length-of-record-markers" href="_005fgfortran_005fset_005frecord_005fmarker.html#g_t_005fgfortran_005fset_005frecord_005fmarker">7.3.4 <code>_gfortran_set_record_marker</code> &mdash; Set length of record markers</a></li>
+      <li><a name="toc-_005fgfortran_005fset_005ffpe-_002d_002d_002d-Enable-floating-point-exception-traps" href="_005fgfortran_005fset_005ffpe.html#g_t_005fgfortran_005fset_005ffpe">7.3.5 <code>_gfortran_set_fpe</code> &mdash; Enable floating point exception traps</a></li>
+      <li><a name="toc-_005fgfortran_005fset_005fmax_005fsubrecord_005flength-_002d_002d_002d-Set-subrecord-length" href="_005fgfortran_005fset_005fmax_005fsubrecord_005flength.html#g_t_005fgfortran_005fset_005fmax_005fsubrecord_005flength">7.3.6 <code>_gfortran_set_max_subrecord_length</code> &mdash; Set subrecord length</a></li>
+    </ul></li>
+    <li><a name="toc-Naming-and-argument_002dpassing-conventions-1" href="Naming-and-argument_002dpassing-conventions.html#Naming-and-argument_002dpassing-conventions">7.4 Naming and argument-passing conventions</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Naming-conventions-1" href="Naming-conventions.html#Naming-conventions">7.4.1 Naming conventions</a></li>
+      <li><a name="toc-Argument-passing-conventions-1" href="Argument-passing-conventions.html#Argument-passing-conventions">7.4.2 Argument passing conventions</a></li>
+    </ul></li>
+  </ul></li>
+  <li><a name="toc-Coarray-Programming-1" href="Coarray-Programming.html#Coarray-Programming">8 Coarray Programming</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Type-and-enum-ABI-Documentation-1" href="Type-and-enum-ABI-Documentation.html#Type-and-enum-ABI-Documentation">8.1 Type and enum ABI Documentation</a>
+    <ul class="no-bullet">
+      <li><a name="toc-caf_005ftoken_005ft-1" href="caf_005ftoken_005ft.html#caf_005ftoken_005ft">8.1.1 <code>caf_token_t</code></a></li>
+      <li><a name="toc-caf_005fregister_005ft-1" href="caf_005fregister_005ft.html#caf_005fregister_005ft">8.1.2 <code>caf_register_t</code></a></li>
+      <li><a name="toc-caf_005fderegister_005ft-1" href="caf_005fderegister_005ft.html#caf_005fderegister_005ft">8.1.3 <code>caf_deregister_t</code></a></li>
+      <li><a name="toc-caf_005freference_005ft-1" href="caf_005freference_005ft.html#caf_005freference_005ft">8.1.4 <code>caf_reference_t</code></a></li>
+      <li><a name="toc-caf_005fteam_005ft-1" href="caf_005fteam_005ft.html#caf_005fteam_005ft">8.1.5 <code>caf_team_t</code></a></li>
+    </ul></li>
+    <li><a name="toc-Function-ABI-Documentation-1" href="Function-ABI-Documentation.html#Function-ABI-Documentation">8.2 Function ABI Documentation</a>
+    <ul class="no-bullet">
+      <li><a name="toc-_005fgfortran_005fcaf_005finit-_002d_002d_002d-Initialiation-function" href="_005fgfortran_005fcaf_005finit.html#g_t_005fgfortran_005fcaf_005finit">8.2.1 <code>_gfortran_caf_init</code> &mdash; Initialiation function</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005ffinish-_002d_002d_002d-Finalization-function" href="_005fgfortran_005fcaf_005ffinish.html#g_t_005fgfortran_005fcaf_005ffinish">8.2.2 <code>_gfortran_caf_finish</code> &mdash; Finalization function</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005fthis_005fimage-_002d_002d_002d-Querying-the-image-number" href="_005fgfortran_005fcaf_005fthis_005fimage.html#g_t_005fgfortran_005fcaf_005fthis_005fimage">8.2.3 <code>_gfortran_caf_this_image</code> &mdash; Querying the image number</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005fnum_005fimages-_002d_002d_002d-Querying-the-maximal-number-of-images" href="_005fgfortran_005fcaf_005fnum_005fimages.html#g_t_005fgfortran_005fcaf_005fnum_005fimages">8.2.4 <code>_gfortran_caf_num_images</code> &mdash; Querying the maximal number of images</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005fimage_005fstatus-_002d_002d_002d-Query-the-status-of-an-image" href="_005fgfortran_005fcaf_005fimage_005fstatus.html#g_t_005fgfortran_005fcaf_005fimage_005fstatus">8.2.5 <code>_gfortran_caf_image_status</code> &mdash; Query the status of an image</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005ffailed_005fimages-_002d_002d_002d-Get-an-array-of-the-indexes-of-the-failed-images" href="_005fgfortran_005fcaf_005ffailed_005fimages.html#g_t_005fgfortran_005fcaf_005ffailed_005fimages">8.2.6 <code>_gfortran_caf_failed_images</code> &mdash; Get an array of the indexes of the failed images</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005fstopped_005fimages-_002d_002d_002d-Get-an-array-of-the-indexes-of-the-stopped-images" href="_005fgfortran_005fcaf_005fstopped_005fimages.html#g_t_005fgfortran_005fcaf_005fstopped_005fimages">8.2.7 <code>_gfortran_caf_stopped_images</code> &mdash; Get an array of the indexes of the stopped images</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005fregister-_002d_002d_002d-Registering-coarrays" href="_005fgfortran_005fcaf_005fregister.html#g_t_005fgfortran_005fcaf_005fregister">8.2.8 <code>_gfortran_caf_register</code> &mdash; Registering coarrays</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005fderegister-_002d_002d_002d-Deregistering-coarrays" href="_005fgfortran_005fcaf_005fderegister.html#g_t_005fgfortran_005fcaf_005fderegister">8.2.9 <code>_gfortran_caf_deregister</code> &mdash; Deregistering coarrays</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005fis_005fpresent-_002d_002d_002d-Query-whether-an-allocatable-or-pointer-component-in-a-derived-type-coarray-is-allocated" href="_005fgfortran_005fcaf_005fis_005fpresent.html#g_t_005fgfortran_005fcaf_005fis_005fpresent">8.2.10 <code>_gfortran_caf_is_present</code> &mdash; Query whether an allocatable or pointer component in a derived type coarray is allocated</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005fsend-_002d_002d_002d-Sending-data-from-a-local-image-to-a-remote-image" href="_005fgfortran_005fcaf_005fsend.html#g_t_005fgfortran_005fcaf_005fsend">8.2.11 <code>_gfortran_caf_send</code> &mdash; Sending data from a local image to a remote image</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005fget-_002d_002d_002d-Getting-data-from-a-remote-image" href="_005fgfortran_005fcaf_005fget.html#g_t_005fgfortran_005fcaf_005fget">8.2.12 <code>_gfortran_caf_get</code> &mdash; Getting data from a remote image</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005fsendget-_002d_002d_002d-Sending-data-between-remote-images" href="_005fgfortran_005fcaf_005fsendget.html#g_t_005fgfortran_005fcaf_005fsendget">8.2.13 <code>_gfortran_caf_sendget</code> &mdash; Sending data between remote images</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005fsend_005fby_005fref-_002d_002d_002d-Sending-data-from-a-local-image-to-a-remote-image-with-enhanced-referencing-options" href="_005fgfortran_005fcaf_005fsend_005fby_005fref.html#g_t_005fgfortran_005fcaf_005fsend_005fby_005fref">8.2.14 <code>_gfortran_caf_send_by_ref</code> &mdash; Sending data from a local image to a remote image with enhanced referencing options</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005fget_005fby_005fref-_002d_002d_002d-Getting-data-from-a-remote-image-using-enhanced-references" href="_005fgfortran_005fcaf_005fget_005fby_005fref.html#g_t_005fgfortran_005fcaf_005fget_005fby_005fref">8.2.15 <code>_gfortran_caf_get_by_ref</code> &mdash; Getting data from a remote image using enhanced references</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005fsendget_005fby_005fref-_002d_002d_002d-Sending-data-between-remote-images-using-enhanced-references-on-both-sides" href="_005fgfortran_005fcaf_005fsendget_005fby_005fref.html#g_t_005fgfortran_005fcaf_005fsendget_005fby_005fref">8.2.16 <code>_gfortran_caf_sendget_by_ref</code> &mdash; Sending data between remote images using enhanced references on both sides</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005flock-_002d_002d_002d-Locking-a-lock-variable" href="_005fgfortran_005fcaf_005flock.html#g_t_005fgfortran_005fcaf_005flock">8.2.17 <code>_gfortran_caf_lock</code> &mdash; Locking a lock variable</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005flock-_002d_002d_002d-Unlocking-a-lock-variable" href="_005fgfortran_005fcaf_005funlock.html#g_t_005fgfortran_005fcaf_005funlock">8.2.18 <code>_gfortran_caf_lock</code> &mdash; Unlocking a lock variable</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005fevent_005fpost-_002d_002d_002d-Post-an-event" href="_005fgfortran_005fcaf_005fevent_005fpost.html#g_t_005fgfortran_005fcaf_005fevent_005fpost">8.2.19 <code>_gfortran_caf_event_post</code> &mdash; Post an event</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005fevent_005fwait-_002d_002d_002d-Wait-that-an-event-occurred" href="_005fgfortran_005fcaf_005fevent_005fwait.html#g_t_005fgfortran_005fcaf_005fevent_005fwait">8.2.20 <code>_gfortran_caf_event_wait</code> &mdash; Wait that an event occurred</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005fevent_005fquery-_002d_002d_002d-Query-event-count" href="_005fgfortran_005fcaf_005fevent_005fquery.html#g_t_005fgfortran_005fcaf_005fevent_005fquery">8.2.21 <code>_gfortran_caf_event_query</code> &mdash; Query event count</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005fsync_005fall-_002d_002d_002d-All_002dimage-barrier" href="_005fgfortran_005fcaf_005fsync_005fall.html#g_t_005fgfortran_005fcaf_005fsync_005fall">8.2.22 <code>_gfortran_caf_sync_all</code> &mdash; All-image barrier</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005fsync_005fimages-_002d_002d_002d-Barrier-for-selected-images" href="_005fgfortran_005fcaf_005fsync_005fimages.html#g_t_005fgfortran_005fcaf_005fsync_005fimages">8.2.23 <code>_gfortran_caf_sync_images</code> &mdash; Barrier for selected images</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005fsync_005fmemory-_002d_002d_002d-Wait-for-completion-of-segment_002dmemory-operations" href="_005fgfortran_005fcaf_005fsync_005fmemory.html#g_t_005fgfortran_005fcaf_005fsync_005fmemory">8.2.24 <code>_gfortran_caf_sync_memory</code> &mdash; Wait for completion of segment-memory operations</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005ferror_005fstop-_002d_002d_002d-Error-termination-with-exit-code" href="_005fgfortran_005fcaf_005ferror_005fstop.html#g_t_005fgfortran_005fcaf_005ferror_005fstop">8.2.25 <code>_gfortran_caf_error_stop</code> &mdash; Error termination with exit code</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005ferror_005fstop_005fstr-_002d_002d_002d-Error-termination-with-string" href="_005fgfortran_005fcaf_005ferror_005fstop_005fstr.html#g_t_005fgfortran_005fcaf_005ferror_005fstop_005fstr">8.2.26 <code>_gfortran_caf_error_stop_str</code> &mdash; Error termination with string</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005ffail_005fimage-_002d_002d_002d-Mark-the-image-failed-and-end-its-execution" href="_005fgfortran_005fcaf_005ffail_005fimage.html#g_t_005fgfortran_005fcaf_005ffail_005fimage">8.2.27 <code>_gfortran_caf_fail_image</code> &mdash; Mark the image failed and end its execution</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005fatomic_005fdefine-_002d_002d_002d-Atomic-variable-assignment" href="_005fgfortran_005fcaf_005fatomic_005fdefine.html#g_t_005fgfortran_005fcaf_005fatomic_005fdefine">8.2.28 <code>_gfortran_caf_atomic_define</code> &mdash; Atomic variable assignment</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005fatomic_005fref-_002d_002d_002d-Atomic-variable-reference" href="_005fgfortran_005fcaf_005fatomic_005fref.html#g_t_005fgfortran_005fcaf_005fatomic_005fref">8.2.29 <code>_gfortran_caf_atomic_ref</code> &mdash; Atomic variable reference</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005fatomic_005fcas-_002d_002d_002d-Atomic-compare-and-swap" href="_005fgfortran_005fcaf_005fatomic_005fcas.html#g_t_005fgfortran_005fcaf_005fatomic_005fcas">8.2.30 <code>_gfortran_caf_atomic_cas</code> &mdash; Atomic compare and swap</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005fatomic_005fop-_002d_002d_002d-Atomic-operation" href="_005fgfortran_005fcaf_005fatomic_005fop.html#g_t_005fgfortran_005fcaf_005fatomic_005fop">8.2.31 <code>_gfortran_caf_atomic_op</code> &mdash; Atomic operation</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005fco_005fbroadcast-_002d_002d_002d-Sending-data-to-all-images" href="_005fgfortran_005fcaf_005fco_005fbroadcast.html#g_t_005fgfortran_005fcaf_005fco_005fbroadcast">8.2.32 <code>_gfortran_caf_co_broadcast</code> &mdash; Sending data to all images</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005fco_005fmax-_002d_002d_002d-Collective-maximum-reduction" href="_005fgfortran_005fcaf_005fco_005fmax.html#g_t_005fgfortran_005fcaf_005fco_005fmax">8.2.33 <code>_gfortran_caf_co_max</code> &mdash; Collective maximum reduction</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005fco_005fmin-_002d_002d_002d-Collective-minimum-reduction" href="_005fgfortran_005fcaf_005fco_005fmin.html#g_t_005fgfortran_005fcaf_005fco_005fmin">8.2.34 <code>_gfortran_caf_co_min</code> &mdash; Collective minimum reduction</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005fco_005fsum-_002d_002d_002d-Collective-summing-reduction" href="_005fgfortran_005fcaf_005fco_005fsum.html#g_t_005fgfortran_005fcaf_005fco_005fsum">8.2.35 <code>_gfortran_caf_co_sum</code> &mdash; Collective summing reduction</a></li>
+      <li><a name="toc-_005fgfortran_005fcaf_005fco_005freduce-_002d_002d_002d-Generic-collective-reduction" href="_005fgfortran_005fcaf_005fco_005freduce.html#g_t_005fgfortran_005fcaf_005fco_005freduce">8.2.36 <code>_gfortran_caf_co_reduce</code> &mdash; Generic collective reduction</a></li>
+    </ul></li>
+  </ul></li>
+  <li><a name="toc-Intrinsic-Procedures-1" href="Intrinsic-Procedures.html#Intrinsic-Procedures">9 Intrinsic Procedures</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Introduction-to-intrinsic-procedures" href="Introduction-to-Intrinsics.html#Introduction-to-Intrinsics">9.1 Introduction to intrinsic procedures</a></li>
+    <li><a name="toc-ABORT-_002d_002d_002d-Abort-the-program" href="ABORT.html#ABORT">9.2 <code>ABORT</code> &mdash; Abort the program</a></li>
+    <li><a name="toc-ABS-_002d_002d_002d-Absolute-value" href="ABS.html#ABS">9.3 <code>ABS</code> &mdash; Absolute value</a></li>
+    <li><a name="toc-ACCESS-_002d_002d_002d-Checks-file-access-modes" href="ACCESS.html#ACCESS">9.4 <code>ACCESS</code> &mdash; Checks file access modes</a></li>
+    <li><a name="toc-ACHAR-_002d_002d_002d-Character-in-ASCII-collating-sequence" href="ACHAR.html#ACHAR">9.5 <code>ACHAR</code> &mdash; Character in <acronym>ASCII</acronym> collating sequence</a></li>
+    <li><a name="toc-ACOS-_002d_002d_002d-Arccosine-function" href="ACOS.html#ACOS">9.6 <code>ACOS</code> &mdash; Arccosine function</a></li>
+    <li><a name="toc-ACOSD-_002d_002d_002d-Arccosine-function_002c-degrees" href="ACOSD.html#ACOSD">9.7 <code>ACOSD</code> &mdash; Arccosine function, degrees</a></li>
+    <li><a name="toc-ACOSH-_002d_002d_002d-Inverse-hyperbolic-cosine-function" href="ACOSH.html#ACOSH">9.8 <code>ACOSH</code> &mdash; Inverse hyperbolic cosine function</a></li>
+    <li><a name="toc-ADJUSTL-_002d_002d_002d-Left-adjust-a-string" href="ADJUSTL.html#ADJUSTL">9.9 <code>ADJUSTL</code> &mdash; Left adjust a string</a></li>
+    <li><a name="toc-ADJUSTR-_002d_002d_002d-Right-adjust-a-string" href="ADJUSTR.html#ADJUSTR">9.10 <code>ADJUSTR</code> &mdash; Right adjust a string</a></li>
+    <li><a name="toc-AIMAG-_002d_002d_002d-Imaginary-part-of-complex-number" href="AIMAG.html#AIMAG">9.11 <code>AIMAG</code> &mdash; Imaginary part of complex number</a></li>
+    <li><a name="toc-AINT-_002d_002d_002d-Truncate-to-a-whole-number" href="AINT.html#AINT">9.12 <code>AINT</code> &mdash; Truncate to a whole number</a></li>
+    <li><a name="toc-ALARM-_002d_002d_002d-Execute-a-routine-after-a-given-delay" href="ALARM.html#ALARM">9.13 <code>ALARM</code> &mdash; Execute a routine after a given delay</a></li>
+    <li><a name="toc-ALL-_002d_002d_002d-All-values-in-MASK-along-DIM-are-true" href="ALL.html#ALL">9.14 <code>ALL</code> &mdash; All values in <var>MASK</var> along <var>DIM</var> are true</a></li>
+    <li><a name="toc-ALLOCATED-_002d_002d_002d-Status-of-an-allocatable-entity" href="ALLOCATED.html#ALLOCATED">9.15 <code>ALLOCATED</code> &mdash; Status of an allocatable entity</a></li>
+    <li><a name="toc-AND-_002d_002d_002d-Bitwise-logical-AND" href="AND.html#AND">9.16 <code>AND</code> &mdash; Bitwise logical AND</a></li>
+    <li><a name="toc-ANINT-_002d_002d_002d-Nearest-whole-number" href="ANINT.html#ANINT">9.17 <code>ANINT</code> &mdash; Nearest whole number</a></li>
+    <li><a name="toc-ANY-_002d_002d_002d-Any-value-in-MASK-along-DIM-is-true" href="ANY.html#ANY">9.18 <code>ANY</code> &mdash; Any value in <var>MASK</var> along <var>DIM</var> is true</a></li>
+    <li><a name="toc-ASIN-_002d_002d_002d-Arcsine-function" href="ASIN.html#ASIN">9.19 <code>ASIN</code> &mdash; Arcsine function</a></li>
+    <li><a name="toc-ASIND-_002d_002d_002d-Arcsine-function_002c-degrees" href="ASIND.html#ASIND">9.20 <code>ASIND</code> &mdash; Arcsine function, degrees</a></li>
+    <li><a name="toc-ASINH-_002d_002d_002d-Inverse-hyperbolic-sine-function" href="ASINH.html#ASINH">9.21 <code>ASINH</code> &mdash; Inverse hyperbolic sine function</a></li>
+    <li><a name="toc-ASSOCIATED-_002d_002d_002d-Status-of-a-pointer-or-pointer_002ftarget-pair" href="ASSOCIATED.html#ASSOCIATED">9.22 <code>ASSOCIATED</code> &mdash; Status of a pointer or pointer/target pair</a></li>
+    <li><a name="toc-ATAN-_002d_002d_002d-Arctangent-function" href="ATAN.html#ATAN">9.23 <code>ATAN</code> &mdash; Arctangent function</a></li>
+    <li><a name="toc-ATAND-_002d_002d_002d-Arctangent-function_002c-degrees" href="ATAND.html#ATAND">9.24 <code>ATAND</code> &mdash; Arctangent function, degrees</a></li>
+    <li><a name="toc-ATAN2-_002d_002d_002d-Arctangent-function" href="ATAN2.html#ATAN2">9.25 <code>ATAN2</code> &mdash; Arctangent function</a></li>
+    <li><a name="toc-ATAN2D-_002d_002d_002d-Arctangent-function_002c-degrees" href="ATAN2D.html#ATAN2D">9.26 <code>ATAN2D</code> &mdash; Arctangent function, degrees</a></li>
+    <li><a name="toc-ATANH-_002d_002d_002d-Inverse-hyperbolic-tangent-function" href="ATANH.html#ATANH">9.27 <code>ATANH</code> &mdash; Inverse hyperbolic tangent function</a></li>
+    <li><a name="toc-ATOMIC_005fADD-_002d_002d_002d-Atomic-ADD-operation" href="ATOMIC_005fADD.html#ATOMIC_005fADD">9.28 <code>ATOMIC_ADD</code> &mdash; Atomic ADD operation</a></li>
+    <li><a name="toc-ATOMIC_005fAND-_002d_002d_002d-Atomic-bitwise-AND-operation" href="ATOMIC_005fAND.html#ATOMIC_005fAND">9.29 <code>ATOMIC_AND</code> &mdash; Atomic bitwise AND operation</a></li>
+    <li><a name="toc-ATOMIC_005fCAS-_002d_002d_002d-Atomic-compare-and-swap" href="ATOMIC_005fCAS.html#ATOMIC_005fCAS">9.30 <code>ATOMIC_CAS</code> &mdash; Atomic compare and swap</a></li>
+    <li><a name="toc-ATOMIC_005fDEFINE-_002d_002d_002d-Setting-a-variable-atomically" href="ATOMIC_005fDEFINE.html#ATOMIC_005fDEFINE">9.31 <code>ATOMIC_DEFINE</code> &mdash; Setting a variable atomically</a></li>
+    <li><a name="toc-ATOMIC_005fFETCH_005fADD-_002d_002d_002d-Atomic-ADD-operation-with-prior-fetch" href="ATOMIC_005fFETCH_005fADD.html#ATOMIC_005fFETCH_005fADD">9.32 <code>ATOMIC_FETCH_ADD</code> &mdash; Atomic ADD operation with prior fetch</a></li>
+    <li><a name="toc-ATOMIC_005fFETCH_005fAND-_002d_002d_002d-Atomic-bitwise-AND-operation-with-prior-fetch" href="ATOMIC_005fFETCH_005fAND.html#ATOMIC_005fFETCH_005fAND">9.33 <code>ATOMIC_FETCH_AND</code> &mdash; Atomic bitwise AND operation with prior fetch</a></li>
+    <li><a name="toc-ATOMIC_005fFETCH_005fOR-_002d_002d_002d-Atomic-bitwise-OR-operation-with-prior-fetch" href="ATOMIC_005fFETCH_005fOR.html#ATOMIC_005fFETCH_005fOR">9.34 <code>ATOMIC_FETCH_OR</code> &mdash; Atomic bitwise OR operation with prior fetch</a></li>
+    <li><a name="toc-ATOMIC_005fFETCH_005fXOR-_002d_002d_002d-Atomic-bitwise-XOR-operation-with-prior-fetch" href="ATOMIC_005fFETCH_005fXOR.html#ATOMIC_005fFETCH_005fXOR">9.35 <code>ATOMIC_FETCH_XOR</code> &mdash; Atomic bitwise XOR operation with prior fetch</a></li>
+    <li><a name="toc-ATOMIC_005fOR-_002d_002d_002d-Atomic-bitwise-OR-operation" href="ATOMIC_005fOR.html#ATOMIC_005fOR">9.36 <code>ATOMIC_OR</code> &mdash; Atomic bitwise OR operation</a></li>
+    <li><a name="toc-ATOMIC_005fREF-_002d_002d_002d-Obtaining-the-value-of-a-variable-atomically" href="ATOMIC_005fREF.html#ATOMIC_005fREF">9.37 <code>ATOMIC_REF</code> &mdash; Obtaining the value of a variable atomically</a></li>
+    <li><a name="toc-ATOMIC_005fXOR-_002d_002d_002d-Atomic-bitwise-OR-operation" href="ATOMIC_005fXOR.html#ATOMIC_005fXOR">9.38 <code>ATOMIC_XOR</code> &mdash; Atomic bitwise OR operation</a></li>
+    <li><a name="toc-BACKTRACE-_002d_002d_002d-Show-a-backtrace" href="BACKTRACE.html#BACKTRACE">9.39 <code>BACKTRACE</code> &mdash; Show a backtrace</a></li>
+    <li><a name="toc-BESSEL_005fJ0-_002d_002d_002d-Bessel-function-of-the-first-kind-of-order-0" href="BESSEL_005fJ0.html#BESSEL_005fJ0">9.40 <code>BESSEL_J0</code> &mdash; Bessel function of the first kind of order 0</a></li>
+    <li><a name="toc-BESSEL_005fJ1-_002d_002d_002d-Bessel-function-of-the-first-kind-of-order-1" href="BESSEL_005fJ1.html#BESSEL_005fJ1">9.41 <code>BESSEL_J1</code> &mdash; Bessel function of the first kind of order 1</a></li>
+    <li><a name="toc-BESSEL_005fJN-_002d_002d_002d-Bessel-function-of-the-first-kind" href="BESSEL_005fJN.html#BESSEL_005fJN">9.42 <code>BESSEL_JN</code> &mdash; Bessel function of the first kind</a></li>
+    <li><a name="toc-BESSEL_005fY0-_002d_002d_002d-Bessel-function-of-the-second-kind-of-order-0" href="BESSEL_005fY0.html#BESSEL_005fY0">9.43 <code>BESSEL_Y0</code> &mdash; Bessel function of the second kind of order 0</a></li>
+    <li><a name="toc-BESSEL_005fY1-_002d_002d_002d-Bessel-function-of-the-second-kind-of-order-1" href="BESSEL_005fY1.html#BESSEL_005fY1">9.44 <code>BESSEL_Y1</code> &mdash; Bessel function of the second kind of order 1</a></li>
+    <li><a name="toc-BESSEL_005fYN-_002d_002d_002d-Bessel-function-of-the-second-kind" href="BESSEL_005fYN.html#BESSEL_005fYN">9.45 <code>BESSEL_YN</code> &mdash; Bessel function of the second kind</a></li>
+    <li><a name="toc-BGE-_002d_002d_002d-Bitwise-greater-than-or-equal-to" href="BGE.html#BGE">9.46 <code>BGE</code> &mdash; Bitwise greater than or equal to</a></li>
+    <li><a name="toc-BGT-_002d_002d_002d-Bitwise-greater-than" href="BGT.html#BGT">9.47 <code>BGT</code> &mdash; Bitwise greater than</a></li>
+    <li><a name="toc-BIT_005fSIZE-_002d_002d_002d-Bit-size-inquiry-function" href="BIT_005fSIZE.html#BIT_005fSIZE">9.48 <code>BIT_SIZE</code> &mdash; Bit size inquiry function</a></li>
+    <li><a name="toc-BLE-_002d_002d_002d-Bitwise-less-than-or-equal-to" href="BLE.html#BLE">9.49 <code>BLE</code> &mdash; Bitwise less than or equal to</a></li>
+    <li><a name="toc-BLT-_002d_002d_002d-Bitwise-less-than" href="BLT.html#BLT">9.50 <code>BLT</code> &mdash; Bitwise less than</a></li>
+    <li><a name="toc-BTEST-_002d_002d_002d-Bit-test-function" href="BTEST.html#BTEST">9.51 <code>BTEST</code> &mdash; Bit test function</a></li>
+    <li><a name="toc-C_005fASSOCIATED-_002d_002d_002d-Status-of-a-C-pointer" href="C_005fASSOCIATED.html#C_005fASSOCIATED">9.52 <code>C_ASSOCIATED</code> &mdash; Status of a C pointer</a></li>
+    <li><a name="toc-C_005fF_005fPOINTER-_002d_002d_002d-Convert-C-into-Fortran-pointer" href="C_005fF_005fPOINTER.html#C_005fF_005fPOINTER">9.53 <code>C_F_POINTER</code> &mdash; Convert C into Fortran pointer</a></li>
+    <li><a name="toc-C_005fF_005fPROCPOINTER-_002d_002d_002d-Convert-C-into-Fortran-procedure-pointer" href="C_005fF_005fPROCPOINTER.html#C_005fF_005fPROCPOINTER">9.54 <code>C_F_PROCPOINTER</code> &mdash; Convert C into Fortran procedure pointer</a></li>
+    <li><a name="toc-C_005fFUNLOC-_002d_002d_002d-Obtain-the-C-address-of-a-procedure" href="C_005fFUNLOC.html#C_005fFUNLOC">9.55 <code>C_FUNLOC</code> &mdash; Obtain the C address of a procedure</a></li>
+    <li><a name="toc-C_005fLOC-_002d_002d_002d-Obtain-the-C-address-of-an-object" href="C_005fLOC.html#C_005fLOC">9.56 <code>C_LOC</code> &mdash; Obtain the C address of an object</a></li>
+    <li><a name="toc-C_005fSIZEOF-_002d_002d_002d-Size-in-bytes-of-an-expression" href="C_005fSIZEOF.html#C_005fSIZEOF">9.57 <code>C_SIZEOF</code> &mdash; Size in bytes of an expression</a></li>
+    <li><a name="toc-CEILING-_002d_002d_002d-Integer-ceiling-function" href="CEILING.html#CEILING">9.58 <code>CEILING</code> &mdash; Integer ceiling function</a></li>
+    <li><a name="toc-CHAR-_002d_002d_002d-Character-conversion-function" href="CHAR.html#CHAR">9.59 <code>CHAR</code> &mdash; Character conversion function</a></li>
+    <li><a name="toc-CHDIR-_002d_002d_002d-Change-working-directory" href="CHDIR.html#CHDIR">9.60 <code>CHDIR</code> &mdash; Change working directory</a></li>
+    <li><a name="toc-CHMOD-_002d_002d_002d-Change-access-permissions-of-files" href="CHMOD.html#CHMOD">9.61 <code>CHMOD</code> &mdash; Change access permissions of files</a></li>
+    <li><a name="toc-CMPLX-_002d_002d_002d-Complex-conversion-function" href="CMPLX.html#CMPLX">9.62 <code>CMPLX</code> &mdash; Complex conversion function</a></li>
+    <li><a name="toc-CO_005fBROADCAST-_002d_002d_002d-Copy-a-value-to-all-images-the-current-set-of-images" href="CO_005fBROADCAST.html#CO_005fBROADCAST">9.63 <code>CO_BROADCAST</code> &mdash; Copy a value to all images the current set of images</a></li>
+    <li><a name="toc-CO_005fMAX-_002d_002d_002d-Maximal-value-on-the-current-set-of-images" href="CO_005fMAX.html#CO_005fMAX">9.64 <code>CO_MAX</code> &mdash; Maximal value on the current set of images</a></li>
+    <li><a name="toc-CO_005fMIN-_002d_002d_002d-Minimal-value-on-the-current-set-of-images" href="CO_005fMIN.html#CO_005fMIN">9.65 <code>CO_MIN</code> &mdash; Minimal value on the current set of images</a></li>
+    <li><a name="toc-CO_005fREDUCE-_002d_002d_002d-Reduction-of-values-on-the-current-set-of-images" href="CO_005fREDUCE.html#CO_005fREDUCE">9.66 <code>CO_REDUCE</code> &mdash; Reduction of values on the current set of images</a></li>
+    <li><a name="toc-CO_005fSUM-_002d_002d_002d-Sum-of-values-on-the-current-set-of-images" href="CO_005fSUM.html#CO_005fSUM">9.67 <code>CO_SUM</code> &mdash; Sum of values on the current set of images</a></li>
+    <li><a name="toc-COMMAND_005fARGUMENT_005fCOUNT-_002d_002d_002d-Get-number-of-command-line-arguments" href="COMMAND_005fARGUMENT_005fCOUNT.html#COMMAND_005fARGUMENT_005fCOUNT">9.68 <code>COMMAND_ARGUMENT_COUNT</code> &mdash; Get number of command line arguments</a></li>
+    <li><a name="toc-COMPILER_005fOPTIONS-_002d_002d_002d-Options-passed-to-the-compiler" href="COMPILER_005fOPTIONS.html#COMPILER_005fOPTIONS">9.69 <code>COMPILER_OPTIONS</code> &mdash; Options passed to the compiler</a></li>
+    <li><a name="toc-COMPILER_005fVERSION-_002d_002d_002d-Compiler-version-string" href="COMPILER_005fVERSION.html#COMPILER_005fVERSION">9.70 <code>COMPILER_VERSION</code> &mdash; Compiler version string</a></li>
+    <li><a name="toc-COMPLEX-_002d_002d_002d-Complex-conversion-function" href="COMPLEX.html#COMPLEX">9.71 <code>COMPLEX</code> &mdash; Complex conversion function</a></li>
+    <li><a name="toc-CONJG-_002d_002d_002d-Complex-conjugate-function" href="CONJG.html#CONJG">9.72 <code>CONJG</code> &mdash; Complex conjugate function</a></li>
+    <li><a name="toc-COS-_002d_002d_002d-Cosine-function" href="COS.html#COS">9.73 <code>COS</code> &mdash; Cosine function</a></li>
+    <li><a name="toc-COSD-_002d_002d_002d-Cosine-function_002c-degrees" href="COSD.html#COSD">9.74 <code>COSD</code> &mdash; Cosine function, degrees</a></li>
+    <li><a name="toc-COSH-_002d_002d_002d-Hyperbolic-cosine-function" href="COSH.html#COSH">9.75 <code>COSH</code> &mdash; Hyperbolic cosine function</a></li>
+    <li><a name="toc-COTAN-_002d_002d_002d-Cotangent-function" href="COTAN.html#COTAN">9.76 <code>COTAN</code> &mdash; Cotangent function</a></li>
+    <li><a name="toc-COTAND-_002d_002d_002d-Cotangent-function_002c-degrees" href="COTAND.html#COTAND">9.77 <code>COTAND</code> &mdash; Cotangent function, degrees</a></li>
+    <li><a name="toc-COUNT-_002d_002d_002d-Count-function" href="COUNT.html#COUNT">9.78 <code>COUNT</code> &mdash; Count function</a></li>
+    <li><a name="toc-CPU_005fTIME-_002d_002d_002d-CPU-elapsed-time-in-seconds" href="CPU_005fTIME.html#CPU_005fTIME">9.79 <code>CPU_TIME</code> &mdash; CPU elapsed time in seconds</a></li>
+    <li><a name="toc-CSHIFT-_002d_002d_002d-Circular-shift-elements-of-an-array" href="CSHIFT.html#CSHIFT">9.80 <code>CSHIFT</code> &mdash; Circular shift elements of an array</a></li>
+    <li><a name="toc-CTIME-_002d_002d_002d-Convert-a-time-into-a-string" href="CTIME.html#CTIME">9.81 <code>CTIME</code> &mdash; Convert a time into a string</a></li>
+    <li><a name="toc-DATE_005fAND_005fTIME-_002d_002d_002d-Date-and-time-subroutine" href="DATE_005fAND_005fTIME.html#DATE_005fAND_005fTIME">9.82 <code>DATE_AND_TIME</code> &mdash; Date and time subroutine</a></li>
+    <li><a name="toc-DBLE-_002d_002d_002d-Double-conversion-function" href="DBLE.html#DBLE">9.83 <code>DBLE</code> &mdash; Double conversion function</a></li>
+    <li><a name="toc-DCMPLX-_002d_002d_002d-Double-complex-conversion-function" href="DCMPLX.html#DCMPLX">9.84 <code>DCMPLX</code> &mdash; Double complex conversion function</a></li>
+    <li><a name="toc-DIGITS-_002d_002d_002d-Significant-binary-digits-function" href="DIGITS.html#DIGITS">9.85 <code>DIGITS</code> &mdash; Significant binary digits function</a></li>
+    <li><a name="toc-DIM-_002d_002d_002d-Positive-difference" href="DIM.html#DIM">9.86 <code>DIM</code> &mdash; Positive difference</a></li>
+    <li><a name="toc-DOT_005fPRODUCT-_002d_002d_002d-Dot-product-function" href="DOT_005fPRODUCT.html#DOT_005fPRODUCT">9.87 <code>DOT_PRODUCT</code> &mdash; Dot product function</a></li>
+    <li><a name="toc-DPROD-_002d_002d_002d-Double-product-function" href="DPROD.html#DPROD">9.88 <code>DPROD</code> &mdash; Double product function</a></li>
+    <li><a name="toc-DREAL-_002d_002d_002d-Double-real-part-function" href="DREAL.html#DREAL">9.89 <code>DREAL</code> &mdash; Double real part function</a></li>
+    <li><a name="toc-DSHIFTL-_002d_002d_002d-Combined-left-shift" href="DSHIFTL.html#DSHIFTL">9.90 <code>DSHIFTL</code> &mdash; Combined left shift</a></li>
+    <li><a name="toc-DSHIFTR-_002d_002d_002d-Combined-right-shift" href="DSHIFTR.html#DSHIFTR">9.91 <code>DSHIFTR</code> &mdash; Combined right shift</a></li>
+    <li><a name="toc-DTIME-_002d_002d_002d-Execution-time-subroutine-_0028or-function_0029" href="DTIME.html#DTIME">9.92 <code>DTIME</code> &mdash; Execution time subroutine (or function)</a></li>
+    <li><a name="toc-EOSHIFT-_002d_002d_002d-End_002doff-shift-elements-of-an-array" href="EOSHIFT.html#EOSHIFT">9.93 <code>EOSHIFT</code> &mdash; End-off shift elements of an array</a></li>
+    <li><a name="toc-EPSILON-_002d_002d_002d-Epsilon-function" href="EPSILON.html#EPSILON">9.94 <code>EPSILON</code> &mdash; Epsilon function</a></li>
+    <li><a name="toc-ERF-_002d_002d_002d-Error-function" href="ERF.html#ERF">9.95 <code>ERF</code> &mdash; Error function</a></li>
+    <li><a name="toc-ERFC-_002d_002d_002d-Error-function" href="ERFC.html#ERFC">9.96 <code>ERFC</code> &mdash; Error function</a></li>
+    <li><a name="toc-ERFC_005fSCALED-_002d_002d_002d-Error-function" href="ERFC_005fSCALED.html#ERFC_005fSCALED">9.97 <code>ERFC_SCALED</code> &mdash; Error function</a></li>
+    <li><a name="toc-ETIME-_002d_002d_002d-Execution-time-subroutine-_0028or-function_0029" href="ETIME.html#ETIME">9.98 <code>ETIME</code> &mdash; Execution time subroutine (or function)</a></li>
+    <li><a name="toc-EVENT_005fQUERY-_002d_002d_002d-Query-whether-a-coarray-event-has-occurred" href="EVENT_005fQUERY.html#EVENT_005fQUERY">9.99 <code>EVENT_QUERY</code> &mdash; Query whether a coarray event has occurred</a></li>
+    <li><a name="toc-EXECUTE_005fCOMMAND_005fLINE-_002d_002d_002d-Execute-a-shell-command" href="EXECUTE_005fCOMMAND_005fLINE.html#EXECUTE_005fCOMMAND_005fLINE">9.100 <code>EXECUTE_COMMAND_LINE</code> &mdash; Execute a shell command</a></li>
+    <li><a name="toc-EXIT-_002d_002d_002d-Exit-the-program-with-status_002e" href="EXIT.html#EXIT">9.101 <code>EXIT</code> &mdash; Exit the program with status.</a></li>
+    <li><a name="toc-EXP-_002d_002d_002d-Exponential-function" href="EXP.html#EXP">9.102 <code>EXP</code> &mdash; Exponential function</a></li>
+    <li><a name="toc-EXPONENT-_002d_002d_002d-Exponent-function" href="EXPONENT.html#EXPONENT">9.103 <code>EXPONENT</code> &mdash; Exponent function</a></li>
+    <li><a name="toc-EXTENDS_005fTYPE_005fOF-_002d_002d_002d-Query-dynamic-type-for-extension" href="EXTENDS_005fTYPE_005fOF.html#EXTENDS_005fTYPE_005fOF">9.104 <code>EXTENDS_TYPE_OF</code> &mdash;  Query dynamic type for extension</a></li>
+    <li><a name="toc-FDATE-_002d_002d_002d-Get-the-current-time-as-a-string" href="FDATE.html#FDATE">9.105 <code>FDATE</code> &mdash; Get the current time as a string</a></li>
+    <li><a name="toc-FGET-_002d_002d_002d-Read-a-single-character-in-stream-mode-from-stdin" href="FGET.html#FGET">9.106 <code>FGET</code> &mdash; Read a single character in stream mode from stdin</a></li>
+    <li><a name="toc-FGETC-_002d_002d_002d-Read-a-single-character-in-stream-mode" href="FGETC.html#FGETC">9.107 <code>FGETC</code> &mdash; Read a single character in stream mode</a></li>
+    <li><a name="toc-FINDLOC-_002d_002d_002d-Search-an-array-for-a-value" href="FINDLOC.html#FINDLOC">9.108 <code>FINDLOC</code> &mdash; Search an array for a value</a></li>
+    <li><a name="toc-FLOOR-_002d_002d_002d-Integer-floor-function" href="FLOOR.html#FLOOR">9.109 <code>FLOOR</code> &mdash; Integer floor function</a></li>
+    <li><a name="toc-FLUSH-_002d_002d_002d-Flush-I_002fO-unit_0028s_0029" href="FLUSH.html#FLUSH">9.110 <code>FLUSH</code> &mdash; Flush I/O unit(s)</a></li>
+    <li><a name="toc-FNUM-_002d_002d_002d-File-number-function" href="FNUM.html#FNUM">9.111 <code>FNUM</code> &mdash; File number function</a></li>
+    <li><a name="toc-FPUT-_002d_002d_002d-Write-a-single-character-in-stream-mode-to-stdout" href="FPUT.html#FPUT">9.112 <code>FPUT</code> &mdash; Write a single character in stream mode to stdout</a></li>
+    <li><a name="toc-FPUTC-_002d_002d_002d-Write-a-single-character-in-stream-mode" href="FPUTC.html#FPUTC">9.113 <code>FPUTC</code> &mdash; Write a single character in stream mode</a></li>
+    <li><a name="toc-FRACTION-_002d_002d_002d-Fractional-part-of-the-model-representation" href="FRACTION.html#FRACTION">9.114 <code>FRACTION</code> &mdash; Fractional part of the model representation</a></li>
+    <li><a name="toc-FREE-_002d_002d_002d-Frees-memory" href="FREE.html#FREE">9.115 <code>FREE</code> &mdash; Frees memory</a></li>
+    <li><a name="toc-FSEEK-_002d_002d_002d-Low-level-file-positioning-subroutine" href="FSEEK.html#FSEEK">9.116 <code>FSEEK</code> &mdash; Low level file positioning subroutine</a></li>
+    <li><a name="toc-FSTAT-_002d_002d_002d-Get-file-status" href="FSTAT.html#FSTAT">9.117 <code>FSTAT</code> &mdash; Get file status</a></li>
+    <li><a name="toc-FTELL-_002d_002d_002d-Current-stream-position" href="FTELL.html#FTELL">9.118 <code>FTELL</code> &mdash; Current stream position</a></li>
+    <li><a name="toc-GAMMA-_002d_002d_002d-Gamma-function" href="GAMMA.html#GAMMA">9.119 <code>GAMMA</code> &mdash; Gamma function</a></li>
+    <li><a name="toc-GERROR-_002d_002d_002d-Get-last-system-error-message" href="GERROR.html#GERROR">9.120 <code>GERROR</code> &mdash; Get last system error message</a></li>
+    <li><a name="toc-GETARG-_002d_002d_002d-Get-command-line-arguments" href="GETARG.html#GETARG">9.121 <code>GETARG</code> &mdash; Get command line arguments</a></li>
+    <li><a name="toc-GET_005fCOMMAND-_002d_002d_002d-Get-the-entire-command-line" href="GET_005fCOMMAND.html#GET_005fCOMMAND">9.122 <code>GET_COMMAND</code> &mdash; Get the entire command line</a></li>
+    <li><a name="toc-GET_005fCOMMAND_005fARGUMENT-_002d_002d_002d-Get-command-line-arguments" href="GET_005fCOMMAND_005fARGUMENT.html#GET_005fCOMMAND_005fARGUMENT">9.123 <code>GET_COMMAND_ARGUMENT</code> &mdash; Get command line arguments</a></li>
+    <li><a name="toc-GETCWD-_002d_002d_002d-Get-current-working-directory" href="GETCWD.html#GETCWD">9.124 <code>GETCWD</code> &mdash; Get current working directory</a></li>
+    <li><a name="toc-GETENV-_002d_002d_002d-Get-an-environmental-variable" href="GETENV.html#GETENV">9.125 <code>GETENV</code> &mdash; Get an environmental variable</a></li>
+    <li><a name="toc-GET_005fENVIRONMENT_005fVARIABLE-_002d_002d_002d-Get-an-environmental-variable" href="GET_005fENVIRONMENT_005fVARIABLE.html#GET_005fENVIRONMENT_005fVARIABLE">9.126 <code>GET_ENVIRONMENT_VARIABLE</code> &mdash; Get an environmental variable</a></li>
+    <li><a name="toc-GETGID-_002d_002d_002d-Group-ID-function" href="GETGID.html#GETGID">9.127 <code>GETGID</code> &mdash; Group ID function</a></li>
+    <li><a name="toc-GETLOG-_002d_002d_002d-Get-login-name" href="GETLOG.html#GETLOG">9.128 <code>GETLOG</code> &mdash; Get login name</a></li>
+    <li><a name="toc-GETPID-_002d_002d_002d-Process-ID-function" href="GETPID.html#GETPID">9.129 <code>GETPID</code> &mdash; Process ID function</a></li>
+    <li><a name="toc-GETUID-_002d_002d_002d-User-ID-function" href="GETUID.html#GETUID">9.130 <code>GETUID</code> &mdash; User ID function</a></li>
+    <li><a name="toc-GMTIME-_002d_002d_002d-Convert-time-to-GMT-info" href="GMTIME.html#GMTIME">9.131 <code>GMTIME</code> &mdash; Convert time to GMT info</a></li>
+    <li><a name="toc-HOSTNM-_002d_002d_002d-Get-system-host-name" href="HOSTNM.html#HOSTNM">9.132 <code>HOSTNM</code> &mdash; Get system host name</a></li>
+    <li><a name="toc-HUGE-_002d_002d_002d-Largest-number-of-a-kind" href="HUGE.html#HUGE">9.133 <code>HUGE</code> &mdash; Largest number of a kind</a></li>
+    <li><a name="toc-HYPOT-_002d_002d_002d-Euclidean-distance-function" href="HYPOT.html#HYPOT">9.134 <code>HYPOT</code> &mdash; Euclidean distance function</a></li>
+    <li><a name="toc-IACHAR-_002d_002d_002d-Code-in-ASCII-collating-sequence" href="IACHAR.html#IACHAR">9.135 <code>IACHAR</code> &mdash; Code in <acronym>ASCII</acronym> collating sequence</a></li>
+    <li><a name="toc-IALL-_002d_002d_002d-Bitwise-AND-of-array-elements" href="IALL.html#IALL">9.136 <code>IALL</code> &mdash; Bitwise AND of array elements</a></li>
+    <li><a name="toc-IAND-_002d_002d_002d-Bitwise-logical-and" href="IAND.html#IAND">9.137 <code>IAND</code> &mdash; Bitwise logical and</a></li>
+    <li><a name="toc-IANY-_002d_002d_002d-Bitwise-OR-of-array-elements" href="IANY.html#IANY">9.138 <code>IANY</code> &mdash; Bitwise OR of array elements</a></li>
+    <li><a name="toc-IARGC-_002d_002d_002d-Get-the-number-of-command-line-arguments" href="IARGC.html#IARGC">9.139 <code>IARGC</code> &mdash; Get the number of command line arguments</a></li>
+    <li><a name="toc-IBCLR-_002d_002d_002d-Clear-bit" href="IBCLR.html#IBCLR">9.140 <code>IBCLR</code> &mdash; Clear bit</a></li>
+    <li><a name="toc-IBITS-_002d_002d_002d-Bit-extraction" href="IBITS.html#IBITS">9.141 <code>IBITS</code> &mdash; Bit extraction</a></li>
+    <li><a name="toc-IBSET-_002d_002d_002d-Set-bit" href="IBSET.html#IBSET">9.142 <code>IBSET</code> &mdash; Set bit</a></li>
+    <li><a name="toc-ICHAR-_002d_002d_002d-Character_002dto_002dinteger-conversion-function" href="ICHAR.html#ICHAR">9.143 <code>ICHAR</code> &mdash; Character-to-integer conversion function</a></li>
+    <li><a name="toc-IDATE-_002d_002d_002d-Get-current-local-time-subroutine-_0028day_002fmonth_002fyear_0029" href="IDATE.html#IDATE">9.144 <code>IDATE</code> &mdash; Get current local time subroutine (day/month/year)</a></li>
+    <li><a name="toc-IEOR-_002d_002d_002d-Bitwise-logical-exclusive-or" href="IEOR.html#IEOR">9.145 <code>IEOR</code> &mdash; Bitwise logical exclusive or</a></li>
+    <li><a name="toc-IERRNO-_002d_002d_002d-Get-the-last-system-error-number" href="IERRNO.html#IERRNO">9.146 <code>IERRNO</code> &mdash; Get the last system error number</a></li>
+    <li><a name="toc-IMAGE_005fINDEX-_002d_002d_002d-Function-that-converts-a-cosubscript-to-an-image-index" href="IMAGE_005fINDEX.html#IMAGE_005fINDEX">9.147 <code>IMAGE_INDEX</code> &mdash; Function that converts a cosubscript to an image index</a></li>
+    <li><a name="toc-INDEX-_002d_002d_002d-Position-of-a-substring-within-a-string" href="INDEX-intrinsic.html#INDEX-intrinsic">9.148 <code>INDEX</code> &mdash; Position of a substring within a string</a></li>
+    <li><a name="toc-INT-_002d_002d_002d-Convert-to-integer-type" href="INT.html#INT">9.149 <code>INT</code> &mdash; Convert to integer type</a></li>
+    <li><a name="toc-INT2-_002d_002d_002d-Convert-to-16_002dbit-integer-type" href="INT2.html#INT2">9.150 <code>INT2</code> &mdash; Convert to 16-bit integer type</a></li>
+    <li><a name="toc-INT8-_002d_002d_002d-Convert-to-64_002dbit-integer-type" href="INT8.html#INT8">9.151 <code>INT8</code> &mdash; Convert to 64-bit integer type</a></li>
+    <li><a name="toc-IOR-_002d_002d_002d-Bitwise-logical-or" href="IOR.html#IOR">9.152 <code>IOR</code> &mdash; Bitwise logical or</a></li>
+    <li><a name="toc-IPARITY-_002d_002d_002d-Bitwise-XOR-of-array-elements" href="IPARITY.html#IPARITY">9.153 <code>IPARITY</code> &mdash; Bitwise XOR of array elements</a></li>
+    <li><a name="toc-IRAND-_002d_002d_002d-Integer-pseudo_002drandom-number" href="IRAND.html#IRAND">9.154 <code>IRAND</code> &mdash; Integer pseudo-random number</a></li>
+    <li><a name="toc-IS_005fCONTIGUOUS-_002d_002d_002d-Test-whether-an-array-is-contiguous" href="IS_005fCONTIGUOUS.html#IS_005fCONTIGUOUS">9.155 <code>IS_CONTIGUOUS</code> &mdash; Test whether an array is contiguous</a></li>
+    <li><a name="toc-IS_005fIOSTAT_005fEND-_002d_002d_002d-Test-for-end_002dof_002dfile-value" href="IS_005fIOSTAT_005fEND.html#IS_005fIOSTAT_005fEND">9.156 <code>IS_IOSTAT_END</code> &mdash; Test for end-of-file value</a></li>
+    <li><a name="toc-IS_005fIOSTAT_005fEOR-_002d_002d_002d-Test-for-end_002dof_002drecord-value" href="IS_005fIOSTAT_005fEOR.html#IS_005fIOSTAT_005fEOR">9.157 <code>IS_IOSTAT_EOR</code> &mdash; Test for end-of-record value</a></li>
+    <li><a name="toc-ISATTY-_002d_002d_002d-Whether-a-unit-is-a-terminal-device_002e" href="ISATTY.html#ISATTY">9.158 <code>ISATTY</code> &mdash; Whether a unit is a terminal device.</a></li>
+    <li><a name="toc-ISHFT-_002d_002d_002d-Shift-bits" href="ISHFT.html#ISHFT">9.159 <code>ISHFT</code> &mdash; Shift bits</a></li>
+    <li><a name="toc-ISHFTC-_002d_002d_002d-Shift-bits-circularly" href="ISHFTC.html#ISHFTC">9.160 <code>ISHFTC</code> &mdash; Shift bits circularly</a></li>
+    <li><a name="toc-ISNAN-_002d_002d_002d-Test-for-a-NaN" href="ISNAN.html#ISNAN">9.161 <code>ISNAN</code> &mdash; Test for a NaN</a></li>
+    <li><a name="toc-ITIME-_002d_002d_002d-Get-current-local-time-subroutine-_0028hour_002fminutes_002fseconds_0029" href="ITIME.html#ITIME">9.162 <code>ITIME</code> &mdash; Get current local time subroutine (hour/minutes/seconds)</a></li>
+    <li><a name="toc-KILL-_002d_002d_002d-Send-a-signal-to-a-process" href="KILL.html#KILL">9.163 <code>KILL</code> &mdash; Send a signal to a process</a></li>
+    <li><a name="toc-KIND-_002d_002d_002d-Kind-of-an-entity" href="KIND.html#KIND">9.164 <code>KIND</code> &mdash; Kind of an entity</a></li>
+    <li><a name="toc-LBOUND-_002d_002d_002d-Lower-dimension-bounds-of-an-array" href="LBOUND.html#LBOUND">9.165 <code>LBOUND</code> &mdash; Lower dimension bounds of an array</a></li>
+    <li><a name="toc-LCOBOUND-_002d_002d_002d-Lower-codimension-bounds-of-an-array" href="LCOBOUND.html#LCOBOUND">9.166 <code>LCOBOUND</code> &mdash; Lower codimension bounds of an array</a></li>
+    <li><a name="toc-LEADZ-_002d_002d_002d-Number-of-leading-zero-bits-of-an-integer" href="LEADZ.html#LEADZ">9.167 <code>LEADZ</code> &mdash; Number of leading zero bits of an integer</a></li>
+    <li><a name="toc-LEN-_002d_002d_002d-Length-of-a-character-entity" href="LEN.html#LEN">9.168 <code>LEN</code> &mdash; Length of a character entity</a></li>
+    <li><a name="toc-LEN_005fTRIM-_002d_002d_002d-Length-of-a-character-entity-without-trailing-blank-characters" href="LEN_005fTRIM.html#LEN_005fTRIM">9.169 <code>LEN_TRIM</code> &mdash; Length of a character entity without trailing blank characters</a></li>
+    <li><a name="toc-LGE-_002d_002d_002d-Lexical-greater-than-or-equal" href="LGE.html#LGE">9.170 <code>LGE</code> &mdash; Lexical greater than or equal</a></li>
+    <li><a name="toc-LGT-_002d_002d_002d-Lexical-greater-than" href="LGT.html#LGT">9.171 <code>LGT</code> &mdash; Lexical greater than</a></li>
+    <li><a name="toc-LINK-_002d_002d_002d-Create-a-hard-link" href="LINK.html#LINK">9.172 <code>LINK</code> &mdash; Create a hard link</a></li>
+    <li><a name="toc-LLE-_002d_002d_002d-Lexical-less-than-or-equal" href="LLE.html#LLE">9.173 <code>LLE</code> &mdash; Lexical less than or equal</a></li>
+    <li><a name="toc-LLT-_002d_002d_002d-Lexical-less-than" href="LLT.html#LLT">9.174 <code>LLT</code> &mdash; Lexical less than</a></li>
+    <li><a name="toc-LNBLNK-_002d_002d_002d-Index-of-the-last-non_002dblank-character-in-a-string" href="LNBLNK.html#LNBLNK">9.175 <code>LNBLNK</code> &mdash; Index of the last non-blank character in a string</a></li>
+    <li><a name="toc-LOC-_002d_002d_002d-Returns-the-address-of-a-variable" href="LOC.html#LOC">9.176 <code>LOC</code> &mdash; Returns the address of a variable</a></li>
+    <li><a name="toc-LOG-_002d_002d_002d-Natural-logarithm-function" href="LOG.html#LOG">9.177 <code>LOG</code> &mdash; Natural logarithm function</a></li>
+    <li><a name="toc-LOG10-_002d_002d_002d-Base-10-logarithm-function" href="LOG10.html#LOG10">9.178 <code>LOG10</code> &mdash; Base 10 logarithm function</a></li>
+    <li><a name="toc-LOG_005fGAMMA-_002d_002d_002d-Logarithm-of-the-Gamma-function" href="LOG_005fGAMMA.html#LOG_005fGAMMA">9.179 <code>LOG_GAMMA</code> &mdash; Logarithm of the Gamma function</a></li>
+    <li><a name="toc-LOGICAL-_002d_002d_002d-Convert-to-logical-type" href="LOGICAL.html#LOGICAL">9.180 <code>LOGICAL</code> &mdash; Convert to logical type</a></li>
+    <li><a name="toc-LONG-_002d_002d_002d-Convert-to-integer-type" href="LONG.html#LONG">9.181 <code>LONG</code> &mdash; Convert to integer type</a></li>
+    <li><a name="toc-LSHIFT-_002d_002d_002d-Left-shift-bits" href="LSHIFT.html#LSHIFT">9.182 <code>LSHIFT</code> &mdash; Left shift bits</a></li>
+    <li><a name="toc-LSTAT-_002d_002d_002d-Get-file-status" href="LSTAT.html#LSTAT">9.183 <code>LSTAT</code> &mdash; Get file status</a></li>
+    <li><a name="toc-LTIME-_002d_002d_002d-Convert-time-to-local-time-info" href="LTIME.html#LTIME">9.184 <code>LTIME</code> &mdash; Convert time to local time info</a></li>
+    <li><a name="toc-MALLOC-_002d_002d_002d-Allocate-dynamic-memory" href="MALLOC.html#MALLOC">9.185 <code>MALLOC</code> &mdash; Allocate dynamic memory</a></li>
+    <li><a name="toc-MASKL-_002d_002d_002d-Left-justified-mask" href="MASKL.html#MASKL">9.186 <code>MASKL</code> &mdash; Left justified mask</a></li>
+    <li><a name="toc-MASKR-_002d_002d_002d-Right-justified-mask" href="MASKR.html#MASKR">9.187 <code>MASKR</code> &mdash; Right justified mask</a></li>
+    <li><a name="toc-MATMUL-_002d_002d_002d-matrix-multiplication" href="MATMUL.html#MATMUL">9.188 <code>MATMUL</code> &mdash; matrix multiplication</a></li>
+    <li><a name="toc-MAX-_002d_002d_002d-Maximum-value-of-an-argument-list" href="MAX.html#MAX">9.189 <code>MAX</code> &mdash; Maximum value of an argument list</a></li>
+    <li><a name="toc-MAXEXPONENT-_002d_002d_002d-Maximum-exponent-of-a-real-kind" href="MAXEXPONENT.html#MAXEXPONENT">9.190 <code>MAXEXPONENT</code> &mdash; Maximum exponent of a real kind</a></li>
+    <li><a name="toc-MAXLOC-_002d_002d_002d-Location-of-the-maximum-value-within-an-array" href="MAXLOC.html#MAXLOC">9.191 <code>MAXLOC</code> &mdash; Location of the maximum value within an array</a></li>
+    <li><a name="toc-MAXVAL-_002d_002d_002d-Maximum-value-of-an-array" href="MAXVAL.html#MAXVAL">9.192 <code>MAXVAL</code> &mdash; Maximum value of an array</a></li>
+    <li><a name="toc-MCLOCK-_002d_002d_002d-Time-function" href="MCLOCK.html#MCLOCK">9.193 <code>MCLOCK</code> &mdash; Time function</a></li>
+    <li><a name="toc-MCLOCK8-_002d_002d_002d-Time-function-_002864_002dbit_0029" href="MCLOCK8.html#MCLOCK8">9.194 <code>MCLOCK8</code> &mdash; Time function (64-bit)</a></li>
+    <li><a name="toc-MERGE-_002d_002d_002d-Merge-variables" href="MERGE.html#MERGE">9.195 <code>MERGE</code> &mdash; Merge variables</a></li>
+    <li><a name="toc-MERGE_005fBITS-_002d_002d_002d-Merge-of-bits-under-mask" href="MERGE_005fBITS.html#MERGE_005fBITS">9.196 <code>MERGE_BITS</code> &mdash; Merge of bits under mask</a></li>
+    <li><a name="toc-MIN-_002d_002d_002d-Minimum-value-of-an-argument-list" href="MIN.html#MIN">9.197 <code>MIN</code> &mdash; Minimum value of an argument list</a></li>
+    <li><a name="toc-MINEXPONENT-_002d_002d_002d-Minimum-exponent-of-a-real-kind" href="MINEXPONENT.html#MINEXPONENT">9.198 <code>MINEXPONENT</code> &mdash; Minimum exponent of a real kind</a></li>
+    <li><a name="toc-MINLOC-_002d_002d_002d-Location-of-the-minimum-value-within-an-array" href="MINLOC.html#MINLOC">9.199 <code>MINLOC</code> &mdash; Location of the minimum value within an array</a></li>
+    <li><a name="toc-MINVAL-_002d_002d_002d-Minimum-value-of-an-array" href="MINVAL.html#MINVAL">9.200 <code>MINVAL</code> &mdash; Minimum value of an array</a></li>
+    <li><a name="toc-MOD-_002d_002d_002d-Remainder-function" href="MOD.html#MOD">9.201 <code>MOD</code> &mdash; Remainder function</a></li>
+    <li><a name="toc-MODULO-_002d_002d_002d-Modulo-function" href="MODULO.html#MODULO">9.202 <code>MODULO</code> &mdash; Modulo function</a></li>
+    <li><a name="toc-MOVE_005fALLOC-_002d_002d_002d-Move-allocation-from-one-object-to-another" href="MOVE_005fALLOC.html#MOVE_005fALLOC">9.203 <code>MOVE_ALLOC</code> &mdash; Move allocation from one object to another</a></li>
+    <li><a name="toc-MVBITS-_002d_002d_002d-Move-bits-from-one-integer-to-another" href="MVBITS.html#MVBITS">9.204 <code>MVBITS</code> &mdash; Move bits from one integer to another</a></li>
+    <li><a name="toc-NEAREST-_002d_002d_002d-Nearest-representable-number" href="NEAREST.html#NEAREST">9.205 <code>NEAREST</code> &mdash; Nearest representable number</a></li>
+    <li><a name="toc-NEW_005fLINE-_002d_002d_002d-New-line-character" href="NEW_005fLINE.html#NEW_005fLINE">9.206 <code>NEW_LINE</code> &mdash; New line character</a></li>
+    <li><a name="toc-NINT-_002d_002d_002d-Nearest-whole-number" href="NINT.html#NINT">9.207 <code>NINT</code> &mdash; Nearest whole number</a></li>
+    <li><a name="toc-NORM2-_002d_002d_002d-Euclidean-vector-norms" href="NORM2.html#NORM2">9.208 <code>NORM2</code> &mdash; Euclidean vector norms</a></li>
+    <li><a name="toc-NOT-_002d_002d_002d-Logical-negation" href="NOT.html#NOT">9.209 <code>NOT</code> &mdash; Logical negation</a></li>
+    <li><a name="toc-NULL-_002d_002d_002d-Function-that-returns-an-disassociated-pointer" href="NULL.html#NULL">9.210 <code>NULL</code> &mdash; Function that returns an disassociated pointer</a></li>
+    <li><a name="toc-NUM_005fIMAGES-_002d_002d_002d-Function-that-returns-the-number-of-images" href="NUM_005fIMAGES.html#NUM_005fIMAGES">9.211 <code>NUM_IMAGES</code> &mdash; Function that returns the number of images</a></li>
+    <li><a name="toc-OR-_002d_002d_002d-Bitwise-logical-OR" href="OR.html#OR">9.212 <code>OR</code> &mdash; Bitwise logical OR</a></li>
+    <li><a name="toc-PACK-_002d_002d_002d-Pack-an-array-into-an-array-of-rank-one" href="PACK.html#PACK">9.213 <code>PACK</code> &mdash; Pack an array into an array of rank one</a></li>
+    <li><a name="toc-PARITY-_002d_002d_002d-Reduction-with-exclusive-OR" href="PARITY.html#PARITY">9.214 <code>PARITY</code> &mdash; Reduction with exclusive OR</a></li>
+    <li><a name="toc-PERROR-_002d_002d_002d-Print-system-error-message" href="PERROR.html#PERROR">9.215 <code>PERROR</code> &mdash; Print system error message</a></li>
+    <li><a name="toc-POPCNT-_002d_002d_002d-Number-of-bits-set" href="POPCNT.html#POPCNT">9.216 <code>POPCNT</code> &mdash; Number of bits set</a></li>
+    <li><a name="toc-POPPAR-_002d_002d_002d-Parity-of-the-number-of-bits-set" href="POPPAR.html#POPPAR">9.217 <code>POPPAR</code> &mdash; Parity of the number of bits set</a></li>
+    <li><a name="toc-PRECISION-_002d_002d_002d-Decimal-precision-of-a-real-kind" href="PRECISION.html#PRECISION">9.218 <code>PRECISION</code> &mdash; Decimal precision of a real kind</a></li>
+    <li><a name="toc-PRESENT-_002d_002d_002d-Determine-whether-an-optional-dummy-argument-is-specified" href="PRESENT.html#PRESENT">9.219 <code>PRESENT</code> &mdash; Determine whether an optional dummy argument is specified</a></li>
+    <li><a name="toc-PRODUCT-_002d_002d_002d-Product-of-array-elements" href="PRODUCT.html#PRODUCT">9.220 <code>PRODUCT</code> &mdash; Product of array elements</a></li>
+    <li><a name="toc-RADIX-_002d_002d_002d-Base-of-a-model-number" href="RADIX.html#RADIX">9.221 <code>RADIX</code> &mdash; Base of a model number</a></li>
+    <li><a name="toc-RAN-_002d_002d_002d-Real-pseudo_002drandom-number" href="RAN.html#RAN">9.222 <code>RAN</code> &mdash; Real pseudo-random number</a></li>
+    <li><a name="toc-RAND-_002d_002d_002d-Real-pseudo_002drandom-number" href="RAND.html#RAND">9.223 <code>RAND</code> &mdash; Real pseudo-random number</a></li>
+    <li><a name="toc-RANDOM_005fINIT-_002d_002d_002d-Initialize-a-pseudo_002drandom-number-generator" href="RANDOM_005fINIT.html#RANDOM_005fINIT">9.224 <code>RANDOM_INIT</code> &mdash; Initialize a pseudo-random number generator</a></li>
+    <li><a name="toc-RANDOM_005fNUMBER-_002d_002d_002d-Pseudo_002drandom-number" href="RANDOM_005fNUMBER.html#RANDOM_005fNUMBER">9.225 <code>RANDOM_NUMBER</code> &mdash; Pseudo-random number</a></li>
+    <li><a name="toc-RANDOM_005fSEED-_002d_002d_002d-Initialize-a-pseudo_002drandom-number-sequence" href="RANDOM_005fSEED.html#RANDOM_005fSEED">9.226 <code>RANDOM_SEED</code> &mdash; Initialize a pseudo-random number sequence</a></li>
+    <li><a name="toc-RANGE-_002d_002d_002d-Decimal-exponent-range" href="RANGE.html#RANGE">9.227 <code>RANGE</code> &mdash; Decimal exponent range</a></li>
+    <li><a name="toc-RANK-_002d_002d_002d-Rank-of-a-data-object" href="RANK.html#RANK">9.228 <code>RANK</code> &mdash; Rank of a data object</a></li>
+    <li><a name="toc-REAL-_002d_002d_002d-Convert-to-real-type" href="REAL.html#REAL">9.229 <code>REAL</code> &mdash; Convert to real type</a></li>
+    <li><a name="toc-RENAME-_002d_002d_002d-Rename-a-file" href="RENAME.html#RENAME">9.230 <code>RENAME</code> &mdash; Rename a file</a></li>
+    <li><a name="toc-REPEAT-_002d_002d_002d-Repeated-string-concatenation" href="REPEAT.html#REPEAT">9.231 <code>REPEAT</code> &mdash; Repeated string concatenation</a></li>
+    <li><a name="toc-RESHAPE-_002d_002d_002d-Function-to-reshape-an-array" href="RESHAPE.html#RESHAPE">9.232 <code>RESHAPE</code> &mdash; Function to reshape an array</a></li>
+    <li><a name="toc-RRSPACING-_002d_002d_002d-Reciprocal-of-the-relative-spacing" href="RRSPACING.html#RRSPACING">9.233 <code>RRSPACING</code> &mdash; Reciprocal of the relative spacing</a></li>
+    <li><a name="toc-RSHIFT-_002d_002d_002d-Right-shift-bits" href="RSHIFT.html#RSHIFT">9.234 <code>RSHIFT</code> &mdash; Right shift bits</a></li>
+    <li><a name="toc-SAME_005fTYPE_005fAS-_002d_002d_002d-Query-dynamic-types-for-equality" href="SAME_005fTYPE_005fAS.html#SAME_005fTYPE_005fAS">9.235 <code>SAME_TYPE_AS</code> &mdash;  Query dynamic types for equality</a></li>
+    <li><a name="toc-SCALE-_002d_002d_002d-Scale-a-real-value" href="SCALE.html#SCALE">9.236 <code>SCALE</code> &mdash; Scale a real value</a></li>
+    <li><a name="toc-SCAN-_002d_002d_002d-Scan-a-string-for-the-presence-of-a-set-of-characters" href="SCAN.html#SCAN">9.237 <code>SCAN</code> &mdash; Scan a string for the presence of a set of characters</a></li>
+    <li><a name="toc-SECNDS-_002d_002d_002d-Time-function" href="SECNDS.html#SECNDS">9.238 <code>SECNDS</code> &mdash; Time function</a></li>
+    <li><a name="toc-SECOND-_002d_002d_002d-CPU-time-function" href="SECOND.html#SECOND">9.239 <code>SECOND</code> &mdash; CPU time function</a></li>
+    <li><a name="toc-SELECTED_005fCHAR_005fKIND-_002d_002d_002d-Choose-character-kind" href="SELECTED_005fCHAR_005fKIND.html#SELECTED_005fCHAR_005fKIND">9.240 <code>SELECTED_CHAR_KIND</code> &mdash; Choose character kind</a></li>
+    <li><a name="toc-SELECTED_005fINT_005fKIND-_002d_002d_002d-Choose-integer-kind" href="SELECTED_005fINT_005fKIND.html#SELECTED_005fINT_005fKIND">9.241 <code>SELECTED_INT_KIND</code> &mdash; Choose integer kind</a></li>
+    <li><a name="toc-SELECTED_005fREAL_005fKIND-_002d_002d_002d-Choose-real-kind" href="SELECTED_005fREAL_005fKIND.html#SELECTED_005fREAL_005fKIND">9.242 <code>SELECTED_REAL_KIND</code> &mdash; Choose real kind</a></li>
+    <li><a name="toc-SET_005fEXPONENT-_002d_002d_002d-Set-the-exponent-of-the-model" href="SET_005fEXPONENT.html#SET_005fEXPONENT">9.243 <code>SET_EXPONENT</code> &mdash; Set the exponent of the model</a></li>
+    <li><a name="toc-SHAPE-_002d_002d_002d-Determine-the-shape-of-an-array" href="SHAPE.html#SHAPE">9.244 <code>SHAPE</code> &mdash; Determine the shape of an array</a></li>
+    <li><a name="toc-SHIFTA-_002d_002d_002d-Right-shift-with-fill" href="SHIFTA.html#SHIFTA">9.245 <code>SHIFTA</code> &mdash; Right shift with fill</a></li>
+    <li><a name="toc-SHIFTL-_002d_002d_002d-Left-shift" href="SHIFTL.html#SHIFTL">9.246 <code>SHIFTL</code> &mdash; Left shift</a></li>
+    <li><a name="toc-SHIFTR-_002d_002d_002d-Right-shift" href="SHIFTR.html#SHIFTR">9.247 <code>SHIFTR</code> &mdash; Right shift</a></li>
+    <li><a name="toc-SIGN-_002d_002d_002d-Sign-copying-function" href="SIGN.html#SIGN">9.248 <code>SIGN</code> &mdash; Sign copying function</a></li>
+    <li><a name="toc-SIGNAL-_002d_002d_002d-Signal-handling-subroutine-_0028or-function_0029" href="SIGNAL.html#SIGNAL">9.249 <code>SIGNAL</code> &mdash; Signal handling subroutine (or function)</a></li>
+    <li><a name="toc-SIN-_002d_002d_002d-Sine-function" href="SIN.html#SIN">9.250 <code>SIN</code> &mdash; Sine function</a></li>
+    <li><a name="toc-SIND-_002d_002d_002d-Sine-function_002c-degrees" href="SIND.html#SIND">9.251 <code>SIND</code> &mdash; Sine function, degrees</a></li>
+    <li><a name="toc-SINH-_002d_002d_002d-Hyperbolic-sine-function" href="SINH.html#SINH">9.252 <code>SINH</code> &mdash; Hyperbolic sine function</a></li>
+    <li><a name="toc-SIZE-_002d_002d_002d-Determine-the-size-of-an-array" href="SIZE.html#SIZE">9.253 <code>SIZE</code> &mdash; Determine the size of an array</a></li>
+    <li><a name="toc-SIZEOF-_002d_002d_002d-Size-in-bytes-of-an-expression" href="SIZEOF.html#SIZEOF">9.254 <code>SIZEOF</code> &mdash; Size in bytes of an expression</a></li>
+    <li><a name="toc-SLEEP-_002d_002d_002d-Sleep-for-the-specified-number-of-seconds" href="SLEEP.html#SLEEP">9.255 <code>SLEEP</code> &mdash; Sleep for the specified number of seconds</a></li>
+    <li><a name="toc-SPACING-_002d_002d_002d-Smallest-distance-between-two-numbers-of-a-given-type" href="SPACING.html#SPACING">9.256 <code>SPACING</code> &mdash; Smallest distance between two numbers of a given type</a></li>
+    <li><a name="toc-SPREAD-_002d_002d_002d-Add-a-dimension-to-an-array" href="SPREAD.html#SPREAD">9.257 <code>SPREAD</code> &mdash; Add a dimension to an array</a></li>
+    <li><a name="toc-SQRT-_002d_002d_002d-Square_002droot-function" href="SQRT.html#SQRT">9.258 <code>SQRT</code> &mdash; Square-root function</a></li>
+    <li><a name="toc-SRAND-_002d_002d_002d-Reinitialize-the-random-number-generator" href="SRAND.html#SRAND">9.259 <code>SRAND</code> &mdash; Reinitialize the random number generator</a></li>
+    <li><a name="toc-STAT-_002d_002d_002d-Get-file-status" href="STAT.html#STAT">9.260 <code>STAT</code> &mdash; Get file status</a></li>
+    <li><a name="toc-STORAGE_005fSIZE-_002d_002d_002d-Storage-size-in-bits" href="STORAGE_005fSIZE.html#STORAGE_005fSIZE">9.261 <code>STORAGE_SIZE</code> &mdash; Storage size in bits</a></li>
+    <li><a name="toc-SUM-_002d_002d_002d-Sum-of-array-elements" href="SUM.html#SUM">9.262 <code>SUM</code> &mdash; Sum of array elements</a></li>
+    <li><a name="toc-SYMLNK-_002d_002d_002d-Create-a-symbolic-link" href="SYMLNK.html#SYMLNK">9.263 <code>SYMLNK</code> &mdash; Create a symbolic link</a></li>
+    <li><a name="toc-SYSTEM-_002d_002d_002d-Execute-a-shell-command" href="SYSTEM.html#SYSTEM">9.264 <code>SYSTEM</code> &mdash; Execute a shell command</a></li>
+    <li><a name="toc-SYSTEM_005fCLOCK-_002d_002d_002d-Time-function" href="SYSTEM_005fCLOCK.html#SYSTEM_005fCLOCK">9.265 <code>SYSTEM_CLOCK</code> &mdash; Time function</a></li>
+    <li><a name="toc-TAN-_002d_002d_002d-Tangent-function" href="TAN.html#TAN">9.266 <code>TAN</code> &mdash; Tangent function</a></li>
+    <li><a name="toc-TAND-_002d_002d_002d-Tangent-function_002c-degrees" href="TAND.html#TAND">9.267 <code>TAND</code> &mdash; Tangent function, degrees</a></li>
+    <li><a name="toc-TANH-_002d_002d_002d-Hyperbolic-tangent-function" href="TANH.html#TANH">9.268 <code>TANH</code> &mdash; Hyperbolic tangent function</a></li>
+    <li><a name="toc-THIS_005fIMAGE-_002d_002d_002d-Function-that-returns-the-cosubscript-index-of-this-image" href="THIS_005fIMAGE.html#THIS_005fIMAGE">9.269 <code>THIS_IMAGE</code> &mdash; Function that returns the cosubscript index of this image</a></li>
+    <li><a name="toc-TIME-_002d_002d_002d-Time-function" href="TIME.html#TIME">9.270 <code>TIME</code> &mdash; Time function</a></li>
+    <li><a name="toc-TIME8-_002d_002d_002d-Time-function-_002864_002dbit_0029" href="TIME8.html#TIME8">9.271 <code>TIME8</code> &mdash; Time function (64-bit)</a></li>
+    <li><a name="toc-TINY-_002d_002d_002d-Smallest-positive-number-of-a-real-kind" href="TINY.html#TINY">9.272 <code>TINY</code> &mdash; Smallest positive number of a real kind</a></li>
+    <li><a name="toc-TRAILZ-_002d_002d_002d-Number-of-trailing-zero-bits-of-an-integer" href="TRAILZ.html#TRAILZ">9.273 <code>TRAILZ</code> &mdash; Number of trailing zero bits of an integer</a></li>
+    <li><a name="toc-TRANSFER-_002d_002d_002d-Transfer-bit-patterns" href="TRANSFER.html#TRANSFER">9.274 <code>TRANSFER</code> &mdash; Transfer bit patterns</a></li>
+    <li><a name="toc-TRANSPOSE-_002d_002d_002d-Transpose-an-array-of-rank-two" href="TRANSPOSE.html#TRANSPOSE">9.275 <code>TRANSPOSE</code> &mdash; Transpose an array of rank two</a></li>
+    <li><a name="toc-TRIM-_002d_002d_002d-Remove-trailing-blank-characters-of-a-string" href="TRIM.html#TRIM">9.276 <code>TRIM</code> &mdash; Remove trailing blank characters of a string</a></li>
+    <li><a name="toc-TTYNAM-_002d_002d_002d-Get-the-name-of-a-terminal-device_002e" href="TTYNAM.html#TTYNAM">9.277 <code>TTYNAM</code> &mdash; Get the name of a terminal device.</a></li>
+    <li><a name="toc-UBOUND-_002d_002d_002d-Upper-dimension-bounds-of-an-array" href="UBOUND.html#UBOUND">9.278 <code>UBOUND</code> &mdash; Upper dimension bounds of an array</a></li>
+    <li><a name="toc-UCOBOUND-_002d_002d_002d-Upper-codimension-bounds-of-an-array" href="UCOBOUND.html#UCOBOUND">9.279 <code>UCOBOUND</code> &mdash; Upper codimension bounds of an array</a></li>
+    <li><a name="toc-UMASK-_002d_002d_002d-Set-the-file-creation-mask" href="UMASK.html#UMASK">9.280 <code>UMASK</code> &mdash; Set the file creation mask</a></li>
+    <li><a name="toc-UNLINK-_002d_002d_002d-Remove-a-file-from-the-file-system" href="UNLINK.html#UNLINK">9.281 <code>UNLINK</code> &mdash; Remove a file from the file system</a></li>
+    <li><a name="toc-UNPACK-_002d_002d_002d-Unpack-an-array-of-rank-one-into-an-array" href="UNPACK.html#UNPACK">9.282 <code>UNPACK</code> &mdash; Unpack an array of rank one into an array</a></li>
+    <li><a name="toc-VERIFY-_002d_002d_002d-Scan-a-string-for-characters-not-a-given-set" href="VERIFY.html#VERIFY">9.283 <code>VERIFY</code> &mdash; Scan a string for characters not a given set</a></li>
+    <li><a name="toc-XOR-_002d_002d_002d-Bitwise-logical-exclusive-OR" href="XOR.html#XOR">9.284 <code>XOR</code> &mdash; Bitwise logical exclusive OR</a></li>
+  </ul></li>
+  <li><a name="toc-Intrinsic-Modules-1" href="Intrinsic-Modules.html#Intrinsic-Modules">10 Intrinsic Modules</a>
+  <ul class="no-bullet">
+    <li><a name="toc-ISO_005fFORTRAN_005fENV-1" href="ISO_005fFORTRAN_005fENV.html#ISO_005fFORTRAN_005fENV">10.1 <code>ISO_FORTRAN_ENV</code></a></li>
+    <li><a name="toc-ISO_005fC_005fBINDING-1" href="ISO_005fC_005fBINDING.html#ISO_005fC_005fBINDING">10.2 <code>ISO_C_BINDING</code></a></li>
+    <li><a name="toc-IEEE-modules_003a-IEEE_005fEXCEPTIONS_002c-IEEE_005fARITHMETIC_002c-and-IEEE_005fFEATURES" href="IEEE-modules.html#IEEE-modules">10.3 IEEE modules: <code>IEEE_EXCEPTIONS</code>, <code>IEEE_ARITHMETIC</code>, and <code>IEEE_FEATURES</code></a></li>
+    <li><a name="toc-OpenMP-Modules-OMP_005fLIB-and-OMP_005fLIB_005fKINDS-1" href="OpenMP-Modules-OMP_005fLIB-and-OMP_005fLIB_005fKINDS.html#OpenMP-Modules-OMP_005fLIB-and-OMP_005fLIB_005fKINDS">10.4 OpenMP Modules <code>OMP_LIB</code> and <code>OMP_LIB_KINDS</code></a></li>
+    <li><a name="toc-OpenACC-Module-OPENACC-1" href="OpenACC-Module-OPENACC.html#OpenACC-Module-OPENACC">10.5 OpenACC Module <code>OPENACC</code></a></li>
+  </ul></li>
+  <li><a name="toc-Contributing-1" href="Contributing.html#Contributing">Contributing</a>
+  <ul class="no-bullet">
+    <li><a name="toc-Contributors-to-GNU-Fortran" href="Contributors.html#Contributors">Contributors to GNU Fortran</a></li>
+    <li><a name="toc-Projects-1" href="Projects.html#Projects">Projects</a></li>
+    <li><a name="toc-Proposed-Extensions-1" href="Proposed-Extensions.html#Proposed-Extensions">Proposed Extensions</a>
+    <ul class="no-bullet">
+      <li><a name="toc-Compiler-extensions_003a" href="Proposed-Extensions.html#Compiler-extensions_003a">Compiler extensions:</a></li>
+      <li><a name="toc-Environment-Options" href="Proposed-Extensions.html#Environment-Options">Environment Options</a></li>
+    </ul></li>
+  </ul></li>
+  <li><a name="toc-GNU-General-Public-License" href="Copying.html#Copying">GNU General Public License</a></li>
+  <li><a name="toc-GNU-Free-Documentation-License-1" href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License">GNU Free Documentation License</a>
+  <ul class="no-bullet">
+    <li><a name="toc-ADDENDUM_003a-How-to-use-this-License-for-your-documents" href="GNU-Free-Documentation-License.html#ADDENDUM_003a-How-to-use-this-License-for-your-documents">ADDENDUM: How to use this License for your documents</a></li>
+  </ul></li>
+  <li><a name="toc-Funding-Free-Software" href="Funding.html#Funding">Funding Free Software</a></li>
+  <li><a name="toc-Option-Index-1" href="Option-Index.html#Option-Index">Option Index</a></li>
+  <li><a name="toc-Keyword-Index-1" href="Keyword-Index.html#Keyword-Index">Keyword Index</a></li>
+</ul>
+</div>
+
+
+
+
+<a name="Top"></a>
+<div class="header">
+<p>
+Next: <a href="Introduction.html#Introduction" accesskey="n" rel="next">Introduction</a>, Up: <a href="../dir/index.html" accesskey="u" rel="up">(dir)</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Introduction-1"></a>
+<h1 class="top">Introduction</h1>
+<a name="index-Introduction"></a>
+
+<p>This manual documents the use of <code>gfortran</code>,
+the GNU Fortran compiler.  You can find in this manual how to invoke
+<code>gfortran</code>, as well as its features and incompatibilities.
+</p>
+
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Introduction.html#Introduction" accesskey="1">Introduction</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+Part I: Invoking GNU Fortran
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Invoking-GNU-Fortran.html#Invoking-GNU-Fortran" accesskey="2">Invoking GNU Fortran</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Command options supported by <code>gfortran</code>.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Runtime.html#Runtime" accesskey="3">Runtime</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Influencing runtime behavior with environment variables.
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+Part II: Language Reference
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Fortran-standards-status.html#Fortran-standards-status" accesskey="4">Fortran standards status</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Fortran 2003, 2008 and 2018 features supported by GNU Fortran.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Compiler-Characteristics.html#Compiler-Characteristics" accesskey="5">Compiler Characteristics</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">User-visible implementation details.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Extensions.html#Extensions" accesskey="6">Extensions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Language extensions implemented by GNU Fortran.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Mixed_002dLanguage-Programming.html#Mixed_002dLanguage-Programming" accesskey="7">Mixed-Language Programming</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Interoperability with C
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Coarray-Programming.html#Coarray-Programming" accesskey="8">Coarray Programming</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Intrinsic-Procedures.html#Intrinsic-Procedures" accesskey="9">Intrinsic Procedures</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Intrinsic procedures supported by GNU Fortran.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Intrinsic-Modules.html#Intrinsic-Modules">Intrinsic Modules</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Intrinsic modules supported by GNU Fortran.
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Contributing.html#Contributing">Contributing</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How you can help.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Copying.html#Copying">Copying</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">GNU General Public License says
+                         how you can copy and share GNU Fortran.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GNU-Free-Documentation-License.html#GNU-Free-Documentation-License">GNU Free Documentation License</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+                         How you can copy and share this manual.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Funding.html#Funding">Funding</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How to help assure continued work for free software.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Option-Index.html#Option-Index">Option Index</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Index of command line options
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Keyword-Index.html#Keyword-Index">Keyword Index</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Index of concepts
+</td></tr>
+</table>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Introduction.html#Introduction" accesskey="n" rel="next">Introduction</a>, Up: <a href="../dir/index.html" accesskey="u" rel="up">(dir)</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

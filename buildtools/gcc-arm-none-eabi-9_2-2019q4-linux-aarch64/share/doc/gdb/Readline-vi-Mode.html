@@ -1,0 +1,95 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Readline vi Mode</title>
+
+<meta name="description" content="Debugging with GDB: Readline vi Mode">
+<meta name="keywords" content="Debugging with GDB: Readline vi Mode">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Command-Line-Editing.html#Command-Line-Editing" rel="up" title="Command Line Editing">
+<link href="Using-History-Interactively.html#Using-History-Interactively" rel="next" title="Using History Interactively">
+<link href="Miscellaneous-Commands.html#Miscellaneous-Commands" rel="prev" title="Miscellaneous Commands">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Readline-vi-Mode"></a>
+<div class="header">
+<p>
+Previous: <a href="Bindable-Readline-Commands.html#Bindable-Readline-Commands" accesskey="p" rel="prev">Bindable Readline Commands</a>, Up: <a href="Command-Line-Editing.html#Command-Line-Editing" accesskey="u" rel="up">Command Line Editing</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Readline-vi-Mode-1"></a>
+<h3 class="section">32.5 Readline vi Mode</h3>
+
+<p>While the Readline library does not have a full set of <code>vi</code>
+editing functions, it does contain enough to allow simple editing
+of the line.  The Readline <code>vi</code> mode behaves as specified in
+the <small>POSIX</small> standard.
+</p>
+<p>In order to switch interactively between <code>emacs</code> and <code>vi</code>
+editing modes, use the command <kbd>M-C-j</kbd> (bound to emacs-editing-mode
+when in <code>vi</code> mode and to vi-editing-mode in <code>emacs</code> mode).
+The Readline default is <code>emacs</code> mode.
+</p>
+<p>When you enter a line in <code>vi</code> mode, you are already placed in
+&lsquo;insertion&rsquo; mode, as if you had typed an &lsquo;<samp>i</samp>&rsquo;.  Pressing <tt class="key">ESC</tt>
+switches you into &lsquo;command&rsquo; mode, where you can edit the text of the
+line with the standard <code>vi</code> movement keys, move to previous
+history lines with &lsquo;<samp>k</samp>&rsquo; and subsequent lines with &lsquo;<samp>j</samp>&rsquo;, and
+so forth.
+</p>
+
+
+
+
+</body>
+</html>

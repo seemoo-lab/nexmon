@@ -1,0 +1,137 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Decimal Float</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Decimal Float">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Decimal Float">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C-Extensions.html#C-Extensions" rel="up" title="C Extensions">
+<link href="Hex-Floats.html#Hex-Floats" rel="next" title="Hex Floats">
+<link href="Half_002dPrecision.html#Half_002dPrecision" rel="prev" title="Half-Precision">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Decimal-Float"></a>
+<div class="header">
+<p>
+Next: <a href="Hex-Floats.html#Hex-Floats" accesskey="n" rel="next">Hex Floats</a>, Previous: <a href="Half_002dPrecision.html#Half_002dPrecision" accesskey="p" rel="prev">Half-Precision</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Decimal-Floating-Types"></a>
+<h3 class="section">6.14 Decimal Floating Types</h3>
+<a name="index-decimal-floating-types"></a>
+<a name="index-_005fDecimal32-data-type"></a>
+<a name="index-_005fDecimal64-data-type"></a>
+<a name="index-_005fDecimal128-data-type"></a>
+<a name="index-df-integer-suffix"></a>
+<a name="index-dd-integer-suffix"></a>
+<a name="index-dl-integer-suffix"></a>
+<a name="index-DF-integer-suffix"></a>
+<a name="index-DD-integer-suffix"></a>
+<a name="index-DL-integer-suffix"></a>
+
+<p>As an extension, GNU C supports decimal floating types as
+defined in the N1312 draft of ISO/IEC WDTR24732.  Support for decimal
+floating types in GCC will evolve as the draft technical report changes.
+Calling conventions for any target might also change.  Not all targets
+support decimal floating types.
+</p>
+<p>The decimal floating types are <code>_Decimal32</code>, <code>_Decimal64</code>, and
+<code>_Decimal128</code>.  They use a radix of ten, unlike the floating types
+<code>float</code>, <code>double</code>, and <code>long double</code> whose radix is not
+specified by the C standard but is usually two.
+</p>
+<p>Support for decimal floating types includes the arithmetic operators
+add, subtract, multiply, divide; unary arithmetic operators;
+relational operators; equality operators; and conversions to and from
+integer and other floating types.  Use a suffix &lsquo;<samp>df</samp>&rsquo; or
+&lsquo;<samp>DF</samp>&rsquo; in a literal constant of type <code>_Decimal32</code>, &lsquo;<samp>dd</samp>&rsquo;
+or &lsquo;<samp>DD</samp>&rsquo; for <code>_Decimal64</code>, and &lsquo;<samp>dl</samp>&rsquo; or &lsquo;<samp>DL</samp>&rsquo; for
+<code>_Decimal128</code>.
+</p>
+<p>GCC support of decimal float as specified by the draft technical report
+is incomplete:
+</p>
+<ul>
+<li> When the value of a decimal floating type cannot be represented in the
+integer type to which it is being converted, the result is undefined
+rather than the result value specified by the draft technical report.
+
+</li><li> GCC does not provide the C library functionality associated with
+<samp>math.h</samp>, <samp>fenv.h</samp>, <samp>stdio.h</samp>, <samp>stdlib.h</samp>, and
+<samp>wchar.h</samp>, which must come from a separate C library implementation.
+Because of this the GNU C compiler does not define macro
+<code>__STDC_DEC_FP__</code> to indicate that the implementation conforms to
+the technical report.
+</li></ul>
+
+<p>Types <code>_Decimal32</code>, <code>_Decimal64</code>, and <code>_Decimal128</code>
+are supported by the DWARF debug information format.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Hex-Floats.html#Hex-Floats" accesskey="n" rel="next">Hex Floats</a>, Previous: <a href="Half_002dPrecision.html#Half_002dPrecision" accesskey="p" rel="prev">Half-Precision</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

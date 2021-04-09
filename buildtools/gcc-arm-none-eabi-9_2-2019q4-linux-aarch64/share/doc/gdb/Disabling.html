@@ -1,0 +1,162 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Disabling</title>
+
+<meta name="description" content="Debugging with GDB: Disabling">
+<meta name="keywords" content="Debugging with GDB: Disabling">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Breakpoints.html#Breakpoints" rel="up" title="Breakpoints">
+<link href="Conditions.html#Conditions" rel="next" title="Conditions">
+<link href="Delete-Breaks.html#Delete-Breaks" rel="prev" title="Delete Breaks">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Disabling"></a>
+<div class="header">
+<p>
+Next: <a href="Conditions.html#Conditions" accesskey="n" rel="next">Conditions</a>, Previous: <a href="Delete-Breaks.html#Delete-Breaks" accesskey="p" rel="prev">Delete Breaks</a>, Up: <a href="Breakpoints.html#Breakpoints" accesskey="u" rel="up">Breakpoints</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Disabling-Breakpoints"></a>
+<h4 class="subsection">5.1.5 Disabling Breakpoints</h4>
+
+<a name="index-enable_002fdisable-a-breakpoint"></a>
+<p>Rather than deleting a breakpoint, watchpoint, or catchpoint, you might
+prefer to <em>disable</em> it.  This makes the breakpoint inoperative as if
+it had been deleted, but remembers the information on the breakpoint so
+that you can <em>enable</em> it again later.
+</p>
+<p>You disable and enable breakpoints, watchpoints, and catchpoints with
+the <code>enable</code> and <code>disable</code> commands, optionally specifying
+one or more breakpoint numbers as arguments.  Use <code>info break</code> to
+print a list of all breakpoints, watchpoints, and catchpoints if you
+do not know which numbers to use.
+</p>
+<p>Disabling and enabling a breakpoint that has multiple locations
+affects all of its locations.
+</p>
+<p>A breakpoint, watchpoint, or catchpoint can have any of several
+different states of enablement:
+</p>
+<ul>
+<li> Enabled.  The breakpoint stops your program.  A breakpoint set
+with the <code>break</code> command starts out in this state.
+</li><li> Disabled.  The breakpoint has no effect on your program.
+</li><li> Enabled once.  The breakpoint stops your program, but then becomes
+disabled.
+</li><li> Enabled for a count.  The breakpoint stops your program for the next
+N times, then becomes disabled.
+</li><li> Enabled for deletion.  The breakpoint stops your program, but
+immediately after it does so it is deleted permanently.  A breakpoint
+set with the <code>tbreak</code> command starts out in this state.
+</li></ul>
+
+<p>You can use the following commands to enable or disable breakpoints,
+watchpoints, and catchpoints:
+</p>
+<dl compact="compact">
+<dd><a name="index-disable"></a>
+<a name="index-dis-_0028disable_0029"></a>
+</dd>
+<dt><code>disable <span class="roman">[</span>breakpoints<span class="roman">]</span> <span class="roman">[</span><var>list</var>&hellip;<span class="roman">]</span></code></dt>
+<dd><p>Disable the specified breakpoints&mdash;or all breakpoints, if none are
+listed.  A disabled breakpoint has no effect but is not forgotten.  All
+options such as ignore-counts, conditions and commands are remembered in
+case the breakpoint is enabled again later.  You may abbreviate
+<code>disable</code> as <code>dis</code>.
+</p>
+<a name="index-enable"></a>
+</dd>
+<dt><code>enable <span class="roman">[</span>breakpoints<span class="roman">]</span> <span class="roman">[</span><var>list</var>&hellip;<span class="roman">]</span></code></dt>
+<dd><p>Enable the specified breakpoints (or all defined breakpoints).  They
+become effective once again in stopping your program.
+</p>
+</dd>
+<dt><code>enable <span class="roman">[</span>breakpoints<span class="roman">]</span> once <var>list</var>&hellip;</code></dt>
+<dd><p>Enable the specified breakpoints temporarily.  <small>GDB</small> disables any
+of these breakpoints immediately after stopping your program.
+</p>
+</dd>
+<dt><code>enable <span class="roman">[</span>breakpoints<span class="roman">]</span> count <var>count</var> <var>list</var>&hellip;</code></dt>
+<dd><p>Enable the specified breakpoints temporarily.  <small>GDB</small> records
+<var>count</var> with each of the specified breakpoints, and decrements a
+breakpoint&rsquo;s count when it is hit.  When any count reaches 0,
+<small>GDB</small> disables that breakpoint.  If a breakpoint has an ignore
+count (see <a href="Conditions.html#Conditions">Break Conditions</a>), that will be
+decremented to 0 before <var>count</var> is affected.
+</p>
+</dd>
+<dt><code>enable <span class="roman">[</span>breakpoints<span class="roman">]</span> delete <var>list</var>&hellip;</code></dt>
+<dd><p>Enable the specified breakpoints to work once, then die.  <small>GDB</small>
+deletes any of these breakpoints as soon as your program stops there.
+Breakpoints set by the <code>tbreak</code> command start out in this state.
+</p></dd>
+</dl>
+
+<p>Except for a breakpoint set with <code>tbreak</code> (see <a href="Set-Breaks.html#Set-Breaks">Setting Breakpoints</a>), breakpoints that you set are initially enabled;
+subsequently, they become disabled or enabled only when you use one of
+the commands above.  (The command <code>until</code> can set and delete a
+breakpoint of its own, but it does not change the state of your other
+breakpoints; see <a href="Continuing-and-Stepping.html#Continuing-and-Stepping">Continuing and
+Stepping</a>.)
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Conditions.html#Conditions" accesskey="n" rel="next">Conditions</a>, Previous: <a href="Delete-Breaks.html#Delete-Breaks" accesskey="p" rel="prev">Delete Breaks</a>, Up: <a href="Breakpoints.html#Breakpoints" accesskey="u" rel="up">Breakpoints</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Deprecated Features</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Deprecated Features">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Deprecated Features">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C_002b_002b-Extensions.html#C_002b_002b-Extensions" rel="up" title="C++ Extensions">
+<link href="Backwards-Compatibility.html#Backwards-Compatibility" rel="next" title="Backwards Compatibility">
+<link href="C_002b_002b-Concepts.html#C_002b_002b-Concepts" rel="prev" title="C++ Concepts">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Deprecated-Features"></a>
+<div class="header">
+<p>
+Next: <a href="Backwards-Compatibility.html#Backwards-Compatibility" accesskey="n" rel="next">Backwards Compatibility</a>, Previous: <a href="C_002b_002b-Concepts.html#C_002b_002b-Concepts" accesskey="p" rel="prev">C++ Concepts</a>, Up: <a href="C_002b_002b-Extensions.html#C_002b_002b-Extensions" accesskey="u" rel="up">C++ Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Deprecated-Features-1"></a>
+<h3 class="section">7.11 Deprecated Features</h3>
+
+<p>In the past, the GNU C++ compiler was extended to experiment with new
+features, at a time when the C++ language was still evolving.  Now that
+the C++ standard is complete, some of those features are superseded by
+superior alternatives.  Using the old features might cause a warning in
+some cases that the feature will be dropped in the future.  In other
+cases, the feature might be gone already.
+</p>
+<p>G++ allows a virtual function returning &lsquo;<samp>void *</samp>&rsquo; to be overridden
+by one returning a different pointer type.  This extension to the
+covariant return type rules is now deprecated and will be removed from a
+future version.
+</p>
+<p>The use of default arguments in function pointers, function typedefs
+and other places where they are not permitted by the standard is
+deprecated and will be removed from a future version of G++.
+</p>
+<p>G++ allows floating-point literals to appear in integral constant expressions,
+e.g. &lsquo;<samp> enum E { e = int(2.2 * 3.7) } </samp>&rsquo;
+This extension is deprecated and will be removed from a future version.
+</p>
+<p>G++ allows static data members of const floating-point type to be declared
+with an initializer in a class definition. The standard only allows
+initializers for static members of const integral types and const
+enumeration types so this extension has been deprecated and will be removed
+from a future version.
+</p>
+<p>G++ allows attributes to follow a parenthesized direct initializer,
+e.g. &lsquo;<samp> int f (0) __attribute__ ((something)); </samp>&rsquo; This extension
+has been ignored since G++ 3.3 and is deprecated.
+</p>
+<p>G++ allows anonymous structs and unions to have members that are not
+public non-static data members (i.e. fields).  These extensions are
+deprecated.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Backwards-Compatibility.html#Backwards-Compatibility" accesskey="n" rel="next">Backwards Compatibility</a>, Previous: <a href="C_002b_002b-Concepts.html#C_002b_002b-Concepts" accesskey="p" rel="prev">C++ Concepts</a>, Up: <a href="C_002b_002b-Extensions.html#C_002b_002b-Extensions" accesskey="u" rel="up">C++ Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

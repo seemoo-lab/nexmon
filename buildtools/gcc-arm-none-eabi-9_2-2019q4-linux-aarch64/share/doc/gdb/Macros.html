@@ -1,0 +1,342 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Macros</title>
+
+<meta name="description" content="Debugging with GDB: Macros">
+<meta name="keywords" content="Debugging with GDB: Macros">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Tracepoints.html#Tracepoints" rel="next" title="Tracepoints">
+<link href="Tail-Call-Frames.html#Tail-Call-Frames" rel="prev" title="Tail Call Frames">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Macros"></a>
+<div class="header">
+<p>
+Next: <a href="Tracepoints.html#Tracepoints" accesskey="n" rel="next">Tracepoints</a>, Previous: <a href="Optimized-Code.html#Optimized-Code" accesskey="p" rel="prev">Optimized Code</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="C-Preprocessor-Macros"></a>
+<h2 class="chapter">12 C Preprocessor Macros</h2>
+
+<p>Some languages, such as C and C<tt>++</tt>, provide a way to define and invoke
+&ldquo;preprocessor macros&rdquo; which expand into strings of tokens.
+<small>GDB</small> can evaluate expressions containing macro invocations, show
+the result of macro expansion, and show a macro&rsquo;s definition, including
+where it was defined.
+</p>
+<p>You may need to compile your program specially to provide <small>GDB</small>
+with information about preprocessor macros.  Most compilers do not
+include macros in their debugging information, even when you compile
+with the <samp>-g</samp> flag.  See <a href="Compilation.html#Compilation">Compilation</a>.
+</p>
+<p>A program may define a macro at one point, remove that definition later,
+and then provide a different definition after that.  Thus, at different
+points in the program, a macro may have different definitions, or have
+no definition at all.  If there is a current stack frame, <small>GDB</small>
+uses the macros in scope at that frame&rsquo;s source code line.  Otherwise,
+<small>GDB</small> uses the macros in scope at the current listing location;
+see <a href="List.html#List">List</a>.
+</p>
+<p>Whenever <small>GDB</small> evaluates an expression, it always expands any
+macro invocations present in the expression.  <small>GDB</small> also provides
+the following commands for working with macros explicitly.
+</p>
+<dl compact="compact">
+<dd>
+<a name="index-macro-expand"></a>
+<a name="index-macro-expansion_002c-showing-the-results-of-preprocessor"></a>
+<a name="index-preprocessor-macro-expansion_002c-showing-the-results-of"></a>
+<a name="index-expanding-preprocessor-macros"></a>
+</dd>
+<dt><code>macro expand <var>expression</var></code></dt>
+<dt><code>macro exp <var>expression</var></code></dt>
+<dd><p>Show the results of expanding all preprocessor macro invocations in
+<var>expression</var>.  Since <small>GDB</small> simply expands macros, but does
+not parse the result, <var>expression</var> need not be a valid expression;
+it can be any string of tokens.
+</p>
+<a name="index-macro-exp1"></a>
+</dd>
+<dt><code>macro expand-once <var>expression</var></code></dt>
+<dt><code>macro exp1 <var>expression</var></code></dt>
+<dd><a name="index-expand-macro-once"></a>
+<p><i>(This command is not yet implemented.)</i>  Show the results of
+expanding those preprocessor macro invocations that appear explicitly in
+<var>expression</var>.  Macro invocations appearing in that expansion are
+left unchanged.  This command allows you to see the effect of a
+particular macro more clearly, without being confused by further
+expansions.  Since <small>GDB</small> simply expands macros, but does not
+parse the result, <var>expression</var> need not be a valid expression; it
+can be any string of tokens.
+</p>
+<a name="index-info-macro"></a>
+<a name="index-macro-definition_002c-showing"></a>
+<a name="index-definition-of-a-macro_002c-showing"></a>
+<a name="index-macros_002c-from-debug-info"></a>
+</dd>
+<dt><code>info macro [-a|-all] [--] <var>macro</var></code></dt>
+<dd><p>Show the current definition or all definitions of the named <var>macro</var>,
+and describe the source location or compiler command-line where that
+definition was established.  The optional double dash is to signify the end of
+argument processing and the beginning of <var>macro</var> for non C-like macros where
+the macro may begin with a hyphen.
+</p>
+<a name="index-info-macros"></a>
+</dd>
+<dt><code>info macros <var>location</var></code></dt>
+<dd><p>Show all macro definitions that are in effect at the location specified
+by <var>location</var>,  and describe the source location or compiler
+command-line where those definitions were established.
+</p>
+<a name="index-macro-define"></a>
+<a name="index-user_002ddefined-macros"></a>
+<a name="index-defining-macros-interactively"></a>
+<a name="index-macros_002c-user_002ddefined"></a>
+</dd>
+<dt><code>macro define <var>macro</var> <var>replacement-list</var></code></dt>
+<dt><code>macro define <var>macro</var>(<var>arglist</var>) <var>replacement-list</var></code></dt>
+<dd><p>Introduce a definition for a preprocessor macro named <var>macro</var>,
+invocations of which are replaced by the tokens given in
+<var>replacement-list</var>.  The first form of this command defines an
+&ldquo;object-like&rdquo; macro, which takes no arguments; the second form
+defines a &ldquo;function-like&rdquo; macro, which takes the arguments given in
+<var>arglist</var>.
+</p>
+<p>A definition introduced by this command is in scope in every
+expression evaluated in <small>GDB</small>, until it is removed with the
+<code>macro undef</code> command, described below.  The definition overrides
+all definitions for <var>macro</var> present in the program being debugged,
+as well as any previous user-supplied definition.
+</p>
+<a name="index-macro-undef"></a>
+</dd>
+<dt><code>macro undef <var>macro</var></code></dt>
+<dd><p>Remove any user-supplied definition for the macro named <var>macro</var>.
+This command only affects definitions provided with the <code>macro
+define</code> command, described above; it cannot remove definitions present
+in the program being debugged.
+</p>
+<a name="index-macro-list"></a>
+</dd>
+<dt><code>macro list</code></dt>
+<dd><p>List all the macros defined using the <code>macro define</code> command.
+</p></dd>
+</dl>
+
+<a name="index-macros_002c-example-of-debugging-with"></a>
+<p>Here is a transcript showing the above commands in action.  First, we
+show our source files:
+</p>
+<div class="smallexample">
+<pre class="smallexample">$ cat sample.c
+#include &lt;stdio.h&gt;
+#include &quot;sample.h&quot;
+
+#define M 42
+#define ADD(x) (M + x)
+
+main ()
+{
+#define N 28
+  printf (&quot;Hello, world!\n&quot;);
+#undef N
+  printf (&quot;We're so creative.\n&quot;);
+#define N 1729
+  printf (&quot;Goodbye, world!\n&quot;);
+}
+$ cat sample.h
+#define Q &lt;
+$
+</pre></div>
+
+<p>Now, we compile the program using the <small>GNU</small> C compiler,
+<small>GCC</small>.  We pass the <samp>-gdwarf-2</samp><a name="DOCF13" href="#FOOT13"><sup>13</sup></a> <em>and</em> <samp>-g3</samp> flags to ensure the compiler
+includes information about preprocessor macros in the debugging
+information.
+</p>
+<div class="smallexample">
+<pre class="smallexample">$ gcc -gdwarf-2 -g3 sample.c -o sample
+$
+</pre></div>
+
+<p>Now, we start <small>GDB</small> on our sample program:
+</p>
+<div class="smallexample">
+<pre class="smallexample">$ gdb -nw sample
+GNU gdb 2002-05-06-cvs
+Copyright 2002 Free Software Foundation, Inc.
+GDB is free software, &hellip;
+(gdb)
+</pre></div>
+
+<p>We can expand macros and examine their definitions, even when the
+program is not running.  <small>GDB</small> uses the current listing position
+to decide which macro definitions are in scope:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) list main
+3
+4       #define M 42
+5       #define ADD(x) (M + x)
+6
+7       main ()
+8       {
+9       #define N 28
+10        printf (&quot;Hello, world!\n&quot;);
+11      #undef N
+12        printf (&quot;We're so creative.\n&quot;);
+(gdb) info macro ADD
+Defined at /home/jimb/gdb/macros/play/sample.c:5
+#define ADD(x) (M + x)
+(gdb) info macro Q
+Defined at /home/jimb/gdb/macros/play/sample.h:1
+  included at /home/jimb/gdb/macros/play/sample.c:2
+#define Q &lt;
+(gdb) macro expand ADD(1)
+expands to: (42 + 1)
+(gdb) macro expand-once ADD(1)
+expands to: once (M + 1)
+(gdb)
+</pre></div>
+
+<p>In the example above, note that <code>macro expand-once</code> expands only
+the macro invocation explicit in the original text &mdash; the invocation of
+<code>ADD</code> &mdash; but does not expand the invocation of the macro <code>M</code>,
+which was introduced by <code>ADD</code>.
+</p>
+<p>Once the program is running, <small>GDB</small> uses the macro definitions in
+force at the source line of the current stack frame:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) break main
+Breakpoint 1 at 0x8048370: file sample.c, line 10.
+(gdb) run
+Starting program: /home/jimb/gdb/macros/play/sample
+
+Breakpoint 1, main () at sample.c:10
+10        printf (&quot;Hello, world!\n&quot;);
+(gdb)
+</pre></div>
+
+<p>At line 10, the definition of the macro <code>N</code> at line 9 is in force:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) info macro N
+Defined at /home/jimb/gdb/macros/play/sample.c:9
+#define N 28
+(gdb) macro expand N Q M
+expands to: 28 &lt; 42
+(gdb) print N Q M
+$1 = 1
+(gdb)
+</pre></div>
+
+<p>As we step over directives that remove <code>N</code>&rsquo;s definition, and then
+give it a new definition, <small>GDB</small> finds the definition (or lack
+thereof) in force at each point:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) next
+Hello, world!
+12        printf (&quot;We're so creative.\n&quot;);
+(gdb) info macro N
+The symbol `N' has no definition as a C/C++ preprocessor macro
+at /home/jimb/gdb/macros/play/sample.c:12
+(gdb) next
+We're so creative.
+14        printf (&quot;Goodbye, world!\n&quot;);
+(gdb) info macro N
+Defined at /home/jimb/gdb/macros/play/sample.c:13
+#define N 1729
+(gdb) macro expand N Q M
+expands to: 1729 &lt; 42
+(gdb) print N Q M
+$2 = 0
+(gdb)
+</pre></div>
+
+<p>In addition to source files, macros can be defined on the compilation command
+line using the <samp>-D<var>name</var>=<var>value</var></samp> syntax.  For macros defined in
+such a way, <small>GDB</small> displays the location of their definition as line zero
+of the source file submitted to the compiler.
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) info macro __STDC__
+Defined at /home/jimb/gdb/macros/play/sample.c:0
+-D__STDC__=1
+(gdb)
+</pre></div>
+
+
+<div class="footnote">
+<hr>
+<h4 class="footnotes-heading">Footnotes</h4>
+
+<h3><a name="FOOT13" href="#DOCF13">(13)</a></h3>
+<p>This is the
+minimum.  Recent versions of <small>GCC</small> support <samp>-gdwarf-3</samp>
+and <samp>-gdwarf-4</samp>; we recommend always choosing the most recent
+version of DWARF.</p>
+</div>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Tracepoints.html#Tracepoints" accesskey="n" rel="next">Tracepoints</a>, Previous: <a href="Optimized-Code.html#Optimized-Code" accesskey="p" rel="prev">Optimized Code</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

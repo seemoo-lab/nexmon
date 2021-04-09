@@ -1,0 +1,316 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): PowerPC Function Attributes</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): PowerPC Function Attributes">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): PowerPC Function Attributes">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Function-Attributes.html#Function-Attributes" rel="up" title="Function Attributes">
+<link href="RISC_002dV-Function-Attributes.html#RISC_002dV-Function-Attributes" rel="next" title="RISC-V Function Attributes">
+<link href="Nvidia-PTX-Function-Attributes.html#Nvidia-PTX-Function-Attributes" rel="prev" title="Nvidia PTX Function Attributes">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="PowerPC-Function-Attributes"></a>
+<div class="header">
+<p>
+Next: <a href="RISC_002dV-Function-Attributes.html#RISC_002dV-Function-Attributes" accesskey="n" rel="next">RISC-V Function Attributes</a>, Previous: <a href="Nvidia-PTX-Function-Attributes.html#Nvidia-PTX-Function-Attributes" accesskey="p" rel="prev">Nvidia PTX Function Attributes</a>, Up: <a href="Function-Attributes.html#Function-Attributes" accesskey="u" rel="up">Function Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="PowerPC-Function-Attributes-1"></a>
+<h4 class="subsection">6.33.25 PowerPC Function Attributes</h4>
+
+<p>These function attributes are supported by the PowerPC back end:
+</p>
+<dl compact="compact">
+<dt><code>longcall</code></dt>
+<dt><code>shortcall</code></dt>
+<dd><a name="index-indirect-calls_002c-PowerPC"></a>
+<a name="index-longcall-function-attribute_002c-PowerPC"></a>
+<a name="index-shortcall-function-attribute_002c-PowerPC"></a>
+<p>The <code>longcall</code> attribute
+indicates that the function might be far away from the call site and
+require a different (more expensive) calling sequence.  The
+<code>shortcall</code> attribute indicates that the function is always close
+enough for the shorter calling sequence to be used.  These attributes
+override both the <samp>-mlongcall</samp> switch and
+the <code>#pragma longcall</code> setting.
+</p>
+<p>See <a href="RS_002f6000-and-PowerPC-Options.html#RS_002f6000-and-PowerPC-Options">RS/6000 and PowerPC Options</a>, for more information on whether long
+calls are necessary.
+</p>
+</dd>
+<dt><code>target (<var>options</var>)</code></dt>
+<dd><a name="index-target-function-attribute-3"></a>
+<p>As discussed in <a href="Common-Function-Attributes.html#Common-Function-Attributes">Common Function Attributes</a>, this attribute 
+allows specification of target-specific compilation options.
+</p>
+<p>On the PowerPC, the following options are allowed:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>altivec</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-altivec</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022altivec_0022_0029-function-attribute_002c-PowerPC"></a>
+<p>Generate code that uses (does not use) AltiVec instructions.  In
+32-bit code, you cannot enable AltiVec instructions unless
+<samp>-mabi=altivec</samp> is used on the command line.
+</p>
+</dd>
+<dt>&lsquo;<samp>cmpb</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-cmpb</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022cmpb_0022_0029-function-attribute_002c-PowerPC"></a>
+<p>Generate code that uses (does not use) the compare bytes instruction
+implemented on the POWER6 processor and other processors that support
+the PowerPC V2.05 architecture.
+</p>
+</dd>
+<dt>&lsquo;<samp>dlmzb</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-dlmzb</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022dlmzb_0022_0029-function-attribute_002c-PowerPC"></a>
+<p>Generate code that uses (does not use) the string-search &lsquo;<samp>dlmzb</samp>&rsquo;
+instruction on the IBM 405, 440, 464 and 476 processors.  This instruction is
+generated by default when targeting those processors.
+</p>
+</dd>
+<dt>&lsquo;<samp>fprnd</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-fprnd</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022fprnd_0022_0029-function-attribute_002c-PowerPC"></a>
+<p>Generate code that uses (does not use) the FP round to integer
+instructions implemented on the POWER5+ processor and other processors
+that support the PowerPC V2.03 architecture.
+</p>
+</dd>
+<dt>&lsquo;<samp>hard-dfp</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-hard-dfp</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022hard_002ddfp_0022_0029-function-attribute_002c-PowerPC"></a>
+<p>Generate code that uses (does not use) the decimal floating-point
+instructions implemented on some POWER processors.
+</p>
+</dd>
+<dt>&lsquo;<samp>isel</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-isel</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022isel_0022_0029-function-attribute_002c-PowerPC"></a>
+<p>Generate code that uses (does not use) ISEL instruction.
+</p>
+</dd>
+<dt>&lsquo;<samp>mfcrf</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-mfcrf</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022mfcrf_0022_0029-function-attribute_002c-PowerPC"></a>
+<p>Generate code that uses (does not use) the move from condition
+register field instruction implemented on the POWER4 processor and
+other processors that support the PowerPC V2.01 architecture.
+</p>
+</dd>
+<dt>&lsquo;<samp>mfpgpr</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-mfpgpr</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022mfpgpr_0022_0029-function-attribute_002c-PowerPC"></a>
+<p>Generate code that uses (does not use) the FP move to/from general
+purpose register instructions implemented on the POWER6X processor and
+other processors that support the extended PowerPC V2.05 architecture.
+</p>
+</dd>
+<dt>&lsquo;<samp>mulhw</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-mulhw</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022mulhw_0022_0029-function-attribute_002c-PowerPC"></a>
+<p>Generate code that uses (does not use) the half-word multiply and
+multiply-accumulate instructions on the IBM 405, 440, 464 and 476 processors.
+These instructions are generated by default when targeting those
+processors.
+</p>
+</dd>
+<dt>&lsquo;<samp>multiple</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-multiple</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022multiple_0022_0029-function-attribute_002c-PowerPC"></a>
+<p>Generate code that uses (does not use) the load multiple word
+instructions and the store multiple word instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>update</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-update</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022update_0022_0029-function-attribute_002c-PowerPC"></a>
+<p>Generate code that uses (does not use) the load or store instructions
+that update the base register to the address of the calculated memory
+location.
+</p>
+</dd>
+<dt>&lsquo;<samp>popcntb</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-popcntb</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022popcntb_0022_0029-function-attribute_002c-PowerPC"></a>
+<p>Generate code that uses (does not use) the popcount and double-precision
+FP reciprocal estimate instruction implemented on the POWER5
+processor and other processors that support the PowerPC V2.02
+architecture.
+</p>
+</dd>
+<dt>&lsquo;<samp>popcntd</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-popcntd</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022popcntd_0022_0029-function-attribute_002c-PowerPC"></a>
+<p>Generate code that uses (does not use) the popcount instruction
+implemented on the POWER7 processor and other processors that support
+the PowerPC V2.06 architecture.
+</p>
+</dd>
+<dt>&lsquo;<samp>powerpc-gfxopt</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-powerpc-gfxopt</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022powerpc_002dgfxopt_0022_0029-function-attribute_002c-PowerPC"></a>
+<p>Generate code that uses (does not use) the optional PowerPC
+architecture instructions in the Graphics group, including
+floating-point select.
+</p>
+</dd>
+<dt>&lsquo;<samp>powerpc-gpopt</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-powerpc-gpopt</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022powerpc_002dgpopt_0022_0029-function-attribute_002c-PowerPC"></a>
+<p>Generate code that uses (does not use) the optional PowerPC
+architecture instructions in the General Purpose group, including
+floating-point square root.
+</p>
+</dd>
+<dt>&lsquo;<samp>recip-precision</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-recip-precision</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022recip_002dprecision_0022_0029-function-attribute_002c-PowerPC"></a>
+<p>Assume (do not assume) that the reciprocal estimate instructions
+provide higher-precision estimates than is mandated by the PowerPC
+ABI.
+</p>
+</dd>
+<dt>&lsquo;<samp>string</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-string</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022string_0022_0029-function-attribute_002c-PowerPC"></a>
+<p>Generate code that uses (does not use) the load string instructions
+and the store string word instructions to save multiple registers and
+do small block moves.
+</p>
+</dd>
+<dt>&lsquo;<samp>vsx</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-vsx</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022vsx_0022_0029-function-attribute_002c-PowerPC"></a>
+<p>Generate code that uses (does not use) vector/scalar (VSX)
+instructions, and also enable the use of built-in functions that allow
+more direct access to the VSX instruction set.  In 32-bit code, you
+cannot enable VSX or AltiVec instructions unless
+<samp>-mabi=altivec</samp> is used on the command line.
+</p>
+</dd>
+<dt>&lsquo;<samp>friz</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-friz</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022friz_0022_0029-function-attribute_002c-PowerPC"></a>
+<p>Generate (do not generate) the <code>friz</code> instruction when the
+<samp>-funsafe-math-optimizations</samp> option is used to optimize
+rounding a floating-point value to 64-bit integer and back to floating
+point.  The <code>friz</code> instruction does not return the same value if
+the floating-point number is too large to fit in an integer.
+</p>
+</dd>
+<dt>&lsquo;<samp>avoid-indexed-addresses</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-avoid-indexed-addresses</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022avoid_002dindexed_002daddresses_0022_0029-function-attribute_002c-PowerPC"></a>
+<p>Generate code that tries to avoid (not avoid) the use of indexed load
+or store instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>paired</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-paired</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022paired_0022_0029-function-attribute_002c-PowerPC"></a>
+<p>Generate code that uses (does not use) the generation of PAIRED simd
+instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>longcall</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-longcall</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022longcall_0022_0029-function-attribute_002c-PowerPC"></a>
+<p>Generate code that assumes (does not assume) that all calls are far
+away so that a longer more expensive calling sequence is required.
+</p>
+</dd>
+<dt>&lsquo;<samp>cpu=<var>CPU</var></samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022cpu_003dCPU_0022_0029-function-attribute_002c-PowerPC"></a>
+<p>Specify the architecture to generate code for when compiling the
+function.  If you select the <code>target(&quot;cpu=power7&quot;)</code> attribute when
+generating 32-bit code, VSX and AltiVec instructions are not generated
+unless you use the <samp>-mabi=altivec</samp> option on the command line.
+</p>
+</dd>
+<dt>&lsquo;<samp>tune=<var>TUNE</var></samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022tune_003dTUNE_0022_0029-function-attribute_002c-PowerPC"></a>
+<p>Specify the architecture to tune for when compiling the function.  If
+you do not specify the <code>target(&quot;tune=<var>TUNE</var>&quot;)</code> attribute and
+you do specify the <code>target(&quot;cpu=<var>CPU</var>&quot;)</code> attribute,
+compilation tunes for the <var>CPU</var> architecture, and not the
+default tuning specified on the command line.
+</p></dd>
+</dl>
+
+<p>On the PowerPC, the inliner does not inline a
+function that has different target options than the caller, unless the
+callee has a subset of the target options of the caller.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="RISC_002dV-Function-Attributes.html#RISC_002dV-Function-Attributes" accesskey="n" rel="next">RISC-V Function Attributes</a>, Previous: <a href="Nvidia-PTX-Function-Attributes.html#Nvidia-PTX-Function-Attributes" accesskey="p" rel="prev">Nvidia PTX Function Attributes</a>, Up: <a href="Function-Attributes.html#Function-Attributes" accesskey="u" rel="up">Function Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

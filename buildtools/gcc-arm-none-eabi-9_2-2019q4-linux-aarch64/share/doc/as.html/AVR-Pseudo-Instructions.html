@@ -1,0 +1,133 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: AVR Pseudo Instructions</title>
+
+<meta name="description" content="Using as: AVR Pseudo Instructions">
+<meta name="keywords" content="Using as: AVR Pseudo Instructions">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="AVR_002dDependent.html#AVR_002dDependent" rel="up" title="AVR-Dependent">
+<link href="Blackfin_002dDependent.html#Blackfin_002dDependent" rel="next" title="Blackfin-Dependent">
+<link href="AVR-Opcodes.html#AVR-Opcodes" rel="prev" title="AVR Opcodes">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="AVR-Pseudo-Instructions"></a>
+<div class="header">
+<p>
+Previous: <a href="AVR-Opcodes.html#AVR-Opcodes" accesskey="p" rel="prev">AVR Opcodes</a>, Up: <a href="AVR_002dDependent.html#AVR_002dDependent" accesskey="u" rel="up">AVR-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Pseudo-Instructions"></a>
+<h4 class="subsection">9.5.4 Pseudo Instructions</h4>
+
+<p>The only available pseudo-instruction <code>__gcc_isr</code> can be activated by
+option <samp>-mgcc-isr</samp>.
+</p>
+<dl compact="compact">
+<dt><code>__gcc_isr 1</code></dt>
+<dd><p>Emit code chunk to be used in avr-gcc ISR prologue.
+It will expand to at most six 1-word instructions, all optional:
+push of <code>tmp_reg</code>, push of <code>SREG</code>,
+push and clear of <code>zero_reg</code>, push of <var>Reg</var>.
+</p>
+</dd>
+<dt><code>__gcc_isr 2</code></dt>
+<dd><p>Emit code chunk to be used in an avr-gcc ISR epilogue.
+It will expand to at most five 1-word instructions, all optional: 
+pop of <var>Reg</var>, pop of <code>zero_reg</code>,
+pop of <code>SREG</code>, pop of <code>tmp_reg</code>.
+</p>
+</dd>
+<dt><code>__gcc_isr 0, <var>Reg</var></code></dt>
+<dd><p>Finish avr-gcc ISR function.  Scan code since the last prologue
+for usage of: <code>SREG</code>, <code>tmp_reg</code>, <code>zero_reg</code>.
+Prologue chunk and epilogue chunks will be replaced by appropriate code
+to save / restore <code>SREG</code>, <code>tmp_reg</code>, <code>zero_reg</code> and <var>Reg</var>.
+</p>
+</dd>
+</dl>
+
+<p>Example input:
+</p>
+<div class="example">
+<pre class="example">__vector1:
+    __gcc_isr 1
+    lds r24, var
+    inc r24
+    sts var, r24
+    __gcc_isr 2
+    reti
+    __gcc_isr 0, r24
+</pre></div>
+
+<p>Example output:
+</p>
+<div class="example">
+<pre class="example">00000000 &lt;__vector1&gt;:
+   0:   8f 93           push    r24
+   2:   8f b7           in      r24, 0x3f
+   4:   8f 93           push    r24
+   6:   80 91 60 00     lds     r24, 0x0060     ; 0x800060 &lt;var&gt;
+   a:   83 95           inc     r24
+   c:   80 93 60 00     sts     0x0060, r24     ; 0x800060 &lt;var&gt;
+  10:   8f 91           pop     r24
+  12:   8f bf           out     0x3f, r24
+  14:   8f 91           pop     r24
+  16:   18 95           reti
+</pre></div>
+
+
+
+
+
+</body>
+</html>

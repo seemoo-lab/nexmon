@@ -1,0 +1,122 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Portability</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Portability">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Portability">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Interface.html#Interface" rel="next" title="Interface">
+<link href="Contributing.html#Contributing" rel="prev" title="Contributing">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Portability"></a>
+<div class="header">
+<p>
+Next: <a href="Interface.html#Interface" accesskey="n" rel="next">Interface</a>, Previous: <a href="Contributing.html#Contributing" accesskey="p" rel="prev">Contributing</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="GCC-and-Portability"></a>
+<h2 class="chapter">2 GCC and Portability</h2>
+<a name="index-portability"></a>
+<a name="index-GCC-and-portability"></a>
+
+<p>GCC itself aims to be portable to any machine where <code>int</code> is at least
+a 32-bit type.  It aims to target machines with a flat (non-segmented) byte
+addressed data address space (the code address space can be separate).
+Target ABIs may have 8, 16, 32 or 64-bit <code>int</code> type.  <code>char</code>
+can be wider than 8 bits.
+</p>
+<p>GCC gets most of the information about the target machine from a machine
+description which gives an algebraic formula for each of the machine&rsquo;s
+instructions.  This is a very clean way to describe the target.  But when
+the compiler needs information that is difficult to express in this
+fashion, ad-hoc parameters have been defined for machine descriptions.
+The purpose of portability is to reduce the total work needed on the
+compiler; it was not of interest for its own sake.
+</p>
+<a name="index-endianness"></a>
+<a name="index-autoincrement-addressing_002c-availability"></a>
+<a name="index-abort"></a>
+<p>GCC does not contain machine dependent code, but it does contain code
+that depends on machine parameters such as endianness (whether the most
+significant byte has the highest or lowest address of the bytes in a word)
+and the availability of autoincrement addressing.  In the RTL-generation
+pass, it is often necessary to have multiple strategies for generating code
+for a particular kind of syntax tree, strategies that are usable for different
+combinations of parameters.  Often, not all possible cases have been
+addressed, but only the common ones or only the ones that have been
+encountered.  As a result, a new target may require additional
+strategies.  You will know
+if this happens because the compiler will call <code>abort</code>.  Fortunately,
+the new strategies can be added in a machine-independent fashion, and will
+affect only the target machines that need them.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Interface.html#Interface" accesskey="n" rel="next">Interface</a>, Previous: <a href="Contributing.html#Contributing" accesskey="p" rel="prev">Contributing</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Input/Output</title>
+
+<meta name="description" content="Debugging with GDB: Input/Output">
+<meta name="keywords" content="Debugging with GDB: Input/Output">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Running.html#Running" rel="up" title="Running">
+<link href="Attach.html#Attach" rel="next" title="Attach">
+<link href="Working-Directory.html#Working-Directory" rel="prev" title="Working Directory">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Input_002fOutput"></a>
+<div class="header">
+<p>
+Next: <a href="Attach.html#Attach" accesskey="n" rel="next">Attach</a>, Previous: <a href="Working-Directory.html#Working-Directory" accesskey="p" rel="prev">Working Directory</a>, Up: <a href="Running.html#Running" accesskey="u" rel="up">Running</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Your-Program_0027s-Input-and-Output"></a>
+<h3 class="section">4.6 Your Program&rsquo;s Input and Output</h3>
+
+<a name="index-redirection"></a>
+<a name="index-i_002fo"></a>
+<a name="index-terminal"></a>
+<p>By default, the program you run under <small>GDB</small> does input and output to
+the same terminal that <small>GDB</small> uses.  <small>GDB</small> switches the terminal
+to its own terminal modes to interact with you, but it records the terminal
+modes your program was using and switches back to them when you continue
+running your program.
+</p>
+<dl compact="compact">
+<dd><a name="index-info-terminal"></a>
+</dd>
+<dt><code>info terminal</code></dt>
+<dd><p>Displays information recorded by <small>GDB</small> about the terminal modes your
+program is using.
+</p></dd>
+</dl>
+
+<p>You can redirect your program&rsquo;s input and/or output using shell
+redirection with the <code>run</code> command.  For example,
+</p>
+<div class="smallexample">
+<pre class="smallexample">run &gt; outfile
+</pre></div>
+
+<p>starts your program, diverting its output to the file <samp>outfile</samp>.
+</p>
+<a name="index-tty"></a>
+<a name="index-controlling-terminal"></a>
+<p>Another way to specify where your program should do input and output is
+with the <code>tty</code> command.  This command accepts a file name as
+argument, and causes this file to be the default for future <code>run</code>
+commands.  It also resets the controlling terminal for the child
+process, for future <code>run</code> commands.  For example,
+</p>
+<div class="smallexample">
+<pre class="smallexample">tty /dev/ttyb
+</pre></div>
+
+<p>directs that processes started with subsequent <code>run</code> commands
+default to do input and output on the terminal <samp>/dev/ttyb</samp> and have
+that as their controlling terminal.
+</p>
+<p>An explicit redirection in <code>run</code> overrides the <code>tty</code> command&rsquo;s
+effect on the input/output device, but not its effect on the controlling
+terminal.
+</p>
+<p>When you use the <code>tty</code> command or redirect input in the <code>run</code>
+command, only the input <em>for your program</em> is affected.  The input
+for <small>GDB</small> still comes from your terminal.  <code>tty</code> is an alias
+for <code>set inferior-tty</code>.
+</p>
+<a name="index-inferior-tty"></a>
+<a name="index-set-inferior-controlling-terminal"></a>
+<p>You can use the <code>show inferior-tty</code> command to tell <small>GDB</small> to
+display the name of the terminal that will be used for future runs of your
+program.
+</p>
+<dl compact="compact">
+<dt><code>set inferior-tty [ <var>tty</var> ]</code></dt>
+<dd><a name="index-set-inferior_002dtty"></a>
+<p>Set the tty for the program being debugged to <var>tty</var>.  Omitting <var>tty</var>
+restores the default behavior, which is to use the same terminal as
+<small>GDB</small>.
+</p>
+</dd>
+<dt><code>show inferior-tty</code></dt>
+<dd><a name="index-show-inferior_002dtty"></a>
+<p>Show the current tty for the program being debugged.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Attach.html#Attach" accesskey="n" rel="next">Attach</a>, Previous: <a href="Working-Directory.html#Working-Directory" accesskey="p" rel="prev">Working Directory</a>, Up: <a href="Running.html#Running" accesskey="u" rel="up">Running</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

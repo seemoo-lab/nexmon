@@ -1,0 +1,188 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: caf_reference_t</title>
+
+<meta name="description" content="The GNU Fortran Compiler: caf_reference_t">
+<meta name="keywords" content="The GNU Fortran Compiler: caf_reference_t">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Type-and-enum-ABI-Documentation.html#Type-and-enum-ABI-Documentation" rel="up" title="Type and enum ABI Documentation">
+<link href="caf_005fteam_005ft.html#caf_005fteam_005ft" rel="next" title="caf_team_t">
+<link href="caf_005fderegister_005ft.html#caf_005fderegister_005ft" rel="prev" title="caf_deregister_t">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="caf_005freference_005ft"></a>
+<div class="header">
+<p>
+Next: <a href="caf_005fteam_005ft.html#caf_005fteam_005ft" accesskey="n" rel="next">caf_team_t</a>, Previous: <a href="caf_005fderegister_005ft.html#caf_005fderegister_005ft" accesskey="p" rel="prev">caf_deregister_t</a>, Up: <a href="Type-and-enum-ABI-Documentation.html#Type-and-enum-ABI-Documentation" accesskey="u" rel="up">Type and enum ABI Documentation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="caf_005freference_005ft-1"></a>
+<h4 class="subsection">8.1.4 <code>caf_reference_t</code></h4>
+
+<p>The structure used for implementing arbitrary reference chains.
+A <code>CAF_REFERENCE_T</code> allows to specify a component reference or any kind
+of array reference of any rank supported by gfortran.  For array references all
+kinds as known by the compiler/Fortran standard are supported indicated by
+a <code>MODE</code>.
+</p>
+<pre class="verbatim">typedef enum caf_ref_type_t {
+  /* Reference a component of a derived type, either regular one or an
+     allocatable or pointer type.  For regular ones idx in caf_reference_t is
+     set to -1.  */
+  CAF_REF_COMPONENT,
+  /* Reference an allocatable array.  */
+  CAF_REF_ARRAY,
+  /* Reference a non-allocatable/non-pointer array.  I.e., the coarray object
+     has no array descriptor associated and the addressing is done
+     completely using the ref.  */
+  CAF_REF_STATIC_ARRAY
+} caf_ref_type_t;
+</pre>
+<pre class="verbatim">typedef enum caf_array_ref_t {
+  /* No array ref.  This terminates the array ref.  */
+  CAF_ARR_REF_NONE = 0,
+  /* Reference array elements given by a vector.  Only for this mode
+     caf_reference_t.u.a.dim[i].v is valid.  */
+  CAF_ARR_REF_VECTOR,
+  /* A full array ref (:).  */
+  CAF_ARR_REF_FULL,
+  /* Reference a range on elements given by start, end and stride.  */
+  CAF_ARR_REF_RANGE,
+  /* Only a single item is referenced given in the start member.  */
+  CAF_ARR_REF_SINGLE,
+  /* An array ref of the kind (i:), where i is an arbitrary valid index in the
+     array.  The index i is given in the start member.  */
+  CAF_ARR_REF_OPEN_END,
+  /* An array ref of the kind (:i), where the lower bound of the array ref
+     is given by the remote side.  The index i is given in the end member.  */
+  CAF_ARR_REF_OPEN_START
+} caf_array_ref_t;
+</pre>
+<pre class="verbatim">/* References to remote components of a derived type.  */
+typedef struct caf_reference_t {
+  /* A pointer to the next ref or NULL.  */
+  struct caf_reference_t *next;
+  /* The type of the reference.  */
+  /* caf_ref_type_t, replaced by int to allow specification in fortran FE.  */
+  int type;
+  /* The size of an item referenced in bytes.  I.e. in an array ref this is
+     the factor to advance the array pointer with to get to the next item.
+     For component refs this gives just the size of the element referenced.  */
+  size_t item_size;
+  union {
+    struct {
+      /* The offset (in bytes) of the component in the derived type.
+         Unused for allocatable or pointer components.  */
+      ptrdiff_t offset;
+      /* The offset (in bytes) to the caf_token associated with this
+         component.  NULL, when not allocatable/pointer ref.  */
+      ptrdiff_t caf_token_offset;
+    } c;
+    struct {
+      /* The mode of the array ref.  See CAF_ARR_REF_*.  */
+      /* caf_array_ref_t, replaced by unsigend char to allow specification in
+         fortran FE.  */
+     unsigned char mode[GFC_MAX_DIMENSIONS];
+      /* The type of a static array.  Unset for array's with descriptors.  */
+      int static_array_type;
+      /* Subscript refs (s) or vector refs (v).  */
+      union {
+        struct {
+          /* The start and end boundary of the ref and the stride.  */
+          index_type start, end, stride;
+        } s;
+        struct {
+          /* nvec entries of kind giving the elements to reference.  */
+          void *vector;
+          /* The number of entries in vector.  */
+          size_t nvec;
+          /* The integer kind used for the elements in vector.  */
+          int kind;
+        } v;
+      } dim[GFC_MAX_DIMENSIONS];
+    } a;
+  } u;
+} caf_reference_t;
+</pre>
+<p>The references make up a single linked list of reference operations.  The
+<code>NEXT</code> member links to the next reference or NULL to indicate the end of
+the chain.  Component and array refs can be arbitrarly mixed as long as they
+comply to the Fortran standard.
+</p>
+<p><em>NOTES</em>
+The member <code>STATIC_ARRAY_TYPE</code> is used only when the <code>TYPE</code> is
+<code>CAF_REF_STATIC_ARRAY</code>.  The member gives the type of the data referenced.
+Because no array descriptor is available for a descriptor-less array and
+type conversion still needs to take place the type is transported here.
+</p>
+<p>At the moment <code>CAF_ARR_REF_VECTOR</code> is not implemented in the front end for
+descriptor-less arrays.  The library caf_single has untested support for it.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="caf_005fteam_005ft.html#caf_005fteam_005ft" accesskey="n" rel="next">caf_team_t</a>, Previous: <a href="caf_005fderegister_005ft.html#caf_005fderegister_005ft" accesskey="p" rel="prev">caf_deregister_t</a>, Up: <a href="Type-and-enum-ABI-Documentation.html#Type-and-enum-ABI-Documentation" accesskey="u" rel="up">Type and enum ABI Documentation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

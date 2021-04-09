@@ -1,0 +1,178 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: EXECUTE_COMMAND_LINE</title>
+
+<meta name="description" content="The GNU Fortran Compiler: EXECUTE_COMMAND_LINE">
+<meta name="keywords" content="The GNU Fortran Compiler: EXECUTE_COMMAND_LINE">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Intrinsic-Procedures.html#Intrinsic-Procedures" rel="up" title="Intrinsic Procedures">
+<link href="EXIT.html#EXIT" rel="next" title="EXIT">
+<link href="EVENT_005fQUERY.html#EVENT_005fQUERY" rel="prev" title="EVENT_QUERY">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="EXECUTE_005fCOMMAND_005fLINE"></a>
+<div class="header">
+<p>
+Next: <a href="EXIT.html#EXIT" accesskey="n" rel="next">EXIT</a>, Previous: <a href="EVENT_005fQUERY.html#EVENT_005fQUERY" accesskey="p" rel="prev">EVENT_QUERY</a>, Up: <a href="Intrinsic-Procedures.html#Intrinsic-Procedures" accesskey="u" rel="up">Intrinsic Procedures</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="EXECUTE_005fCOMMAND_005fLINE-_002d_002d_002d-Execute-a-shell-command"></a>
+<h3 class="section">9.100 <code>EXECUTE_COMMAND_LINE</code> &mdash; Execute a shell command</h3>
+<a name="index-EXECUTE_005fCOMMAND_005fLINE"></a>
+<a name="index-system_002c-system-call"></a>
+<a name="index-command-line"></a>
+
+<dl compact="compact">
+<dt><em>Description</em>:</dt>
+<dd><p><code>EXECUTE_COMMAND_LINE</code> runs a shell command, synchronously or
+asynchronously.
+</p>
+<p>The <code>COMMAND</code> argument is passed to the shell and executed (The
+shell is <code>sh</code> on Unix systems, and <code>cmd.exe</code> on Windows.).
+If <code>WAIT</code> is present and has the value false, the execution of
+the command is asynchronous if the system supports it; otherwise, the
+command is executed synchronously using the C library&rsquo;s <code>system</code>
+call.
+</p>
+<p>The three last arguments allow the user to get status information.  After
+synchronous execution, <code>EXITSTAT</code> contains the integer exit code of
+the command, as returned by <code>system</code>.  <code>CMDSTAT</code> is set to zero
+if the command line was executed (whatever its exit status was).
+<code>CMDMSG</code> is assigned an error message if an error has occurred.
+</p>
+<p>Note that the <code>system</code> function need not be thread-safe. It is
+the responsibility of the user to ensure that <code>system</code> is not
+called concurrently.
+</p>
+<p>For asynchronous execution on supported targets, the POSIX
+<code>posix_spawn</code> or <code>fork</code> functions are used.  Also, a signal
+handler for the <code>SIGCHLD</code> signal is installed.
+</p>
+</dd>
+<dt><em>Standard</em>:</dt>
+<dd><p>Fortran 2008 and later
+</p>
+</dd>
+<dt><em>Class</em>:</dt>
+<dd><p>Subroutine
+</p>
+</dd>
+<dt><em>Syntax</em>:</dt>
+<dd><p><code>CALL EXECUTE_COMMAND_LINE(COMMAND [, WAIT, EXITSTAT, CMDSTAT, CMDMSG ])</code>
+</p>
+</dd>
+<dt><em>Arguments</em>:</dt>
+<dd><table>
+<tr><td width="15%"><var>COMMAND</var></td><td width="70%">Shall be a default <code>CHARACTER</code> scalar.</td></tr>
+<tr><td width="15%"><var>WAIT</var></td><td width="70%">(Optional) Shall be a default <code>LOGICAL</code> scalar.</td></tr>
+<tr><td width="15%"><var>EXITSTAT</var></td><td width="70%">(Optional) Shall be an <code>INTEGER</code> of the
+default kind.</td></tr>
+<tr><td width="15%"><var>CMDSTAT</var></td><td width="70%">(Optional) Shall be an <code>INTEGER</code> of the
+default kind.</td></tr>
+<tr><td width="15%"><var>CMDMSG</var></td><td width="70%">(Optional) Shall be an <code>CHARACTER</code> scalar of the
+default kind.</td></tr>
+</table>
+
+</dd>
+<dt><em>Example</em>:</dt>
+<dd><div class="smallexample">
+<pre class="smallexample">program test_exec
+  integer :: i
+
+  call execute_command_line (&quot;external_prog.exe&quot;, exitstat=i)
+  print *, &quot;Exit status of external_prog.exe was &quot;, i
+
+  call execute_command_line (&quot;reindex_files.exe&quot;, wait=.false.)
+  print *, &quot;Now reindexing files in the background&quot;
+
+end program test_exec
+</pre></div>
+
+
+</dd>
+<dt><em>Note</em>:</dt>
+<dd>
+<p>Because this intrinsic is implemented in terms of the <code>system</code>
+function call, its behavior with respect to signaling is processor
+dependent. In particular, on POSIX-compliant systems, the SIGINT and
+SIGQUIT signals will be ignored, and the SIGCHLD will be blocked. As
+such, if the parent process is terminated, the child process might not be
+terminated alongside.
+</p>
+
+</dd>
+<dt><em>See also</em>:</dt>
+<dd><p><a href="SYSTEM.html#SYSTEM">SYSTEM</a>
+</p></dd>
+</dl>
+
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="EXIT.html#EXIT" accesskey="n" rel="next">EXIT</a>, Previous: <a href="EVENT_005fQUERY.html#EVENT_005fQUERY" accesskey="p" rel="prev">EVENT_QUERY</a>, Up: <a href="Intrinsic-Procedures.html#Intrinsic-Procedures" accesskey="u" rel="up">Intrinsic Procedures</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

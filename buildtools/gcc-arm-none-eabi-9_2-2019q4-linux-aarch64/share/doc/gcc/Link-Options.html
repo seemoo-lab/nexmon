@@ -1,0 +1,529 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Link Options</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Link Options">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Link Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Invoking-GCC.html#Invoking-GCC" rel="up" title="Invoking GCC">
+<link href="Directory-Options.html#Directory-Options" rel="next" title="Directory Options">
+<link href="Assembler-Options.html#Assembler-Options" rel="prev" title="Assembler Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Link-Options"></a>
+<div class="header">
+<p>
+Next: <a href="Directory-Options.html#Directory-Options" accesskey="n" rel="next">Directory Options</a>, Previous: <a href="Assembler-Options.html#Assembler-Options" accesskey="p" rel="prev">Assembler Options</a>, Up: <a href="Invoking-GCC.html#Invoking-GCC" accesskey="u" rel="up">Invoking GCC</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Options-for-Linking"></a>
+<h3 class="section">3.14 Options for Linking</h3>
+<a name="index-link-options"></a>
+<a name="index-options_002c-linking"></a>
+
+<p>These options come into play when the compiler links object files into
+an executable output file.  They are meaningless if the compiler is
+not doing a link step.
+</p>
+<dl compact="compact">
+<dd><a name="index-file-names"></a>
+</dd>
+<dt><code><var>object-file-name</var></code></dt>
+<dd><p>A file name that does not end in a special recognized suffix is
+considered to name an object file or library.  (Object files are
+distinguished from libraries by the linker according to the file
+contents.)  If linking is done, these object files are used as input
+to the linker.
+</p>
+</dd>
+<dt><code>-c</code></dt>
+<dt><code>-S</code></dt>
+<dt><code>-E</code></dt>
+<dd><a name="index-c-1"></a>
+<a name="index-S-1"></a>
+<a name="index-E-1"></a>
+<p>If any of these options is used, then the linker is not run, and
+object file names should not be used as arguments.  See <a href="Overall-Options.html#Overall-Options">Overall Options</a>.
+</p>
+</dd>
+<dt><code>-flinker-output=<var>type</var></code></dt>
+<dd><a name="index-flinker_002doutput"></a>
+<p>This option controls the code generation of the link time optimizer.  By
+default the linker output is determined by the linker plugin automatically. For
+debugging the compiler and in the case of incremental linking to non-lto object
+file is desired, it may be useful to control the type manually.
+</p>
+<p>If <var>type</var> is &lsquo;<samp>exec</samp>&rsquo; the code generation is configured to produce static
+binary. In this case <samp>-fpic</samp> and <samp>-fpie</samp> are both disabled.
+</p>
+<p>If <var>type</var> is &lsquo;<samp>dyn</samp>&rsquo; the code generation is configured to produce shared
+library. In this case <samp>-fpic</samp> or <samp>-fPIC</samp> is preserved, but not
+enabled automatically.  This makes it possible to build shared libraries without
+position independent code on architectures this is possible, i.e. on x86.
+</p>
+<p>If <var>type</var> is &lsquo;<samp>pie</samp>&rsquo; the code generation is configured to produce
+<samp>-fpie</samp> executable. This result in similar optimizations as &lsquo;<samp>exec</samp>&rsquo;
+except that <samp>-fpie</samp> is not disabled if specified at compilation time.
+</p>
+<p>If <var>type</var> is &lsquo;<samp>rel</samp>&rsquo; the compiler assumes that incremental linking is
+done.  The sections containing intermediate code for link-time optimization are
+merged, pre-optimized, and output to the resulting object file. In addition, if
+<samp>-ffat-lto-objects</samp> is specified the binary code is produced for future
+non-lto linking. The object file produced by incremental linking will be smaller
+than a static library produced from the same object files.  At link-time the
+result of incremental linking will also load faster to compiler than a static
+library assuming that majority of objects in the library are used.
+</p>
+<p>Finally &lsquo;<samp>nolto-rel</samp>&rsquo; configure compiler to for incremental linking where
+code generation is forced, final binary is produced and the intermediate code
+for later link-time optimization is stripped. When multiple object files are
+linked together the resulting code will be optimized better than with link time
+optimizations disabled (for example, the cross-module inlining will happen),
+most of benefits of whole program optimizations are however lost. 
+</p>
+<p>During the incremental link (by <samp>-r</samp>) the linker plugin will default to
+<samp>rel</samp>. With current interfaces to GNU Binutils it is however not
+possible to link incrementally LTO objects and non-LTO objects into a single
+mixed object file.  In the case any of object files in incremental link cannot
+be used for link-time optimization the linker plugin will output warning and
+use &lsquo;<samp>nolto-rel</samp>&rsquo;. To maintain the whole program optimization it is
+recommended to link such objects into static library instead. Alternatively it
+is possible to use H.J. Lu&rsquo;s binutils with support for mixed objects.
+</p>
+</dd>
+<dt><code>-fuse-ld=bfd</code></dt>
+<dd><a name="index-fuse_002dld_003dbfd"></a>
+<p>Use the <code>bfd</code> linker instead of the default linker.
+</p>
+</dd>
+<dt><code>-fuse-ld=gold</code></dt>
+<dd><a name="index-fuse_002dld_003dgold"></a>
+<p>Use the <code>gold</code> linker instead of the default linker.
+</p>
+</dd>
+<dt><code>-fuse-ld=lld</code></dt>
+<dd><a name="index-fuse_002dld_003dlld"></a>
+<p>Use the LLVM <code>lld</code> linker instead of the default linker.
+</p>
+<a name="index-Libraries"></a>
+</dd>
+<dt><code>-l<var>library</var></code></dt>
+<dt><code>-l <var>library</var></code></dt>
+<dd><a name="index-l"></a>
+<p>Search the library named <var>library</var> when linking.  (The second
+alternative with the library as a separate argument is only for
+POSIX compliance and is not recommended.)
+</p>
+<p>The <samp>-l</samp> option is passed directly to the linker by GCC.  Refer
+to your linker documentation for exact details.  The general
+description below applies to the GNU linker.  
+</p>
+<p>The linker searches a standard list of directories for the library.
+The directories searched include several standard system directories
+plus any that you specify with <samp>-L</samp>.
+</p>
+<p>Static libraries are archives of object files, and have file names
+like <samp>lib<var>library</var>.a</samp>.  Some targets also support shared
+libraries, which typically have names like <samp>lib<var>library</var>.so</samp>.
+If both static and shared libraries are found, the linker gives
+preference to linking with the shared library unless the
+<samp>-static</samp> option is used.
+</p>
+<p>It makes a difference where in the command you write this option; the
+linker searches and processes libraries and object files in the order they
+are specified.  Thus, &lsquo;<samp>foo.o -lz bar.o</samp>&rsquo; searches library &lsquo;<samp>z</samp>&rsquo;
+after file <samp>foo.o</samp> but before <samp>bar.o</samp>.  If <samp>bar.o</samp> refers
+to functions in &lsquo;<samp>z</samp>&rsquo;, those functions may not be loaded.
+</p>
+</dd>
+<dt><code>-lobjc</code></dt>
+<dd><a name="index-lobjc"></a>
+<p>You need this special case of the <samp>-l</samp> option in order to
+link an Objective-C or Objective-C++ program.
+</p>
+</dd>
+<dt><code>-nostartfiles</code></dt>
+<dd><a name="index-nostartfiles"></a>
+<p>Do not use the standard system startup files when linking.
+The standard system libraries are used normally, unless <samp>-nostdlib</samp>,
+<samp>-nolibc</samp>, or <samp>-nodefaultlibs</samp> is used.
+</p>
+</dd>
+<dt><code>-nodefaultlibs</code></dt>
+<dd><a name="index-nodefaultlibs"></a>
+<p>Do not use the standard system libraries when linking.
+Only the libraries you specify are passed to the linker, and options
+specifying linkage of the system libraries, such as <samp>-static-libgcc</samp>
+or <samp>-shared-libgcc</samp>, are ignored.  
+The standard startup files are used normally, unless <samp>-nostartfiles</samp>
+is used.  
+</p>
+<p>The compiler may generate calls to <code>memcmp</code>,
+<code>memset</code>, <code>memcpy</code> and <code>memmove</code>.
+These entries are usually resolved by entries in
+libc.  These entry points should be supplied through some other
+mechanism when this option is specified.
+</p>
+</dd>
+<dt><code>-nolibc</code></dt>
+<dd><a name="index-nolibc"></a>
+<p>Do not use the C library or system libraries tightly coupled with it when
+linking.  Still link with the startup files, <samp>libgcc</samp> or toolchain
+provided language support libraries such as <samp>libgnat</samp>, <samp>libgfortran</samp>
+or <samp>libstdc++</samp> unless options preventing their inclusion are used as
+well.  This typically removes <samp>-lc</samp> from the link command line, as well
+as system libraries that normally go with it and become meaningless when
+absence of a C library is assumed, for example <samp>-lpthread</samp> or
+<samp>-lm</samp> in some configurations.  This is intended for bare-board
+targets when there is indeed no C library available.
+</p>
+</dd>
+<dt><code>-nostdlib</code></dt>
+<dd><a name="index-nostdlib"></a>
+<p>Do not use the standard system startup files or libraries when linking.
+No startup files and only the libraries you specify are passed to
+the linker, and options specifying linkage of the system libraries, such as
+<samp>-static-libgcc</samp> or <samp>-shared-libgcc</samp>, are ignored.
+</p>
+<p>The compiler may generate calls to <code>memcmp</code>, <code>memset</code>,
+<code>memcpy</code> and <code>memmove</code>.
+These entries are usually resolved by entries in
+libc.  These entry points should be supplied through some other
+mechanism when this option is specified.
+</p>
+<a name="index-_002dlgcc_002c-use-with-_002dnostdlib"></a>
+<a name="index-_002dnostdlib-and-unresolved-references"></a>
+<a name="index-unresolved-references-and-_002dnostdlib"></a>
+<a name="index-_002dlgcc_002c-use-with-_002dnodefaultlibs"></a>
+<a name="index-_002dnodefaultlibs-and-unresolved-references"></a>
+<a name="index-unresolved-references-and-_002dnodefaultlibs"></a>
+<p>One of the standard libraries bypassed by <samp>-nostdlib</samp> and
+<samp>-nodefaultlibs</samp> is <samp>libgcc.a</samp>, a library of internal subroutines
+which GCC uses to overcome shortcomings of particular machines, or special
+needs for some languages.
+(See <a href="http://gcc.gnu.org/onlinedocs/gccint/Interface.html#Interface">Interfacing to GCC Output</a> in <cite>GNU Compiler
+Collection (GCC) Internals</cite>,
+for more discussion of <samp>libgcc.a</samp>.)
+In most cases, you need <samp>libgcc.a</samp> even when you want to avoid
+other standard libraries.  In other words, when you specify <samp>-nostdlib</samp>
+or <samp>-nodefaultlibs</samp> you should usually specify <samp>-lgcc</samp> as well.
+This ensures that you have no unresolved references to internal GCC
+library subroutines.
+(An example of such an internal subroutine is <code>__main</code>, used to ensure C++
+constructors are called; see <a href="http://gcc.gnu.org/onlinedocs/gccint/Collect2.html#Collect2"><code>collect2</code></a> in <cite>GNU Compiler Collection (GCC) Internals</cite>.)
+</p>
+</dd>
+<dt><code>-e <var>entry</var></code></dt>
+<dt><code>--entry=<var>entry</var></code></dt>
+<dd><a name="index-e"></a>
+<a name="index-entry"></a>
+
+<p>Specify that the program entry point is <var>entry</var>.  The argument is
+interpreted by the linker; the GNU linker accepts either a symbol name
+or an address.
+</p>
+</dd>
+<dt><code>-pie</code></dt>
+<dd><a name="index-pie"></a>
+<p>Produce a dynamically linked position independent executable on targets
+that support it.  For predictable results, you must also specify the same
+set of options used for compilation (<samp>-fpie</samp>, <samp>-fPIE</samp>,
+or model suboptions) when you specify this linker option.
+</p>
+</dd>
+<dt><code>-no-pie</code></dt>
+<dd><a name="index-no_002dpie"></a>
+<p>Don&rsquo;t produce a dynamically linked position independent executable.
+</p>
+</dd>
+<dt><code>-static-pie</code></dt>
+<dd><a name="index-static_002dpie"></a>
+<p>Produce a static position independent executable on targets that support
+it.  A static position independent executable is similar to a static
+executable, but can be loaded at any address without a dynamic linker.
+For predictable results, you must also specify the same set of options
+used for compilation (<samp>-fpie</samp>, <samp>-fPIE</samp>, or model
+suboptions) when you specify this linker option.
+</p>
+</dd>
+<dt><code>-pthread</code></dt>
+<dd><a name="index-pthread-1"></a>
+<p>Link with the POSIX threads library.  This option is supported on 
+GNU/Linux targets, most other Unix derivatives, and also on 
+x86 Cygwin and MinGW targets.  On some targets this option also sets 
+flags for the preprocessor, so it should be used consistently for both
+compilation and linking.
+</p>
+</dd>
+<dt><code>-r</code></dt>
+<dd><a name="index-r"></a>
+<p>Produce a relocatable object as output.  This is also known as partial
+linking.
+</p>
+</dd>
+<dt><code>-rdynamic</code></dt>
+<dd><a name="index-rdynamic"></a>
+<p>Pass the flag <samp>-export-dynamic</samp> to the ELF linker, on targets
+that support it. This instructs the linker to add all symbols, not
+only used ones, to the dynamic symbol table. This option is needed
+for some uses of <code>dlopen</code> or to allow obtaining backtraces
+from within a program.
+</p>
+</dd>
+<dt><code>-s</code></dt>
+<dd><a name="index-s"></a>
+<p>Remove all symbol table and relocation information from the executable.
+</p>
+</dd>
+<dt><code>-static</code></dt>
+<dd><a name="index-static"></a>
+<p>On systems that support dynamic linking, this overrides <samp>-pie</samp>
+and prevents linking with the shared libraries.  On other systems, this
+option has no effect.
+</p>
+</dd>
+<dt><code>-shared</code></dt>
+<dd><a name="index-shared"></a>
+<p>Produce a shared object which can then be linked with other objects to
+form an executable.  Not all systems support this option.  For predictable
+results, you must also specify the same set of options used for compilation
+(<samp>-fpic</samp>, <samp>-fPIC</samp>, or model suboptions) when
+you specify this linker option.<a name="DOCF1" href="#FOOT1"><sup>1</sup></a>
+</p>
+</dd>
+<dt><code>-shared-libgcc</code></dt>
+<dt><code>-static-libgcc</code></dt>
+<dd><a name="index-shared_002dlibgcc"></a>
+<a name="index-static_002dlibgcc"></a>
+<p>On systems that provide <samp>libgcc</samp> as a shared library, these options
+force the use of either the shared or static version, respectively.
+If no shared version of <samp>libgcc</samp> was built when the compiler was
+configured, these options have no effect.
+</p>
+<p>There are several situations in which an application should use the
+shared <samp>libgcc</samp> instead of the static version.  The most common
+of these is when the application wishes to throw and catch exceptions
+across different shared libraries.  In that case, each of the libraries
+as well as the application itself should use the shared <samp>libgcc</samp>.
+</p>
+<p>Therefore, the G++ driver automatically adds <samp>-shared-libgcc</samp>
+whenever you build a shared library or a main executable, because C++
+programs typically use exceptions, so this is the right thing to do.
+</p>
+<p>If, instead, you use the GCC driver to create shared libraries, you may
+find that they are not always linked with the shared <samp>libgcc</samp>.
+If GCC finds, at its configuration time, that you have a non-GNU linker
+or a GNU linker that does not support option <samp>--eh-frame-hdr</samp>,
+it links the shared version of <samp>libgcc</samp> into shared libraries
+by default.  Otherwise, it takes advantage of the linker and optimizes
+away the linking with the shared version of <samp>libgcc</samp>, linking with
+the static version of libgcc by default.  This allows exceptions to
+propagate through such shared libraries, without incurring relocation
+costs at library load time.
+</p>
+<p>However, if a library or main executable is supposed to throw or catch
+exceptions, you must link it using the G++ driver, or using the option
+<samp>-shared-libgcc</samp>, such that it is linked with the shared
+<samp>libgcc</samp>.
+</p>
+</dd>
+<dt><code>-static-libasan</code></dt>
+<dd><a name="index-static_002dlibasan"></a>
+<p>When the <samp>-fsanitize=address</samp> option is used to link a program,
+the GCC driver automatically links against <samp>libasan</samp>.  If
+<samp>libasan</samp> is available as a shared library, and the <samp>-static</samp>
+option is not used, then this links against the shared version of
+<samp>libasan</samp>.  The <samp>-static-libasan</samp> option directs the GCC
+driver to link <samp>libasan</samp> statically, without necessarily linking
+other libraries statically.
+</p>
+</dd>
+<dt><code>-static-libtsan</code></dt>
+<dd><a name="index-static_002dlibtsan"></a>
+<p>When the <samp>-fsanitize=thread</samp> option is used to link a program,
+the GCC driver automatically links against <samp>libtsan</samp>.  If
+<samp>libtsan</samp> is available as a shared library, and the <samp>-static</samp>
+option is not used, then this links against the shared version of
+<samp>libtsan</samp>.  The <samp>-static-libtsan</samp> option directs the GCC
+driver to link <samp>libtsan</samp> statically, without necessarily linking
+other libraries statically.
+</p>
+</dd>
+<dt><code>-static-liblsan</code></dt>
+<dd><a name="index-static_002dliblsan"></a>
+<p>When the <samp>-fsanitize=leak</samp> option is used to link a program,
+the GCC driver automatically links against <samp>liblsan</samp>.  If
+<samp>liblsan</samp> is available as a shared library, and the <samp>-static</samp>
+option is not used, then this links against the shared version of
+<samp>liblsan</samp>.  The <samp>-static-liblsan</samp> option directs the GCC
+driver to link <samp>liblsan</samp> statically, without necessarily linking
+other libraries statically.
+</p>
+</dd>
+<dt><code>-static-libubsan</code></dt>
+<dd><a name="index-static_002dlibubsan"></a>
+<p>When the <samp>-fsanitize=undefined</samp> option is used to link a program,
+the GCC driver automatically links against <samp>libubsan</samp>.  If
+<samp>libubsan</samp> is available as a shared library, and the <samp>-static</samp>
+option is not used, then this links against the shared version of
+<samp>libubsan</samp>.  The <samp>-static-libubsan</samp> option directs the GCC
+driver to link <samp>libubsan</samp> statically, without necessarily linking
+other libraries statically.
+</p>
+</dd>
+<dt><code>-static-libstdc++</code></dt>
+<dd><a name="index-static_002dlibstdc_002b_002b"></a>
+<p>When the <code>g++</code> program is used to link a C++ program, it
+normally automatically links against <samp>libstdc++</samp>.  If
+<samp>libstdc++</samp> is available as a shared library, and the
+<samp>-static</samp> option is not used, then this links against the
+shared version of <samp>libstdc++</samp>.  That is normally fine.  However, it
+is sometimes useful to freeze the version of <samp>libstdc++</samp> used by
+the program without going all the way to a fully static link.  The
+<samp>-static-libstdc++</samp> option directs the <code>g++</code> driver to
+link <samp>libstdc++</samp> statically, without necessarily linking other
+libraries statically.
+</p>
+</dd>
+<dt><code>-symbolic</code></dt>
+<dd><a name="index-symbolic"></a>
+<p>Bind references to global symbols when building a shared object.  Warn
+about any unresolved references (unless overridden by the link editor
+option <samp>-Xlinker -z -Xlinker defs</samp>).  Only a few systems support
+this option.
+</p>
+</dd>
+<dt><code>-T <var>script</var></code></dt>
+<dd><a name="index-T"></a>
+<a name="index-linker-script"></a>
+<p>Use <var>script</var> as the linker script.  This option is supported by most
+systems using the GNU linker.  On some targets, such as bare-board
+targets without an operating system, the <samp>-T</samp> option may be required
+when linking to avoid references to undefined symbols.
+</p>
+</dd>
+<dt><code>-Xlinker <var>option</var></code></dt>
+<dd><a name="index-Xlinker"></a>
+<p>Pass <var>option</var> as an option to the linker.  You can use this to
+supply system-specific linker options that GCC does not recognize.
+</p>
+<p>If you want to pass an option that takes a separate argument, you must use
+<samp>-Xlinker</samp> twice, once for the option and once for the argument.
+For example, to pass <samp>-assert definitions</samp>, you must write
+<samp>-Xlinker -assert -Xlinker definitions</samp>.  It does not work to write
+<samp>-Xlinker &quot;-assert definitions&quot;</samp>, because this passes the entire
+string as a single argument, which is not what the linker expects.
+</p>
+<p>When using the GNU linker, it is usually more convenient to pass
+arguments to linker options using the <samp><var>option</var>=<var>value</var></samp>
+syntax than as separate arguments.  For example, you can specify
+<samp>-Xlinker -Map=output.map</samp> rather than
+<samp>-Xlinker -Map -Xlinker output.map</samp>.  Other linkers may not support
+this syntax for command-line options.
+</p>
+</dd>
+<dt><code>-Wl,<var>option</var></code></dt>
+<dd><a name="index-Wl"></a>
+<p>Pass <var>option</var> as an option to the linker.  If <var>option</var> contains
+commas, it is split into multiple options at the commas.  You can use this
+syntax to pass an argument to the option.
+For example, <samp>-Wl,-Map,output.map</samp> passes <samp>-Map output.map</samp> to the
+linker.  When using the GNU linker, you can also get the same effect with
+<samp>-Wl,-Map=output.map</samp>.
+</p>
+</dd>
+<dt><code>-u <var>symbol</var></code></dt>
+<dd><a name="index-u"></a>
+<p>Pretend the symbol <var>symbol</var> is undefined, to force linking of
+library modules to define it.  You can use <samp>-u</samp> multiple times with
+different symbols to force loading of additional library modules.
+</p>
+</dd>
+<dt><code>-z <var>keyword</var></code></dt>
+<dd><a name="index-z"></a>
+<p><samp>-z</samp> is passed directly on to the linker along with the keyword
+<var>keyword</var>. See the section in the documentation of your linker for
+permitted values and their meanings.
+</p></dd>
+</dl>
+
+<div class="footnote">
+<hr>
+<h4 class="footnotes-heading">Footnotes</h4>
+
+<h3><a name="FOOT1" href="#DOCF1">(1)</a></h3>
+<p>On some systems, &lsquo;<samp>gcc -shared</samp>&rsquo;
+needs to build supplementary stub code for constructors to work.  On
+multi-libbed systems, &lsquo;<samp>gcc -shared</samp>&rsquo; must select the correct support
+libraries to link against.  Failing to supply the correct flags may lead
+to subtle defects.  Supplying them in cases where they are not necessary
+is innocuous.</p>
+</div>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Directory-Options.html#Directory-Options" accesskey="n" rel="next">Directory Options</a>, Previous: <a href="Assembler-Options.html#Assembler-Options" accesskey="p" rel="prev">Assembler Options</a>, Up: <a href="Invoking-GCC.html#Invoking-GCC" accesskey="u" rel="up">Invoking GCC</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

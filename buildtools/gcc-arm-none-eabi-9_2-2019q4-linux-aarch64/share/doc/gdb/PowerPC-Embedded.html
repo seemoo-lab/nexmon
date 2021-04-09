@@ -1,0 +1,164 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: PowerPC Embedded</title>
+
+<meta name="description" content="Debugging with GDB: PowerPC Embedded">
+<meta name="keywords" content="Debugging with GDB: PowerPC Embedded">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Embedded-Processors.html#Embedded-Processors" rel="up" title="Embedded Processors">
+<link href="AVR.html#AVR" rel="next" title="AVR">
+<link href="OpenRISC-1000.html#OpenRISC-1000" rel="prev" title="OpenRISC 1000">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="PowerPC-Embedded"></a>
+<div class="header">
+<p>
+Next: <a href="AVR.html#AVR" accesskey="n" rel="next">AVR</a>, Previous: <a href="OpenRISC-1000.html#OpenRISC-1000" accesskey="p" rel="prev">OpenRISC 1000</a>, Up: <a href="Embedded-Processors.html#Embedded-Processors" accesskey="u" rel="up">Embedded Processors</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="PowerPC-Embedded-1"></a>
+<h4 class="subsection">21.3.7 PowerPC Embedded</h4>
+
+<a name="index-DVC-register"></a>
+<p><small>GDB</small> supports using the DVC (Data Value Compare) register to
+implement in hardware simple hardware watchpoint conditions of the form:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) watch <var>ADDRESS|VARIABLE</var> \
+  if  <var>ADDRESS|VARIABLE</var> == <var>CONSTANT EXPRESSION</var>
+</pre></div>
+
+<p>The DVC register will be automatically used when <small>GDB</small> detects
+such pattern in a condition expression, and the created watchpoint uses one
+debug register (either the <code>exact-watchpoints</code> option is on and the
+variable is scalar, or the variable has a length of one byte).  This feature
+is available in native <small>GDB</small> running on a Linux kernel version 2.6.34
+or newer.
+</p>
+<p>When running on PowerPC embedded processors, <small>GDB</small> automatically uses
+ranged hardware watchpoints, unless the <code>exact-watchpoints</code> option is on,
+in which case watchpoints using only one debug register are created when
+watching variables of scalar types.
+</p>
+<p>You can create an artificial array to watch an arbitrary memory
+region using one of the following commands (see <a href="Expressions.html#Expressions">Expressions</a>):
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) watch *((char *) <var>address</var>)@<var>length</var>
+(gdb) watch {char[<var>length</var>]} <var>address</var>
+</pre></div>
+
+<p>PowerPC embedded processors support masked watchpoints.  See the discussion
+about the <code>mask</code> argument in <a href="Set-Watchpoints.html#Set-Watchpoints">Set Watchpoints</a>.
+</p>
+<a name="index-ranged-breakpoint"></a>
+<p>PowerPC embedded processors support hardware accelerated
+<em>ranged breakpoints</em>.  A ranged breakpoint stops execution of
+the inferior whenever it executes an instruction at any address within
+the range it specifies.  To set a ranged breakpoint in <small>GDB</small>,
+use the <code>break-range</code> command.
+</p>
+<p><small>GDB</small> provides the following PowerPC-specific commands:
+</p>
+<dl compact="compact">
+<dd><a name="index-break_002drange"></a>
+</dd>
+<dt><code>break-range <var>start-location</var>, <var>end-location</var></code></dt>
+<dd><p>Set a breakpoint for an address range given by
+<var>start-location</var> and <var>end-location</var>, which can specify a function name,
+a line number, an offset of lines from the current line or from the start
+location, or an address of an instruction (see <a href="Specify-Location.html#Specify-Location">Specify Location</a>,
+for a list of all the possible ways to specify a <var>location</var>.)
+The breakpoint will stop execution of the inferior whenever it
+executes an instruction at any address within the specified range,
+(including <var>start-location</var> and <var>end-location</var>.)
+</p>
+<a name="index-set-powerpc"></a>
+</dd>
+<dt><code>set powerpc soft-float</code></dt>
+<dt><code>show powerpc soft-float</code></dt>
+<dd><p>Force <small>GDB</small> to use (or not use) a software floating point calling
+convention.  By default, <small>GDB</small> selects the calling convention based
+on the selected architecture and the provided executable file.
+</p>
+</dd>
+<dt><code>set powerpc vector-abi</code></dt>
+<dt><code>show powerpc vector-abi</code></dt>
+<dd><p>Force <small>GDB</small> to use the specified calling convention for vector
+arguments and return values.  The valid options are &lsquo;<samp>auto</samp>&rsquo;;
+&lsquo;<samp>generic</samp>&rsquo;, to avoid vector registers even if they are present;
+&lsquo;<samp>altivec</samp>&rsquo;, to use AltiVec registers; and &lsquo;<samp>spe</samp>&rsquo; to use SPE
+registers.  By default, <small>GDB</small> selects the calling convention
+based on the selected architecture and the provided executable file.
+</p>
+</dd>
+<dt><code>set powerpc exact-watchpoints</code></dt>
+<dt><code>show powerpc exact-watchpoints</code></dt>
+<dd><p>Allow <small>GDB</small> to use only one debug register when watching a variable
+of scalar type, thus assuming that the variable is accessed through the
+address of its first byte.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="AVR.html#AVR" accesskey="n" rel="next">AVR</a>, Previous: <a href="OpenRISC-1000.html#OpenRISC-1000" accesskey="p" rel="prev">OpenRISC 1000</a>, Up: <a href="Embedded-Processors.html#Embedded-Processors" accesskey="u" rel="up">Embedded Processors</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

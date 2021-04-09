@@ -1,0 +1,186 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Function Properties</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Function Properties">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Function Properties">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Functions.html#Functions" rel="up" title="Functions">
+<link href="Language_002ddependent-trees.html#Language_002ddependent-trees" rel="next" title="Language-dependent trees">
+<link href="Function-Basics.html#Function-Basics" rel="prev" title="Function Basics">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Function-Properties"></a>
+<div class="header">
+<p>
+Previous: <a href="Function-Basics.html#Function-Basics" accesskey="p" rel="prev">Function Basics</a>, Up: <a href="Functions.html#Functions" accesskey="u" rel="up">Functions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Function-Properties-1"></a>
+<h4 class="subsection">11.8.2 Function Properties</h4>
+<a name="index-function-properties"></a>
+<a name="index-statements"></a>
+
+<p>To determine the scope of a function, you can use the
+<code>DECL_CONTEXT</code> macro.  This macro will return the class
+(either a <code>RECORD_TYPE</code> or a <code>UNION_TYPE</code>) or namespace (a
+<code>NAMESPACE_DECL</code>) of which the function is a member.  For a virtual
+function, this macro returns the class in which the function was
+actually defined, not the base class in which the virtual declaration
+occurred.
+</p>
+<p>In C, the <code>DECL_CONTEXT</code> for a function maybe another function.
+This representation indicates that the GNU nested function extension
+is in use.  For details on the semantics of nested functions, see the
+GCC Manual.  The nested function can refer to local variables in its
+containing function.  Such references are not explicitly marked in the
+tree structure; back ends must look at the <code>DECL_CONTEXT</code> for the
+referenced <code>VAR_DECL</code>.  If the <code>DECL_CONTEXT</code> for the
+referenced <code>VAR_DECL</code> is not the same as the function currently
+being processed, and neither <code>DECL_EXTERNAL</code> nor
+<code>TREE_STATIC</code> hold, then the reference is to a local variable in
+a containing function, and the back end must take appropriate action.
+</p>
+<dl compact="compact">
+<dt><code>DECL_EXTERNAL</code>
+<a name="index-DECL_005fEXTERNAL-1"></a>
+</dt>
+<dd><p>This predicate holds if the function is undefined.
+</p>
+</dd>
+<dt><code>TREE_PUBLIC</code>
+<a name="index-TREE_005fPUBLIC-1"></a>
+</dt>
+<dd><p>This predicate holds if the function has external linkage.
+</p>
+</dd>
+<dt><code>TREE_STATIC</code>
+<a name="index-TREE_005fSTATIC"></a>
+</dt>
+<dd><p>This predicate holds if the function has been defined.
+</p>
+</dd>
+<dt><code>TREE_THIS_VOLATILE</code>
+<a name="index-TREE_005fTHIS_005fVOLATILE"></a>
+</dt>
+<dd><p>This predicate holds if the function does not return normally.
+</p>
+</dd>
+<dt><code>TREE_READONLY</code>
+<a name="index-TREE_005fREADONLY"></a>
+</dt>
+<dd><p>This predicate holds if the function can only read its arguments.
+</p>
+</dd>
+<dt><code>DECL_PURE_P</code>
+<a name="index-DECL_005fPURE_005fP"></a>
+</dt>
+<dd><p>This predicate holds if the function can only read its arguments, but
+may also read global memory.
+</p>
+</dd>
+<dt><code>DECL_VIRTUAL_P</code>
+<a name="index-DECL_005fVIRTUAL_005fP"></a>
+</dt>
+<dd><p>This predicate holds if the function is virtual.
+</p>
+</dd>
+<dt><code>DECL_ARTIFICIAL</code>
+<a name="index-DECL_005fARTIFICIAL-2"></a>
+</dt>
+<dd><p>This macro holds if the function was implicitly generated by the
+compiler, rather than explicitly declared.  In addition to implicitly
+generated class member functions, this macro holds for the special
+functions created to implement static initialization and destruction, to
+compute run-time type information, and so forth.
+</p>
+</dd>
+<dt><code>DECL_FUNCTION_SPECIFIC_TARGET</code>
+<a name="index-DECL_005fFUNCTION_005fSPECIFIC_005fTARGET-1"></a>
+</dt>
+<dd><p>This macro returns a tree node that holds the target options that are
+to be used to compile this particular function or <code>NULL_TREE</code> if
+the function is to be compiled with the target options specified on
+the command line.
+</p>
+</dd>
+<dt><code>DECL_FUNCTION_SPECIFIC_OPTIMIZATION</code>
+<a name="index-DECL_005fFUNCTION_005fSPECIFIC_005fOPTIMIZATION-1"></a>
+</dt>
+<dd><p>This macro returns a tree node that holds the optimization options
+that are to be used to compile this particular function or
+<code>NULL_TREE</code> if the function is to be compiled with the
+optimization options specified on the command line.
+</p>
+</dd>
+</dl>
+
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Function-Basics.html#Function-Basics" accesskey="p" rel="prev">Function Basics</a>, Up: <a href="Functions.html#Functions" accesskey="u" rel="up">Functions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

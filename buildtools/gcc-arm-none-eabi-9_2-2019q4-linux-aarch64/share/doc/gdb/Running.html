@@ -1,0 +1,114 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Running</title>
+
+<meta name="description" content="Debugging with GDB: Running">
+<meta name="keywords" content="Debugging with GDB: Running">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Compilation.html#Compilation" rel="next" title="Compilation">
+<link href="Help.html#Help" rel="prev" title="Help">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Running"></a>
+<div class="header">
+<p>
+Next: <a href="Stopping.html#Stopping" accesskey="n" rel="next">Stopping</a>, Previous: <a href="Commands.html#Commands" accesskey="p" rel="prev">Commands</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Running-Programs-Under-GDB"></a>
+<h2 class="chapter">4 Running Programs Under <small>GDB</small></h2>
+
+<p>When you run a program under <small>GDB</small>, you must first generate
+debugging information when you compile it.
+</p>
+<p>You may start <small>GDB</small> with its arguments, if any, in an environment
+of your choice.  If you are doing native debugging, you may redirect
+your program&rsquo;s input and output, debug an already running process, or
+kill a child process.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Compilation.html#Compilation" accesskey="1">Compilation</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Compiling for debugging
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Starting.html#Starting" accesskey="2">Starting</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Starting your program
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Arguments.html#Arguments" accesskey="3">Arguments</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Your program&rsquo;s arguments
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Environment.html#Environment" accesskey="4">Environment</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Your program&rsquo;s environment
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Working-Directory.html#Working-Directory" accesskey="5">Working Directory</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Your program&rsquo;s working directory
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Input_002fOutput.html#Input_002fOutput" accesskey="6">Input/Output</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Your program&rsquo;s input and output
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Attach.html#Attach" accesskey="7">Attach</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Debugging an already-running process
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Kill-Process.html#Kill-Process" accesskey="8">Kill Process</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Killing the child process
+</td></tr>
+<tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+</pre></th></tr><tr><td align="left" valign="top">&bull; <a href="Inferiors-and-Programs.html#Inferiors-and-Programs" accesskey="9">Inferiors and Programs</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Debugging multiple inferiors and programs
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Threads.html#Threads">Threads</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Debugging programs with multiple threads
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Forks.html#Forks">Forks</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Debugging forks
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Checkpoint_002fRestart.html#Checkpoint_002fRestart">Checkpoint/Restart</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Setting a <em>bookmark</em> to return to later
+</td></tr>
+</table>
+
+
+
+
+</body>
+</html>

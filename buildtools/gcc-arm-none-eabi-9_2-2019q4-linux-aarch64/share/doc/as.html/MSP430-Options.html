@@ -1,0 +1,196 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: MSP430 Options</title>
+
+<meta name="description" content="Using as: MSP430 Options">
+<meta name="keywords" content="Using as: MSP430 Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="MSP430_002dDependent.html#MSP430_002dDependent" rel="up" title="MSP430-Dependent">
+<link href="MSP430-Syntax.html#MSP430-Syntax" rel="next" title="MSP430 Syntax">
+<link href="MSP430_002dDependent.html#MSP430_002dDependent" rel="prev" title="MSP430-Dependent">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="MSP430-Options"></a>
+<div class="header">
+<p>
+Next: <a href="MSP430-Syntax.html#MSP430-Syntax" accesskey="n" rel="next">MSP430 Syntax</a>, Up: <a href="MSP430_002dDependent.html#MSP430_002dDependent" accesskey="u" rel="up">MSP430-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Options-15"></a>
+<h4 class="subsection">9.29.1 Options</h4>
+<a name="index-MSP-430-options-_0028none_0029"></a>
+<a name="index-options-for-MSP430-_0028none_0029"></a>
+<dl compact="compact">
+<dt><code>-mmcu</code></dt>
+<dd><p>selects the mcu architecture.  If the architecture is 430Xv2 then this
+also enables NOP generation unless the <samp>-mN</samp> is also specified.
+</p>
+</dd>
+<dt><code>-mcpu</code></dt>
+<dd><p>selects the cpu architecture.  If the architecture is 430Xv2 then this
+also enables NOP generation unless the <samp>-mN</samp> is also specified.
+</p>
+</dd>
+<dt><code>-msilicon-errata=<var>name</var>[,<var>name</var>&hellip;]</code></dt>
+<dd><p>Implements a fixup for named silicon errata.  Multiple silicon errata
+can be specified by multiple uses of the <samp>-msilicon-errata</samp>
+option and/or by including the errata names, separated by commas, on
+an individual <samp>-msilicon-errata</samp> option.  Errata names
+currently recognised by the assembler are:
+</p>
+<dl compact="compact">
+<dt><code>cpu4</code></dt>
+<dd><p><code>PUSH #4</code> and <samp>PUSH #8</samp> need longer encodings on the
+MSP430.  This option is enabled by default, and cannot be disabled.
+</p></dd>
+<dt><code>cpu8</code></dt>
+<dd><p>Do not set the <code>SP</code> to an odd value.
+</p></dd>
+<dt><code>cpu11</code></dt>
+<dd><p>Do not update the <code>SR</code> and the <code>PC</code> in the same instruction.
+</p></dd>
+<dt><code>cpu12</code></dt>
+<dd><p>Do not use the <code>PC</code> in a <code>CMP</code> or <code>BIT</code> instruction.
+</p></dd>
+<dt><code>cpu13</code></dt>
+<dd><p>Do not use an arithmetic instruction to modify the <code>SR</code>.
+</p></dd>
+<dt><code>cpu19</code></dt>
+<dd><p>Insert <code>NOP</code> after <code>CPUOFF</code>.
+</p></dd>
+</dl>
+
+</dd>
+<dt><code>-msilicon-errata-warn=<var>name</var>[,<var>name</var>&hellip;]</code></dt>
+<dd><p>Like the <samp>-msilicon-errata</samp> option except that instead of
+fixing the specified errata, a warning message is issued instead.
+This option can be used alongside <samp>-msilicon-errata</samp> to
+generate messages whenever a problem is fixed, or on its own in order
+to inspect code for potential problems.
+</p>
+</dd>
+<dt><code>-mP</code></dt>
+<dd><p>enables polymorph instructions handler.
+</p>
+</dd>
+<dt><code>-mQ</code></dt>
+<dd><p>enables relaxation at assembly time. DANGEROUS!
+</p>
+</dd>
+<dt><code>-ml</code></dt>
+<dd><p>indicates that the input uses the large code model.
+</p>
+</dd>
+<dt><code>-mn</code></dt>
+<dd><p>enables the generation of a NOP instruction following any instruction
+that might change the interrupts enabled/disabled state.  The
+pipelined nature of the MSP430 core means that any instruction that
+changes the interrupt state (<code>EINT</code>, <code>DINT</code>, <code>BIC #8,
+SR</code>, <code>BIS #8, SR</code> or <code>MOV.W &lt;&gt;, SR</code>) must be 
+followed by a NOP instruction in order to ensure the correct
+processing of interrupts.  By default it is up to the programmer to
+supply these NOP instructions, but this command-line option enables
+the automatic insertion by the assembler, if they are missing.
+</p>
+</dd>
+<dt><code>-mN</code></dt>
+<dd><p>disables the generation of a NOP instruction following any instruction
+that might change the interrupts enabled/disabled state.  This is the
+default behaviour.
+</p>
+</dd>
+<dt><code>-my</code></dt>
+<dd><p>tells the assembler to generate a warning message if a NOP does not
+immediately follow an instruction that enables or disables
+interrupts.  This is the default.
+</p>
+<p>Note that this option can be stacked with the <samp>-mn</samp> option so
+that the assembler will both warn about missing NOP instructions and
+then insert them automatically.
+</p>
+</dd>
+<dt><code>-mY</code></dt>
+<dd><p>disables warnings about missing NOP instructions.
+</p>
+</dd>
+<dt><code>-md</code></dt>
+<dd><p>mark the object file as one that requires data to copied from ROM to
+RAM at execution startup.  Disabled by default.
+</p>
+</dd>
+<dt><code>-mdata-region=<var>region</var></code></dt>
+<dd><p>Select the region data will be placed in.
+Region placement is performed by the compiler and linker.  The only effect this
+option will have on the assembler is that if <var>upper</var> or <var>either</var> is
+selected, then the symbols to initialise high data and bss will be defined.
+Valid <var>region</var> values are:
+</p><dl compact="compact">
+<dt><code>none</code></dt>
+<dt><code>lower</code></dt>
+<dt><code>upper</code></dt>
+<dt><code>either</code></dt>
+</dl>
+
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="MSP430-Syntax.html#MSP430-Syntax" accesskey="n" rel="next">MSP430 Syntax</a>, Up: <a href="MSP430_002dDependent.html#MSP430_002dDependent" accesskey="u" rel="up">MSP430-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

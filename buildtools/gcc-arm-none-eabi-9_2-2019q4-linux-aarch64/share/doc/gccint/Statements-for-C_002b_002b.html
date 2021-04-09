@@ -1,0 +1,352 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Statements for C++</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Statements for C++">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Statements for C++">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C-and-C_002b_002b-Trees.html#C-and-C_002b_002b-Trees" rel="up" title="C and C++ Trees">
+<link href="C_002b_002b-Expressions.html#C_002b_002b-Expressions" rel="next" title="C++ Expressions">
+<link href="Functions-for-C_002b_002b.html#Functions-for-C_002b_002b" rel="prev" title="Functions for C++">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Statements-for-C_002b_002b"></a>
+<div class="header">
+<p>
+Next: <a href="C_002b_002b-Expressions.html#C_002b_002b-Expressions" accesskey="n" rel="next">C++ Expressions</a>, Previous: <a href="Functions-for-C_002b_002b.html#Functions-for-C_002b_002b" accesskey="p" rel="prev">Functions for C++</a>, Up: <a href="C-and-C_002b_002b-Trees.html#C-and-C_002b_002b-Trees" accesskey="u" rel="up">C and C++ Trees</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Statements-for-C_002b_002b-1"></a>
+<h4 class="subsection">11.10.5 Statements for C++</h4>
+<a name="index-statements-1"></a>
+<a name="index-BREAK_005fSTMT"></a>
+<a name="index-CLEANUP_005fSTMT"></a>
+<a name="index-CLEANUP_005fDECL"></a>
+<a name="index-CLEANUP_005fEXPR"></a>
+<a name="index-CONTINUE_005fSTMT"></a>
+<a name="index-DECL_005fSTMT"></a>
+<a name="index-DECL_005fSTMT_005fDECL"></a>
+<a name="index-DO_005fSTMT"></a>
+<a name="index-DO_005fBODY"></a>
+<a name="index-DO_005fCOND"></a>
+<a name="index-EMPTY_005fCLASS_005fEXPR"></a>
+<a name="index-EXPR_005fSTMT"></a>
+<a name="index-EXPR_005fSTMT_005fEXPR"></a>
+<a name="index-FOR_005fSTMT"></a>
+<a name="index-FOR_005fINIT_005fSTMT"></a>
+<a name="index-FOR_005fCOND"></a>
+<a name="index-FOR_005fEXPR"></a>
+<a name="index-FOR_005fBODY"></a>
+<a name="index-HANDLER"></a>
+<a name="index-IF_005fSTMT"></a>
+<a name="index-IF_005fCOND"></a>
+<a name="index-THEN_005fCLAUSE"></a>
+<a name="index-ELSE_005fCLAUSE"></a>
+<a name="index-RETURN_005fSTMT"></a>
+<a name="index-RETURN_005fEXPR"></a>
+<a name="index-SUBOBJECT"></a>
+<a name="index-SUBOBJECT_005fCLEANUP"></a>
+<a name="index-SWITCH_005fSTMT"></a>
+<a name="index-SWITCH_005fCOND"></a>
+<a name="index-SWITCH_005fBODY"></a>
+<a name="index-TRY_005fBLOCK"></a>
+<a name="index-TRY_005fSTMTS"></a>
+<a name="index-TRY_005fHANDLERS"></a>
+<a name="index-HANDLER_005fPARMS"></a>
+<a name="index-HANDLER_005fBODY"></a>
+<a name="index-USING_005fSTMT"></a>
+<a name="index-WHILE_005fSTMT"></a>
+<a name="index-WHILE_005fBODY"></a>
+<a name="index-WHILE_005fCOND"></a>
+
+<p>A function that has a definition in the current translation unit will
+have a non-<code>NULL</code> <code>DECL_INITIAL</code>.  However, back ends should not make
+use of the particular value given by <code>DECL_INITIAL</code>.
+</p>
+<p>The <code>DECL_SAVED_TREE</code> macro will give the complete body of the
+function.
+</p>
+<a name="Statements-2"></a>
+<h4 class="subsubsection">11.10.5.1 Statements</h4>
+
+<p>There are tree nodes corresponding to all of the source-level
+statement constructs, used within the C and C++ frontends.  These are
+enumerated here, together with a list of the various macros that can
+be used to obtain information about them.  There are a few macros that
+can be used with all statements:
+</p>
+<dl compact="compact">
+<dt><code>STMT_IS_FULL_EXPR_P</code>
+<a name="index-STMT_005fIS_005fFULL_005fEXPR_005fP"></a>
+</dt>
+<dd><p>In C++, statements normally constitute &ldquo;full expressions&rdquo;; temporaries
+created during a statement are destroyed when the statement is complete.
+However, G++ sometimes represents expressions by statements; these
+statements will not have <code>STMT_IS_FULL_EXPR_P</code> set.  Temporaries
+created during such statements should be destroyed when the innermost
+enclosing statement with <code>STMT_IS_FULL_EXPR_P</code> set is exited.
+</p>
+</dd>
+</dl>
+
+<p>Here is the list of the various statement nodes, and the macros used to
+access them.  This documentation describes the use of these nodes in
+non-template functions (including instantiations of template functions).
+In template functions, the same nodes are used, but sometimes in
+slightly different ways.
+</p>
+<p>Many of the statements have substatements.  For example, a <code>while</code>
+loop will have a body, which is itself a statement.  If the substatement
+is <code>NULL_TREE</code>, it is considered equivalent to a statement
+consisting of a single <code>;</code>, i.e., an expression statement in which
+the expression has been omitted.  A substatement may in fact be a list
+of statements, connected via their <code>TREE_CHAIN</code>s.  So, you should
+always process the statement tree by looping over substatements, like
+this:
+</p><div class="smallexample">
+<pre class="smallexample">void process_stmt (stmt)
+     tree stmt;
+{
+  while (stmt)
+    {
+      switch (TREE_CODE (stmt))
+        {
+        case IF_STMT:
+          process_stmt (THEN_CLAUSE (stmt));
+          /* <span class="roman">More processing here.</span>  */
+          break;
+
+        &hellip;
+        }
+
+      stmt = TREE_CHAIN (stmt);
+    }
+}
+</pre></div>
+<p>In other words, while the <code>then</code> clause of an <code>if</code> statement
+in C++ can be only one statement (although that one statement may be a
+compound statement), the intermediate representation will sometimes use
+several statements chained together.
+</p>
+<dl compact="compact">
+<dt><code>BREAK_STMT</code></dt>
+<dd>
+<p>Used to represent a <code>break</code> statement.  There are no additional
+fields.
+</p>
+</dd>
+<dt><code>CLEANUP_STMT</code></dt>
+<dd>
+<p>Used to represent an action that should take place upon exit from the
+enclosing scope.  Typically, these actions are calls to destructors for
+local objects, but back ends cannot rely on this fact.  If these nodes
+are in fact representing such destructors, <code>CLEANUP_DECL</code> will be
+the <code>VAR_DECL</code> destroyed.  Otherwise, <code>CLEANUP_DECL</code> will be
+<code>NULL_TREE</code>.  In any case, the <code>CLEANUP_EXPR</code> is the
+expression to execute.  The cleanups executed on exit from a scope
+should be run in the reverse order of the order in which the associated
+<code>CLEANUP_STMT</code>s were encountered.
+</p>
+</dd>
+<dt><code>CONTINUE_STMT</code></dt>
+<dd>
+<p>Used to represent a <code>continue</code> statement.  There are no additional
+fields.
+</p>
+</dd>
+<dt><code>CTOR_STMT</code></dt>
+<dd>
+<p>Used to mark the beginning (if <code>CTOR_BEGIN_P</code> holds) or end (if
+<code>CTOR_END_P</code> holds of the main body of a constructor.  See also
+<code>SUBOBJECT</code> for more information on how to use these nodes.
+</p>
+</dd>
+<dt><code>DO_STMT</code></dt>
+<dd>
+<p>Used to represent a <code>do</code> loop.  The body of the loop is given by
+<code>DO_BODY</code> while the termination condition for the loop is given by
+<code>DO_COND</code>.  The condition for a <code>do</code>-statement is always an
+expression.
+</p>
+</dd>
+<dt><code>EMPTY_CLASS_EXPR</code></dt>
+<dd>
+<p>Used to represent a temporary object of a class with no data whose
+address is never taken.  (All such objects are interchangeable.)  The
+<code>TREE_TYPE</code> represents the type of the object.
+</p>
+</dd>
+<dt><code>EXPR_STMT</code></dt>
+<dd>
+<p>Used to represent an expression statement.  Use <code>EXPR_STMT_EXPR</code> to
+obtain the expression.
+</p>
+</dd>
+<dt><code>FOR_STMT</code></dt>
+<dd>
+<p>Used to represent a <code>for</code> statement.  The <code>FOR_INIT_STMT</code> is
+the initialization statement for the loop.  The <code>FOR_COND</code> is the
+termination condition.  The <code>FOR_EXPR</code> is the expression executed
+right before the <code>FOR_COND</code> on each loop iteration; often, this
+expression increments a counter.  The body of the loop is given by
+<code>FOR_BODY</code>.  Note that <code>FOR_INIT_STMT</code> and <code>FOR_BODY</code>
+return statements, while <code>FOR_COND</code> and <code>FOR_EXPR</code> return
+expressions.
+</p>
+</dd>
+<dt><code>HANDLER</code></dt>
+<dd>
+<p>Used to represent a C++ <code>catch</code> block.  The <code>HANDLER_TYPE</code>
+is the type of exception that will be caught by this handler; it is
+equal (by pointer equality) to <code>NULL</code> if this handler is for all
+types.  <code>HANDLER_PARMS</code> is the <code>DECL_STMT</code> for the catch
+parameter, and <code>HANDLER_BODY</code> is the code for the block itself.
+</p>
+</dd>
+<dt><code>IF_STMT</code></dt>
+<dd>
+<p>Used to represent an <code>if</code> statement.  The <code>IF_COND</code> is the
+expression.
+</p>
+<p>If the condition is a <code>TREE_LIST</code>, then the <code>TREE_PURPOSE</code> is
+a statement (usually a <code>DECL_STMT</code>).  Each time the condition is
+evaluated, the statement should be executed.  Then, the
+<code>TREE_VALUE</code> should be used as the conditional expression itself.
+This representation is used to handle C++ code like this:
+</p>
+<p>C++ distinguishes between this and <code>COND_EXPR</code> for handling templates.
+</p>
+<div class="smallexample">
+<pre class="smallexample">if (int i = 7) &hellip;
+</pre></div>
+
+<p>where there is a new local variable (or variables) declared within the
+condition.
+</p>
+<p>The <code>THEN_CLAUSE</code> represents the statement given by the <code>then</code>
+condition, while the <code>ELSE_CLAUSE</code> represents the statement given
+by the <code>else</code> condition.
+</p>
+</dd>
+<dt><code>SUBOBJECT</code></dt>
+<dd>
+<p>In a constructor, these nodes are used to mark the point at which a
+subobject of <code>this</code> is fully constructed.  If, after this point, an
+exception is thrown before a <code>CTOR_STMT</code> with <code>CTOR_END_P</code> set
+is encountered, the <code>SUBOBJECT_CLEANUP</code> must be executed.  The
+cleanups must be executed in the reverse order in which they appear.
+</p>
+</dd>
+<dt><code>SWITCH_STMT</code></dt>
+<dd>
+<p>Used to represent a <code>switch</code> statement.  The <code>SWITCH_STMT_COND</code>
+is the expression on which the switch is occurring.  See the documentation
+for an <code>IF_STMT</code> for more information on the representation used
+for the condition.  The <code>SWITCH_STMT_BODY</code> is the body of the switch
+statement.   The <code>SWITCH_STMT_TYPE</code> is the original type of switch
+expression as given in the source, before any compiler conversions.
+</p>
+</dd>
+<dt><code>TRY_BLOCK</code></dt>
+<dd><p>Used to represent a <code>try</code> block.  The body of the try block is
+given by <code>TRY_STMTS</code>.  Each of the catch blocks is a <code>HANDLER</code>
+node.  The first handler is given by <code>TRY_HANDLERS</code>.  Subsequent
+handlers are obtained by following the <code>TREE_CHAIN</code> link from one
+handler to the next.  The body of the handler is given by
+<code>HANDLER_BODY</code>.
+</p>
+<p>If <code>CLEANUP_P</code> holds of the <code>TRY_BLOCK</code>, then the
+<code>TRY_HANDLERS</code> will not be a <code>HANDLER</code> node.  Instead, it will
+be an expression that should be executed if an exception is thrown in
+the try block.  It must rethrow the exception after executing that code.
+And, if an exception is thrown while the expression is executing,
+<code>terminate</code> must be called.
+</p>
+</dd>
+<dt><code>USING_STMT</code></dt>
+<dd><p>Used to represent a <code>using</code> directive.  The namespace is given by
+<code>USING_STMT_NAMESPACE</code>, which will be a NAMESPACE_DECL.  This node
+is needed inside template functions, to implement using directives
+during instantiation.
+</p>
+</dd>
+<dt><code>WHILE_STMT</code></dt>
+<dd>
+<p>Used to represent a <code>while</code> loop.  The <code>WHILE_COND</code> is the
+termination condition for the loop.  See the documentation for an
+<code>IF_STMT</code> for more information on the representation used for the
+condition.
+</p>
+<p>The <code>WHILE_BODY</code> is the body of the loop.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="C_002b_002b-Expressions.html#C_002b_002b-Expressions" accesskey="n" rel="next">C++ Expressions</a>, Previous: <a href="Functions-for-C_002b_002b.html#Functions-for-C_002b_002b" accesskey="p" rel="prev">Functions for C++</a>, Up: <a href="C-and-C_002b_002b-Trees.html#C-and-C_002b_002b-Trees" accesskey="u" rel="up">C and C++ Trees</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

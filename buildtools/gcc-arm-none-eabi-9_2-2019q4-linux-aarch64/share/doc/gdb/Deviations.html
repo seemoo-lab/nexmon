@@ -1,0 +1,100 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Deviations</title>
+
+<meta name="description" content="Debugging with GDB: Deviations">
+<meta name="keywords" content="Debugging with GDB: Deviations">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Modula_002d2.html#Modula_002d2" rel="up" title="Modula-2">
+<link href="M2-Checks.html#M2-Checks" rel="next" title="M2 Checks">
+<link href="M2-Defaults.html#M2-Defaults" rel="prev" title="M2 Defaults">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Deviations"></a>
+<div class="header">
+<p>
+Next: <a href="M2-Checks.html#M2-Checks" accesskey="n" rel="next">M2 Checks</a>, Previous: <a href="M2-Defaults.html#M2-Defaults" accesskey="p" rel="prev">M2 Defaults</a>, Up: <a href="Modula_002d2.html#Modula_002d2" accesskey="u" rel="up">Modula-2</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Deviations-from-Standard-Modula_002d2"></a>
+<h4 class="subsubsection">15.4.9.6 Deviations from Standard Modula-2</h4>
+<a name="index-Modula_002d2_002c-deviations-from"></a>
+
+<p>A few changes have been made to make Modula-2 programs easier to debug.
+This is done primarily via loosening its type strictness:
+</p>
+<ul>
+<li> Unlike in standard Modula-2, pointer constants can be formed by
+integers.  This allows you to modify pointer variables during
+debugging.  (In standard Modula-2, the actual address contained in a
+pointer variable is hidden from you; it can only be modified
+through direct assignment to another pointer variable or expression that
+returned a pointer.)
+
+</li><li> C escape sequences can be used in strings and characters to represent
+non-printable characters.  <small>GDB</small> prints out strings with these
+escape sequences embedded.  Single non-printable characters are
+printed using the &lsquo;<samp>CHR(<var>nnn</var>)</samp>&rsquo; format.
+
+</li><li> The assignment operator (<code>:=</code>) returns the value of its right-hand
+argument.
+
+</li><li> All built-in procedures both modify <em>and</em> return their argument.
+</li></ul>
+
+
+
+
+</body>
+</html>

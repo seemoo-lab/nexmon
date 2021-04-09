@@ -1,0 +1,163 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Epiphany Function Attributes</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Epiphany Function Attributes">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Epiphany Function Attributes">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Function-Attributes.html#Function-Attributes" rel="up" title="Function Attributes">
+<link href="H8_002f300-Function-Attributes.html#H8_002f300-Function-Attributes" rel="next" title="H8/300 Function Attributes">
+<link href="C_002dSKY-Function-Attributes.html#C_002dSKY-Function-Attributes" rel="prev" title="C-SKY Function Attributes">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Epiphany-Function-Attributes"></a>
+<div class="header">
+<p>
+Next: <a href="H8_002f300-Function-Attributes.html#H8_002f300-Function-Attributes" accesskey="n" rel="next">H8/300 Function Attributes</a>, Previous: <a href="C_002dSKY-Function-Attributes.html#C_002dSKY-Function-Attributes" accesskey="p" rel="prev">C-SKY Function Attributes</a>, Up: <a href="Function-Attributes.html#Function-Attributes" accesskey="u" rel="up">Function Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Epiphany-Function-Attributes-1"></a>
+<h4 class="subsection">6.33.10 Epiphany Function Attributes</h4>
+
+<p>These function attributes are supported by the Epiphany back end:
+</p>
+<dl compact="compact">
+<dt><code>disinterrupt</code></dt>
+<dd><a name="index-disinterrupt-function-attribute_002c-Epiphany"></a>
+<p>This attribute causes the compiler to emit
+instructions to disable interrupts for the duration of the given
+function.
+</p>
+</dd>
+<dt><code>forwarder_section</code></dt>
+<dd><a name="index-forwarder_005fsection-function-attribute_002c-Epiphany"></a>
+<p>This attribute modifies the behavior of an interrupt handler.
+The interrupt handler may be in external memory which cannot be
+reached by a branch instruction, so generate a local memory trampoline
+to transfer control.  The single parameter identifies the section where
+the trampoline is placed.
+</p>
+</dd>
+<dt><code>interrupt</code></dt>
+<dd><a name="index-interrupt-function-attribute_002c-Epiphany"></a>
+<p>Use this attribute to indicate
+that the specified function is an interrupt handler.  The compiler generates
+function entry and exit sequences suitable for use in an interrupt handler
+when this attribute is present.  It may also generate
+a special section with code to initialize the interrupt vector table.
+</p>
+<p>On Epiphany targets one or more optional parameters can be added like this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">void __attribute__ ((interrupt (&quot;dma0, dma1&quot;))) universal_dma_handler ();
+</pre></div>
+
+<p>Permissible values for these parameters are: <code>reset</code><!-- /@w -->,
+<code><span class="nolinebreak">software_exception</span></code><!-- /@w -->, <code><span class="nolinebreak">page_miss</span></code><!-- /@w -->,
+<code>timer0</code><!-- /@w -->, <code>timer1</code><!-- /@w -->, <code>message</code><!-- /@w -->,
+<code>dma0</code><!-- /@w -->, <code>dma1</code><!-- /@w -->, <code>wand</code><!-- /@w --> and <code>swi</code><!-- /@w -->.
+Multiple parameters indicate that multiple entries in the interrupt
+vector table should be initialized for this function, i.e. for each
+parameter <var>name</var><!-- /@w -->, a jump to the function is emitted in
+the section <span class="nolinebreak">ivt_entry_</span><var>name</var><!-- /@w -->.  The parameter(s) may be omitted
+entirely, in which case no interrupt vector table entry is provided.
+</p>
+<p>Note that interrupts are enabled inside the function
+unless the <code>disinterrupt</code> attribute is also specified.
+</p>
+<p>The following examples are all valid uses of these attributes on
+Epiphany targets:
+</p><div class="smallexample">
+<pre class="smallexample">void __attribute__ ((interrupt)) universal_handler ();
+void __attribute__ ((interrupt (&quot;dma1&quot;))) dma1_handler ();
+void __attribute__ ((interrupt (&quot;dma0, dma1&quot;))) 
+  universal_dma_handler ();
+void __attribute__ ((interrupt (&quot;timer0&quot;), disinterrupt))
+  fast_timer_handler ();
+void __attribute__ ((interrupt (&quot;dma0, dma1&quot;), 
+                     forwarder_section (&quot;tramp&quot;)))
+  external_dma_handler ();
+</pre></div>
+
+</dd>
+<dt><code>long_call</code></dt>
+<dt><code>short_call</code></dt>
+<dd><a name="index-long_005fcall-function-attribute_002c-Epiphany"></a>
+<a name="index-short_005fcall-function-attribute_002c-Epiphany"></a>
+<a name="index-indirect-calls_002c-Epiphany"></a>
+<p>These attributes specify how a particular function is called.
+These attributes override the
+<samp>-mlong-calls</samp> (see <a href="Adapteva-Epiphany-Options.html#Adapteva-Epiphany-Options">Adapteva Epiphany Options</a>)
+command-line switch and <code>#pragma long_calls</code> settings.
+</p></dd>
+</dl>
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="H8_002f300-Function-Attributes.html#H8_002f300-Function-Attributes" accesskey="n" rel="next">H8/300 Function Attributes</a>, Previous: <a href="C_002dSKY-Function-Attributes.html#C_002dSKY-Function-Attributes" accesskey="p" rel="prev">C-SKY Function Attributes</a>, Up: <a href="Function-Attributes.html#Function-Attributes" accesskey="u" rel="up">Function Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Constructing Calls</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Constructing Calls">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Constructing Calls">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C-Extensions.html#C-Extensions" rel="up" title="C Extensions">
+<link href="Typeof.html#Typeof" rel="next" title="Typeof">
+<link href="Nonlocal-Gotos.html#Nonlocal-Gotos" rel="prev" title="Nonlocal Gotos">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Constructing-Calls"></a>
+<div class="header">
+<p>
+Next: <a href="Typeof.html#Typeof" accesskey="n" rel="next">Typeof</a>, Previous: <a href="Nonlocal-Gotos.html#Nonlocal-Gotos" accesskey="p" rel="prev">Nonlocal Gotos</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Constructing-Function-Calls"></a>
+<h3 class="section">6.6 Constructing Function Calls</h3>
+<a name="index-constructing-calls"></a>
+<a name="index-forwarding-calls"></a>
+
+<p>Using the built-in functions described below, you can record
+the arguments a function received, and call another function
+with the same arguments, without knowing the number or types
+of the arguments.
+</p>
+<p>You can also record the return value of that function call,
+and later return that value, without knowing what data type
+the function tried to return (as long as your caller expects
+that data type).
+</p>
+<p>However, these built-in functions may interact badly with some
+sophisticated features or other extensions of the language.  It
+is, therefore, not recommended to use them outside very simple
+functions acting as mere forwarders for their arguments.
+</p>
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fapply_005fargs"></a>Built-in Function: <em>void *</em> <strong>__builtin_apply_args</strong> <em>()</em></dt>
+<dd><p>This built-in function returns a pointer to data
+describing how to perform a call with the same arguments as are passed
+to the current function.
+</p>
+<p>The function saves the arg pointer register, structure value address,
+and all registers that might be used to pass arguments to a function
+into a block of memory allocated on the stack.  Then it returns the
+address of that block.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fapply"></a>Built-in Function: <em>void *</em> <strong>__builtin_apply</strong> <em>(void (*<var>function</var>)(), void *<var>arguments</var>, size_t <var>size</var>)</em></dt>
+<dd><p>This built-in function invokes <var>function</var>
+with a copy of the parameters described by <var>arguments</var>
+and <var>size</var>.
+</p>
+<p>The value of <var>arguments</var> should be the value returned by
+<code>__builtin_apply_args</code>.  The argument <var>size</var> specifies the size
+of the stack argument data, in bytes.
+</p>
+<p>This function returns a pointer to data describing
+how to return whatever value is returned by <var>function</var>.  The data
+is saved in a block of memory allocated on the stack.
+</p>
+<p>It is not always simple to compute the proper value for <var>size</var>.  The
+value is used by <code>__builtin_apply</code> to compute the amount of data
+that should be pushed on the stack and copied from the incoming argument
+area.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005freturn"></a>Built-in Function: <em>void</em> <strong>__builtin_return</strong> <em>(void *<var>result</var>)</em></dt>
+<dd><p>This built-in function returns the value described by <var>result</var> from
+the containing function.  You should specify, for <var>result</var>, a value
+returned by <code>__builtin_apply</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fva_005farg_005fpack"></a>Built-in Function: <em></em> <strong>__builtin_va_arg_pack</strong> <em>()</em></dt>
+<dd><p>This built-in function represents all anonymous arguments of an inline
+function.  It can be used only in inline functions that are always
+inlined, never compiled as a separate function, such as those using
+<code>__attribute__ ((__always_inline__))</code> or
+<code>__attribute__ ((__gnu_inline__))</code> extern inline functions.
+It must be only passed as last argument to some other function
+with variable arguments.  This is useful for writing small wrapper
+inlines for variable argument functions, when using preprocessor
+macros is undesirable.  For example:
+</p><div class="smallexample">
+<pre class="smallexample">extern int myprintf (FILE *f, const char *format, ...);
+extern inline __attribute__ ((__gnu_inline__)) int
+myprintf (FILE *f, const char *format, ...)
+{
+  int r = fprintf (f, &quot;myprintf: &quot;);
+  if (r &lt; 0)
+    return r;
+  int s = fprintf (f, format, __builtin_va_arg_pack ());
+  if (s &lt; 0)
+    return s;
+  return r + s;
+}
+</pre></div>
+</dd></dl>
+
+<dl>
+<dt><a name="index-_005f_005fbuiltin_005fva_005farg_005fpack_005flen"></a>Built-in Function: <em>size_t</em> <strong>__builtin_va_arg_pack_len</strong> <em>()</em></dt>
+<dd><p>This built-in function returns the number of anonymous arguments of
+an inline function.  It can be used only in inline functions that
+are always inlined, never compiled as a separate function, such
+as those using <code>__attribute__ ((__always_inline__))</code> or
+<code>__attribute__ ((__gnu_inline__))</code> extern inline functions.
+For example following does link- or run-time checking of open
+arguments for optimized code:
+</p><div class="smallexample">
+<pre class="smallexample">#ifdef __OPTIMIZE__
+extern inline __attribute__((__gnu_inline__)) int
+myopen (const char *path, int oflag, ...)
+{
+  if (__builtin_va_arg_pack_len () &gt; 1)
+    warn_open_too_many_arguments ();
+
+  if (__builtin_constant_p (oflag))
+    {
+      if ((oflag &amp; O_CREAT) != 0 &amp;&amp; __builtin_va_arg_pack_len () &lt; 1)
+        {
+          warn_open_missing_mode ();
+          return __open_2 (path, oflag);
+        }
+      return open (path, oflag, __builtin_va_arg_pack ());
+    }
+
+  if (__builtin_va_arg_pack_len () &lt; 1)
+    return __open_2 (path, oflag);
+
+  return open (path, oflag, __builtin_va_arg_pack ());
+}
+#endif
+</pre></div>
+</dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Typeof.html#Typeof" accesskey="n" rel="next">Typeof</a>, Previous: <a href="Nonlocal-Gotos.html#Nonlocal-Gotos" accesskey="p" rel="prev">Nonlocal Gotos</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

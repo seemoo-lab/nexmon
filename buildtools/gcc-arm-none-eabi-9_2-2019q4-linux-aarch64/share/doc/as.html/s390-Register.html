@@ -1,0 +1,96 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: s390 Register</title>
+
+<meta name="description" content="Using as: s390 Register">
+<meta name="keywords" content="Using as: s390 Register">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="s390-Syntax.html#s390-Syntax" rel="up" title="s390 Syntax">
+<link href="s390-Mnemonics.html#s390-Mnemonics" rel="next" title="s390 Mnemonics">
+<link href="s390-Syntax.html#s390-Syntax" rel="prev" title="s390 Syntax">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="s390-Register"></a>
+<div class="header">
+<p>
+Next: <a href="s390-Mnemonics.html#s390-Mnemonics" accesskey="n" rel="next">s390 Mnemonics</a>, Up: <a href="s390-Syntax.html#s390-Syntax" accesskey="u" rel="up">s390 Syntax</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Register-naming"></a>
+<h4 class="subsubsection">9.41.3.1 Register naming</h4>
+<a name="index-register-naming_002c-s390"></a>
+<a name="index-s390-register-naming"></a>
+
+<p>The <code>as</code> recognizes a number of predefined symbols for the
+various processor registers. A register specification in one of the
+instruction formats is an unsigned integer between 0 and 15. The specific
+instruction and the position of the register in the instruction format
+denotes the type of the register. The register symbols are prefixed with
+&lsquo;<samp>%</samp>&rsquo;:
+</p>
+<div class="display">
+<table>
+<tr><td><pre class="display">%rN</pre></td><td><pre class="display">the 16 general purpose registers, 0 &lt;= N &lt;= 15</pre></td></tr>
+<tr><td><pre class="display">%fN</pre></td><td><pre class="display">the 16 floating point registers, 0 &lt;= N &lt;= 15</pre></td></tr>
+<tr><td><pre class="display">%aN</pre></td><td><pre class="display">the 16 access registers, 0 &lt;= N &lt;= 15</pre></td></tr>
+<tr><td><pre class="display">%cN</pre></td><td><pre class="display">the 16 control registers, 0 &lt;= N &lt;= 15</pre></td></tr>
+<tr><td><pre class="display">%lit</pre></td><td><pre class="display">an alias for the general purpose register %r13</pre></td></tr>
+<tr><td><pre class="display">%sp</pre></td><td><pre class="display">an alias for the general purpose register %r15</pre></td></tr>
+</table>
+</div>
+
+
+
+
+</body>
+</html>

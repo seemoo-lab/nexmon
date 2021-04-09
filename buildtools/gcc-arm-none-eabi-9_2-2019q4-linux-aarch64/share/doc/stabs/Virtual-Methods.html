@@ -1,0 +1,163 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1992-2019 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License". -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>STABS: Virtual Methods</title>
+
+<meta name="description" content="STABS: Virtual Methods">
+<meta name="keywords" content="STABS: Virtual Methods">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Symbol-Types-Index.html#Symbol-Types-Index" rel="index" title="Symbol Types Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Cplusplus.html#Cplusplus" rel="up" title="Cplusplus">
+<link href="Inheritance.html#Inheritance" rel="next" title="Inheritance">
+<link href="Method-Modifiers.html#Method-Modifiers" rel="prev" title="Method Modifiers">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Virtual-Methods"></a>
+<div class="header">
+<p>
+Next: <a href="Inheritance.html#Inheritance" accesskey="n" rel="next">Inheritance</a>, Previous: <a href="Method-Modifiers.html#Method-Modifiers" accesskey="p" rel="prev">Method Modifiers</a>, Up: <a href="Cplusplus.html#Cplusplus" accesskey="u" rel="up">Cplusplus</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Symbol-Types-Index.html#Symbol-Types-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Virtual-Methods-1"></a>
+<h3 class="section">8.11 Virtual Methods</h3>
+
+<p>&lt;&lt; The following examples are based on a4.C &gt;&gt;
+</p>
+<p>The presence of virtual methods in a class definition adds additional
+data to the class description.  The extra data is appended to the
+description of the virtual method and to the end of the class
+description.  Consider the class definition below:
+</p>
+<div class="example">
+<pre class="example">class A {
+public:
+        int Adat;
+        virtual int A_virt (int arg) { return arg; };
+};
+</pre></div>
+
+<p>This results in the stab below describing class A.  It defines a new
+type (20) which is an 8 byte structure.  The first field of the class
+struct is &lsquo;<samp>Adat</samp>&rsquo;, an integer, starting at structure offset 0 and
+occupying 32 bits.
+</p>
+<p>The second field in the class struct is not explicitly defined by the
+C<tt>++</tt> class definition but is implied by the fact that the class
+contains a virtual method.  This field is the vtable pointer.  The
+name of the vtable pointer field starts with &lsquo;<samp>$vf</samp>&rsquo; and continues with a
+type reference to the class it is part of.  In this example the type
+reference for class A is 20 so the name of its vtable pointer field is
+&lsquo;<samp>$vf20</samp>&rsquo;, followed by the usual colon.
+</p>
+<p>Next there is a type definition for the vtable pointer type (21).
+This is in turn defined as a pointer to another new type (22).
+</p>
+<p>Type 22 is the vtable itself, which is defined as an array, indexed by
+a range of integers between 0 and 1, and whose elements are of type
+17.  Type 17 was the vtable record type defined by the boilerplate C<tt>++</tt>
+type definitions, as shown earlier.
+</p>
+<p>The bit offset of the vtable pointer field is 32.  The number of bits
+in the field are not specified when the field is a vtable pointer.
+</p>
+<p>Next is the method definition for the virtual member function <code>A_virt</code>.
+Its description starts out using the same format as the non-virtual
+member functions described above, except instead of a dot after the
+&lsquo;<samp>A</samp>&rsquo; there is an asterisk, indicating that the function is virtual.
+Since is is virtual some addition information is appended to the end
+of the method description.
+</p>
+<p>The first number represents the vtable index of the method.  This is a
+32 bit unsigned number with the high bit set, followed by a
+semi-colon.
+</p>
+<p>The second number is a type reference to the first base class in the
+inheritance hierarchy defining the virtual member function.  In this
+case the class stab describes a base class so the virtual function is
+not overriding any other definition of the method.  Therefore the
+reference is to the type number of the class that the stab is
+describing (20).
+</p>
+<p>This is followed by three semi-colons.  One marks the end of the
+current sub-section, one marks the end of the method field, and the
+third marks the end of the struct definition.
+</p>
+<p>For classes containing virtual functions the very last section of the
+string part of the stab holds a type reference to the first base
+class.  This is preceded by &lsquo;<samp>~%</samp>&rsquo; and followed by a final semi-colon.
+</p>
+<div class="display">
+<pre class="display">.stabs &quot;class_name(A):type_def(20)=sym_desc(struct)struct_bytes(8)
+        field_name(Adat):type_ref(int),bit_offset(0),field_bits(32);
+        field_name(A virt func ptr):type_def(21)=type_desc(ptr to)type_def(22)=
+        sym_desc(array)index_type_ref(range of int from 0 to 1);
+        elem_type_ref(vtbl elem type),
+        bit_offset(32);
+        meth_name(A_virt)::typedef(23)=sym_desc(method)returning(int);
+        :arg_type(int),protection(public)normal(yes)virtual(yes)
+        vtable_index(1);class_first_defining(A);;;~%first_base(A);&quot;,
+        N_LSYM,NIL,NIL,NIL
+</pre></div>
+
+<div class="example">
+<pre class="example">.stabs &quot;A:t20=s8Adat:1,0,32;$vf20:21=*22=ar1;0;1;17,32;
+        A_virt::23=##1;:i;2A*-2147483647;20;;;~%20;&quot;,128,0,0,0
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Inheritance.html#Inheritance" accesskey="n" rel="next">Inheritance</a>, Previous: <a href="Method-Modifiers.html#Method-Modifiers" accesskey="p" rel="prev">Method Modifiers</a>, Up: <a href="Cplusplus.html#Cplusplus" accesskey="u" rel="up">Cplusplus</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Symbol-Types-Index.html#Symbol-Types-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

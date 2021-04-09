@@ -1,0 +1,132 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: PIC</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: PIC">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: PIC">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Target-Macros.html#Target-Macros" rel="up" title="Target Macros">
+<link href="Assembler-Format.html#Assembler-Format" rel="next" title="Assembler Format">
+<link href="Sections.html#Sections" rel="prev" title="Sections">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="PIC"></a>
+<div class="header">
+<p>
+Next: <a href="Assembler-Format.html#Assembler-Format" accesskey="n" rel="next">Assembler Format</a>, Previous: <a href="Sections.html#Sections" accesskey="p" rel="prev">Sections</a>, Up: <a href="Target-Macros.html#Target-Macros" accesskey="u" rel="up">Target Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Position-Independent-Code"></a>
+<h3 class="section">18.19 Position Independent Code</h3>
+<a name="index-position-independent-code"></a>
+<a name="index-PIC"></a>
+
+<p>This section describes macros that help implement generation of position
+independent code.  Simply defining these macros is not enough to
+generate valid PIC; you must also add support to the hook
+<code>TARGET_LEGITIMATE_ADDRESS_P</code> and to the macro
+<code>PRINT_OPERAND_ADDRESS</code>, as well as <code>LEGITIMIZE_ADDRESS</code>.  You
+must modify the definition of &lsquo;<samp>movsi</samp>&rsquo; to do something appropriate
+when the source operand contains a symbolic address.  You may also
+need to alter the handling of switch statements so that they use
+relative addresses.
+</p>
+<dl>
+<dt><a name="index-PIC_005fOFFSET_005fTABLE_005fREGNUM"></a>Macro: <strong>PIC_OFFSET_TABLE_REGNUM</strong></dt>
+<dd><p>The register number of the register used to address a table of static
+data addresses in memory.  In some cases this register is defined by a
+processor&rsquo;s &ldquo;application binary interface&rdquo; (ABI).  When this macro
+is defined, RTL is generated for this register once, as with the stack
+pointer and frame pointer registers.  If this macro is not defined, it
+is up to the machine-dependent files to allocate such a register (if
+necessary).  Note that this register must be fixed when in use (e.g.
+when <code>flag_pic</code> is true).
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-PIC_005fOFFSET_005fTABLE_005fREG_005fCALL_005fCLOBBERED"></a>Macro: <strong>PIC_OFFSET_TABLE_REG_CALL_CLOBBERED</strong></dt>
+<dd><p>A C expression that is nonzero if the register defined by
+<code>PIC_OFFSET_TABLE_REGNUM</code> is clobbered by calls.  If not defined,
+the default is zero.  Do not define
+this macro if <code>PIC_OFFSET_TABLE_REGNUM</code> is not defined.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-LEGITIMATE_005fPIC_005fOPERAND_005fP"></a>Macro: <strong>LEGITIMATE_PIC_OPERAND_P</strong> <em>(<var>x</var>)</em></dt>
+<dd><p>A C expression that is nonzero if <var>x</var> is a legitimate immediate
+operand on the target machine when generating position independent code.
+You can assume that <var>x</var> satisfies <code>CONSTANT_P</code>, so you need not
+check this.  You can also assume <var>flag_pic</var> is true, so you need not
+check it either.  You need not define this macro if all constants
+(including <code>SYMBOL_REF</code>) can be immediate operands when generating
+position independent code.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Assembler-Format.html#Assembler-Format" accesskey="n" rel="next">Assembler Format</a>, Previous: <a href="Sections.html#Sections" accesskey="p" rel="prev">Sections</a>, Up: <a href="Target-Macros.html#Target-Macros" accesskey="u" rel="up">Target Macros</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

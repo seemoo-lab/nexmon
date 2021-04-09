@@ -1,0 +1,225 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): MicroBlaze Options</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): MicroBlaze Options">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): MicroBlaze Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Submodel-Options.html#Submodel-Options" rel="up" title="Submodel Options">
+<link href="MIPS-Options.html#MIPS-Options" rel="next" title="MIPS Options">
+<link href="MeP-Options.html#MeP-Options" rel="prev" title="MeP Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="MicroBlaze-Options"></a>
+<div class="header">
+<p>
+Next: <a href="MIPS-Options.html#MIPS-Options" accesskey="n" rel="next">MIPS Options</a>, Previous: <a href="MeP-Options.html#MeP-Options" accesskey="p" rel="prev">MeP Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="MicroBlaze-Options-1"></a>
+<h4 class="subsection">3.18.27 MicroBlaze Options</h4>
+<a name="index-MicroBlaze-Options"></a>
+
+<dl compact="compact">
+<dt><code>-msoft-float</code></dt>
+<dd><a name="index-msoft_002dfloat-6"></a>
+<p>Use software emulation for floating point (default).
+</p>
+</dd>
+<dt><code>-mhard-float</code></dt>
+<dd><a name="index-mhard_002dfloat-3"></a>
+<p>Use hardware floating-point instructions.
+</p>
+</dd>
+<dt><code>-mmemcpy</code></dt>
+<dd><a name="index-mmemcpy"></a>
+<p>Do not optimize block moves, use <code>memcpy</code>.
+</p>
+</dd>
+<dt><code>-mno-clearbss</code></dt>
+<dd><a name="index-mno_002dclearbss"></a>
+<p>This option is deprecated.  Use <samp>-fno-zero-initialized-in-bss</samp> instead.
+</p>
+</dd>
+<dt><code>-mcpu=<var>cpu-type</var></code></dt>
+<dd><a name="index-mcpu_003d-3"></a>
+<p>Use features of, and schedule code for, the given CPU.
+Supported values are in the format &lsquo;<samp>v<var>X</var>.<var>YY</var>.<var>Z</var></samp>&rsquo;,
+where <var>X</var> is a major version, <var>YY</var> is the minor version, and
+<var>Z</var> is compatibility code.  Example values are &lsquo;<samp>v3.00.a</samp>&rsquo;,
+&lsquo;<samp>v4.00.b</samp>&rsquo;, &lsquo;<samp>v5.00.a</samp>&rsquo;, &lsquo;<samp>v5.00.b</samp>&rsquo;, &lsquo;<samp>v6.00.a</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>-mxl-soft-mul</code></dt>
+<dd><a name="index-mxl_002dsoft_002dmul"></a>
+<p>Use software multiply emulation (default).
+</p>
+</dd>
+<dt><code>-mxl-soft-div</code></dt>
+<dd><a name="index-mxl_002dsoft_002ddiv"></a>
+<p>Use software emulation for divides (default).
+</p>
+</dd>
+<dt><code>-mxl-barrel-shift</code></dt>
+<dd><a name="index-mxl_002dbarrel_002dshift"></a>
+<p>Use the hardware barrel shifter.
+</p>
+</dd>
+<dt><code>-mxl-pattern-compare</code></dt>
+<dd><a name="index-mxl_002dpattern_002dcompare"></a>
+<p>Use pattern compare instructions.
+</p>
+</dd>
+<dt><code>-msmall-divides</code></dt>
+<dd><a name="index-msmall_002ddivides"></a>
+<p>Use table lookup optimization for small signed integer divisions.
+</p>
+</dd>
+<dt><code>-mxl-stack-check</code></dt>
+<dd><a name="index-mxl_002dstack_002dcheck"></a>
+<p>This option is deprecated.  Use <samp>-fstack-check</samp> instead.
+</p>
+</dd>
+<dt><code>-mxl-gp-opt</code></dt>
+<dd><a name="index-mxl_002dgp_002dopt"></a>
+<p>Use GP-relative <code>.sdata</code>/<code>.sbss</code> sections.
+</p>
+</dd>
+<dt><code>-mxl-multiply-high</code></dt>
+<dd><a name="index-mxl_002dmultiply_002dhigh"></a>
+<p>Use multiply high instructions for high part of 32x32 multiply.
+</p>
+</dd>
+<dt><code>-mxl-float-convert</code></dt>
+<dd><a name="index-mxl_002dfloat_002dconvert"></a>
+<p>Use hardware floating-point conversion instructions.
+</p>
+</dd>
+<dt><code>-mxl-float-sqrt</code></dt>
+<dd><a name="index-mxl_002dfloat_002dsqrt"></a>
+<p>Use hardware floating-point square root instruction.
+</p>
+</dd>
+<dt><code>-mbig-endian</code></dt>
+<dd><a name="index-mbig_002dendian-7"></a>
+<p>Generate code for a big-endian target.
+</p>
+</dd>
+<dt><code>-mlittle-endian</code></dt>
+<dd><a name="index-mlittle_002dendian-7"></a>
+<p>Generate code for a little-endian target.
+</p>
+</dd>
+<dt><code>-mxl-reorder</code></dt>
+<dd><a name="index-mxl_002dreorder"></a>
+<p>Use reorder instructions (swap and byte reversed load/store).
+</p>
+</dd>
+<dt><code>-mxl-mode-<var>app-model</var></code></dt>
+<dd><p>Select application model <var>app-model</var>.  Valid models are
+</p><dl compact="compact">
+<dt>&lsquo;<samp>executable</samp>&rsquo;</dt>
+<dd><p>normal executable (default), uses startup code <samp>crt0.o</samp>.
+</p>
+</dd>
+<dt>&lsquo;<samp>-mpic-data-is-text-relative</samp>&rsquo;</dt>
+<dd><a name="index-mpic_002ddata_002dis_002dtext_002drelative-1"></a>
+<p>Assume that the displacement between the text and data segments is fixed
+at static link time.  This allows data to be referenced by offset from start of
+text address instead of GOT since PC-relative addressing is not supported.
+</p>
+</dd>
+<dt>&lsquo;<samp>xmdstub</samp>&rsquo;</dt>
+<dd><p>for use with Xilinx Microprocessor Debugger (XMD) based
+software intrusive debug agent called xmdstub. This uses startup file
+<samp>crt1.o</samp> and sets the start address of the program to 0x800.
+</p>
+</dd>
+<dt>&lsquo;<samp>bootstrap</samp>&rsquo;</dt>
+<dd><p>for applications that are loaded using a bootloader.
+This model uses startup file <samp>crt2.o</samp> which does not contain a processor
+reset vector handler. This is suitable for transferring control on a
+processor reset to the bootloader rather than the application.
+</p>
+</dd>
+<dt>&lsquo;<samp>novectors</samp>&rsquo;</dt>
+<dd><p>for applications that do not require any of the
+MicroBlaze vectors. This option may be useful for applications running
+within a monitoring application. This model uses <samp>crt3.o</samp> as a startup file.
+</p></dd>
+</dl>
+
+<p>Option <samp>-xl-mode-<var>app-model</var></samp> is a deprecated alias for
+<samp>-mxl-mode-<var>app-model</var></samp>.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="MIPS-Options.html#MIPS-Options" accesskey="n" rel="next">MIPS Options</a>, Previous: <a href="MeP-Options.html#MeP-Options" accesskey="p" rel="prev">MeP Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

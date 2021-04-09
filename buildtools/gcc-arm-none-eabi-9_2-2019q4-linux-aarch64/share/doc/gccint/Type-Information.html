@@ -1,0 +1,180 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Type Information</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Type Information">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Type Information">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="GTY-Options.html#GTY-Options" rel="next" title="GTY Options">
+<link href="Header-Dirs.html#Header-Dirs" rel="prev" title="Header Dirs">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Type-Information"></a>
+<div class="header">
+<p>
+Next: <a href="Plugins.html#Plugins" accesskey="n" rel="next">Plugins</a>, Previous: <a href="Header-Dirs.html#Header-Dirs" accesskey="p" rel="prev">Header Dirs</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Memory-Management-and-Type-Information"></a>
+<h2 class="chapter">23 Memory Management and Type Information</h2>
+<a name="index-GGC"></a>
+<a name="index-GTY"></a>
+
+<p>GCC uses some fairly sophisticated memory management techniques, which
+involve determining information about GCC&rsquo;s data structures from GCC&rsquo;s
+source code and using this information to perform garbage collection and
+implement precompiled headers.
+</p>
+<p>A full C++ parser would be too complicated for this task, so a limited
+subset of C++ is interpreted and special markers are used to determine
+what parts of the source to look at.  All <code>struct</code>, <code>union</code>
+and <code>template</code> structure declarations that define data structures
+that are allocated under control of the garbage collector must be
+marked.  All global variables that hold pointers to garbage-collected
+memory must also be marked.  Finally, all global variables that need
+to be saved and restored by a precompiled header must be marked.  (The
+precompiled header mechanism can only save static variables if they&rsquo;re
+scalar. Complex data structures must be allocated in garbage-collected
+memory to be saved in a precompiled header.)
+</p>
+<p>The full format of a marker is
+</p><div class="smallexample">
+<pre class="smallexample">GTY (([<var>option</var>] [(<var>param</var>)], [<var>option</var>] [(<var>param</var>)] &hellip;))
+</pre></div>
+<p>but in most cases no options are needed.  The outer double parentheses
+are still necessary, though: <code>GTY(())</code>.  Markers can appear:
+</p>
+<ul>
+<li> In a structure definition, before the open brace;
+</li><li> In a global variable declaration, after the keyword <code>static</code> or
+<code>extern</code>; and
+</li><li> In a structure field definition, before the name of the field.
+</li></ul>
+
+<p>Here are some examples of marking simple data structures and globals.
+</p>
+<div class="smallexample">
+<pre class="smallexample">struct GTY(()) <var>tag</var>
+{
+  <var>fields</var>&hellip;
+};
+
+typedef struct GTY(()) <var>tag</var>
+{
+  <var>fields</var>&hellip;
+} *<var>typename</var>;
+
+static GTY(()) struct <var>tag</var> *<var>list</var>;   /* <span class="roman">points to GC memory</span> */
+static GTY(()) int <var>counter</var>;        /* <span class="roman">save counter in a PCH</span> */
+</pre></div>
+
+<p>The parser understands simple typedefs such as
+<code>typedef struct <var>tag</var> *<var>name</var>;</code> and
+<code>typedef int <var>name</var>;</code>.
+These don&rsquo;t need to be marked.
+</p>
+<p>Since <code>gengtype</code>&rsquo;s understanding of C++ is limited, there are
+several constructs and declarations that are not supported inside
+classes/structures marked for automatic GC code generation.  The
+following C++ constructs produce a <code>gengtype</code> error on
+structures/classes marked for automatic GC code generation:
+</p>
+<ul>
+<li> Type definitions inside classes/structures are not supported.
+</li><li> Enumerations inside classes/structures are not supported.
+</li></ul>
+
+<p>If you have a class or structure using any of the above constructs,
+you need to mark that class as <code>GTY ((user))</code> and provide your
+own marking routines (see section <a href="User-GC.html#User-GC">User GC</a> for details).
+</p>
+<p>It is always valid to include function definitions inside classes.
+Those are always ignored by <code>gengtype</code>, as it only cares about
+data members.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="GTY-Options.html#GTY-Options" accesskey="1">GTY Options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">What goes inside a <code>GTY(())</code>.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Inheritance-and-GTY.html#Inheritance-and-GTY" accesskey="2">Inheritance and GTY</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Adding GTY to a class hierarchy.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="User-GC.html#User-GC" accesskey="3">User GC</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Adding user-provided GC marking routines.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GGC-Roots.html#GGC-Roots" accesskey="4">GGC Roots</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Making global variables GGC roots.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Files.html#Files" accesskey="5">Files</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How the generated files work.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Invoking-the-garbage-collector.html#Invoking-the-garbage-collector" accesskey="6">Invoking the garbage collector</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How to invoke the garbage collector.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Troubleshooting.html#Troubleshooting" accesskey="7">Troubleshooting</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">When something does not work as expected.
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Plugins.html#Plugins" accesskey="n" rel="next">Plugins</a>, Previous: <a href="Header-Dirs.html#Header-Dirs" accesskey="p" rel="prev">Header Dirs</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

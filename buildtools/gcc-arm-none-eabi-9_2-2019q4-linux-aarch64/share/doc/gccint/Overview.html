@@ -1,0 +1,130 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Overview</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Overview">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Overview">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Machine-Desc.html#Machine-Desc" rel="up" title="Machine Desc">
+<link href="Patterns.html#Patterns" rel="next" title="Patterns">
+<link href="Machine-Desc.html#Machine-Desc" rel="prev" title="Machine Desc">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Overview"></a>
+<div class="header">
+<p>
+Next: <a href="Patterns.html#Patterns" accesskey="n" rel="next">Patterns</a>, Up: <a href="Machine-Desc.html#Machine-Desc" accesskey="u" rel="up">Machine Desc</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Overview-of-How-the-Machine-Description-is-Used"></a>
+<h3 class="section">17.1 Overview of How the Machine Description is Used</h3>
+
+<p>There are three main conversions that happen in the compiler:
+</p>
+<ol>
+<li> The front end reads the source code and builds a parse tree.
+
+</li><li> The parse tree is used to generate an RTL insn list based on named
+instruction patterns.
+
+</li><li> The insn list is matched against the RTL templates to produce assembler
+code.
+
+</li></ol>
+
+<p>For the generate pass, only the names of the insns matter, from either a
+named <code>define_insn</code> or a <code>define_expand</code>.  The compiler will
+choose the pattern with the right name and apply the operands according
+to the documentation later in this chapter, without regard for the RTL
+template or operand constraints.  Note that the names the compiler looks
+for are hard-coded in the compiler&mdash;it will ignore unnamed patterns and
+patterns with names it doesn&rsquo;t know about, but if you don&rsquo;t provide a
+named pattern it needs, it will abort.
+</p>
+<p>If a <code>define_insn</code> is used, the template given is inserted into the
+insn list.  If a <code>define_expand</code> is used, one of three things
+happens, based on the condition logic.  The condition logic may manually
+create new insns for the insn list, say via <code>emit_insn()</code>, and
+invoke <code>DONE</code>.  For certain named patterns, it may invoke <code>FAIL</code> to tell the
+compiler to use an alternate way of performing that task.  If it invokes
+neither <code>DONE</code> nor <code>FAIL</code>, the template given in the pattern
+is inserted, as if the <code>define_expand</code> were a <code>define_insn</code>.
+</p>
+<p>Once the insn list is generated, various optimization passes convert,
+replace, and rearrange the insns in the insn list.  This is where the
+<code>define_split</code> and <code>define_peephole</code> patterns get used, for
+example.
+</p>
+<p>Finally, the insn list&rsquo;s RTL is matched up with the RTL templates in the
+<code>define_insn</code> patterns, and those patterns are used to emit the
+final assembly code.  For this purpose, each named <code>define_insn</code>
+acts like it&rsquo;s unnamed, since the names are ignored.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Patterns.html#Patterns" accesskey="n" rel="next">Patterns</a>, Up: <a href="Machine-Desc.html#Machine-Desc" accesskey="u" rel="up">Machine Desc</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

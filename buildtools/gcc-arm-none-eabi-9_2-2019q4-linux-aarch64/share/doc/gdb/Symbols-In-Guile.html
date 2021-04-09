@@ -1,0 +1,379 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Symbols In Guile</title>
+
+<meta name="description" content="Debugging with GDB: Symbols In Guile">
+<meta name="keywords" content="Debugging with GDB: Symbols In Guile">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Guile-API.html#Guile-API" rel="up" title="Guile API">
+<link href="Symbol-Tables-In-Guile.html#Symbol-Tables-In-Guile" rel="next" title="Symbol Tables In Guile">
+<link href="Blocks-In-Guile.html#Blocks-In-Guile" rel="prev" title="Blocks In Guile">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Symbols-In-Guile"></a>
+<div class="header">
+<p>
+Next: <a href="Symbol-Tables-In-Guile.html#Symbol-Tables-In-Guile" accesskey="n" rel="next">Symbol Tables In Guile</a>, Previous: <a href="Blocks-In-Guile.html#Blocks-In-Guile" accesskey="p" rel="prev">Blocks In Guile</a>, Up: <a href="Guile-API.html#Guile-API" accesskey="u" rel="up">Guile API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Guile-representation-of-Symbols_002e"></a>
+<h4 class="subsubsection">23.3.3.17 Guile representation of Symbols.</h4>
+
+<a name="index-symbols-in-guile"></a>
+<a name="index-_003cgdb_003asymbol_003e"></a>
+
+<p><small>GDB</small> represents every variable, function and type as an
+entry in a symbol table.  See <a href="Symbols.html#Symbols">Examining the Symbol Table</a>.
+Guile represents these symbols in <small>GDB</small> with the
+<code>&lt;gdb:symbol&gt;</code> object.
+</p>
+<p>The following symbol-related procedures are provided by the
+<code>(gdb)</code> module:
+</p>
+<dl>
+<dt><a name="index-symbol_003f"></a>Scheme Procedure: <strong>symbol?</strong> <em>object</em></dt>
+<dd><p>Return <code>#t</code> if <var>object</var> is an object of type <code>&lt;gdb:symbol&gt;</code>.
+Otherwise return <code>#f</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-symbol_002dvalid_003f"></a>Scheme Procedure: <strong>symbol-valid?</strong> <em>symbol</em></dt>
+<dd><p>Return <code>#t</code> if the <code>&lt;gdb:symbol&gt;</code> object is valid,
+<code>#f</code> if not.  A <code>&lt;gdb:symbol&gt;</code> object can become invalid if
+the symbol it refers to does not exist in <small>GDB</small> any longer.
+All other <code>&lt;gdb:symbol&gt;</code> procedures will throw an exception if it is
+invalid at the time the procedure is called.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-symbol_002dtype"></a>Scheme Procedure: <strong>symbol-type</strong> <em>symbol</em></dt>
+<dd><p>Return the type of <var>symbol</var> or <code>#f</code> if no type is recorded.
+The result is an object of type <code>&lt;gdb:type&gt;</code>.
+See <a href="Types-In-Guile.html#Types-In-Guile">Types In Guile</a>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-symbol_002dsymtab"></a>Scheme Procedure: <strong>symbol-symtab</strong> <em>symbol</em></dt>
+<dd><p>Return the symbol table in which <var>symbol</var> appears.
+The result is an object of type <code>&lt;gdb:symtab&gt;</code>.
+See <a href="Symbol-Tables-In-Guile.html#Symbol-Tables-In-Guile">Symbol Tables In Guile</a>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-symbol_002dline"></a>Scheme Procedure: <strong>symbol-line</strong> <em>symbol</em></dt>
+<dd><p>Return the line number in the source code at which <var>symbol</var> was defined.
+This is an integer.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-symbol_002dname"></a>Scheme Procedure: <strong>symbol-name</strong> <em>symbol</em></dt>
+<dd><p>Return the name of <var>symbol</var> as a string.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-symbol_002dlinkage_002dname"></a>Scheme Procedure: <strong>symbol-linkage-name</strong> <em>symbol</em></dt>
+<dd><p>Return the name of <var>symbol</var>, as used by the linker (i.e., may be mangled).
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-symbol_002dprint_002dname"></a>Scheme Procedure: <strong>symbol-print-name</strong> <em>symbol</em></dt>
+<dd><p>Return the name of <var>symbol</var> in a form suitable for output.  This is either
+<code>name</code> or <code>linkage_name</code>, depending on whether the user
+asked <small>GDB</small> to display demangled or mangled names.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-symbol_002daddr_002dclass"></a>Scheme Procedure: <strong>symbol-addr-class</strong> <em>symbol</em></dt>
+<dd><p>Return the address class of the symbol.  This classifies how to find the value
+of a symbol.  Each address class is a constant defined in the
+<code>(gdb)</code> module and described later in this chapter.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-symbol_002dneeds_002dframe_003f"></a>Scheme Procedure: <strong>symbol-needs-frame?</strong> <em>symbol</em></dt>
+<dd><p>Return <code>#t</code> if evaluating <var>symbol</var>&rsquo;s value requires a frame
+(see <a href="Frames-In-Guile.html#Frames-In-Guile">Frames In Guile</a>) and <code>#f</code> otherwise.  Typically,
+local variables will require a frame, but other symbols will not.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-symbol_002dargument_003f"></a>Scheme Procedure: <strong>symbol-argument?</strong> <em>symbol</em></dt>
+<dd><p>Return <code>#t</code> if <var>symbol</var> is an argument of a function.
+Otherwise return <code>#f</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-symbol_002dconstant_003f"></a>Scheme Procedure: <strong>symbol-constant?</strong> <em>symbol</em></dt>
+<dd><p>Return <code>#t</code> if <var>symbol</var> is a constant.
+Otherwise return <code>#f</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-symbol_002dfunction_003f"></a>Scheme Procedure: <strong>symbol-function?</strong> <em>symbol</em></dt>
+<dd><p>Return <code>#t</code> if <var>symbol</var> is a function or a method.
+Otherwise return <code>#f</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-symbol_002dvariable_003f"></a>Scheme Procedure: <strong>symbol-variable?</strong> <em>symbol</em></dt>
+<dd><p>Return <code>#t</code> if <var>symbol</var> is a variable.
+Otherwise return <code>#f</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-symbol_002dvalue"></a>Scheme Procedure: <strong>symbol-value</strong> <em>symbol <span class="roman">[</span>#:frame frame<span class="roman">]</span></em></dt>
+<dd><p>Compute the value of <var>symbol</var>, as a <code>&lt;gdb:value&gt;</code>.  For
+functions, this computes the address of the function, cast to the
+appropriate type.  If the symbol requires a frame in order to compute
+its value, then <var>frame</var> must be given.  If <var>frame</var> is not
+given, or if <var>frame</var> is invalid, then an exception is thrown.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-lookup_002dsymbol"></a>Scheme Procedure: <strong>lookup-symbol</strong> <em>name <span class="roman">[</span>#:block block<span class="roman">]</span> <span class="roman">[</span>#:domain domain<span class="roman">]</span></em></dt>
+<dd><p>This function searches for a symbol by name.  The search scope can be
+restricted to the parameters defined in the optional domain and block
+arguments.
+</p>
+<p><var>name</var> is the name of the symbol.  It must be a string.  The
+optional <var>block</var> argument restricts the search to symbols visible
+in that <var>block</var>.  The <var>block</var> argument must be a
+<code>&lt;gdb:block&gt;</code> object.  If omitted, the block for the current frame
+is used.  The optional <var>domain</var> argument restricts
+the search to the domain type.  The <var>domain</var> argument must be a
+domain constant defined in the <code>(gdb)</code> module and described later
+in this chapter.
+</p>
+<p>The result is a list of two elements.
+The first element is a <code>&lt;gdb:symbol&gt;</code> object or <code>#f</code> if the symbol
+is not found.
+If the symbol is found, the second element is <code>#t</code> if the symbol
+is a field of a method&rsquo;s object (e.g., <code>this</code> in C<tt>++</tt>),
+otherwise it is <code>#f</code>.
+If the symbol is not found, the second element is <code>#f</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-lookup_002dglobal_002dsymbol"></a>Scheme Procedure: <strong>lookup-global-symbol</strong> <em>name <span class="roman">[</span>#:domain domain<span class="roman">]</span></em></dt>
+<dd><p>This function searches for a global symbol by name.
+The search scope can be restricted by the domain argument.
+</p>
+<p><var>name</var> is the name of the symbol.  It must be a string.
+The optional <var>domain</var> argument restricts the search to the domain type.
+The <var>domain</var> argument must be a domain constant defined in the <code>(gdb)</code>
+module and described later in this chapter.
+</p>
+<p>The result is a <code>&lt;gdb:symbol&gt;</code> object or <code>#f</code> if the symbol
+is not found.
+</p></dd></dl>
+
+<p>The available domain categories in <code>&lt;gdb:symbol&gt;</code> are represented
+as constants in the <code>(gdb)</code> module:
+</p>
+<dl compact="compact">
+<dt><code>SYMBOL_UNDEF_DOMAIN</code>
+<a name="index-SYMBOL_005fUNDEF_005fDOMAIN-1"></a>
+</dt>
+<dd><p>This is used when a domain has not been discovered or none of the
+following domains apply.  This usually indicates an error either
+in the symbol information or in <small>GDB</small>&rsquo;s handling of symbols.
+</p>
+</dd>
+<dt><code>SYMBOL_VAR_DOMAIN</code>
+<a name="index-SYMBOL_005fVAR_005fDOMAIN-1"></a>
+</dt>
+<dd><p>This domain contains variables, function names, typedef names and enum
+type values.
+</p>
+</dd>
+<dt><code>SYMBOL_STRUCT_DOMAIN</code>
+<a name="index-SYMBOL_005fSTRUCT_005fDOMAIN-1"></a>
+</dt>
+<dd><p>This domain holds struct, union and enum type names.
+</p>
+</dd>
+<dt><code>SYMBOL_LABEL_DOMAIN</code>
+<a name="index-SYMBOL_005fLABEL_005fDOMAIN-1"></a>
+</dt>
+<dd><p>This domain contains names of labels (for gotos).
+</p>
+</dd>
+<dt><code>SYMBOL_VARIABLES_DOMAIN</code>
+<a name="index-SYMBOL_005fVARIABLES_005fDOMAIN"></a>
+</dt>
+<dd><p>This domain holds a subset of the <code>SYMBOLS_VAR_DOMAIN</code>; it
+contains everything minus functions and types.
+</p>
+</dd>
+<dt><code>SYMBOL_FUNCTIONS_DOMAIN</code>
+<a name="index-SYMBOL_005fFUNCTIONS_005fDOMAIN"></a>
+</dt>
+<dd><p>This domain contains all functions.
+</p>
+</dd>
+<dt><code>SYMBOL_TYPES_DOMAIN</code>
+<a name="index-SYMBOL_005fTYPES_005fDOMAIN"></a>
+</dt>
+<dd><p>This domain contains all types.
+</p></dd>
+</dl>
+
+<p>The available address class categories in <code>&lt;gdb:symbol&gt;</code> are represented
+as constants in the <code>gdb</code> module:
+</p>
+<dl compact="compact">
+<dt><code>SYMBOL_LOC_UNDEF</code>
+<a name="index-SYMBOL_005fLOC_005fUNDEF-1"></a>
+</dt>
+<dd><p>If this is returned by address class, it indicates an error either in
+the symbol information or in <small>GDB</small>&rsquo;s handling of symbols.
+</p>
+</dd>
+<dt><code>SYMBOL_LOC_CONST</code>
+<a name="index-SYMBOL_005fLOC_005fCONST-1"></a>
+</dt>
+<dd><p>Value is constant int.
+</p>
+</dd>
+<dt><code>SYMBOL_LOC_STATIC</code>
+<a name="index-SYMBOL_005fLOC_005fSTATIC-1"></a>
+</dt>
+<dd><p>Value is at a fixed address.
+</p>
+</dd>
+<dt><code>SYMBOL_LOC_REGISTER</code>
+<a name="index-SYMBOL_005fLOC_005fREGISTER-1"></a>
+</dt>
+<dd><p>Value is in a register.
+</p>
+</dd>
+<dt><code>SYMBOL_LOC_ARG</code>
+<a name="index-SYMBOL_005fLOC_005fARG-1"></a>
+</dt>
+<dd><p>Value is an argument.  This value is at the offset stored within the
+symbol inside the frame&rsquo;s argument list.
+</p>
+</dd>
+<dt><code>SYMBOL_LOC_REF_ARG</code>
+<a name="index-SYMBOL_005fLOC_005fREF_005fARG-1"></a>
+</dt>
+<dd><p>Value address is stored in the frame&rsquo;s argument list.  Just like
+<code>LOC_ARG</code> except that the value&rsquo;s address is stored at the
+offset, not the value itself.
+</p>
+</dd>
+<dt><code>SYMBOL_LOC_REGPARM_ADDR</code>
+<a name="index-SYMBOL_005fLOC_005fREGPARM_005fADDR-1"></a>
+</dt>
+<dd><p>Value is a specified register.  Just like <code>LOC_REGISTER</code> except
+the register holds the address of the argument instead of the argument
+itself.
+</p>
+</dd>
+<dt><code>SYMBOL_LOC_LOCAL</code>
+<a name="index-SYMBOL_005fLOC_005fLOCAL-1"></a>
+</dt>
+<dd><p>Value is a local variable.
+</p>
+</dd>
+<dt><code>SYMBOL_LOC_TYPEDEF</code>
+<a name="index-SYMBOL_005fLOC_005fTYPEDEF-1"></a>
+</dt>
+<dd><p>Value not used.  Symbols in the domain <code>SYMBOL_STRUCT_DOMAIN</code> all
+have this class.
+</p>
+</dd>
+<dt><code>SYMBOL_LOC_BLOCK</code>
+<a name="index-SYMBOL_005fLOC_005fBLOCK-1"></a>
+</dt>
+<dd><p>Value is a block.
+</p>
+</dd>
+<dt><code>SYMBOL_LOC_CONST_BYTES</code>
+<a name="index-SYMBOL_005fLOC_005fCONST_005fBYTES-1"></a>
+</dt>
+<dd><p>Value is a byte-sequence.
+</p>
+</dd>
+<dt><code>SYMBOL_LOC_UNRESOLVED</code>
+<a name="index-SYMBOL_005fLOC_005fUNRESOLVED-1"></a>
+</dt>
+<dd><p>Value is at a fixed address, but the address of the variable has to be
+determined from the minimal symbol table whenever the variable is
+referenced.
+</p>
+</dd>
+<dt><code>SYMBOL_LOC_OPTIMIZED_OUT</code>
+<a name="index-SYMBOL_005fLOC_005fOPTIMIZED_005fOUT-1"></a>
+</dt>
+<dd><p>The value does not actually exist in the program.
+</p>
+</dd>
+<dt><code>SYMBOL_LOC_COMPUTED</code>
+<a name="index-SYMBOL_005fLOC_005fCOMPUTED-2"></a>
+</dt>
+<dd><p>The value&rsquo;s address is a computed location.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Symbol-Tables-In-Guile.html#Symbol-Tables-In-Guile" accesskey="n" rel="next">Symbol Tables In Guile</a>, Previous: <a href="Blocks-In-Guile.html#Blocks-In-Guile" accesskey="p" rel="prev">Blocks In Guile</a>, Up: <a href="Guile-API.html#Guile-API" accesskey="u" rel="up">Guile API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

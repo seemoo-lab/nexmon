@@ -1,0 +1,759 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Machine Modes</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Machine Modes">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Machine Modes">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="RTL.html#RTL" rel="up" title="RTL">
+<link href="Constants.html#Constants" rel="next" title="Constants">
+<link href="Flags.html#Flags" rel="prev" title="Flags">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Machine-Modes"></a>
+<div class="header">
+<p>
+Next: <a href="Constants.html#Constants" accesskey="n" rel="next">Constants</a>, Previous: <a href="Flags.html#Flags" accesskey="p" rel="prev">Flags</a>, Up: <a href="RTL.html#RTL" accesskey="u" rel="up">RTL</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Machine-Modes-1"></a>
+<h3 class="section">14.6 Machine Modes</h3>
+<a name="index-machine-modes"></a>
+
+<a name="index-machine_005fmode"></a>
+<p>A machine mode describes a size of data object and the representation used
+for it.  In the C code, machine modes are represented by an enumeration
+type, <code>machine_mode</code>, defined in <samp>machmode.def</samp>.  Each RTL
+expression has room for a machine mode and so do certain kinds of tree
+expressions (declarations and types, to be precise).
+</p>
+<p>In debugging dumps and machine descriptions, the machine mode of an RTL
+expression is written after the expression code with a colon to separate
+them.  The letters &lsquo;<samp>mode</samp>&rsquo; which appear at the end of each machine mode
+name are omitted.  For example, <code>(reg:SI 38)</code> is a <code>reg</code>
+expression with machine mode <code>SImode</code>.  If the mode is
+<code>VOIDmode</code>, it is not written at all.
+</p>
+<p>Here is a table of machine modes.  The term &ldquo;byte&rdquo; below refers to an
+object of <code>BITS_PER_UNIT</code> bits (see <a href="Storage-Layout.html#Storage-Layout">Storage Layout</a>).
+</p>
+<dl compact="compact">
+<dd><a name="index-BImode"></a>
+</dd>
+<dt><code>BImode</code></dt>
+<dd><p>&ldquo;Bit&rdquo; mode represents a single bit, for predicate registers.
+</p>
+<a name="index-QImode"></a>
+</dd>
+<dt><code>QImode</code></dt>
+<dd><p>&ldquo;Quarter-Integer&rdquo; mode represents a single byte treated as an integer.
+</p>
+<a name="index-HImode"></a>
+</dd>
+<dt><code>HImode</code></dt>
+<dd><p>&ldquo;Half-Integer&rdquo; mode represents a two-byte integer.
+</p>
+<a name="index-PSImode"></a>
+</dd>
+<dt><code>PSImode</code></dt>
+<dd><p>&ldquo;Partial Single Integer&rdquo; mode represents an integer which occupies
+four bytes but which doesn&rsquo;t really use all four.  On some machines,
+this is the right mode to use for pointers.
+</p>
+<a name="index-SImode"></a>
+</dd>
+<dt><code>SImode</code></dt>
+<dd><p>&ldquo;Single Integer&rdquo; mode represents a four-byte integer.
+</p>
+<a name="index-PDImode"></a>
+</dd>
+<dt><code>PDImode</code></dt>
+<dd><p>&ldquo;Partial Double Integer&rdquo; mode represents an integer which occupies
+eight bytes but which doesn&rsquo;t really use all eight.  On some machines,
+this is the right mode to use for certain pointers.
+</p>
+<a name="index-DImode"></a>
+</dd>
+<dt><code>DImode</code></dt>
+<dd><p>&ldquo;Double Integer&rdquo; mode represents an eight-byte integer.
+</p>
+<a name="index-TImode"></a>
+</dd>
+<dt><code>TImode</code></dt>
+<dd><p>&ldquo;Tetra Integer&rdquo; (?) mode represents a sixteen-byte integer.
+</p>
+<a name="index-OImode"></a>
+</dd>
+<dt><code>OImode</code></dt>
+<dd><p>&ldquo;Octa Integer&rdquo; (?) mode represents a thirty-two-byte integer.
+</p>
+<a name="index-XImode"></a>
+</dd>
+<dt><code>XImode</code></dt>
+<dd><p>&ldquo;Hexadeca Integer&rdquo; (?) mode represents a sixty-four-byte integer.
+</p>
+<a name="index-QFmode"></a>
+</dd>
+<dt><code>QFmode</code></dt>
+<dd><p>&ldquo;Quarter-Floating&rdquo; mode represents a quarter-precision (single byte)
+floating point number.
+</p>
+<a name="index-HFmode"></a>
+</dd>
+<dt><code>HFmode</code></dt>
+<dd><p>&ldquo;Half-Floating&rdquo; mode represents a half-precision (two byte) floating
+point number.
+</p>
+<a name="index-TQFmode"></a>
+</dd>
+<dt><code>TQFmode</code></dt>
+<dd><p>&ldquo;Three-Quarter-Floating&rdquo; (?) mode represents a three-quarter-precision
+(three byte) floating point number.
+</p>
+<a name="index-SFmode"></a>
+</dd>
+<dt><code>SFmode</code></dt>
+<dd><p>&ldquo;Single Floating&rdquo; mode represents a four byte floating point number.
+In the common case, of a processor with IEEE arithmetic and 8-bit bytes,
+this is a single-precision IEEE floating point number; it can also be
+used for double-precision (on processors with 16-bit bytes) and
+single-precision VAX and IBM types.
+</p>
+<a name="index-DFmode"></a>
+</dd>
+<dt><code>DFmode</code></dt>
+<dd><p>&ldquo;Double Floating&rdquo; mode represents an eight byte floating point number.
+In the common case, of a processor with IEEE arithmetic and 8-bit bytes,
+this is a double-precision IEEE floating point number.
+</p>
+<a name="index-XFmode"></a>
+</dd>
+<dt><code>XFmode</code></dt>
+<dd><p>&ldquo;Extended Floating&rdquo; mode represents an IEEE extended floating point
+number.  This mode only has 80 meaningful bits (ten bytes).  Some
+processors require such numbers to be padded to twelve bytes, others
+to sixteen; this mode is used for either.
+</p>
+<a name="index-SDmode"></a>
+</dd>
+<dt><code>SDmode</code></dt>
+<dd><p>&ldquo;Single Decimal Floating&rdquo; mode represents a four byte decimal
+floating point number (as distinct from conventional binary floating
+point).
+</p>
+<a name="index-DDmode"></a>
+</dd>
+<dt><code>DDmode</code></dt>
+<dd><p>&ldquo;Double Decimal Floating&rdquo; mode represents an eight byte decimal
+floating point number.
+</p>
+<a name="index-TDmode"></a>
+</dd>
+<dt><code>TDmode</code></dt>
+<dd><p>&ldquo;Tetra Decimal Floating&rdquo; mode represents a sixteen byte decimal
+floating point number all 128 of whose bits are meaningful.
+</p>
+<a name="index-TFmode"></a>
+</dd>
+<dt><code>TFmode</code></dt>
+<dd><p>&ldquo;Tetra Floating&rdquo; mode represents a sixteen byte floating point number
+all 128 of whose bits are meaningful.  One common use is the
+IEEE quad-precision format.
+</p>
+<a name="index-QQmode"></a>
+</dd>
+<dt><code>QQmode</code></dt>
+<dd><p>&ldquo;Quarter-Fractional&rdquo; mode represents a single byte treated as a signed
+fractional number.  The default format is &ldquo;s.7&rdquo;.
+</p>
+<a name="index-HQmode"></a>
+</dd>
+<dt><code>HQmode</code></dt>
+<dd><p>&ldquo;Half-Fractional&rdquo; mode represents a two-byte signed fractional number.
+The default format is &ldquo;s.15&rdquo;.
+</p>
+<a name="index-SQmode"></a>
+</dd>
+<dt><code>SQmode</code></dt>
+<dd><p>&ldquo;Single Fractional&rdquo; mode represents a four-byte signed fractional number.
+The default format is &ldquo;s.31&rdquo;.
+</p>
+<a name="index-DQmode"></a>
+</dd>
+<dt><code>DQmode</code></dt>
+<dd><p>&ldquo;Double Fractional&rdquo; mode represents an eight-byte signed fractional number.
+The default format is &ldquo;s.63&rdquo;.
+</p>
+<a name="index-TQmode"></a>
+</dd>
+<dt><code>TQmode</code></dt>
+<dd><p>&ldquo;Tetra Fractional&rdquo; mode represents a sixteen-byte signed fractional number.
+The default format is &ldquo;s.127&rdquo;.
+</p>
+<a name="index-UQQmode"></a>
+</dd>
+<dt><code>UQQmode</code></dt>
+<dd><p>&ldquo;Unsigned Quarter-Fractional&rdquo; mode represents a single byte treated as an
+unsigned fractional number.  The default format is &ldquo;.8&rdquo;.
+</p>
+<a name="index-UHQmode"></a>
+</dd>
+<dt><code>UHQmode</code></dt>
+<dd><p>&ldquo;Unsigned Half-Fractional&rdquo; mode represents a two-byte unsigned fractional
+number.  The default format is &ldquo;.16&rdquo;.
+</p>
+<a name="index-USQmode"></a>
+</dd>
+<dt><code>USQmode</code></dt>
+<dd><p>&ldquo;Unsigned Single Fractional&rdquo; mode represents a four-byte unsigned fractional
+number.  The default format is &ldquo;.32&rdquo;.
+</p>
+<a name="index-UDQmode"></a>
+</dd>
+<dt><code>UDQmode</code></dt>
+<dd><p>&ldquo;Unsigned Double Fractional&rdquo; mode represents an eight-byte unsigned
+fractional number.  The default format is &ldquo;.64&rdquo;.
+</p>
+<a name="index-UTQmode"></a>
+</dd>
+<dt><code>UTQmode</code></dt>
+<dd><p>&ldquo;Unsigned Tetra Fractional&rdquo; mode represents a sixteen-byte unsigned
+fractional number.  The default format is &ldquo;.128&rdquo;.
+</p>
+<a name="index-HAmode"></a>
+</dd>
+<dt><code>HAmode</code></dt>
+<dd><p>&ldquo;Half-Accumulator&rdquo; mode represents a two-byte signed accumulator.
+The default format is &ldquo;s8.7&rdquo;.
+</p>
+<a name="index-SAmode"></a>
+</dd>
+<dt><code>SAmode</code></dt>
+<dd><p>&ldquo;Single Accumulator&rdquo; mode represents a four-byte signed accumulator.
+The default format is &ldquo;s16.15&rdquo;.
+</p>
+<a name="index-DAmode"></a>
+</dd>
+<dt><code>DAmode</code></dt>
+<dd><p>&ldquo;Double Accumulator&rdquo; mode represents an eight-byte signed accumulator.
+The default format is &ldquo;s32.31&rdquo;.
+</p>
+<a name="index-TAmode"></a>
+</dd>
+<dt><code>TAmode</code></dt>
+<dd><p>&ldquo;Tetra Accumulator&rdquo; mode represents a sixteen-byte signed accumulator.
+The default format is &ldquo;s64.63&rdquo;.
+</p>
+<a name="index-UHAmode"></a>
+</dd>
+<dt><code>UHAmode</code></dt>
+<dd><p>&ldquo;Unsigned Half-Accumulator&rdquo; mode represents a two-byte unsigned accumulator.
+The default format is &ldquo;8.8&rdquo;.
+</p>
+<a name="index-USAmode"></a>
+</dd>
+<dt><code>USAmode</code></dt>
+<dd><p>&ldquo;Unsigned Single Accumulator&rdquo; mode represents a four-byte unsigned
+accumulator.  The default format is &ldquo;16.16&rdquo;.
+</p>
+<a name="index-UDAmode"></a>
+</dd>
+<dt><code>UDAmode</code></dt>
+<dd><p>&ldquo;Unsigned Double Accumulator&rdquo; mode represents an eight-byte unsigned
+accumulator.  The default format is &ldquo;32.32&rdquo;.
+</p>
+<a name="index-UTAmode"></a>
+</dd>
+<dt><code>UTAmode</code></dt>
+<dd><p>&ldquo;Unsigned Tetra Accumulator&rdquo; mode represents a sixteen-byte unsigned
+accumulator.  The default format is &ldquo;64.64&rdquo;.
+</p>
+<a name="index-CCmode"></a>
+</dd>
+<dt><code>CCmode</code></dt>
+<dd><p>&ldquo;Condition Code&rdquo; mode represents the value of a condition code, which
+is a machine-specific set of bits used to represent the result of a
+comparison operation.  Other machine-specific modes may also be used for
+the condition code.  These modes are not used on machines that use
+<code>cc0</code> (see <a href="Condition-Code.html#Condition-Code">Condition Code</a>).
+</p>
+<a name="index-BLKmode"></a>
+</dd>
+<dt><code>BLKmode</code></dt>
+<dd><p>&ldquo;Block&rdquo; mode represents values that are aggregates to which none of
+the other modes apply.  In RTL, only memory references can have this mode,
+and only if they appear in string-move or vector instructions.  On machines
+which have no such instructions, <code>BLKmode</code> will not appear in RTL.
+</p>
+<a name="index-VOIDmode"></a>
+</dd>
+<dt><code>VOIDmode</code></dt>
+<dd><p>Void mode means the absence of a mode or an unspecified mode.
+For example, RTL expressions of code <code>const_int</code> have mode
+<code>VOIDmode</code> because they can be taken to have whatever mode the context
+requires.  In debugging dumps of RTL, <code>VOIDmode</code> is expressed by
+the absence of any mode.
+</p>
+<a name="index-QCmode"></a>
+<a name="index-HCmode"></a>
+<a name="index-SCmode"></a>
+<a name="index-DCmode"></a>
+<a name="index-XCmode"></a>
+<a name="index-TCmode"></a>
+</dd>
+<dt><code>QCmode, HCmode, SCmode, DCmode, XCmode, TCmode</code></dt>
+<dd><p>These modes stand for a complex number represented as a pair of floating
+point values.  The floating point values are in <code>QFmode</code>,
+<code>HFmode</code>, <code>SFmode</code>, <code>DFmode</code>, <code>XFmode</code>, and
+<code>TFmode</code>, respectively.
+</p>
+<a name="index-CQImode"></a>
+<a name="index-CHImode"></a>
+<a name="index-CSImode"></a>
+<a name="index-CDImode"></a>
+<a name="index-CTImode"></a>
+<a name="index-COImode"></a>
+<a name="index-CPSImode"></a>
+</dd>
+<dt><code>CQImode, CHImode, CSImode, CDImode, CTImode, COImode, CPSImode</code></dt>
+<dd><p>These modes stand for a complex number represented as a pair of integer
+values.  The integer values are in <code>QImode</code>, <code>HImode</code>,
+<code>SImode</code>, <code>DImode</code>, <code>TImode</code>, <code>OImode</code>, and <code>PSImode</code>,
+respectively.
+</p>
+<a name="index-BND32mode"></a>
+<a name="index-BND64mode"></a>
+</dd>
+<dt><code>BND32mode BND64mode</code></dt>
+<dd><p>These modes stand for bounds for pointer of 32 and 64 bit size respectively.
+Mode size is double pointer mode size.
+</p></dd>
+</dl>
+
+<p>The machine description defines <code>Pmode</code> as a C macro which expands
+into the machine mode used for addresses.  Normally this is the mode
+whose size is <code>BITS_PER_WORD</code>, <code>SImode</code> on 32-bit machines.
+</p>
+<p>The only modes which a machine description <i>must</i> support are
+<code>QImode</code>, and the modes corresponding to <code>BITS_PER_WORD</code>,
+<code>FLOAT_TYPE_SIZE</code> and <code>DOUBLE_TYPE_SIZE</code>.
+The compiler will attempt to use <code>DImode</code> for 8-byte structures and
+unions, but this can be prevented by overriding the definition of
+<code>MAX_FIXED_MODE_SIZE</code>.  Alternatively, you can have the compiler
+use <code>TImode</code> for 16-byte structures and unions.  Likewise, you can
+arrange for the C type <code>short int</code> to avoid using <code>HImode</code>.
+</p>
+<a name="index-mode-classes"></a>
+<p>Very few explicit references to machine modes remain in the compiler and
+these few references will soon be removed.  Instead, the machine modes
+are divided into mode classes.  These are represented by the enumeration
+type <code>enum mode_class</code> defined in <samp>machmode.h</samp>.  The possible
+mode classes are:
+</p>
+<dl compact="compact">
+<dd><a name="index-MODE_005fINT"></a>
+</dd>
+<dt><code>MODE_INT</code></dt>
+<dd><p>Integer modes.  By default these are <code>BImode</code>, <code>QImode</code>,
+<code>HImode</code>, <code>SImode</code>, <code>DImode</code>, <code>TImode</code>, and
+<code>OImode</code>.
+</p>
+<a name="index-MODE_005fPARTIAL_005fINT"></a>
+</dd>
+<dt><code>MODE_PARTIAL_INT</code></dt>
+<dd><p>The &ldquo;partial integer&rdquo; modes, <code>PQImode</code>, <code>PHImode</code>,
+<code>PSImode</code> and <code>PDImode</code>.
+</p>
+<a name="index-MODE_005fFLOAT"></a>
+</dd>
+<dt><code>MODE_FLOAT</code></dt>
+<dd><p>Floating point modes.  By default these are <code>QFmode</code>,
+<code>HFmode</code>, <code>TQFmode</code>, <code>SFmode</code>, <code>DFmode</code>,
+<code>XFmode</code> and <code>TFmode</code>.
+</p>
+<a name="index-MODE_005fDECIMAL_005fFLOAT"></a>
+</dd>
+<dt><code>MODE_DECIMAL_FLOAT</code></dt>
+<dd><p>Decimal floating point modes.  By default these are <code>SDmode</code>,
+<code>DDmode</code> and <code>TDmode</code>.
+</p>
+<a name="index-MODE_005fFRACT"></a>
+</dd>
+<dt><code>MODE_FRACT</code></dt>
+<dd><p>Signed fractional modes.  By default these are <code>QQmode</code>, <code>HQmode</code>,
+<code>SQmode</code>, <code>DQmode</code> and <code>TQmode</code>.
+</p>
+<a name="index-MODE_005fUFRACT"></a>
+</dd>
+<dt><code>MODE_UFRACT</code></dt>
+<dd><p>Unsigned fractional modes.  By default these are <code>UQQmode</code>, <code>UHQmode</code>,
+<code>USQmode</code>, <code>UDQmode</code> and <code>UTQmode</code>.
+</p>
+<a name="index-MODE_005fACCUM"></a>
+</dd>
+<dt><code>MODE_ACCUM</code></dt>
+<dd><p>Signed accumulator modes.  By default these are <code>HAmode</code>,
+<code>SAmode</code>, <code>DAmode</code> and <code>TAmode</code>.
+</p>
+<a name="index-MODE_005fUACCUM"></a>
+</dd>
+<dt><code>MODE_UACCUM</code></dt>
+<dd><p>Unsigned accumulator modes.  By default these are <code>UHAmode</code>,
+<code>USAmode</code>, <code>UDAmode</code> and <code>UTAmode</code>.
+</p>
+<a name="index-MODE_005fCOMPLEX_005fINT"></a>
+</dd>
+<dt><code>MODE_COMPLEX_INT</code></dt>
+<dd><p>Complex integer modes.  (These are not currently implemented).
+</p>
+<a name="index-MODE_005fCOMPLEX_005fFLOAT"></a>
+</dd>
+<dt><code>MODE_COMPLEX_FLOAT</code></dt>
+<dd><p>Complex floating point modes.  By default these are <code>QCmode</code>,
+<code>HCmode</code>, <code>SCmode</code>, <code>DCmode</code>, <code>XCmode</code>, and
+<code>TCmode</code>.
+</p>
+<a name="index-MODE_005fCC"></a>
+</dd>
+<dt><code>MODE_CC</code></dt>
+<dd><p>Modes representing condition code values.  These are <code>CCmode</code> plus
+any <code>CC_MODE</code> modes listed in the <samp><var>machine</var>-modes.def</samp>.
+See <a href="Jump-Patterns.html#Jump-Patterns">Jump Patterns</a>,
+also see <a href="Condition-Code.html#Condition-Code">Condition Code</a>.
+</p>
+<a name="index-MODE_005fPOINTER_005fBOUNDS"></a>
+</dd>
+<dt><code>MODE_POINTER_BOUNDS</code></dt>
+<dd><p>Pointer bounds modes.  Used to represent values of pointer bounds type.
+Operations in these modes may be executed as NOPs depending on hardware
+features and environment setup.
+</p>
+<a name="index-MODE_005fRANDOM"></a>
+</dd>
+<dt><code>MODE_RANDOM</code></dt>
+<dd><p>This is a catchall mode class for modes which don&rsquo;t fit into the above
+classes.  Currently <code>VOIDmode</code> and <code>BLKmode</code> are in
+<code>MODE_RANDOM</code>.
+</p></dd>
+</dl>
+
+<a name="index-machine-mode-wrapper-classes"></a>
+<p><code>machmode.h</code> also defines various wrapper classes that combine a
+<code>machine_mode</code> with a static assertion that a particular
+condition holds.  The classes are:
+</p>
+<dl compact="compact">
+<dd><a name="index-scalar_005fint_005fmode"></a>
+</dd>
+<dt><code>scalar_int_mode</code></dt>
+<dd><p>A mode that has class <code>MODE_INT</code> or <code>MODE_PARTIAL_INT</code>.
+</p>
+<a name="index-scalar_005ffloat_005fmode"></a>
+</dd>
+<dt><code>scalar_float_mode</code></dt>
+<dd><p>A mode that has class <code>MODE_FLOAT</code> or <code>MODE_DECIMAL_FLOAT</code>.
+</p>
+<a name="index-scalar_005fmode"></a>
+</dd>
+<dt><code>scalar_mode</code></dt>
+<dd><p>A mode that holds a single numerical value.  In practice this means
+that the mode is a <code>scalar_int_mode</code>, is a <code>scalar_float_mode</code>,
+or has class <code>MODE_FRACT</code>, <code>MODE_UFRACT</code>, <code>MODE_ACCUM</code>,
+<code>MODE_UACCUM</code> or <code>MODE_POINTER_BOUNDS</code>.
+</p>
+<a name="index-complex_005fmode"></a>
+</dd>
+<dt><code>complex_mode</code></dt>
+<dd><p>A mode that has class <code>MODE_COMPLEX_INT</code> or <code>MODE_COMPLEX_FLOAT</code>.
+</p>
+<a name="index-fixed_005fsize_005fmode"></a>
+</dd>
+<dt><code>fixed_size_mode</code></dt>
+<dd><p>A mode whose size is known at compile time.
+</p></dd>
+</dl>
+
+<p>Named modes use the most constrained of the available wrapper classes,
+if one exists, otherwise they use <code>machine_mode</code>.  For example,
+<code>QImode</code> is a <code>scalar_int_mode</code>, <code>SFmode</code> is a
+<code>scalar_float_mode</code> and <code>BLKmode</code> is a plain
+<code>machine_mode</code>.  It is possible to refer to any mode as a raw
+<code>machine_mode</code> by adding the <code>E_</code> prefix, where <code>E</code>
+stands for &ldquo;enumeration&rdquo;.  For example, the raw <code>machine_mode</code>
+names of the modes just mentioned are <code>E_QImode</code>, <code>E_SFmode</code>
+and <code>E_BLKmode</code> respectively.
+</p>
+<p>The wrapper classes implicitly convert to <code>machine_mode</code> and to any
+wrapper class that represents a more general condition; for example
+<code>scalar_int_mode</code> and <code>scalar_float_mode</code> both convert
+to <code>scalar_mode</code> and all three convert to <code>fixed_size_mode</code>.
+The classes act like <code>machine_mode</code>s that accept only certain
+named modes.
+</p>
+<a name="index-opt_005fmode"></a>
+<p><samp>machmode.h</samp> also defines a template class <code>opt_mode&lt;<var>T</var>&gt;</code>
+that holds a <code>T</code> or nothing, where <code>T</code> can be either
+<code>machine_mode</code> or one of the wrapper classes above.  The main
+operations on an <code>opt_mode&lt;<var>T</var>&gt;</code> <var>x</var> are as follows:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp><var>x</var>.exists ()</samp>&rsquo;</dt>
+<dd><p>Return true if <var>x</var> holds a mode rather than nothing.
+</p>
+</dd>
+<dt>&lsquo;<samp><var>x</var>.exists (&amp;<var>y</var>)</samp>&rsquo;</dt>
+<dd><p>Return true if <var>x</var> holds a mode rather than nothing, storing the
+mode in <var>y</var> if so.  <var>y</var> must be assignment-compatible with <var>T</var>.
+</p>
+</dd>
+<dt>&lsquo;<samp><var>x</var>.require ()</samp>&rsquo;</dt>
+<dd><p>Assert that <var>x</var> holds a mode rather than nothing and return that mode.
+</p>
+</dd>
+<dt>&lsquo;<samp><var>x</var> = <var>y</var></samp>&rsquo;</dt>
+<dd><p>Set <var>x</var> to <var>y</var>, where <var>y</var> is a <var>T</var> or implicitly converts
+to a <var>T</var>.
+</p></dd>
+</dl>
+
+<p>The default constructor sets an <code>opt_mode&lt;<var>T</var>&gt;</code> to nothing.
+There is also a constructor that takes an initial value of type <var>T</var>.
+</p>
+<p>It is possible to use the <samp>is-a.h</samp> accessors on a <code>machine_mode</code>
+or machine mode wrapper <var>x</var>:
+</p>
+<dl compact="compact">
+<dd><a name="index-is_005fa"></a>
+</dd>
+<dt>&lsquo;<samp>is_a &lt;<var>T</var>&gt; (<var>x</var>)</samp>&rsquo;</dt>
+<dd><p>Return true if <var>x</var> meets the conditions for wrapper class <var>T</var>.
+</p>
+</dd>
+<dt>&lsquo;<samp>is_a &lt;<var>T</var>&gt; (<var>x</var>, &amp;<var>y</var>)</samp>&rsquo;</dt>
+<dd><p>Return true if <var>x</var> meets the conditions for wrapper class <var>T</var>,
+storing it in <var>y</var> if so.  <var>y</var> must be assignment-compatible with
+<var>T</var>.
+</p>
+</dd>
+<dt>&lsquo;<samp>as_a &lt;<var>T</var>&gt; (<var>x</var>)</samp>&rsquo;</dt>
+<dd><p>Assert that <var>x</var> meets the conditions for wrapper class <var>T</var>
+and return it as a <var>T</var>.
+</p>
+</dd>
+<dt>&lsquo;<samp>dyn_cast &lt;<var>T</var>&gt; (<var>x</var>)</samp>&rsquo;</dt>
+<dd><p>Return an <code>opt_mode&lt;<var>T</var>&gt;</code> that holds <var>x</var> if <var>x</var> meets
+the conditions for wrapper class <var>T</var> and that holds nothing otherwise.
+</p></dd>
+</dl>
+
+<p>The purpose of these wrapper classes is to give stronger static type
+checking.  For example, if a function takes a <code>scalar_int_mode</code>,
+a caller that has a general <code>machine_mode</code> must either check or
+assert that the code is indeed a scalar integer first, using one of
+the functions above.
+</p>
+<p>The wrapper classes are normal C++ classes, with user-defined
+constructors.  Sometimes it is useful to have a POD version of
+the same type, particularly if the type appears in a <code>union</code>.
+The template class <code>pod_mode&lt;<var>T</var>&gt;</code> provides a POD version
+of wrapper class <var>T</var>.  It is assignment-compatible with <var>T</var>
+and implicitly converts to both <code>machine_mode</code> and <var>T</var>.
+</p>
+<p>Here are some C macros that relate to machine modes:
+</p>
+<dl compact="compact">
+<dd><a name="index-GET_005fMODE"></a>
+</dd>
+<dt><code>GET_MODE (<var>x</var>)</code></dt>
+<dd><p>Returns the machine mode of the RTX <var>x</var>.
+</p>
+<a name="index-PUT_005fMODE"></a>
+</dd>
+<dt><code>PUT_MODE (<var>x</var>, <var>newmode</var>)</code></dt>
+<dd><p>Alters the machine mode of the RTX <var>x</var> to be <var>newmode</var>.
+</p>
+<a name="index-NUM_005fMACHINE_005fMODES"></a>
+</dd>
+<dt><code>NUM_MACHINE_MODES</code></dt>
+<dd><p>Stands for the number of machine modes available on the target
+machine.  This is one greater than the largest numeric value of any
+machine mode.
+</p>
+<a name="index-GET_005fMODE_005fNAME"></a>
+</dd>
+<dt><code>GET_MODE_NAME (<var>m</var>)</code></dt>
+<dd><p>Returns the name of mode <var>m</var> as a string.
+</p>
+<a name="index-GET_005fMODE_005fCLASS"></a>
+</dd>
+<dt><code>GET_MODE_CLASS (<var>m</var>)</code></dt>
+<dd><p>Returns the mode class of mode <var>m</var>.
+</p>
+<a name="index-GET_005fMODE_005fWIDER_005fMODE"></a>
+</dd>
+<dt><code>GET_MODE_WIDER_MODE (<var>m</var>)</code></dt>
+<dd><p>Returns the next wider natural mode.  For example, the expression
+<code>GET_MODE_WIDER_MODE (QImode)</code> returns <code>HImode</code>.
+</p>
+<a name="index-GET_005fMODE_005fSIZE"></a>
+</dd>
+<dt><code>GET_MODE_SIZE (<var>m</var>)</code></dt>
+<dd><p>Returns the size in bytes of a datum of mode <var>m</var>.
+</p>
+<a name="index-GET_005fMODE_005fBITSIZE"></a>
+</dd>
+<dt><code>GET_MODE_BITSIZE (<var>m</var>)</code></dt>
+<dd><p>Returns the size in bits of a datum of mode <var>m</var>.
+</p>
+<a name="index-GET_005fMODE_005fIBIT"></a>
+</dd>
+<dt><code>GET_MODE_IBIT (<var>m</var>)</code></dt>
+<dd><p>Returns the number of integral bits of a datum of fixed-point mode <var>m</var>.
+</p>
+<a name="index-GET_005fMODE_005fFBIT"></a>
+</dd>
+<dt><code>GET_MODE_FBIT (<var>m</var>)</code></dt>
+<dd><p>Returns the number of fractional bits of a datum of fixed-point mode <var>m</var>.
+</p>
+<a name="index-GET_005fMODE_005fMASK"></a>
+</dd>
+<dt><code>GET_MODE_MASK (<var>m</var>)</code></dt>
+<dd><p>Returns a bitmask containing 1 for all bits in a word that fit within
+mode <var>m</var>.  This macro can only be used for modes whose bitsize is
+less than or equal to <code>HOST_BITS_PER_INT</code>.
+</p>
+<a name="index-GET_005fMODE_005fALIGNMENT"></a>
+</dd>
+<dt><code>GET_MODE_ALIGNMENT (<var>m</var>)</code></dt>
+<dd><p>Return the required alignment, in bits, for an object of mode <var>m</var>.
+</p>
+<a name="index-GET_005fMODE_005fUNIT_005fSIZE"></a>
+</dd>
+<dt><code>GET_MODE_UNIT_SIZE (<var>m</var>)</code></dt>
+<dd><p>Returns the size in bytes of the subunits of a datum of mode <var>m</var>.
+This is the same as <code>GET_MODE_SIZE</code> except in the case of complex
+modes.  For them, the unit size is the size of the real or imaginary
+part.
+</p>
+<a name="index-GET_005fMODE_005fNUNITS"></a>
+</dd>
+<dt><code>GET_MODE_NUNITS (<var>m</var>)</code></dt>
+<dd><p>Returns the number of units contained in a mode, i.e.,
+<code>GET_MODE_SIZE</code> divided by <code>GET_MODE_UNIT_SIZE</code>.
+</p>
+<a name="index-GET_005fCLASS_005fNARROWEST_005fMODE"></a>
+</dd>
+<dt><code>GET_CLASS_NARROWEST_MODE (<var>c</var>)</code></dt>
+<dd><p>Returns the narrowest mode in mode class <var>c</var>.
+</p></dd>
+</dl>
+
+<p>The following 3 variables are defined on every target.   They can be
+used to allocate buffers that are guaranteed to be large enough to
+hold any value that can be represented on the target.   The first two
+can be overridden by defining them in the target&rsquo;s mode.def file,
+however, the value must be a constant that can determined very early
+in the compilation process.   The third symbol cannot be overridden.
+</p>
+<dl compact="compact">
+<dd><a name="index-BITS_005fPER_005fUNIT"></a>
+</dd>
+<dt><code>BITS_PER_UNIT</code></dt>
+<dd><p>The number of bits in an addressable storage unit (byte).  If you do
+not define this, the default is 8.
+</p>
+<a name="index-MAX_005fBITSIZE_005fMODE_005fANY_005fINT"></a>
+</dd>
+<dt><code>MAX_BITSIZE_MODE_ANY_INT</code></dt>
+<dd><p>The maximum bitsize of any mode that is used in integer math.  This
+should be overridden by the target if it uses large integers as
+containers for larger vectors but otherwise never uses the contents to
+compute integer values.
+</p>
+<a name="index-MAX_005fBITSIZE_005fMODE_005fANY_005fMODE"></a>
+</dd>
+<dt><code>MAX_BITSIZE_MODE_ANY_MODE</code></dt>
+<dd><p>The bitsize of the largest mode on the target.  The default value is
+the largest mode size given in the mode definition file, which is
+always correct for targets whose modes have a fixed size.  Targets
+that might increase the size of a mode beyond this default should define
+<code>MAX_BITSIZE_MODE_ANY_MODE</code> to the actual upper limit in
+<samp><var>machine</var>-modes.def</samp>.
+</p></dd>
+</dl>
+
+<a name="index-byte_005fmode"></a>
+<a name="index-word_005fmode"></a>
+<p>The global variables <code>byte_mode</code> and <code>word_mode</code> contain modes
+whose classes are <code>MODE_INT</code> and whose bitsizes are either
+<code>BITS_PER_UNIT</code> or <code>BITS_PER_WORD</code>, respectively.  On 32-bit
+machines, these are <code>QImode</code> and <code>SImode</code>, respectively.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Constants.html#Constants" accesskey="n" rel="next">Constants</a>, Previous: <a href="Flags.html#Flags" accesskey="p" rel="prev">Flags</a>, Up: <a href="RTL.html#RTL" accesskey="u" rel="up">RTL</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

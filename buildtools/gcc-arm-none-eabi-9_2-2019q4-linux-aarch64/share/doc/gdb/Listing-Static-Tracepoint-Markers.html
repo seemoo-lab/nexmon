@@ -1,0 +1,136 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Listing Static Tracepoint Markers</title>
+
+<meta name="description" content="Debugging with GDB: Listing Static Tracepoint Markers">
+<meta name="keywords" content="Debugging with GDB: Listing Static Tracepoint Markers">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Set-Tracepoints.html#Set-Tracepoints" rel="up" title="Set Tracepoints">
+<link href="Starting-and-Stopping-Trace-Experiments.html#Starting-and-Stopping-Trace-Experiments" rel="next" title="Starting and Stopping Trace Experiments">
+<link href="Listing-Tracepoints.html#Listing-Tracepoints" rel="prev" title="Listing Tracepoints">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Listing-Static-Tracepoint-Markers"></a>
+<div class="header">
+<p>
+Next: <a href="Starting-and-Stopping-Trace-Experiments.html#Starting-and-Stopping-Trace-Experiments" accesskey="n" rel="next">Starting and Stopping Trace Experiments</a>, Previous: <a href="Listing-Tracepoints.html#Listing-Tracepoints" accesskey="p" rel="prev">Listing Tracepoints</a>, Up: <a href="Set-Tracepoints.html#Set-Tracepoints" accesskey="u" rel="up">Set Tracepoints</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Listing-Static-Tracepoint-Markers-1"></a>
+<h4 class="subsection">13.1.8 Listing Static Tracepoint Markers</h4>
+
+<dl compact="compact">
+<dd><a name="index-info-static_002dtracepoint_002dmarkers"></a>
+<a name="index-information-about-static-tracepoint-markers"></a>
+</dd>
+<dt><code>info static-tracepoint-markers</code></dt>
+<dd><p>Display information about all static tracepoint markers defined in the
+program.
+</p>
+<p>For each marker, the following columns are printed:
+</p>
+<dl compact="compact">
+<dt><em>Count</em></dt>
+<dd><p>An incrementing counter, output to help readability.  This is not a
+stable identifier.
+</p></dd>
+<dt><em>ID</em></dt>
+<dd><p>The marker ID, as reported by the target.
+</p></dd>
+<dt><em>Enabled or Disabled</em></dt>
+<dd><p>Probed markers are tagged with &lsquo;<samp>y</samp>&rsquo;.  &lsquo;<samp>n</samp>&rsquo; identifies marks
+that are not enabled.
+</p></dd>
+<dt><em>Address</em></dt>
+<dd><p>Where the marker is in your program, as a memory address.
+</p></dd>
+<dt><em>What</em></dt>
+<dd><p>Where the marker is in the source for your program, as a file and line
+number.  If the debug information included in the program does not
+allow <small>GDB</small> to locate the source of the marker, this column
+will be left blank.
+</p></dd>
+</dl>
+
+<p>In addition, the following information may be printed for each marker:
+</p>
+<dl compact="compact">
+<dt><em>Data</em></dt>
+<dd><p>User data passed to the tracing library by the marker call.  In the
+UST backend, this is the format string passed as argument to the
+marker call.
+</p></dd>
+<dt><em>Static tracepoints probing the marker</em></dt>
+<dd><p>The list of static tracepoints attached to the marker.
+</p></dd>
+</dl>
+
+<div class="smallexample">
+<pre class="smallexample">(gdb) info static-tracepoint-markers
+Cnt ID         Enb Address            What
+1   ust/bar2   y   0x0000000000400e1a in main at stexample.c:25
+     Data: number1 %d number2 %d
+     Probed by static tracepoints: #2
+2   ust/bar33  n   0x0000000000400c87 in main at stexample.c:24
+     Data: str %s
+(gdb)
+</pre></div>
+</dd>
+</dl>
+
+
+
+
+</body>
+</html>

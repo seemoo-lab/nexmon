@@ -1,0 +1,223 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Emacs</title>
+
+<meta name="description" content="Debugging with GDB: Emacs">
+<meta name="keywords" content="Debugging with GDB: Emacs">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="GDB_002fMI.html#GDB_002fMI" rel="next" title="GDB/MI">
+<link href="TUI-Configuration.html#TUI-Configuration" rel="prev" title="TUI Configuration">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Emacs"></a>
+<div class="header">
+<p>
+Next: <a href="GDB_002fMI.html#GDB_002fMI" accesskey="n" rel="next">GDB/MI</a>, Previous: <a href="TUI.html#TUI" accesskey="p" rel="prev">TUI</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Using-GDB-under-GNU-Emacs"></a>
+<h2 class="chapter">26 Using <small>GDB</small> under <small>GNU</small> Emacs</h2>
+
+<a name="index-Emacs"></a>
+<a name="index-GNU-Emacs"></a>
+<p>A special interface allows you to use <small>GNU</small> Emacs to view (and
+edit) the source files for the program you are debugging with
+<small>GDB</small>.
+</p>
+<p>To use this interface, use the command <kbd>M-x gdb</kbd> in Emacs.  Give the
+executable file you want to debug as an argument.  This command starts
+<small>GDB</small> as a subprocess of Emacs, with input and output through a newly
+created Emacs buffer.
+</p>
+<p>Running <small>GDB</small> under Emacs can be just like running <small>GDB</small> normally except for two
+things:
+</p>
+<ul>
+<li> All &ldquo;terminal&rdquo; input and output goes through an Emacs buffer, called
+the GUD buffer.
+
+<p>This applies both to <small>GDB</small> commands and their output, and to the input
+and output done by the program you are debugging.
+</p>
+<p>This is useful because it means that you can copy the text of previous
+commands and input them again; you can even use parts of the output
+in this way.
+</p>
+<p>All the facilities of Emacs&rsquo; Shell mode are available for interacting
+with your program.  In particular, you can send signals the usual
+way&mdash;for example, <kbd>C-c C-c</kbd> for an interrupt, <kbd>C-c C-z</kbd> for a
+stop.
+</p>
+</li><li> <small>GDB</small> displays source code through Emacs.
+
+<p>Each time <small>GDB</small> displays a stack frame, Emacs automatically finds the
+source file for that frame and puts an arrow (&lsquo;<samp>=&gt;</samp>&rsquo;) at the
+left margin of the current line.  Emacs uses a separate buffer for
+source display, and splits the screen to show both your <small>GDB</small> session
+and the source.
+</p>
+<p>Explicit <small>GDB</small> <code>list</code> or search commands still produce output as
+usual, but you probably have no reason to use them from Emacs.
+</p></li></ul>
+
+<p>We call this <em>text command mode</em>.  Emacs 22.1, and later, also uses
+a graphical mode, enabled by default, which provides further buffers
+that can control the execution and describe the state of your program.
+See <a href="../Emacs/GDB-Graphical-Interface.html#GDB-Graphical-Interface">GDB Graphical Interface</a> in <cite>The <small>GNU</small> Emacs Manual</cite>.
+</p>
+<p>If you specify an absolute file name when prompted for the <kbd>M-x
+gdb</kbd> argument, then Emacs sets your current working directory to where
+your program resides.  If you only specify the file name, then Emacs
+sets your current working directory to the directory associated
+with the previous buffer.  In this case, <small>GDB</small> may find your
+program by searching your environment&rsquo;s <code>PATH</code> variable, but on
+some operating systems it might not find the source.  So, although the
+<small>GDB</small> input and output session proceeds normally, the auxiliary
+buffer does not display the current source and line of execution.
+</p>
+<p>The initial working directory of <small>GDB</small> is printed on the top
+line of the GUD buffer and this serves as a default for the commands
+that specify files for <small>GDB</small> to operate on.  See <a href="Files.html#Files">Commands to Specify Files</a>.
+</p>
+<p>By default, <kbd>M-x gdb</kbd> calls the program called <samp>gdb</samp>.  If you
+need to call <small>GDB</small> by a different name (for example, if you
+keep several configurations around, with different names) you can
+customize the Emacs variable <code>gud-gdb-command-name</code> to run the
+one you want.
+</p>
+<p>In the GUD buffer, you can use these special Emacs commands in
+addition to the standard Shell mode commands:
+</p>
+<dl compact="compact">
+<dt><kbd>C-h m</kbd></dt>
+<dd><p>Describe the features of Emacs&rsquo; GUD Mode.
+</p>
+</dd>
+<dt><kbd>C-c C-s</kbd></dt>
+<dd><p>Execute to another source line, like the <small>GDB</small> <code>step</code> command; also
+update the display window to show the current file and location.
+</p>
+</dd>
+<dt><kbd>C-c C-n</kbd></dt>
+<dd><p>Execute to next source line in this function, skipping all function
+calls, like the <small>GDB</small> <code>next</code> command.  Then update the display window
+to show the current file and location.
+</p>
+</dd>
+<dt><kbd>C-c C-i</kbd></dt>
+<dd><p>Execute one instruction, like the <small>GDB</small> <code>stepi</code> command; update
+display window accordingly.
+</p>
+</dd>
+<dt><kbd>C-c C-f</kbd></dt>
+<dd><p>Execute until exit from the selected stack frame, like the <small>GDB</small>
+<code>finish</code> command.
+</p>
+</dd>
+<dt><kbd>C-c C-r</kbd></dt>
+<dd><p>Continue execution of your program, like the <small>GDB</small> <code>continue</code>
+command.
+</p>
+</dd>
+<dt><kbd>C-c &lt;</kbd></dt>
+<dd><p>Go up the number of frames indicated by the numeric argument
+(see <a href="../Emacs/Arguments.html#Arguments">Numeric Arguments</a> in <cite>The <small>GNU</small> Emacs Manual</cite>),
+like the <small>GDB</small> <code>up</code> command.
+</p>
+</dd>
+<dt><kbd>C-c &gt;</kbd></dt>
+<dd><p>Go down the number of frames indicated by the numeric argument, like the
+<small>GDB</small> <code>down</code> command.
+</p></dd>
+</dl>
+
+<p>In any source file, the Emacs command <kbd>C-x <span class="key">SPC</span></kbd> (<code>gud-break</code>)
+tells <small>GDB</small> to set a breakpoint on the source line point is on.
+</p>
+<p>In text command mode, if you type <kbd>M-x speedbar</kbd>, Emacs displays a
+separate frame which shows a backtrace when the GUD buffer is current.
+Move point to any frame in the stack and type <tt class="key">RET</tt> to make it
+become the current frame and display the associated source in the
+source buffer.  Alternatively, click <kbd>Mouse-2</kbd> to make the
+selected frame become the current one.  In graphical mode, the
+speedbar displays watch expressions.
+</p>
+<p>If you accidentally delete the source-display buffer, an easy way to get
+it back is to type the command <code>f</code> in the <small>GDB</small> buffer, to
+request a frame display; when you run under Emacs, this recreates
+the source buffer if necessary to show you the context of the current
+frame.
+</p>
+<p>The source files displayed in Emacs are in ordinary Emacs buffers
+which are visiting the source files in the usual way.  You can edit
+the files with these buffers if you wish; but keep in mind that <small>GDB</small>
+communicates with Emacs in terms of line numbers.  If you add or
+delete lines from the text, the line numbers that <small>GDB</small> knows cease
+to correspond properly with the code.
+</p>
+<p>A more detailed description of Emacs&rsquo; interaction with <small>GDB</small> is
+given in the Emacs manual (see <a href="../Emacs/Debuggers.html#Debuggers">Debuggers</a> in <cite>The <small>GNU</small>
+Emacs Manual</cite>).
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="GDB_002fMI.html#GDB_002fMI" accesskey="n" rel="next">GDB/MI</a>, Previous: <a href="TUI.html#TUI" accesskey="p" rel="prev">TUI</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

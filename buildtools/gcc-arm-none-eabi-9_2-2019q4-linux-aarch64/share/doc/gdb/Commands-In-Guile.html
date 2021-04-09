@@ -1,0 +1,415 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Commands In Guile</title>
+
+<meta name="description" content="Debugging with GDB: Commands In Guile">
+<meta name="keywords" content="Debugging with GDB: Commands In Guile">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Guile-API.html#Guile-API" rel="up" title="Guile API">
+<link href="Parameters-In-Guile.html#Parameters-In-Guile" rel="next" title="Parameters In Guile">
+<link href="Writing-a-Guile-Pretty_002dPrinter.html#Writing-a-Guile-Pretty_002dPrinter" rel="prev" title="Writing a Guile Pretty-Printer">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Commands-In-Guile"></a>
+<div class="header">
+<p>
+Next: <a href="Parameters-In-Guile.html#Parameters-In-Guile" accesskey="n" rel="next">Parameters In Guile</a>, Previous: <a href="Writing-a-Guile-Pretty_002dPrinter.html#Writing-a-Guile-Pretty_002dPrinter" accesskey="p" rel="prev">Writing a Guile Pretty-Printer</a>, Up: <a href="Guile-API.html#Guile-API" accesskey="u" rel="up">Guile API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Commands-In-Guile-1"></a>
+<h4 class="subsubsection">23.3.3.11 Commands In Guile</h4>
+
+<a name="index-commands-in-guile"></a>
+<a name="index-guile-commands-1"></a>
+<p>You can implement new <small>GDB</small> CLI commands in Guile.  A CLI
+command object is created with the <code>make-command</code> Guile function,
+and added to <small>GDB</small> with the <code>register-command!</code> Guile function.
+This two-step approach is taken to separate out the side-effect of adding
+the command to <small>GDB</small> from <code>make-command</code>.
+</p>
+<p>There is no support for multi-line commands, that is commands that
+consist of multiple lines and are terminated with <code>end</code>.
+</p>
+<dl>
+<dt><a name="index-_0028make_002dcommand"></a>Scheme Procedure: <strong>(make-command</strong> <em>name <span class="roman">[</span>#:invoke invoke] <span class="roman">[</span>#:command-class command-class<span class="roman">]</span> <span class="roman">[</span>#:completer-class completer] <span class="roman">[</span>#:prefix? prefix<span class="roman">]</span> <span class="roman">[</span>#:doc doc-string])</em></dt>
+<dd>
+<p>The argument <var>name</var> is the name of the command.  If <var>name</var> consists of
+multiple words, then the initial words are looked for as prefix
+commands.  In this case, if one of the prefix commands does not exist,
+an exception is raised.
+</p>
+<p>The result is the <code>&lt;gdb:command&gt;</code> object representing the command.
+The command is not usable until it has been registered with <small>GDB</small>
+with <code>register-command!</code>.
+</p>
+<p>The rest of the arguments are optional.
+</p>
+<p>The argument <var>invoke</var> is a procedure of three arguments: <var>self</var>,
+<var>args</var> and <var>from-tty</var>.  The argument <var>self</var> is the
+<code>&lt;gdb:command&gt;</code> object representing the command.
+The argument <var>args</var> is a string representing the arguments passed to
+the command, after leading and trailing whitespace has been stripped.
+The argument <var>from-tty</var> is a boolean flag and specifies whether the
+command should consider itself to have been originated from the user
+invoking it interactively.  If this function throws an exception,
+it is turned into a <small>GDB</small> <code>error</code> call.
+Otherwise, the return value is ignored.
+</p>
+<p>The argument <var>command-class</var> is one of the &lsquo;<samp>COMMAND_</samp>&rsquo; constants
+defined below.  This argument tells <small>GDB</small> how to categorize the
+new command in the help system.  The default is <code>COMMAND_NONE</code>.
+</p>
+<p>The argument <var>completer</var> is either <code>#f</code>, one of the &lsquo;<samp>COMPLETE_</samp>&rsquo;
+constants defined below, or a procedure, also defined below.
+This argument tells <small>GDB</small> how to perform completion
+for this command.  If not provided or if the value is <code>#f</code>,
+then no completion is performed on the command.
+</p>
+<p>The argument <var>prefix</var> is a boolean flag indicating whether the new
+command is a prefix command; sub-commands of this command may be
+registered.
+</p>
+<p>The argument <var>doc-string</var> is help text for the new command.
+If no documentation string is provided, the default value &ldquo;This command is
+not documented.&rdquo; is used.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-register_002dcommand_0021"></a>Scheme Procedure: <strong>register-command!</strong> <em>command</em></dt>
+<dd><p>Add <var>command</var>, a <code>&lt;gdb:command&gt;</code> object, to <small>GDB</small>&rsquo;s
+list of commands.
+It is an error to register a command more than once.
+The result is unspecified.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-command_003f"></a>Scheme Procedure: <strong>command?</strong> <em>object</em></dt>
+<dd><p>Return <code>#t</code> if <var>object</var> is a <code>&lt;gdb:command&gt;</code> object.
+Otherwise return <code>#f</code>.
+</p></dd></dl>
+
+<a name="index-don_0027t-repeat-Guile-command"></a>
+<dl>
+<dt><a name="index-dont_002drepeat"></a>Scheme Procedure: <strong>dont-repeat</strong></dt>
+<dd><p>By default, a <small>GDB</small> command is repeated when the user enters a
+blank line at the command prompt.  A command can suppress this
+behavior by invoking the <code>dont-repeat</code> function.  This is similar
+to the user command <code>dont-repeat</code>, see <a href="Define.html#Define">dont-repeat</a>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-string_002d_003eargv"></a>Scheme Procedure: <strong>string-&gt;argv</strong> <em>string</em></dt>
+<dd><p>Convert a string to a list of strings split up according to
+<small>GDB</small>&rsquo;s argv parsing rules.
+It is recommended to use this for consistency.
+Arguments are separated by spaces and may be quoted.
+Example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">scheme@(guile-user)&gt; (string-&gt;argv &quot;1 2\\ \\\&quot;3 '4 \&quot;5' \&quot;6 '7\&quot;&quot;)
+$1 = (&quot;1&quot; &quot;2 \&quot;3&quot; &quot;4 \&quot;5&quot; &quot;6 '7&quot;)
+</pre></div>
+</dd></dl>
+
+<dl>
+<dt><a name="index-throw_002duser_002derror"></a>Scheme Procedure: <strong>throw-user-error</strong> <em>message . args</em></dt>
+<dd><p>Throw a <code>gdb:user-error</code> exception.
+The argument <var>message</var> is the error message as a format string, like the 
+<var>fmt</var> argument to the <code>format</code> Scheme function.
+See <a href="http://www.gnu.org/software/guile/manual/html_node/Formatted-Output.html#Formatted-Output">Formatted Output</a> in <cite>GNU Guile Reference Manual</cite>.
+The argument <var>args</var> is a list of the optional arguments of <var>message</var>.
+</p>
+<p>This is used when the command detects a user error of some kind,
+say a bad command argument.
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) guile (use-modules (gdb))
+(gdb) guile
+(register-command! (make-command &quot;test-user-error&quot;
+  #:command-class COMMAND_OBSCURE
+  #:invoke (lambda (self arg from-tty)
+    (throw-user-error &quot;Bad argument ~a&quot; arg))))
+end
+(gdb) test-user-error ugh
+ERROR: Bad argument ugh
+</pre></div>
+</dd></dl>
+
+<a name="index-completion-of-Guile-commands"></a>
+<dl>
+<dt><a name="index-self"></a>completer: <strong>self</strong> <em>text word</em></dt>
+<dd><p>If the <var>completer</var> option to <code>make-command</code> is a procedure,
+it takes three arguments: <var>self</var> which is the <code>&lt;gdb:command&gt;</code>
+object, and <var>text</var> and <var>word</var> which are both strings.
+The argument <var>text</var> holds the complete command line up to the cursor&rsquo;s
+location.  The argument <var>word</var> holds the last word of the command line;
+this is computed using a word-breaking heuristic.
+</p>
+<p>All forms of completion are handled by this function, that is,
+the <tt class="key">TAB</tt> and <tt class="key">M-?</tt> key bindings (see <a href="Completion.html#Completion">Completion</a>),
+and the <code>complete</code> command (see <a href="Help.html#Help">complete</a>).
+</p>
+<p>This procedure can return several kinds of values:
+</p>
+<ul>
+<li> If the return value is a list, the contents of the list are used as the
+completions.  It is up to <var>completer</var> to ensure that the
+contents actually do complete the word.  An empty list is
+allowed, it means that there were no completions available.  Only
+string elements of the list are used; other elements in the
+list are ignored.
+
+</li><li> If the return value is a <code>&lt;gdb:iterator&gt;</code> object, it is iterated over to
+obtain the completions.  It is up to <code>completer-procedure</code> to ensure
+that the results actually do complete the word.  Only
+string elements of the result are used; other elements in the
+sequence are ignored.
+
+</li><li> All other results are treated as though there were no available
+completions.
+</li></ul>
+</dd></dl>
+
+<p>When a new command is registered, it will have been declared as a member of
+some general class of commands.  This is used to classify top-level
+commands in the on-line help system; note that prefix commands are not
+listed under their own category but rather that of their top-level
+command.  The available classifications are represented by constants
+defined in the <code>gdb</code> module:
+</p>
+<dl compact="compact">
+<dt><code>COMMAND_NONE</code>
+<a name="index-COMMAND_005fNONE-1"></a>
+</dt>
+<dd><p>The command does not belong to any particular class.  A command in
+this category will not be displayed in any of the help categories.
+This is the default.
+</p>
+</dd>
+<dt><code>COMMAND_RUNNING</code>
+<a name="index-COMMAND_005fRUNNING-1"></a>
+</dt>
+<dd><p>The command is related to running the inferior.  For example,
+<code>start</code>, <code>step</code>, and <code>continue</code> are in this category.
+Type <kbd>help running</kbd> at the <small>GDB</small> prompt to see a list of
+commands in this category.
+</p>
+</dd>
+<dt><code>COMMAND_DATA</code>
+<a name="index-COMMAND_005fDATA-1"></a>
+</dt>
+<dd><p>The command is related to data or variables.  For example,
+<code>call</code>, <code>find</code>, and <code>print</code> are in this category.  Type
+<kbd>help data</kbd> at the <small>GDB</small> prompt to see a list of commands
+in this category.
+</p>
+</dd>
+<dt><code>COMMAND_STACK</code>
+<a name="index-COMMAND_005fSTACK-1"></a>
+</dt>
+<dd><p>The command has to do with manipulation of the stack.  For example,
+<code>backtrace</code>, <code>frame</code>, and <code>return</code> are in this
+category.  Type <kbd>help stack</kbd> at the <small>GDB</small> prompt to see a
+list of commands in this category.
+</p>
+</dd>
+<dt><code>COMMAND_FILES</code>
+<a name="index-COMMAND_005fFILES-1"></a>
+</dt>
+<dd><p>This class is used for file-related commands.  For example,
+<code>file</code>, <code>list</code> and <code>section</code> are in this category.
+Type <kbd>help files</kbd> at the <small>GDB</small> prompt to see a list of
+commands in this category.
+</p>
+</dd>
+<dt><code>COMMAND_SUPPORT</code>
+<a name="index-COMMAND_005fSUPPORT-1"></a>
+</dt>
+<dd><p>This should be used for &ldquo;support facilities&rdquo;, generally meaning
+things that are useful to the user when interacting with <small>GDB</small>,
+but not related to the state of the inferior.  For example,
+<code>help</code>, <code>make</code>, and <code>shell</code> are in this category.  Type
+<kbd>help support</kbd> at the <small>GDB</small> prompt to see a list of
+commands in this category.
+</p>
+</dd>
+<dt><code>COMMAND_STATUS</code>
+<a name="index-COMMAND_005fSTATUS-1"></a>
+</dt>
+<dd><p>The command is an &lsquo;<samp>info</samp>&rsquo;-related command, that is, related to the
+state of <small>GDB</small> itself.  For example, <code>info</code>, <code>macro</code>,
+and <code>show</code> are in this category.  Type <kbd>help status</kbd> at the
+<small>GDB</small> prompt to see a list of commands in this category.
+</p>
+</dd>
+<dt><code>COMMAND_BREAKPOINTS</code>
+<a name="index-COMMAND_005fBREAKPOINTS-1"></a>
+</dt>
+<dd><p>The command has to do with breakpoints.  For example, <code>break</code>,
+<code>clear</code>, and <code>delete</code> are in this category.  Type <kbd>help
+breakpoints</kbd> at the <small>GDB</small> prompt to see a list of commands in
+this category.
+</p>
+</dd>
+<dt><code>COMMAND_TRACEPOINTS</code>
+<a name="index-COMMAND_005fTRACEPOINTS-1"></a>
+</dt>
+<dd><p>The command has to do with tracepoints.  For example, <code>trace</code>,
+<code>actions</code>, and <code>tfind</code> are in this category.  Type
+<kbd>help tracepoints</kbd> at the <small>GDB</small> prompt to see a list of
+commands in this category.
+</p>
+</dd>
+<dt><code>COMMAND_USER</code>
+<a name="index-COMMAND_005fUSER-1"></a>
+</dt>
+<dd><p>The command is a general purpose command for the user, and typically
+does not fit in one of the other categories.
+Type <kbd>help user-defined</kbd> at the <small>GDB</small> prompt to see
+a list of commands in this category, as well as the list of gdb macros
+(see <a href="Sequences.html#Sequences">Sequences</a>).
+</p>
+</dd>
+<dt><code>COMMAND_OBSCURE</code>
+<a name="index-COMMAND_005fOBSCURE-1"></a>
+</dt>
+<dd><p>The command is only used in unusual circumstances, or is not of
+general interest to users.  For example, <code>checkpoint</code>,
+<code>fork</code>, and <code>stop</code> are in this category.  Type <kbd>help
+obscure</kbd> at the <small>GDB</small> prompt to see a list of commands in this
+category.
+</p>
+</dd>
+<dt><code>COMMAND_MAINTENANCE</code>
+<a name="index-COMMAND_005fMAINTENANCE-1"></a>
+</dt>
+<dd><p>The command is only useful to <small>GDB</small> maintainers.  The
+<code>maintenance</code> and <code>flushregs</code> commands are in this category.
+Type <kbd>help internals</kbd> at the <small>GDB</small> prompt to see a list of
+commands in this category.
+</p></dd>
+</dl>
+
+<p>A new command can use a predefined completion function, either by
+specifying it via an argument at initialization, or by returning it
+from the <code>completer</code> procedure.  These predefined completion
+constants are all defined in the <code>gdb</code> module:
+</p>
+<dl compact="compact">
+<dt><code>COMPLETE_NONE</code>
+<a name="index-COMPLETE_005fNONE-1"></a>
+</dt>
+<dd><p>This constant means that no completion should be done.
+</p>
+</dd>
+<dt><code>COMPLETE_FILENAME</code>
+<a name="index-COMPLETE_005fFILENAME-1"></a>
+</dt>
+<dd><p>This constant means that filename completion should be performed.
+</p>
+</dd>
+<dt><code>COMPLETE_LOCATION</code>
+<a name="index-COMPLETE_005fLOCATION-1"></a>
+</dt>
+<dd><p>This constant means that location completion should be done.
+See <a href="Specify-Location.html#Specify-Location">Specify Location</a>.
+</p>
+</dd>
+<dt><code>COMPLETE_COMMAND</code>
+<a name="index-COMPLETE_005fCOMMAND-1"></a>
+</dt>
+<dd><p>This constant means that completion should examine <small>GDB</small>
+command names.
+</p>
+</dd>
+<dt><code>COMPLETE_SYMBOL</code>
+<a name="index-COMPLETE_005fSYMBOL-1"></a>
+</dt>
+<dd><p>This constant means that completion should be done using symbol names
+as the source.
+</p>
+</dd>
+<dt><code>COMPLETE_EXPRESSION</code>
+<a name="index-COMPLETE_005fEXPRESSION-1"></a>
+</dt>
+<dd><p>This constant means that completion should be done on expressions.
+Often this means completing on symbol names, but some language
+parsers also have support for completing on field names.
+</p></dd>
+</dl>
+
+<p>The following code snippet shows how a trivial CLI command can be
+implemented in Guile:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) guile
+(register-command! (make-command &quot;hello-world&quot;
+  #:command-class COMMAND_USER
+  #:doc &quot;Greet the whole world.&quot;
+  #:invoke (lambda (self args from-tty) (display &quot;Hello, World!\n&quot;))))
+end
+(gdb) hello-world
+Hello, World!
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Parameters-In-Guile.html#Parameters-In-Guile" accesskey="n" rel="next">Parameters In Guile</a>, Previous: <a href="Writing-a-Guile-Pretty_002dPrinter.html#Writing-a-Guile-Pretty_002dPrinter" accesskey="p" rel="prev">Writing a Guile Pretty-Printer</a>, Up: <a href="Guile-API.html#Guile-API" accesskey="u" rel="up">Guile API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

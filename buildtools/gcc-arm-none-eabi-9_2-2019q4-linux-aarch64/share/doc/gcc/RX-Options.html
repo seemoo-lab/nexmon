@@ -1,0 +1,311 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): RX Options</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): RX Options">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): RX Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Submodel-Options.html#Submodel-Options" rel="up" title="Submodel Options">
+<link href="S_002f390-and-zSeries-Options.html#S_002f390-and-zSeries-Options" rel="next" title="S/390 and zSeries Options">
+<link href="RS_002f6000-and-PowerPC-Options.html#RS_002f6000-and-PowerPC-Options" rel="prev" title="RS/6000 and PowerPC Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="RX-Options"></a>
+<div class="header">
+<p>
+Next: <a href="S_002f390-and-zSeries-Options.html#S_002f390-and-zSeries-Options" accesskey="n" rel="next">S/390 and zSeries Options</a>, Previous: <a href="RS_002f6000-and-PowerPC-Options.html#RS_002f6000-and-PowerPC-Options" accesskey="p" rel="prev">RS/6000 and PowerPC Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="RX-Options-1"></a>
+<h4 class="subsection">3.18.43 RX Options</h4>
+<a name="index-RX-Options"></a>
+
+<p>These command-line options are defined for RX targets:
+</p>
+<dl compact="compact">
+<dt><code>-m64bit-doubles</code></dt>
+<dt><code>-m32bit-doubles</code></dt>
+<dd><a name="index-m64bit_002ddoubles-1"></a>
+<a name="index-m32bit_002ddoubles-1"></a>
+<p>Make the <code>double</code> data type be 64 bits (<samp>-m64bit-doubles</samp>)
+or 32 bits (<samp>-m32bit-doubles</samp>) in size.  The default is
+<samp>-m32bit-doubles</samp>.  <em>Note</em> RX floating-point hardware only
+works on 32-bit values, which is why the default is
+<samp>-m32bit-doubles</samp>.
+</p>
+</dd>
+<dt><code>-fpu</code></dt>
+<dt><code>-nofpu</code></dt>
+<dd><a name="index-fpu"></a>
+<a name="index-nofpu"></a>
+<p>Enables (<samp>-fpu</samp>) or disables (<samp>-nofpu</samp>) the use of RX
+floating-point hardware.  The default is enabled for the RX600
+series and disabled for the RX200 series.
+</p>
+<p>Floating-point instructions are only generated for 32-bit floating-point 
+values, however, so the FPU hardware is not used for doubles if the
+<samp>-m64bit-doubles</samp> option is used.
+</p>
+<p><em>Note</em> If the <samp>-fpu</samp> option is enabled then
+<samp>-funsafe-math-optimizations</samp> is also enabled automatically.
+This is because the RX FPU instructions are themselves unsafe.
+</p>
+</dd>
+<dt><code>-mcpu=<var>name</var></code></dt>
+<dd><a name="index-mcpu-10"></a>
+<p>Selects the type of RX CPU to be targeted.  Currently three types are
+supported, the generic &lsquo;<samp>RX600</samp>&rsquo; and &lsquo;<samp>RX200</samp>&rsquo; series hardware and
+the specific &lsquo;<samp>RX610</samp>&rsquo; CPU.  The default is &lsquo;<samp>RX600</samp>&rsquo;.
+</p>
+<p>The only difference between &lsquo;<samp>RX600</samp>&rsquo; and &lsquo;<samp>RX610</samp>&rsquo; is that the
+&lsquo;<samp>RX610</samp>&rsquo; does not support the <code>MVTIPL</code> instruction.
+</p>
+<p>The &lsquo;<samp>RX200</samp>&rsquo; series does not have a hardware floating-point unit
+and so <samp>-nofpu</samp> is enabled by default when this type is
+selected.
+</p>
+</dd>
+<dt><code>-mbig-endian-data</code></dt>
+<dt><code>-mlittle-endian-data</code></dt>
+<dd><a name="index-mbig_002dendian_002ddata"></a>
+<a name="index-mlittle_002dendian_002ddata"></a>
+<p>Store data (but not code) in the big-endian format.  The default is
+<samp>-mlittle-endian-data</samp>, i.e. to store data in the little-endian
+format.
+</p>
+</dd>
+<dt><code>-msmall-data-limit=<var>N</var></code></dt>
+<dd><a name="index-msmall_002ddata_002dlimit-1"></a>
+<p>Specifies the maximum size in bytes of global and static variables
+which can be placed into the small data area.  Using the small data
+area can lead to smaller and faster code, but the size of area is
+limited and it is up to the programmer to ensure that the area does
+not overflow.  Also when the small data area is used one of the RX&rsquo;s
+registers (usually <code>r13</code>) is reserved for use pointing to this
+area, so it is no longer available for use by the compiler.  This
+could result in slower and/or larger code if variables are pushed onto
+the stack instead of being held in this register.
+</p>
+<p>Note, common variables (variables that have not been initialized) and
+constants are not placed into the small data area as they are assigned
+to other sections in the output executable.
+</p>
+<p>The default value is zero, which disables this feature.  Note, this
+feature is not enabled by default with higher optimization levels
+(<samp>-O2</samp> etc) because of the potentially detrimental effects of
+reserving a register.  It is up to the programmer to experiment and
+discover whether this feature is of benefit to their program.  See the
+description of the <samp>-mpid</samp> option for a description of how the
+actual register to hold the small data area pointer is chosen.
+</p>
+</dd>
+<dt><code>-msim</code></dt>
+<dt><code>-mno-sim</code></dt>
+<dd><a name="index-msim-9"></a>
+<a name="index-mno_002dsim"></a>
+<p>Use the simulator runtime.  The default is to use the libgloss
+board-specific runtime.
+</p>
+</dd>
+<dt><code>-mas100-syntax</code></dt>
+<dt><code>-mno-as100-syntax</code></dt>
+<dd><a name="index-mas100_002dsyntax"></a>
+<a name="index-mno_002das100_002dsyntax"></a>
+<p>When generating assembler output use a syntax that is compatible with
+Renesas&rsquo;s AS100 assembler.  This syntax can also be handled by the GAS
+assembler, but it has some restrictions so it is not generated by default.
+</p>
+</dd>
+<dt><code>-mmax-constant-size=<var>N</var></code></dt>
+<dd><a name="index-mmax_002dconstant_002dsize"></a>
+<p>Specifies the maximum size, in bytes, of a constant that can be used as
+an operand in a RX instruction.  Although the RX instruction set does
+allow constants of up to 4 bytes in length to be used in instructions,
+a longer value equates to a longer instruction.  Thus in some
+circumstances it can be beneficial to restrict the size of constants
+that are used in instructions.  Constants that are too big are instead
+placed into a constant pool and referenced via register indirection.
+</p>
+<p>The value <var>N</var> can be between 0 and 4.  A value of 0 (the default)
+or 4 means that constants of any size are allowed.
+</p>
+</dd>
+<dt><code>-mrelax</code></dt>
+<dd><a name="index-mrelax-5"></a>
+<p>Enable linker relaxation.  Linker relaxation is a process whereby the
+linker attempts to reduce the size of a program by finding shorter
+versions of various instructions.  Disabled by default.
+</p>
+</dd>
+<dt><code>-mint-register=<var>N</var></code></dt>
+<dd><a name="index-mint_002dregister"></a>
+<p>Specify the number of registers to reserve for fast interrupt handler
+functions.  The value <var>N</var> can be between 0 and 4.  A value of 1
+means that register <code>r13</code> is reserved for the exclusive use
+of fast interrupt handlers.  A value of 2 reserves <code>r13</code> and
+<code>r12</code>.  A value of 3 reserves <code>r13</code>, <code>r12</code> and
+<code>r11</code>, and a value of 4 reserves <code>r13</code> through <code>r10</code>.
+A value of 0, the default, does not reserve any registers.
+</p>
+</dd>
+<dt><code>-msave-acc-in-interrupts</code></dt>
+<dd><a name="index-msave_002dacc_002din_002dinterrupts"></a>
+<p>Specifies that interrupt handler functions should preserve the
+accumulator register.  This is only necessary if normal code might use
+the accumulator register, for example because it performs 64-bit
+multiplications.  The default is to ignore the accumulator as this
+makes the interrupt handlers faster.
+</p>
+</dd>
+<dt><code>-mpid</code></dt>
+<dt><code>-mno-pid</code></dt>
+<dd><a name="index-mpid"></a>
+<a name="index-mno_002dpid"></a>
+<p>Enables the generation of position independent data.  When enabled any
+access to constant data is done via an offset from a base address
+held in a register.  This allows the location of constant data to be
+determined at run time without requiring the executable to be
+relocated, which is a benefit to embedded applications with tight
+memory constraints.  Data that can be modified is not affected by this
+option.
+</p>
+<p>Note, using this feature reserves a register, usually <code>r13</code>, for
+the constant data base address.  This can result in slower and/or
+larger code, especially in complicated functions.
+</p>
+<p>The actual register chosen to hold the constant data base address
+depends upon whether the <samp>-msmall-data-limit</samp> and/or the
+<samp>-mint-register</samp> command-line options are enabled.  Starting
+with register <code>r13</code> and proceeding downwards, registers are
+allocated first to satisfy the requirements of <samp>-mint-register</samp>,
+then <samp>-mpid</samp> and finally <samp>-msmall-data-limit</samp>.  Thus it
+is possible for the small data area register to be <code>r8</code> if both
+<samp>-mint-register=4</samp> and <samp>-mpid</samp> are specified on the
+command line.
+</p>
+<p>By default this feature is not enabled.  The default can be restored
+via the <samp>-mno-pid</samp> command-line option.
+</p>
+</dd>
+<dt><code>-mno-warn-multiple-fast-interrupts</code></dt>
+<dt><code>-mwarn-multiple-fast-interrupts</code></dt>
+<dd><a name="index-mno_002dwarn_002dmultiple_002dfast_002dinterrupts"></a>
+<a name="index-mwarn_002dmultiple_002dfast_002dinterrupts"></a>
+<p>Prevents GCC from issuing a warning message if it finds more than one
+fast interrupt handler when it is compiling a file.  The default is to
+issue a warning for each extra fast interrupt handler found, as the RX
+only supports one such interrupt.
+</p>
+</dd>
+<dt><code>-mallow-string-insns</code></dt>
+<dt><code>-mno-allow-string-insns</code></dt>
+<dd><a name="index-mallow_002dstring_002dinsns"></a>
+<a name="index-mno_002dallow_002dstring_002dinsns"></a>
+<p>Enables or disables the use of the string manipulation instructions
+<code>SMOVF</code>, <code>SCMPU</code>, <code>SMOVB</code>, <code>SMOVU</code>, <code>SUNTIL</code>
+<code>SWHILE</code> and also the <code>RMPA</code> instruction.  These
+instructions may prefetch data, which is not safe to do if accessing
+an I/O register.  (See section 12.2.7 of the RX62N Group User&rsquo;s Manual
+for more information).
+</p>
+<p>The default is to allow these instructions, but it is not possible for
+GCC to reliably detect all circumstances where a string instruction
+might be used to access an I/O register, so their use cannot be
+disabled automatically.  Instead it is reliant upon the programmer to
+use the <samp>-mno-allow-string-insns</samp> option if their program
+accesses I/O space.
+</p>
+<p>When the instructions are enabled GCC defines the C preprocessor
+symbol <code>__RX_ALLOW_STRING_INSNS__</code>, otherwise it defines the
+symbol <code>__RX_DISALLOW_STRING_INSNS__</code>.
+</p>
+</dd>
+<dt><code>-mjsr</code></dt>
+<dt><code>-mno-jsr</code></dt>
+<dd><a name="index-mjsr"></a>
+<a name="index-mno_002djsr"></a>
+<p>Use only (or not only) <code>JSR</code> instructions to access functions.
+This option can be used when code size exceeds the range of <code>BSR</code>
+instructions.  Note that <samp>-mno-jsr</samp> does not mean to not use
+<code>JSR</code> but instead means that any type of branch may be used.
+</p></dd>
+</dl>
+
+<p><em>Note:</em> The generic GCC command-line option <samp>-ffixed-<var>reg</var></samp>
+has special significance to the RX port when used with the
+<code>interrupt</code> function attribute.  This attribute indicates a
+function intended to process fast interrupts.  GCC ensures
+that it only uses the registers <code>r10</code>, <code>r11</code>, <code>r12</code>
+and/or <code>r13</code> and only provided that the normal use of the
+corresponding registers have been restricted via the
+<samp>-ffixed-<var>reg</var></samp> or <samp>-mint-register</samp> command-line
+options.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="S_002f390-and-zSeries-Options.html#S_002f390-and-zSeries-Options" accesskey="n" rel="next">S/390 and zSeries Options</a>, Previous: <a href="RS_002f6000-and-PowerPC-Options.html#RS_002f6000-and-PowerPC-Options" accesskey="p" rel="prev">RS/6000 and PowerPC Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

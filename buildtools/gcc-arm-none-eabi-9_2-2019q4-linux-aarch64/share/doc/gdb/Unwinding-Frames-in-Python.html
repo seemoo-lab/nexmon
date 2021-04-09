@@ -1,0 +1,270 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Unwinding Frames in Python</title>
+
+<meta name="description" content="Debugging with GDB: Unwinding Frames in Python">
+<meta name="keywords" content="Debugging with GDB: Unwinding Frames in Python">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Python-API.html#Python-API" rel="up" title="Python API">
+<link href="Xmethods-In-Python.html#Xmethods-In-Python" rel="next" title="Xmethods In Python">
+<link href="Writing-a-Frame-Filter.html#Writing-a-Frame-Filter" rel="prev" title="Writing a Frame Filter">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Unwinding-Frames-in-Python"></a>
+<div class="header">
+<p>
+Next: <a href="Xmethods-In-Python.html#Xmethods-In-Python" accesskey="n" rel="next">Xmethods In Python</a>, Previous: <a href="Writing-a-Frame-Filter.html#Writing-a-Frame-Filter" accesskey="p" rel="prev">Writing a Frame Filter</a>, Up: <a href="Python-API.html#Python-API" accesskey="u" rel="up">Python API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Unwinding-Frames-in-Python-1"></a>
+<h4 class="subsubsection">23.2.2.12 Unwinding Frames in Python</h4>
+<a name="index-unwinding-frames-in-Python"></a>
+
+<p>In <small>GDB</small> terminology &ldquo;unwinding&rdquo; is the process of finding
+the previous frame (that is, caller&rsquo;s) from the current one.  An
+unwinder has three methods.  The first one checks if it can handle
+given frame (&ldquo;sniff&rdquo; it).  For the frames it can sniff an unwinder
+provides two additional methods: it can return frame&rsquo;s ID, and it can
+fetch registers from the previous frame.  A running <small>GDB</small>
+mantains a list of the unwinders and calls each unwinder&rsquo;s sniffer in
+turn until it finds the one that recognizes the current frame.  There
+is an API to register an unwinder.
+</p>
+<p>The unwinders that come with <small>GDB</small> handle standard frames.
+However, mixed language applications (for example, an application
+running Java Virtual Machine) sometimes use frame layouts that cannot
+be handled by the <small>GDB</small> unwinders.  You can write Python code
+that can handle such custom frames.
+</p>
+<p>You implement a frame unwinder in Python as a class with which has two
+attributes, <code>name</code> and <code>enabled</code>, with obvious meanings, and
+a single method <code>__call__</code>, which examines a given frame and
+returns an object (an instance of <code>gdb.UnwindInfo class)</code>
+describing it.  If an unwinder does not recognize a frame, it should
+return <code>None</code>.  The code in <small>GDB</small> that enables writing
+unwinders in Python uses this object to return frame&rsquo;s ID and previous
+frame registers when <small>GDB</small> core asks for them.
+</p>
+<p>An unwinder should do as little work as possible.  Some otherwise
+innocuous operations can cause problems (even crashes, as this code is
+not not well-hardened yet).  For example, making an inferior call from
+an unwinder is unadvisable, as an inferior call will reset
+<small>GDB</small>&rsquo;s stack unwinding process, potentially causing re-entrant
+unwinding.
+</p>
+<a name="Unwinder-Input"></a>
+<h4 class="subheading">Unwinder Input</h4>
+
+<p>An object passed to an unwinder (a <code>gdb.PendingFrame</code> instance)
+provides a method to read frame&rsquo;s registers:
+</p>
+<dl>
+<dt><a name="index-PendingFrame_002eread_005fregister"></a>Function: <strong>PendingFrame.read_register</strong> <em>(reg)</em></dt>
+<dd><p>This method returns the contents of the register <var>reg</var> in the
+frame as a <code>gdb.Value</code> object.  <var>reg</var> can be either a
+register number or a register name; the values are platform-specific.
+They are usually found in the corresponding
+<samp><var>platform</var>-tdep.h</samp> file in the <small>GDB</small> source tree.  If
+<var>reg</var> does not name a register for the current architecture, this
+method will throw an exception.
+</p>
+<p>Note that this method will always return a <code>gdb.Value</code> for a
+valid register name.  This does not mean that the value will be valid.
+For example, you may request a register that an earlier unwinder could
+not unwind&mdash;the value will be unavailable.  Instead, the
+<code>gdb.Value</code> returned from this method will be lazy; that is, its
+underlying bits will not be fetched until it is first used.  So,
+attempting to use such a value will cause an exception at the point of
+use.
+</p>
+<p>The type of the returned <code>gdb.Value</code> depends on the register and
+the architecture.  It is common for registers to have a scalar type,
+like <code>long long</code>; but many other types are possible, such as
+pointer, pointer-to-function, floating point or vector types.
+</p></dd></dl>
+
+<p>It also provides a factory method to create a <code>gdb.UnwindInfo</code>
+instance to be returned to <small>GDB</small>:
+</p>
+<dl>
+<dt><a name="index-PendingFrame_002ecreate_005funwind_005finfo"></a>Function: <strong>PendingFrame.create_unwind_info</strong> <em>(frame_id)</em></dt>
+<dd><p>Returns a new <code>gdb.UnwindInfo</code> instance identified by given
+<var>frame_id</var>.  The argument is used to build <small>GDB</small>&rsquo;s frame ID
+using one of functions provided by <small>GDB</small>.  <var>frame_id</var>&rsquo;s attributes
+determine which function will be used, as follows:
+</p>
+<dl compact="compact">
+<dt><code>sp, pc</code></dt>
+<dd><p>The frame is identified by the given stack address and PC.  The stack
+address must be chosen so that it is constant throughout the lifetime
+of the frame, so a typical choice is the value of the stack pointer at
+the start of the function&mdash;in the DWARF standard, this would be the
+&ldquo;Call Frame Address&rdquo;.
+</p>
+<p>This is the most common case by far.  The other cases are documented
+for completeness but are only useful in specialized situations.
+</p>
+</dd>
+<dt><code>sp, pc, special</code></dt>
+<dd><p>The frame is identified by the stack address, the PC, and a
+&ldquo;special&rdquo; address.  The special address is used on architectures
+that can have frames that do not change the stack, but which are still
+distinct, for example the IA-64, which has a second stack for
+registers.  Both <var>sp</var> and <var>special</var> must be constant
+throughout the lifetime of the frame.
+</p>
+</dd>
+<dt><code>sp</code></dt>
+<dd><p>The frame is identified by the stack address only.  Any other stack
+frame with a matching <var>sp</var> will be considered to match this frame.
+Inside gdb, this is called a &ldquo;wild frame&rdquo;.  You will never need
+this.
+</p></dd>
+</dl>
+
+<p>Each attribute value should be an instance of <code>gdb.Value</code>.
+</p>
+</dd></dl>
+
+<a name="Unwinder-Output_003a-UnwindInfo"></a>
+<h4 class="subheading">Unwinder Output: UnwindInfo</h4>
+
+<p>Use <code>PendingFrame.create_unwind_info</code> method described above to
+create a <code>gdb.UnwindInfo</code> instance.  Use the following method to
+specify caller registers that have been saved in this frame:
+</p>
+<dl>
+<dt><a name="index-gdb_002eUnwindInfo_002eadd_005fsaved_005fregister"></a>Function: <strong>gdb.UnwindInfo.add_saved_register</strong> <em>(reg, value)</em></dt>
+<dd><p><var>reg</var> identifies the register.  It can be a number or a name, just
+as for the <code>PendingFrame.read_register</code> method above.
+<var>value</var> is a register value (a <code>gdb.Value</code> object).
+</p></dd></dl>
+
+<a name="Unwinder-Skeleton-Code"></a>
+<h4 class="subheading">Unwinder Skeleton Code</h4>
+
+<p><small>GDB</small> comes with the module containing the base <code>Unwinder</code>
+class.  Derive your unwinder class from it and structure the code as
+follows:
+</p>
+<div class="smallexample">
+<pre class="smallexample">from gdb.unwinders import Unwinder
+
+class FrameId(object):
+    def __init__(self, sp, pc):
+        self.sp = sp
+        self.pc = pc
+
+
+class MyUnwinder(Unwinder):
+    def __init__(....):
+        supe(MyUnwinder, self).__init___(&lt;expects unwinder name argument&gt;)
+
+    def __call__(pending_frame):
+        if not &lt;we recognize frame&gt;:
+            return None
+        # Create UnwindInfo.  Usually the frame is identified by the stack 
+        # pointer and the program counter.
+        sp = pending_frame.read_register(&lt;SP number&gt;)
+        pc = pending_frame.read_register(&lt;PC number&gt;)
+        unwind_info = pending_frame.create_unwind_info(FrameId(sp, pc))
+
+        # Find the values of the registers in the caller's frame and 
+        # save them in the result:
+        unwind_info.add_saved_register(&lt;register&gt;, &lt;value&gt;)
+        ....
+
+        # Return the result:
+        return unwind_info
+
+</pre></div>
+
+<a name="Registering-a-Unwinder"></a>
+<h4 class="subheading">Registering a Unwinder</h4>
+
+<p>An object file, a program space, and the <small>GDB</small> proper can have
+unwinders registered with it.
+</p>
+<p>The <code>gdb.unwinders</code> module provides the function to register a
+unwinder:
+</p>
+<dl>
+<dt><a name="index-gdb_002eunwinder_002eregister_005funwinder"></a>Function: <strong>gdb.unwinder.register_unwinder</strong> <em>(locus, unwinder, replace=False)</em></dt>
+<dd><p><var>locus</var> is specifies an object file or a program space to which
+<var>unwinder</var> is added.  Passing <code>None</code> or <code>gdb</code> adds
+<var>unwinder</var> to the <small>GDB</small>&rsquo;s global unwinder list.  The newly
+added <var>unwinder</var> will be called before any other unwinder from the
+same locus.  Two unwinders in the same locus cannot have the same
+name.  An attempt to add a unwinder with already existing name raises
+an exception unless <var>replace</var> is <code>True</code>, in which case the
+old unwinder is deleted.
+</p></dd></dl>
+
+<a name="Unwinder-Precedence"></a>
+<h4 class="subheading">Unwinder Precedence</h4>
+
+<p><small>GDB</small> first calls the unwinders from all the object files in no
+particular order, then the unwinders from the current program space,
+and finally the unwinders from <small>GDB</small>.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Xmethods-In-Python.html#Xmethods-In-Python" accesskey="n" rel="next">Xmethods In Python</a>, Previous: <a href="Writing-a-Frame-Filter.html#Writing-a-Frame-Filter" accesskey="p" rel="prev">Writing a Frame Filter</a>, Up: <a href="Python-API.html#Python-API" accesskey="u" rel="up">Python API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

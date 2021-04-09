@@ -1,0 +1,277 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Convenience Funs</title>
+
+<meta name="description" content="Debugging with GDB: Convenience Funs">
+<meta name="keywords" content="Debugging with GDB: Convenience Funs">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Data.html#Data" rel="up" title="Data">
+<link href="Registers.html#Registers" rel="next" title="Registers">
+<link href="Convenience-Vars.html#Convenience-Vars" rel="prev" title="Convenience Vars">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Convenience-Funs"></a>
+<div class="header">
+<p>
+Next: <a href="Registers.html#Registers" accesskey="n" rel="next">Registers</a>, Previous: <a href="Convenience-Vars.html#Convenience-Vars" accesskey="p" rel="prev">Convenience Vars</a>, Up: <a href="Data.html#Data" accesskey="u" rel="up">Data</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Convenience-Functions"></a>
+<h3 class="section">10.12 Convenience Functions</h3>
+
+<a name="index-convenience-functions"></a>
+<p><small>GDB</small> also supplies some <em>convenience functions</em>.  These
+have a syntax similar to convenience variables.  A convenience
+function can be used in an expression just like an ordinary function;
+however, a convenience function is implemented internally to
+<small>GDB</small>.
+</p>
+<p>These functions do not require <small>GDB</small> to be configured with
+<code>Python</code> support, which means that they are always available.
+</p>
+<dl compact="compact">
+<dt><code>$_isvoid (<var>expr</var>)</code></dt>
+<dd><a name="index-_0024_005fisvoid_002c-convenience-function"></a>
+<p>Return one if the expression <var>expr</var> is <code>void</code>.  Otherwise it
+returns zero.
+</p>
+<p>A <code>void</code> expression is an expression where the type of the result
+is <code>void</code>.  For example, you can examine a convenience variable
+(see <a href="Convenience-Vars.html#Convenience-Vars">Convenience Variables</a>) to check whether
+it is <code>void</code>:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) print $_exitcode
+$1 = void
+(gdb) print $_isvoid ($_exitcode)
+$2 = 1
+(gdb) run
+Starting program: ./a.out
+[Inferior 1 (process 29572) exited normally]
+(gdb) print $_exitcode
+$3 = 0
+(gdb) print $_isvoid ($_exitcode)
+$4 = 0
+</pre></div>
+
+<p>In the example above, we used <code>$_isvoid</code> to check whether
+<code>$_exitcode</code> is <code>void</code> before and after the execution of the
+program being debugged.  Before the execution there is no exit code to
+be examined, therefore <code>$_exitcode</code> is <code>void</code>.  After the
+execution the program being debugged returned zero, therefore
+<code>$_exitcode</code> is zero, which means that it is not <code>void</code>
+anymore.
+</p>
+<p>The <code>void</code> expression can also be a call of a function from the
+program being debugged.  For example, given the following function:
+</p>
+<div class="smallexample">
+<pre class="smallexample">void
+foo (void)
+{
+}
+</pre></div>
+
+<p>The result of calling it inside <small>GDB</small> is <code>void</code>:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) print foo ()
+$1 = void
+(gdb) print $_isvoid (foo ())
+$2 = 1
+(gdb) set $v = foo ()
+(gdb) print $v
+$3 = void
+(gdb) print $_isvoid ($v)
+$4 = 1
+</pre></div>
+
+</dd>
+</dl>
+
+<p>These functions require <small>GDB</small> to be configured with
+<code>Python</code> support.
+</p>
+<dl compact="compact">
+<dt><code>$_memeq(<var>buf1</var>, <var>buf2</var>, <var>length</var>)</code></dt>
+<dd><a name="index-_0024_005fmemeq_002c-convenience-function"></a>
+<p>Returns one if the <var>length</var> bytes at the addresses given by
+<var>buf1</var> and <var>buf2</var> are equal.
+Otherwise it returns zero.
+</p>
+</dd>
+<dt><code>$_regex(<var>str</var>, <var>regex</var>)</code></dt>
+<dd><a name="index-_0024_005fregex_002c-convenience-function"></a>
+<p>Returns one if the string <var>str</var> matches the regular expression
+<var>regex</var>.  Otherwise it returns zero.
+The syntax of the regular expression is that specified by <code>Python</code>&rsquo;s
+regular expression support.
+</p>
+</dd>
+<dt><code>$_streq(<var>str1</var>, <var>str2</var>)</code></dt>
+<dd><a name="index-_0024_005fstreq_002c-convenience-function"></a>
+<p>Returns one if the strings <var>str1</var> and <var>str2</var> are equal.
+Otherwise it returns zero.
+</p>
+</dd>
+<dt><code>$_strlen(<var>str</var>)</code></dt>
+<dd><a name="index-_0024_005fstrlen_002c-convenience-function"></a>
+<p>Returns the length of string <var>str</var>.
+</p>
+</dd>
+<dt><code>$_caller_is(<var>name</var><span class="roman">[</span>, <var>number_of_frames</var><span class="roman">]</span>)</code></dt>
+<dd><a name="index-_0024_005fcaller_005fis_002c-convenience-function"></a>
+<p>Returns one if the calling function&rsquo;s name is equal to <var>name</var>.
+Otherwise it returns zero.
+</p>
+<p>If the optional argument <var>number_of_frames</var> is provided,
+it is the number of frames up in the stack to look.
+The default is 1.
+</p>
+<p>Example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) backtrace
+#0  bottom_func ()
+    at testsuite/gdb.python/py-caller-is.c:21
+#1  0x00000000004005a0 in middle_func ()
+    at testsuite/gdb.python/py-caller-is.c:27
+#2  0x00000000004005ab in top_func ()
+    at testsuite/gdb.python/py-caller-is.c:33
+#3  0x00000000004005b6 in main ()
+    at testsuite/gdb.python/py-caller-is.c:39
+(gdb) print $_caller_is (&quot;middle_func&quot;)
+$1 = 1
+(gdb) print $_caller_is (&quot;top_func&quot;, 2)
+$1 = 1
+</pre></div>
+
+</dd>
+<dt><code>$_caller_matches(<var>regexp</var><span class="roman">[</span>, <var>number_of_frames</var><span class="roman">]</span>)</code></dt>
+<dd><a name="index-_0024_005fcaller_005fmatches_002c-convenience-function"></a>
+<p>Returns one if the calling function&rsquo;s name matches the regular expression
+<var>regexp</var>.  Otherwise it returns zero.
+</p>
+<p>If the optional argument <var>number_of_frames</var> is provided,
+it is the number of frames up in the stack to look.
+The default is 1.
+</p>
+</dd>
+<dt><code>$_any_caller_is(<var>name</var><span class="roman">[</span>, <var>number_of_frames</var><span class="roman">]</span>)</code></dt>
+<dd><a name="index-_0024_005fany_005fcaller_005fis_002c-convenience-function"></a>
+<p>Returns one if any calling function&rsquo;s name is equal to <var>name</var>.
+Otherwise it returns zero.
+</p>
+<p>If the optional argument <var>number_of_frames</var> is provided,
+it is the number of frames up in the stack to look.
+The default is 1.
+</p>
+<p>This function differs from <code>$_caller_is</code> in that this function
+checks all stack frames from the immediate caller to the frame specified
+by <var>number_of_frames</var>, whereas <code>$_caller_is</code> only checks the
+frame specified by <var>number_of_frames</var>.
+</p>
+</dd>
+<dt><code>$_any_caller_matches(<var>regexp</var><span class="roman">[</span>, <var>number_of_frames</var><span class="roman">]</span>)</code></dt>
+<dd><a name="index-_0024_005fany_005fcaller_005fmatches_002c-convenience-function"></a>
+<p>Returns one if any calling function&rsquo;s name matches the regular expression
+<var>regexp</var>.  Otherwise it returns zero.
+</p>
+<p>If the optional argument <var>number_of_frames</var> is provided,
+it is the number of frames up in the stack to look.
+The default is 1.
+</p>
+<p>This function differs from <code>$_caller_matches</code> in that this function
+checks all stack frames from the immediate caller to the frame specified
+by <var>number_of_frames</var>, whereas <code>$_caller_matches</code> only checks the
+frame specified by <var>number_of_frames</var>.
+</p>
+</dd>
+<dt><code>$_as_string(<var>value</var>)</code></dt>
+<dd><a name="index-_0024_005fas_005fstring_002c-convenience-function"></a>
+<p>Return the string representation of <var>value</var>.
+</p>
+<p>This function is useful to obtain the textual label (enumerator) of an
+enumeration value.  For example, assuming the variable <var>node</var> is of
+an enumerated type:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) printf &quot;Visiting node of type %s\n&quot;, $_as_string(node)
+Visiting node of type NODE_INTEGER
+</pre></div>
+
+</dd>
+</dl>
+
+<p><small>GDB</small> provides the ability to list and get help on
+convenience functions.
+</p>
+<dl compact="compact">
+<dt><code>help function</code></dt>
+<dd><a name="index-help-function"></a>
+<a name="index-show-all-convenience-functions"></a>
+<p>Print a list of all convenience functions.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Registers.html#Registers" accesskey="n" rel="next">Registers</a>, Previous: <a href="Convenience-Vars.html#Convenience-Vars" accesskey="p" rel="prev">Convenience Vars</a>, Up: <a href="Data.html#Data" accesskey="u" rel="up">Data</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

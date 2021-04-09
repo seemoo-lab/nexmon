@@ -1,0 +1,105 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Comparing potentially-unordered poly_ints</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Comparing potentially-unordered poly_ints">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Comparing potentially-unordered poly_ints">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Comparisons-involving-poly_005fint.html#Comparisons-involving-poly_005fint" rel="up" title="Comparisons involving poly_int">
+<link href="Comparing-ordered-poly_005fints.html#Comparing-ordered-poly_005fints" rel="next" title="Comparing ordered poly_ints">
+<link href="Properties-of-the-poly_005fint-comparisons.html#Properties-of-the-poly_005fint-comparisons" rel="prev" title="Properties of the poly_int comparisons">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Comparing-potentially_002dunordered-poly_005fints"></a>
+<div class="header">
+<p>
+Next: <a href="Comparing-ordered-poly_005fints.html#Comparing-ordered-poly_005fints" accesskey="n" rel="next">Comparing ordered <code>poly_int</code>s</a>, Previous: <a href="Properties-of-the-poly_005fint-comparisons.html#Properties-of-the-poly_005fint-comparisons" accesskey="p" rel="prev">Properties of the <code>poly_int</code> comparisons</a>, Up: <a href="Comparisons-involving-poly_005fint.html#Comparisons-involving-poly_005fint" accesskey="u" rel="up">Comparisons involving <code>poly_int</code></a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Comparing-potentially_002dunordered-poly_005fints-1"></a>
+<h4 class="subsection">10.3.3 Comparing potentially-unordered <code>poly_int</code>s</h4>
+
+<p>In cases where there is no definite link between two <code>poly_int</code>s,
+we can usually make a conservatively-correct assumption.  For example,
+the conservative assumption for alias analysis is that two references
+<em>might</em> alias.
+</p>
+<p>One way of checking whether [<var>begin1</var>, <var>end1</var>) might overlap
+[<var>begin2</var>, <var>end2</var>) using the <code>poly_int</code> comparisons is:
+</p>
+<div class="smallexample">
+<pre class="smallexample">maybe_gt (<var>end1</var>, <var>begin2</var>) &amp;&amp; maybe_gt (<var>end2</var>, <var>begin1</var>)
+</pre></div>
+
+<p>and another (equivalent) way is:
+</p>
+<div class="smallexample">
+<pre class="smallexample">!(known_le (<var>end1</var>, <var>begin2</var>) || known_le (<var>end2</var>, <var>begin1</var>))
+</pre></div>
+
+<p>However, in this particular example, it is better to use the range helper
+functions instead.  See <a href="Range-checks-on-poly_005fints.html#Range-checks-on-poly_005fints">Range checks on <code>poly_int</code>s</a>.
+</p>
+
+
+
+</body>
+</html>

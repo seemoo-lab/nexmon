@@ -1,0 +1,364 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Events In Python</title>
+
+<meta name="description" content="Debugging with GDB: Events In Python">
+<meta name="keywords" content="Debugging with GDB: Events In Python">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Python-API.html#Python-API" rel="up" title="Python API">
+<link href="Threads-In-Python.html#Threads-In-Python" rel="next" title="Threads In Python">
+<link href="Inferiors-In-Python.html#Inferiors-In-Python" rel="prev" title="Inferiors In Python">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Events-In-Python"></a>
+<div class="header">
+<p>
+Next: <a href="Threads-In-Python.html#Threads-In-Python" accesskey="n" rel="next">Threads In Python</a>, Previous: <a href="Inferiors-In-Python.html#Inferiors-In-Python" accesskey="p" rel="prev">Inferiors In Python</a>, Up: <a href="Python-API.html#Python-API" accesskey="u" rel="up">Python API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Events-In-Python-1"></a>
+<h4 class="subsubsection">23.2.2.17 Events In Python</h4>
+<a name="index-inferior-events-in-Python"></a>
+
+<p><small>GDB</small> provides a general event facility so that Python code can be
+notified of various state changes, particularly changes that occur in
+the inferior.
+</p>
+<p>An <em>event</em> is just an object that describes some state change.  The
+type of the object and its attributes will vary depending on the details
+of the change.  All the existing events are described below.
+</p>
+<p>In order to be notified of an event, you must register an event handler
+with an <em>event registry</em>.  An event registry is an object in the
+<code>gdb.events</code> module which dispatches particular events.  A registry
+provides methods to register and unregister event handlers:
+</p>
+<dl>
+<dt><a name="index-EventRegistry_002econnect"></a>Function: <strong>EventRegistry.connect</strong> <em>(object)</em></dt>
+<dd><p>Add the given callable <var>object</var> to the registry.  This object will be
+called when an event corresponding to this registry occurs.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-EventRegistry_002edisconnect"></a>Function: <strong>EventRegistry.disconnect</strong> <em>(object)</em></dt>
+<dd><p>Remove the given <var>object</var> from the registry.  Once removed, the object
+will no longer receive notifications of events.
+</p></dd></dl>
+
+<p>Here is an example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">def exit_handler (event):
+    print &quot;event type: exit&quot;
+    print &quot;exit code: %d&quot; % (event.exit_code)
+
+gdb.events.exited.connect (exit_handler)
+</pre></div>
+
+<p>In the above example we connect our handler <code>exit_handler</code> to the
+registry <code>events.exited</code>.  Once connected, <code>exit_handler</code> gets
+called when the inferior exits.  The argument <em>event</em> in this example is
+of type <code>gdb.ExitedEvent</code>.  As you can see in the example the
+<code>ExitedEvent</code> object has an attribute which indicates the exit code of
+the inferior.
+</p>
+<p>The following is a listing of the event registries that are available and
+details of the events they emit:
+</p>
+<dl compact="compact">
+<dt><code>events.cont</code></dt>
+<dd><p>Emits <code>gdb.ThreadEvent</code>.
+</p>
+<p>Some events can be thread specific when <small>GDB</small> is running in non-stop
+mode.  When represented in Python, these events all extend
+<code>gdb.ThreadEvent</code>.  Note, this event is not emitted directly; instead,
+events which are emitted by this or other modules might extend this event.
+Examples of these events are <code>gdb.BreakpointEvent</code> and
+<code>gdb.ContinueEvent</code>.
+</p>
+<dl>
+<dt><a name="index-ThreadEvent_002einferior_005fthread"></a>Variable: <strong>ThreadEvent.inferior_thread</strong></dt>
+<dd><p>In non-stop mode this attribute will be set to the specific thread which was
+involved in the emitted event. Otherwise, it will be set to <code>None</code>.
+</p></dd></dl>
+
+<p>Emits <code>gdb.ContinueEvent</code> which extends <code>gdb.ThreadEvent</code>.
+</p>
+<p>This event indicates that the inferior has been continued after a stop. For
+inherited attribute refer to <code>gdb.ThreadEvent</code> above.
+</p>
+</dd>
+<dt><code>events.exited</code></dt>
+<dd><p>Emits <code>events.ExitedEvent</code> which indicates that the inferior has exited.
+<code>events.ExitedEvent</code> has two attributes:
+</p><dl>
+<dt><a name="index-ExitedEvent_002eexit_005fcode"></a>Variable: <strong>ExitedEvent.exit_code</strong></dt>
+<dd><p>An integer representing the exit code, if available, which the inferior 
+has returned.  (The exit code could be unavailable if, for example,
+<small>GDB</small> detaches from the inferior.) If the exit code is unavailable,
+the attribute does not exist.
+</p></dd></dl>
+<dl>
+<dt><a name="index-ExitedEvent_002einferior"></a>Variable: <strong>ExitedEvent.inferior</strong></dt>
+<dd><p>A reference to the inferior which triggered the <code>exited</code> event.
+</p></dd></dl>
+
+</dd>
+<dt><code>events.stop</code></dt>
+<dd><p>Emits <code>gdb.StopEvent</code> which extends <code>gdb.ThreadEvent</code>.
+</p>
+<p>Indicates that the inferior has stopped.  All events emitted by this registry
+extend StopEvent.  As a child of <code>gdb.ThreadEvent</code>, <code>gdb.StopEvent</code>
+will indicate the stopped thread when <small>GDB</small> is running in non-stop
+mode.  Refer to <code>gdb.ThreadEvent</code> above for more details.
+</p>
+<p>Emits <code>gdb.SignalEvent</code> which extends <code>gdb.StopEvent</code>.
+</p>
+<p>This event indicates that the inferior or one of its threads has received as
+signal.  <code>gdb.SignalEvent</code> has the following attributes:
+</p>
+<dl>
+<dt><a name="index-SignalEvent_002estop_005fsignal"></a>Variable: <strong>SignalEvent.stop_signal</strong></dt>
+<dd><p>A string representing the signal received by the inferior.  A list of possible
+signal values can be obtained by running the command <code>info signals</code> in
+the <small>GDB</small> command prompt.
+</p></dd></dl>
+
+<p>Also emits  <code>gdb.BreakpointEvent</code> which extends <code>gdb.StopEvent</code>.
+</p>
+<p><code>gdb.BreakpointEvent</code> event indicates that one or more breakpoints have
+been hit, and has the following attributes:
+</p>
+<dl>
+<dt><a name="index-BreakpointEvent_002ebreakpoints"></a>Variable: <strong>BreakpointEvent.breakpoints</strong></dt>
+<dd><p>A sequence containing references to all the breakpoints (type 
+<code>gdb.Breakpoint</code>) that were hit.
+See <a href="Breakpoints-In-Python.html#Breakpoints-In-Python">Breakpoints In Python</a>, for details of the <code>gdb.Breakpoint</code> object.
+</p></dd></dl>
+<dl>
+<dt><a name="index-BreakpointEvent_002ebreakpoint"></a>Variable: <strong>BreakpointEvent.breakpoint</strong></dt>
+<dd><p>A reference to the first breakpoint that was hit.
+This function is maintained for backward compatibility and is now deprecated 
+in favor of the <code>gdb.BreakpointEvent.breakpoints</code> attribute.
+</p></dd></dl>
+
+</dd>
+<dt><code>events.new_objfile</code></dt>
+<dd><p>Emits <code>gdb.NewObjFileEvent</code> which indicates that a new object file has
+been loaded by <small>GDB</small>.  <code>gdb.NewObjFileEvent</code> has one attribute:
+</p>
+<dl>
+<dt><a name="index-NewObjFileEvent_002enew_005fobjfile"></a>Variable: <strong>NewObjFileEvent.new_objfile</strong></dt>
+<dd><p>A reference to the object file (<code>gdb.Objfile</code>) which has been loaded.
+See <a href="Objfiles-In-Python.html#Objfiles-In-Python">Objfiles In Python</a>, for details of the <code>gdb.Objfile</code> object.
+</p></dd></dl>
+
+</dd>
+<dt><code>events.clear_objfiles</code></dt>
+<dd><p>Emits <code>gdb.ClearObjFilesEvent</code> which indicates that the list of object
+files for a program space has been reset.
+<code>gdb.ClearObjFilesEvent</code> has one attribute:
+</p>
+<dl>
+<dt><a name="index-ClearObjFilesEvent_002eprogspace"></a>Variable: <strong>ClearObjFilesEvent.progspace</strong></dt>
+<dd><p>A reference to the program space (<code>gdb.Progspace</code>) whose objfile list has
+been cleared.  See <a href="Progspaces-In-Python.html#Progspaces-In-Python">Progspaces In Python</a>.
+</p></dd></dl>
+
+</dd>
+<dt><code>events.inferior_call</code></dt>
+<dd><p>Emits events just before and after a function in the inferior is
+called by <small>GDB</small>.  Before an inferior call, this emits an event
+of type <code>gdb.InferiorCallPreEvent</code>, and after an inferior call,
+this emits an event of type <code>gdb.InferiorCallPostEvent</code>.
+</p>
+<dl compact="compact">
+<dd><a name="index-gdb_002eInferiorCallPreEvent"></a>
+</dd>
+<dt><code><code>gdb.InferiorCallPreEvent</code></code></dt>
+<dd><p>Indicates that a function in the inferior is about to be called.
+</p>
+<dl>
+<dt><a name="index-InferiorCallPreEvent_002eptid"></a>Variable: <strong>InferiorCallPreEvent.ptid</strong></dt>
+<dd><p>The thread in which the call will be run.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-InferiorCallPreEvent_002eaddress"></a>Variable: <strong>InferiorCallPreEvent.address</strong></dt>
+<dd><p>The location of the function to be called.
+</p></dd></dl>
+
+<a name="index-gdb_002eInferiorCallPostEvent"></a>
+</dd>
+<dt><code><code>gdb.InferiorCallPostEvent</code></code></dt>
+<dd><p>Indicates that a function in the inferior has just been called.
+</p>
+<dl>
+<dt><a name="index-InferiorCallPostEvent_002eptid"></a>Variable: <strong>InferiorCallPostEvent.ptid</strong></dt>
+<dd><p>The thread in which the call was run.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-InferiorCallPostEvent_002eaddress"></a>Variable: <strong>InferiorCallPostEvent.address</strong></dt>
+<dd><p>The location of the function that was called.
+</p></dd></dl>
+</dd>
+</dl>
+
+</dd>
+<dt><code>events.memory_changed</code></dt>
+<dd><p>Emits <code>gdb.MemoryChangedEvent</code> which indicates that the memory of the
+inferior has been modified by the <small>GDB</small> user, for instance via a
+command like <code>set&nbsp;*addr&nbsp;=&nbsp;value</code><!-- /@w -->.  The event has the following
+attributes:
+</p>
+<dl>
+<dt><a name="index-MemoryChangedEvent_002eaddress"></a>Variable: <strong>MemoryChangedEvent.address</strong></dt>
+<dd><p>The start address of the changed region.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-MemoryChangedEvent_002elength"></a>Variable: <strong>MemoryChangedEvent.length</strong></dt>
+<dd><p>Length in bytes of the changed region.
+</p></dd></dl>
+
+</dd>
+<dt><code>events.register_changed</code></dt>
+<dd><p>Emits <code>gdb.RegisterChangedEvent</code> which indicates that a register in the
+inferior has been modified by the <small>GDB</small> user.
+</p>
+<dl>
+<dt><a name="index-RegisterChangedEvent_002eframe"></a>Variable: <strong>RegisterChangedEvent.frame</strong></dt>
+<dd><p>A gdb.Frame object representing the frame in which the register was modified.
+</p></dd></dl>
+<dl>
+<dt><a name="index-RegisterChangedEvent_002eregnum"></a>Variable: <strong>RegisterChangedEvent.regnum</strong></dt>
+<dd><p>Denotes which register was modified.
+</p></dd></dl>
+
+</dd>
+<dt><code>events.breakpoint_created</code></dt>
+<dd><p>This is emitted when a new breakpoint has been created.  The argument
+that is passed is the new <code>gdb.Breakpoint</code> object.
+</p>
+</dd>
+<dt><code>events.breakpoint_modified</code></dt>
+<dd><p>This is emitted when a breakpoint has been modified in some way.  The
+argument that is passed is the new <code>gdb.Breakpoint</code> object.
+</p>
+</dd>
+<dt><code>events.breakpoint_deleted</code></dt>
+<dd><p>This is emitted when a breakpoint has been deleted.  The argument that
+is passed is the <code>gdb.Breakpoint</code> object.  When this event is
+emitted, the <code>gdb.Breakpoint</code> object will already be in its
+invalid state; that is, the <code>is_valid</code> method will return
+<code>False</code>.
+</p>
+</dd>
+<dt><code>events.before_prompt</code></dt>
+<dd><p>This event carries no payload.  It is emitted each time <small>GDB</small>
+presents a prompt to the user.
+</p>
+</dd>
+<dt><code>events.new_inferior</code></dt>
+<dd><p>This is emitted when a new inferior is created.  Note that the
+inferior is not necessarily running; in fact, it may not even have an
+associated executable.
+</p>
+<p>The event is of type <code>gdb.NewInferiorEvent</code>.  This has a single
+attribute:
+</p>
+<dl>
+<dt><a name="index-NewInferiorEvent_002einferior"></a>Variable: <strong>NewInferiorEvent.inferior</strong></dt>
+<dd><p>The new inferior, a <code>gdb.Inferior</code> object.
+</p></dd></dl>
+
+</dd>
+<dt><code>events.inferior_deleted</code></dt>
+<dd><p>This is emitted when an inferior has been deleted.  Note that this is
+not the same as process exit; it is notified when the inferior itself
+is removed, say via <code>remove-inferiors</code>.
+</p>
+<p>The event is of type <code>gdb.InferiorDeletedEvent</code>.  This has a single
+attribute:
+</p>
+<dl>
+<dt><a name="index-NewInferiorEvent_002einferior-1"></a>Variable: <strong>NewInferiorEvent.inferior</strong></dt>
+<dd><p>The inferior that is being removed, a <code>gdb.Inferior</code> object.
+</p></dd></dl>
+
+</dd>
+<dt><code>events.new_thread</code></dt>
+<dd><p>This is emitted when <small>GDB</small> notices a new thread.  The event is of
+type <code>gdb.NewThreadEvent</code>, which extends <code>gdb.ThreadEvent</code>.
+This has a single attribute:
+</p>
+<dl>
+<dt><a name="index-NewThreadEvent_002einferior_005fthread"></a>Variable: <strong>NewThreadEvent.inferior_thread</strong></dt>
+<dd><p>The new thread.
+</p></dd></dl>
+
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Threads-In-Python.html#Threads-In-Python" accesskey="n" rel="next">Threads In Python</a>, Previous: <a href="Inferiors-In-Python.html#Inferiors-In-Python" accesskey="p" rel="prev">Inferiors In Python</a>, Up: <a href="Python-API.html#Python-API" accesskey="u" rel="up">Python API</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

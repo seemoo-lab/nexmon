@@ -1,0 +1,135 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Integers implementation</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Integers implementation">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Integers implementation">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C-Implementation.html#C-Implementation" rel="up" title="C Implementation">
+<link href="Floating-point-implementation.html#Floating-point-implementation" rel="next" title="Floating point implementation">
+<link href="Characters-implementation.html#Characters-implementation" rel="prev" title="Characters implementation">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Integers-implementation"></a>
+<div class="header">
+<p>
+Next: <a href="Floating-point-implementation.html#Floating-point-implementation" accesskey="n" rel="next">Floating point implementation</a>, Previous: <a href="Characters-implementation.html#Characters-implementation" accesskey="p" rel="prev">Characters implementation</a>, Up: <a href="C-Implementation.html#C-Implementation" accesskey="u" rel="up">C Implementation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Integers"></a>
+<h3 class="section">4.5 Integers</h3>
+
+<ul>
+<li> <cite>Any extended integer types that exist in the implementation (C99
+and C11 6.2.5).</cite>
+
+<p>GCC does not support any extended integer types.
+</p>
+</li><li> <cite>Whether signed integer types are represented using sign and magnitude,
+two&rsquo;s complement, or one&rsquo;s complement, and whether the extraordinary value
+is a trap representation or an ordinary value (C99 and C11 6.2.6.2).</cite>
+
+<p>GCC supports only two&rsquo;s complement integer types, and all bit patterns
+are ordinary values.
+</p>
+</li><li> <cite>The rank of any extended integer type relative to another extended
+integer type with the same precision (C99 and C11 6.3.1.1).</cite>
+
+<p>GCC does not support any extended integer types.
+</p>
+</li><li> <cite>The result of, or the signal raised by, converting an integer to a
+signed integer type when the value cannot be represented in an object of
+that type (C90 6.2.1.2, C99 and C11 6.3.1.3).</cite>
+
+<p>For conversion to a type of width <em>N</em>, the value is reduced
+modulo <em>2^N</em> to be within range of the type; no signal is raised.
+</p>
+</li><li> <cite>The results of some bitwise operations on signed integers (C90
+6.3, C99 and C11 6.5).</cite>
+
+<p>Bitwise operators act on the representation of the value including
+both the sign and value bits, where the sign bit is considered
+immediately above the highest-value value bit.  Signed &lsquo;<samp>&gt;&gt;</samp>&rsquo; acts
+on negative numbers by sign extension.
+</p>
+<p>As an extension to the C language, GCC does not use the latitude given in
+C99 and C11 only to treat certain aspects of signed &lsquo;<samp>&lt;&lt;</samp>&rsquo; as undefined.
+However, <samp>-fsanitize=shift</samp> (and <samp>-fsanitize=undefined</samp>) will
+diagnose such cases.  They are also diagnosed where constant
+expressions are required.
+</p>
+</li><li> <cite>The sign of the remainder on integer division (C90 6.3.5).</cite>
+
+<p>GCC always follows the C99 and C11 requirement that the result of division is
+truncated towards zero.
+</p>
+</li></ul>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Floating-point-implementation.html#Floating-point-implementation" accesskey="n" rel="next">Floating point implementation</a>, Previous: <a href="Characters-implementation.html#Characters-implementation" accesskey="p" rel="prev">Characters implementation</a>, Up: <a href="C-Implementation.html#C-Implementation" accesskey="u" rel="up">C Implementation</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

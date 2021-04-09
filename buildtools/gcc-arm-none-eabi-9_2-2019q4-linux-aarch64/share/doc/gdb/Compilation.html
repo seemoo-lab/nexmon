@@ -1,0 +1,122 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Compilation</title>
+
+<meta name="description" content="Debugging with GDB: Compilation">
+<meta name="keywords" content="Debugging with GDB: Compilation">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Running.html#Running" rel="up" title="Running">
+<link href="Starting.html#Starting" rel="next" title="Starting">
+<link href="Running.html#Running" rel="prev" title="Running">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Compilation"></a>
+<div class="header">
+<p>
+Next: <a href="Starting.html#Starting" accesskey="n" rel="next">Starting</a>, Up: <a href="Running.html#Running" accesskey="u" rel="up">Running</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Compiling-for-Debugging"></a>
+<h3 class="section">4.1 Compiling for Debugging</h3>
+
+<p>In order to debug a program effectively, you need to generate
+debugging information when you compile it.  This debugging information
+is stored in the object file; it describes the data type of each
+variable or function and the correspondence between source line numbers
+and addresses in the executable code.
+</p>
+<p>To request debugging information, specify the &lsquo;<samp>-g</samp>&rsquo; option when you run
+the compiler.
+</p>
+<p>Programs that are to be shipped to your customers are compiled with
+optimizations, using the &lsquo;<samp>-O</samp>&rsquo; compiler option.  However, some
+compilers are unable to handle the &lsquo;<samp>-g</samp>&rsquo; and &lsquo;<samp>-O</samp>&rsquo; options
+together.  Using those compilers, you cannot generate optimized
+executables containing debugging information.
+</p>
+<p><small>GCC</small>, the <small>GNU</small> C/C<tt>++</tt> compiler, supports &lsquo;<samp>-g</samp>&rsquo; with or
+without &lsquo;<samp>-O</samp>&rsquo;, making it possible to debug optimized code.  We
+recommend that you <em>always</em> use &lsquo;<samp>-g</samp>&rsquo; whenever you compile a
+program.  You may think your program is correct, but there is no sense
+in pushing your luck.  For more information, see <a href="Optimized-Code.html#Optimized-Code">Optimized Code</a>.
+</p>
+<p>Older versions of the <small>GNU</small> C compiler permitted a variant option
+&lsquo;<samp><span class="nolinebreak">-gg</span></samp>&rsquo;<!-- /@w --> for debugging information.  <small>GDB</small> no longer supports this
+format; if your <small>GNU</small> C compiler has this option, do not use it.
+</p>
+<p><small>GDB</small> knows about preprocessor macros and can show you their
+expansion (see <a href="Macros.html#Macros">Macros</a>).  Most compilers do not include information
+about preprocessor macros in the debugging information if you specify
+the <samp>-g</samp> flag alone.  Version 3.1 and later of <small>GCC</small>,
+the <small>GNU</small> C compiler, provides macro information if you are using
+the DWARF debugging format, and specify the option <samp>-g3</samp>.
+</p>
+<p>See <a href="http://gcc.gnu.org/onlinedocs/gcc/Debugging-Options.html#Debugging-Options">Options for Debugging Your Program or GCC</a> in <cite>Using the <small>GNU</small> Compiler Collection (GCC)</cite>, for more
+information on <small>GCC</small> options affecting debug information.
+</p>
+<p>You will have the best debugging experience if you use the latest
+version of the DWARF debugging format that your compiler supports.
+DWARF is currently the most expressive and best supported debugging
+format in <small>GDB</small>.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Starting.html#Starting" accesskey="n" rel="next">Starting</a>, Up: <a href="Running.html#Running" accesskey="u" rel="up">Running</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

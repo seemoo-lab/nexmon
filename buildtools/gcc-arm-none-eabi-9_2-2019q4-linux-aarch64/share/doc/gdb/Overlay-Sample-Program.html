@@ -1,0 +1,130 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Overlay Sample Program</title>
+
+<meta name="description" content="Debugging with GDB: Overlay Sample Program">
+<meta name="keywords" content="Debugging with GDB: Overlay Sample Program">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Overlays.html#Overlays" rel="up" title="Overlays">
+<link href="Languages.html#Languages" rel="next" title="Languages">
+<link href="Automatic-Overlay-Debugging.html#Automatic-Overlay-Debugging" rel="prev" title="Automatic Overlay Debugging">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Overlay-Sample-Program"></a>
+<div class="header">
+<p>
+Previous: <a href="Automatic-Overlay-Debugging.html#Automatic-Overlay-Debugging" accesskey="p" rel="prev">Automatic Overlay Debugging</a>, Up: <a href="Overlays.html#Overlays" accesskey="u" rel="up">Overlays</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Overlay-Sample-Program-1"></a>
+<h3 class="section">14.4 Overlay Sample Program</h3>
+<a name="index-overlay-example-program"></a>
+
+<p>When linking a program which uses overlays, you must place the overlays
+at their load addresses, while relocating them to run at their mapped
+addresses.  To do this, you must write a linker script (see <a href="http://sourceware.org/binutils/docs/ld/Overlay-Description.html#Overlay-Description">Overlay
+Description</a> in <cite>Using ld: the GNU linker</cite>).  Unfortunately,
+since linker scripts are specific to a particular host system, target
+architecture, and target memory layout, this manual cannot provide
+portable sample code demonstrating <small>GDB</small>&rsquo;s overlay support.
+</p>
+<p>However, the <small>GDB</small> source distribution does contain an overlaid
+program, with linker scripts for a few systems, as part of its test
+suite.  The program consists of the following files from
+<samp>gdb/testsuite/gdb.base</samp>:
+</p>
+<dl compact="compact">
+<dt><samp>overlays.c</samp></dt>
+<dd><p>The main program file.
+</p></dd>
+<dt><samp>ovlymgr.c</samp></dt>
+<dd><p>A simple overlay manager, used by <samp>overlays.c</samp>.
+</p></dd>
+<dt><samp>foo.c</samp></dt>
+<dt><samp>bar.c</samp></dt>
+<dt><samp>baz.c</samp></dt>
+<dt><samp>grbx.c</samp></dt>
+<dd><p>Overlay modules, loaded and used by <samp>overlays.c</samp>.
+</p></dd>
+<dt><samp>d10v.ld</samp></dt>
+<dt><samp>m32r.ld</samp></dt>
+<dd><p>Linker scripts for linking the test program on the <code>d10v-elf</code>
+and <code>m32r-elf</code> targets.
+</p></dd>
+</dl>
+
+<p>You can build the test program using the <code>d10v-elf</code> GCC
+cross-compiler like this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">$ d10v-elf-gcc -g -c overlays.c
+$ d10v-elf-gcc -g -c ovlymgr.c
+$ d10v-elf-gcc -g -c foo.c
+$ d10v-elf-gcc -g -c bar.c
+$ d10v-elf-gcc -g -c baz.c
+$ d10v-elf-gcc -g -c grbx.c
+$ d10v-elf-gcc -g overlays.o ovlymgr.o foo.o bar.o \
+                  baz.o grbx.o -Wl,-Td10v.ld -o overlays
+</pre></div>
+
+<p>The build process is identical for any other architecture, except that
+you must substitute the appropriate compiler and linker script for the
+target system for <code>d10v-elf-gcc</code> and <code>d10v.ld</code>.
+</p>
+
+
+
+
+</body>
+</html>

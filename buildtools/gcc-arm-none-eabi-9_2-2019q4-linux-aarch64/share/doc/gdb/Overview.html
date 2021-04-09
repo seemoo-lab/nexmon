@@ -1,0 +1,208 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Overview</title>
+
+<meta name="description" content="Debugging with GDB: Overview">
+<meta name="keywords" content="Debugging with GDB: Overview">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Remote-Protocol.html#Remote-Protocol" rel="up" title="Remote Protocol">
+<link href="Packets.html#Packets" rel="next" title="Packets">
+<link href="Remote-Protocol.html#Remote-Protocol" rel="prev" title="Remote Protocol">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Overview"></a>
+<div class="header">
+<p>
+Next: <a href="Packets.html#Packets" accesskey="n" rel="next">Packets</a>, Up: <a href="Remote-Protocol.html#Remote-Protocol" accesskey="u" rel="up">Remote Protocol</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Overview-1"></a>
+<h3 class="section">E.1 Overview</h3>
+
+<p>There may be occasions when you need to know something about the
+protocol&mdash;for example, if there is only one serial port to your target
+machine, you might want your program to do something special if it
+recognizes a packet meant for <small>GDB</small>.
+</p>
+<p>In the examples below, &lsquo;<samp>-&gt;</samp>&rsquo; and &lsquo;<samp>&lt;-</samp>&rsquo; are used to indicate
+transmitted and received data, respectively.
+</p>
+<a name="index-protocol_002c-GDB-remote-serial"></a>
+<a name="index-serial-protocol_002c-GDB-remote"></a>
+<a name="index-remote-serial-protocol"></a>
+<p>All <small>GDB</small> commands and responses (other than acknowledgments
+and notifications, see <a href="Notification-Packets.html#Notification-Packets">Notification Packets</a>) are sent as a
+<var>packet</var>.  A <var>packet</var> is introduced with the character
+&lsquo;<samp>$</samp>&rsquo;, the actual <var>packet-data</var>, and the terminating character
+&lsquo;<samp>#</samp>&rsquo; followed by a two-digit <var>checksum</var>:
+</p>
+<div class="smallexample">
+<pre class="smallexample"><code>$</code><var>packet-data</var><code>#</code><var>checksum</var>
+</pre></div>
+
+<a name="index-checksum_002c-for-GDB-remote"></a>
+<p>The two-digit <var>checksum</var> is computed as the modulo 256 sum of all
+characters between the leading &lsquo;<samp>$</samp>&rsquo; and the trailing &lsquo;<samp>#</samp>&rsquo; (an
+eight bit unsigned checksum).
+</p>
+<p>Implementors should note that prior to <small>GDB</small> 5.0 the protocol
+specification also included an optional two-digit <var>sequence-id</var>:
+</p>
+<div class="smallexample">
+<pre class="smallexample"><code>$</code><var>sequence-id</var><code>:</code><var>packet-data</var><code>#</code><var>checksum</var>
+</pre></div>
+
+<a name="index-sequence_002did_002c-for-GDB-remote"></a>
+<p>That <var>sequence-id</var> was appended to the acknowledgment.  <small>GDB</small>
+has never output <var>sequence-id</var>s.  Stubs that handle packets added
+since <small>GDB</small> 5.0 must not accept <var>sequence-id</var>.
+</p>
+<p>When either the host or the target machine receives a packet, the first
+response expected is an acknowledgment: either &lsquo;<samp>+</samp>&rsquo; (to indicate
+the package was received correctly) or &lsquo;<samp>-</samp>&rsquo; (to request
+retransmission):
+</p>
+<div class="smallexample">
+<pre class="smallexample">-&gt; <code>$</code><var>packet-data</var><code>#</code><var>checksum</var>
+&lt;- <code>+</code>
+</pre></div>
+
+<p>The &lsquo;<samp>+</samp>&rsquo;/&lsquo;<samp>-</samp>&rsquo; acknowledgments can be disabled
+once a connection is established.
+See <a href="Packet-Acknowledgment.html#Packet-Acknowledgment">Packet Acknowledgment</a>, for details.
+</p>
+<p>The host (<small>GDB</small>) sends <var>command</var>s, and the target (the
+debugging stub incorporated in your program) sends a <var>response</var>.  In
+the case of step and continue <var>command</var>s, the response is only sent
+when the operation has completed, and the target has again stopped all
+threads in all attached processes.  This is the default all-stop mode
+behavior, but the remote protocol also supports <small>GDB</small>&rsquo;s non-stop 
+execution mode; see <a href="Remote-Non_002dStop.html#Remote-Non_002dStop">Remote Non-Stop</a>, for details.
+</p>
+<p><var>packet-data</var> consists of a sequence of characters with the
+exception of &lsquo;<samp>#</samp>&rsquo; and &lsquo;<samp>$</samp>&rsquo; (see &lsquo;<samp>X</samp>&rsquo; packet for additional
+exceptions).
+</p>
+<a name="index-remote-protocol_002c-field-separator"></a>
+<p>Fields within the packet should be separated using &lsquo;<samp>,</samp>&rsquo; &lsquo;<samp>;</samp>&rsquo; or
+&lsquo;<samp>:</samp>&rsquo;.  Except where otherwise noted all numbers are represented in
+<small>HEX</small> with leading zeros suppressed.
+</p>
+<p>Implementors should note that prior to <small>GDB</small> 5.0, the character
+&lsquo;<samp>:</samp>&rsquo; could not appear as the third character in a packet (as it
+would potentially conflict with the <var>sequence-id</var>).
+</p>
+<a name="index-remote-protocol_002c-binary-data"></a>
+<a name="Binary-Data"></a><p>Binary data in most packets is encoded either as two hexadecimal
+digits per byte of binary data.  This allowed the traditional remote
+protocol to work over connections which were only seven-bit clean.
+Some packets designed more recently assume an eight-bit clean
+connection, and use a more efficient encoding to send and receive
+binary data.
+</p>
+<p>The binary data representation uses <code>7d</code> (<small>ASCII</small> &lsquo;<samp>}</samp>&rsquo;)
+as an escape character.  Any escaped byte is transmitted as the escape
+character followed by the original character XORed with <code>0x20</code>.
+For example, the byte <code>0x7d</code> would be transmitted as the two
+bytes <code>0x7d 0x5d</code>.  The bytes <code>0x23</code> (<small>ASCII</small> &lsquo;<samp>#</samp>&rsquo;),
+<code>0x24</code> (<small>ASCII</small> &lsquo;<samp>$</samp>&rsquo;), and <code>0x7d</code> (<small>ASCII</small>
+&lsquo;<samp>}</samp>&rsquo;) must always be escaped.  Responses sent by the stub
+must also escape <code>0x2a</code> (<small>ASCII</small> &lsquo;<samp>*</samp>&rsquo;), so that it
+is not interpreted as the start of a run-length encoded sequence
+(described next).
+</p>
+<p>Response <var>data</var> can be run-length encoded to save space.
+Run-length encoding replaces runs of identical characters with one
+instance of the repeated character, followed by a &lsquo;<samp>*</samp>&rsquo; and a
+repeat count.  The repeat count is itself sent encoded, to avoid
+binary characters in <var>data</var>: a value of <var>n</var> is sent as
+<code><var>n</var>+29</code>.  For a repeat count greater or equal to 3, this
+produces a printable <small>ASCII</small> character, e.g. a space (<small>ASCII</small>
+code 32) for a repeat count of 3.  (This is because run-length
+encoding starts to win for counts 3 or more.)  Thus, for example,
+&lsquo;<samp>0* </samp>&rsquo; is a run-length encoding of &ldquo;0000&rdquo;: the space character
+after &lsquo;<samp>*</samp>&rsquo; means repeat the leading <code>0</code> <code>32&nbsp;<span class="nolinebreak">-</span>&nbsp;29&nbsp;=&nbsp;3</code><!-- /@w --> more times.
+</p>
+<p>The printable characters &lsquo;<samp>#</samp>&rsquo; and &lsquo;<samp>$</samp>&rsquo; or with a numeric value
+greater than 126 must not be used.  Runs of six repeats (&lsquo;<samp>#</samp>&rsquo;) or
+seven repeats (&lsquo;<samp>$</samp>&rsquo;) can be expanded using a repeat count of only
+five (&lsquo;<samp>&quot;</samp>&rsquo;).  For example, &lsquo;<samp>00000000</samp>&rsquo; can be encoded as
+&lsquo;<samp>0*&quot;00</samp>&rsquo;.
+</p>
+<p>The error response returned for some packets includes a two character
+error number.  That number is not well defined.
+</p>
+<a name="index-empty-response_002c-for-unsupported-packets"></a>
+<p>For any <var>command</var> not supported by the stub, an empty response
+(&lsquo;<samp>$#00</samp>&rsquo;) should be returned.  That way it is possible to extend the
+protocol.  A newer <small>GDB</small> can tell if a packet is supported based
+on that response.
+</p>
+<p>At a minimum, a stub is required to support the &lsquo;<samp>g</samp>&rsquo; and &lsquo;<samp>G</samp>&rsquo;
+commands for register access, and the &lsquo;<samp>m</samp>&rsquo; and &lsquo;<samp>M</samp>&rsquo; commands
+for memory access.  Stubs that only control single-threaded targets
+can implement run control with the &lsquo;<samp>c</samp>&rsquo; (continue), and &lsquo;<samp>s</samp>&rsquo;
+(step) commands.  Stubs that support multi-threading targets should
+support the &lsquo;<samp>vCont</samp>&rsquo; command.  All other commands are optional.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Packets.html#Packets" accesskey="n" rel="next">Packets</a>, Up: <a href="Remote-Protocol.html#Remote-Protocol" accesskey="u" rel="up">Remote Protocol</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Summary</title>
+
+<meta name="description" content="Debugging with GDB: Summary">
+<meta name="keywords" content="Debugging with GDB: Summary">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Free-Software.html#Free-Software" rel="next" title="Free Software">
+<link href="index.html#Top" rel="prev" title="Top">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Summary"></a>
+<div class="header">
+<p>
+Next: <a href="Sample-Session.html#Sample-Session" accesskey="n" rel="next">Sample Session</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Summary-of-GDB"></a>
+<h2 class="unnumbered">Summary of <small>GDB</small></h2>
+
+<p>The purpose of a debugger such as <small>GDB</small> is to allow you to see what is
+going on &ldquo;inside&rdquo; another program while it executes&mdash;or what another
+program was doing at the moment it crashed.
+</p>
+<p><small>GDB</small> can do four main kinds of things (plus other things in support of
+these) to help you catch bugs in the act:
+</p>
+<ul>
+<li> Start your program, specifying anything that might affect its behavior.
+
+</li><li> Make your program stop on specified conditions.
+
+</li><li> Examine what has happened, when your program has stopped.
+
+</li><li> Change things in your program, so you can experiment with correcting the
+effects of one bug and go on to learn about another.
+</li></ul>
+
+<p>You can use <small>GDB</small> to debug programs written in C and C<tt>++</tt>.
+For more information, see <a href="Supported-Languages.html#Supported-Languages">Supported Languages</a>.
+For more information, see <a href="C.html#C">C and C++</a>.
+</p>
+<p>Support for D is partial.  For information on D, see
+<a href="D.html#D">D</a>.
+</p>
+<a name="index-Modula_002d2"></a>
+<p>Support for Modula-2 is partial.  For information on Modula-2, see
+<a href="Modula_002d2.html#Modula_002d2">Modula-2</a>.
+</p>
+<p>Support for OpenCL C is partial.  For information on OpenCL C, see
+<a href="OpenCL-C.html#OpenCL-C">OpenCL C</a>.
+</p>
+<a name="index-Pascal"></a>
+<p>Debugging Pascal programs which use sets, subranges, file variables, or
+nested functions does not currently work.  <small>GDB</small> does not support
+entering expressions, printing values, or similar features using Pascal
+syntax.
+</p>
+<a name="index-Fortran"></a>
+<p><small>GDB</small> can be used to debug programs written in Fortran, although
+it may be necessary to refer to some variables with a trailing
+underscore.
+</p>
+<p><small>GDB</small> can be used to debug programs written in Objective-C,
+using either the Apple/NeXT or the GNU Objective-C runtime.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Free-Software.html#Free-Software" accesskey="1">Free Software</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Freely redistributable software
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Free-Documentation.html#Free-Documentation" accesskey="2">Free Documentation</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Free Software Needs Free Documentation
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Contributors.html#Contributors" accesskey="3">Contributors</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Contributors to GDB
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Sample-Session.html#Sample-Session" accesskey="n" rel="next">Sample Session</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

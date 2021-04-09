@@ -1,0 +1,170 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: DATE_AND_TIME</title>
+
+<meta name="description" content="The GNU Fortran Compiler: DATE_AND_TIME">
+<meta name="keywords" content="The GNU Fortran Compiler: DATE_AND_TIME">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Intrinsic-Procedures.html#Intrinsic-Procedures" rel="up" title="Intrinsic Procedures">
+<link href="DBLE.html#DBLE" rel="next" title="DBLE">
+<link href="CTIME.html#CTIME" rel="prev" title="CTIME">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="DATE_005fAND_005fTIME"></a>
+<div class="header">
+<p>
+Next: <a href="DBLE.html#DBLE" accesskey="n" rel="next">DBLE</a>, Previous: <a href="CTIME.html#CTIME" accesskey="p" rel="prev">CTIME</a>, Up: <a href="Intrinsic-Procedures.html#Intrinsic-Procedures" accesskey="u" rel="up">Intrinsic Procedures</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="DATE_005fAND_005fTIME-_002d_002d_002d-Date-and-time-subroutine"></a>
+<h3 class="section">9.82 <code>DATE_AND_TIME</code> &mdash; Date and time subroutine</h3>
+<a name="index-DATE_005fAND_005fTIME"></a>
+<a name="index-date_002c-current"></a>
+<a name="index-current-date"></a>
+<a name="index-time_002c-current"></a>
+<a name="index-current-time"></a>
+
+<dl compact="compact">
+<dt><em>Description</em>:</dt>
+<dd><p><code>DATE_AND_TIME(DATE, TIME, ZONE, VALUES)</code> gets the corresponding date and
+time information from the real-time system clock.  <var>DATE</var> is
+<code>INTENT(OUT)</code> and has form ccyymmdd.  <var>TIME</var> is <code>INTENT(OUT)</code> and
+has form hhmmss.sss.  <var>ZONE</var> is <code>INTENT(OUT)</code> and has form (+-)hhmm,
+representing the difference with respect to Coordinated Universal Time (UTC).
+Unavailable time and date parameters return blanks.
+</p>
+<p><var>VALUES</var> is <code>INTENT(OUT)</code> and provides the following:
+</p>
+<table>
+<tr><td width="15%"></td><td width="30%"><code>VALUE(1)</code>:</td><td width="40%">The year</td></tr>
+<tr><td width="15%"></td><td width="30%"><code>VALUE(2)</code>:</td><td width="40%">The month</td></tr>
+<tr><td width="15%"></td><td width="30%"><code>VALUE(3)</code>:</td><td width="40%">The day of the month</td></tr>
+<tr><td width="15%"></td><td width="30%"><code>VALUE(4)</code>:</td><td width="40%">Time difference with UTC in minutes</td></tr>
+<tr><td width="15%"></td><td width="30%"><code>VALUE(5)</code>:</td><td width="40%">The hour of the day</td></tr>
+<tr><td width="15%"></td><td width="30%"><code>VALUE(6)</code>:</td><td width="40%">The minutes of the hour</td></tr>
+<tr><td width="15%"></td><td width="30%"><code>VALUE(7)</code>:</td><td width="40%">The seconds of the minute</td></tr>
+<tr><td width="15%"></td><td width="30%"><code>VALUE(8)</code>:</td><td width="40%">The milliseconds of the second</td></tr>
+</table>
+
+</dd>
+<dt><em>Standard</em>:</dt>
+<dd><p>Fortran 95 and later
+</p>
+</dd>
+<dt><em>Class</em>:</dt>
+<dd><p>Subroutine
+</p>
+</dd>
+<dt><em>Syntax</em>:</dt>
+<dd><p><code>CALL DATE_AND_TIME([DATE, TIME, ZONE, VALUES])</code>
+</p>
+</dd>
+<dt><em>Arguments</em>:</dt>
+<dd><table>
+<tr><td width="15%"><var>DATE</var></td><td width="70%">(Optional) The type shall be <code>CHARACTER(LEN=8)</code>
+or larger, and of default kind.</td></tr>
+<tr><td width="15%"><var>TIME</var></td><td width="70%">(Optional) The type shall be <code>CHARACTER(LEN=10)</code>
+or larger, and of default kind.</td></tr>
+<tr><td width="15%"><var>ZONE</var></td><td width="70%">(Optional) The type shall be <code>CHARACTER(LEN=5)</code>
+or larger, and of default kind.</td></tr>
+<tr><td width="15%"><var>VALUES</var></td><td width="70%">(Optional) The type shall be <code>INTEGER(8)</code>.</td></tr>
+</table>
+
+</dd>
+<dt><em>Return value</em>:</dt>
+<dd><p>None
+</p>
+</dd>
+<dt><em>Example</em>:</dt>
+<dd><div class="smallexample">
+<pre class="smallexample">program test_time_and_date
+    character(8)  :: date
+    character(10) :: time
+    character(5)  :: zone
+    integer,dimension(8) :: values
+    ! using keyword arguments
+    call date_and_time(date,time,zone,values)
+    call date_and_time(DATE=date,ZONE=zone)
+    call date_and_time(TIME=time)
+    call date_and_time(VALUES=values)
+    print '(a,2x,a,2x,a)', date, time, zone
+    print '(8i5)', values
+end program test_time_and_date
+</pre></div>
+
+</dd>
+<dt><em>See also</em>:</dt>
+<dd><p><a href="CPU_005fTIME.html#CPU_005fTIME">CPU_TIME</a>, <a href="SYSTEM_005fCLOCK.html#SYSTEM_005fCLOCK">SYSTEM_CLOCK</a>
+</p></dd>
+</dl>
+
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="DBLE.html#DBLE" accesskey="n" rel="next">DBLE</a>, Previous: <a href="CTIME.html#CTIME" accesskey="p" rel="prev">CTIME</a>, Up: <a href="Intrinsic-Procedures.html#Intrinsic-Procedures" accesskey="u" rel="up">Intrinsic Procedures</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

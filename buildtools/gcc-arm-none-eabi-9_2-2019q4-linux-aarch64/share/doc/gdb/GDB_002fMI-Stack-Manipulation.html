@@ -1,0 +1,536 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: GDB/MI Stack Manipulation</title>
+
+<meta name="description" content="Debugging with GDB: GDB/MI Stack Manipulation">
+<meta name="keywords" content="Debugging with GDB: GDB/MI Stack Manipulation">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="GDB_002fMI.html#GDB_002fMI" rel="up" title="GDB/MI">
+<link href="GDB_002fMI-Variable-Objects.html#GDB_002fMI-Variable-Objects" rel="next" title="GDB/MI Variable Objects">
+<link href="GDB_002fMI-Program-Execution.html#GDB_002fMI-Program-Execution" rel="prev" title="GDB/MI Program Execution">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="GDB_002fMI-Stack-Manipulation"></a>
+<div class="header">
+<p>
+Next: <a href="GDB_002fMI-Variable-Objects.html#GDB_002fMI-Variable-Objects" accesskey="n" rel="next">GDB/MI Variable Objects</a>, Previous: <a href="GDB_002fMI-Program-Execution.html#GDB_002fMI-Program-Execution" accesskey="p" rel="prev">GDB/MI Program Execution</a>, Up: <a href="GDB_002fMI.html#GDB_002fMI" accesskey="u" rel="up">GDB/MI</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="GDB_002fMI-Stack-Manipulation-Commands"></a>
+<h3 class="section">27.14 <small>GDB/MI</small> Stack Manipulation Commands</h3>
+
+<a name="The-_002denable_002dframe_002dfilters-Command"></a>
+<h4 class="subheading">The <code>-enable-frame-filters</code> Command</h4>
+<a name="index-_002denable_002dframe_002dfilters"></a>
+
+<div class="smallexample">
+<pre class="smallexample">-enable-frame-filters
+</pre></div>
+
+<p><small>GDB</small> allows Python-based frame filters to affect the output of
+the MI commands relating to stack traces.  As there is no way to
+implement this in a fully backward-compatible way, a front end must
+request that this functionality be enabled.
+</p>
+<p>Once enabled, this feature cannot be disabled.
+</p>
+<p>Note that if Python support has not been compiled into <small>GDB</small>,
+this command will still succeed (and do nothing).
+</p>
+<a name="The-_002dstack_002dinfo_002dframe-Command"></a>
+<h4 class="subheading">The <code>-stack-info-frame</code> Command</h4>
+<a name="index-_002dstack_002dinfo_002dframe"></a>
+
+<a name="Synopsis-38"></a>
+<h4 class="subsubheading">Synopsis</h4>
+
+<div class="smallexample">
+<pre class="smallexample"> -stack-info-frame
+</pre></div>
+
+<p>Get info on the selected frame.
+</p>
+<a name="GDB-Command-37"></a>
+<h4 class="subsubheading"><small>GDB</small> Command</h4>
+
+<p>The corresponding <small>GDB</small> command is &lsquo;<samp>info frame</samp>&rsquo; or &lsquo;<samp>frame</samp>&rsquo;
+(without arguments).
+</p>
+<a name="Example-36"></a>
+<h4 class="subsubheading">Example</h4>
+
+<div class="smallexample">
+<pre class="smallexample">(gdb)
+-stack-info-frame
+^done,frame={level=&quot;1&quot;,addr=&quot;0x0001076c&quot;,func=&quot;callee3&quot;,
+file=&quot;../../../devo/gdb/testsuite/gdb.mi/basics.c&quot;,
+fullname=&quot;/home/foo/bar/devo/gdb/testsuite/gdb.mi/basics.c&quot;,line=&quot;17&quot;,
+arch=&quot;i386:x86_64&quot;}
+(gdb)
+</pre></div>
+
+<a name="The-_002dstack_002dinfo_002ddepth-Command"></a>
+<h4 class="subheading">The <code>-stack-info-depth</code> Command</h4>
+<a name="index-_002dstack_002dinfo_002ddepth"></a>
+
+<a name="Synopsis-39"></a>
+<h4 class="subsubheading">Synopsis</h4>
+
+<div class="smallexample">
+<pre class="smallexample"> -stack-info-depth [ <var>max-depth</var> ]
+</pre></div>
+
+<p>Return the depth of the stack.  If the integer argument <var>max-depth</var>
+is specified, do not count beyond <var>max-depth</var> frames.
+</p>
+<a name="GDB-Command-38"></a>
+<h4 class="subsubheading"><small>GDB</small> Command</h4>
+
+<p>There&rsquo;s no equivalent <small>GDB</small> command.
+</p>
+<a name="Example-37"></a>
+<h4 class="subsubheading">Example</h4>
+
+<p>For a stack with frame levels 0 through 11:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb)
+-stack-info-depth
+^done,depth=&quot;12&quot;
+(gdb)
+-stack-info-depth 4
+^done,depth=&quot;4&quot;
+(gdb)
+-stack-info-depth 12
+^done,depth=&quot;12&quot;
+(gdb)
+-stack-info-depth 11
+^done,depth=&quot;11&quot;
+(gdb)
+-stack-info-depth 13
+^done,depth=&quot;12&quot;
+(gdb)
+</pre></div>
+
+<a name="g_t_002dstack_002dlist_002darguments"></a><a name="The-_002dstack_002dlist_002darguments-Command"></a>
+<h4 class="subheading">The <code>-stack-list-arguments</code> Command</h4>
+<a name="index-_002dstack_002dlist_002darguments"></a>
+
+<a name="Synopsis-40"></a>
+<h4 class="subsubheading">Synopsis</h4>
+
+<div class="smallexample">
+<pre class="smallexample"> -stack-list-arguments [ --no-frame-filters ] [ --skip-unavailable ] <var>print-values</var>
+    [ <var>low-frame</var> <var>high-frame</var> ]
+</pre></div>
+
+<p>Display a list of the arguments for the frames between <var>low-frame</var>
+and <var>high-frame</var> (inclusive).  If <var>low-frame</var> and
+<var>high-frame</var> are not provided, list the arguments for the whole
+call stack.  If the two arguments are equal, show the single frame
+at the corresponding level.  It is an error if <var>low-frame</var> is
+larger than the actual number of frames.  On the other hand,
+<var>high-frame</var> may be larger than the actual number of frames, in
+which case only existing frames will be returned.
+</p>
+<p>If <var>print-values</var> is 0 or <code>--no-values</code>, print only the names of
+the variables; if it is 1 or <code>--all-values</code>, print also their
+values; and if it is 2 or <code>--simple-values</code>, print the name,
+type and value for simple data types, and the name and type for arrays,
+structures and unions.  If the option <code>--no-frame-filters</code> is
+supplied, then Python frame filters will not be executed.
+</p>
+<p>If the <code>--skip-unavailable</code> option is specified, arguments that
+are not available are not listed.  Partially available arguments
+are still displayed, however.
+</p>
+<p>Use of this command to obtain arguments in a single frame is
+deprecated in favor of the &lsquo;<samp>-stack-list-variables</samp>&rsquo; command.
+</p>
+<a name="GDB-Command-39"></a>
+<h4 class="subsubheading"><small>GDB</small> Command</h4>
+
+<p><small>GDB</small> does not have an equivalent command.  <code>gdbtk</code> has a
+&lsquo;<samp>gdb_get_args</samp>&rsquo; command which partially overlaps with the
+functionality of &lsquo;<samp>-stack-list-arguments</samp>&rsquo;.
+</p>
+<a name="Example-38"></a>
+<h4 class="subsubheading">Example</h4>
+
+<div class="smallexample">
+<pre class="smallexample">(gdb)
+-stack-list-frames
+^done,
+stack=[
+frame={level=&quot;0&quot;,addr=&quot;0x00010734&quot;,func=&quot;callee4&quot;,
+file=&quot;../../../devo/gdb/testsuite/gdb.mi/basics.c&quot;,
+fullname=&quot;/home/foo/bar/devo/gdb/testsuite/gdb.mi/basics.c&quot;,line=&quot;8&quot;,
+arch=&quot;i386:x86_64&quot;},
+frame={level=&quot;1&quot;,addr=&quot;0x0001076c&quot;,func=&quot;callee3&quot;,
+file=&quot;../../../devo/gdb/testsuite/gdb.mi/basics.c&quot;,
+fullname=&quot;/home/foo/bar/devo/gdb/testsuite/gdb.mi/basics.c&quot;,line=&quot;17&quot;,
+arch=&quot;i386:x86_64&quot;},
+frame={level=&quot;2&quot;,addr=&quot;0x0001078c&quot;,func=&quot;callee2&quot;,
+file=&quot;../../../devo/gdb/testsuite/gdb.mi/basics.c&quot;,
+fullname=&quot;/home/foo/bar/devo/gdb/testsuite/gdb.mi/basics.c&quot;,line=&quot;22&quot;,
+arch=&quot;i386:x86_64&quot;},
+frame={level=&quot;3&quot;,addr=&quot;0x000107b4&quot;,func=&quot;callee1&quot;,
+file=&quot;../../../devo/gdb/testsuite/gdb.mi/basics.c&quot;,
+fullname=&quot;/home/foo/bar/devo/gdb/testsuite/gdb.mi/basics.c&quot;,line=&quot;27&quot;,
+arch=&quot;i386:x86_64&quot;},
+frame={level=&quot;4&quot;,addr=&quot;0x000107e0&quot;,func=&quot;main&quot;,
+file=&quot;../../../devo/gdb/testsuite/gdb.mi/basics.c&quot;,
+fullname=&quot;/home/foo/bar/devo/gdb/testsuite/gdb.mi/basics.c&quot;,line=&quot;32&quot;,
+arch=&quot;i386:x86_64&quot;}]
+(gdb)
+-stack-list-arguments 0
+^done,
+stack-args=[
+frame={level=&quot;0&quot;,args=[]},
+frame={level=&quot;1&quot;,args=[name=&quot;strarg&quot;]},
+frame={level=&quot;2&quot;,args=[name=&quot;intarg&quot;,name=&quot;strarg&quot;]},
+frame={level=&quot;3&quot;,args=[name=&quot;intarg&quot;,name=&quot;strarg&quot;,name=&quot;fltarg&quot;]},
+frame={level=&quot;4&quot;,args=[]}]
+(gdb)
+-stack-list-arguments 1
+^done,
+stack-args=[
+frame={level=&quot;0&quot;,args=[]},
+frame={level=&quot;1&quot;,
+ args=[{name=&quot;strarg&quot;,value=&quot;0x11940 \&quot;A string argument.\&quot;&quot;}]},
+frame={level=&quot;2&quot;,args=[
+{name=&quot;intarg&quot;,value=&quot;2&quot;},
+{name=&quot;strarg&quot;,value=&quot;0x11940 \&quot;A string argument.\&quot;&quot;}]},
+{frame={level=&quot;3&quot;,args=[
+{name=&quot;intarg&quot;,value=&quot;2&quot;},
+{name=&quot;strarg&quot;,value=&quot;0x11940 \&quot;A string argument.\&quot;&quot;},
+{name=&quot;fltarg&quot;,value=&quot;3.5&quot;}]},
+frame={level=&quot;4&quot;,args=[]}]
+(gdb)
+-stack-list-arguments 0 2 2
+^done,stack-args=[frame={level=&quot;2&quot;,args=[name=&quot;intarg&quot;,name=&quot;strarg&quot;]}]
+(gdb)
+-stack-list-arguments 1 2 2
+^done,stack-args=[frame={level=&quot;2&quot;,
+args=[{name=&quot;intarg&quot;,value=&quot;2&quot;},
+{name=&quot;strarg&quot;,value=&quot;0x11940 \&quot;A string argument.\&quot;&quot;}]}]
+(gdb)
+</pre></div>
+
+
+
+<a name="g_t_002dstack_002dlist_002dframes"></a><a name="The-_002dstack_002dlist_002dframes-Command"></a>
+<h4 class="subheading">The <code>-stack-list-frames</code> Command</h4>
+<a name="index-_002dstack_002dlist_002dframes"></a>
+
+<a name="Synopsis-41"></a>
+<h4 class="subsubheading">Synopsis</h4>
+
+<div class="smallexample">
+<pre class="smallexample"> -stack-list-frames [ --no-frame-filters <var>low-frame</var> <var>high-frame</var> ]
+</pre></div>
+
+<p>List the frames currently on the stack.  For each frame it displays the
+following info:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp><var>level</var></samp>&rsquo;</dt>
+<dd><p>The frame number, 0 being the topmost frame, i.e., the innermost function.
+</p></dd>
+<dt>&lsquo;<samp><var>addr</var></samp>&rsquo;</dt>
+<dd><p>The <code>$pc</code> value for that frame.
+</p></dd>
+<dt>&lsquo;<samp><var>func</var></samp>&rsquo;</dt>
+<dd><p>Function name.
+</p></dd>
+<dt>&lsquo;<samp><var>file</var></samp>&rsquo;</dt>
+<dd><p>File name of the source file where the function lives.
+</p></dd>
+<dt>&lsquo;<samp><var>fullname</var></samp>&rsquo;</dt>
+<dd><p>The full file name of the source file where the function lives.
+</p></dd>
+<dt>&lsquo;<samp><var>line</var></samp>&rsquo;</dt>
+<dd><p>Line number corresponding to the <code>$pc</code>.
+</p></dd>
+<dt>&lsquo;<samp><var>from</var></samp>&rsquo;</dt>
+<dd><p>The shared library where this function is defined.  This is only given
+if the frame&rsquo;s function is not known.
+</p></dd>
+<dt>&lsquo;<samp><var>arch</var></samp>&rsquo;</dt>
+<dd><p>Frame&rsquo;s architecture.
+</p></dd>
+</dl>
+
+<p>If invoked without arguments, this command prints a backtrace for the
+whole stack.  If given two integer arguments, it shows the frames whose
+levels are between the two arguments (inclusive).  If the two arguments
+are equal, it shows the single frame at the corresponding level.  It is
+an error if <var>low-frame</var> is larger than the actual number of
+frames.  On the other hand, <var>high-frame</var> may be larger than the
+actual number of frames, in which case only existing frames will be
+returned.  If the option <code>--no-frame-filters</code> is supplied, then
+Python frame filters will not be executed.
+</p>
+<a name="GDB-Command-40"></a>
+<h4 class="subsubheading"><small>GDB</small> Command</h4>
+
+<p>The corresponding <small>GDB</small> commands are &lsquo;<samp>backtrace</samp>&rsquo; and &lsquo;<samp>where</samp>&rsquo;.
+</p>
+<a name="Example-39"></a>
+<h4 class="subsubheading">Example</h4>
+
+<p>Full stack backtrace:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb)
+-stack-list-frames
+^done,stack=
+[frame={level=&quot;0&quot;,addr=&quot;0x0001076c&quot;,func=&quot;foo&quot;,
+  file=&quot;recursive2.c&quot;,fullname=&quot;/home/foo/bar/recursive2.c&quot;,line=&quot;11&quot;,
+  arch=&quot;i386:x86_64&quot;},
+frame={level=&quot;1&quot;,addr=&quot;0x000107a4&quot;,func=&quot;foo&quot;,
+  file=&quot;recursive2.c&quot;,fullname=&quot;/home/foo/bar/recursive2.c&quot;,line=&quot;14&quot;,
+  arch=&quot;i386:x86_64&quot;},
+frame={level=&quot;2&quot;,addr=&quot;0x000107a4&quot;,func=&quot;foo&quot;,
+  file=&quot;recursive2.c&quot;,fullname=&quot;/home/foo/bar/recursive2.c&quot;,line=&quot;14&quot;,
+  arch=&quot;i386:x86_64&quot;},
+frame={level=&quot;3&quot;,addr=&quot;0x000107a4&quot;,func=&quot;foo&quot;,
+  file=&quot;recursive2.c&quot;,fullname=&quot;/home/foo/bar/recursive2.c&quot;,line=&quot;14&quot;,
+  arch=&quot;i386:x86_64&quot;},
+frame={level=&quot;4&quot;,addr=&quot;0x000107a4&quot;,func=&quot;foo&quot;,
+  file=&quot;recursive2.c&quot;,fullname=&quot;/home/foo/bar/recursive2.c&quot;,line=&quot;14&quot;,
+  arch=&quot;i386:x86_64&quot;},
+frame={level=&quot;5&quot;,addr=&quot;0x000107a4&quot;,func=&quot;foo&quot;,
+  file=&quot;recursive2.c&quot;,fullname=&quot;/home/foo/bar/recursive2.c&quot;,line=&quot;14&quot;,
+  arch=&quot;i386:x86_64&quot;},
+frame={level=&quot;6&quot;,addr=&quot;0x000107a4&quot;,func=&quot;foo&quot;,
+  file=&quot;recursive2.c&quot;,fullname=&quot;/home/foo/bar/recursive2.c&quot;,line=&quot;14&quot;,
+  arch=&quot;i386:x86_64&quot;},
+frame={level=&quot;7&quot;,addr=&quot;0x000107a4&quot;,func=&quot;foo&quot;,
+  file=&quot;recursive2.c&quot;,fullname=&quot;/home/foo/bar/recursive2.c&quot;,line=&quot;14&quot;,
+  arch=&quot;i386:x86_64&quot;},
+frame={level=&quot;8&quot;,addr=&quot;0x000107a4&quot;,func=&quot;foo&quot;,
+  file=&quot;recursive2.c&quot;,fullname=&quot;/home/foo/bar/recursive2.c&quot;,line=&quot;14&quot;,
+  arch=&quot;i386:x86_64&quot;},
+frame={level=&quot;9&quot;,addr=&quot;0x000107a4&quot;,func=&quot;foo&quot;,
+  file=&quot;recursive2.c&quot;,fullname=&quot;/home/foo/bar/recursive2.c&quot;,line=&quot;14&quot;,
+  arch=&quot;i386:x86_64&quot;},
+frame={level=&quot;10&quot;,addr=&quot;0x000107a4&quot;,func=&quot;foo&quot;,
+  file=&quot;recursive2.c&quot;,fullname=&quot;/home/foo/bar/recursive2.c&quot;,line=&quot;14&quot;,
+  arch=&quot;i386:x86_64&quot;},
+frame={level=&quot;11&quot;,addr=&quot;0x00010738&quot;,func=&quot;main&quot;,
+  file=&quot;recursive2.c&quot;,fullname=&quot;/home/foo/bar/recursive2.c&quot;,line=&quot;4&quot;,
+  arch=&quot;i386:x86_64&quot;}]
+(gdb)
+</pre></div>
+
+<p>Show frames between <var>low_frame</var> and <var>high_frame</var>:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb)
+-stack-list-frames 3 5
+^done,stack=
+[frame={level=&quot;3&quot;,addr=&quot;0x000107a4&quot;,func=&quot;foo&quot;,
+  file=&quot;recursive2.c&quot;,fullname=&quot;/home/foo/bar/recursive2.c&quot;,line=&quot;14&quot;,
+  arch=&quot;i386:x86_64&quot;},
+frame={level=&quot;4&quot;,addr=&quot;0x000107a4&quot;,func=&quot;foo&quot;,
+  file=&quot;recursive2.c&quot;,fullname=&quot;/home/foo/bar/recursive2.c&quot;,line=&quot;14&quot;,
+  arch=&quot;i386:x86_64&quot;},
+frame={level=&quot;5&quot;,addr=&quot;0x000107a4&quot;,func=&quot;foo&quot;,
+  file=&quot;recursive2.c&quot;,fullname=&quot;/home/foo/bar/recursive2.c&quot;,line=&quot;14&quot;,
+  arch=&quot;i386:x86_64&quot;}]
+(gdb)
+</pre></div>
+
+<p>Show a single frame:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb)
+-stack-list-frames 3 3
+^done,stack=
+[frame={level=&quot;3&quot;,addr=&quot;0x000107a4&quot;,func=&quot;foo&quot;,
+  file=&quot;recursive2.c&quot;,fullname=&quot;/home/foo/bar/recursive2.c&quot;,line=&quot;14&quot;,
+  arch=&quot;i386:x86_64&quot;}]
+(gdb)
+</pre></div>
+
+
+<a name="The-_002dstack_002dlist_002dlocals-Command"></a>
+<h4 class="subheading">The <code>-stack-list-locals</code> Command</h4>
+<a name="index-_002dstack_002dlist_002dlocals"></a>
+<a name="g_t_002dstack_002dlist_002dlocals"></a>
+<a name="Synopsis-42"></a>
+<h4 class="subsubheading">Synopsis</h4>
+
+<div class="smallexample">
+<pre class="smallexample"> -stack-list-locals [ --no-frame-filters ] [ --skip-unavailable ] <var>print-values</var>
+</pre></div>
+
+<p>Display the local variable names for the selected frame.  If
+<var>print-values</var> is 0 or <code>--no-values</code>, print only the names of
+the variables; if it is 1 or <code>--all-values</code>, print also their
+values; and if it is 2 or <code>--simple-values</code>, print the name,
+type and value for simple data types, and the name and type for arrays,
+structures and unions.  In this last case, a frontend can immediately
+display the value of simple data types and create variable objects for
+other data types when the user wishes to explore their values in
+more detail.  If the option <code>--no-frame-filters</code> is supplied, then
+Python frame filters will not be executed.
+</p>
+<p>If the <code>--skip-unavailable</code> option is specified, local variables
+that are not available are not listed.  Partially available local
+variables are still displayed, however.
+</p>
+<p>This command is deprecated in favor of the
+&lsquo;<samp>-stack-list-variables</samp>&rsquo; command.
+</p>
+<a name="GDB-Command-41"></a>
+<h4 class="subsubheading"><small>GDB</small> Command</h4>
+
+<p>&lsquo;<samp>info locals</samp>&rsquo; in <small>GDB</small>, &lsquo;<samp>gdb_get_locals</samp>&rsquo; in <code>gdbtk</code>.
+</p>
+<a name="Example-40"></a>
+<h4 class="subsubheading">Example</h4>
+
+<div class="smallexample">
+<pre class="smallexample">(gdb)
+-stack-list-locals 0
+^done,locals=[name=&quot;A&quot;,name=&quot;B&quot;,name=&quot;C&quot;]
+(gdb)
+-stack-list-locals --all-values
+^done,locals=[{name=&quot;A&quot;,value=&quot;1&quot;},{name=&quot;B&quot;,value=&quot;2&quot;},
+  {name=&quot;C&quot;,value=&quot;{1, 2, 3}&quot;}]
+-stack-list-locals --simple-values
+^done,locals=[{name=&quot;A&quot;,type=&quot;int&quot;,value=&quot;1&quot;},
+  {name=&quot;B&quot;,type=&quot;int&quot;,value=&quot;2&quot;},{name=&quot;C&quot;,type=&quot;int [3]&quot;}]
+(gdb)
+</pre></div>
+
+<a name="g_t_002dstack_002dlist_002dvariables"></a><a name="The-_002dstack_002dlist_002dvariables-Command"></a>
+<h4 class="subheading">The <code>-stack-list-variables</code> Command</h4>
+<a name="index-_002dstack_002dlist_002dvariables"></a>
+
+<a name="Synopsis-43"></a>
+<h4 class="subsubheading">Synopsis</h4>
+
+<div class="smallexample">
+<pre class="smallexample"> -stack-list-variables [ --no-frame-filters ] [ --skip-unavailable ] <var>print-values</var>
+</pre></div>
+
+<p>Display the names of local variables and function arguments for the selected frame.  If
+<var>print-values</var> is 0 or <code>--no-values</code>, print only the names of
+the variables; if it is 1 or <code>--all-values</code>, print also their
+values; and if it is 2 or <code>--simple-values</code>, print the name,
+type and value for simple data types, and the name and type for arrays,
+structures and unions.  If the option <code>--no-frame-filters</code> is
+supplied, then Python frame filters will not be executed.
+</p>
+<p>If the <code>--skip-unavailable</code> option is specified, local variables
+and arguments that are not available are not listed.  Partially
+available arguments and local variables are still displayed, however.
+</p>
+<a name="Example-41"></a>
+<h4 class="subsubheading">Example</h4>
+
+<div class="smallexample">
+<pre class="smallexample">(gdb)
+-stack-list-variables --thread 1 --frame 0 --all-values
+^done,variables=[{name=&quot;x&quot;,value=&quot;11&quot;},{name=&quot;s&quot;,value=&quot;{a = 1, b = 2}&quot;}]
+(gdb)
+</pre></div>
+
+
+<a name="The-_002dstack_002dselect_002dframe-Command"></a>
+<h4 class="subheading">The <code>-stack-select-frame</code> Command</h4>
+<a name="index-_002dstack_002dselect_002dframe"></a>
+
+<a name="Synopsis-44"></a>
+<h4 class="subsubheading">Synopsis</h4>
+
+<div class="smallexample">
+<pre class="smallexample"> -stack-select-frame <var>framenum</var>
+</pre></div>
+
+<p>Change the selected frame.  Select a different frame <var>framenum</var> on
+the stack.
+</p>
+<p>This command in deprecated in favor of passing the &lsquo;<samp>--frame</samp>&rsquo;
+option to every command.
+</p>
+<a name="GDB-Command-42"></a>
+<h4 class="subsubheading"><small>GDB</small> Command</h4>
+
+<p>The corresponding <small>GDB</small> commands are &lsquo;<samp>frame</samp>&rsquo;, &lsquo;<samp>up</samp>&rsquo;,
+&lsquo;<samp>down</samp>&rsquo;, &lsquo;<samp>select-frame</samp>&rsquo;, &lsquo;<samp>up-silent</samp>&rsquo;, and &lsquo;<samp>down-silent</samp>&rsquo;.
+</p>
+<a name="Example-42"></a>
+<h4 class="subsubheading">Example</h4>
+
+<div class="smallexample">
+<pre class="smallexample">(gdb)
+-stack-select-frame 2
+^done
+(gdb)
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="GDB_002fMI-Variable-Objects.html#GDB_002fMI-Variable-Objects" accesskey="n" rel="next">GDB/MI Variable Objects</a>, Previous: <a href="GDB_002fMI-Program-Execution.html#GDB_002fMI-Program-Execution" accesskey="p" rel="prev">GDB/MI Program Execution</a>, Up: <a href="GDB_002fMI.html#GDB_002fMI" accesskey="u" rel="up">GDB/MI</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

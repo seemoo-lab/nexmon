@@ -1,0 +1,138 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Using poly_int with C++ arithmetic operators</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Using poly_int with C++ arithmetic operators">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Using poly_int with C++ arithmetic operators">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Arithmetic-on-poly_005fints.html#Arithmetic-on-poly_005fints" rel="up" title="Arithmetic on poly_ints">
+<link href="wi-arithmetic-on-poly_005fints.html#wi-arithmetic-on-poly_005fints" rel="next" title="wi arithmetic on poly_ints">
+<link href="Arithmetic-on-poly_005fints.html#Arithmetic-on-poly_005fints" rel="prev" title="Arithmetic on poly_ints">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Using-poly_005fint-with-C_002b_002b-arithmetic-operators"></a>
+<div class="header">
+<p>
+Next: <a href="wi-arithmetic-on-poly_005fints.html#wi-arithmetic-on-poly_005fints" accesskey="n" rel="next"><code>wi</code> arithmetic on <code>poly_int</code>s</a>, Up: <a href="Arithmetic-on-poly_005fints.html#Arithmetic-on-poly_005fints" accesskey="u" rel="up">Arithmetic on <code>poly_int</code>s</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Using-poly_005fint-with-C_002b_002b-arithmetic-operators-1"></a>
+<h4 class="subsection">10.4.1 Using <code>poly_int</code> with C++ arithmetic operators</h4>
+
+<p>The following C++ expressions are supported, where <var>p1</var> and <var>p2</var>
+are <code>poly_int</code>s and where <var>c1</var> and <var>c2</var> are scalars:
+</p>
+<div class="smallexample">
+<pre class="smallexample">-<var>p1</var>
+~<var>p1</var>
+
+<var>p1</var> + <var>p2</var>
+<var>p1</var> + <var>c2</var>
+<var>c1</var> + <var>p2</var>
+
+<var>p1</var> - <var>p2</var>
+<var>p1</var> - <var>c2</var>
+<var>c1</var> - <var>p2</var>
+
+<var>c1</var> * <var>p2</var>
+<var>p1</var> * <var>c2</var>
+
+<var>p1</var> &lt;&lt; <var>c2</var>
+
+<var>p1</var> += <var>p2</var>
+<var>p1</var> += <var>c2</var>
+
+<var>p1</var> -= <var>p2</var>
+<var>p1</var> -= <var>c2</var>
+
+<var>p1</var> *= <var>c2</var>
+<var>p1</var> &lt;&lt;= <var>c2</var>
+</pre></div>
+
+<p>These arithmetic operations handle integer ranks in a similar way
+to C++.  The main difference is that every coefficient narrower than
+<code>HOST_WIDE_INT</code> promotes to <code>HOST_WIDE_INT</code>, whereas in
+C++ everything narrower than <code>int</code> promotes to <code>int</code>.
+For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">poly_uint16     + int          -&gt; poly_int64
+unsigned int    + poly_uint16  -&gt; poly_int64
+poly_int64      + int          -&gt; poly_int64
+poly_int32      + poly_uint64  -&gt; poly_uint64
+uint64          + poly_int64   -&gt; poly_uint64
+poly_offset_int + int32        -&gt; poly_offset_int
+offset_int      + poly_uint16  -&gt; poly_offset_int
+</pre></div>
+
+<p>In the first two examples, both coefficients are narrower than
+<code>HOST_WIDE_INT</code>, so the result has coefficients of type
+<code>HOST_WIDE_INT</code>.  In the other examples, the coefficient
+with the highest rank &ldquo;wins&rdquo;.
+</p>
+<p>If one of the operands is <code>wide_int</code> or <code>poly_wide_int</code>,
+the rules are the same as for <code>wide_int</code> arithmetic.
+</p>
+
+
+
+</body>
+</html>

@@ -1,0 +1,323 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Directory Options</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Directory Options">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Directory Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Invoking-GCC.html#Invoking-GCC" rel="up" title="Invoking GCC">
+<link href="Code-Gen-Options.html#Code-Gen-Options" rel="next" title="Code Gen Options">
+<link href="Link-Options.html#Link-Options" rel="prev" title="Link Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Directory-Options"></a>
+<div class="header">
+<p>
+Next: <a href="Code-Gen-Options.html#Code-Gen-Options" accesskey="n" rel="next">Code Gen Options</a>, Previous: <a href="Link-Options.html#Link-Options" accesskey="p" rel="prev">Link Options</a>, Up: <a href="Invoking-GCC.html#Invoking-GCC" accesskey="u" rel="up">Invoking GCC</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Options-for-Directory-Search"></a>
+<h3 class="section">3.15 Options for Directory Search</h3>
+<a name="index-directory-options"></a>
+<a name="index-options_002c-directory-search"></a>
+<a name="index-search-path"></a>
+
+<p>These options specify directories to search for header files, for
+libraries and for parts of the compiler:
+</p>
+<dl compact="compact">
+<dt><code>-I <var>dir</var></code></dt>
+<dt><code>-iquote <var>dir</var></code></dt>
+<dt><code>-isystem <var>dir</var></code></dt>
+<dt><code>-idirafter <var>dir</var></code></dt>
+<dd><a name="index-I"></a>
+<a name="index-iquote"></a>
+<a name="index-isystem"></a>
+<a name="index-idirafter"></a>
+<p>Add the directory <var>dir</var> to the list of directories to be searched
+for header files during preprocessing.
+If <var>dir</var> begins with &lsquo;<samp>=</samp>&rsquo; or <code>$SYSROOT</code>, then the &lsquo;<samp>=</samp>&rsquo;
+or <code>$SYSROOT</code> is replaced by the sysroot prefix; see
+<samp>--sysroot</samp> and <samp>-isysroot</samp>.
+</p>
+<p>Directories specified with <samp>-iquote</samp> apply only to the quote 
+form of the directive, <code>#include&nbsp;&quot;<var>file</var>&quot;<!-- /@w --></code>.
+Directories specified with <samp>-I</samp>, <samp>-isystem</samp>, 
+or <samp>-idirafter</samp> apply to lookup for both the
+<code>#include&nbsp;&quot;<var>file</var>&quot;<!-- /@w --></code> and
+<code>#include&nbsp;&lt;<var>file</var>&gt;<!-- /@w --></code> directives.
+</p>
+<p>You can specify any number or combination of these options on the 
+command line to search for header files in several directories.  
+The lookup order is as follows:
+</p>
+<ol>
+<li> For the quote form of the include directive, the directory of the current
+file is searched first.
+
+</li><li> For the quote form of the include directive, the directories specified
+by <samp>-iquote</samp> options are searched in left-to-right order,
+as they appear on the command line.
+
+</li><li> Directories specified with <samp>-I</samp> options are scanned in
+left-to-right order.
+
+</li><li> Directories specified with <samp>-isystem</samp> options are scanned in
+left-to-right order.
+
+</li><li> Standard system directories are scanned.
+
+</li><li> Directories specified with <samp>-idirafter</samp> options are scanned in
+left-to-right order.
+</li></ol>
+
+<p>You can use <samp>-I</samp> to override a system header
+file, substituting your own version, since these directories are
+searched before the standard system header file directories.  
+However, you should
+not use this option to add directories that contain vendor-supplied
+system header files; use <samp>-isystem</samp> for that.
+</p>
+<p>The <samp>-isystem</samp> and <samp>-idirafter</samp> options also mark the directory
+as a system directory, so that it gets the same special treatment that
+is applied to the standard system directories.
+</p>
+<p>If a standard system include directory, or a directory specified with
+<samp>-isystem</samp>, is also specified with <samp>-I</samp>, the <samp>-I</samp>
+option is ignored.  The directory is still searched but as a
+system directory at its normal position in the system include chain.
+This is to ensure that GCC&rsquo;s procedure to fix buggy system headers and
+the ordering for the <code>#include_next</code> directive are not inadvertently
+changed.
+If you really need to change the search order for system directories,
+use the <samp>-nostdinc</samp> and/or <samp>-isystem</samp> options.
+</p>
+</dd>
+<dt><code>-I-</code></dt>
+<dd><a name="index-I_002d"></a>
+<p>Split the include path.
+This option has been deprecated.  Please use <samp>-iquote</samp> instead for
+<samp>-I</samp> directories before the <samp>-I-</samp> and remove the <samp>-I-</samp>
+option.
+</p>
+<p>Any directories specified with <samp>-I</samp>
+options before <samp>-I-</samp> are searched only for headers requested with
+<code>#include&nbsp;&quot;<var>file</var>&quot;<!-- /@w --></code>; they are not searched for
+<code>#include&nbsp;&lt;<var>file</var>&gt;<!-- /@w --></code>.  If additional directories are
+specified with <samp>-I</samp> options after the <samp>-I-</samp>, those
+directories are searched for all &lsquo;<samp>#include</samp>&rsquo; directives.
+</p>
+<p>In addition, <samp>-I-</samp> inhibits the use of the directory of the current
+file directory as the first search directory for <code>#include&nbsp;&quot;<var>file</var>&quot;<!-- /@w --></code>.  There is no way to override this effect of <samp>-I-</samp>.
+</p>
+</dd>
+<dt><code>-iprefix <var>prefix</var></code></dt>
+<dd><a name="index-iprefix"></a>
+<p>Specify <var>prefix</var> as the prefix for subsequent <samp>-iwithprefix</samp>
+options.  If the prefix represents a directory, you should include the
+final &lsquo;<samp>/</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>-iwithprefix <var>dir</var></code></dt>
+<dt><code>-iwithprefixbefore <var>dir</var></code></dt>
+<dd><a name="index-iwithprefix"></a>
+<a name="index-iwithprefixbefore"></a>
+<p>Append <var>dir</var> to the prefix specified previously with
+<samp>-iprefix</samp>, and add the resulting directory to the include search
+path.  <samp>-iwithprefixbefore</samp> puts it in the same place <samp>-I</samp>
+would; <samp>-iwithprefix</samp> puts it where <samp>-idirafter</samp> would.
+</p>
+</dd>
+<dt><code>-isysroot <var>dir</var></code></dt>
+<dd><a name="index-isysroot"></a>
+<p>This option is like the <samp>--sysroot</samp> option, but applies only to
+header files (except for Darwin targets, where it applies to both header
+files and libraries).  See the <samp>--sysroot</samp> option for more
+information.
+</p>
+</dd>
+<dt><code>-imultilib <var>dir</var></code></dt>
+<dd><a name="index-imultilib"></a>
+<p>Use <var>dir</var> as a subdirectory of the directory containing
+target-specific C++ headers.
+</p>
+</dd>
+<dt><code>-nostdinc</code></dt>
+<dd><a name="index-nostdinc"></a>
+<p>Do not search the standard system directories for header files.
+Only the directories explicitly specified with <samp>-I</samp>,
+<samp>-iquote</samp>, <samp>-isystem</samp>, and/or <samp>-idirafter</samp>
+options (and the directory of the current file, if appropriate) 
+are searched.
+</p>
+</dd>
+<dt><code>-nostdinc++</code></dt>
+<dd><a name="index-nostdinc_002b_002b-1"></a>
+<p>Do not search for header files in the C++-specific standard directories,
+but do still search the other standard directories.  (This option is
+used when building the C++ library.)
+</p>
+
+</dd>
+<dt><code>-iplugindir=<var>dir</var></code></dt>
+<dd><a name="index-iplugindir_003d"></a>
+<p>Set the directory to search for plugins that are passed
+by <samp>-fplugin=<var>name</var></samp> instead of
+<samp>-fplugin=<var>path</var>/<var>name</var>.so</samp>.  This option is not meant
+to be used by the user, but only passed by the driver.
+</p>
+</dd>
+<dt><code>-L<var>dir</var></code></dt>
+<dd><a name="index-L"></a>
+<p>Add directory <var>dir</var> to the list of directories to be searched
+for <samp>-l</samp>.
+</p>
+</dd>
+<dt><code>-B<var>prefix</var></code></dt>
+<dd><a name="index-B"></a>
+<p>This option specifies where to find the executables, libraries,
+include files, and data files of the compiler itself.
+</p>
+<p>The compiler driver program runs one or more of the subprograms
+<code>cpp</code>, <code>cc1</code>, <code>as</code> and <code>ld</code>.  It tries
+<var>prefix</var> as a prefix for each program it tries to run, both with and
+without &lsquo;<samp><var>machine</var>/<var>version</var>/</samp>&rsquo; for the corresponding target
+machine and compiler version.
+</p>
+<p>For each subprogram to be run, the compiler driver first tries the
+<samp>-B</samp> prefix, if any.  If that name is not found, or if <samp>-B</samp>
+is not specified, the driver tries two standard prefixes, 
+<samp>/usr/lib/gcc/</samp> and <samp>/usr/local/lib/gcc/</samp>.  If neither of
+those results in a file name that is found, the unmodified program
+name is searched for using the directories specified in your
+<code>PATH</code> environment variable.
+</p>
+<p>The compiler checks to see if the path provided by <samp>-B</samp>
+refers to a directory, and if necessary it adds a directory
+separator character at the end of the path.
+</p>
+<p><samp>-B</samp> prefixes that effectively specify directory names also apply
+to libraries in the linker, because the compiler translates these
+options into <samp>-L</samp> options for the linker.  They also apply to
+include files in the preprocessor, because the compiler translates these
+options into <samp>-isystem</samp> options for the preprocessor.  In this case,
+the compiler appends &lsquo;<samp>include</samp>&rsquo; to the prefix.
+</p>
+<p>The runtime support file <samp>libgcc.a</samp> can also be searched for using
+the <samp>-B</samp> prefix, if needed.  If it is not found there, the two
+standard prefixes above are tried, and that is all.  The file is left
+out of the link if it is not found by those means.
+</p>
+<p>Another way to specify a prefix much like the <samp>-B</samp> prefix is to use
+the environment variable <code>GCC_EXEC_PREFIX</code>.  See <a href="Environment-Variables.html#Environment-Variables">Environment Variables</a>.
+</p>
+<p>As a special kludge, if the path provided by <samp>-B</samp> is
+<samp>[dir/]stage<var>N</var>/</samp>, where <var>N</var> is a number in the range 0 to
+9, then it is replaced by <samp>[dir/]include</samp>.  This is to help
+with boot-strapping the compiler.
+</p>
+</dd>
+<dt><code>-no-canonical-prefixes</code></dt>
+<dd><a name="index-no_002dcanonical_002dprefixes"></a>
+<p>Do not expand any symbolic links, resolve references to &lsquo;<samp>/../</samp>&rsquo;
+or &lsquo;<samp>/./</samp>&rsquo;, or make the path absolute when generating a relative
+prefix.
+</p>
+</dd>
+<dt><code>--sysroot=<var>dir</var></code></dt>
+<dd><a name="index-sysroot"></a>
+<p>Use <var>dir</var> as the logical root directory for headers and libraries.
+For example, if the compiler normally searches for headers in
+<samp>/usr/include</samp> and libraries in <samp>/usr/lib</samp>, it instead
+searches <samp><var>dir</var>/usr/include</samp> and <samp><var>dir</var>/usr/lib</samp>.
+</p>
+<p>If you use both this option and the <samp>-isysroot</samp> option, then
+the <samp>--sysroot</samp> option applies to libraries, but the
+<samp>-isysroot</samp> option applies to header files.
+</p>
+<p>The GNU linker (beginning with version 2.16) has the necessary support
+for this option.  If your linker does not support this option, the
+header file aspect of <samp>--sysroot</samp> still works, but the
+library aspect does not.
+</p>
+</dd>
+<dt><code>--no-sysroot-suffix</code></dt>
+<dd><a name="index-no_002dsysroot_002dsuffix"></a>
+<p>For some targets, a suffix is added to the root directory specified
+with <samp>--sysroot</samp>, depending on the other options used, so that
+headers may for example be found in
+<samp><var>dir</var>/<var>suffix</var>/usr/include</samp> instead of
+<samp><var>dir</var>/usr/include</samp>.  This option disables the addition of
+such a suffix.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Code-Gen-Options.html#Code-Gen-Options" accesskey="n" rel="next">Code Gen Options</a>, Previous: <a href="Link-Options.html#Link-Options" accesskey="p" rel="prev">Link Options</a>, Up: <a href="Invoking-GCC.html#Invoking-GCC" accesskey="u" rel="up">Invoking GCC</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: MMIX-Symbols</title>
+
+<meta name="description" content="Using as: MMIX-Symbols">
+<meta name="keywords" content="Using as: MMIX-Symbols">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="MMIX_002dSyntax.html#MMIX_002dSyntax" rel="up" title="MMIX-Syntax">
+<link href="MMIX_002dRegs.html#MMIX_002dRegs" rel="next" title="MMIX-Regs">
+<link href="MMIX_002dChars.html#MMIX_002dChars" rel="prev" title="MMIX-Chars">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="MMIX_002dSymbols"></a>
+<div class="header">
+<p>
+Next: <a href="MMIX_002dRegs.html#MMIX_002dRegs" accesskey="n" rel="next">MMIX-Regs</a>, Previous: <a href="MMIX_002dChars.html#MMIX_002dChars" accesskey="p" rel="prev">MMIX-Chars</a>, Up: <a href="MMIX_002dSyntax.html#MMIX_002dSyntax" accesskey="u" rel="up">MMIX-Syntax</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Symbols-4"></a>
+<h4 class="subsubsection">9.28.3.2 Symbols</h4>
+<p>The character &lsquo;<samp>:</samp>&rsquo; is permitted in identifiers.  There are two
+exceptions to it being treated as any other symbol character: if a symbol
+begins with &lsquo;<samp>:</samp>&rsquo;, it means that the symbol is in the global namespace
+and that the current prefix should not be prepended to that symbol
+(see <a href="MMIX_002dPseudos.html#MMIX_002dprefix">MMIX-prefix</a>).  The &lsquo;<samp>:</samp>&rsquo; is then not considered part of the
+symbol.  For a symbol in the label position (first on a line), a &lsquo;<samp>:</samp>&rsquo;
+at the end of a symbol is silently stripped off.  A label is permitted,
+but not required, to be followed by a &lsquo;<samp>:</samp>&rsquo;, as with many other
+assembly formats.
+</p>
+<p>The character &lsquo;<samp>@</samp>&rsquo; in an expression, is a synonym for &lsquo;<samp>.</samp>&rsquo;, the
+current location.
+</p>
+<p>In addition to the common forward and backward local symbol formats
+(see <a href="Symbol-Names.html#Symbol-Names">Symbol Names</a>), they can be specified with upper-case &lsquo;<samp>B</samp>&rsquo; and
+&lsquo;<samp>F</samp>&rsquo;, as in &lsquo;<samp>8B</samp>&rsquo; and &lsquo;<samp>9F</samp>&rsquo;.  A local label defined for the
+current position is written with a &lsquo;<samp>H</samp>&rsquo; appended to the number:
+</p><div class="smallexample">
+<pre class="smallexample">3H LDB $0,$1,2
+</pre></div>
+<p>This and traditional local-label formats cannot be mixed: a label must be
+defined and referred to using the same format.
+</p>
+<p>There&rsquo;s a minor caveat: just as for the ordinary local symbols, the local
+symbols are translated into ordinary symbols using control characters are
+to hide the ordinal number of the symbol.  Unfortunately, these symbols
+are not translated back in error messages.  Thus you may see confusing
+error messages when local symbols are used.  Control characters
+&lsquo;<samp>\003</samp>&rsquo; (control-C) and &lsquo;<samp>\004</samp>&rsquo; (control-D) are used for the
+MMIX-specific local-symbol syntax.
+</p>
+<p>The symbol &lsquo;<samp>Main</samp>&rsquo; is handled specially; it is always global.
+</p>
+<p>By defining the symbols &lsquo;<samp>__.MMIX.start..text</samp>&rsquo; and
+&lsquo;<samp>__.MMIX.start..data</samp>&rsquo;, the address of respectively the &lsquo;<samp>.text</samp>&rsquo;
+and &lsquo;<samp>.data</samp>&rsquo; segments of the final program can be defined, though when
+linking more than one object file, the code or data in the object file
+containing the symbol is not guaranteed to be start at that position; just
+the final executable.  See <a href="MMIX_002dPseudos.html#MMIX_002dloc">MMIX-loc</a>.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="MMIX_002dRegs.html#MMIX_002dRegs" accesskey="n" rel="next">MMIX-Regs</a>, Previous: <a href="MMIX_002dChars.html#MMIX_002dChars" accesskey="p" rel="prev">MMIX-Chars</a>, Up: <a href="MMIX_002dSyntax.html#MMIX_002dSyntax" accesskey="u" rel="up">MMIX-Syntax</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

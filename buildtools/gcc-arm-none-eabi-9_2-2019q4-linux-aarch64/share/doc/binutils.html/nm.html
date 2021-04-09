@@ -1,0 +1,485 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Binary Utilities: nm</title>
+
+<meta name="description" content="GNU Binary Utilities: nm">
+<meta name="keywords" content="GNU Binary Utilities: nm">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Binutils-Index.html#Binutils-Index" rel="index" title="Binutils Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="objcopy.html#objcopy" rel="next" title="objcopy">
+<link href="ar-scripts.html#ar-scripts" rel="prev" title="ar scripts">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="nm"></a>
+<div class="header">
+<p>
+Next: <a href="objcopy.html#objcopy" accesskey="n" rel="next">objcopy</a>, Previous: <a href="ar.html#ar" accesskey="p" rel="prev">ar</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Binutils-Index.html#Binutils-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="nm-1"></a>
+<h2 class="chapter">2 nm</h2>
+<a name="index-symbols"></a>
+<a name="index-nm"></a>
+
+
+<div class="smallexample">
+<pre class="smallexample">nm [<samp>-A</samp>|<samp>-o</samp>|<samp>--print-file-name</samp>] [<samp>-a</samp>|<samp>--debug-syms</samp>]
+   [<samp>-B</samp>|<samp>--format=bsd</samp>] [<samp>-C</samp>|<samp>--demangle</samp>[=<var>style</var>]]
+   [<samp>-D</samp>|<samp>--dynamic</samp>] [<samp>-f</samp><var>format</var>|<samp>--format=</samp><var>format</var>]
+   [<samp>-g</samp>|<samp>--extern-only</samp>] [<samp>-h</samp>|<samp>--help</samp>]
+   [<samp>-l</samp>|<samp>--line-numbers</samp>] [<samp>--inlines</samp>]
+   [<samp>-n</samp>|<samp>-v</samp>|<samp>--numeric-sort</samp>]
+   [<samp>-P</samp>|<samp>--portability</samp>] [<samp>-p</samp>|<samp>--no-sort</samp>]
+   [<samp>-r</samp>|<samp>--reverse-sort</samp>] [<samp>-S</samp>|<samp>--print-size</samp>]
+   [<samp>-s</samp>|<samp>--print-armap</samp>] [<samp>-t</samp> <var>radix</var>|<samp>--radix=</samp><var>radix</var>]
+   [<samp>-u</samp>|<samp>--undefined-only</samp>] [<samp>-V</samp>|<samp>--version</samp>]
+   [<samp>-X 32_64</samp>] [<samp>--defined-only</samp>] [<samp>--no-demangle</samp>]
+   [<samp>--plugin</samp> <var>name</var>]
+   [<samp>--no-recurse-limit</samp>|<samp>--recurse-limit</samp>]]
+   [<samp>--size-sort</samp>] [<samp>--special-syms</samp>]
+   [<samp>--synthetic</samp>] [<samp>--with-symbol-versions</samp>] [<samp>--target=</samp><var>bfdname</var>]
+   [<var>objfile</var>&hellip;]
+</pre></div>
+
+<p><small>GNU</small> <code>nm</code> lists the symbols from object files <var>objfile</var>&hellip;.
+If no object files are listed as arguments, <code>nm</code> assumes the file
+<samp>a.out</samp>.
+</p>
+<p>For each symbol, <code>nm</code> shows:
+</p>
+<ul>
+<li> The symbol value, in the radix selected by options (see below), or
+hexadecimal by default.
+
+</li><li> The symbol type.  At least the following types are used; others are, as
+well, depending on the object file format.  If lowercase, the symbol is
+usually local; if uppercase, the symbol is global (external).  There
+are however a few lowercase symbols that are shown for special global
+symbols (<code>u</code>, <code>v</code> and <code>w</code>).
+
+<dl compact="compact">
+<dt><code>A</code></dt>
+<dd><p>The symbol&rsquo;s value is absolute, and will not be changed by further
+linking.
+</p>
+</dd>
+<dt><code>B</code></dt>
+<dt><code>b</code></dt>
+<dd><p>The symbol is in the BSS data section.  This section typically
+contains zero-initialized or uninitialized data, although the exact
+behavior is system dependent.
+</p>
+</dd>
+<dt><code>C</code></dt>
+<dd><p>The symbol is common.  Common symbols are uninitialized data.  When
+linking, multiple common symbols may appear with the same name.  If the
+symbol is defined anywhere, the common symbols are treated as undefined
+references.
+For more details on common symbols, see the discussion of
+&ndash;warn-common in <a href="http://sourceware.org/binutils/docs/ld/Options.html#Options">Linker options</a> in <cite>The GNU linker</cite>.
+</p>
+</dd>
+<dt><code>D</code></dt>
+<dt><code>d</code></dt>
+<dd><p>The symbol is in the initialized data section.
+</p>
+</dd>
+<dt><code>G</code></dt>
+<dt><code>g</code></dt>
+<dd><p>The symbol is in an initialized data section for small objects.  Some
+object file formats permit more efficient access to small data objects,
+such as a global int variable as opposed to a large global array.
+</p>
+</dd>
+<dt><code>i</code></dt>
+<dd><p>For PE format files this indicates that the symbol is in a section
+specific to the implementation of DLLs.  For ELF format files this
+indicates that the symbol is an indirect function.  This is a GNU
+extension to the standard set of ELF symbol types.  It indicates a
+symbol which if referenced by a relocation does not evaluate to its
+address, but instead must be invoked at runtime.  The runtime
+execution will then return the value to be used in the relocation.
+</p>
+</dd>
+<dt><code>I</code></dt>
+<dd><p>The symbol is an indirect reference to another symbol.
+</p>
+</dd>
+<dt><code>N</code></dt>
+<dd><p>The symbol is a debugging symbol.
+</p>
+</dd>
+<dt><code>n</code></dt>
+<dd><p>The symbol is in the read-only data section.
+</p>
+</dd>
+<dt><code>p</code></dt>
+<dd><p>The symbol is in a stack unwind section.
+</p>
+</dd>
+<dt><code>R</code></dt>
+<dt><code>r</code></dt>
+<dd><p>The symbol is in a read only data section.
+</p>
+</dd>
+<dt><code>S</code></dt>
+<dt><code>s</code></dt>
+<dd><p>The symbol is in an uninitialized or zero-initialized data section
+for small objects.
+</p>
+</dd>
+<dt><code>T</code></dt>
+<dt><code>t</code></dt>
+<dd><p>The symbol is in the text (code) section.
+</p>
+</dd>
+<dt><code>U</code></dt>
+<dd><p>The symbol is undefined.
+</p>
+</dd>
+<dt><code>u</code></dt>
+<dd><p>The symbol is a unique global symbol.  This is a GNU extension to the
+standard set of ELF symbol bindings.  For such a symbol the dynamic linker
+will make sure that in the entire process there is just one symbol with
+this name and type in use.
+</p>
+</dd>
+<dt><code>V</code></dt>
+<dt><code>v</code></dt>
+<dd><p>The symbol is a weak object.  When a weak defined symbol is linked with
+a normal defined symbol, the normal defined symbol is used with no error.
+When a weak undefined symbol is linked and the symbol is not defined,
+the value of the weak symbol becomes zero with no error.  On some
+systems, uppercase indicates that a default value has been specified.
+</p>
+</dd>
+<dt><code>W</code></dt>
+<dt><code>w</code></dt>
+<dd><p>The symbol is a weak symbol that has not been specifically tagged as a
+weak object symbol.  When a weak defined symbol is linked with a normal
+defined symbol, the normal defined symbol is used with no error.
+When a weak undefined symbol is linked and the symbol is not defined,
+the value of the symbol is determined in a system-specific manner without
+error.  On some systems, uppercase indicates that a default value has been
+specified.
+</p>
+</dd>
+<dt><code>-</code></dt>
+<dd><p>The symbol is a stabs symbol in an a.out object file.  In this case, the
+next values printed are the stabs other field, the stabs desc field, and
+the stab type.  Stabs symbols are used to hold debugging information.
+</p>
+</dd>
+<dt><code>?</code></dt>
+<dd><p>The symbol type is unknown, or object file format specific.
+</p></dd>
+</dl>
+
+</li><li> The symbol name.
+</li></ul>
+
+
+<p>The long and short forms of options, shown here as alternatives, are
+equivalent.
+</p>
+<dl compact="compact">
+<dt><code>-A</code></dt>
+<dt><code>-o</code></dt>
+<dt><code>--print-file-name</code></dt>
+<dd><a name="index-input-file-name"></a>
+<a name="index-file-name"></a>
+<a name="index-source-file-name"></a>
+<p>Precede each symbol by the name of the input file (or archive member)
+in which it was found, rather than identifying the input file once only,
+before all of its symbols.
+</p>
+</dd>
+<dt><code>-a</code></dt>
+<dt><code>--debug-syms</code></dt>
+<dd><a name="index-debugging-symbols"></a>
+<p>Display all symbols, even debugger-only symbols; normally these are not
+listed.
+</p>
+</dd>
+<dt><code>-B</code></dt>
+<dd><a name="index-nm-format"></a>
+<a name="index-nm-compatibility"></a>
+<p>The same as <samp>--format=bsd</samp> (for compatibility with the MIPS <code>nm</code>).
+</p>
+</dd>
+<dt><code>-C</code></dt>
+<dt><code>--demangle[=<var>style</var>]</code></dt>
+<dd><a name="index-demangling-in-nm"></a>
+<p>Decode (<em>demangle</em>) low-level symbol names into user-level names.
+Besides removing any initial underscore prepended by the system, this
+makes C++ function names readable. Different compilers have different
+mangling styles. The optional demangling style argument can be used to
+choose an appropriate demangling style for your compiler. See <a href="c_002b_002bfilt.html#c_002b_002bfilt">c++filt</a>,
+for more information on demangling.
+</p>
+</dd>
+<dt><code>--no-demangle</code></dt>
+<dd><p>Do not demangle low-level symbol names.  This is the default.
+</p>
+</dd>
+<dt><code>--recurse-limit</code></dt>
+<dt><code>--no-recurse-limit</code></dt>
+<dt><code>--recursion-limit</code></dt>
+<dt><code>--no-recursion-limit</code></dt>
+<dd><p>Enables or disables a limit on the amount of recursion performed
+whilst demangling strings.  Since the name mangling formats allow for
+an inifinite level of recursion it is possible to create strings whose
+decoding will exhaust the amount of stack space available on the host
+machine, triggering a memory fault.  The limit tries to prevent this
+from happening by restricting recursion to 2048 levels of nesting.
+</p>
+<p>The default is for this limit to be enabled, but disabling it may be
+necessary in order to demangle truly complicated names.  Note however
+that if the recursion limit is disabled then stack exhaustion is
+possible and any bug reports about such an event will be rejected.
+</p>
+</dd>
+<dt><code>-D</code></dt>
+<dt><code>--dynamic</code></dt>
+<dd><a name="index-dynamic-symbols"></a>
+<p>Display the dynamic symbols rather than the normal symbols.  This is
+only meaningful for dynamic objects, such as certain types of shared
+libraries.
+</p>
+</dd>
+<dt><code>-f <var>format</var></code></dt>
+<dt><code>--format=<var>format</var></code></dt>
+<dd><a name="index-nm-format-1"></a>
+<a name="index-nm-compatibility-1"></a>
+<p>Use the output format <var>format</var>, which can be <code>bsd</code>,
+<code>sysv</code>, or <code>posix</code>.  The default is <code>bsd</code>.
+Only the first character of <var>format</var> is significant; it can be
+either upper or lower case.
+</p>
+</dd>
+<dt><code>-g</code></dt>
+<dt><code>--extern-only</code></dt>
+<dd><a name="index-external-symbols"></a>
+<p>Display only external symbols.
+</p>
+</dd>
+<dt><code>-h</code></dt>
+<dt><code>--help</code></dt>
+<dd><p>Show a summary of the options to <code>nm</code> and exit.
+</p>
+</dd>
+<dt><code>-l</code></dt>
+<dt><code>--line-numbers</code></dt>
+<dd><a name="index-symbol-line-numbers"></a>
+<p>For each symbol, use debugging information to try to find a filename and
+line number.  For a defined symbol, look for the line number of the
+address of the symbol.  For an undefined symbol, look for the line
+number of a relocation entry which refers to the symbol.  If line number
+information can be found, print it after the other symbol information.
+</p>
+</dd>
+<dt><code>--inlines</code></dt>
+<dd><a name="index-objdump-inlines"></a>
+<p>When option <samp>-l</samp> is active, if the address belongs to a
+function that was inlined, then this option causes the source 
+information for all enclosing scopes back to the first non-inlined
+function to be printed as well.  For example, if <code>main</code> inlines
+<code>callee1</code> which inlines <code>callee2</code>, and address is from
+<code>callee2</code>, the source information for <code>callee1</code> and <code>main</code>
+will also be printed.
+</p>
+</dd>
+<dt><code>-n</code></dt>
+<dt><code>-v</code></dt>
+<dt><code>--numeric-sort</code></dt>
+<dd><p>Sort symbols numerically by their addresses, rather than alphabetically
+by their names.
+</p>
+</dd>
+<dt><code>-p</code></dt>
+<dt><code>--no-sort</code></dt>
+<dd><a name="index-sorting-symbols"></a>
+<p>Do not bother to sort the symbols in any order; print them in the order
+encountered.
+</p>
+</dd>
+<dt><code>-P</code></dt>
+<dt><code>--portability</code></dt>
+<dd><p>Use the POSIX.2 standard output format instead of the default format.
+Equivalent to &lsquo;<samp>-f posix</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>-r</code></dt>
+<dt><code>--reverse-sort</code></dt>
+<dd><p>Reverse the order of the sort (whether numeric or alphabetic); let the
+last come first.
+</p>
+</dd>
+<dt><code>-S</code></dt>
+<dt><code>--print-size</code></dt>
+<dd><p>Print both value and size of defined symbols for the <code>bsd</code> output style.
+This option has no effect for object formats that do not record symbol
+sizes, unless &lsquo;<samp>--size-sort</samp>&rsquo; is also used in which case a
+calculated size is displayed.
+</p>
+</dd>
+<dt><code>-s</code></dt>
+<dt><code>--print-armap</code></dt>
+<dd><a name="index-symbol-index_002c-listing"></a>
+<p>When listing symbols from archive members, include the index: a mapping
+(stored in the archive by <code>ar</code> or <code>ranlib</code>) of which modules
+contain definitions for which names.
+</p>
+</dd>
+<dt><code>-t <var>radix</var></code></dt>
+<dt><code>--radix=<var>radix</var></code></dt>
+<dd><p>Use <var>radix</var> as the radix for printing the symbol values.  It must be
+&lsquo;<samp>d</samp>&rsquo; for decimal, &lsquo;<samp>o</samp>&rsquo; for octal, or &lsquo;<samp>x</samp>&rsquo; for hexadecimal.
+</p>
+</dd>
+<dt><code>-u</code></dt>
+<dt><code>--undefined-only</code></dt>
+<dd><a name="index-external-symbols-1"></a>
+<a name="index-undefined-symbols"></a>
+<p>Display only undefined symbols (those external to each object file).
+</p>
+</dd>
+<dt><code>-V</code></dt>
+<dt><code>--version</code></dt>
+<dd><p>Show the version number of <code>nm</code> and exit.
+</p>
+</dd>
+<dt><code>-X</code></dt>
+<dd><p>This option is ignored for compatibility with the AIX version of
+<code>nm</code>.  It takes one parameter which must be the string
+<samp>32_64</samp>.  The default mode of AIX <code>nm</code> corresponds
+to <samp>-X 32</samp>, which is not supported by <small>GNU</small> <code>nm</code>.
+</p>
+</dd>
+<dt><code>--defined-only</code></dt>
+<dd><a name="index-external-symbols-2"></a>
+<a name="index-undefined-symbols-1"></a>
+<p>Display only defined symbols for each object file.
+</p>
+</dd>
+<dt><code>--plugin <var>name</var></code></dt>
+<dd><a name="index-plugins-1"></a>
+<p>Load the plugin called <var>name</var> to add support for extra target
+types.  This option is only available if the toolchain has been built
+with plugin support enabled.
+</p>
+<p>If <samp>--plugin</samp> is not provided, but plugin support has been
+enabled then <code>nm</code> iterates over the files in
+<samp>${libdir}/bfd-plugins</samp> in alphabetic order and the first
+plugin that claims the object in question is used.
+</p>
+<p>Please note that this plugin search directory is <em>not</em> the one
+used by <code>ld</code>&rsquo;s <samp>-plugin</samp> option.  In order to make
+<code>nm</code> use the  linker plugin it must be copied into the
+<samp>${libdir}/bfd-plugins</samp> directory.  For GCC based compilations
+the linker plugin is called <samp>liblto_plugin.so.0.0.0</samp>.  For Clang
+based compilations it is called <samp>LLVMgold.so</samp>.  The GCC plugin
+is always backwards compatible with earlier versions, so it is
+sufficient to just copy the newest one.
+</p>
+</dd>
+<dt><code>--size-sort</code></dt>
+<dd><p>Sort symbols by size.  For ELF objects symbol sizes are read from the
+ELF, for other object types the symbol sizes are computed as the
+difference between the value of the symbol and the value of the symbol
+with the next higher value.  If the <code>bsd</code> output format is used
+the size of the symbol is printed, rather than the value, and
+&lsquo;<samp>-S</samp>&rsquo; must be used in order both size and value to be printed.
+</p>
+</dd>
+<dt><code>--special-syms</code></dt>
+<dd><p>Display symbols which have a target-specific special meaning.  These
+symbols are usually used by the target for some special processing and
+are not normally helpful when included in the normal symbol lists.
+For example for ARM targets this option would skip the mapping symbols
+used to mark transitions between ARM code, THUMB code and data.
+</p>
+</dd>
+<dt><code>--synthetic</code></dt>
+<dd><p>Include synthetic symbols in the output.  These are special symbols
+created by the linker for various purposes.  They are not shown by
+default since they are not part of the binary&rsquo;s original source code.
+</p>
+</dd>
+<dt><code>--with-symbol-versions</code></dt>
+<dd><p>Enables the display of symbol version information if any exists.  The
+version string is displayed as a suffix to the symbol name, preceeded by
+an @ character.  For example &lsquo;<samp>foo@VER_1</samp>&rsquo;.  If the version is
+the default version to be used when resolving unversioned references
+to the symbol then it is displayed as a suffix preceeded by two @
+characters.  For example &lsquo;<samp>foo@@VER_2</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>--target=<var>bfdname</var></code></dt>
+<dd><a name="index-object-code-format"></a>
+<p>Specify an object code format other than your system&rsquo;s default format.
+See <a href="Target-Selection.html#Target-Selection">Target Selection</a>, for more information.
+</p>
+</dd>
+</dl>
+
+
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="objcopy.html#objcopy" accesskey="n" rel="next">objcopy</a>, Previous: <a href="ar.html#ar" accesskey="p" rel="prev">ar</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Binutils-Index.html#Binutils-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

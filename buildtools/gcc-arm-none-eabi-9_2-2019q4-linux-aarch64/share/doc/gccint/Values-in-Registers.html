@@ -1,0 +1,250 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Values in Registers</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Values in Registers">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Values in Registers">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Registers.html#Registers" rel="up" title="Registers">
+<link href="Leaf-Functions.html#Leaf-Functions" rel="next" title="Leaf Functions">
+<link href="Allocation-Order.html#Allocation-Order" rel="prev" title="Allocation Order">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Values-in-Registers"></a>
+<div class="header">
+<p>
+Next: <a href="Leaf-Functions.html#Leaf-Functions" accesskey="n" rel="next">Leaf Functions</a>, Previous: <a href="Allocation-Order.html#Allocation-Order" accesskey="p" rel="prev">Allocation Order</a>, Up: <a href="Registers.html#Registers" accesskey="u" rel="up">Registers</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="How-Values-Fit-in-Registers"></a>
+<h4 class="subsection">18.7.3 How Values Fit in Registers</h4>
+
+<p>This section discusses the macros that describe which kinds of values
+(specifically, which machine modes) each register can hold, and how many
+consecutive registers are needed for a given mode.
+</p>
+<dl>
+<dt><a name="index-TARGET_005fHARD_005fREGNO_005fNREGS"></a>Target Hook: <em>unsigned int</em> <strong>TARGET_HARD_REGNO_NREGS</strong> <em>(unsigned int <var>regno</var>, machine_mode <var>mode</var>)</em></dt>
+<dd><p>This hook returns the number of consecutive hard registers, starting
+at register number <var>regno</var>, required to hold a value of mode
+<var>mode</var>.  This hook must never return zero, even if a register
+cannot hold the requested mode - indicate that with
+<code>TARGET_HARD_REGNO_MODE_OK</code> and/or
+<code>TARGET_CAN_CHANGE_MODE_CLASS</code> instead.
+</p>
+<p>The default definition returns the number of words in <var>mode</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-HARD_005fREGNO_005fNREGS_005fHAS_005fPADDING"></a>Macro: <strong>HARD_REGNO_NREGS_HAS_PADDING</strong> <em>(<var>regno</var>, <var>mode</var>)</em></dt>
+<dd><p>A C expression that is nonzero if a value of mode <var>mode</var>, stored
+in memory, ends with padding that causes it to take up more space than
+in registers starting at register number <var>regno</var> (as determined by
+multiplying GCC&rsquo;s notion of the size of the register when containing
+this mode by the number of registers returned by
+<code>TARGET_HARD_REGNO_NREGS</code>).  By default this is zero.
+</p>
+<p>For example, if a floating-point value is stored in three 32-bit
+registers but takes up 128 bits in memory, then this would be
+nonzero.
+</p>
+<p>This macros only needs to be defined if there are cases where
+<code>subreg_get_info</code>
+would otherwise wrongly determine that a <code>subreg</code> can be
+represented by an offset to the register number, when in fact such a
+<code>subreg</code> would contain some of the padding not stored in
+registers and so not be representable.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-HARD_005fREGNO_005fNREGS_005fWITH_005fPADDING"></a>Macro: <strong>HARD_REGNO_NREGS_WITH_PADDING</strong> <em>(<var>regno</var>, <var>mode</var>)</em></dt>
+<dd><p>For values of <var>regno</var> and <var>mode</var> for which
+<code>HARD_REGNO_NREGS_HAS_PADDING</code> returns nonzero, a C expression
+returning the greater number of registers required to hold the value
+including any padding.  In the example above, the value would be four.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-REGMODE_005fNATURAL_005fSIZE-2"></a>Macro: <strong>REGMODE_NATURAL_SIZE</strong> <em>(<var>mode</var>)</em></dt>
+<dd><p>Define this macro if the natural size of registers that hold values
+of mode <var>mode</var> is not the word size.  It is a C expression that
+should give the natural size in bytes for the specified mode.  It is
+used by the register allocator to try to optimize its results.  This
+happens for example on SPARC 64-bit where the natural size of
+floating-point registers is still 32-bit.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fHARD_005fREGNO_005fMODE_005fOK"></a>Target Hook: <em>bool</em> <strong>TARGET_HARD_REGNO_MODE_OK</strong> <em>(unsigned int <var>regno</var>, machine_mode <var>mode</var>)</em></dt>
+<dd><p>This hook returns true if it is permissible to store a value
+of mode <var>mode</var> in hard register number <var>regno</var> (or in several
+registers starting with that one).  The default definition returns true
+unconditionally.
+</p>
+<p>You need not include code to check for the numbers of fixed registers,
+because the allocation mechanism considers them to be always occupied.
+</p>
+<a name="index-register-pairs"></a>
+<p>On some machines, double-precision values must be kept in even/odd
+register pairs.  You can implement that by defining this hook to reject
+odd register numbers for such modes.
+</p>
+<p>The minimum requirement for a mode to be OK in a register is that the
+&lsquo;<samp>mov<var>mode</var></samp>&rsquo; instruction pattern support moves between the
+register and other hard register in the same class and that moving a
+value into the register and back out not alter it.
+</p>
+<p>Since the same instruction used to move <code>word_mode</code> will work for
+all narrower integer modes, it is not necessary on any machine for
+this hook to distinguish between these modes, provided you define
+patterns &lsquo;<samp>movhi</samp>&rsquo;, etc., to take advantage of this.  This is
+useful because of the interaction between <code>TARGET_HARD_REGNO_MODE_OK</code>
+and <code>TARGET_MODES_TIEABLE_P</code>; it is very desirable for all integer
+modes to be tieable.
+</p>
+<p>Many machines have special registers for floating point arithmetic.
+Often people assume that floating point machine modes are allowed only
+in floating point registers.  This is not true.  Any registers that
+can hold integers can safely <em>hold</em> a floating point machine
+mode, whether or not floating arithmetic can be done on it in those
+registers.  Integer move instructions can be used to move the values.
+</p>
+<p>On some machines, though, the converse is true: fixed-point machine
+modes may not go in floating registers.  This is true if the floating
+registers normalize any value stored in them, because storing a
+non-floating value there would garble it.  In this case,
+<code>TARGET_HARD_REGNO_MODE_OK</code> should reject fixed-point machine modes in
+floating registers.  But if the floating registers do not automatically
+normalize, if you can store any bit pattern in one and retrieve it
+unchanged without a trap, then any machine mode may go in a floating
+register, so you can define this hook to say so.
+</p>
+<p>The primary significance of special floating registers is rather that
+they are the registers acceptable in floating point arithmetic
+instructions.  However, this is of no concern to
+<code>TARGET_HARD_REGNO_MODE_OK</code>.  You handle it by writing the proper
+constraints for those instructions.
+</p>
+<p>On some machines, the floating registers are especially slow to access,
+so that it is better to store a value in a stack frame than in such a
+register if floating point arithmetic is not being done.  As long as the
+floating registers are not in class <code>GENERAL_REGS</code>, they will not
+be used unless some pattern&rsquo;s constraint asks for one.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-HARD_005fREGNO_005fRENAME_005fOK"></a>Macro: <strong>HARD_REGNO_RENAME_OK</strong> <em>(<var>from</var>, <var>to</var>)</em></dt>
+<dd><p>A C expression that is nonzero if it is OK to rename a hard register
+<var>from</var> to another hard register <var>to</var>.
+</p>
+<p>One common use of this macro is to prevent renaming of a register to
+another register that is not saved by a prologue in an interrupt
+handler.
+</p>
+<p>The default is always nonzero.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fMODES_005fTIEABLE_005fP"></a>Target Hook: <em>bool</em> <strong>TARGET_MODES_TIEABLE_P</strong> <em>(machine_mode <var>mode1</var>, machine_mode <var>mode2</var>)</em></dt>
+<dd><p>This hook returns true if a value of mode <var>mode1</var> is accessible
+in mode <var>mode2</var> without copying.
+</p>
+<p>If <code>TARGET_HARD_REGNO_MODE_OK (<var>r</var>, <var>mode1</var>)</code> and
+<code>TARGET_HARD_REGNO_MODE_OK (<var>r</var>, <var>mode2</var>)</code> are always
+the same for any <var>r</var>, then
+<code>TARGET_MODES_TIEABLE_P (<var>mode1</var>, <var>mode2</var>)</code>
+should be true.  If they differ for any <var>r</var>, you should define
+this hook to return false unless some other mechanism ensures the
+accessibility of the value in a narrower mode.
+</p>
+<p>You should define this hook to return true in as many cases as
+possible since doing so will allow GCC to perform better register
+allocation.  The default definition returns true unconditionally.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fHARD_005fREGNO_005fSCRATCH_005fOK"></a>Target Hook: <em>bool</em> <strong>TARGET_HARD_REGNO_SCRATCH_OK</strong> <em>(unsigned int <var>regno</var>)</em></dt>
+<dd><p>This target hook should return <code>true</code> if it is OK to use a hard register
+<var>regno</var> as scratch reg in peephole2.
+</p>
+<p>One common use of this macro is to prevent using of a register that
+is not saved by a prologue in an interrupt handler.
+</p>
+<p>The default version of this hook always returns <code>true</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-AVOID_005fCCMODE_005fCOPIES"></a>Macro: <strong>AVOID_CCMODE_COPIES</strong></dt>
+<dd><p>Define this macro if the compiler should avoid copies to/from <code>CCmode</code>
+registers.  You should only define this macro if support for copying to/from
+<code>CCmode</code> is incomplete.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Leaf-Functions.html#Leaf-Functions" accesskey="n" rel="next">Leaf Functions</a>, Previous: <a href="Allocation-Order.html#Allocation-Order" accesskey="p" rel="prev">Allocation Order</a>, Up: <a href="Registers.html#Registers" accesskey="u" rel="up">Registers</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

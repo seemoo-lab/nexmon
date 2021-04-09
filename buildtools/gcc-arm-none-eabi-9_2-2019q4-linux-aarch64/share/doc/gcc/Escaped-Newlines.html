@@ -1,0 +1,98 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Escaped Newlines</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Escaped Newlines">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Escaped Newlines">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C-Extensions.html#C-Extensions" rel="up" title="C Extensions">
+<link href="Subscripting.html#Subscripting" rel="next" title="Subscripting">
+<link href="Variadic-Macros.html#Variadic-Macros" rel="prev" title="Variadic Macros">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Escaped-Newlines"></a>
+<div class="header">
+<p>
+Next: <a href="Subscripting.html#Subscripting" accesskey="n" rel="next">Subscripting</a>, Previous: <a href="Variadic-Macros.html#Variadic-Macros" accesskey="p" rel="prev">Variadic Macros</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Slightly-Looser-Rules-for-Escaped-Newlines"></a>
+<h3 class="section">6.22 Slightly Looser Rules for Escaped Newlines</h3>
+<a name="index-escaped-newlines"></a>
+<a name="index-newlines-_0028escaped_0029"></a>
+
+<p>The preprocessor treatment of escaped newlines is more relaxed 
+than that specified by the C90 standard, which requires the newline
+to immediately follow a backslash.  
+GCC&rsquo;s implementation allows whitespace in the form
+of spaces, horizontal and vertical tabs, and form feeds between the
+backslash and the subsequent newline.  The preprocessor issues a
+warning, but treats it as a valid escaped newline and combines the two
+lines to form a single logical line.  This works within comments and
+tokens, as well as between tokens.  Comments are <em>not</em> treated as
+whitespace for the purposes of this relaxation, since they have not
+yet been replaced with spaces.
+</p>
+
+
+
+</body>
+</html>

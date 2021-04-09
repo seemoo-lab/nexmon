@@ -1,0 +1,128 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Examples</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Examples">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Examples">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Mode-Iterators.html#Mode-Iterators" rel="up" title="Mode Iterators">
+<link href="Code-Iterators.html#Code-Iterators" rel="next" title="Code Iterators">
+<link href="Substitutions.html#Substitutions" rel="prev" title="Substitutions">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Examples"></a>
+<div class="header">
+<p>
+Previous: <a href="Substitutions.html#Substitutions" accesskey="p" rel="prev">Substitutions</a>, Up: <a href="Mode-Iterators.html#Mode-Iterators" accesskey="u" rel="up">Mode Iterators</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Mode-Iterator-Examples"></a>
+<h4 class="subsubsection">17.23.1.3 Mode Iterator Examples</h4>
+
+<p>Here is an example from the MIPS port.  It defines the following
+modes and attributes (among others):
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_mode_iterator GPR [SI (DI &quot;TARGET_64BIT&quot;)])
+(define_mode_attr d [(SI &quot;&quot;) (DI &quot;d&quot;)])
+</pre></div>
+
+<p>and uses the following template to define both <code>subsi3</code>
+and <code>subdi3</code>:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_insn &quot;sub&lt;mode&gt;3&quot;
+  [(set (match_operand:GPR 0 &quot;register_operand&quot; &quot;=d&quot;)
+        (minus:GPR (match_operand:GPR 1 &quot;register_operand&quot; &quot;d&quot;)
+                   (match_operand:GPR 2 &quot;register_operand&quot; &quot;d&quot;)))]
+  &quot;&quot;
+  &quot;&lt;d&gt;subu\t%0,%1,%2&quot;
+  [(set_attr &quot;type&quot; &quot;arith&quot;)
+   (set_attr &quot;mode&quot; &quot;&lt;MODE&gt;&quot;)])
+</pre></div>
+
+<p>This is exactly equivalent to:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_insn &quot;subsi3&quot;
+  [(set (match_operand:SI 0 &quot;register_operand&quot; &quot;=d&quot;)
+        (minus:SI (match_operand:SI 1 &quot;register_operand&quot; &quot;d&quot;)
+                  (match_operand:SI 2 &quot;register_operand&quot; &quot;d&quot;)))]
+  &quot;&quot;
+  &quot;subu\t%0,%1,%2&quot;
+  [(set_attr &quot;type&quot; &quot;arith&quot;)
+   (set_attr &quot;mode&quot; &quot;SI&quot;)])
+
+(define_insn &quot;subdi3&quot;
+  [(set (match_operand:DI 0 &quot;register_operand&quot; &quot;=d&quot;)
+        (minus:DI (match_operand:DI 1 &quot;register_operand&quot; &quot;d&quot;)
+                  (match_operand:DI 2 &quot;register_operand&quot; &quot;d&quot;)))]
+  &quot;&quot;
+  &quot;dsubu\t%0,%1,%2&quot;
+  [(set_attr &quot;type&quot; &quot;arith&quot;)
+   (set_attr &quot;mode&quot; &quot;DI&quot;)])
+</pre></div>
+
+
+
+
+</body>
+</html>

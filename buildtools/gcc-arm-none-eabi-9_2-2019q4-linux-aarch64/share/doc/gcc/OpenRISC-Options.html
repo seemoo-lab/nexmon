@@ -1,0 +1,153 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): OpenRISC Options</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): OpenRISC Options">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): OpenRISC Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Submodel-Options.html#Submodel-Options" rel="up" title="Submodel Options">
+<link href="PDP_002d11-Options.html#PDP_002d11-Options" rel="next" title="PDP-11 Options">
+<link href="Nvidia-PTX-Options.html#Nvidia-PTX-Options" rel="prev" title="Nvidia PTX Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="OpenRISC-Options"></a>
+<div class="header">
+<p>
+Next: <a href="PDP_002d11-Options.html#PDP_002d11-Options" accesskey="n" rel="next">PDP-11 Options</a>, Previous: <a href="Nvidia-PTX-Options.html#Nvidia-PTX-Options" accesskey="p" rel="prev">Nvidia PTX Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="OpenRISC-Options-1"></a>
+<h4 class="subsection">3.18.36 OpenRISC Options</h4>
+<a name="index-OpenRISC-Options"></a>
+
+<p>These options are defined for OpenRISC:
+</p>
+<dl compact="compact">
+<dt><code>-mboard=<var>name</var></code></dt>
+<dd><a name="index-mboard"></a>
+<p>Configure a board specific runtime.  This will be passed to the linker for
+newlib board library linking.  The default is <code>or1ksim</code>.
+</p>
+</dd>
+<dt><code>-mnewlib</code></dt>
+<dd><a name="index-mnewlib"></a>
+<p>For compatibility, it&rsquo;s always newlib for elf now.
+</p>
+</dd>
+<dt><code>-mhard-div</code></dt>
+<dd><a name="index-mhard_002ddiv"></a>
+<p>Generate code for hardware which supports divide instructions.  This is the
+default.
+</p>
+</dd>
+<dt><code>-mhard-mul</code></dt>
+<dd><a name="index-mhard_002dmul"></a>
+<p>Generate code for hardware which supports multiply instructions.  This is the
+default.
+</p>
+</dd>
+<dt><code>-mcmov</code></dt>
+<dd><a name="index-mcmov-1"></a>
+<p>Generate code for hardware which supports the conditional move (<code>l.cmov</code>)
+instruction.
+</p>
+</dd>
+<dt><code>-mror</code></dt>
+<dd><a name="index-mror"></a>
+<p>Generate code for hardware which supports rotate right instructions.
+</p>
+</dd>
+<dt><code>-msext</code></dt>
+<dd><a name="index-msext"></a>
+<p>Generate code for hardware which supports sign-extension instructions.
+</p>
+</dd>
+<dt><code>-msfimm</code></dt>
+<dd><a name="index-msfimm"></a>
+<p>Generate code for hardware which supports set flag immediate (<code>l.sf*i</code>)
+instructions.
+</p>
+</dd>
+<dt><code>-mshftimm</code></dt>
+<dd><a name="index-mshftimm"></a>
+<p>Generate code for hardware which supports shift immediate related instructions
+(i.e. <code>l.srai</code>, <code>l.srli</code>, <code>l.slli</code>, <code>1.rori</code>).  Note, to
+enable generation of the <code>l.rori</code> instruction the <samp>-mror</samp> flag must
+also be specified.
+</p>
+</dd>
+<dt><code>-msoft-div</code></dt>
+<dd><a name="index-msoft_002ddiv"></a>
+<p>Generate code for hardware which requires divide instruction emulation.
+</p>
+</dd>
+<dt><code>-msoft-mul</code></dt>
+<dd><a name="index-msoft_002dmul"></a>
+<p>Generate code for hardware which requires multiply instruction emulation.
+</p>
+</dd>
+</dl>
+
+
+
+
+</body>
+</html>

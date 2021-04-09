@@ -1,0 +1,960 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): x86 Function Attributes</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): x86 Function Attributes">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): x86 Function Attributes">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Function-Attributes.html#Function-Attributes" rel="up" title="Function Attributes">
+<link href="Xstormy16-Function-Attributes.html#Xstormy16-Function-Attributes" rel="next" title="Xstormy16 Function Attributes">
+<link href="Visium-Function-Attributes.html#Visium-Function-Attributes" rel="prev" title="Visium Function Attributes">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="x86-Function-Attributes"></a>
+<div class="header">
+<p>
+Next: <a href="Xstormy16-Function-Attributes.html#Xstormy16-Function-Attributes" accesskey="n" rel="next">Xstormy16 Function Attributes</a>, Previous: <a href="Visium-Function-Attributes.html#Visium-Function-Attributes" accesskey="p" rel="prev">Visium Function Attributes</a>, Up: <a href="Function-Attributes.html#Function-Attributes" accesskey="u" rel="up">Function Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="x86-Function-Attributes-1"></a>
+<h4 class="subsection">6.33.35 x86 Function Attributes</h4>
+
+<p>These function attributes are supported by the x86 back end:
+</p>
+<dl compact="compact">
+<dt><code>cdecl</code></dt>
+<dd><a name="index-cdecl-function-attribute_002c-x86_002d32"></a>
+<a name="index-functions-that-pop-the-argument-stack-on-x86_002d32"></a>
+<a name="index-mrtd-2"></a>
+<p>On the x86-32 targets, the <code>cdecl</code> attribute causes the compiler to
+assume that the calling function pops off the stack space used to
+pass arguments.  This is
+useful to override the effects of the <samp>-mrtd</samp> switch.
+</p>
+</dd>
+<dt><code>fastcall</code></dt>
+<dd><a name="index-fastcall-function-attribute_002c-x86_002d32"></a>
+<a name="index-functions-that-pop-the-argument-stack-on-x86_002d32-1"></a>
+<p>On x86-32 targets, the <code>fastcall</code> attribute causes the compiler to
+pass the first argument (if of integral type) in the register ECX and
+the second argument (if of integral type) in the register EDX.  Subsequent
+and other typed arguments are passed on the stack.  The called function
+pops the arguments off the stack.  If the number of arguments is variable all
+arguments are pushed on the stack.
+</p>
+</dd>
+<dt><code>thiscall</code></dt>
+<dd><a name="index-thiscall-function-attribute_002c-x86_002d32"></a>
+<a name="index-functions-that-pop-the-argument-stack-on-x86_002d32-2"></a>
+<p>On x86-32 targets, the <code>thiscall</code> attribute causes the compiler to
+pass the first argument (if of integral type) in the register ECX.
+Subsequent and other typed arguments are passed on the stack. The called
+function pops the arguments off the stack.
+If the number of arguments is variable all arguments are pushed on the
+stack.
+The <code>thiscall</code> attribute is intended for C++ non-static member functions.
+As a GCC extension, this calling convention can be used for C functions
+and for static member methods.
+</p>
+</dd>
+<dt><code>ms_abi</code></dt>
+<dt><code>sysv_abi</code></dt>
+<dd><a name="index-ms_005fabi-function-attribute_002c-x86"></a>
+<a name="index-sysv_005fabi-function-attribute_002c-x86"></a>
+
+<p>On 32-bit and 64-bit x86 targets, you can use an ABI attribute
+to indicate which calling convention should be used for a function.  The
+<code>ms_abi</code> attribute tells the compiler to use the Microsoft ABI,
+while the <code>sysv_abi</code> attribute tells the compiler to use the ABI
+used on GNU/Linux and other systems.  The default is to use the Microsoft ABI
+when targeting Windows.  On all other systems, the default is the x86/AMD ABI.
+</p>
+<p>Note, the <code>ms_abi</code> attribute for Microsoft Windows 64-bit targets currently
+requires the <samp>-maccumulate-outgoing-args</samp> option.
+</p>
+</dd>
+<dt><code>callee_pop_aggregate_return (<var>number</var>)</code></dt>
+<dd><a name="index-callee_005fpop_005faggregate_005freturn-function-attribute_002c-x86"></a>
+
+<p>On x86-32 targets, you can use this attribute to control how
+aggregates are returned in memory.  If the caller is responsible for
+popping the hidden pointer together with the rest of the arguments, specify
+<var>number</var> equal to zero.  If callee is responsible for popping the
+hidden pointer, specify <var>number</var> equal to one.  
+</p>
+<p>The default x86-32 ABI assumes that the callee pops the
+stack for hidden pointer.  However, on x86-32 Microsoft Windows targets,
+the compiler assumes that the
+caller pops the stack for hidden pointer.
+</p>
+</dd>
+<dt><code>ms_hook_prologue</code></dt>
+<dd><a name="index-ms_005fhook_005fprologue-function-attribute_002c-x86"></a>
+
+<p>On 32-bit and 64-bit x86 targets, you can use
+this function attribute to make GCC generate the &ldquo;hot-patching&rdquo; function
+prologue used in Win32 API functions in Microsoft Windows XP Service Pack 2
+and newer.
+</p>
+</dd>
+<dt><code>naked</code></dt>
+<dd><a name="index-naked-function-attribute_002c-x86"></a>
+<p>This attribute allows the compiler to construct the
+requisite function declaration, while allowing the body of the
+function to be assembly code. The specified function will not have
+prologue/epilogue sequences generated by the compiler. Only basic
+<code>asm</code> statements can safely be included in naked functions
+(see <a href="Basic-Asm.html#Basic-Asm">Basic Asm</a>). While using extended <code>asm</code> or a mixture of
+basic <code>asm</code> and C code may appear to work, they cannot be
+depended upon to work reliably and are not supported.
+</p>
+</dd>
+<dt><code>regparm (<var>number</var>)</code></dt>
+<dd><a name="index-regparm-function-attribute_002c-x86"></a>
+<a name="index-functions-that-are-passed-arguments-in-registers-on-x86_002d32"></a>
+<p>On x86-32 targets, the <code>regparm</code> attribute causes the compiler to
+pass arguments number one to <var>number</var> if they are of integral type
+in registers EAX, EDX, and ECX instead of on the stack.  Functions that
+take a variable number of arguments continue to be passed all of their
+arguments on the stack.
+</p>
+<p>Beware that on some ELF systems this attribute is unsuitable for
+global functions in shared libraries with lazy binding (which is the
+default).  Lazy binding sends the first call via resolving code in
+the loader, which might assume EAX, EDX and ECX can be clobbered, as
+per the standard calling conventions.  Solaris 8 is affected by this.
+Systems with the GNU C Library version 2.1 or higher
+and FreeBSD are believed to be
+safe since the loaders there save EAX, EDX and ECX.  (Lazy binding can be
+disabled with the linker or the loader if desired, to avoid the
+problem.)
+</p>
+</dd>
+<dt><code>sseregparm</code></dt>
+<dd><a name="index-sseregparm-function-attribute_002c-x86"></a>
+<p>On x86-32 targets with SSE support, the <code>sseregparm</code> attribute
+causes the compiler to pass up to 3 floating-point arguments in
+SSE registers instead of on the stack.  Functions that take a
+variable number of arguments continue to pass all of their
+floating-point arguments on the stack.
+</p>
+</dd>
+<dt><code>force_align_arg_pointer</code></dt>
+<dd><a name="index-force_005falign_005farg_005fpointer-function-attribute_002c-x86"></a>
+<p>On x86 targets, the <code>force_align_arg_pointer</code> attribute may be
+applied to individual function definitions, generating an alternate
+prologue and epilogue that realigns the run-time stack if necessary.
+This supports mixing legacy codes that run with a 4-byte aligned stack
+with modern codes that keep a 16-byte stack for SSE compatibility.
+</p>
+</dd>
+<dt><code>stdcall</code></dt>
+<dd><a name="index-stdcall-function-attribute_002c-x86_002d32"></a>
+<a name="index-functions-that-pop-the-argument-stack-on-x86_002d32-3"></a>
+<p>On x86-32 targets, the <code>stdcall</code> attribute causes the compiler to
+assume that the called function pops off the stack space used to
+pass arguments, unless it takes a variable number of arguments.
+</p>
+</dd>
+<dt><code>no_caller_saved_registers</code></dt>
+<dd><a name="index-no_005fcaller_005fsaved_005fregisters-function-attribute_002c-x86"></a>
+<p>Use this attribute to indicate that the specified function has no
+caller-saved registers. That is, all registers are callee-saved. For
+example, this attribute can be used for a function called from an
+interrupt handler. The compiler generates proper function entry and
+exit sequences to save and restore any modified registers, except for
+the EFLAGS register.  Since GCC doesn&rsquo;t preserve SSE, MMX nor x87
+states, the GCC option <samp>-mgeneral-regs-only</samp> should be used to
+compile functions with <code>no_caller_saved_registers</code> attribute.
+</p>
+</dd>
+<dt><code>interrupt</code></dt>
+<dd><a name="index-interrupt-function-attribute_002c-x86"></a>
+<p>Use this attribute to indicate that the specified function is an
+interrupt handler or an exception handler (depending on parameters passed
+to the function, explained further).  The compiler generates function
+entry and exit sequences suitable for use in an interrupt handler when
+this attribute is present.  The <code>IRET</code> instruction, instead of the
+<code>RET</code> instruction, is used to return from interrupt handlers.  All
+registers, except for the EFLAGS register which is restored by the
+<code>IRET</code> instruction, are preserved by the compiler.  Since GCC
+doesn&rsquo;t preserve SSE, MMX nor x87 states, the GCC option
+<samp>-mgeneral-regs-only</samp> should be used to compile interrupt and
+exception handlers.
+</p>
+<p>Any interruptible-without-stack-switch code must be compiled with
+<samp>-mno-red-zone</samp> since interrupt handlers can and will, because
+of the hardware design, touch the red zone.
+</p>
+<p>An interrupt handler must be declared with a mandatory pointer
+argument:
+</p>
+<div class="smallexample">
+<pre class="smallexample">struct interrupt_frame;
+
+__attribute__ ((interrupt))
+void
+f (struct interrupt_frame *frame)
+{
+}
+</pre></div>
+
+<p>and you must define <code>struct interrupt_frame</code> as described in the
+processor&rsquo;s manual.
+</p>
+<p>Exception handlers differ from interrupt handlers because the system
+pushes an error code on the stack.  An exception handler declaration is
+similar to that for an interrupt handler, but with a different mandatory
+function signature.  The compiler arranges to pop the error code off the
+stack before the <code>IRET</code> instruction.
+</p>
+<div class="smallexample">
+<pre class="smallexample">#ifdef __x86_64__
+typedef unsigned long long int uword_t;
+#else
+typedef unsigned int uword_t;
+#endif
+
+struct interrupt_frame;
+
+__attribute__ ((interrupt))
+void
+f (struct interrupt_frame *frame, uword_t error_code)
+{
+  ...
+}
+</pre></div>
+
+<p>Exception handlers should only be used for exceptions that push an error
+code; you should use an interrupt handler in other cases.  The system
+will crash if the wrong kind of handler is used.
+</p>
+</dd>
+<dt><code>target (<var>options</var>)</code></dt>
+<dd><a name="index-target-function-attribute-5"></a>
+<p>As discussed in <a href="Common-Function-Attributes.html#Common-Function-Attributes">Common Function Attributes</a>, this attribute 
+allows specification of target-specific compilation options.
+</p>
+<p>On the x86, the following options are allowed:
+</p><dl compact="compact">
+<dt>&lsquo;<samp>3dnow</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-3dnow</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_00223dnow_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the 3DNow! instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>3dnowa</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-3dnowa</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_00223dnowa_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the enhanced 3DNow! instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>abm</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-abm</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022abm_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the advanced bit instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>adx</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-adx</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022adx_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the ADX instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>aes</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-aes</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022aes_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the AES instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>avx</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-avx</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022avx_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the AVX instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>avx2</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-avx2</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022avx2_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the AVX2 instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>avx5124fmaps</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-avx5124fmaps</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022avx5124fmaps_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the AVX5124FMAPS instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>avx5124vnniw</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-avx5124vnniw</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022avx5124vnniw_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the AVX5124VNNIW instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>avx512bitalg</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-avx512bitalg</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022avx512bitalg_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the AVX512BITALG instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>avx512bw</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-avx512bw</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022avx512bw_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the AVX512BW instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>avx512cd</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-avx512cd</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022avx512cd_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the AVX512CD instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>avx512dq</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-avx512dq</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022avx512dq_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the AVX512DQ instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>avx512er</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-avx512er</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022avx512er_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the AVX512ER instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>avx512f</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-avx512f</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022avx512f_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the AVX512F instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>avx512ifma</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-avx512ifma</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022avx512ifma_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the AVX512IFMA instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>avx512pf</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-avx512pf</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022avx512pf_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the AVX512PF instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>avx512vbmi</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-avx512vbmi</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022avx512vbmi_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the AVX512VBMI instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>avx512vbmi2</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-avx512vbmi2</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022avx512vbmi2_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the AVX512VBMI2 instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>avx512vl</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-avx512vl</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022avx512vl_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the AVX512VL instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>avx512vnni</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-avx512vnni</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022avx512vnni_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the AVX512VNNI instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>avx512vpopcntdq</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-avx512vpopcntdq</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022avx512vpopcntdq_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the AVX512VPOPCNTDQ instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>bmi</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-bmi</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022bmi_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the BMI instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>bmi2</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-bmi2</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022bmi2_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the BMI2 instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>cldemote</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-cldemote</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022cldemote_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the CLDEMOTE instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>clflushopt</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-clflushopt</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022clflushopt_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the CLFLUSHOPT instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>clwb</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-clwb</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022clwb_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the CLWB instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>clzero</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-clzero</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022clzero_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the CLZERO instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>crc32</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-crc32</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022crc32_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the CRC32 instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>cx16</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-cx16</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022cx16_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the CMPXCHG16B instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>default</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022default_0022_0029-function-attribute_002c-x86"></a>
+<p>See <a href="Function-Multiversioning.html#Function-Multiversioning">Function Multiversioning</a>, where it is used to specify the
+default function version.
+</p>
+</dd>
+<dt>&lsquo;<samp>f16c</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-f16c</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022f16c_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the F16C instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>fma</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-fma</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022fma_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the FMA instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>fma4</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-fma4</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022fma4_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the FMA4 instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>fsgsbase</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-fsgsbase</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022fsgsbase_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the FSGSBASE instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>fxsr</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-fxsr</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022fxsr_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the FXSR instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>gfni</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-gfni</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022gfni_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the GFNI instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>hle</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-hle</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022hle_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the HLE instruction prefixes.
+</p>
+</dd>
+<dt>&lsquo;<samp>lwp</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-lwp</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022lwp_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the LWP instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>lzcnt</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-lzcnt</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022lzcnt_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the LZCNT instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>mmx</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-mmx</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022mmx_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the MMX instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>movbe</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-movbe</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022movbe_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the MOVBE instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>movdir64b</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-movdir64b</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022movdir64b_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the MOVDIR64B instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>movdiri</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-movdiri</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022movdiri_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the MOVDIRI instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>mwaitx</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-mwaitx</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022mwaitx_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the MWAITX instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>pclmul</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-pclmul</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022pclmul_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the PCLMUL instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>pconfig</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-pconfig</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022pconfig_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the PCONFIG instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>pku</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-pku</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022pku_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the PKU instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>popcnt</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-popcnt</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022popcnt_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the POPCNT instruction.
+</p>
+</dd>
+<dt>&lsquo;<samp>prefetchwt1</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-prefetchwt1</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022prefetchwt1_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the PREFETCHWT1 instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>prfchw</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-prfchw</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022prfchw_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the PREFETCHW instruction.
+</p>
+</dd>
+<dt>&lsquo;<samp>ptwrite</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-ptwrite</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022ptwrite_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the PTWRITE instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>rdpid</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-rdpid</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022rdpid_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the RDPID instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>rdrnd</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-rdrnd</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022rdrnd_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the RDRND instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>rdseed</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-rdseed</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022rdseed_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the RDSEED instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>rtm</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-rtm</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022rtm_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the RTM instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>sahf</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-sahf</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022sahf_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the SAHF instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>sgx</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-sgx</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022sgx_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the SGX instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>sha</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-sha</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022sha_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the SHA instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>shstk</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-shstk</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022shstk_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the shadow stack built-in functions from CET.
+</p>
+</dd>
+<dt>&lsquo;<samp>sse</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-sse</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022sse_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the SSE instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>sse2</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-sse2</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022sse2_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the SSE2 instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>sse3</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-sse3</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022sse3_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the SSE3 instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>sse4</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-sse4</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022sse4_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the SSE4 instructions (both SSE4.1
+and SSE4.2).
+</p>
+</dd>
+<dt>&lsquo;<samp>sse4.1</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-sse4.1</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022sse4_002e1_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the sse4.1 instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>sse4.2</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-sse4.2</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022sse4_002e2_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the sse4.2 instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>sse4a</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-sse4a</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022sse4a_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the SSE4A instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>ssse3</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-ssse3</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022ssse3_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the SSSE3 instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>tbm</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-tbm</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022tbm_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the TBM instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>vaes</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-vaes</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022vaes_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the VAES instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>vpclmulqdq</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-vpclmulqdq</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022vpclmulqdq_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the VPCLMULQDQ instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>waitpkg</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-waitpkg</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022waitpkg_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the WAITPKG instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>wbnoinvd</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-wbnoinvd</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022wbnoinvd_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the WBNOINVD instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>xop</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-xop</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022xop_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the XOP instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>xsave</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-xsave</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022xsave_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the XSAVE instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>xsavec</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-xsavec</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022xsavec_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the XSAVEC instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>xsaveopt</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-xsaveopt</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022xsaveopt_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the XSAVEOPT instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>xsaves</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-xsaves</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022xsaves_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the XSAVES instructions.
+</p>
+</dd>
+<dt>&lsquo;<samp>cld</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-cld</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022cld_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the CLD before string moves.
+</p>
+</dd>
+<dt>&lsquo;<samp>fancy-math-387</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-fancy-math-387</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022fancy_002dmath_002d387_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the <code>sin</code>, <code>cos</code>, and
+<code>sqrt</code> instructions on the 387 floating-point unit.
+</p>
+</dd>
+<dt>&lsquo;<samp>ieee-fp</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-ieee-fp</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022ieee_002dfp_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of floating point that depends on IEEE arithmetic.
+</p>
+</dd>
+<dt>&lsquo;<samp>inline-all-stringops</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-inline-all-stringops</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022inline_002dall_002dstringops_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable inlining of string operations.
+</p>
+</dd>
+<dt>&lsquo;<samp>inline-stringops-dynamically</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-inline-stringops-dynamically</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022inline_002dstringops_002ddynamically_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of the inline code to do small string
+operations and calling the library routines for large operations.
+</p>
+</dd>
+<dt>&lsquo;<samp>align-stringops</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-align-stringops</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022align_002dstringops_0022_0029-function-attribute_002c-x86"></a>
+<p>Do/do not align destination of inlined string operations.
+</p>
+</dd>
+<dt>&lsquo;<samp>recip</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>no-recip</samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022recip_0022_0029-function-attribute_002c-x86"></a>
+<p>Enable/disable the generation of RCPSS, RCPPS, RSQRTSS and RSQRTPS
+instructions followed an additional Newton-Raphson step instead of
+doing a floating-point division.
+</p>
+</dd>
+<dt>&lsquo;<samp>arch=<var>ARCH</var></samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022arch_003dARCH_0022_0029-function-attribute_002c-x86"></a>
+<p>Specify the architecture to generate code for in compiling the function.
+</p>
+</dd>
+<dt>&lsquo;<samp>tune=<var>TUNE</var></samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022tune_003dTUNE_0022_0029-function-attribute_002c-x86"></a>
+<p>Specify the architecture to tune for in compiling the function.
+</p>
+</dd>
+<dt>&lsquo;<samp>fpmath=<var>FPMATH</var></samp>&rsquo;</dt>
+<dd><a name="index-target_0028_0022fpmath_003dFPMATH_0022_0029-function-attribute_002c-x86"></a>
+<p>Specify which floating-point unit to use.  You must specify the
+<code>target(&quot;fpmath=sse,387&quot;)</code> option as
+<code>target(&quot;fpmath=sse+387&quot;)</code> because the comma would separate
+different options.
+</p>
+</dd>
+<dt>&lsquo;<samp>indirect_branch(&quot;<var>choice</var>&quot;)</samp>&rsquo;</dt>
+<dd><a name="index-indirect_005fbranch-function-attribute_002c-x86"></a>
+<p>On x86 targets, the <code>indirect_branch</code> attribute causes the compiler
+to convert indirect call and jump with <var>choice</var>.  &lsquo;<samp>keep</samp>&rsquo;
+keeps indirect call and jump unmodified.  &lsquo;<samp>thunk</samp>&rsquo; converts indirect
+call and jump to call and return thunk.  &lsquo;<samp>thunk-inline</samp>&rsquo; converts
+indirect call and jump to inlined call and return thunk.
+&lsquo;<samp>thunk-extern</samp>&rsquo; converts indirect call and jump to external call
+and return thunk provided in a separate object file.
+</p>
+</dd>
+<dt>&lsquo;<samp>function_return(&quot;<var>choice</var>&quot;)</samp>&rsquo;</dt>
+<dd><a name="index-function_005freturn-function-attribute_002c-x86"></a>
+<p>On x86 targets, the <code>function_return</code> attribute causes the compiler
+to convert function return with <var>choice</var>.  &lsquo;<samp>keep</samp>&rsquo; keeps function
+return unmodified.  &lsquo;<samp>thunk</samp>&rsquo; converts function return to call and
+return thunk.  &lsquo;<samp>thunk-inline</samp>&rsquo; converts function return to inlined
+call and return thunk.  &lsquo;<samp>thunk-extern</samp>&rsquo; converts function return to
+external call and return thunk provided in a separate object file.
+</p>
+</dd>
+<dt>&lsquo;<samp>nocf_check</samp>&rsquo;</dt>
+<dd><a name="index-nocf_005fcheck-function-attribute"></a>
+<p>The <code>nocf_check</code> attribute on a function is used to inform the
+compiler that the function&rsquo;s prologue should not be instrumented when
+compiled with the <samp>-fcf-protection=branch</samp> option.  The
+compiler assumes that the function&rsquo;s address is a valid target for a
+control-flow transfer.
+</p>
+<p>The <code>nocf_check</code> attribute on a type of pointer to function is
+used to inform the compiler that a call through the pointer should
+not be instrumented when compiled with the
+<samp>-fcf-protection=branch</samp> option.  The compiler assumes
+that the function&rsquo;s address from the pointer is a valid target for
+a control-flow transfer.  A direct function call through a function
+name is assumed to be a safe call thus direct calls are not
+instrumented by the compiler.
+</p>
+<p>The <code>nocf_check</code> attribute is applied to an object&rsquo;s type.
+In case of assignment of a function address or a function pointer to
+another pointer, the attribute is not carried over from the right-hand
+object&rsquo;s type; the type of left-hand object stays unchanged.  The
+compiler checks for <code>nocf_check</code> attribute mismatch and reports
+a warning in case of mismatch.
+</p>
+<div class="smallexample">
+<pre class="smallexample">{
+int foo (void) __attribute__(nocf_check);
+void (*foo1)(void) __attribute__(nocf_check);
+void (*foo2)(void);
+
+/* foo's address is assumed to be valid.  */
+int
+foo (void) 
+
+  /* This call site is not checked for control-flow 
+     validity.  */
+  (*foo1)();
+
+  /* A warning is issued about attribute mismatch.  */
+  foo1 = foo2; 
+
+  /* This call site is still not checked.  */
+  (*foo1)();
+
+  /* This call site is checked.  */
+  (*foo2)();
+
+  /* A warning is issued about attribute mismatch.  */
+  foo2 = foo1; 
+
+  /* This call site is still checked.  */
+  (*foo2)();
+
+  return 0;
+}
+</pre></div>
+
+</dd>
+<dt>&lsquo;<samp>cf_check</samp>&rsquo;</dt>
+<dd><a name="index-cf_005fcheck-function-attribute_002c-x86"></a>
+
+<p>The <code>cf_check</code> attribute on a function is used to inform the
+compiler that ENDBR instruction should be placed at the function
+entry when <samp>-fcf-protection=branch</samp> is enabled.
+</p>
+</dd>
+<dt>&lsquo;<samp>indirect_return</samp>&rsquo;</dt>
+<dd><a name="index-indirect_005freturn-function-attribute_002c-x86"></a>
+
+<p>The <code>indirect_return</code> attribute can be applied to a function,
+as well as variable or type of function pointer to inform the
+compiler that the function may return via indirect branch.
+</p>
+</dd>
+<dt>&lsquo;<samp>fentry_name(&quot;<var>name</var>&quot;)</samp>&rsquo;</dt>
+<dd><a name="index-fentry_005fname-function-attribute_002c-x86"></a>
+<p>On x86 targets, the <code>fentry_name</code> attribute sets the function to
+call on function entry when function instrumentation is enabled
+with <samp>-pg -mfentry</samp>. When <var>name</var> is nop then a 5 byte
+nop sequence is generated.
+</p>
+</dd>
+<dt>&lsquo;<samp>fentry_section(&quot;<var>name</var>&quot;)</samp>&rsquo;</dt>
+<dd><a name="index-fentry_005fsection-function-attribute_002c-x86"></a>
+<p>On x86 targets, the <code>fentry_section</code> attribute sets the name
+of the section to record function entry instrumentation calls in when
+enabled with <samp>-pg -mrecord-mcount</samp>
+</p>
+</dd>
+</dl>
+
+<p>On the x86, the inliner does not inline a
+function that has different target options than the caller, unless the
+callee has a subset of the target options of the caller.  For example
+a function declared with <code>target(&quot;sse3&quot;)</code> can inline a function
+with <code>target(&quot;sse2&quot;)</code>, since <code>-msse3</code> implies <code>-msse2</code>.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Xstormy16-Function-Attributes.html#Xstormy16-Function-Attributes" accesskey="n" rel="next">Xstormy16 Function Attributes</a>, Previous: <a href="Visium-Function-Attributes.html#Visium-Function-Attributes" accesskey="p" rel="prev">Visium Function Attributes</a>, Up: <a href="Function-Attributes.html#Function-Attributes" accesskey="u" rel="up">Function Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

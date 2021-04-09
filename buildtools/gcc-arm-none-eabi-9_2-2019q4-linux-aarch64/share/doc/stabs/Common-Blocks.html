@@ -1,0 +1,102 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1992-2019 Free Software Foundation, Inc.
+Contributed by Cygnus Support.  Written by Julia Menapace, Jim Kingdon,
+and David MacKenzie.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License". -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>STABS: Common Blocks</title>
+
+<meta name="description" content="STABS: Common Blocks">
+<meta name="keywords" content="STABS: Common Blocks">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Symbol-Types-Index.html#Symbol-Types-Index" rel="index" title="Symbol Types Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Variables.html#Variables" rel="up" title="Variables">
+<link href="Statics.html#Statics" rel="next" title="Statics">
+<link href="Register-Variables.html#Register-Variables" rel="prev" title="Register Variables">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Common-Blocks"></a>
+<div class="header">
+<p>
+Next: <a href="Statics.html#Statics" accesskey="n" rel="next">Statics</a>, Previous: <a href="Register-Variables.html#Register-Variables" accesskey="p" rel="prev">Register Variables</a>, Up: <a href="Variables.html#Variables" accesskey="u" rel="up">Variables</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Symbol-Types-Index.html#Symbol-Types-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Common-Blocks-1"></a>
+<h3 class="section">4.4 Common Blocks</h3>
+
+<p>A common block is a statically allocated section of memory which can be
+referred to by several source files.  It may contain several variables.
+I believe Fortran is the only language with this feature.
+</p>
+<a name="index-N_005fBCOMM"></a>
+<a name="index-N_005fECOMM"></a>
+<a name="index-C_005fBCOMM"></a>
+<a name="index-C_005fECOMM"></a>
+<p>A <code>N_BCOMM</code> stab begins a common block and an <code>N_ECOMM</code> stab
+ends it.  The only field that is significant in these two stabs is the
+string, which names a normal (non-debugging) symbol that gives the
+address of the common block.  According to IBM documentation, only the
+<code>N_BCOMM</code> has the name of the common block (even though their
+compiler actually puts it both places).
+</p>
+<a name="index-N_005fECOML"></a>
+<a name="index-C_005fECOML"></a>
+<p>The stabs for the members of the common block are between the
+<code>N_BCOMM</code> and the <code>N_ECOMM</code>; the value of each stab is the
+offset within the common block of that variable.  IBM uses the
+<code>C_ECOML</code> stab type, and there is a corresponding <code>N_ECOML</code>
+stab type, but Sun&rsquo;s Fortran compiler uses <code>N_GSYM</code> instead.  The
+variables within a common block use the &lsquo;<samp>V</samp>&rsquo; symbol descriptor (I
+believe this is true of all Fortran variables).  Other stabs (at least
+type declarations using <code>C_DECL</code>) can also be between the
+<code>N_BCOMM</code> and the <code>N_ECOMM</code>.
+</p>
+
+
+
+</body>
+</html>

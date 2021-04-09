@@ -1,0 +1,122 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Pass manager</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Pass manager">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Pass manager">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Passes.html#Passes" rel="up" title="Passes">
+<link href="Tree-SSA-passes.html#Tree-SSA-passes" rel="next" title="Tree SSA passes">
+<link href="Gimplification-pass.html#Gimplification-pass" rel="prev" title="Gimplification pass">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Pass-manager"></a>
+<div class="header">
+<p>
+Next: <a href="Tree-SSA-passes.html#Tree-SSA-passes" accesskey="n" rel="next">Tree SSA passes</a>, Previous: <a href="Gimplification-pass.html#Gimplification-pass" accesskey="p" rel="prev">Gimplification pass</a>, Up: <a href="Passes.html#Passes" accesskey="u" rel="up">Passes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Pass-manager-1"></a>
+<h3 class="section">9.3 Pass manager</h3>
+
+<p>The pass manager is located in <samp>passes.c</samp>, <samp>tree-optimize.c</samp>
+and <samp>tree-pass.h</samp>.
+It processes passes as described in <samp>passes.def</samp>.
+Its job is to run all of the individual passes in the correct order,
+and take care of standard bookkeeping that applies to every pass.
+</p>
+<p>The theory of operation is that each pass defines a structure that
+represents everything we need to know about that pass&mdash;when it
+should be run, how it should be run, what intermediate language
+form or on-the-side data structures it needs.  We register the pass
+to be run in some particular order, and the pass manager arranges
+for everything to happen in the correct order.
+</p>
+<p>The actuality doesn&rsquo;t completely live up to the theory at present.
+Command-line switches and <code>timevar_id_t</code> enumerations must still
+be defined elsewhere.  The pass manager validates constraints but does
+not attempt to (re-)generate data structures or lower intermediate
+language form based on the requirements of the next pass.  Nevertheless,
+what is present is useful, and a far sight better than nothing at all.
+</p>
+<p>Each pass should have a unique name.
+Each pass may have its own dump file (for GCC debugging purposes).
+Passes with a name starting with a star do not dump anything.
+Sometimes passes are supposed to share a dump file / option name.
+To still give these unique names, you can use a prefix that is delimited
+by a space from the part that is used for the dump file / option name.
+E.g. When the pass name is &quot;ud dce&quot;, the name used for dump file/options
+is &quot;dce&quot;.
+</p>
+<p>TODO: describe the global variables set up by the pass manager,
+and a brief description of how a new pass should use it.
+I need to look at what info RTL passes use first<small class="enddots">...</small>
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Tree-SSA-passes.html#Tree-SSA-passes" accesskey="n" rel="next">Tree SSA passes</a>, Previous: <a href="Gimplification-pass.html#Gimplification-pass" accesskey="p" rel="prev">Gimplification pass</a>, Up: <a href="Passes.html#Passes" accesskey="u" rel="up">Passes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

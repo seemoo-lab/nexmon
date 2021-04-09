@@ -1,0 +1,142 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): C Implementation</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): C Implementation">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): C Implementation">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Translation-implementation.html#Translation-implementation" rel="next" title="Translation implementation">
+<link href="Precompiled-Headers.html#Precompiled-Headers" rel="prev" title="Precompiled Headers">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="C-Implementation"></a>
+<div class="header">
+<p>
+Next: <a href="C_002b_002b-Implementation.html#C_002b_002b-Implementation" accesskey="n" rel="next">C++ Implementation</a>, Previous: <a href="Invoking-GCC.html#Invoking-GCC" accesskey="p" rel="prev">Invoking GCC</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="C-Implementation_002dDefined-Behavior"></a>
+<h2 class="chapter">4 C Implementation-Defined Behavior</h2>
+<a name="index-implementation_002ddefined-behavior_002c-C-language"></a>
+
+<p>A conforming implementation of ISO C is required to document its
+choice of behavior in each of the areas that are designated
+&ldquo;implementation defined&rdquo;.  The following lists all such areas,
+along with the section numbers from the ISO/IEC 9899:1990, ISO/IEC
+9899:1999 and ISO/IEC 9899:2011 standards.  Some areas are only
+implementation-defined in one version of the standard.
+</p>
+<p>Some choices depend on the externally determined ABI for the platform
+(including standard character encodings) which GCC follows; these are
+listed as &ldquo;determined by ABI&rdquo; below.  See <a href="Compatibility.html#Compatibility">Binary
+Compatibility</a>, and <a href="http://gcc.gnu.org/readings.html">http://gcc.gnu.org/readings.html</a>.  Some
+choices are documented in the preprocessor manual.
+See <a href="http://gcc.gnu.org/onlinedocs/cpp/Implementation_002ddefined-behavior.html#Implementation_002ddefined-behavior">Implementation-defined
+behavior</a> in <cite>The C Preprocessor</cite>.  Some choices are made by the
+library and operating system (or other environment when compiling for
+a freestanding environment); refer to their documentation for details.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Translation-implementation.html#Translation-implementation" accesskey="1">Translation implementation</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Environment-implementation.html#Environment-implementation" accesskey="2">Environment implementation</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Identifiers-implementation.html#Identifiers-implementation" accesskey="3">Identifiers implementation</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Characters-implementation.html#Characters-implementation" accesskey="4">Characters implementation</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Integers-implementation.html#Integers-implementation" accesskey="5">Integers implementation</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Floating-point-implementation.html#Floating-point-implementation" accesskey="6">Floating point implementation</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Arrays-and-pointers-implementation.html#Arrays-and-pointers-implementation" accesskey="7">Arrays and pointers implementation</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Hints-implementation.html#Hints-implementation" accesskey="8">Hints implementation</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Structures-unions-enumerations-and-bit_002dfields-implementation.html#Structures-unions-enumerations-and-bit_002dfields-implementation" accesskey="9">Structures unions enumerations and bit-fields implementation</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Qualifiers-implementation.html#Qualifiers-implementation">Qualifiers implementation</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Declarators-implementation.html#Declarators-implementation">Declarators implementation</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Statements-implementation.html#Statements-implementation">Statements implementation</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Preprocessing-directives-implementation.html#Preprocessing-directives-implementation">Preprocessing directives implementation</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Library-functions-implementation.html#Library-functions-implementation">Library functions implementation</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Architecture-implementation.html#Architecture-implementation">Architecture implementation</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Locale_002dspecific-behavior-implementation.html#Locale_002dspecific-behavior-implementation">Locale-specific behavior implementation</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="C_002b_002b-Implementation.html#C_002b_002b-Implementation" accesskey="n" rel="next">C++ Implementation</a>, Previous: <a href="Invoking-GCC.html#Invoking-GCC" accesskey="p" rel="prev">Invoking GCC</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

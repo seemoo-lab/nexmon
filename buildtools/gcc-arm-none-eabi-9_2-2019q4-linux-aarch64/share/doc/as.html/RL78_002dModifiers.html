@@ -1,0 +1,115 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: RL78-Modifiers</title>
+
+<meta name="description" content="Using as: RL78-Modifiers">
+<meta name="keywords" content="Using as: RL78-Modifiers">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="RL78_002dDependent.html#RL78_002dDependent" rel="up" title="RL78-Dependent">
+<link href="RL78_002dDirectives.html#RL78_002dDirectives" rel="next" title="RL78-Directives">
+<link href="RL78_002dOpts.html#RL78_002dOpts" rel="prev" title="RL78-Opts">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="RL78_002dModifiers"></a>
+<div class="header">
+<p>
+Next: <a href="RL78_002dDirectives.html#RL78_002dDirectives" accesskey="n" rel="next">RL78-Directives</a>, Previous: <a href="RL78_002dOpts.html#RL78_002dOpts" accesskey="p" rel="prev">RL78-Opts</a>, Up: <a href="RL78_002dDependent.html#RL78_002dDependent" accesskey="u" rel="up">RL78-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Symbolic-Operand-Modifiers-2"></a>
+<h4 class="subsection">9.39.2 Symbolic Operand Modifiers</h4>
+
+<a name="index-RL78-modifiers"></a>
+<a name="index-syntax_002c-RL78"></a>
+
+<p>The RL78 has three modifiers that adjust the relocations used by the
+linker:
+</p>
+<dl compact="compact">
+<dt><code>%lo16()</code></dt>
+<dd>
+<p>When loading a 20-bit (or wider) address into registers, this modifier
+selects the 16 least significant bits.
+</p>
+<div class="smallexample">
+<pre class="smallexample">  movw ax,#%lo16(_sym)
+</pre></div>
+
+</dd>
+<dt><code>%hi16()</code></dt>
+<dd>
+<p>When loading a 20-bit (or wider) address into registers, this modifier
+selects the 16 most significant bits.
+</p>
+<div class="smallexample">
+<pre class="smallexample">  movw ax,#%hi16(_sym)
+</pre></div>
+
+</dd>
+<dt><code>%hi8()</code></dt>
+<dd>
+<p>When loading a 20-bit (or wider) address into registers, this modifier
+selects the 8 bits that would go into CS or ES (i.e. bits 23..16).
+</p>
+<div class="smallexample">
+<pre class="smallexample">  mov es, #%hi8(_sym)
+</pre></div>
+
+</dd>
+</dl>
+
+
+
+
+</body>
+</html>

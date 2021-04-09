@@ -1,0 +1,156 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Nvidia PTX Options</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Nvidia PTX Options">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Nvidia PTX Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Submodel-Options.html#Submodel-Options" rel="up" title="Submodel Options">
+<link href="OpenRISC-Options.html#OpenRISC-Options" rel="next" title="OpenRISC Options">
+<link href="Nios-II-Options.html#Nios-II-Options" rel="prev" title="Nios II Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Nvidia-PTX-Options"></a>
+<div class="header">
+<p>
+Next: <a href="OpenRISC-Options.html#OpenRISC-Options" accesskey="n" rel="next">OpenRISC Options</a>, Previous: <a href="Nios-II-Options.html#Nios-II-Options" accesskey="p" rel="prev">Nios II Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Nvidia-PTX-Options-1"></a>
+<h4 class="subsection">3.18.35 Nvidia PTX Options</h4>
+<a name="index-Nvidia-PTX-options"></a>
+<a name="index-nvptx-options"></a>
+
+<p>These options are defined for Nvidia PTX:
+</p>
+<dl compact="compact">
+<dt><code>-m32</code></dt>
+<dt><code>-m64</code></dt>
+<dd><a name="index-m32"></a>
+<a name="index-m64"></a>
+<p>Generate code for 32-bit or 64-bit ABI.
+</p>
+</dd>
+<dt><code>-misa=<var>ISA-string</var></code></dt>
+<dd><a name="index-march-11"></a>
+<p>Generate code for given the specified PTX ISA (e.g. &lsquo;<samp>sm_35</samp>&rsquo;).  ISA
+strings must be lower-case.  Valid ISA strings include &lsquo;<samp>sm_30</samp>&rsquo; and
+&lsquo;<samp>sm_35</samp>&rsquo;.  The default ISA is sm_30.
+</p>
+</dd>
+<dt><code>-mmainkernel</code></dt>
+<dd><a name="index-mmainkernel"></a>
+<p>Link in code for a __main kernel.  This is for stand-alone instead of
+offloading execution.
+</p>
+</dd>
+<dt><code>-moptimize</code></dt>
+<dd><a name="index-moptimize"></a>
+<p>Apply partitioned execution optimizations.  This is the default when any
+level of optimization is selected.
+</p>
+</dd>
+<dt><code>-msoft-stack</code></dt>
+<dd><a name="index-msoft_002dstack"></a>
+<p>Generate code that does not use <code>.local</code> memory
+directly for stack storage. Instead, a per-warp stack pointer is
+maintained explicitly. This enables variable-length stack allocation (with
+variable-length arrays or <code>alloca</code>), and when global memory is used for
+underlying storage, makes it possible to access automatic variables from other
+threads, or with atomic instructions. This code generation variant is used
+for OpenMP offloading, but the option is exposed on its own for the purpose
+of testing the compiler; to generate code suitable for linking into programs
+using OpenMP offloading, use option <samp>-mgomp</samp>.
+</p>
+</dd>
+<dt><code>-muniform-simt</code></dt>
+<dd><a name="index-muniform_002dsimt"></a>
+<p>Switch to code generation variant that allows to execute all threads in each
+warp, while maintaining memory state and side effects as if only one thread
+in each warp was active outside of OpenMP SIMD regions.  All atomic operations
+and calls to runtime (malloc, free, vprintf) are conditionally executed (iff
+current lane index equals the master lane index), and the register being
+assigned is copied via a shuffle instruction from the master lane.  Outside of
+SIMD regions lane 0 is the master; inside, each thread sees itself as the
+master.  Shared memory array <code>int __nvptx_uni[]</code> stores all-zeros or
+all-ones bitmasks for each warp, indicating current mode (0 outside of SIMD
+regions).  Each thread can bitwise-and the bitmask at position <code>tid.y</code>
+with current lane index to compute the master lane index.
+</p>
+</dd>
+<dt><code>-mgomp</code></dt>
+<dd><a name="index-mgomp"></a>
+<p>Generate code for use in OpenMP offloading: enables <samp>-msoft-stack</samp> and
+<samp>-muniform-simt</samp> options, and selects corresponding multilib variant.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="OpenRISC-Options.html#OpenRISC-Options" accesskey="n" rel="next">OpenRISC Options</a>, Previous: <a href="Nios-II-Options.html#Nios-II-Options" accesskey="p" rel="prev">Nios II Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

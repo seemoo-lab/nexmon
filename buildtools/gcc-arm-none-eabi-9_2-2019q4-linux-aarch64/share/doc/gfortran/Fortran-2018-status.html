@@ -1,0 +1,161 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: Fortran 2018 status</title>
+
+<meta name="description" content="The GNU Fortran Compiler: Fortran 2018 status">
+<meta name="keywords" content="The GNU Fortran Compiler: Fortran 2018 status">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Fortran-standards-status.html#Fortran-standards-status" rel="up" title="Fortran standards status">
+<link href="Compiler-Characteristics.html#Compiler-Characteristics" rel="next" title="Compiler Characteristics">
+<link href="Fortran-2008-status.html#Fortran-2008-status" rel="prev" title="Fortran 2008 status">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Fortran-2018-status"></a>
+<div class="header">
+<p>
+Previous: <a href="Fortran-2008-status.html#Fortran-2008-status" accesskey="p" rel="prev">Fortran 2008 status</a>, Up: <a href="Fortran-standards-status.html#Fortran-standards-status" accesskey="u" rel="up">Fortran standards status</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Status-of-Fortran-2018-support"></a>
+<h3 class="section">4.3 Status of Fortran 2018 support</h3>
+
+<ul>
+<li> ERROR STOP in a PURE procedure
+An <code>ERROR STOP</code> statement is permitted in a <code>PURE</code>
+procedure.
+
+</li><li> IMPLICIT NONE with a spec-list
+Support the <code>IMPLICIT NONE</code> statement with an
+<code>implicit-none-spec-list</code>.
+
+</li><li> Behavior of INQUIRE with the RECL= specifier
+
+<p>The behavior of the <code>INQUIRE</code> statement with the <code>RECL=</code>
+specifier now conforms to Fortran 2018.
+</p>
+</li></ul>
+
+
+<a name="TS-29113-Status-_0028Further-Interoperability-with-C_0029"></a>
+<h4 class="subsection">4.3.1 TS 29113 Status (Further Interoperability with C)</h4>
+
+<p>GNU Fortran supports some of the new features of the Technical
+Specification (TS) 29113 on Further Interoperability of Fortran with C.
+The <a href="https://gcc.gnu.org/wiki/TS29113Status">wiki</a> has some information
+about the current TS 29113 implementation status.  In particular, the
+following is implemented.
+</p>
+<p>See also <a href="Further-Interoperability-of-Fortran-with-C.html#Further-Interoperability-of-Fortran-with-C">Further Interoperability of Fortran with C</a>.
+</p>
+<ul>
+<li> The <code>OPTIONAL</code> attribute is allowed for dummy arguments
+of <code>BIND(C) procedures.</code>
+
+</li><li> The <code>RANK</code> intrinsic is supported.
+
+</li><li> GNU Fortran&rsquo;s implementation for variables with <code>ASYNCHRONOUS</code>
+attribute is compatible with TS 29113.
+
+</li><li> Assumed types (<code>TYPE(*)</code>).
+
+</li><li> Assumed-rank (<code>DIMENSION(..)</code>).
+
+</li><li> ISO_Fortran_binding (now in Fortran 2018 18.4) is implemented such that
+conversion of the array descriptor for assumed type or assumed rank arrays is
+done in the library. The include file ISO_Fortran_binding.h is can be found in
+<code>~prefix/lib/gcc/$target/$version</code>.
+</li></ul>
+
+
+
+<a name="TS-18508-Status-_0028Additional-Parallel-Features_0029"></a>
+<h4 class="subsection">4.3.2 TS 18508 Status (Additional Parallel Features)</h4>
+
+<p>GNU Fortran supports the following new features of the Technical
+Specification 18508 on Additional Parallel Features in Fortran:
+</p>
+<ul>
+<li> The new atomic ADD, CAS, FETCH and ADD/OR/XOR, OR and XOR intrinsics.
+
+</li><li> The <code>CO_MIN</code> and <code>CO_MAX</code> and <code>SUM</code> reduction intrinsics.
+And the <code>CO_BROADCAST</code> and <code>CO_REDUCE</code> intrinsic, except that those
+do not support polymorphic types or types with allocatable, pointer or
+polymorphic components.
+
+</li><li> Events (<code>EVENT POST</code>, <code>EVENT WAIT</code>, <code>EVENT_QUERY</code>)
+
+</li><li> Failed images (<code>FAIL IMAGE</code>, <code>IMAGE_STATUS</code>,
+<code>FAILED_IMAGES</code>, <code>STOPPED_IMAGES</code>)
+
+</li></ul>
+
+
+
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Fortran-2008-status.html#Fortran-2008-status" accesskey="p" rel="prev">Fortran 2008 status</a>, Up: <a href="Fortran-standards-status.html#Fortran-standards-status" accesskey="u" rel="up">Fortran standards status</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: M68K-Branch</title>
+
+<meta name="description" content="Using as: M68K-Branch">
+<meta name="keywords" content="Using as: M68K-Branch">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="M68K_002dopcodes.html#M68K_002dopcodes" rel="up" title="M68K-opcodes">
+<link href="M68K_002dChars.html#M68K_002dChars" rel="next" title="M68K-Chars">
+<link href="M68K_002dopcodes.html#M68K_002dopcodes" rel="prev" title="M68K-opcodes">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="M68K_002dBranch"></a>
+<div class="header">
+<p>
+Next: <a href="M68K_002dChars.html#M68K_002dChars" accesskey="n" rel="next">M68K-Chars</a>, Up: <a href="M68K_002dopcodes.html#M68K_002dopcodes" accesskey="u" rel="up">M68K-opcodes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Branch-Improvement"></a>
+<h4 class="subsubsection">9.22.6.1 Branch Improvement</h4>
+
+<a name="index-pseudo_002dopcodes_002c-M680x0"></a>
+<a name="index-M680x0-pseudo_002dopcodes"></a>
+<a name="index-branch-improvement_002c-M680x0"></a>
+<a name="index-M680x0-branch-improvement"></a>
+<p>Certain pseudo opcodes are permitted for branch instructions.
+They expand to the shortest branch instruction that reach the
+target.  Generally these mnemonics are made by substituting &lsquo;<samp>j</samp>&rsquo; for
+&lsquo;<samp>b</samp>&rsquo; at the start of a Motorola mnemonic.
+</p>
+<p>The following table summarizes the pseudo-operations.  A <code>*</code> flags
+cases that are more fully described after the table:
+</p>
+<div class="smallexample">
+<pre class="smallexample">          Displacement
+          +------------------------------------------------------------
+          |                68020           68000/10, not PC-relative OK
+Pseudo-Op |BYTE    WORD    LONG            ABSOLUTE LONG JUMP    **
+          +------------------------------------------------------------
+     jbsr |bsrs    bsrw    bsrl            jsr
+      jra |bras    braw    bral            jmp
+*     jXX |bXXs    bXXw    bXXl            bNXs;jmp
+*    dbXX | N/A    dbXXw   dbXX;bras;bral  dbXX;bras;jmp
+     fjXX | N/A    fbXXw   fbXXl            N/A
+
+XX: condition
+NX: negative of condition XX
+
+</pre></div>
+<div align="center"><code>*</code>&mdash;see full description below
+</div><div align="center"><code>**</code>&mdash;this expansion mode is disallowed by &lsquo;<samp>--pcrel</samp>&rsquo;
+</div>
+<dl compact="compact">
+<dt><code>jbsr</code></dt>
+<dt><code>jra</code></dt>
+<dd><p>These are the simplest jump pseudo-operations; they always map to one
+particular machine instruction, depending on the displacement to the
+branch target.  This instruction will be a byte or word branch is that
+is sufficient.  Otherwise, a long branch will be emitted if available.
+If no long branches are available and the &lsquo;<samp>--pcrel</samp>&rsquo; option is not
+given, an absolute long jump will be emitted instead.  If no long
+branches are available, the &lsquo;<samp>--pcrel</samp>&rsquo; option is given, and a word
+branch cannot reach the target, an error message is generated.
+</p>
+<p>In addition to standard branch operands, <code>as</code> allows these
+pseudo-operations to have all operands that are allowed for jsr and jmp,
+substituting these instructions if the operand given is not valid for a
+branch instruction.
+</p>
+</dd>
+<dt><code>j<var>XX</var></code></dt>
+<dd><p>Here, &lsquo;<samp>j<var>XX</var></samp>&rsquo; stands for an entire family of pseudo-operations,
+where <var>XX</var> is a conditional branch or condition-code test.  The full
+list of pseudo-ops in this family is:
+</p><div class="smallexample">
+<pre class="smallexample"> jhi   jls   jcc   jcs   jne   jeq   jvc
+ jvs   jpl   jmi   jge   jlt   jgt   jle
+</pre></div>
+
+<p>Usually, each of these pseudo-operations expands to a single branch
+instruction.  However, if a word branch is not sufficient, no long branches
+are available, and the &lsquo;<samp>--pcrel</samp>&rsquo; option is not given, <code>as</code>
+issues a longer code fragment in terms of <var>NX</var>, the opposite condition
+to <var>XX</var>.  For example, under these conditions:
+</p><div class="smallexample">
+<pre class="smallexample">    j<var>XX</var> foo
+</pre></div>
+<p>gives
+</p><div class="smallexample">
+<pre class="smallexample">     b<var>NX</var>s oof
+     jmp foo
+ oof:
+</pre></div>
+
+</dd>
+<dt><code>db<var>XX</var></code></dt>
+<dd><p>The full family of pseudo-operations covered here is
+</p><div class="smallexample">
+<pre class="smallexample"> dbhi   dbls   dbcc   dbcs   dbne   dbeq   dbvc
+ dbvs   dbpl   dbmi   dbge   dblt   dbgt   dble
+ dbf    dbra   dbt
+</pre></div>
+
+<p>Motorola &lsquo;<samp>db<var>XX</var></samp>&rsquo; instructions allow word displacements only.  When
+a word displacement is sufficient, each of these pseudo-operations expands
+to the corresponding Motorola instruction.  When a word displacement is not
+sufficient and long branches are available, when the source reads
+&lsquo;<samp>db<var>XX</var> foo</samp>&rsquo;, <code>as</code> emits
+</p><div class="smallexample">
+<pre class="smallexample">     db<var>XX</var> oo1
+     bras oo2
+ oo1:bral foo
+ oo2:
+</pre></div>
+
+<p>If, however, long branches are not available and the &lsquo;<samp>--pcrel</samp>&rsquo; option is
+not given, <code>as</code> emits
+</p><div class="smallexample">
+<pre class="smallexample">     db<var>XX</var> oo1
+     bras oo2
+ oo1:jmp foo
+ oo2:
+</pre></div>
+
+</dd>
+<dt><code>fj<var>XX</var></code></dt>
+<dd><p>This family includes
+</p><div class="smallexample">
+<pre class="smallexample"> fjne   fjeq   fjge   fjlt   fjgt   fjle   fjf
+ fjt    fjgl   fjgle  fjnge  fjngl  fjngle fjngt
+ fjnle  fjnlt  fjoge  fjogl  fjogt  fjole  fjolt
+ fjor   fjseq  fjsf   fjsne  fjst   fjueq  fjuge
+ fjugt  fjule  fjult  fjun
+</pre></div>
+
+<p>Each of these pseudo-operations always expands to a single Motorola
+coprocessor branch instruction, word or long.  All Motorola coprocessor
+branch instructions allow both word and long displacements.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="M68K_002dChars.html#M68K_002dChars" accesskey="n" rel="next">M68K-Chars</a>, Up: <a href="M68K_002dopcodes.html#M68K_002dopcodes" accesskey="u" rel="up">M68K-opcodes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

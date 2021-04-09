@@ -1,0 +1,145 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Method Names in Commands</title>
+
+<meta name="description" content="Debugging with GDB: Method Names in Commands">
+<meta name="keywords" content="Debugging with GDB: Method Names in Commands">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Objective_002dC.html#Objective_002dC" rel="up" title="Objective-C">
+<link href="The-Print-Command-with-Objective_002dC.html#The-Print-Command-with-Objective_002dC" rel="next" title="The Print Command with Objective-C">
+<link href="Objective_002dC.html#Objective_002dC" rel="prev" title="Objective-C">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Method-Names-in-Commands"></a>
+<div class="header">
+<p>
+Next: <a href="The-Print-Command-with-Objective_002dC.html#The-Print-Command-with-Objective_002dC" accesskey="n" rel="next">The Print Command with Objective-C</a>, Up: <a href="Objective_002dC.html#Objective_002dC" accesskey="u" rel="up">Objective-C</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Method-Names-in-Commands-1"></a>
+<h4 class="subsubsection">15.4.4.1 Method Names in Commands</h4>
+
+<p>The following commands have been extended to accept Objective-C method
+names as line specifications:
+</p>
+<a name="index-clear_002c-and-Objective_002dC"></a>
+<a name="index-break_002c-and-Objective_002dC"></a>
+<a name="index-info-line_002c-and-Objective_002dC"></a>
+<a name="index-jump_002c-and-Objective_002dC"></a>
+<a name="index-list_002c-and-Objective_002dC"></a>
+<ul>
+<li> <code>clear</code>
+</li><li> <code>break</code>
+</li><li> <code>info line</code>
+</li><li> <code>jump</code>
+</li><li> <code>list</code>
+</li></ul>
+
+<p>A fully qualified Objective-C method name is specified as
+</p>
+<div class="smallexample">
+<pre class="smallexample">-[<var>Class</var> <var>methodName</var>]
+</pre></div>
+
+<p>where the minus sign is used to indicate an instance method and a
+plus sign (not shown) is used to indicate a class method.  The class
+name <var>Class</var> and method name <var>methodName</var> are enclosed in
+brackets, similar to the way messages are specified in Objective-C
+source code.  For example, to set a breakpoint at the <code>create</code>
+instance method of class <code>Fruit</code> in the program currently being
+debugged, enter:
+</p>
+<div class="smallexample">
+<pre class="smallexample">break -[Fruit create]
+</pre></div>
+
+<p>To list ten program lines around the <code>initialize</code> class method,
+enter:
+</p>
+<div class="smallexample">
+<pre class="smallexample">list +[NSText initialize]
+</pre></div>
+
+<p>In the current version of <small>GDB</small>, the plus or minus sign is
+required.  In future versions of <small>GDB</small>, the plus or minus
+sign will be optional, but you can use it to narrow the search.  It
+is also possible to specify just a method name:
+</p>
+<div class="smallexample">
+<pre class="smallexample">break create
+</pre></div>
+
+<p>You must specify the complete method name, including any colons.  If
+your program&rsquo;s source files contain more than one <code>create</code> method,
+you&rsquo;ll be presented with a numbered list of classes that implement that
+method.  Indicate your choice by number, or type &lsquo;<samp>0</samp>&rsquo; to exit if
+none apply.
+</p>
+<p>As another example, to clear a breakpoint established at the
+<code>makeKeyAndOrderFront:</code> method of the <code>NSWindow</code> class, enter:
+</p>
+<div class="smallexample">
+<pre class="smallexample">clear -[NSWindow makeKeyAndOrderFront:]
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="The-Print-Command-with-Objective_002dC.html#The-Print-Command-with-Objective_002dC" accesskey="n" rel="next">The Print Command with Objective-C</a>, Up: <a href="Objective_002dC.html#Objective_002dC" accesskey="u" rel="up">Objective-C</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: Invoking GNU Fortran</title>
+
+<meta name="description" content="The GNU Fortran Compiler: Invoking GNU Fortran">
+<meta name="keywords" content="The GNU Fortran Compiler: Invoking GNU Fortran">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="index.html#Top" rel="up" title="Top">
+<link href="Option-Summary.html#Option-Summary" rel="next" title="Option Summary">
+<link href="Varying-Length-Character-Strings.html#Varying-Length-Character-Strings" rel="prev" title="Varying Length Character Strings">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Invoking-GNU-Fortran"></a>
+<div class="header">
+<p>
+Next: <a href="Runtime.html#Runtime" accesskey="n" rel="next">Runtime</a>, Previous: <a href="Introduction.html#Introduction" accesskey="p" rel="prev">Introduction</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="GNU-Fortran-Command-Options"></a>
+<h2 class="chapter">2 GNU Fortran Command Options</h2>
+<a name="index-GNU-Fortran-command-options"></a>
+<a name="index-command-options"></a>
+<a name="index-options_002c-gfortran-command"></a>
+
+
+<p>The <code>gfortran</code> command supports all the options supported by the
+<code>gcc</code> command.  Only options specific to GNU Fortran are documented
+here.
+</p>
+<p>See <a href="http://gcc.gnu.org/onlinedocs/gcc/Invoking-GCC.html#Invoking-GCC">GCC Command Options</a> in <cite>Using the GNU Compiler
+Collection (GCC)</cite>, for information
+on the non-Fortran-specific aspects of the <code>gcc</code> command (and,
+therefore, the <code>gfortran</code> command).
+</p>
+<a name="index-options_002c-negative-forms"></a>
+<p>All GCC and GNU Fortran options
+are accepted both by <code>gfortran</code> and by <code>gcc</code>
+(as well as any other drivers built at the same time,
+such as <code>g++</code>),
+since adding GNU Fortran to the GCC distribution
+enables acceptance of GNU Fortran options
+by all of the relevant drivers.
+</p>
+<p>In some cases, options have positive and negative forms;
+the negative form of <samp>-ffoo</samp> would be <samp>-fno-foo</samp>.
+This manual documents only one of these two forms, whichever
+one is not the default.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="Option-Summary.html#Option-Summary" accesskey="1">Option Summary</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Brief list of all <code>gfortran</code> options,
+                        without explanations.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Fortran-Dialect-Options.html#Fortran-Dialect-Options" accesskey="2">Fortran Dialect Options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Controlling the variant of Fortran language
+                             compiled.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Preprocessing-Options.html#Preprocessing-Options" accesskey="3">Preprocessing Options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Enable and customize preprocessing.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Error-and-Warning-Options.html#Error-and-Warning-Options" accesskey="4">Error and Warning Options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">How picky should the compiler be?
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Debugging-Options.html#Debugging-Options" accesskey="5">Debugging Options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Symbol tables, measurements, and debugging dumps.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Directory-Options.html#Directory-Options" accesskey="6">Directory Options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Where to find module files
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Link-Options.html#Link-Options" accesskey="7">Link Options </a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Influencing the linking step
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Runtime-Options.html#Runtime-Options" accesskey="8">Runtime Options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Influencing runtime behavior
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Code-Gen-Options.html#Code-Gen-Options" accesskey="9">Code Gen Options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Specifying conventions for function calls, data layout
+                        and register usage.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Interoperability-Options.html#Interoperability-Options">Interoperability Options</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Options for interoperability with other
+                              languages.
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Environment-Variables.html#Environment-Variables">Environment Variables</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Environment variables that affect <code>gfortran</code>.
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Runtime.html#Runtime" accesskey="n" rel="next">Runtime</a>, Previous: <a href="Introduction.html#Introduction" accesskey="p" rel="prev">Introduction</a>, Up: <a href="index.html#Top" accesskey="u" rel="up">Top</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

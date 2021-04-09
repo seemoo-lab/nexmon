@@ -1,0 +1,165 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: TIC54X-Macros</title>
+
+<meta name="description" content="Using as: TIC54X-Macros">
+<meta name="keywords" content="Using as: TIC54X-Macros">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="TIC54X_002dDependent.html#TIC54X_002dDependent" rel="up" title="TIC54X-Dependent">
+<link href="TIC54X_002dMMRegs.html#TIC54X_002dMMRegs" rel="next" title="TIC54X-MMRegs">
+<link href="TIC54X_002dDirectives.html#TIC54X_002dDirectives" rel="prev" title="TIC54X-Directives">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="TIC54X_002dMacros"></a>
+<div class="header">
+<p>
+Next: <a href="TIC54X_002dMMRegs.html#TIC54X_002dMMRegs" accesskey="n" rel="next">TIC54X-MMRegs</a>, Previous: <a href="TIC54X_002dDirectives.html#TIC54X_002dDirectives" accesskey="p" rel="prev">TIC54X-Directives</a>, Up: <a href="TIC54X_002dDependent.html#TIC54X_002dDependent" accesskey="u" rel="up">TIC54X-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Macros-1"></a>
+<h4 class="subsection">9.45.10 Macros</h4>
+
+<a name="index-TIC54X_002dspecific-macros"></a>
+<a name="index-macros_002c-TIC54X"></a>
+<p>Macros do not require explicit dereferencing of arguments (i.e., \ARG).
+</p>
+<p>During macro expansion, the macro parameters are converted to subsyms.
+If the number of arguments passed the macro invocation exceeds the
+number of parameters defined, the last parameter is assigned the string
+equivalent of all remaining arguments.  If fewer arguments are given
+than parameters, the missing parameters are assigned empty strings.  To
+include a comma in an argument, you must enclose the argument in quotes.
+</p>
+<a name="index-subsym-builtins_002c-TIC54X"></a>
+<a name="index-TIC54X-subsym-builtins"></a>
+<a name="index-builtin-subsym-functions_002c-TIC54X"></a>
+<p>The following built-in subsym functions allow examination of the string
+value of subsyms (or ordinary strings).  The arguments are strings
+unless otherwise indicated (subsyms passed as args will be replaced by
+the strings they represent).
+</p><dl compact="compact">
+<dd><a name="index-_0024symlen-subsym-builtin_002c-TIC54X"></a>
+</dd>
+<dt><code><code>$symlen(<var>str</var>)</code></code></dt>
+<dd><p>Returns the length of <var>str</var>.
+</p>
+<a name="index-_0024symcmp-subsym-builtin_002c-TIC54X"></a>
+</dd>
+<dt><code><code>$symcmp(<var>str1</var>,<var>str2</var>)</code></code></dt>
+<dd><p>Returns 0 if <var>str1</var> == <var>str2</var>, non-zero otherwise.
+</p>
+<a name="index-_0024firstch-subsym-builtin_002c-TIC54X"></a>
+</dd>
+<dt><code><code>$firstch(<var>str</var>,<var>ch</var>)</code></code></dt>
+<dd><p>Returns index of the first occurrence of character constant <var>ch</var> in
+<var>str</var>.
+</p>
+<a name="index-_0024lastch-subsym-builtin_002c-TIC54X"></a>
+</dd>
+<dt><code><code>$lastch(<var>str</var>,<var>ch</var>)</code></code></dt>
+<dd><p>Returns index of the last occurrence of character constant <var>ch</var> in
+<var>str</var>.
+</p>
+<a name="index-_0024isdefed-subsym-builtin_002c-TIC54X"></a>
+</dd>
+<dt><code><code>$isdefed(<var>symbol</var>)</code></code></dt>
+<dd><p>Returns zero if the symbol <var>symbol</var> is not in the symbol table,
+non-zero otherwise.
+</p>
+<a name="index-_0024ismember-subsym-builtin_002c-TIC54X"></a>
+</dd>
+<dt><code><code>$ismember(<var>symbol</var>,<var>list</var>)</code></code></dt>
+<dd><p>Assign the first member of comma-separated string <var>list</var> to
+<var>symbol</var>; <var>list</var> is reassigned the remainder of the list.  Returns
+zero if <var>list</var> is a null string.  Both arguments must be subsyms.
+</p>
+<a name="index-_0024iscons-subsym-builtin_002c-TIC54X"></a>
+</dd>
+<dt><code><code>$iscons(<var>expr</var>)</code></code></dt>
+<dd><p>Returns 1 if string <var>expr</var> is binary, 2 if octal, 3 if hexadecimal,
+4 if a character, 5 if decimal, and zero if not an integer.
+</p>
+<a name="index-_0024isname-subsym-builtin_002c-TIC54X"></a>
+</dd>
+<dt><code><code>$isname(<var>name</var>)</code></code></dt>
+<dd><p>Returns 1 if <var>name</var> is a valid symbol name, zero otherwise.
+</p>
+<a name="index-_0024isreg-subsym-builtin_002c-TIC54X"></a>
+</dd>
+<dt><code><code>$isreg(<var>reg</var>)</code></code></dt>
+<dd><p>Returns 1 if <var>reg</var> is a valid predefined register name (AR0-AR7 only).
+</p>
+<a name="index-_0024structsz-subsym-builtin_002c-TIC54X"></a>
+</dd>
+<dt><code><code>$structsz(<var>stag</var>)</code></code></dt>
+<dd><p>Returns the size of the structure or union represented by <var>stag</var>.
+</p>
+<a name="index-_0024structacc-subsym-builtin_002c-TIC54X"></a>
+</dd>
+<dt><code><code>$structacc(<var>stag</var>)</code></code></dt>
+<dd><p>Returns the reference point of the structure or union represented by
+<var>stag</var>.   Always returns zero.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="TIC54X_002dMMRegs.html#TIC54X_002dMMRegs" accesskey="n" rel="next">TIC54X-MMRegs</a>, Previous: <a href="TIC54X_002dDirectives.html#TIC54X_002dDirectives" accesskey="p" rel="prev">TIC54X-Directives</a>, Up: <a href="TIC54X_002dDependent.html#TIC54X_002dDependent" accesskey="u" rel="up">TIC54X-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

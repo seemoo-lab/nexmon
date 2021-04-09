@@ -1,0 +1,146 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Cast to Union</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Cast to Union">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Cast to Union">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C-Extensions.html#C-Extensions" rel="up" title="C Extensions">
+<link href="Mixed-Declarations.html#Mixed-Declarations" rel="next" title="Mixed Declarations">
+<link href="Case-Ranges.html#Case-Ranges" rel="prev" title="Case Ranges">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Cast-to-Union"></a>
+<div class="header">
+<p>
+Next: <a href="Mixed-Declarations.html#Mixed-Declarations" accesskey="n" rel="next">Mixed Declarations</a>, Previous: <a href="Case-Ranges.html#Case-Ranges" accesskey="p" rel="prev">Case Ranges</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Cast-to-a-Union-Type"></a>
+<h3 class="section">6.31 Cast to a Union Type</h3>
+<a name="index-cast-to-a-union"></a>
+<a name="index-union_002c-casting-to-a"></a>
+
+<p>A cast to a union type is a C extension not available in C++.  It looks
+just like ordinary casts with the constraint that the type specified is
+a union type.  You can specify the type either with the <code>union</code>
+keyword or with a <code>typedef</code> name that refers to a union.  The result
+of a cast to a union is a temporary rvalue of the union type with a member
+whose type matches that of the operand initialized to the value of
+the operand.  The effect of a cast to a union is similar to a compound
+literal except that it yields an rvalue like standard casts do.
+See <a href="Compound-Literals.html#Compound-Literals">Compound Literals</a>.
+</p>
+<p>Expressions that may be cast to the union type are those whose type matches
+at least one of the members of the union.  Thus, given the following union
+and variables:
+</p>
+<div class="smallexample">
+<pre class="smallexample">union foo { int i; double d; };
+int x;
+double y;
+union foo z;
+</pre></div>
+
+<p>both <code>x</code> and <code>y</code> can be cast to type <code>union foo</code> and
+the following assignments
+</p><div class="smallexample">
+<pre class="smallexample">  z = (union foo) x;
+  z = (union foo) y;
+</pre></div>
+<p>are shorthand equivalents of these
+</p><div class="smallexample">
+<pre class="smallexample">  z = (union foo) { .i = x };
+  z = (union foo) { .d = y };
+</pre></div>
+
+<p>However, <code>(union foo) FLT_MAX;</code> is not a valid cast because the union
+has no member of type <code>float</code>.
+</p>
+<p>Using the cast as the right-hand side of an assignment to a variable of
+union type is equivalent to storing in a member of the union with
+the same type
+</p>
+<div class="smallexample">
+<pre class="smallexample">union foo u;
+/* <span class="roman">&hellip;</span> */
+u = (union foo) x  &equiv;  u.i = x
+u = (union foo) y  &equiv;  u.d = y
+</pre></div>
+
+<p>You can also use the union cast as a function argument:
+</p>
+<div class="smallexample">
+<pre class="smallexample">void hack (union foo);
+/* <span class="roman">&hellip;</span> */
+hack ((union foo) x);
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Mixed-Declarations.html#Mixed-Declarations" accesskey="n" rel="next">Mixed Declarations</a>, Previous: <a href="Case-Ranges.html#Case-Ranges" accesskey="p" rel="prev">Case Ranges</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: RX-Opts</title>
+
+<meta name="description" content="Using as: RX-Opts">
+<meta name="keywords" content="Using as: RX-Opts">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="RX_002dDependent.html#RX_002dDependent" rel="up" title="RX-Dependent">
+<link href="RX_002dModifiers.html#RX_002dModifiers" rel="next" title="RX-Modifiers">
+<link href="RX_002dDependent.html#RX_002dDependent" rel="prev" title="RX-Dependent">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="RX_002dOpts"></a>
+<div class="header">
+<p>
+Next: <a href="RX_002dModifiers.html#RX_002dModifiers" accesskey="n" rel="next">RX-Modifiers</a>, Up: <a href="RX_002dDependent.html#RX_002dDependent" accesskey="u" rel="up">RX-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="RX-Options"></a>
+<h4 class="subsection">9.40.1 RX Options</h4>
+<a name="index-options_002c-RX"></a>
+<a name="index-RX-options"></a>
+
+<p>The Renesas RX port of <code>as</code> has a few target specific
+command-line options:
+</p>
+<dl compact="compact">
+<dd>
+<a name="index-_002dm32bit_002ddoubles"></a>
+</dd>
+<dt><code>-m32bit-doubles</code></dt>
+<dd><p>This option controls the ABI and indicates to use a 32-bit float ABI.
+It has no effect on the assembled instructions, but it does influence
+the behaviour of the &lsquo;<samp>.double</samp>&rsquo; pseudo-op.
+This is the default.
+</p>
+<a name="index-_002dm64bit_002ddoubles"></a>
+</dd>
+<dt><code>-m64bit-doubles</code></dt>
+<dd><p>This option controls the ABI and indicates to use a 64-bit float ABI.
+It has no effect on the assembled instructions, but it does influence
+the behaviour of the &lsquo;<samp>.double</samp>&rsquo; pseudo-op.
+</p>
+<a name="index-_002dmbig_002dendian"></a>
+</dd>
+<dt><code>-mbig-endian</code></dt>
+<dd><p>This option controls the ABI and indicates to use a big-endian data
+ABI.  It has no effect on the assembled instructions, but it does
+influence the behaviour of the &lsquo;<samp>.short</samp>&rsquo;, &lsquo;<samp>.hword</samp>&rsquo;, &lsquo;<samp>.int</samp>&rsquo;,
+&lsquo;<samp>.word</samp>&rsquo;, &lsquo;<samp>.long</samp>&rsquo;, &lsquo;<samp>.quad</samp>&rsquo; and &lsquo;<samp>.octa</samp>&rsquo; pseudo-ops.
+</p>
+<a name="index-_002dmlittle_002dendian"></a>
+</dd>
+<dt><code>-mlittle-endian</code></dt>
+<dd><p>This option controls the ABI and indicates to use a little-endian data
+ABI.  It has no effect on the assembled instructions, but it does
+influence the behaviour of the &lsquo;<samp>.short</samp>&rsquo;, &lsquo;<samp>.hword</samp>&rsquo;, &lsquo;<samp>.int</samp>&rsquo;,
+&lsquo;<samp>.word</samp>&rsquo;, &lsquo;<samp>.long</samp>&rsquo;, &lsquo;<samp>.quad</samp>&rsquo; and &lsquo;<samp>.octa</samp>&rsquo; pseudo-ops.
+This is the default.
+</p>
+<a name="index-_002dmuse_002dconventional_002dsection_002dnames"></a>
+</dd>
+<dt><code>-muse-conventional-section-names</code></dt>
+<dd><p>This option controls the default names given to the code (.text),
+initialised data (.data) and uninitialised data sections (.bss).
+</p>
+<a name="index-_002dmuse_002drenesas_002dsection_002dnames"></a>
+</dd>
+<dt><code>-muse-renesas-section-names</code></dt>
+<dd><p>This option controls the default names given to the code (.P),
+initialised data (.D_1) and uninitialised data sections (.B_1).
+This is the default.
+</p>
+<a name="index-_002dmsmall_002ddata_002dlimit"></a>
+</dd>
+<dt><code>-msmall-data-limit</code></dt>
+<dd><p>This option tells the assembler that the small data limit feature of
+the RX port of GCC is being used.  This results in the assembler
+generating an undefined reference to a symbol called <code>__gp</code> for
+use by the relocations that are needed to support the small data limit
+feature.   This option is not enabled by default as it would otherwise
+pollute the symbol table.
+</p>
+<a name="index-_002dmpid"></a>
+</dd>
+<dt><code>-mpid</code></dt>
+<dd><p>This option tells the assembler that the position independent data of the
+RX port of GCC is being used.  This results in the assembler
+generating an undefined reference to a symbol called <code>__pid_base</code>,
+and also setting the RX_PID flag bit in the e_flags field of the ELF
+header of the object file.
+</p>
+<a name="index-_002dmint_002dregister"></a>
+</dd>
+<dt><code>-mint-register=<var>num</var></code></dt>
+<dd><p>This option tells the assembler how many registers have been reserved
+for use by interrupt handlers.  This is needed in order to compute the
+correct values for the <code>%gpreg</code> and <code>%pidreg</code> meta registers.
+</p>
+<a name="index-_002dmgcc_002dabi"></a>
+</dd>
+<dt><code>-mgcc-abi</code></dt>
+<dd><p>This option tells the assembler that the old GCC ABI is being used by
+the assembled code.  With this version of the ABI function arguments
+that are passed on the stack are aligned to a 32-bit boundary.
+</p>
+<a name="index-_002dmrx_002dabi"></a>
+</dd>
+<dt><code>-mrx-abi</code></dt>
+<dd><p>This option tells the assembler that the official RX ABI is being used
+by the assembled code.  With this version of the ABI function
+arguments that are passed on the stack are aligned to their natural
+alignments.  This option is the default.
+</p>
+<a name="index-_002dmcpu_003d"></a>
+</dd>
+<dt><code>-mcpu=<var>name</var></code></dt>
+<dd><p>This option tells the assembler the target CPU type.  Currently the
+<code>rx100</code>, <code>rx200</code>, <code>rx600</code>, <code>rx610</code>, <code>rxv2</code>,
+<code>rxv3</code> and <code>rxv3-dfpu</code> are recognised as valid cpu names.
+Attempting to assemble an instructionnot supported by the indicated
+cpu type will result in an error message being generated.
+</p>
+<a name="index-_002dmno_002dallow_002dstring_002dinsns"></a>
+</dd>
+<dt><code>-mno-allow-string-insns</code></dt>
+<dd><p>This option tells the assembler to mark the object file that it is
+building as one that does not use the string instructions
+<code>SMOVF</code>, <code>SCMPU</code>, <code>SMOVB</code>, <code>SMOVU</code>, <code>SUNTIL</code>
+<code>SWHILE</code> or the <code>RMPA</code> instruction.  In addition the mark
+tells the linker to complain if an attempt is made to link the binary
+with another one that does use any of these instructions.
+</p>
+<p>Note - the inverse of this option, <code>-mallow-string-insns</code>, is
+not needed.  The assembler automatically detects the use of the
+the instructions in the source code and labels the resulting
+object file appropriately.  If no string instructions are detected
+then the object file is labelled as being one that can be linked with
+either string-using or string-banned object files.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="RX_002dModifiers.html#RX_002dModifiers" accesskey="n" rel="next">RX-Modifiers</a>, Up: <a href="RX_002dDependent.html#RX_002dDependent" accesskey="u" rel="up">RX-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

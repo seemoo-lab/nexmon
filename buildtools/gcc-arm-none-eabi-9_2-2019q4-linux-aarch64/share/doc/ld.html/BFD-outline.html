@@ -1,0 +1,103 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU linker LD
+(GNU Toolchain for the A-profile Architecture 9.2-2019.12 (arm-9.10))
+version 2.33.1.
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License". -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>LD: BFD outline</title>
+
+<meta name="description" content="LD: BFD outline">
+<meta name="keywords" content="LD: BFD outline">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="LD-Index.html#LD-Index" rel="index" title="LD Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="BFD.html#BFD" rel="up" title="BFD">
+<link href="BFD-information-loss.html#BFD-information-loss" rel="next" title="BFD information loss">
+<link href="BFD.html#BFD" rel="prev" title="BFD">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="BFD-outline"></a>
+<div class="header">
+<p>
+Up: <a href="BFD.html#BFD" accesskey="u" rel="up">BFD</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="LD-Index.html#LD-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="How-It-Works_003a-An-Outline-of-BFD"></a>
+<h3 class="section">5.1 How It Works: An Outline of BFD</h3>
+<a name="index-opening-object-files"></a>
+
+<p>When an object file is opened, BFD subroutines automatically determine
+the format of the input object file.  They then build a descriptor in
+memory with pointers to routines that will be used to access elements of
+the object file&rsquo;s data structures.
+</p>
+<p>As different information from the object files is required,
+BFD reads from different sections of the file and processes them.
+For example, a very common operation for the linker is processing symbol
+tables.  Each BFD back end provides a routine for converting
+between the object file&rsquo;s representation of symbols and an internal
+canonical format. When the linker asks for the symbol table of an object
+file, it calls through a memory pointer to the routine from the
+relevant BFD back end which reads and converts the table into a canonical
+form.  The linker then operates upon the canonical form. When the link is
+finished and the linker writes the output file&rsquo;s symbol table,
+another BFD back end routine is called to take the newly
+created symbol table and convert it into the chosen output format.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="BFD-information-loss.html#BFD-information-loss" accesskey="1">BFD information loss</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Information Loss
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Canonical-format.html#Canonical-format" accesskey="2">Canonical format</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">The BFD	canonical object-file format 
+</td></tr>
+</table>
+
+
+
+
+</body>
+</html>

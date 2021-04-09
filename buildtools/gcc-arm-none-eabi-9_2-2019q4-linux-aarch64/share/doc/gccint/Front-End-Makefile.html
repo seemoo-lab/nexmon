@@ -1,0 +1,187 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Front End Makefile</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Front End Makefile">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Front End Makefile">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Front-End.html#Front-End" rel="up" title="Front End">
+<link href="Back-End.html#Back-End" rel="next" title="Back End">
+<link href="Front-End-Config.html#Front-End-Config" rel="prev" title="Front End Config">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Front-End-Makefile"></a>
+<div class="header">
+<p>
+Previous: <a href="Front-End-Config.html#Front-End-Config" accesskey="p" rel="prev">Front End Config</a>, Up: <a href="Front-End.html#Front-End" accesskey="u" rel="up">Front End</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="The-Front-End-Make_002dlang_002ein-File"></a>
+<h4 class="subsubsection">6.3.8.3 The Front End <samp>Make-lang.in</samp> File</h4>
+
+<p>Each language subdirectory contains a <samp>Make-lang.in</samp> file.  It contains
+targets <code><var>lang</var>.<var>hook</var></code> (where <code><var>lang</var></code> is the
+setting of <code>language</code> in <samp>config-lang.in</samp>) for the following
+values of <code><var>hook</var></code>, and any other Makefile rules required to
+build those targets (which may if necessary use other Makefiles
+specified in <code>outputs</code> in <samp>config-lang.in</samp>, although this is
+deprecated).  It also adds any testsuite targets that can use the
+standard rule in <samp>gcc/Makefile.in</samp> to the variable
+<code>lang_checks</code>.
+</p>
+<dl compact="compact">
+<dt><code>all.cross</code></dt>
+<dt><code>start.encap</code></dt>
+<dt><code>rest.encap</code></dt>
+<dd><p>FIXME: exactly what goes in each of these targets?
+</p></dd>
+<dt><code>tags</code></dt>
+<dd><p>Build an <code>etags</code> <samp>TAGS</samp> file in the language subdirectory
+in the source tree.
+</p></dd>
+<dt><code>info</code></dt>
+<dd><p>Build info documentation for the front end, in the build directory.
+This target is only called by &lsquo;<samp>make bootstrap</samp>&rsquo; if a suitable
+version of <code>makeinfo</code> is available, so does not need to check
+for this, and should fail if an error occurs.
+</p></dd>
+<dt><code>dvi</code></dt>
+<dd><p>Build DVI documentation for the front end, in the build directory.
+This should be done using <code>$(TEXI2DVI)</code>, with appropriate
+<samp>-I</samp> arguments pointing to directories of included files.
+</p></dd>
+<dt><code>pdf</code></dt>
+<dd><p>Build PDF documentation for the front end, in the build directory.
+This should be done using <code>$(TEXI2PDF)</code>, with appropriate
+<samp>-I</samp> arguments pointing to directories of included files.
+</p></dd>
+<dt><code>html</code></dt>
+<dd><p>Build HTML documentation for the front end, in the build directory.
+</p></dd>
+<dt><code>man</code></dt>
+<dd><p>Build generated man pages for the front end from Texinfo manuals
+(see <a href="Man-Page-Generation.html#Man-Page-Generation">Man Page Generation</a>), in the build directory.  This target
+is only called if the necessary tools are available, but should ignore
+errors so as not to stop the build if errors occur; man pages are
+optional and the tools involved may be installed in a broken way.
+</p></dd>
+<dt><code>install-common</code></dt>
+<dd><p>Install everything that is part of the front end, apart from the
+compiler executables listed in <code>compilers</code> in
+<samp>config-lang.in</samp>.
+</p></dd>
+<dt><code>install-info</code></dt>
+<dd><p>Install info documentation for the front end, if it is present in the
+source directory.  This target should have dependencies on info files
+that should be installed.
+</p></dd>
+<dt><code>install-man</code></dt>
+<dd><p>Install man pages for the front end.  This target should ignore
+errors.
+</p></dd>
+<dt><code>install-plugin</code></dt>
+<dd><p>Install headers needed for plugins.
+</p></dd>
+<dt><code>srcextra</code></dt>
+<dd><p>Copies its dependencies into the source directory.  This generally should
+be used for generated files such as Bison output files which are not
+version-controlled, but should be included in any release tarballs.  This
+target will be executed during a bootstrap if
+&lsquo;<samp>--enable-generated-files-in-srcdir</samp>&rsquo; was specified as a
+<samp>configure</samp> option.
+</p></dd>
+<dt><code>srcinfo</code></dt>
+<dt><code>srcman</code></dt>
+<dd><p>Copies its dependencies into the source directory.  These targets will be
+executed during a bootstrap if &lsquo;<samp>--enable-generated-files-in-srcdir</samp>&rsquo;
+was specified as a <samp>configure</samp> option.
+</p></dd>
+<dt><code>uninstall</code></dt>
+<dd><p>Uninstall files installed by installing the compiler.  This is
+currently documented not to be supported, so the hook need not do
+anything.
+</p></dd>
+<dt><code>mostlyclean</code></dt>
+<dt><code>clean</code></dt>
+<dt><code>distclean</code></dt>
+<dt><code>maintainer-clean</code></dt>
+<dd><p>The language parts of the standard GNU
+&lsquo;<samp>*clean</samp>&rsquo; targets.  See <a href="http://www.gnu.org/prep/standards/html_node/Standard-Targets.html#Standard-Targets">Standard Targets for
+Users</a> in <cite>GNU Coding Standards</cite>, for details of the standard
+targets.  For GCC, <code>maintainer-clean</code> should delete
+all generated files in the source directory that are not version-controlled,
+but should not delete anything that is.
+</p></dd>
+</dl>
+
+<p><samp>Make-lang.in</samp> must also define a variable <code><var>lang</var>_OBJS</code>
+to a list of host object files that are used by that language.
+</p>
+<hr>
+<div class="header">
+<p>
+Previous: <a href="Front-End-Config.html#Front-End-Config" accesskey="p" rel="prev">Front End Config</a>, Up: <a href="Front-End.html#Front-End" accesskey="u" rel="up">Front End</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

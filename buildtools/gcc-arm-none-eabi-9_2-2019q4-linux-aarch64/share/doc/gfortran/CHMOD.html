@@ -1,0 +1,154 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: CHMOD</title>
+
+<meta name="description" content="The GNU Fortran Compiler: CHMOD">
+<meta name="keywords" content="The GNU Fortran Compiler: CHMOD">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Intrinsic-Procedures.html#Intrinsic-Procedures" rel="up" title="Intrinsic Procedures">
+<link href="CMPLX.html#CMPLX" rel="next" title="CMPLX">
+<link href="CHDIR.html#CHDIR" rel="prev" title="CHDIR">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="CHMOD"></a>
+<div class="header">
+<p>
+Next: <a href="CMPLX.html#CMPLX" accesskey="n" rel="next">CMPLX</a>, Previous: <a href="CHDIR.html#CHDIR" accesskey="p" rel="prev">CHDIR</a>, Up: <a href="Intrinsic-Procedures.html#Intrinsic-Procedures" accesskey="u" rel="up">Intrinsic Procedures</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="CHMOD-_002d_002d_002d-Change-access-permissions-of-files"></a>
+<h3 class="section">9.61 <code>CHMOD</code> &mdash; Change access permissions of files</h3>
+<a name="index-CHMOD"></a>
+<a name="index-file-system_002c-change-access-mode"></a>
+
+<dl compact="compact">
+<dt><em>Description</em>:</dt>
+<dd><p><code>CHMOD</code> changes the permissions of a file.
+</p>
+<p>This intrinsic is provided in both subroutine and function forms; however,
+only one form can be used in any given program unit.
+</p>
+</dd>
+<dt><em>Standard</em>:</dt>
+<dd><p>GNU extension
+</p>
+</dd>
+<dt><em>Class</em>:</dt>
+<dd><p>Subroutine, function
+</p>
+</dd>
+<dt><em>Syntax</em>:</dt>
+<dd><table>
+<tr><td width="80%"><code>CALL CHMOD(NAME, MODE[, STATUS])</code></td></tr>
+<tr><td width="80%"><code>STATUS = CHMOD(NAME, MODE)</code></td></tr>
+</table>
+
+</dd>
+<dt><em>Arguments</em>:</dt>
+<dd><table>
+<tr><td width="15%"><var>NAME</var></td><td width="70%">Scalar <code>CHARACTER</code> of default kind with the
+file name. Trailing blanks are ignored unless the character
+<code>achar(0)</code> is present, then all characters up to and excluding
+<code>achar(0)</code> are used as the file name.</td></tr>
+<tr><td width="15%"><var>MODE</var></td><td width="70%">Scalar <code>CHARACTER</code> of default kind giving the
+file permission. <var>MODE</var> uses the same syntax as the <code>chmod</code> utility
+as defined by the POSIX standard. The argument shall either be a string of
+a nonnegative octal number or a symbolic mode.</td></tr>
+<tr><td width="15%"><var>STATUS</var></td><td width="70%">(optional) scalar <code>INTEGER</code>, which is
+<code>0</code> on success and nonzero otherwise.</td></tr>
+</table>
+
+</dd>
+<dt><em>Return value</em>:</dt>
+<dd><p>In either syntax, <var>STATUS</var> is set to <code>0</code> on success and nonzero
+otherwise.
+</p>
+</dd>
+<dt><em>Example</em>:</dt>
+<dd><p><code>CHMOD</code> as subroutine
+</p><div class="smallexample">
+<pre class="smallexample">program chmod_test
+  implicit none
+  integer :: status
+  call chmod('test.dat','u+x',status)
+  print *, 'Status: ', status
+end program chmod_test
+</pre></div>
+<p><code>CHMOD</code> as function:
+</p><div class="smallexample">
+<pre class="smallexample">program chmod_test
+  implicit none
+  integer :: status
+  status = chmod('test.dat','u+x')
+  print *, 'Status: ', status
+end program chmod_test
+</pre></div>
+
+</dd>
+</dl>
+
+
+
+
+
+
+</body>
+</html>

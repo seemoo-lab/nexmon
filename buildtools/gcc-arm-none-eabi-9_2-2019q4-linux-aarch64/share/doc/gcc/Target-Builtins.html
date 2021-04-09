@@ -1,0 +1,166 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Target Builtins</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Target Builtins">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Target Builtins">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C-Extensions.html#C-Extensions" rel="up" title="C Extensions">
+<link href="AArch64-Built_002din-Functions.html#AArch64-Built_002din-Functions" rel="next" title="AArch64 Built-in Functions">
+<link href="Other-Builtins.html#Other-Builtins" rel="prev" title="Other Builtins">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Target-Builtins"></a>
+<div class="header">
+<p>
+Next: <a href="Target-Format-Checks.html#Target-Format-Checks" accesskey="n" rel="next">Target Format Checks</a>, Previous: <a href="Other-Builtins.html#Other-Builtins" accesskey="p" rel="prev">Other Builtins</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Built_002din-Functions-Specific-to-Particular-Target-Machines"></a>
+<h3 class="section">6.60 Built-in Functions Specific to Particular Target Machines</h3>
+
+<p>On some target machines, GCC supports many built-in functions specific
+to those machines.  Generally these generate calls to specific machine
+instructions, but allow the compiler to schedule those calls.
+</p>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="AArch64-Built_002din-Functions.html#AArch64-Built_002din-Functions" accesskey="1">AArch64 Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Alpha-Built_002din-Functions.html#Alpha-Built_002din-Functions" accesskey="2">Alpha Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Altera-Nios-II-Built_002din-Functions.html#Altera-Nios-II-Built_002din-Functions" accesskey="3">Altera Nios II Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="ARC-Built_002din-Functions.html#ARC-Built_002din-Functions" accesskey="4">ARC Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="ARC-SIMD-Built_002din-Functions.html#ARC-SIMD-Built_002din-Functions" accesskey="5">ARC SIMD Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="ARM-iWMMXt-Built_002din-Functions.html#ARM-iWMMXt-Built_002din-Functions" accesskey="6">ARM iWMMXt Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="ARM-C-Language-Extensions-_0028ACLE_0029.html#ARM-C-Language-Extensions-_0028ACLE_0029" accesskey="7">ARM C Language Extensions (ACLE)</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="ARM-Floating-Point-Status-and-Control-Intrinsics.html#ARM-Floating-Point-Status-and-Control-Intrinsics" accesskey="8">ARM Floating Point Status and Control Intrinsics</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="ARM-ARMv8_002dM-Security-Extensions.html#ARM-ARMv8_002dM-Security-Extensions" accesskey="9">ARM ARMv8-M Security Extensions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="AVR-Built_002din-Functions.html#AVR-Built_002din-Functions">AVR Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Blackfin-Built_002din-Functions.html#Blackfin-Built_002din-Functions">Blackfin Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="FR_002dV-Built_002din-Functions.html#FR_002dV-Built_002din-Functions">FR-V Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="MIPS-DSP-Built_002din-Functions.html#MIPS-DSP-Built_002din-Functions">MIPS DSP Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="MIPS-Paired_002dSingle-Support.html#MIPS-Paired_002dSingle-Support">MIPS Paired-Single Support</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="MIPS-Loongson-Built_002din-Functions.html#MIPS-Loongson-Built_002din-Functions">MIPS Loongson Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="MIPS-SIMD-Architecture-_0028MSA_0029-Support.html#MIPS-SIMD-Architecture-_0028MSA_0029-Support">MIPS SIMD Architecture (MSA) Support</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Other-MIPS-Built_002din-Functions.html#Other-MIPS-Built_002din-Functions">Other MIPS Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="MSP430-Built_002din-Functions.html#MSP430-Built_002din-Functions">MSP430 Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="NDS32-Built_002din-Functions.html#NDS32-Built_002din-Functions">NDS32 Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="picoChip-Built_002din-Functions.html#picoChip-Built_002din-Functions">picoChip Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Basic-PowerPC-Built_002din-Functions.html#Basic-PowerPC-Built_002din-Functions">Basic PowerPC Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="PowerPC-AltiVec_002fVSX-Built_002din-Functions.html#PowerPC-AltiVec_002fVSX-Built_002din-Functions">PowerPC AltiVec/VSX Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="PowerPC-Hardware-Transactional-Memory-Built_002din-Functions.html#PowerPC-Hardware-Transactional-Memory-Built_002din-Functions">PowerPC Hardware Transactional Memory Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="PowerPC-Atomic-Memory-Operation-Functions.html#PowerPC-Atomic-Memory-Operation-Functions">PowerPC Atomic Memory Operation Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="RX-Built_002din-Functions.html#RX-Built_002din-Functions">RX Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="S_002f390-System-z-Built_002din-Functions.html#S_002f390-System-z-Built_002din-Functions">S/390 System z Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="SH-Built_002din-Functions.html#SH-Built_002din-Functions">SH Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="SPARC-VIS-Built_002din-Functions.html#SPARC-VIS-Built_002din-Functions">SPARC VIS Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="SPU-Built_002din-Functions.html#SPU-Built_002din-Functions">SPU Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="TI-C6X-Built_002din-Functions.html#TI-C6X-Built_002din-Functions">TI C6X Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="TILE_002dGx-Built_002din-Functions.html#TILE_002dGx-Built_002din-Functions">TILE-Gx Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="TILEPro-Built_002din-Functions.html#TILEPro-Built_002din-Functions">TILEPro Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="x86-Built_002din-Functions.html#x86-Built_002din-Functions">x86 Built-in Functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="x86-transactional-memory-intrinsics.html#x86-transactional-memory-intrinsics">x86 transactional memory intrinsics</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="x86-control_002dflow-protection-intrinsics.html#x86-control_002dflow-protection-intrinsics">x86 control-flow protection intrinsics</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+</table>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Target-Format-Checks.html#Target-Format-Checks" accesskey="n" rel="next">Target Format Checks</a>, Previous: <a href="Other-Builtins.html#Other-Builtins" accesskey="p" rel="prev">Other Builtins</a>, Up: <a href="C-Extensions.html#C-Extensions" accesskey="u" rel="up">C Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

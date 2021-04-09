@@ -1,0 +1,167 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Code Iterators</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Code Iterators">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Code Iterators">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Iterators.html#Iterators" rel="up" title="Iterators">
+<link href="Int-Iterators.html#Int-Iterators" rel="next" title="Int Iterators">
+<link href="Examples.html#Examples" rel="prev" title="Examples">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Code-Iterators"></a>
+<div class="header">
+<p>
+Next: <a href="Int-Iterators.html#Int-Iterators" accesskey="n" rel="next">Int Iterators</a>, Previous: <a href="Mode-Iterators.html#Mode-Iterators" accesskey="p" rel="prev">Mode Iterators</a>, Up: <a href="Iterators.html#Iterators" accesskey="u" rel="up">Iterators</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Code-Iterators-1"></a>
+<h4 class="subsection">17.23.2 Code Iterators</h4>
+<a name="index-code-iterators-in-_002emd-files"></a>
+<a name="index-define_005fcode_005fiterator"></a>
+<a name="index-define_005fcode_005fattr"></a>
+
+<p>Code iterators operate in a similar way to mode iterators.  See <a href="Mode-Iterators.html#Mode-Iterators">Mode Iterators</a>.
+</p>
+<p>The construct:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_code_iterator <var>name</var> [(<var>code1</var> &quot;<var>cond1</var>&quot;) &hellip; (<var>coden</var> &quot;<var>condn</var>&quot;)])
+</pre></div>
+
+<p>defines a pseudo rtx code <var>name</var> that can be instantiated as
+<var>codei</var> if condition <var>condi</var> is true.  Each <var>codei</var>
+must have the same rtx format.  See <a href="RTL-Classes.html#RTL-Classes">RTL Classes</a>.
+</p>
+<p>As with mode iterators, each pattern that uses <var>name</var> will be
+expanded <var>n</var> times, once with all uses of <var>name</var> replaced by
+<var>code1</var>, once with all uses replaced by <var>code2</var>, and so on.
+See <a href="Defining-Mode-Iterators.html#Defining-Mode-Iterators">Defining Mode Iterators</a>.
+</p>
+<p>It is possible to define attributes for codes as well as for modes.
+There are two standard code attributes: <code>code</code>, the name of the
+code in lower case, and <code>CODE</code>, the name of the code in upper case.
+Other attributes are defined using:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_code_attr <var>name</var> [(<var>code1</var> &quot;<var>value1</var>&quot;) &hellip; (<var>coden</var> &quot;<var>valuen</var>&quot;)])
+</pre></div>
+
+<p>Here&rsquo;s an example of code iterators in action, taken from the MIPS port:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_code_iterator any_cond [unordered ordered unlt unge uneq ltgt unle ungt
+                                eq ne gt ge lt le gtu geu ltu leu])
+
+(define_expand &quot;b&lt;code&gt;&quot;
+  [(set (pc)
+        (if_then_else (any_cond:CC (cc0)
+                                   (const_int 0))
+                      (label_ref (match_operand 0 &quot;&quot;))
+                      (pc)))]
+  &quot;&quot;
+{
+  gen_conditional_branch (operands, &lt;CODE&gt;);
+  DONE;
+})
+</pre></div>
+
+<p>This is equivalent to:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_expand &quot;bunordered&quot;
+  [(set (pc)
+        (if_then_else (unordered:CC (cc0)
+                                    (const_int 0))
+                      (label_ref (match_operand 0 &quot;&quot;))
+                      (pc)))]
+  &quot;&quot;
+{
+  gen_conditional_branch (operands, UNORDERED);
+  DONE;
+})
+
+(define_expand &quot;bordered&quot;
+  [(set (pc)
+        (if_then_else (ordered:CC (cc0)
+                                  (const_int 0))
+                      (label_ref (match_operand 0 &quot;&quot;))
+                      (pc)))]
+  &quot;&quot;
+{
+  gen_conditional_branch (operands, ORDERED);
+  DONE;
+})
+
+&hellip;
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Int-Iterators.html#Int-Iterators" accesskey="n" rel="next">Int Iterators</a>, Previous: <a href="Mode-Iterators.html#Mode-Iterators" accesskey="p" rel="prev">Mode Iterators</a>, Up: <a href="Iterators.html#Iterators" accesskey="u" rel="up">Iterators</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1999-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>The GNU Fortran Compiler: Bitwise logical operators</title>
+
+<meta name="description" content="The GNU Fortran Compiler: Bitwise logical operators">
+<meta name="keywords" content="The GNU Fortran Compiler: Bitwise logical operators">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Extensions-implemented-in-GNU-Fortran.html#Extensions-implemented-in-GNU-Fortran" rel="up" title="Extensions implemented in GNU Fortran">
+<link href="Extended-I_002fO-specifiers.html#Extended-I_002fO-specifiers" rel="next" title="Extended I/O specifiers">
+<link href="_002eXOR_002e-operator.html#g_t_002eXOR_002e-operator" rel="prev" title=".XOR. operator">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Bitwise-logical-operators"></a>
+<div class="header">
+<p>
+Next: <a href="Extended-I_002fO-specifiers.html#Extended-I_002fO-specifiers" accesskey="n" rel="next">Extended I/O specifiers</a>, Previous: <a href="_002eXOR_002e-operator.html#g_t_002eXOR_002e-operator" accesskey="p" rel="prev">.XOR. operator</a>, Up: <a href="Extensions-implemented-in-GNU-Fortran.html#Extensions-implemented-in-GNU-Fortran" accesskey="u" rel="up">Extensions implemented in GNU Fortran</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Bitwise-logical-operators-1"></a>
+<h4 class="subsection">6.1.29 Bitwise logical operators</h4>
+<a name="index-logical_002c-bitwise"></a>
+
+<p>With <samp>-fdec</samp>, GNU Fortran relaxes the type constraints on
+logical operators to allow integer operands, and performs the corresponding
+bitwise operation instead.  This flag is for compatibility only, and should be
+avoided in new code.  Consider:
+</p>
+<div class="smallexample">
+<pre class="smallexample">  INTEGER :: i, j
+  i = z'33'
+  j = z'cc'
+  print *, i .AND. j
+</pre></div>
+
+<p>In this example, compiled with <samp>-fdec</samp>, GNU Fortran will
+replace the <code>.AND.</code> operation with a call to the intrinsic
+<code><a href="IAND.html#IAND">IAND</a></code> function, yielding the bitwise-and of <code>i</code> and <code>j</code>.
+</p>
+<p>Note that this conversion will occur if at least one operand is of integral
+type.  As a result, a logical operand will be converted to an integer when the
+other operand is an integer in a logical operation.  In this case,
+<code>.TRUE.</code> is converted to <code>1</code> and <code>.FALSE.</code> to <code>0</code>.
+</p>
+<p>Here is the mapping of logical operator to bitwise intrinsic used with
+<samp>-fdec</samp>:
+</p>
+<table>
+<thead><tr><th width="25%">Operator</th><th width="25%">Intrinsic</th><th width="50%">Bitwise operation</th></tr></thead>
+<tr><td width="25%"><code>.NOT.</code></td><td width="25%"><code><a href="NOT.html#NOT">NOT</a></code></td><td width="50%">complement</td></tr>
+<tr><td width="25%"><code>.AND.</code></td><td width="25%"><code><a href="IAND.html#IAND">IAND</a></code></td><td width="50%">intersection</td></tr>
+<tr><td width="25%"><code>.OR.</code></td><td width="25%"><code><a href="IOR.html#IOR">IOR</a></code></td><td width="50%">union</td></tr>
+<tr><td width="25%"><code>.NEQV.</code></td><td width="25%"><code><a href="IEOR.html#IEOR">IEOR</a></code></td><td width="50%">exclusive or</td></tr>
+<tr><td width="25%"><code>.EQV.</code></td><td width="25%"><code><a href="NOT.html#NOT">NOT</a>(<a href="IEOR.html#IEOR">IEOR</a>)</code></td><td width="50%">complement of exclusive or</td></tr>
+</table>
+
+
+
+
+</body>
+</html>

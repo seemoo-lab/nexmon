@@ -1,0 +1,121 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Symbol-Renaming Pragmas</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Symbol-Renaming Pragmas">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Symbol-Renaming Pragmas">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Pragmas.html#Pragmas" rel="up" title="Pragmas">
+<link href="Structure_002dLayout-Pragmas.html#Structure_002dLayout-Pragmas" rel="next" title="Structure-Layout Pragmas">
+<link href="Solaris-Pragmas.html#Solaris-Pragmas" rel="prev" title="Solaris Pragmas">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Symbol_002dRenaming-Pragmas"></a>
+<div class="header">
+<p>
+Next: <a href="Structure_002dLayout-Pragmas.html#Structure_002dLayout-Pragmas" accesskey="n" rel="next">Structure-Layout Pragmas</a>, Previous: <a href="Solaris-Pragmas.html#Solaris-Pragmas" accesskey="p" rel="prev">Solaris Pragmas</a>, Up: <a href="Pragmas.html#Pragmas" accesskey="u" rel="up">Pragmas</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Symbol_002dRenaming-Pragmas-1"></a>
+<h4 class="subsection">6.62.9 Symbol-Renaming Pragmas</h4>
+
+<p>GCC supports a <code>#pragma</code> directive that changes the name used in
+assembly for a given declaration. While this pragma is supported on all
+platforms, it is intended primarily to provide compatibility with the
+Solaris system headers. This effect can also be achieved using the asm
+labels extension (see <a href="Asm-Labels.html#Asm-Labels">Asm Labels</a>).
+</p>
+<dl compact="compact">
+<dt><code>redefine_extname <var>oldname</var> <var>newname</var></code></dt>
+<dd><a name="index-pragma_002c-redefine_005fextname"></a>
+
+<p>This pragma gives the C function <var>oldname</var> the assembly symbol
+<var>newname</var>.  The preprocessor macro <code>__PRAGMA_REDEFINE_EXTNAME</code>
+is defined if this pragma is available (currently on all platforms).
+</p></dd>
+</dl>
+
+<p>This pragma and the <code>asm</code> labels extension interact in a complicated
+manner.  Here are some corner cases you may want to be aware of:
+</p>
+<ol>
+<li> This pragma silently applies only to declarations with external
+linkage.  The <code>asm</code> label feature does not have this restriction.
+
+</li><li> In C++, this pragma silently applies only to declarations with
+&ldquo;C&rdquo; linkage.  Again, <code>asm</code> labels do not have this restriction.
+
+</li><li> If either of the ways of changing the assembly name of a
+declaration are applied to a declaration whose assembly name has
+already been determined (either by a previous use of one of these
+features, or because the compiler needed the assembly name in order to
+generate code), and the new name is different, a warning issues and
+the name does not change.
+
+</li><li> The <var>oldname</var> used by <code>#pragma redefine_extname</code> is
+always the C-language name.
+</li></ol>
+
+
+
+
+</body>
+</html>

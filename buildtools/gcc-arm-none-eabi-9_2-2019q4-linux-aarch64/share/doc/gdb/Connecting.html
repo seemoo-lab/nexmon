@@ -1,0 +1,422 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Connecting</title>
+
+<meta name="description" content="Debugging with GDB: Connecting">
+<meta name="keywords" content="Debugging with GDB: Connecting">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Remote-Debugging.html#Remote-Debugging" rel="up" title="Remote Debugging">
+<link href="File-Transfer.html#File-Transfer" rel="next" title="File Transfer">
+<link href="Remote-Debugging.html#Remote-Debugging" rel="prev" title="Remote Debugging">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Connecting"></a>
+<div class="header">
+<p>
+Next: <a href="File-Transfer.html#File-Transfer" accesskey="n" rel="next">File Transfer</a>, Up: <a href="Remote-Debugging.html#Remote-Debugging" accesskey="u" rel="up">Remote Debugging</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Connecting-to-a-Remote-Target"></a>
+<h3 class="section">20.1 Connecting to a Remote Target</h3>
+<a name="index-remote-debugging_002c-connecting"></a>
+<a name="index-gdbserver_002c-connecting"></a>
+<a name="index-remote-debugging_002c-types-of-connections"></a>
+<a name="index-gdbserver_002c-types-of-connections"></a>
+<a name="index-gdbserver_002c-target-remote-mode"></a>
+<a name="index-gdbserver_002c-target-extended_002dremote-mode"></a>
+
+<p>This section describes how to connect to a remote target, including the
+types of connections and their differences, how to set up executable and
+symbol files on the host and target, and the commands used for
+connecting to and disconnecting from the remote target.
+</p>
+<a name="Types-of-Remote-Connections"></a>
+<h4 class="subsection">20.1.1 Types of Remote Connections</h4>
+
+<p><small>GDB</small> supports two types of remote connections, <code>target remote</code>
+mode and <code>target extended-remote</code> mode.  Note that many remote targets
+support only <code>target remote</code> mode.  There are several major
+differences between the two types of connections, enumerated here:
+</p>
+<dl compact="compact">
+<dd>
+<a name="index-remote-debugging_002c-detach-and-program-exit"></a>
+</dd>
+<dt>Result of detach or program exit</dt>
+<dd><p><strong>With target remote mode:</strong> When the debugged program exits or you
+detach from it, <small>GDB</small> disconnects from the target.  When using
+<code>gdbserver</code>, <code>gdbserver</code> will exit.
+</p>
+<p><strong>With target extended-remote mode:</strong> When the debugged program exits or
+you detach from it, <small>GDB</small> remains connected to the target, even
+though no program is running.  You can rerun the program, attach to a
+running program, or use <code>monitor</code> commands specific to the target.
+</p>
+<p>When using <code>gdbserver</code> in this case, it does not exit unless it was
+invoked using the <samp>--once</samp> option.  If the <samp>--once</samp> option
+was not used, you can ask <code>gdbserver</code> to exit using the
+<code>monitor exit</code> command (see <a href="Server.html#Monitor-Commands-for-gdbserver">Monitor Commands for gdbserver</a>).
+</p>
+</dd>
+<dt>Specifying the program to debug</dt>
+<dd><p>For both connection types you use the <code>file</code> command to specify the
+program on the host system.  If you are using <code>gdbserver</code> there are
+some differences in how to specify the location of the program on the
+target.
+</p>
+<p><strong>With target remote mode:</strong> You must either specify the program to debug
+on the <code>gdbserver</code> command line or use the <samp>--attach</samp> option
+(see <a href="Server.html#Attaching-to-a-program">Attaching to a Running Program</a>).
+</p>
+<a name="index-_002d_002dmulti_002c-gdbserver-option"></a>
+<p><strong>With target extended-remote mode:</strong> You may specify the program to debug
+on the <code>gdbserver</code> command line, or you can load the program or attach
+to it using <small>GDB</small> commands after connecting to <code>gdbserver</code>.
+</p>
+<a name="g_t_002d_002dmulti-Option-in-Types-of-Remote-Connnections"></a><p>You can start <code>gdbserver</code> without supplying an initial command to run
+or process ID to attach.  To do this, use the <samp>--multi</samp> command line
+option.  Then you can connect using <code>target extended-remote</code> and start
+the program you want to debug (see below for details on using the
+<code>run</code> command in this scenario).  Note that the conditions under which
+<code>gdbserver</code> terminates depend on how <small>GDB</small> connects to it
+(<code>target remote</code> or <code>target extended-remote</code>).  The
+<samp>--multi</samp> option to <code>gdbserver</code> has no influence on that.
+</p>
+</dd>
+<dt>The <code>run</code> command</dt>
+<dd><p><strong>With target remote mode:</strong> The <code>run</code> command is not
+supported.  Once a connection has been established, you can use all
+the usual <small>GDB</small> commands to examine and change data.  The
+remote program is already running, so you can use commands like
+<kbd>step</kbd> and <kbd>continue</kbd>.
+</p>
+<p><strong>With target extended-remote mode:</strong> The <code>run</code> command is
+supported.  The <code>run</code> command uses the value set by
+<code>set remote exec-file</code> (see <a href="Remote-Configuration.html#set-remote-exec_002dfile">set remote exec-file</a>) to select
+the program to run.  Command line arguments are supported, except for
+wildcard expansion and I/O redirection (see <a href="Arguments.html#Arguments">Arguments</a>).
+</p>
+<p>If you specify the program to debug on the command line, then the
+<code>run</code> command is not required to start execution, and you can
+resume using commands like <kbd>step</kbd> and <kbd>continue</kbd> as with
+<code>target remote</code> mode.
+</p>
+<a name="Attaching-in-Types-of-Remote-Connections"></a></dd>
+<dt>Attaching</dt>
+<dd><p><strong>With target remote mode:</strong> The <small>GDB</small> command <code>attach</code> is
+not supported.  To attach to a running program using <code>gdbserver</code>, you
+must use the <samp>--attach</samp> option (see <a href="Server.html#Running-gdbserver">Running gdbserver</a>).
+</p>
+<p><strong>With target extended-remote mode:</strong> To attach to a running program,
+you may use the <code>attach</code> command after the connection has been
+established.  If you are using <code>gdbserver</code>, you may also invoke
+<code>gdbserver</code> using the <samp>--attach</samp> option
+(see <a href="Server.html#Running-gdbserver">Running gdbserver</a>).
+</p>
+</dd>
+</dl>
+
+<a name="Host-and-target-files"></a><a name="Host-and-Target-Files"></a>
+<h4 class="subsection">20.1.2 Host and Target Files</h4>
+<a name="index-remote-debugging_002c-symbol-files"></a>
+<a name="index-symbol-files_002c-remote-debugging"></a>
+
+<p><small>GDB</small>, running on the host, needs access to symbol and debugging
+information for your program running on the target.  This requires 
+access to an unstripped copy of your program, and possibly any associated
+symbol files.  Note that this section applies equally to both <code>target
+remote</code> mode and <code>target extended-remote</code> mode.
+</p>
+<p>Some remote targets (see <a href="General-Query-Packets.html#qXfer-executable-filename-read">qXfer executable filename read</a>, and
+see <a href="Host-I_002fO-Packets.html#Host-I_002fO-Packets">Host I/O Packets</a>) allow <small>GDB</small> to access program files over
+the same connection used to communicate with <small>GDB</small>.  With such a
+target, if the remote program is unstripped, the only command you need is
+<code>target remote</code> (or <code>target extended-remote</code>).
+</p>
+<p>If the remote program is stripped, or the target does not support remote
+program file access, start up <small>GDB</small> using the name of the local
+unstripped copy of your program as the first argument, or use the
+<code>file</code> command.  Use <code>set sysroot</code> to specify the location (on
+the host) of target libraries (unless your <small>GDB</small> was compiled with
+the correct sysroot using <code>--with-sysroot</code>).  Alternatively, you
+may use <code>set solib-search-path</code> to specify how <small>GDB</small> locates
+target libraries.
+</p>
+<p>The symbol file and target libraries must exactly match the executable
+and libraries on the target, with one exception: the files on the host
+system should not be stripped, even if the files on the target system
+are.  Mismatched or missing files will lead to confusing results
+during debugging.  On <small>GNU</small>/Linux targets, mismatched or missing
+files may also prevent <code>gdbserver</code> from debugging multi-threaded
+programs.
+</p>
+<a name="Remote-Connection-Commands"></a>
+<h4 class="subsection">20.1.3 Remote Connection Commands</h4>
+<a name="index-remote-connection-commands"></a>
+<p><small>GDB</small> can communicate with the target over a serial line, a
+local Unix domain socket, or
+over an <acronym>IP</acronym> network using <acronym>TCP</acronym> or <acronym>UDP</acronym>.  In
+each case, <small>GDB</small> uses the same protocol for debugging your
+program; only the medium carrying the debugging packets varies.  The
+<code>target remote</code> and <code>target extended-remote</code> commands
+establish a connection to the target.  Both commands accept the same
+arguments, which indicate the medium to use:
+</p>
+<dl compact="compact">
+<dt><code>target remote <var>serial-device</var></code></dt>
+<dt><code>target extended-remote <var>serial-device</var></code></dt>
+<dd><a name="index-serial-line_002c-target-remote"></a>
+<p>Use <var>serial-device</var> to communicate with the target.  For example,
+to use a serial line connected to the device named <samp>/dev/ttyb</samp>:
+</p>
+<div class="smallexample">
+<pre class="smallexample">target remote /dev/ttyb
+</pre></div>
+
+<p>If you&rsquo;re using a serial line, you may want to give <small>GDB</small> the
+&lsquo;<samp>--baud</samp>&rsquo; option, or use the <code>set serial baud</code> command
+(see <a href="Remote-Configuration.html#Remote-Configuration">set serial baud</a>) before the
+<code>target</code> command.
+</p>
+</dd>
+<dt><code>target remote <var>local-socket</var></code></dt>
+<dt><code>target extended-remote <var>local-socket</var></code></dt>
+<dd><a name="index-local-socket_002c-target-remote"></a>
+<a name="index-Unix-domain-socket"></a>
+<p>Use <var>local-socket</var> to communicate with the target.  For example,
+to use a local Unix domain socket bound to the file system entry <samp>/tmp/gdb-socket0</samp>:
+</p>
+<div class="smallexample">
+<pre class="smallexample">target remote /tmp/gdb-socket0
+</pre></div>
+
+<p>Note that this command has the same form as the command to connect
+to a serial line.  <small>GDB</small> will automatically determine which
+kind of file you have specified and will make the appropriate kind
+of connection.
+This feature is not available if the host system does not support
+Unix domain sockets.
+</p>
+</dd>
+<dt><code>target remote <code><var>host</var>:<var>port</var></code></code></dt>
+<dt><code>target remote <code><var>[host]</var>:<var>port</var></code></code></dt>
+<dt><code>target remote <code>tcp:<var>host</var>:<var>port</var></code></code></dt>
+<dt><code>target remote <code>tcp:<var>[host]</var>:<var>port</var></code></code></dt>
+<dt><code>target remote <code>tcp4:<var>host</var>:<var>port</var></code></code></dt>
+<dt><code>target remote <code>tcp6:<var>host</var>:<var>port</var></code></code></dt>
+<dt><code>target remote <code>tcp6:<var>[host]</var>:<var>port</var></code></code></dt>
+<dt><code>target extended-remote <code><var>host</var>:<var>port</var></code></code></dt>
+<dt><code>target extended-remote <code><var>[host]</var>:<var>port</var></code></code></dt>
+<dt><code>target extended-remote <code>tcp:<var>host</var>:<var>port</var></code></code></dt>
+<dt><code>target extended-remote <code>tcp:<var>[host]</var>:<var>port</var></code></code></dt>
+<dt><code>target extended-remote <code>tcp4:<var>host</var>:<var>port</var></code></code></dt>
+<dt><code>target extended-remote <code>tcp6:<var>host</var>:<var>port</var></code></code></dt>
+<dt><code>target extended-remote <code>tcp6:<var>[host]</var>:<var>port</var></code></code></dt>
+<dd><a name="index-TCP-port_002c-target-remote"></a>
+<p>Debug using a <acronym>TCP</acronym> connection to <var>port</var> on <var>host</var>.
+The <var>host</var> may be either a host name, a numeric <acronym>IPv4</acronym>
+address, or a numeric <acronym>IPv6</acronym> address (with or without the
+square brackets to separate the address from the port); <var>port</var>
+must be a decimal number.  The <var>host</var> could be the target machine
+itself, if it is directly connected to the net, or it might be a
+terminal server which in turn has a serial line to the target.
+</p>
+<p>For example, to connect to port 2828 on a terminal server named
+<code>manyfarms</code>:
+</p>
+<div class="smallexample">
+<pre class="smallexample">target remote manyfarms:2828
+</pre></div>
+
+<p>To connect to port 2828 on a terminal server whose address is
+<code>2001:0db8:85a3:0000:0000:8a2e:0370:7334</code>, you can either use the
+square bracket syntax:
+</p>
+<div class="smallexample">
+<pre class="smallexample">target remote [2001:0db8:85a3:0000:0000:8a2e:0370:7334]:2828
+</pre></div>
+
+<p>or explicitly specify the <acronym>IPv6</acronym> protocol:
+</p>
+<div class="smallexample">
+<pre class="smallexample">target remote tcp6:2001:0db8:85a3:0000:0000:8a2e:0370:7334:2828
+</pre></div>
+
+<p>This last example may be confusing to the reader, because there is no
+visible separation between the hostname and the port number.
+Therefore, we recommend the user to provide <acronym>IPv6</acronym> addresses
+using square brackets for clarity.  However, it is important to
+mention that for <small>GDB</small> there is no ambiguity: the number after
+the last colon is considered to be the port number.
+</p>
+<p>If your remote target is actually running on the same machine as your
+debugger session (e.g. a simulator for your target running on the
+same host), you can omit the hostname.  For example, to connect to
+port 1234 on your local machine:
+</p>
+<div class="smallexample">
+<pre class="smallexample">target remote :1234
+</pre></div>
+
+<p>Note that the colon is still required here.
+</p>
+</dd>
+<dt><code>target remote <code>udp:<var>host</var>:<var>port</var></code></code></dt>
+<dt><code>target remote <code>udp:<var>[host]</var>:<var>port</var></code></code></dt>
+<dt><code>target remote <code>udp4:<var>host</var>:<var>port</var></code></code></dt>
+<dt><code>target remote <code>udp6:<var>[host]</var>:<var>port</var></code></code></dt>
+<dt><code>target extended-remote <code>udp:<var>host</var>:<var>port</var></code></code></dt>
+<dt><code>target extended-remote <code>udp:<var>host</var>:<var>port</var></code></code></dt>
+<dt><code>target extended-remote <code>udp:<var>[host]</var>:<var>port</var></code></code></dt>
+<dt><code>target extended-remote <code>udp4:<var>host</var>:<var>port</var></code></code></dt>
+<dt><code>target extended-remote <code>udp6:<var>host</var>:<var>port</var></code></code></dt>
+<dt><code>target extended-remote <code>udp6:<var>[host]</var>:<var>port</var></code></code></dt>
+<dd><a name="index-UDP-port_002c-target-remote"></a>
+<p>Debug using <acronym>UDP</acronym> packets to <var>port</var> on <var>host</var>.  For example, to
+connect to <acronym>UDP</acronym> port 2828 on a terminal server named <code>manyfarms</code>:
+</p>
+<div class="smallexample">
+<pre class="smallexample">target remote udp:manyfarms:2828
+</pre></div>
+
+<p>When using a <acronym>UDP</acronym> connection for remote debugging, you should
+keep in mind that the &lsquo;U&rsquo; stands for &ldquo;Unreliable&rdquo;.  <acronym>UDP</acronym>
+can silently drop packets on busy or unreliable networks, which will
+cause havoc with your debugging session.
+</p>
+</dd>
+<dt><code>target remote | <var>command</var></code></dt>
+<dt><code>target extended-remote | <var>command</var></code></dt>
+<dd><a name="index-pipe_002c-target-remote-to"></a>
+<p>Run <var>command</var> in the background and communicate with it using a
+pipe.  The <var>command</var> is a shell command, to be parsed and expanded
+by the system&rsquo;s command shell, <code>/bin/sh</code>; it should expect remote
+protocol packets on its standard input, and send replies on its
+standard output.  You could use this to run a stand-alone simulator
+that speaks the remote debugging protocol, to make net connections
+using programs like <code>ssh</code>, or for other similar tricks.
+</p>
+<p>If <var>command</var> closes its standard output (perhaps by exiting),
+<small>GDB</small> will try to send it a <code>SIGTERM</code> signal.  (If the
+program has already exited, this will have no effect.)
+</p>
+</dd>
+</dl>
+
+<a name="index-interrupting-remote-programs"></a>
+<a name="index-remote-programs_002c-interrupting"></a>
+<p>Whenever <small>GDB</small> is waiting for the remote program, if you type the
+interrupt character (often <kbd>Ctrl-c</kbd>), <small>GDB</small> attempts to stop the
+program.  This may or may not succeed, depending in part on the hardware
+and the serial drivers the remote system uses.  If you type the
+interrupt character once again, <small>GDB</small> displays this prompt:
+</p>
+<div class="smallexample">
+<pre class="smallexample">Interrupted while waiting for the program.
+Give up (and stop debugging it)?  (y or n)
+</pre></div>
+
+<p>In <code>target remote</code> mode, if you type <kbd>y</kbd>, <small>GDB</small> abandons
+the remote debugging session.  (If you decide you want to try again later,
+you can use <kbd>target remote</kbd> again to connect once more.)  If you type
+<kbd>n</kbd>, <small>GDB</small> goes back to waiting.
+</p>
+<p>In <code>target extended-remote</code> mode, typing <kbd>n</kbd> will leave
+<small>GDB</small> connected to the target.
+</p>
+<dl compact="compact">
+<dd><a name="index-detach-_0028remote_0029"></a>
+</dd>
+<dt><code>detach</code></dt>
+<dd><p>When you have finished debugging the remote program, you can use the
+<code>detach</code> command to release it from <small>GDB</small> control.
+Detaching from the target normally resumes its execution, but the results
+will depend on your particular remote stub.  After the <code>detach</code>
+command in <code>target remote</code> mode, <small>GDB</small> is free to connect to
+another target.  In <code>target extended-remote</code> mode, <small>GDB</small> is
+still connected to the target.
+</p>
+<a name="index-disconnect"></a>
+</dd>
+<dt><code>disconnect</code></dt>
+<dd><p>The <code>disconnect</code> command closes the connection to the target, and
+the target is generally not resumed.  It will wait for <small>GDB</small>
+(this instance or another one) to connect and continue debugging.  After
+the <code>disconnect</code> command, <small>GDB</small> is again free to connect to
+another target.
+</p>
+<a name="index-send-command-to-remote-monitor"></a>
+<a name="index-extend-GDB-for-remote-targets"></a>
+<a name="index-add-new-commands-for-external-monitor"></a>
+<a name="index-monitor"></a>
+</dd>
+<dt><code>monitor <var>cmd</var></code></dt>
+<dd><p>This command allows you to send arbitrary commands directly to the
+remote monitor.  Since <small>GDB</small> doesn&rsquo;t care about the commands it
+sends like this, this command is the way to extend <small>GDB</small>&mdash;you
+can add new commands that only the external monitor will understand
+and implement.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="File-Transfer.html#File-Transfer" accesskey="n" rel="next">File Transfer</a>, Up: <a href="Remote-Debugging.html#Remote-Debugging" accesskey="u" rel="up">Remote Debugging</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

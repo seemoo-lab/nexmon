@@ -1,0 +1,108 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Modula-2</title>
+
+<meta name="description" content="Debugging with GDB: Modula-2">
+<meta name="keywords" content="Debugging with GDB: Modula-2">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Supported-Languages.html#Supported-Languages" rel="up" title="Supported Languages">
+<link href="M2-Operators.html#M2-Operators" rel="next" title="M2 Operators">
+<link href="Rust.html#Rust" rel="prev" title="Rust">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Modula_002d2"></a>
+<div class="header">
+<p>
+Next: <a href="Ada.html#Ada" accesskey="n" rel="next">Ada</a>, Previous: <a href="Rust.html#Rust" accesskey="p" rel="prev">Rust</a>, Up: <a href="Supported-Languages.html#Supported-Languages" accesskey="u" rel="up">Supported Languages</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Modula_002d2-1"></a>
+<h4 class="subsection">15.4.9 Modula-2</h4>
+
+<a name="index-Modula_002d2_002c-GDB-support"></a>
+
+<p>The extensions made to <small>GDB</small> to support Modula-2 only support
+output from the <small>GNU</small> Modula-2 compiler (which is currently being
+developed).  Other Modula-2 compilers are not currently supported, and
+attempting to debug executables produced by them is most likely
+to give an error as <small>GDB</small> reads in the executable&rsquo;s symbol
+table.
+</p>
+<a name="index-expressions-in-Modula_002d2"></a>
+<table class="menu" border="0" cellspacing="0">
+<tr><td align="left" valign="top">&bull; <a href="M2-Operators.html#M2-Operators" accesskey="1">M2 Operators</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Built-in operators
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Built_002dIn-Func_002fProc.html#Built_002dIn-Func_002fProc" accesskey="2">Built-In Func/Proc</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Built-in functions and procedures
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="M2-Constants.html#M2-Constants" accesskey="3">M2 Constants</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Modula-2 constants
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="M2-Types.html#M2-Types" accesskey="4">M2 Types</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Modula-2 types
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="M2-Defaults.html#M2-Defaults" accesskey="5">M2 Defaults</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Default settings for Modula-2
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="Deviations.html#Deviations" accesskey="6">Deviations</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Deviations from standard Modula-2
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="M2-Checks.html#M2-Checks" accesskey="7">M2 Checks</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Modula-2 type and range checks
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="M2-Scope.html#M2-Scope" accesskey="8">M2 Scope</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">The scope operators <code>::</code> and <code>.</code>
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="GDB_002fM2.html#GDB_002fM2" accesskey="9">GDB/M2</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top"><small>GDB</small> and Modula-2
+</td></tr>
+</table>
+
+
+
+
+</body>
+</html>

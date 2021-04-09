@@ -1,0 +1,604 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Common Type Attributes</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Common Type Attributes">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Common Type Attributes">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Type-Attributes.html#Type-Attributes" rel="up" title="Type Attributes">
+<link href="ARC-Type-Attributes.html#ARC-Type-Attributes" rel="next" title="ARC Type Attributes">
+<link href="Type-Attributes.html#Type-Attributes" rel="prev" title="Type Attributes">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Common-Type-Attributes"></a>
+<div class="header">
+<p>
+Next: <a href="ARC-Type-Attributes.html#ARC-Type-Attributes" accesskey="n" rel="next">ARC Type Attributes</a>, Up: <a href="Type-Attributes.html#Type-Attributes" accesskey="u" rel="up">Type Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Common-Type-Attributes-1"></a>
+<h4 class="subsection">6.35.1 Common Type Attributes</h4>
+
+<p>The following type attributes are supported on most targets.
+</p>
+<dl compact="compact">
+<dd><a name="index-aligned-type-attribute"></a>
+</dd>
+<dt><code>aligned</code></dt>
+<dt><code>aligned (<var>alignment</var>)</code></dt>
+<dd><p>The <code>aligned</code> attribute specifies a minimum alignment (in bytes) for
+variables of the specified type.  When specified, <var>alignment</var> must be
+a power of 2.  Specifying no <var>alignment</var> argument implies the maximum
+alignment for the target, which is often, but by no means always, 8 or 16
+bytes.  For example, the declarations:
+</p>
+<div class="smallexample">
+<pre class="smallexample">struct __attribute__ ((aligned (8))) S { short f[3]; };
+typedef int more_aligned_int __attribute__ ((aligned (8)));
+</pre></div>
+
+<p>force the compiler to ensure (as far as it can) that each variable whose
+type is <code>struct S</code> or <code>more_aligned_int</code> is allocated and
+aligned <em>at least</em> on a 8-byte boundary.  On a SPARC, having all
+variables of type <code>struct S</code> aligned to 8-byte boundaries allows
+the compiler to use the <code>ldd</code> and <code>std</code> (doubleword load and
+store) instructions when copying one variable of type <code>struct S</code> to
+another, thus improving run-time efficiency.
+</p>
+<p>Note that the alignment of any given <code>struct</code> or <code>union</code> type
+is required by the ISO C standard to be at least a perfect multiple of
+the lowest common multiple of the alignments of all of the members of
+the <code>struct</code> or <code>union</code> in question.  This means that you <em>can</em>
+effectively adjust the alignment of a <code>struct</code> or <code>union</code>
+type by attaching an <code>aligned</code> attribute to any one of the members
+of such a type, but the notation illustrated in the example above is a
+more obvious, intuitive, and readable way to request the compiler to
+adjust the alignment of an entire <code>struct</code> or <code>union</code> type.
+</p>
+<p>As in the preceding example, you can explicitly specify the alignment
+(in bytes) that you wish the compiler to use for a given <code>struct</code>
+or <code>union</code> type.  Alternatively, you can leave out the alignment factor
+and just ask the compiler to align a type to the maximum
+useful alignment for the target machine you are compiling for.  For
+example, you could write:
+</p>
+<div class="smallexample">
+<pre class="smallexample">struct __attribute__ ((aligned)) S { short f[3]; };
+</pre></div>
+
+<p>Whenever you leave out the alignment factor in an <code>aligned</code>
+attribute specification, the compiler automatically sets the alignment
+for the type to the largest alignment that is ever used for any data
+type on the target machine you are compiling for.  Doing this can often
+make copy operations more efficient, because the compiler can use
+whatever instructions copy the biggest chunks of memory when performing
+copies to or from the variables that have types that you have aligned
+this way.
+</p>
+<p>In the example above, if the size of each <code>short</code> is 2 bytes, then
+the size of the entire <code>struct S</code> type is 6 bytes.  The smallest
+power of two that is greater than or equal to that is 8, so the
+compiler sets the alignment for the entire <code>struct S</code> type to 8
+bytes.
+</p>
+<p>Note that although you can ask the compiler to select a time-efficient
+alignment for a given type and then declare only individual stand-alone
+objects of that type, the compiler&rsquo;s ability to select a time-efficient
+alignment is primarily useful only when you plan to create arrays of
+variables having the relevant (efficiently aligned) type.  If you
+declare or use arrays of variables of an efficiently-aligned type, then
+it is likely that your program also does pointer arithmetic (or
+subscripting, which amounts to the same thing) on pointers to the
+relevant type, and the code that the compiler generates for these
+pointer arithmetic operations is often more efficient for
+efficiently-aligned types than for other types.
+</p>
+<p>Note that the effectiveness of <code>aligned</code> attributes may be limited
+by inherent limitations in your linker.  On many systems, the linker is
+only able to arrange for variables to be aligned up to a certain maximum
+alignment.  (For some linkers, the maximum supported alignment may
+be very very small.)  If your linker is only able to align variables
+up to a maximum of 8-byte alignment, then specifying <code>aligned (16)</code>
+in an <code>__attribute__</code> still only provides you with 8-byte
+alignment.  See your linker documentation for further information.
+</p>
+<p>When used on a struct, or struct member, the <code>aligned</code> attribute can
+only increase the alignment; in order to decrease it, the <code>packed</code>
+attribute must be specified as well.  When used as part of a typedef, the
+<code>aligned</code> attribute can both increase and decrease alignment, and
+specifying the <code>packed</code> attribute generates a warning.
+</p>
+<a name="index-warn_005fif_005fnot_005faligned-type-attribute"></a>
+</dd>
+<dt><code>warn_if_not_aligned (<var>alignment</var>)</code></dt>
+<dd><p>This attribute specifies a threshold for the structure field, measured
+in bytes.  If the structure field is aligned below the threshold, a
+warning will be issued.  For example, the declaration:
+</p>
+<div class="smallexample">
+<pre class="smallexample">typedef unsigned long long __u64
+   __attribute__((aligned (4), warn_if_not_aligned (8)));
+
+struct foo
+{
+  int i1;
+  int i2;
+  __u64 x;
+};
+</pre></div>
+
+<p>causes the compiler to issue an warning on <code>struct foo</code>, like
+&lsquo;<samp>warning: alignment 4 of 'struct foo' is less than 8</samp>&rsquo;.
+It is used to define <code>struct foo</code> in such a way that
+<code>struct foo</code> has the same layout and the structure field <code>x</code>
+has the same alignment when <code>__u64</code> is aligned at either 4 or
+8 bytes.  Align <code>struct foo</code> to 8 bytes:
+</p>
+<div class="smallexample">
+<pre class="smallexample">struct __attribute__ ((aligned (8))) foo
+{
+  int i1;
+  int i2;
+  __u64 x;
+};
+</pre></div>
+
+<p>silences the warning.  The compiler also issues a warning, like
+&lsquo;<samp>warning: 'x' offset 12 in 'struct foo' isn't aligned to 8</samp>&rsquo;,
+when the structure field has the misaligned offset:
+</p>
+<div class="smallexample">
+<pre class="smallexample">struct __attribute__ ((aligned (8))) foo
+{
+  int i1;
+  int i2;
+  int i3;
+  __u64 x;
+};
+</pre></div>
+
+<p>This warning can be disabled by <samp>-Wno-if-not-aligned</samp>.
+</p>
+</dd>
+<dt><code>alloc_size (<var>position</var>)</code></dt>
+<dt><code>alloc_size (<var>position-1</var>, <var>position-2</var>)</code></dt>
+<dd><a name="index-alloc_005fsize-type-attribute"></a>
+<p>The <code>alloc_size</code> type attribute may be applied to the definition
+of a type of a function that returns a pointer and takes at least one
+argument of an integer type.  It indicates that the returned pointer
+points to an object whose size is given by the function argument at
+<var>position-1</var>, or by the product of the arguments at <var>position-1</var>
+and <var>position-2</var>.  Meaningful sizes are positive values less than
+<code>PTRDIFF_MAX</code>.  Other sizes are disagnosed when detected.  GCC uses
+this information to improve the results of <code>__builtin_object_size</code>.
+</p>
+<p>For instance, the following declarations
+</p>
+<div class="smallexample">
+<pre class="smallexample">typedef __attribute__ ((alloc_size (1, 2))) void*
+  calloc_type (size_t, size_t);
+typedef __attribute__ ((alloc_size (1))) void*
+  malloc_type (size_t);
+</pre></div>
+
+<p>specify that <code>calloc_type</code> is a type of a function that, like
+the standard C function <code>calloc</code>, returns an object whose size
+is given by the product of arguments 1 and 2, and that
+<code>malloc_type</code>, like the standard C function <code>malloc</code>,
+returns an object whose size is given by argument 1 to the function.
+</p>
+</dd>
+<dt><code>copy</code></dt>
+<dt><code>copy (<var>expression</var>)</code></dt>
+<dd><a name="index-copy-type-attribute"></a>
+<p>The <code>copy</code> attribute applies the set of attributes with which
+the type of the <var>expression</var> has been declared to the declaration
+of the type to which the attribute is applied.  The attribute is
+designed for libraries that define aliases that are expected to
+specify the same set of attributes as the aliased symbols.
+The <code>copy</code> attribute can be used with types, variables, or
+functions.  However, the kind of symbol to which the attribute is
+applied (either varible or function) must match the kind of symbol
+to which the argument refers.
+The <code>copy</code> attribute copies only syntactic and semantic attributes
+but not attributes that affect a symbol&rsquo;s linkage or visibility such as
+<code>alias</code>, <code>visibility</code>, or <code>weak</code>.  The <code>deprecated</code>
+attribute is also not copied.  See <a href="Common-Function-Attributes.html#Common-Function-Attributes">Common Function Attributes</a>.
+See <a href="Common-Variable-Attributes.html#Common-Variable-Attributes">Common Variable Attributes</a>.
+</p>
+<p>For example, suppose <code>struct A</code> below is defined in some third
+party library header to have the alignment requirement <code>N</code> and
+to force a warning whenever a variable of the type is not so aligned
+due to attribute <code>packed</code>.  Specifying the <code>copy</code> attribute
+on the definition on the unrelated <code>struct B</code> has the effect of
+copying all relevant attributes from the type referenced by the pointer
+expression to <code>struct B</code>.
+</p>
+<div class="smallexample">
+<pre class="smallexample">struct __attribute__ ((aligned (N), warn_if_not_aligned (N)))
+A { /* <span class="roman">&hellip;</span> */ };
+struct __attribute__ ((copy ( (struct A *)0)) B { /* <span class="roman">&hellip;</span> */ };
+</pre></div>
+
+</dd>
+<dt><code>deprecated</code></dt>
+<dt><code>deprecated (<var>msg</var>)</code></dt>
+<dd><a name="index-deprecated-type-attribute"></a>
+<p>The <code>deprecated</code> attribute results in a warning if the type
+is used anywhere in the source file.  This is useful when identifying
+types that are expected to be removed in a future version of a program.
+If possible, the warning also includes the location of the declaration
+of the deprecated type, to enable users to easily find further
+information about why the type is deprecated, or what they should do
+instead.  Note that the warnings only occur for uses and then only
+if the type is being applied to an identifier that itself is not being
+declared as deprecated.
+</p>
+<div class="smallexample">
+<pre class="smallexample">typedef int T1 __attribute__ ((deprecated));
+T1 x;
+typedef T1 T2;
+T2 y;
+typedef T1 T3 __attribute__ ((deprecated));
+T3 z __attribute__ ((deprecated));
+</pre></div>
+
+<p>results in a warning on line 2 and 3 but not lines 4, 5, or 6.  No
+warning is issued for line 4 because T2 is not explicitly
+deprecated.  Line 5 has no warning because T3 is explicitly
+deprecated.  Similarly for line 6.  The optional <var>msg</var>
+argument, which must be a string, is printed in the warning if
+present.  Control characters in the string will be replaced with
+escape sequences, and if the <samp>-fmessage-length</samp> option is set
+to 0 (its default value) then any newline characters will be ignored.
+</p>
+<p>The <code>deprecated</code> attribute can also be used for functions and
+variables (see <a href="Function-Attributes.html#Function-Attributes">Function Attributes</a>, see <a href="Variable-Attributes.html#Variable-Attributes">Variable Attributes</a>.)
+</p>
+<p>The message attached to the attribute is affected by the setting of
+the <samp>-fmessage-length</samp> option.
+</p>
+</dd>
+<dt><code>designated_init</code></dt>
+<dd><a name="index-designated_005finit-type-attribute"></a>
+<p>This attribute may only be applied to structure types.  It indicates
+that any initialization of an object of this type must use designated
+initializers rather than positional initializers.  The intent of this
+attribute is to allow the programmer to indicate that a structure&rsquo;s
+layout may change, and that therefore relying on positional
+initialization will result in future breakage.
+</p>
+<p>GCC emits warnings based on this attribute by default; use
+<samp>-Wno-designated-init</samp> to suppress them.
+</p>
+</dd>
+<dt><code>may_alias</code></dt>
+<dd><a name="index-may_005falias-type-attribute"></a>
+<p>Accesses through pointers to types with this attribute are not subject
+to type-based alias analysis, but are instead assumed to be able to alias
+any other type of objects.
+In the context of section 6.5 paragraph 7 of the C99 standard,
+an lvalue expression
+dereferencing such a pointer is treated like having a character type.
+See <samp>-fstrict-aliasing</samp> for more information on aliasing issues.
+This extension exists to support some vector APIs, in which pointers to
+one vector type are permitted to alias pointers to a different vector type.
+</p>
+<p>Note that an object of a type with this attribute does not have any
+special semantics.
+</p>
+<p>Example of use:
+</p>
+<div class="smallexample">
+<pre class="smallexample">typedef short __attribute__ ((__may_alias__)) short_a;
+
+int
+main (void)
+{
+  int a = 0x12345678;
+  short_a *b = (short_a *) &amp;a;
+
+  b[1] = 0;
+
+  if (a == 0x12345678)
+    abort();
+
+  exit(0);
+}
+</pre></div>
+
+<p>If you replaced <code>short_a</code> with <code>short</code> in the variable
+declaration, the above program would abort when compiled with
+<samp>-fstrict-aliasing</samp>, which is on by default at <samp>-O2</samp> or
+above.
+</p>
+</dd>
+<dt><code>mode (<var>mode</var>)</code></dt>
+<dd><a name="index-mode-type-attribute"></a>
+<p>This attribute specifies the data type for the declaration&mdash;whichever
+type corresponds to the mode <var>mode</var>.  This in effect lets you
+request an integer or floating-point type according to its width.
+</p>
+<p>See <a href="http://gcc.gnu.org/onlinedocs/gccint/Machine-Modes.html#Machine-Modes">Machine Modes</a> in <cite>GNU Compiler Collection (GCC) Internals</cite>,
+for a list of the possible keywords for <var>mode</var>.
+You may also specify a mode of <code>byte</code> or <code>__byte__</code> to
+indicate the mode corresponding to a one-byte integer, <code>word</code> or
+<code>__word__</code> for the mode of a one-word integer, and <code>pointer</code>
+or <code>__pointer__</code> for the mode used to represent pointers.
+</p>
+</dd>
+<dt><code>packed</code></dt>
+<dd><a name="index-packed-type-attribute"></a>
+<p>This attribute, attached to a <code>struct</code>, <code>union</code>, or C++ <code>class</code>
+type definition, specifies that each of its members (other than zero-width
+bit-fields) is placed to minimize the memory required.  This is equivalent
+to specifying the <code>packed</code> attribute on each of the members.
+</p>
+<a name="index-fshort_002denums-2"></a>
+<p>When attached to an <code>enum</code> definition, the <code>packed</code> attribute
+indicates that the smallest integral type should be used.
+Specifying the <samp>-fshort-enums</samp> flag on the command line
+is equivalent to specifying the <code>packed</code>
+attribute on all <code>enum</code> definitions.
+</p>
+<p>In the following example <code>struct my_packed_struct</code>&rsquo;s members are
+packed closely together, but the internal layout of its <code>s</code> member
+is not packed&mdash;to do that, <code>struct my_unpacked_struct</code> needs to
+be packed too.
+</p>
+<div class="smallexample">
+<pre class="smallexample">struct my_unpacked_struct
+ {
+    char c;
+    int i;
+ };
+
+struct __attribute__ ((__packed__)) my_packed_struct
+  {
+     char c;
+     int  i;
+     struct my_unpacked_struct s;
+  };
+</pre></div>
+
+<p>You may only specify the <code>packed</code> attribute on the definition
+of an <code>enum</code>, <code>struct</code>, <code>union</code>, or <code>class</code>, 
+not on a <code>typedef</code> that does not also define the enumerated type,
+structure, union, or class.
+</p>
+</dd>
+<dt><code>scalar_storage_order (&quot;<var>endianness</var>&quot;)</code></dt>
+<dd><a name="index-scalar_005fstorage_005forder-type-attribute"></a>
+<p>When attached to a <code>union</code> or a <code>struct</code>, this attribute sets
+the storage order, aka endianness, of the scalar fields of the type, as
+well as the array fields whose component is scalar.  The supported
+endiannesses are <code>big-endian</code> and <code>little-endian</code>.  The attribute
+has no effects on fields which are themselves a <code>union</code>, a <code>struct</code>
+or an array whose component is a <code>union</code> or a <code>struct</code>, and it is
+possible for these fields to have a different scalar storage order than the
+enclosing type.
+</p>
+<p>This attribute is supported only for targets that use a uniform default
+scalar storage order (fortunately, most of them), i.e. targets that store
+the scalars either all in big-endian or all in little-endian.
+</p>
+<p>Additional restrictions are enforced for types with the reverse scalar
+storage order with regard to the scalar storage order of the target:
+</p>
+<ul>
+<li> Taking the address of a scalar field of a <code>union</code> or a
+<code>struct</code> with reverse scalar storage order is not permitted and yields
+an error.
+</li><li> Taking the address of an array field, whose component is scalar, of
+a <code>union</code> or a <code>struct</code> with reverse scalar storage order is
+permitted but yields a warning, unless <samp>-Wno-scalar-storage-order</samp>
+is specified.
+</li><li> Taking the address of a <code>union</code> or a <code>struct</code> with reverse
+scalar storage order is permitted.
+</li></ul>
+
+<p>These restrictions exist because the storage order attribute is lost when
+the address of a scalar or the address of an array with scalar component is
+taken, so storing indirectly through this address generally does not work.
+The second case is nevertheless allowed to be able to perform a block copy
+from or to the array.
+</p>
+<p>Moreover, the use of type punning or aliasing to toggle the storage order
+is not supported; that is to say, a given scalar object cannot be accessed
+through distinct types that assign a different storage order to it.
+</p>
+</dd>
+<dt><code>transparent_union</code></dt>
+<dd><a name="index-transparent_005funion-type-attribute"></a>
+
+<p>This attribute, attached to a <code>union</code> type definition, indicates
+that any function parameter having that union type causes calls to that
+function to be treated in a special way.
+</p>
+<p>First, the argument corresponding to a transparent union type can be of
+any type in the union; no cast is required.  Also, if the union contains
+a pointer type, the corresponding argument can be a null pointer
+constant or a void pointer expression; and if the union contains a void
+pointer type, the corresponding argument can be any pointer expression.
+If the union member type is a pointer, qualifiers like <code>const</code> on
+the referenced type must be respected, just as with normal pointer
+conversions.
+</p>
+<p>Second, the argument is passed to the function using the calling
+conventions of the first member of the transparent union, not the calling
+conventions of the union itself.  All members of the union must have the
+same machine representation; this is necessary for this argument passing
+to work properly.
+</p>
+<p>Transparent unions are designed for library functions that have multiple
+interfaces for compatibility reasons.  For example, suppose the
+<code>wait</code> function must accept either a value of type <code>int *</code> to
+comply with POSIX, or a value of type <code>union wait *</code> to comply with
+the 4.1BSD interface.  If <code>wait</code>&rsquo;s parameter were <code>void *</code>,
+<code>wait</code> would accept both kinds of arguments, but it would also
+accept any other pointer type and this would make argument type checking
+less useful.  Instead, <code>&lt;sys/wait.h&gt;</code> might define the interface
+as follows:
+</p>
+<div class="smallexample">
+<pre class="smallexample">typedef union __attribute__ ((__transparent_union__))
+  {
+    int *__ip;
+    union wait *__up;
+  } wait_status_ptr_t;
+
+pid_t wait (wait_status_ptr_t);
+</pre></div>
+
+<p>This interface allows either <code>int *</code> or <code>union wait *</code>
+arguments to be passed, using the <code>int *</code> calling convention.
+The program can call <code>wait</code> with arguments of either type:
+</p>
+<div class="smallexample">
+<pre class="smallexample">int w1 () { int w; return wait (&amp;w); }
+int w2 () { union wait w; return wait (&amp;w); }
+</pre></div>
+
+<p>With this interface, <code>wait</code>&rsquo;s implementation might look like this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">pid_t wait (wait_status_ptr_t p)
+{
+  return waitpid (-1, p.__ip, 0);
+}
+</pre></div>
+
+</dd>
+<dt><code>unused</code></dt>
+<dd><a name="index-unused-type-attribute"></a>
+<p>When attached to a type (including a <code>union</code> or a <code>struct</code>),
+this attribute means that variables of that type are meant to appear
+possibly unused.  GCC does not produce a warning for any variables of
+that type, even if the variable appears to do nothing.  This is often
+the case with lock or thread classes, which are usually defined and then
+not referenced, but contain constructors and destructors that have
+nontrivial bookkeeping functions.
+</p>
+</dd>
+<dt><code>vector_size (<var>bytes</var>)</code></dt>
+<dd><a name="index-vector_005fsize-type-attribute"></a>
+<p>This attribute specifies the vector size for the type, measured in bytes.
+The type to which it applies is known as the <em>base type</em>.  The <var>bytes</var>
+argument must be a positive power-of-two multiple of the base type size.  For
+example, the following declarations:
+</p>
+<div class="smallexample">
+<pre class="smallexample">typedef __attribute__ ((vector_size (32))) int int_vec32_t ;
+typedef __attribute__ ((vector_size (32))) int* int_vec32_ptr_t;
+typedef __attribute__ ((vector_size (32))) int int_vec32_arr3_t[3];
+</pre></div>
+
+<p>define <code>int_vec32_t</code> to be a 32-byte vector type composed of <code>int</code>
+sized units.  With <code>int</code> having a size of 4 bytes, the type defines
+a vector of eight units, four bytes each.  The mode of variables of type
+<code>int_vec32_t</code> is <code>V8SI</code>.  <code>int_vec32_ptr_t</code> is then defined
+to be a pointer to such a vector type, and <code>int_vec32_arr3_t</code> to be
+an array of three such vectors.  See <a href="Vector-Extensions.html#Vector-Extensions">Vector Extensions</a> for details of
+manipulating objects of vector types.
+</p>
+<p>This attribute is only applicable to integral and floating scalar types.
+In function declarations the attribute applies to the function return
+type.
+</p>
+<p>For example, the following:
+</p><div class="smallexample">
+<pre class="smallexample">__attribute__ ((vector_size (16))) float get_flt_vec16 (void);
+</pre></div>
+<p>declares <code>get_flt_vec16</code> to be a function returning a 16-byte vector
+with the base type <code>float</code>.
+</p>
+</dd>
+<dt><code>visibility</code></dt>
+<dd><a name="index-visibility-type-attribute"></a>
+<p>In C++, attribute visibility (see <a href="Function-Attributes.html#Function-Attributes">Function Attributes</a>) can also be
+applied to class, struct, union and enum types.  Unlike other type
+attributes, the attribute must appear between the initial keyword and
+the name of the type; it cannot appear after the body of the type.
+</p>
+<p>Note that the type visibility is applied to vague linkage entities
+associated with the class (vtable, typeinfo node, etc.).  In
+particular, if a class is thrown as an exception in one shared object
+and caught in another, the class must have default visibility.
+Otherwise the two shared objects are unable to use the same
+typeinfo node and exception handling will break.
+</p>
+</dd>
+</dl>
+
+<p>To specify multiple attributes, separate them by commas within the
+double parentheses: for example, &lsquo;<samp>__attribute__ ((aligned (16),
+packed))</samp>&rsquo;.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="ARC-Type-Attributes.html#ARC-Type-Attributes" accesskey="n" rel="next">ARC Type Attributes</a>, Up: <a href="Type-Attributes.html#Type-Attributes" accesskey="u" rel="up">Type Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

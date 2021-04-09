@@ -1,0 +1,141 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Attr Example</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Attr Example">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Attr Example">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Insn-Attributes.html#Insn-Attributes" rel="up" title="Insn Attributes">
+<link href="Insn-Lengths.html#Insn-Lengths" rel="next" title="Insn Lengths">
+<link href="Tagging-Insns.html#Tagging-Insns" rel="prev" title="Tagging Insns">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Attr-Example"></a>
+<div class="header">
+<p>
+Next: <a href="Insn-Lengths.html#Insn-Lengths" accesskey="n" rel="next">Insn Lengths</a>, Previous: <a href="Tagging-Insns.html#Tagging-Insns" accesskey="p" rel="prev">Tagging Insns</a>, Up: <a href="Insn-Attributes.html#Insn-Attributes" accesskey="u" rel="up">Insn Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Example-of-Attribute-Specifications"></a>
+<h4 class="subsection">17.19.4 Example of Attribute Specifications</h4>
+<a name="index-attribute-specifications-example"></a>
+<a name="index-attribute-specifications"></a>
+
+<p>The judicious use of defaulting is important in the efficient use of
+insn attributes.  Typically, insns are divided into <em>types</em> and an
+attribute, customarily called <code>type</code>, is used to represent this
+value.  This attribute is normally used only to define the default value
+for other attributes.  An example will clarify this usage.
+</p>
+<p>Assume we have a RISC machine with a condition code and in which only
+full-word operations are performed in registers.  Let us assume that we
+can divide all insns into loads, stores, (integer) arithmetic
+operations, floating point operations, and branches.
+</p>
+<p>Here we will concern ourselves with determining the effect of an insn on
+the condition code and will limit ourselves to the following possible
+effects:  The condition code can be set unpredictably (clobbered), not
+be changed, be set to agree with the results of the operation, or only
+changed if the item previously set into the condition code has been
+modified.
+</p>
+<p>Here is part of a sample <samp>md</samp> file for such a machine:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_attr &quot;type&quot; &quot;load,store,arith,fp,branch&quot; (const_string &quot;arith&quot;))
+
+(define_attr &quot;cc&quot; &quot;clobber,unchanged,set,change0&quot;
+             (cond [(eq_attr &quot;type&quot; &quot;load&quot;)
+                        (const_string &quot;change0&quot;)
+                    (eq_attr &quot;type&quot; &quot;store,branch&quot;)
+                        (const_string &quot;unchanged&quot;)
+                    (eq_attr &quot;type&quot; &quot;arith&quot;)
+                        (if_then_else (match_operand:SI 0 &quot;&quot; &quot;&quot;)
+                                      (const_string &quot;set&quot;)
+                                      (const_string &quot;clobber&quot;))]
+                   (const_string &quot;clobber&quot;)))
+
+(define_insn &quot;&quot;
+  [(set (match_operand:SI 0 &quot;general_operand&quot; &quot;=r,r,m&quot;)
+        (match_operand:SI 1 &quot;general_operand&quot; &quot;r,m,r&quot;))]
+  &quot;&quot;
+  &quot;@
+   move %0,%1
+   load %0,%1
+   store %0,%1&quot;
+  [(set_attr &quot;type&quot; &quot;arith,load,store&quot;)])
+</pre></div>
+
+<p>Note that we assume in the above example that arithmetic operations
+performed on quantities smaller than a machine word clobber the condition
+code since they will set the condition code to a value corresponding to the
+full-word result.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Insn-Lengths.html#Insn-Lengths" accesskey="n" rel="next">Insn Lengths</a>, Previous: <a href="Tagging-Insns.html#Tagging-Insns" accesskey="p" rel="prev">Tagging Insns</a>, Up: <a href="Insn-Attributes.html#Insn-Attributes" accesskey="u" rel="up">Insn Attributes</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

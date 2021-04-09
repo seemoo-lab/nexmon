@@ -1,0 +1,127 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Interrupts</title>
+
+<meta name="description" content="Debugging with GDB: Interrupts">
+<meta name="keywords" content="Debugging with GDB: Interrupts">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Remote-Protocol.html#Remote-Protocol" rel="up" title="Remote Protocol">
+<link href="Notification-Packets.html#Notification-Packets" rel="next" title="Notification Packets">
+<link href="Host-I_002fO-Packets.html#Host-I_002fO-Packets" rel="prev" title="Host I/O Packets">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Interrupts"></a>
+<div class="header">
+<p>
+Next: <a href="Notification-Packets.html#Notification-Packets" accesskey="n" rel="next">Notification Packets</a>, Previous: <a href="Host-I_002fO-Packets.html#Host-I_002fO-Packets" accesskey="p" rel="prev">Host I/O Packets</a>, Up: <a href="Remote-Protocol.html#Remote-Protocol" accesskey="u" rel="up">Remote Protocol</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Interrupts-1"></a>
+<h3 class="section">E.8 Interrupts</h3>
+<a name="index-interrupts-_0028remote-protocol_0029"></a>
+<a name="interrupting-remote-targets"></a>
+<p>In all-stop mode, when a program on the remote target is running,
+<small>GDB</small> may attempt to interrupt it by sending a &lsquo;<samp>Ctrl-C</samp>&rsquo;,
+<code>BREAK</code> or a <code>BREAK</code> followed by <code>g</code>, control of which
+is specified via <small>GDB</small>&rsquo;s &lsquo;<samp>interrupt-sequence</samp>&rsquo;.
+</p>
+<p>The precise meaning of <code>BREAK</code> is defined by the transport
+mechanism and may, in fact, be undefined.  <small>GDB</small> does not
+currently define a <code>BREAK</code> mechanism for any of the network
+interfaces except for TCP, in which case <small>GDB</small> sends the
+<code>telnet</code> BREAK sequence.
+</p>
+<p>&lsquo;<samp>Ctrl-C</samp>&rsquo;, on the other hand, is defined and implemented for all
+transport mechanisms.  It is represented by sending the single byte
+<code>0x03</code> without any of the usual packet overhead described in
+the Overview section (see <a href="Overview.html#Overview">Overview</a>).  When a <code>0x03</code> byte is
+transmitted as part of a packet, it is considered to be packet data
+and does <em>not</em> represent an interrupt.  E.g., an &lsquo;<samp>X</samp>&rsquo; packet
+(see <a href="Packets.html#X-packet">X packet</a>), used for binary downloads, may include an unescaped
+<code>0x03</code> as part of its packet.
+</p>
+<p><code>BREAK</code> followed by <code>g</code> is also known as Magic SysRq g.
+When Linux kernel receives this sequence from serial port,
+it stops execution and connects to gdb.
+</p>
+<p>In non-stop mode, because packet resumptions are asynchronous
+(see <a href="Packets.html#vCont-packet">vCont packet</a>), <small>GDB</small> is always free to send a remote
+command to the remote stub, even when the target is running.  For that
+reason, <small>GDB</small> instead sends a regular packet (see <a href="Packets.html#vCtrlC-packet">vCtrlC packet</a>) with the usual packet framing instead of the single byte
+<code>0x03</code>.
+</p>
+<p>Stubs are not required to recognize these interrupt mechanisms and the
+precise meaning associated with receipt of the interrupt is
+implementation defined.  If the target supports debugging of multiple
+threads and/or processes, it should attempt to interrupt all 
+currently-executing threads and processes.
+If the stub is successful at interrupting the
+running program, it should send one of the stop
+reply packets (see <a href="Stop-Reply-Packets.html#Stop-Reply-Packets">Stop Reply Packets</a>) to <small>GDB</small> as a result
+of successfully stopping the program in all-stop mode, and a stop reply
+for each stopped thread in non-stop mode.
+Interrupts received while the
+program is stopped are queued and the program will be interrupted when
+it is resumed next time.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Notification-Packets.html#Notification-Packets" accesskey="n" rel="next">Notification Packets</a>, Previous: <a href="Host-I_002fO-Packets.html#Host-I_002fO-Packets" accesskey="p" rel="prev">Host I/O Packets</a>, Up: <a href="Remote-Protocol.html#Remote-Protocol" accesskey="u" rel="up">Remote Protocol</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

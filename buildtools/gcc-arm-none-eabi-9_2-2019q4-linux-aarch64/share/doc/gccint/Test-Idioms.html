@@ -1,0 +1,164 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Test Idioms</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Test Idioms">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Test Idioms">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Testsuites.html#Testsuites" rel="up" title="Testsuites">
+<link href="Test-Directives.html#Test-Directives" rel="next" title="Test Directives">
+<link href="Testsuites.html#Testsuites" rel="prev" title="Testsuites">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Test-Idioms"></a>
+<div class="header">
+<p>
+Next: <a href="Test-Directives.html#Test-Directives" accesskey="n" rel="next">Test Directives</a>, Up: <a href="Testsuites.html#Testsuites" accesskey="u" rel="up">Testsuites</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Idioms-Used-in-Testsuite-Code"></a>
+<h3 class="section">7.1 Idioms Used in Testsuite Code</h3>
+
+<p>In general, C testcases have a trailing <samp>-<var>n</var>.c</samp>, starting
+with <samp>-1.c</samp>, in case other testcases with similar names are added
+later.  If the test is a test of some well-defined feature, it should
+have a name referring to that feature such as
+<samp><var>feature</var>-1.c</samp>.  If it does not test a well-defined feature
+but just happens to exercise a bug somewhere in the compiler, and a
+bug report has been filed for this bug in the GCC bug database,
+<samp>pr<var>bug-number</var>-1.c</samp> is the appropriate form of name.
+Otherwise (for miscellaneous bugs not filed in the GCC bug database),
+and previously more generally, test cases are named after the date on
+which they were added.  This allows people to tell at a glance whether
+a test failure is because of a recently found bug that has not yet
+been fixed, or whether it may be a regression, but does not give any
+other information about the bug or where discussion of it may be
+found.  Some other language testsuites follow similar conventions.
+</p>
+<p>In the <samp>gcc.dg</samp> testsuite, it is often necessary to test that an
+error is indeed a hard error and not just a warning&mdash;for example,
+where it is a constraint violation in the C standard, which must
+become an error with <samp>-pedantic-errors</samp>.  The following idiom,
+where the first line shown is line <var>line</var> of the file and the line
+that generates the error, is used for this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">/* { dg-bogus &quot;warning&quot; &quot;warning in place of error&quot; } */
+/* { dg-error &quot;<var>regexp</var>&quot; &quot;<var>message</var>&quot; { target *-*-* } <var>line</var> } */
+</pre></div>
+
+<p>It may be necessary to check that an expression is an integer constant
+expression and has a certain value.  To check that <code><var>E</var></code> has
+value <code><var>V</var></code>, an idiom similar to the following is used:
+</p>
+<div class="smallexample">
+<pre class="smallexample">char x[((E) == (V) ? 1 : -1)];
+</pre></div>
+
+<p>In <samp>gcc.dg</samp> tests, <code>__typeof__</code> is sometimes used to make
+assertions about the types of expressions.  See, for example,
+<samp>gcc.dg/c99-condexpr-1.c</samp>.  The more subtle uses depend on the
+exact rules for the types of conditional expressions in the C
+standard; see, for example, <samp>gcc.dg/c99-intconst-1.c</samp>.
+</p>
+<p>It is useful to be able to test that optimizations are being made
+properly.  This cannot be done in all cases, but it can be done where
+the optimization will lead to code being optimized away (for example,
+where flow analysis or alias analysis should show that certain code
+cannot be called) or to functions not being called because they have
+been expanded as built-in functions.  Such tests go in
+<samp>gcc.c-torture/execute</samp>.  Where code should be optimized away, a
+call to a nonexistent function such as <code>link_failure ()</code> may be
+inserted; a definition
+</p>
+<div class="smallexample">
+<pre class="smallexample">#ifndef __OPTIMIZE__
+void
+link_failure (void)
+{
+  abort ();
+}
+#endif
+</pre></div>
+
+<p>will also be needed so that linking still succeeds when the test is
+run without optimization.  When all calls to a built-in function
+should have been optimized and no calls to the non-built-in version of
+the function should remain, that function may be defined as
+<code>static</code> to call <code>abort ()</code> (although redeclaring a function
+as static may not work on all targets).
+</p>
+<p>All testcases must be portable.  Target-specific testcases must have
+appropriate code to avoid causing failures on unsupported systems;
+unfortunately, the mechanisms for this differ by directory.
+</p>
+<p>FIXME: discuss non-C testsuites here.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Test-Directives.html#Test-Directives" accesskey="n" rel="next">Test Directives</a>, Up: <a href="Testsuites.html#Testsuites" accesskey="u" rel="up">Testsuites</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Incdec</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Incdec">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Incdec">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="RTL.html#RTL" rel="up" title="RTL">
+<link href="Assembler.html#Assembler" rel="next" title="Assembler">
+<link href="Side-Effects.html#Side-Effects" rel="prev" title="Side Effects">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Incdec"></a>
+<div class="header">
+<p>
+Next: <a href="Assembler.html#Assembler" accesskey="n" rel="next">Assembler</a>, Previous: <a href="Side-Effects.html#Side-Effects" accesskey="p" rel="prev">Side Effects</a>, Up: <a href="RTL.html#RTL" accesskey="u" rel="up">RTL</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Embedded-Side_002dEffects-on-Addresses"></a>
+<h3 class="section">14.16 Embedded Side-Effects on Addresses</h3>
+<a name="index-RTL-preincrement"></a>
+<a name="index-RTL-postincrement"></a>
+<a name="index-RTL-predecrement"></a>
+<a name="index-RTL-postdecrement"></a>
+
+<p>Six special side-effect expression codes appear as memory addresses.
+</p>
+<dl compact="compact">
+<dd><a name="index-pre_005fdec"></a>
+</dd>
+<dt><code>(pre_dec:<var>m</var> <var>x</var>)</code></dt>
+<dd><p>Represents the side effect of decrementing <var>x</var> by a standard
+amount and represents also the value that <var>x</var> has after being
+decremented.  <var>x</var> must be a <code>reg</code> or <code>mem</code>, but most
+machines allow only a <code>reg</code>.  <var>m</var> must be the machine mode
+for pointers on the machine in use.  The amount <var>x</var> is decremented
+by is the length in bytes of the machine mode of the containing memory
+reference of which this expression serves as the address.  Here is an
+example of its use:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(mem:DF (pre_dec:SI (reg:SI 39)))
+</pre></div>
+
+<p>This says to decrement pseudo register 39 by the length of a <code>DFmode</code>
+value and use the result to address a <code>DFmode</code> value.
+</p>
+<a name="index-pre_005finc"></a>
+</dd>
+<dt><code>(pre_inc:<var>m</var> <var>x</var>)</code></dt>
+<dd><p>Similar, but specifies incrementing <var>x</var> instead of decrementing it.
+</p>
+<a name="index-post_005fdec"></a>
+</dd>
+<dt><code>(post_dec:<var>m</var> <var>x</var>)</code></dt>
+<dd><p>Represents the same side effect as <code>pre_dec</code> but a different
+value.  The value represented here is the value <var>x</var> has <i>before</i>
+being decremented.
+</p>
+<a name="index-post_005finc"></a>
+</dd>
+<dt><code>(post_inc:<var>m</var> <var>x</var>)</code></dt>
+<dd><p>Similar, but specifies incrementing <var>x</var> instead of decrementing it.
+</p>
+<a name="index-post_005fmodify"></a>
+</dd>
+<dt><code>(post_modify:<var>m</var> <var>x</var> <var>y</var>)</code></dt>
+<dd>
+<p>Represents the side effect of setting <var>x</var> to <var>y</var> and
+represents <var>x</var> before <var>x</var> is modified.  <var>x</var> must be a
+<code>reg</code> or <code>mem</code>, but most machines allow only a <code>reg</code>.
+<var>m</var> must be the machine mode for pointers on the machine in use.
+</p>
+<p>The expression <var>y</var> must be one of three forms:
+<code>(plus:<var>m</var> <var>x</var> <var>z</var>)</code>,
+<code>(minus:<var>m</var> <var>x</var> <var>z</var>)</code>, or
+<code>(plus:<var>m</var> <var>x</var> <var>i</var>)</code>,
+where <var>z</var> is an index register and <var>i</var> is a constant.
+</p>
+<p>Here is an example of its use:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(mem:SF (post_modify:SI (reg:SI 42) (plus (reg:SI 42)
+                                          (reg:SI 48))))
+</pre></div>
+
+<p>This says to modify pseudo register 42 by adding the contents of pseudo
+register 48 to it, after the use of what ever 42 points to.
+</p>
+<a name="index-pre_005fmodify"></a>
+</dd>
+<dt><code>(pre_modify:<var>m</var> <var>x</var> <var>expr</var>)</code></dt>
+<dd><p>Similar except side effects happen before the use.
+</p></dd>
+</dl>
+
+<p>These embedded side effect expressions must be used with care.  Instruction
+patterns may not use them.  Until the &lsquo;<samp>flow</samp>&rsquo; pass of the compiler,
+they may occur only to represent pushes onto the stack.  The &lsquo;<samp>flow</samp>&rsquo;
+pass finds cases where registers are incremented or decremented in one
+instruction and used as an address shortly before or after; these cases are
+then transformed to use pre- or post-increment or -decrement.
+</p>
+<p>If a register used as the operand of these expressions is used in
+another address in an insn, the original value of the register is used.
+Uses of the register outside of an address are not permitted within the
+same insn as a use in an embedded side effect expression because such
+insns behave differently on different machines and hence must be treated
+as ambiguous and disallowed.
+</p>
+<p>An instruction that can be represented with an embedded side effect
+could also be represented using <code>parallel</code> containing an additional
+<code>set</code> to describe how the address register is altered.  This is not
+done because machines that allow these operations at all typically
+allow them wherever a memory address is called for.  Describing them as
+additional parallel stores would require doubling the number of entries
+in the machine description.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Assembler.html#Assembler" accesskey="n" rel="next">Assembler</a>, Previous: <a href="Side-Effects.html#Side-Effects" accesskey="p" rel="prev">Side Effects</a>, Up: <a href="RTL.html#RTL" accesskey="u" rel="up">RTL</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,342 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Stop Reply Packets</title>
+
+<meta name="description" content="Debugging with GDB: Stop Reply Packets">
+<meta name="keywords" content="Debugging with GDB: Stop Reply Packets">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Remote-Protocol.html#Remote-Protocol" rel="up" title="Remote Protocol">
+<link href="General-Query-Packets.html#General-Query-Packets" rel="next" title="General Query Packets">
+<link href="Packets.html#Packets" rel="prev" title="Packets">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Stop-Reply-Packets"></a>
+<div class="header">
+<p>
+Next: <a href="General-Query-Packets.html#General-Query-Packets" accesskey="n" rel="next">General Query Packets</a>, Previous: <a href="Packets.html#Packets" accesskey="p" rel="prev">Packets</a>, Up: <a href="Remote-Protocol.html#Remote-Protocol" accesskey="u" rel="up">Remote Protocol</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Stop-Reply-Packets-1"></a>
+<h3 class="section">E.3 Stop Reply Packets</h3>
+<a name="index-stop-reply-packets"></a>
+
+<p>The &lsquo;<samp>C</samp>&rsquo;, &lsquo;<samp>c</samp>&rsquo;, &lsquo;<samp>S</samp>&rsquo;, &lsquo;<samp>s</samp>&rsquo;, &lsquo;<samp>vCont</samp>&rsquo;,
+&lsquo;<samp>vAttach</samp>&rsquo;, &lsquo;<samp>vRun</samp>&rsquo;, &lsquo;<samp>vStopped</samp>&rsquo;, and &lsquo;<samp>?</samp>&rsquo; packets can
+receive any of the below as a reply.  Except for &lsquo;<samp>?</samp>&rsquo;
+and &lsquo;<samp>vStopped</samp>&rsquo;, that reply is only returned
+when the target halts.  In the below the exact meaning of <em>signal
+number</em> is defined by the header <samp>include/gdb/signals.h</samp> in the
+<small>GDB</small> source code.
+</p>
+<p>In non-stop mode, the server will simply reply &lsquo;<samp>OK</samp>&rsquo; to commands
+such as &lsquo;<samp>vCont</samp>&rsquo;; any stop will be the subject of a future
+notification.  See <a href="Remote-Non_002dStop.html#Remote-Non_002dStop">Remote Non-Stop</a>.
+</p>
+<p>As in the description of request packets, we include spaces in the
+reply templates for clarity; these are not part of the reply packet&rsquo;s
+syntax.  No <small>GDB</small> stop reply packet uses spaces to separate its
+components.
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>S <var>AA</var></samp>&rsquo;</dt>
+<dd><p>The program received signal number <var>AA</var> (a two-digit hexadecimal
+number).  This is equivalent to a &lsquo;<samp>T</samp>&rsquo; response with no
+<var>n</var>:<var>r</var> pairs.
+</p>
+</dd>
+<dt>&lsquo;<samp>T <var>AA</var> <var>n1</var>:<var>r1</var>;<var>n2</var>:<var>r2</var>;&hellip;</samp>&rsquo;</dt>
+<dd><a name="index-T-packet-reply"></a>
+<p>The program received signal number <var>AA</var> (a two-digit hexadecimal
+number).  This is equivalent to an &lsquo;<samp>S</samp>&rsquo; response, except that the
+&lsquo;<samp><var>n</var>:<var>r</var></samp>&rsquo; pairs can carry values of important registers
+and other information directly in the stop reply packet, reducing
+round-trip latency.  Single-step and breakpoint traps are reported
+this way.  Each &lsquo;<samp><var>n</var>:<var>r</var></samp>&rsquo; pair is interpreted as follows:
+</p>
+<ul>
+<li> If <var>n</var> is a hexadecimal number, it is a register number, and the
+corresponding <var>r</var> gives that register&rsquo;s value.  The data <var>r</var> is a
+series of bytes in target byte order, with each byte given by a
+two-digit hex number.
+
+</li><li> If <var>n</var> is &lsquo;<samp>thread</samp>&rsquo;, then <var>r</var> is the <var>thread-id</var> of
+the stopped thread, as specified in <a href="Packets.html#thread_002did-syntax">thread-id syntax</a>.
+
+</li><li> If <var>n</var> is &lsquo;<samp>core</samp>&rsquo;, then <var>r</var> is the hexadecimal number of
+the core on which the stop event was detected.
+
+</li><li> If <var>n</var> is a recognized <em>stop reason</em>, it describes a more
+specific event that stopped the target.  The currently defined stop
+reasons are listed below.  The <var>aa</var> should be &lsquo;<samp>05</samp>&rsquo;, the trap
+signal.  At most one stop reason should be present.
+
+</li><li> Otherwise, <small>GDB</small> should ignore this &lsquo;<samp><var>n</var>:<var>r</var></samp>&rsquo; pair
+and go on to the next; this allows us to extend the protocol in the
+future.
+</li></ul>
+
+<p>The currently defined stop reasons are:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>watch</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>rwatch</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>awatch</samp>&rsquo;</dt>
+<dd><p>The packet indicates a watchpoint hit, and <var>r</var> is the data address, in
+hex.
+</p>
+</dd>
+<dt>&lsquo;<samp>syscall_entry</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>syscall_return</samp>&rsquo;</dt>
+<dd><p>The packet indicates a syscall entry or return, and <var>r</var> is the
+syscall number, in hex.
+</p>
+<a name="index-shared-library-events_002c-remote-reply"></a>
+</dd>
+<dt>&lsquo;<samp>library</samp>&rsquo;</dt>
+<dd><p>The packet indicates that the loaded libraries have changed.
+<small>GDB</small> should use &lsquo;<samp>qXfer:libraries:read</samp>&rsquo; to fetch a new
+list of loaded libraries.  The <var>r</var> part is ignored.
+</p>
+<a name="index-replay-log-events_002c-remote-reply"></a>
+</dd>
+<dt>&lsquo;<samp>replaylog</samp>&rsquo;</dt>
+<dd><p>The packet indicates that the target cannot continue replaying 
+logged execution events, because it has reached the end (or the
+beginning when executing backward) of the log.  The value of <var>r</var>
+will be either &lsquo;<samp>begin</samp>&rsquo; or &lsquo;<samp>end</samp>&rsquo;.  See <a href="Reverse-Execution.html#Reverse-Execution">Reverse Execution</a>, 
+for more information.
+</p>
+</dd>
+<dt>&lsquo;<samp>swbreak</samp>&rsquo;</dt>
+<dd><a name="swbreak-stop-reason"></a><p>The packet indicates a software breakpoint instruction was executed,
+irrespective of whether it was <small>GDB</small> that planted the
+breakpoint or the breakpoint is hardcoded in the program.  The <var>r</var>
+part must be left empty.
+</p>
+<p>On some architectures, such as x86, at the architecture level, when a
+breakpoint instruction executes the program counter points at the
+breakpoint address plus an offset.  On such targets, the stub is
+responsible for adjusting the PC to point back at the breakpoint
+address.
+</p>
+<p>This packet should not be sent by default; older <small>GDB</small> versions
+did not support it.  <small>GDB</small> requests it, by supplying an
+appropriate &lsquo;<samp>qSupported</samp>&rsquo; feature (see <a href="General-Query-Packets.html#qSupported">qSupported</a>).  The
+remote stub must also supply the appropriate &lsquo;<samp>qSupported</samp>&rsquo; feature
+indicating support.
+</p>
+<p>This packet is required for correct non-stop mode operation.
+</p>
+</dd>
+<dt>&lsquo;<samp>hwbreak</samp>&rsquo;</dt>
+<dd><p>The packet indicates the target stopped for a hardware breakpoint.
+The <var>r</var> part must be left empty.
+</p>
+<p>The same remarks about &lsquo;<samp>qSupported</samp>&rsquo; and non-stop mode above
+apply.
+</p>
+<a name="index-fork-events_002c-remote-reply"></a>
+</dd>
+<dt>&lsquo;<samp>fork</samp>&rsquo;</dt>
+<dd><p>The packet indicates that <code>fork</code> was called, and <var>r</var>
+is the thread ID of the new child process.  Refer to
+<a href="Packets.html#thread_002did-syntax">thread-id syntax</a> for the format of the <var>thread-id</var>
+field.  This packet is only applicable to targets that support
+fork events.
+</p>
+<p>This packet should not be sent by default; older <small>GDB</small> versions
+did not support it.  <small>GDB</small> requests it, by supplying an
+appropriate &lsquo;<samp>qSupported</samp>&rsquo; feature (see <a href="General-Query-Packets.html#qSupported">qSupported</a>).  The
+remote stub must also supply the appropriate &lsquo;<samp>qSupported</samp>&rsquo; feature
+indicating support.
+</p>
+<a name="index-vfork-events_002c-remote-reply"></a>
+</dd>
+<dt>&lsquo;<samp>vfork</samp>&rsquo;</dt>
+<dd><p>The packet indicates that <code>vfork</code> was called, and <var>r</var>
+is the thread ID of the new child process. Refer to
+<a href="Packets.html#thread_002did-syntax">thread-id syntax</a> for the format of the <var>thread-id</var>
+field.  This packet is only applicable to targets that support
+vfork events.
+</p>
+<p>This packet should not be sent by default; older <small>GDB</small> versions
+did not support it.  <small>GDB</small> requests it, by supplying an
+appropriate &lsquo;<samp>qSupported</samp>&rsquo; feature (see <a href="General-Query-Packets.html#qSupported">qSupported</a>).  The
+remote stub must also supply the appropriate &lsquo;<samp>qSupported</samp>&rsquo; feature
+indicating support.
+</p>
+<a name="index-vforkdone-events_002c-remote-reply"></a>
+</dd>
+<dt>&lsquo;<samp>vforkdone</samp>&rsquo;</dt>
+<dd><p>The packet indicates that a child process created by a vfork
+has either called <code>exec</code> or terminated, so that the
+address spaces of the parent and child process are no longer
+shared. The <var>r</var> part is ignored.  This packet is only
+applicable to targets that support vforkdone events.
+</p>
+<p>This packet should not be sent by default; older <small>GDB</small> versions
+did not support it.  <small>GDB</small> requests it, by supplying an
+appropriate &lsquo;<samp>qSupported</samp>&rsquo; feature (see <a href="General-Query-Packets.html#qSupported">qSupported</a>).  The
+remote stub must also supply the appropriate &lsquo;<samp>qSupported</samp>&rsquo; feature
+indicating support.
+</p>
+<a name="index-exec-events_002c-remote-reply"></a>
+</dd>
+<dt>&lsquo;<samp>exec</samp>&rsquo;</dt>
+<dd><p>The packet indicates that <code>execve</code> was called, and <var>r</var>
+is the absolute pathname of the file that was executed, in hex.
+This packet is only applicable to targets that support exec events.
+</p>
+<p>This packet should not be sent by default; older <small>GDB</small> versions
+did not support it.  <small>GDB</small> requests it, by supplying an
+appropriate &lsquo;<samp>qSupported</samp>&rsquo; feature (see <a href="General-Query-Packets.html#qSupported">qSupported</a>).  The
+remote stub must also supply the appropriate &lsquo;<samp>qSupported</samp>&rsquo; feature
+indicating support.
+</p>
+<a name="index-thread-create-event_002c-remote-reply"></a>
+<a name="thread-create-event"></a></dd>
+<dt>&lsquo;<samp>create</samp>&rsquo;</dt>
+<dd><p>The packet indicates that the thread was just created.  The new thread
+is stopped until <small>GDB</small> sets it running with a resumption packet
+(see <a href="Packets.html#vCont-packet">vCont packet</a>).  This packet should not be sent by default;
+<small>GDB</small> requests it with the <a href="General-Query-Packets.html#QThreadEvents">QThreadEvents</a> packet.  See
+also the &lsquo;<samp>w</samp>&rsquo; (see <a href="#thread-exit-event">thread exit event</a>) remote reply below.  The
+<var>r</var> part is ignored.
+</p>
+</dd>
+</dl>
+
+</dd>
+<dt>&lsquo;<samp>W <var>AA</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>W <var>AA</var> ; process:<var>pid</var></samp>&rsquo;</dt>
+<dd><p>The process exited, and <var>AA</var> is the exit status.  This is only
+applicable to certain targets.
+</p>
+<p>The second form of the response, including the process ID of the
+exited process, can be used only when <small>GDB</small> has reported
+support for multiprocess protocol extensions; see <a href="General-Query-Packets.html#multiprocess-extensions">multiprocess extensions</a>.  Both <var>AA</var> and <var>pid</var> are formatted as big-endian
+hex strings.
+</p>
+</dd>
+<dt>&lsquo;<samp>X <var>AA</var></samp>&rsquo;</dt>
+<dt>&lsquo;<samp>X <var>AA</var> ; process:<var>pid</var></samp>&rsquo;</dt>
+<dd><p>The process terminated with signal <var>AA</var>.
+</p>
+<p>The second form of the response, including the process ID of the
+terminated process, can be used only when <small>GDB</small> has reported
+support for multiprocess protocol extensions; see <a href="General-Query-Packets.html#multiprocess-extensions">multiprocess extensions</a>.  Both <var>AA</var> and <var>pid</var> are formatted as big-endian
+hex strings.
+</p>
+<a name="thread-exit-event"></a><a name="index-thread-exit-event_002c-remote-reply"></a>
+</dd>
+<dt>&lsquo;<samp>w <var>AA</var> ; <var>tid</var></samp>&rsquo;</dt>
+<dd>
+<p>The thread exited, and <var>AA</var> is the exit status.  This response
+should not be sent by default; <small>GDB</small> requests it with the
+<a href="General-Query-Packets.html#QThreadEvents">QThreadEvents</a> packet.  See also <a href="#thread-create-event">thread create event</a> above.
+<var>AA</var> is formatted as a big-endian hex string.
+</p>
+</dd>
+<dt>&lsquo;<samp>N</samp>&rsquo;</dt>
+<dd><p>There are no resumed threads left in the target.  In other words, even
+though the process is alive, the last resumed thread has exited.  For
+example, say the target process has two threads: thread 1 and thread
+2.  The client leaves thread 1 stopped, and resumes thread 2, which
+subsequently exits.  At this point, even though the process is still
+alive, and thus no &lsquo;<samp>W</samp>&rsquo; stop reply is sent, no thread is actually
+executing either.  The &lsquo;<samp>N</samp>&rsquo; stop reply thus informs the client
+that it can stop waiting for stop replies.  This packet should not be
+sent by default; older <small>GDB</small> versions did not support it.
+<small>GDB</small> requests it, by supplying an appropriate
+&lsquo;<samp>qSupported</samp>&rsquo; feature (see <a href="General-Query-Packets.html#qSupported">qSupported</a>).  The remote stub must
+also supply the appropriate &lsquo;<samp>qSupported</samp>&rsquo; feature indicating
+support.
+</p>
+</dd>
+<dt>&lsquo;<samp>O <var>XX</var>&hellip;</samp>&rsquo;</dt>
+<dd><p>&lsquo;<samp><var>XX</var>&hellip;</samp>&rsquo; is hex encoding of <small>ASCII</small> data, to be
+written as the program&rsquo;s console output.  This can happen at any time
+while the program is running and the debugger should continue to wait
+for &lsquo;<samp>W</samp>&rsquo;, &lsquo;<samp>T</samp>&rsquo;, etc.  This reply is not permitted in non-stop mode.
+</p>
+</dd>
+<dt>&lsquo;<samp>F <var>call-id</var>,<var>parameter</var>&hellip;</samp>&rsquo;</dt>
+<dd><p><var>call-id</var> is the identifier which says which host system call should
+be called.  This is just the name of the function.  Translation into the
+correct system call is only applicable as it&rsquo;s defined in <small>GDB</small>.
+See <a href="File_002dI_002fO-Remote-Protocol-Extension.html#File_002dI_002fO-Remote-Protocol-Extension">File-I/O Remote Protocol Extension</a>, for a list of implemented
+system calls.
+</p>
+<p>&lsquo;<samp><var>parameter</var>&hellip;</samp>&rsquo; is a list of parameters as defined for
+this very system call.
+</p>
+<p>The target replies with this packet when it expects <small>GDB</small> to
+call a host system call on behalf of the target.  <small>GDB</small> replies
+with an appropriate &lsquo;<samp>F</samp>&rsquo; packet and keeps up waiting for the next
+reply packet from the target.  The latest &lsquo;<samp>C</samp>&rsquo;, &lsquo;<samp>c</samp>&rsquo;, &lsquo;<samp>S</samp>&rsquo;
+or &lsquo;<samp>s</samp>&rsquo; action is expected to be continued.  See <a href="File_002dI_002fO-Remote-Protocol-Extension.html#File_002dI_002fO-Remote-Protocol-Extension">File-I/O Remote Protocol Extension</a>, for more details.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="General-Query-Packets.html#General-Query-Packets" accesskey="n" rel="next">General Query Packets</a>, Previous: <a href="Packets.html#Packets" accesskey="p" rel="prev">Packets</a>, Up: <a href="Remote-Protocol.html#Remote-Protocol" accesskey="u" rel="up">Remote Protocol</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

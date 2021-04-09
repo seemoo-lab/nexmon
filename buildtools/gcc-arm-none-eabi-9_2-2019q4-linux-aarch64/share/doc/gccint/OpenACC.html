@@ -1,0 +1,153 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: OpenACC</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: OpenACC">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: OpenACC">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Statements.html#Statements" rel="up" title="Statements">
+<link href="Functions.html#Functions" rel="next" title="Functions">
+<link href="OpenMP.html#OpenMP" rel="prev" title="OpenMP">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="OpenACC"></a>
+<div class="header">
+<p>
+Previous: <a href="OpenMP.html#OpenMP" accesskey="p" rel="prev">OpenMP</a>, Up: <a href="Statements.html#Statements" accesskey="u" rel="up">Statements</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="OpenACC-1"></a>
+<h4 class="subsection">11.7.8 OpenACC</h4>
+<a name="index-OACC_005fCACHE"></a>
+<a name="index-OACC_005fDATA"></a>
+<a name="index-OACC_005fDECLARE"></a>
+<a name="index-OACC_005fENTER_005fDATA"></a>
+<a name="index-OACC_005fEXIT_005fDATA"></a>
+<a name="index-OACC_005fHOST_005fDATA"></a>
+<a name="index-OACC_005fKERNELS"></a>
+<a name="index-OACC_005fLOOP"></a>
+<a name="index-OACC_005fPARALLEL"></a>
+<a name="index-OACC_005fUPDATE"></a>
+
+<p>All the statements starting with <code>OACC_</code> represent directives and
+clauses used by the OpenACC API <a href="https://www.openacc.org">https://www.openacc.org</a><!-- /@w -->.
+</p>
+<dl compact="compact">
+<dt><code>OACC_CACHE</code></dt>
+<dd>
+<p>Represents <code>#pragma acc cache (var &hellip;)</code>.
+</p>
+</dd>
+<dt><code>OACC_DATA</code></dt>
+<dd>
+<p>Represents <code>#pragma acc data [clause1 &hellip; clauseN]</code>.
+</p>
+</dd>
+<dt><code>OACC_DECLARE</code></dt>
+<dd>
+<p>Represents <code>#pragma acc declare [clause1 &hellip; clauseN]</code>.
+</p>
+</dd>
+<dt><code>OACC_ENTER_DATA</code></dt>
+<dd>
+<p>Represents <code>#pragma acc enter data [clause1 &hellip; clauseN]</code>.
+</p>
+</dd>
+<dt><code>OACC_EXIT_DATA</code></dt>
+<dd>
+<p>Represents <code>#pragma acc exit data [clause1 &hellip; clauseN]</code>.
+</p>
+</dd>
+<dt><code>OACC_HOST_DATA</code></dt>
+<dd>
+<p>Represents <code>#pragma acc host_data [clause1 &hellip; clauseN]</code>.
+</p>
+</dd>
+<dt><code>OACC_KERNELS</code></dt>
+<dd>
+<p>Represents <code>#pragma acc kernels [clause1 &hellip; clauseN]</code>.
+</p>
+</dd>
+<dt><code>OACC_LOOP</code></dt>
+<dd>
+<p>Represents <code>#pragma acc loop [clause1 &hellip; clauseN]</code>.
+</p>
+<p>See the description of the <code>OMP_FOR</code> code.
+</p>
+</dd>
+<dt><code>OACC_PARALLEL</code></dt>
+<dd>
+<p>Represents <code>#pragma acc parallel [clause1 &hellip; clauseN]</code>.
+</p>
+</dd>
+<dt><code>OACC_UPDATE</code></dt>
+<dd>
+<p>Represents <code>#pragma acc update [clause1 &hellip; clauseN]</code>.
+</p>
+</dd>
+</dl>
+
+
+
+
+
+</body>
+</html>

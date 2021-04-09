@@ -1,0 +1,335 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Signals</title>
+
+<meta name="description" content="Debugging with GDB: Signals">
+<meta name="keywords" content="Debugging with GDB: Signals">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Stopping.html#Stopping" rel="up" title="Stopping">
+<link href="Thread-Stops.html#Thread-Stops" rel="next" title="Thread Stops">
+<link href="Skipping-Over-Functions-and-Files.html#Skipping-Over-Functions-and-Files" rel="prev" title="Skipping Over Functions and Files">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Signals"></a>
+<div class="header">
+<p>
+Next: <a href="Thread-Stops.html#Thread-Stops" accesskey="n" rel="next">Thread Stops</a>, Previous: <a href="Skipping-Over-Functions-and-Files.html#Skipping-Over-Functions-and-Files" accesskey="p" rel="prev">Skipping Over Functions and Files</a>, Up: <a href="Stopping.html#Stopping" accesskey="u" rel="up">Stopping</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Signals-1"></a>
+<h3 class="section">5.4 Signals</h3>
+<a name="index-signals"></a>
+
+<p>A signal is an asynchronous event that can happen in a program.  The
+operating system defines the possible kinds of signals, and gives each
+kind a name and a number.  For example, in Unix <code>SIGINT</code> is the
+signal a program gets when you type an interrupt character (often <kbd>Ctrl-c</kbd>);
+<code>SIGSEGV</code> is the signal a program gets from referencing a place in
+memory far away from all the areas in use; <code>SIGALRM</code> occurs when
+the alarm clock timer goes off (which happens only if your program has
+requested an alarm).
+</p>
+<a name="index-fatal-signals"></a>
+<p>Some signals, including <code>SIGALRM</code>, are a normal part of the
+functioning of your program.  Others, such as <code>SIGSEGV</code>, indicate
+errors; these signals are <em>fatal</em> (they kill your program immediately) if the
+program has not specified in advance some other way to handle the signal.
+<code>SIGINT</code> does not indicate an error in your program, but it is normally
+fatal so it can carry out the purpose of the interrupt: to kill the program.
+</p>
+<p><small>GDB</small> has the ability to detect any occurrence of a signal in your
+program.  You can tell <small>GDB</small> in advance what to do for each kind of
+signal.
+</p>
+<a name="index-handling-signals"></a>
+<p>Normally, <small>GDB</small> is set up to let the non-erroneous signals like
+<code>SIGALRM</code> be silently passed to your program
+(so as not to interfere with their role in the program&rsquo;s functioning)
+but to stop your program immediately whenever an error signal happens.
+You can change these settings with the <code>handle</code> command.
+</p>
+<dl compact="compact">
+<dd><a name="index-info-signals"></a>
+<a name="index-info-handle"></a>
+</dd>
+<dt><code>info signals</code></dt>
+<dt><code>info handle</code></dt>
+<dd><p>Print a table of all the kinds of signals and how <small>GDB</small> has been told to
+handle each one.  You can use this to see the signal numbers of all
+the defined types of signals.
+</p>
+</dd>
+<dt><code>info signals <var>sig</var></code></dt>
+<dd><p>Similar, but print information only about the specified signal number.
+</p>
+<p><code>info handle</code> is an alias for <code>info signals</code>.
+</p>
+</dd>
+<dt><code>catch signal <span class="roman">[</span><var>signal</var>&hellip; <span class="roman">|</span> &lsquo;<samp>all</samp>&rsquo;<span class="roman">]</span></code></dt>
+<dd><p>Set a catchpoint for the indicated signals.  See <a href="Set-Catchpoints.html#Set-Catchpoints">Set Catchpoints</a>,
+for details about this command.
+</p>
+<a name="index-handle"></a>
+</dd>
+<dt><code>handle <var>signal</var> <span class="roman">[</span><var>keywords</var>&hellip;<span class="roman">]</span></code></dt>
+<dd><p>Change the way <small>GDB</small> handles signal <var>signal</var>.  The <var>signal</var>
+can be the number of a signal or its name (with or without the
+&lsquo;<samp>SIG</samp>&rsquo; at the beginning); a list of signal numbers of the form
+&lsquo;<samp><var>low</var>-<var>high</var></samp>&rsquo;; or the word &lsquo;<samp>all</samp>&rsquo;, meaning all the
+known signals.  Optional arguments <var>keywords</var>, described below,
+say what change to make.
+</p></dd>
+</dl>
+
+<p>The keywords allowed by the <code>handle</code> command can be abbreviated.
+Their full names are:
+</p>
+<dl compact="compact">
+<dt><code>nostop</code></dt>
+<dd><p><small>GDB</small> should not stop your program when this signal happens.  It may
+still print a message telling you that the signal has come in.
+</p>
+</dd>
+<dt><code>stop</code></dt>
+<dd><p><small>GDB</small> should stop your program when this signal happens.  This implies
+the <code>print</code> keyword as well.
+</p>
+</dd>
+<dt><code>print</code></dt>
+<dd><p><small>GDB</small> should print a message when this signal happens.
+</p>
+</dd>
+<dt><code>noprint</code></dt>
+<dd><p><small>GDB</small> should not mention the occurrence of the signal at all.  This
+implies the <code>nostop</code> keyword as well.
+</p>
+</dd>
+<dt><code>pass</code></dt>
+<dt><code>noignore</code></dt>
+<dd><p><small>GDB</small> should allow your program to see this signal; your program
+can handle the signal, or else it may terminate if the signal is fatal
+and not handled.  <code>pass</code> and <code>noignore</code> are synonyms.
+</p>
+</dd>
+<dt><code>nopass</code></dt>
+<dt><code>ignore</code></dt>
+<dd><p><small>GDB</small> should not allow your program to see this signal.
+<code>nopass</code> and <code>ignore</code> are synonyms.
+</p></dd>
+</dl>
+
+<p>When a signal stops your program, the signal is not visible to the
+program until you
+continue.  Your program sees the signal then, if <code>pass</code> is in
+effect for the signal in question <em>at that time</em>.  In other words,
+after <small>GDB</small> reports a signal, you can use the <code>handle</code>
+command with <code>pass</code> or <code>nopass</code> to control whether your
+program sees that signal when you continue.
+</p>
+<p>The default is set to <code>nostop</code>, <code>noprint</code>, <code>pass</code> for
+non-erroneous signals such as <code>SIGALRM</code>, <code>SIGWINCH</code> and
+<code>SIGCHLD</code>, and to <code>stop</code>, <code>print</code>, <code>pass</code> for the
+erroneous signals.
+</p>
+<p>You can also use the <code>signal</code> command to prevent your program from
+seeing a signal, or cause it to see a signal it normally would not see,
+or to give it any signal at any time.  For example, if your program stopped
+due to some sort of memory reference error, you might store correct
+values into the erroneous variables and continue, hoping to see more
+execution; but your program would probably terminate immediately as
+a result of the fatal signal once it saw the signal.  To prevent this,
+you can continue with &lsquo;<samp>signal 0</samp>&rsquo;.  See <a href="Signaling.html#Signaling">Giving your
+Program a Signal</a>.
+</p>
+<a name="index-stepping-and-signal-handlers"></a>
+<a name="stepping-and-signal-handlers"></a>
+<p><small>GDB</small> optimizes for stepping the mainline code.  If a signal
+that has <code>handle nostop</code> and <code>handle pass</code> set arrives while
+a stepping command (e.g., <code>stepi</code>, <code>step</code>, <code>next</code>) is
+in progress, <small>GDB</small> lets the signal handler run and then resumes
+stepping the mainline code once the signal handler returns.  In other
+words, <small>GDB</small> steps over the signal handler.  This prevents
+signals that you&rsquo;ve specified as not interesting (with <code>handle
+nostop</code>) from changing the focus of debugging unexpectedly.  Note that
+the signal handler itself may still hit a breakpoint, stop for another
+signal that has <code>handle stop</code> in effect, or for any other event
+that normally results in stopping the stepping command sooner.  Also
+note that <small>GDB</small> still informs you that the program received a
+signal if <code>handle print</code> is set.
+</p>
+<a name="stepping-into-signal-handlers"></a>
+<p>If you set <code>handle pass</code> for a signal, and your program sets up a
+handler for it, then issuing a stepping command, such as <code>step</code>
+or <code>stepi</code>, when your program is stopped due to the signal will
+step <em>into</em> the signal handler (if the target supports that).
+</p>
+<p>Likewise, if you use the <code>queue-signal</code> command to queue a signal
+to be delivered to the current thread when execution of the thread
+resumes (see <a href="Signaling.html#Signaling">Giving your Program a Signal</a>), then a
+stepping command will step into the signal handler.
+</p>
+<p>Here&rsquo;s an example, using <code>stepi</code> to step to the first instruction
+of <code>SIGUSR1</code>&rsquo;s handler:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) handle SIGUSR1
+Signal        Stop      Print   Pass to program Description
+SIGUSR1       Yes       Yes     Yes             User defined signal 1
+(gdb) c
+Continuing.
+
+Program received signal SIGUSR1, User defined signal 1.
+main () sigusr1.c:28
+28        p = 0;
+(gdb) si
+sigusr1_handler () at sigusr1.c:9
+9       {
+</pre></div>
+
+<p>The same, but using <code>queue-signal</code> instead of waiting for the
+program to receive the signal first:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) n
+28        p = 0;
+(gdb) queue-signal SIGUSR1
+(gdb) si
+sigusr1_handler () at sigusr1.c:9
+9       {
+(gdb)
+</pre></div>
+
+<a name="index-extra-signal-information"></a>
+<a name="extra-signal-information"></a>
+<p>On some targets, <small>GDB</small> can inspect extra signal information
+associated with the intercepted signal, before it is actually
+delivered to the program being debugged.  This information is exported
+by the convenience variable <code>$_siginfo</code>, and consists of data
+that is passed by the kernel to the signal handler at the time of the
+receipt of a signal.  The data type of the information itself is
+target dependent.  You can see the data type using the <code>ptype
+$_siginfo</code> command.  On Unix systems, it typically corresponds to the
+standard <code>siginfo_t</code> type, as defined in the <samp>signal.h</samp>
+system header.
+</p>
+<p>Here&rsquo;s an example, on a <small>GNU</small>/Linux system, printing the stray
+referenced address that raised a segmentation fault.
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) continue
+Program received signal SIGSEGV, Segmentation fault.
+0x0000000000400766 in main ()
+69        *(int *)p = 0;
+(gdb) ptype $_siginfo
+type = struct {
+    int si_signo;
+    int si_errno;
+    int si_code;
+    union {
+        int _pad[28];
+        struct {...} _kill;
+        struct {...} _timer;
+        struct {...} _rt;
+        struct {...} _sigchld;
+        struct {...} _sigfault;
+        struct {...} _sigpoll;
+    } _sifields;
+}
+(gdb) ptype $_siginfo._sifields._sigfault
+type = struct {
+    void *si_addr;
+}
+(gdb) p $_siginfo._sifields._sigfault.si_addr
+$1 = (void *) 0x7ffff7ff7000
+</pre></div>
+
+<p>Depending on target support, <code>$_siginfo</code> may also be writable.
+</p>
+<a name="index-Intel-MPX-boundary-violations"></a>
+<a name="index-boundary-violations_002c-Intel-MPX"></a>
+<p>On some targets, a <code>SIGSEGV</code> can be caused by a boundary
+violation, i.e., accessing an address outside of the allowed range.
+In those cases <small>GDB</small> may displays additional information,
+depending on how <small>GDB</small> has been told to handle the signal.
+With <code>handle stop SIGSEGV</code>, <small>GDB</small> displays the violation
+kind: &quot;Upper&quot; or &quot;Lower&quot;, the memory address accessed and the
+bounds, while with <code>handle nostop SIGSEGV</code> no additional
+information is displayed.
+</p>
+<p>The usual output of a segfault is:
+</p><div class="smallexample">
+<pre class="smallexample">Program received signal SIGSEGV, Segmentation fault
+0x0000000000400d7c in upper () at i386-mpx-sigsegv.c:68
+68        value = *(p + len);
+</pre></div>
+
+<p>While a bound violation is presented as:
+</p><div class="smallexample">
+<pre class="smallexample">Program received signal SIGSEGV, Segmentation fault
+Upper bound violation while accessing address 0x7fffffffc3b3
+Bounds: [lower = 0x7fffffffc390, upper = 0x7fffffffc3a3]
+0x0000000000400d7c in upper () at i386-mpx-sigsegv.c:68
+68        value = *(p + len);
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Thread-Stops.html#Thread-Stops" accesskey="n" rel="next">Thread Stops</a>, Previous: <a href="Skipping-Over-Functions-and-Files.html#Skipping-Over-Functions-and-Files" accesskey="p" rel="prev">Skipping Over Functions and Files</a>, Up: <a href="Stopping.html#Stopping" accesskey="u" rel="up">Stopping</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): Vague Linkage</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): Vague Linkage">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): Vague Linkage">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="C_002b_002b-Extensions.html#C_002b_002b-Extensions" rel="up" title="C++ Extensions">
+<link href="C_002b_002b-Interface.html#C_002b_002b-Interface" rel="next" title="C++ Interface">
+<link href="Restricted-Pointers.html#Restricted-Pointers" rel="prev" title="Restricted Pointers">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Vague-Linkage"></a>
+<div class="header">
+<p>
+Next: <a href="C_002b_002b-Interface.html#C_002b_002b-Interface" accesskey="n" rel="next">C++ Interface</a>, Previous: <a href="Restricted-Pointers.html#Restricted-Pointers" accesskey="p" rel="prev">Restricted Pointers</a>, Up: <a href="C_002b_002b-Extensions.html#C_002b_002b-Extensions" accesskey="u" rel="up">C++ Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Vague-Linkage-1"></a>
+<h3 class="section">7.3 Vague Linkage</h3>
+<a name="index-vague-linkage"></a>
+
+<p>There are several constructs in C++ that require space in the object
+file but are not clearly tied to a single translation unit.  We say that
+these constructs have &ldquo;vague linkage&rdquo;.  Typically such constructs are
+emitted wherever they are needed, though sometimes we can be more
+clever.
+</p>
+<dl compact="compact">
+<dt>Inline Functions</dt>
+<dd><p>Inline functions are typically defined in a header file which can be
+included in many different compilations.  Hopefully they can usually be
+inlined, but sometimes an out-of-line copy is necessary, if the address
+of the function is taken or if inlining fails.  In general, we emit an
+out-of-line copy in all translation units where one is needed.  As an
+exception, we only emit inline virtual functions with the vtable, since
+it always requires a copy.
+</p>
+<p>Local static variables and string constants used in an inline function
+are also considered to have vague linkage, since they must be shared
+between all inlined and out-of-line instances of the function.
+</p>
+</dd>
+<dt>VTables</dt>
+<dd><a name="index-vtable"></a>
+<p>C++ virtual functions are implemented in most compilers using a lookup
+table, known as a vtable.  The vtable contains pointers to the virtual
+functions provided by a class, and each object of the class contains a
+pointer to its vtable (or vtables, in some multiple-inheritance
+situations).  If the class declares any non-inline, non-pure virtual
+functions, the first one is chosen as the &ldquo;key method&rdquo; for the class,
+and the vtable is only emitted in the translation unit where the key
+method is defined.
+</p>
+<p><em>Note:</em> If the chosen key method is later defined as inline, the
+vtable is still emitted in every translation unit that defines it.
+Make sure that any inline virtuals are declared inline in the class
+body, even if they are not defined there.
+</p>
+</dd>
+<dt><code>type_info</code> objects</dt>
+<dd><a name="index-type_005finfo"></a>
+<a name="index-RTTI"></a>
+<p>C++ requires information about types to be written out in order to
+implement &lsquo;<samp>dynamic_cast</samp>&rsquo;, &lsquo;<samp>typeid</samp>&rsquo; and exception handling.
+For polymorphic classes (classes with virtual functions), the &lsquo;<samp>type_info</samp>&rsquo;
+object is written out along with the vtable so that &lsquo;<samp>dynamic_cast</samp>&rsquo;
+can determine the dynamic type of a class object at run time.  For all
+other types, we write out the &lsquo;<samp>type_info</samp>&rsquo; object when it is used: when
+applying &lsquo;<samp>typeid</samp>&rsquo; to an expression, throwing an object, or
+referring to a type in a catch clause or exception specification.
+</p>
+</dd>
+<dt>Template Instantiations</dt>
+<dd><p>Most everything in this section also applies to template instantiations,
+but there are other options as well.
+See <a href="Template-Instantiation.html#Template-Instantiation">Where&rsquo;s the Template?</a>.
+</p>
+</dd>
+</dl>
+
+<p>When used with GNU ld version 2.8 or later on an ELF system such as
+GNU/Linux or Solaris 2, or on Microsoft Windows, duplicate copies of
+these constructs will be discarded at link time.  This is known as
+COMDAT support.
+</p>
+<p>On targets that don&rsquo;t support COMDAT, but do support weak symbols, GCC
+uses them.  This way one copy overrides all the others, but
+the unused copies still take up space in the executable.
+</p>
+<p>For targets that do not support either COMDAT or weak symbols,
+most entities with vague linkage are emitted as local symbols to
+avoid duplicate definition errors from the linker.  This does not happen
+for local statics in inlines, however, as having multiple copies
+almost certainly breaks things.
+</p>
+<p>See <a href="C_002b_002b-Interface.html#C_002b_002b-Interface">Declarations and Definitions in One Header</a>, for
+another way to control placement of these constructs.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="C_002b_002b-Interface.html#C_002b_002b-Interface" accesskey="n" rel="next">C++ Interface</a>, Previous: <a href="Restricted-Pointers.html#Restricted-Pointers" accesskey="p" rel="prev">Restricted Pointers</a>, Up: <a href="C_002b_002b-Extensions.html#C_002b_002b-Extensions" accesskey="u" rel="up">C++ Extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

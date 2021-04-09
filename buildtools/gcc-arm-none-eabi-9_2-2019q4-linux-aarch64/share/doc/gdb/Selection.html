@@ -1,0 +1,229 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Selection</title>
+
+<meta name="description" content="Debugging with GDB: Selection">
+<meta name="keywords" content="Debugging with GDB: Selection">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Stack.html#Stack" rel="up" title="Stack">
+<link href="Frame-Info.html#Frame-Info" rel="next" title="Frame Info">
+<link href="Backtrace.html#Backtrace" rel="prev" title="Backtrace">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Selection"></a>
+<div class="header">
+<p>
+Next: <a href="Frame-Info.html#Frame-Info" accesskey="n" rel="next">Frame Info</a>, Previous: <a href="Backtrace.html#Backtrace" accesskey="p" rel="prev">Backtrace</a>, Up: <a href="Stack.html#Stack" accesskey="u" rel="up">Stack</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Selecting-a-Frame"></a>
+<h3 class="section">8.3 Selecting a Frame</h3>
+
+<p>Most commands for examining the stack and other data in your program work on
+whichever stack frame is selected at the moment.  Here are the commands for
+selecting a stack frame; all of them finish by printing a brief description
+of the stack frame just selected.
+</p>
+<dl compact="compact">
+<dd><a name="index-frame_002c-selecting"></a>
+<a name="index-f-_0028frame_0029"></a>
+</dd>
+<dt><code>frame <span class="roman">[</span> <var>frame-selection-spec</var> <span class="roman">]</span></code></dt>
+<dt><code>f <span class="roman">[</span> <var>frame-selection-spec</var> <span class="roman">]</span></code></dt>
+<dd><p>The <code>frame</code> command allows different stack frames to be
+selected.  The <var>frame-selection-spec</var> can be any of the following:
+</p>
+<dl compact="compact">
+<dd><a name="index-frame-level-1"></a>
+</dd>
+<dt><code><var>num</var></code></dt>
+<dt><code>level <var>num</var></code></dt>
+<dd><p>Select frame level <var>num</var>.  Recall that frame zero is the innermost
+(currently executing) frame, frame one is the frame that called the
+innermost one, and so on.  The highest level frame is usually the one
+for <code>main</code>.
+</p>
+<p>As this is the most common method of navigating the frame stack, the
+string <code>level</code> can be omitted.  For example, the following two
+commands are equivalent:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) frame 3
+(gdb) frame level 3
+</pre></div>
+
+<a name="index-frame-address"></a>
+</dd>
+<dt><code>address <var>stack-address</var></code></dt>
+<dd><p>Select the frame with stack address <var>stack-address</var>.  The
+<var>stack-address</var> for a frame can be seen in the output of
+<code>info frame</code>, for example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) info frame
+Stack level 1, frame at 0x7fffffffda30:
+ rip = 0x40066d in b (amd64-entry-value.cc:59); saved rip 0x4004c5
+ tail call frame, caller of frame at 0x7fffffffda30
+ source language c++.
+ Arglist at unknown address.
+ Locals at unknown address, Previous frame's sp is 0x7fffffffda30
+</pre></div>
+
+<p>The <var>stack-address</var> for this frame is <code>0x7fffffffda30</code> as
+indicated by the line:
+</p>
+<div class="smallexample">
+<pre class="smallexample">Stack level 1, frame at 0x7fffffffda30:
+</pre></div>
+
+<a name="index-frame-function"></a>
+</dd>
+<dt><code>function <var>function-name</var></code></dt>
+<dd><p>Select the stack frame for function <var>function-name</var>.  If there are
+multiple stack frames for function <var>function-name</var> then the inner
+most stack frame is selected.
+</p>
+<a name="index-frame-view"></a>
+</dd>
+<dt><code>view <var>stack-address</var> <span class="roman">[</span> <var>pc-addr</var> <span class="roman">]</span></code></dt>
+<dd><p>View a frame that is not part of <small>GDB</small>&rsquo;s backtrace.  The frame
+viewed has stack address <var>stack-addr</var>, and optionally, a program
+counter address of <var>pc-addr</var>.
+</p>
+<p>This is useful mainly if the chaining of stack frames has been
+damaged by a bug, making it impossible for <small>GDB</small> to assign
+numbers properly to all frames.  In addition, this can be useful
+when your program has multiple stacks and switches between them.
+</p>
+<p>When viewing a frame outside the current backtrace using
+<code>frame view</code> then you can always return to the original
+stack using one of the previous stack frame selection instructions,
+for example <code>frame level 0</code>.
+</p>
+</dd>
+</dl>
+
+<a name="index-up"></a>
+</dd>
+<dt><code>up <var>n</var></code></dt>
+<dd><p>Move <var>n</var> frames up the stack; <var>n</var> defaults to 1.  For positive
+numbers <var>n</var>, this advances toward the outermost frame, to higher
+frame numbers, to frames that have existed longer.
+</p>
+<a name="index-down"></a>
+<a name="index-do-_0028down_0029"></a>
+</dd>
+<dt><code>down <var>n</var></code></dt>
+<dd><p>Move <var>n</var> frames down the stack; <var>n</var> defaults to 1.  For
+positive numbers <var>n</var>, this advances toward the innermost frame, to
+lower frame numbers, to frames that were created more recently.
+You may abbreviate <code>down</code> as <code>do</code>.
+</p></dd>
+</dl>
+
+<p>All of these commands end by printing two lines of output describing the
+frame.  The first line shows the frame number, the function name, the
+arguments, and the source file and line number of execution in that
+frame.  The second line shows the text of that source line.
+</p>
+<p>For example:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) up
+#1  0x22f0 in main (argc=1, argv=0xf7fffbf4, env=0xf7fffbfc)
+    at env.c:10
+10              read_input_file (argv[i]);
+</pre></div>
+
+<p>After such a printout, the <code>list</code> command with no arguments
+prints ten lines centered on the point of execution in the frame.
+You can also edit the program at the point of execution with your favorite
+editing program by typing <code>edit</code>.
+See <a href="List.html#List">Printing Source Lines</a>,
+for details.
+</p>
+<dl compact="compact">
+<dd><a name="index-select_002dframe"></a>
+</dd>
+<dt><code>select-frame <span class="roman">[</span> <var>frame-selection-spec</var> <span class="roman">]</span></code></dt>
+<dd><p>The <code>select-frame</code> command is a variant of <code>frame</code> that does
+not display the new frame after selecting it.  This command is
+intended primarily for use in <small>GDB</small> command scripts, where the
+output might be unnecessary and distracting.  The
+<var>frame-selection-spec</var> is as for the <code>frame</code> command
+described in <a href="#Selection">Selecting a Frame</a>.
+</p>
+<a name="index-down_002dsilently"></a>
+<a name="index-up_002dsilently"></a>
+</dd>
+<dt><code>up-silently <var>n</var></code></dt>
+<dt><code>down-silently <var>n</var></code></dt>
+<dd><p>These two commands are variants of <code>up</code> and <code>down</code>,
+respectively; they differ in that they do their work silently, without
+causing display of the new frame.  They are intended primarily for use
+in <small>GDB</small> command scripts, where the output might be unnecessary and
+distracting.
+</p></dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="Frame-Info.html#Frame-Info" accesskey="n" rel="next">Frame Info</a>, Previous: <a href="Backtrace.html#Backtrace" accesskey="p" rel="prev">Backtrace</a>, Up: <a href="Stack.html#Stack" accesskey="u" rel="up">Stack</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

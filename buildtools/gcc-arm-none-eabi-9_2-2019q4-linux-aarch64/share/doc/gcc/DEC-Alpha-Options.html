@@ -1,0 +1,438 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using the GNU Compiler Collection (GCC): DEC Alpha Options</title>
+
+<meta name="description" content="Using the GNU Compiler Collection (GCC): DEC Alpha Options">
+<meta name="keywords" content="Using the GNU Compiler Collection (GCC): DEC Alpha Options">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Submodel-Options.html#Submodel-Options" rel="up" title="Submodel Options">
+<link href="FR30-Options.html#FR30-Options" rel="next" title="FR30 Options">
+<link href="Darwin-Options.html#Darwin-Options" rel="prev" title="Darwin Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="DEC-Alpha-Options"></a>
+<div class="header">
+<p>
+Next: <a href="FR30-Options.html#FR30-Options" accesskey="n" rel="next">FR30 Options</a>, Previous: <a href="Darwin-Options.html#Darwin-Options" accesskey="p" rel="prev">Darwin Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="DEC-Alpha-Options-1"></a>
+<h4 class="subsection">3.18.13 DEC Alpha Options</h4>
+
+<p>These &lsquo;<samp>-m</samp>&rsquo; options are defined for the DEC Alpha implementations:
+</p>
+<dl compact="compact">
+<dt><code>-mno-soft-float</code></dt>
+<dt><code>-msoft-float</code></dt>
+<dd><a name="index-mno_002dsoft_002dfloat"></a>
+<a name="index-msoft_002dfloat-2"></a>
+<p>Use (do not use) the hardware floating-point instructions for
+floating-point operations.  When <samp>-msoft-float</samp> is specified,
+functions in <samp>libgcc.a</samp> are used to perform floating-point
+operations.  Unless they are replaced by routines that emulate the
+floating-point operations, or compiled in such a way as to call such
+emulations routines, these routines issue floating-point
+operations.   If you are compiling for an Alpha without floating-point
+operations, you must ensure that the library is built so as not to call
+them.
+</p>
+<p>Note that Alpha implementations without floating-point operations are
+required to have floating-point registers.
+</p>
+</dd>
+<dt><code>-mfp-reg</code></dt>
+<dt><code>-mno-fp-regs</code></dt>
+<dd><a name="index-mfp_002dreg"></a>
+<a name="index-mno_002dfp_002dregs"></a>
+<p>Generate code that uses (does not use) the floating-point register set.
+<samp>-mno-fp-regs</samp> implies <samp>-msoft-float</samp>.  If the floating-point
+register set is not used, floating-point operands are passed in integer
+registers as if they were integers and floating-point results are passed
+in <code>$0</code> instead of <code>$f0</code>.  This is a non-standard calling sequence,
+so any function with a floating-point argument or return value called by code
+compiled with <samp>-mno-fp-regs</samp> must also be compiled with that
+option.
+</p>
+<p>A typical use of this option is building a kernel that does not use,
+and hence need not save and restore, any floating-point registers.
+</p>
+</dd>
+<dt><code>-mieee</code></dt>
+<dd><a name="index-mieee"></a>
+<p>The Alpha architecture implements floating-point hardware optimized for
+maximum performance.  It is mostly compliant with the IEEE floating-point
+standard.  However, for full compliance, software assistance is
+required.  This option generates code fully IEEE-compliant code
+<em>except</em> that the <var>inexact-flag</var> is not maintained (see below).
+If this option is turned on, the preprocessor macro <code>_IEEE_FP</code> is
+defined during compilation.  The resulting code is less efficient but is
+able to correctly support denormalized numbers and exceptional IEEE
+values such as not-a-number and plus/minus infinity.  Other Alpha
+compilers call this option <samp>-ieee_with_no_inexact</samp>.
+</p>
+</dd>
+<dt><code>-mieee-with-inexact</code></dt>
+<dd><a name="index-mieee_002dwith_002dinexact"></a>
+<p>This is like <samp>-mieee</samp> except the generated code also maintains
+the IEEE <var>inexact-flag</var>.  Turning on this option causes the
+generated code to implement fully-compliant IEEE math.  In addition to
+<code>_IEEE_FP</code>, <code>_IEEE_FP_EXACT</code> is defined as a preprocessor
+macro.  On some Alpha implementations the resulting code may execute
+significantly slower than the code generated by default.  Since there is
+very little code that depends on the <var>inexact-flag</var>, you should
+normally not specify this option.  Other Alpha compilers call this
+option <samp>-ieee_with_inexact</samp>.
+</p>
+</dd>
+<dt><code>-mfp-trap-mode=<var>trap-mode</var></code></dt>
+<dd><a name="index-mfp_002dtrap_002dmode"></a>
+<p>This option controls what floating-point related traps are enabled.
+Other Alpha compilers call this option <samp>-fptm <var>trap-mode</var></samp>.
+The trap mode can be set to one of four values:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>n</samp>&rsquo;</dt>
+<dd><p>This is the default (normal) setting.  The only traps that are enabled
+are the ones that cannot be disabled in software (e.g., division by zero
+trap).
+</p>
+</dd>
+<dt>&lsquo;<samp>u</samp>&rsquo;</dt>
+<dd><p>In addition to the traps enabled by &lsquo;<samp>n</samp>&rsquo;, underflow traps are enabled
+as well.
+</p>
+</dd>
+<dt>&lsquo;<samp>su</samp>&rsquo;</dt>
+<dd><p>Like &lsquo;<samp>u</samp>&rsquo;, but the instructions are marked to be safe for software
+completion (see Alpha architecture manual for details).
+</p>
+</dd>
+<dt>&lsquo;<samp>sui</samp>&rsquo;</dt>
+<dd><p>Like &lsquo;<samp>su</samp>&rsquo;, but inexact traps are enabled as well.
+</p></dd>
+</dl>
+
+</dd>
+<dt><code>-mfp-rounding-mode=<var>rounding-mode</var></code></dt>
+<dd><a name="index-mfp_002drounding_002dmode"></a>
+<p>Selects the IEEE rounding mode.  Other Alpha compilers call this option
+<samp>-fprm <var>rounding-mode</var></samp>.  The <var>rounding-mode</var> can be one
+of:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>n</samp>&rsquo;</dt>
+<dd><p>Normal IEEE rounding mode.  Floating-point numbers are rounded towards
+the nearest machine number or towards the even machine number in case
+of a tie.
+</p>
+</dd>
+<dt>&lsquo;<samp>m</samp>&rsquo;</dt>
+<dd><p>Round towards minus infinity.
+</p>
+</dd>
+<dt>&lsquo;<samp>c</samp>&rsquo;</dt>
+<dd><p>Chopped rounding mode.  Floating-point numbers are rounded towards zero.
+</p>
+</dd>
+<dt>&lsquo;<samp>d</samp>&rsquo;</dt>
+<dd><p>Dynamic rounding mode.  A field in the floating-point control register
+(<var>fpcr</var>, see Alpha architecture reference manual) controls the
+rounding mode in effect.  The C library initializes this register for
+rounding towards plus infinity.  Thus, unless your program modifies the
+<var>fpcr</var>, &lsquo;<samp>d</samp>&rsquo; corresponds to round towards plus infinity.
+</p></dd>
+</dl>
+
+</dd>
+<dt><code>-mtrap-precision=<var>trap-precision</var></code></dt>
+<dd><a name="index-mtrap_002dprecision"></a>
+<p>In the Alpha architecture, floating-point traps are imprecise.  This
+means without software assistance it is impossible to recover from a
+floating trap and program execution normally needs to be terminated.
+GCC can generate code that can assist operating system trap handlers
+in determining the exact location that caused a floating-point trap.
+Depending on the requirements of an application, different levels of
+precisions can be selected:
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>p</samp>&rsquo;</dt>
+<dd><p>Program precision.  This option is the default and means a trap handler
+can only identify which program caused a floating-point exception.
+</p>
+</dd>
+<dt>&lsquo;<samp>f</samp>&rsquo;</dt>
+<dd><p>Function precision.  The trap handler can determine the function that
+caused a floating-point exception.
+</p>
+</dd>
+<dt>&lsquo;<samp>i</samp>&rsquo;</dt>
+<dd><p>Instruction precision.  The trap handler can determine the exact
+instruction that caused a floating-point exception.
+</p></dd>
+</dl>
+
+<p>Other Alpha compilers provide the equivalent options called
+<samp>-scope_safe</samp> and <samp>-resumption_safe</samp>.
+</p>
+</dd>
+<dt><code>-mieee-conformant</code></dt>
+<dd><a name="index-mieee_002dconformant"></a>
+<p>This option marks the generated code as IEEE conformant.  You must not
+use this option unless you also specify <samp>-mtrap-precision=i</samp> and either
+<samp>-mfp-trap-mode=su</samp> or <samp>-mfp-trap-mode=sui</samp>.  Its only effect
+is to emit the line &lsquo;<samp>.eflag 48</samp>&rsquo; in the function prologue of the
+generated assembly file.
+</p>
+</dd>
+<dt><code>-mbuild-constants</code></dt>
+<dd><a name="index-mbuild_002dconstants"></a>
+<p>Normally GCC examines a 32- or 64-bit integer constant to
+see if it can construct it from smaller constants in two or three
+instructions.  If it cannot, it outputs the constant as a literal and
+generates code to load it from the data segment at run time.
+</p>
+<p>Use this option to require GCC to construct <em>all</em> integer constants
+using code, even if it takes more instructions (the maximum is six).
+</p>
+<p>You typically use this option to build a shared library dynamic
+loader.  Itself a shared library, it must relocate itself in memory
+before it can find the variables and constants in its own data segment.
+</p>
+</dd>
+<dt><code>-mbwx</code></dt>
+<dt><code>-mno-bwx</code></dt>
+<dt><code>-mcix</code></dt>
+<dt><code>-mno-cix</code></dt>
+<dt><code>-mfix</code></dt>
+<dt><code>-mno-fix</code></dt>
+<dt><code>-mmax</code></dt>
+<dt><code>-mno-max</code></dt>
+<dd><a name="index-mbwx"></a>
+<a name="index-mno_002dbwx"></a>
+<a name="index-mcix"></a>
+<a name="index-mno_002dcix"></a>
+<a name="index-mfix"></a>
+<a name="index-mno_002dfix"></a>
+<a name="index-mmax"></a>
+<a name="index-mno_002dmax"></a>
+<p>Indicate whether GCC should generate code to use the optional BWX,
+CIX, FIX and MAX instruction sets.  The default is to use the instruction
+sets supported by the CPU type specified via <samp>-mcpu=</samp> option or that
+of the CPU on which GCC was built if none is specified.
+</p>
+</dd>
+<dt><code>-mfloat-vax</code></dt>
+<dt><code>-mfloat-ieee</code></dt>
+<dd><a name="index-mfloat_002dvax"></a>
+<a name="index-mfloat_002dieee"></a>
+<p>Generate code that uses (does not use) VAX F and G floating-point
+arithmetic instead of IEEE single and double precision.
+</p>
+</dd>
+<dt><code>-mexplicit-relocs</code></dt>
+<dt><code>-mno-explicit-relocs</code></dt>
+<dd><a name="index-mexplicit_002drelocs"></a>
+<a name="index-mno_002dexplicit_002drelocs"></a>
+<p>Older Alpha assemblers provided no way to generate symbol relocations
+except via assembler macros.  Use of these macros does not allow
+optimal instruction scheduling.  GNU binutils as of version 2.12
+supports a new syntax that allows the compiler to explicitly mark
+which relocations should apply to which instructions.  This option
+is mostly useful for debugging, as GCC detects the capabilities of
+the assembler when it is built and sets the default accordingly.
+</p>
+</dd>
+<dt><code>-msmall-data</code></dt>
+<dt><code>-mlarge-data</code></dt>
+<dd><a name="index-msmall_002ddata"></a>
+<a name="index-mlarge_002ddata"></a>
+<p>When <samp>-mexplicit-relocs</samp> is in effect, static data is
+accessed via <em>gp-relative</em> relocations.  When <samp>-msmall-data</samp>
+is used, objects 8 bytes long or smaller are placed in a <em>small data area</em>
+(the <code>.sdata</code> and <code>.sbss</code> sections) and are accessed via
+16-bit relocations off of the <code>$gp</code> register.  This limits the
+size of the small data area to 64KB, but allows the variables to be
+directly accessed via a single instruction.
+</p>
+<p>The default is <samp>-mlarge-data</samp>.  With this option the data area
+is limited to just below 2GB.  Programs that require more than 2GB of
+data must use <code>malloc</code> or <code>mmap</code> to allocate the data in the
+heap instead of in the program&rsquo;s data segment.
+</p>
+<p>When generating code for shared libraries, <samp>-fpic</samp> implies
+<samp>-msmall-data</samp> and <samp>-fPIC</samp> implies <samp>-mlarge-data</samp>.
+</p>
+</dd>
+<dt><code>-msmall-text</code></dt>
+<dt><code>-mlarge-text</code></dt>
+<dd><a name="index-msmall_002dtext"></a>
+<a name="index-mlarge_002dtext"></a>
+<p>When <samp>-msmall-text</samp> is used, the compiler assumes that the
+code of the entire program (or shared library) fits in 4MB, and is
+thus reachable with a branch instruction.  When <samp>-msmall-data</samp>
+is used, the compiler can assume that all local symbols share the
+same <code>$gp</code> value, and thus reduce the number of instructions
+required for a function call from 4 to 1.
+</p>
+<p>The default is <samp>-mlarge-text</samp>.
+</p>
+</dd>
+<dt><code>-mcpu=<var>cpu_type</var></code></dt>
+<dd><a name="index-mcpu-4"></a>
+<p>Set the instruction set and instruction scheduling parameters for
+machine type <var>cpu_type</var>.  You can specify either the &lsquo;<samp>EV</samp>&rsquo;
+style name or the corresponding chip number.  GCC supports scheduling
+parameters for the EV4, EV5 and EV6 family of processors and
+chooses the default values for the instruction set from the processor
+you specify.  If you do not specify a processor type, GCC defaults
+to the processor on which the compiler was built.
+</p>
+<p>Supported values for <var>cpu_type</var> are
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp>ev4</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>ev45</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>21064</samp>&rsquo;</dt>
+<dd><p>Schedules as an EV4 and has no instruction set extensions.
+</p>
+</dd>
+<dt>&lsquo;<samp>ev5</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>21164</samp>&rsquo;</dt>
+<dd><p>Schedules as an EV5 and has no instruction set extensions.
+</p>
+</dd>
+<dt>&lsquo;<samp>ev56</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>21164a</samp>&rsquo;</dt>
+<dd><p>Schedules as an EV5 and supports the BWX extension.
+</p>
+</dd>
+<dt>&lsquo;<samp>pca56</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>21164pc</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>21164PC</samp>&rsquo;</dt>
+<dd><p>Schedules as an EV5 and supports the BWX and MAX extensions.
+</p>
+</dd>
+<dt>&lsquo;<samp>ev6</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>21264</samp>&rsquo;</dt>
+<dd><p>Schedules as an EV6 and supports the BWX, FIX, and MAX extensions.
+</p>
+</dd>
+<dt>&lsquo;<samp>ev67</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>21264a</samp>&rsquo;</dt>
+<dd><p>Schedules as an EV6 and supports the BWX, CIX, FIX, and MAX extensions.
+</p></dd>
+</dl>
+
+<p>Native toolchains also support the value &lsquo;<samp>native</samp>&rsquo;,
+which selects the best architecture option for the host processor.
+<samp>-mcpu=native</samp> has no effect if GCC does not recognize
+the processor.
+</p>
+</dd>
+<dt><code>-mtune=<var>cpu_type</var></code></dt>
+<dd><a name="index-mtune-6"></a>
+<p>Set only the instruction scheduling parameters for machine type
+<var>cpu_type</var>.  The instruction set is not changed.
+</p>
+<p>Native toolchains also support the value &lsquo;<samp>native</samp>&rsquo;,
+which selects the best architecture option for the host processor.
+<samp>-mtune=native</samp> has no effect if GCC does not recognize
+the processor.
+</p>
+</dd>
+<dt><code>-mmemory-latency=<var>time</var></code></dt>
+<dd><a name="index-mmemory_002dlatency"></a>
+<p>Sets the latency the scheduler should assume for typical memory
+references as seen by the application.  This number is highly
+dependent on the memory access patterns used by the application
+and the size of the external cache on the machine.
+</p>
+<p>Valid options for <var>time</var> are
+</p>
+<dl compact="compact">
+<dt>&lsquo;<samp><var>number</var></samp>&rsquo;</dt>
+<dd><p>A decimal number representing clock cycles.
+</p>
+</dd>
+<dt>&lsquo;<samp>L1</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>L2</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>L3</samp>&rsquo;</dt>
+<dt>&lsquo;<samp>main</samp>&rsquo;</dt>
+<dd><p>The compiler contains estimates of the number of clock cycles for
+&ldquo;typical&rdquo; EV4 &amp; EV5 hardware for the Level 1, 2 &amp; 3 caches
+(also called Dcache, Scache, and Bcache), as well as to main memory.
+Note that L3 is only valid for EV5.
+</p>
+</dd>
+</dl>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="FR30-Options.html#FR30-Options" accesskey="n" rel="next">FR30 Options</a>, Previous: <a href="Darwin-Options.html#Darwin-Options" accesskey="p" rel="prev">Darwin Options</a>, Up: <a href="Submodel-Options.html#Submodel-Options" accesskey="u" rel="up">Submodel Options</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

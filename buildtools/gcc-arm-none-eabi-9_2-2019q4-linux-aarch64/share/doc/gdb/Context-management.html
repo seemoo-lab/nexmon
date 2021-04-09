@@ -1,0 +1,155 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Context management</title>
+
+<meta name="description" content="Debugging with GDB: Context management">
+<meta name="keywords" content="Debugging with GDB: Context management">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="GDB_002fMI-General-Design.html#GDB_002fMI-General-Design" rel="up" title="GDB/MI General Design">
+<link href="Asynchronous-and-non_002dstop-modes.html#Asynchronous-and-non_002dstop-modes" rel="next" title="Asynchronous and non-stop modes">
+<link href="GDB_002fMI-General-Design.html#GDB_002fMI-General-Design" rel="prev" title="GDB/MI General Design">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Context-management"></a>
+<div class="header">
+<p>
+Next: <a href="Asynchronous-and-non_002dstop-modes.html#Asynchronous-and-non_002dstop-modes" accesskey="n" rel="next">Asynchronous and non-stop modes</a>, Up: <a href="GDB_002fMI-General-Design.html#GDB_002fMI-General-Design" accesskey="u" rel="up">GDB/MI General Design</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Context-management-1"></a>
+<h4 class="subsection">27.1.1 Context management</h4>
+
+<a name="Threads-and-Frames"></a>
+<h4 class="subsubsection">27.1.1.1 Threads and Frames</h4>
+
+<p>In most cases when <small>GDB</small> accesses the target, this access is
+done in context of a specific thread and frame (see <a href="Frames.html#Frames">Frames</a>).
+Often, even when accessing global data, the target requires that a thread
+be specified.  The CLI interface maintains the selected thread and frame,
+and supplies them to target on each command.  This is convenient,
+because a command line user would not want to specify that information
+explicitly on each command, and because user interacts with
+<small>GDB</small> via a single terminal, so no confusion is possible as 
+to what thread and frame are the current ones.
+</p>
+<p>In the case of MI, the concept of selected thread and frame is less
+useful.  First, a frontend can easily remember this information
+itself.  Second, a graphical frontend can have more than one window,
+each one used for debugging a different thread, and the frontend might
+want to access additional threads for internal purposes.  This
+increases the risk that by relying on implicitly selected thread, the
+frontend may be operating on a wrong one.  Therefore, each MI command
+should explicitly specify which thread and frame to operate on.  To
+make it possible, each MI command accepts the &lsquo;<samp>--thread</samp>&rsquo; and
+&lsquo;<samp>--frame</samp>&rsquo; options, the value to each is <small>GDB</small> global
+identifier for thread and frame to operate on.
+</p>
+<p>Usually, each top-level window in a frontend allows the user to select
+a thread and a frame, and remembers the user selection for further
+operations.  However, in some cases <small>GDB</small> may suggest that the
+current thread or frame be changed.  For example, when stopping on a
+breakpoint it is reasonable to switch to the thread where breakpoint is
+hit.  For another example, if the user issues the CLI &lsquo;<samp>thread</samp>&rsquo; or
+&lsquo;<samp>frame</samp>&rsquo; commands via the frontend, it is desirable to change the
+frontend&rsquo;s selection to the one specified by user.  <small>GDB</small>
+communicates the suggestion to change current thread and frame using the
+&lsquo;<samp>=thread-selected</samp>&rsquo; notification.
+</p>
+<p>Note that historically, MI shares the selected thread with CLI, so 
+frontends used the <code>-thread-select</code> to execute commands in the
+right context.  However, getting this to work right is cumbersome.  The
+simplest way is for frontend to emit <code>-thread-select</code> command
+before every command.  This doubles the number of commands that need
+to be sent.  The alternative approach is to suppress <code>-thread-select</code>
+if the selected thread in <small>GDB</small> is supposed to be identical to the
+thread the frontend wants to operate on.  However, getting this
+optimization right can be tricky.  In particular, if the frontend
+sends several commands to <small>GDB</small>, and one of the commands changes the
+selected thread, then the behaviour of subsequent commands will
+change.  So, a frontend should either wait for response from such
+problematic commands, or explicitly add <code>-thread-select</code> for
+all subsequent commands.  No frontend is known to do this exactly
+right, so it is suggested to just always pass the &lsquo;<samp>--thread</samp>&rsquo; and
+&lsquo;<samp>--frame</samp>&rsquo; options.
+</p>
+<a name="Language"></a>
+<h4 class="subsubsection">27.1.1.2 Language</h4>
+
+<p>The execution of several commands depends on which language is selected.
+By default, the current language (see <a href="Show.html#show-language">show language</a>) is used.
+But for commands known to be language-sensitive, it is recommended
+to use the &lsquo;<samp>--language</samp>&rsquo; option.  This option takes one argument,
+which is the name of the language to use while executing the command.
+For instance:
+</p>
+<div class="smallexample">
+<pre class="smallexample">-data-evaluate-expression --language c &quot;sizeof (void*)&quot;
+^done,value=&quot;4&quot;
+(gdb) 
+</pre></div>
+
+<p>The valid language names are the same names accepted by the
+&lsquo;<samp>set language</samp>&rsquo; command (see <a href="Manually.html#Manually">Manually</a>), excluding &lsquo;<samp>auto</samp>&rsquo;,
+&lsquo;<samp>local</samp>&rsquo; or &lsquo;<samp>unknown</samp>&rsquo;.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Asynchronous-and-non_002dstop-modes.html#Asynchronous-and-non_002dstop-modes" accesskey="n" rel="next">Asynchronous and non-stop modes</a>, Up: <a href="GDB_002fMI-General-Design.html#GDB_002fMI-General-Design" accesskey="u" rel="up">GDB/MI General Design</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

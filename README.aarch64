@@ -1,0 +1,24 @@
+NOTES
+1) Integrated pre-built GNU cross-toolchain
+-> https://developer.arm.com/-/media/Files/downloads/gnu-a/9.2-2019.12/binrel/gcc-arm-9.2-2019.12-aarch64-arm-none-eabi.tar.xz
+2) Buildtools
+-> apt install libdl-dev xxd
+3) Kernel Module 
+apt-get install kernel-headers-$(uname -r)
+-> Paket kernel-headers-5.4.45-sunxi64 kann nicht gefunden werden.
+
+snapshot https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/snapshot/linux-5.4.45.tar.gz
+https://www.cyberciti.biz/tips/build-linux-kernel-module-against-installed-kernel-source-tree.html
+
+Header installieren => sehr wenig "Material" im Zielverzeichnis ...
+ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- make headers_install
+
+Kernel kompilieren => 2h
+ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- make -j2 vmlinux 
+root@nanopineoplus2:/opt/wip/linux-5.4.45# find . -iname "System.map" -ls
+   310289   3608 -rw-r--r--   1 root     root      3692909 Jul 16 01:18 ./System.map
+root@nanopineoplus2:/opt/wip/linux-5.4.45# find . -iname ".config" -ls
+   308689    184 -rw-r--r--   1 root     root       185735 Jul 15 23:16 ./.config
+
+./gen_mod_headers ./tmp ./linux-5.4.45 ./obj arm64 aarch64-linux-gnu-
+Source tree not clean

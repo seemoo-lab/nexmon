@@ -1,0 +1,159 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: Value History</title>
+
+<meta name="description" content="Debugging with GDB: Value History">
+<meta name="keywords" content="Debugging with GDB: Value History">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Data.html#Data" rel="up" title="Data">
+<link href="Convenience-Vars.html#Convenience-Vars" rel="next" title="Convenience Vars">
+<link href="Pretty_002dPrinter-Commands.html#Pretty_002dPrinter-Commands" rel="prev" title="Pretty-Printer Commands">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Value-History"></a>
+<div class="header">
+<p>
+Next: <a href="Convenience-Vars.html#Convenience-Vars" accesskey="n" rel="next">Convenience Vars</a>, Previous: <a href="Pretty-Printing.html#Pretty-Printing" accesskey="p" rel="prev">Pretty Printing</a>, Up: <a href="Data.html#Data" accesskey="u" rel="up">Data</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Value-History-1"></a>
+<h3 class="section">10.10 Value History</h3>
+
+<a name="index-value-history"></a>
+<a name="index-history-of-values-printed-by-GDB"></a>
+<p>Values printed by the <code>print</code> command are saved in the <small>GDB</small>
+<em>value history</em>.  This allows you to refer to them in other expressions.
+Values are kept until the symbol table is re-read or discarded
+(for example with the <code>file</code> or <code>symbol-file</code> commands).
+When the symbol table changes, the value history is discarded,
+since the values may contain pointers back to the types defined in the
+symbol table.
+</p>
+<a name="index-_0024"></a>
+<a name="index-_0024_0024"></a>
+<a name="index-history-number"></a>
+<p>The values printed are given <em>history numbers</em> by which you can
+refer to them.  These are successive integers starting with one.
+<code>print</code> shows you the history number assigned to a value by
+printing &lsquo;<samp>$<var>num</var> = </samp>&rsquo; before the value; here <var>num</var> is the
+history number.
+</p>
+<p>To refer to any previous value, use &lsquo;<samp>$</samp>&rsquo; followed by the value&rsquo;s
+history number.  The way <code>print</code> labels its output is designed to
+remind you of this.  Just <code>$</code> refers to the most recent value in
+the history, and <code>$$</code> refers to the value before that.
+<code>$$<var>n</var></code> refers to the <var>n</var>th value from the end; <code>$$2</code>
+is the value just prior to <code>$$</code>, <code>$$1</code> is equivalent to
+<code>$$</code>, and <code>$$0</code> is equivalent to <code>$</code>.
+</p>
+<p>For example, suppose you have just printed a pointer to a structure and
+want to see the contents of the structure.  It suffices to type
+</p>
+<div class="smallexample">
+<pre class="smallexample">p *$
+</pre></div>
+
+<p>If you have a chain of structures where the component <code>next</code> points
+to the next one, you can print the contents of the next one with this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">p *$.next
+</pre></div>
+
+<p>You can print successive links in the chain by repeating this
+command&mdash;which you can do by just typing <tt class="key">RET</tt>.
+</p>
+<p>Note that the history records values, not expressions.  If the value of
+<code>x</code> is 4 and you type these commands:
+</p>
+<div class="smallexample">
+<pre class="smallexample">print x
+set x=5
+</pre></div>
+
+<p>then the value recorded in the value history by the <code>print</code> command
+remains 4 even though the value of <code>x</code> has changed.
+</p>
+<dl compact="compact">
+<dd><a name="index-show-values"></a>
+</dd>
+<dt><code>show values</code></dt>
+<dd><p>Print the last ten values in the value history, with their item numbers.
+This is like &lsquo;<samp>p&nbsp;$$9</samp>&rsquo; repeated ten times, except that <code>show
+values</code> does not change the history.
+</p>
+</dd>
+<dt><code>show values <var>n</var></code></dt>
+<dd><p>Print ten history values centered on history item number <var>n</var>.
+</p>
+</dd>
+<dt><code>show values +</code></dt>
+<dd><p>Print ten history values just after the values last printed.  If no more
+values are available, <code>show values +</code> produces no display.
+</p></dd>
+</dl>
+
+<p>Pressing <tt class="key">RET</tt> to repeat <code>show values <var>n</var></code> has exactly the
+same effect as &lsquo;<samp>show values +</samp>&rsquo;.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Convenience-Vars.html#Convenience-Vars" accesskey="n" rel="next">Convenience Vars</a>, Previous: <a href="Pretty-Printing.html#Pretty-Printing" accesskey="p" rel="prev">Pretty Printing</a>, Up: <a href="Data.html#Data" accesskey="u" rel="up">Data</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

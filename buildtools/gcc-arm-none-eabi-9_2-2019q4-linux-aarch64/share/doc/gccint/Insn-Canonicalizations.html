@@ -1,0 +1,238 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: Insn Canonicalizations</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: Insn Canonicalizations">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: Insn Canonicalizations">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Machine-Desc.html#Machine-Desc" rel="up" title="Machine Desc">
+<link href="Expander-Definitions.html#Expander-Definitions" rel="next" title="Expander Definitions">
+<link href="Looping-Patterns.html#Looping-Patterns" rel="prev" title="Looping Patterns">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="Insn-Canonicalizations"></a>
+<div class="header">
+<p>
+Next: <a href="Expander-Definitions.html#Expander-Definitions" accesskey="n" rel="next">Expander Definitions</a>, Previous: <a href="Looping-Patterns.html#Looping-Patterns" accesskey="p" rel="prev">Looping Patterns</a>, Up: <a href="Machine-Desc.html#Machine-Desc" accesskey="u" rel="up">Machine Desc</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Canonicalization-of-Instructions"></a>
+<h3 class="section">17.14 Canonicalization of Instructions</h3>
+<a name="index-canonicalization-of-instructions"></a>
+<a name="index-insn-canonicalization"></a>
+
+<p>There are often cases where multiple RTL expressions could represent an
+operation performed by a single machine instruction.  This situation is
+most commonly encountered with logical, branch, and multiply-accumulate
+instructions.  In such cases, the compiler attempts to convert these
+multiple RTL expressions into a single canonical form to reduce the
+number of insn patterns required.
+</p>
+<p>In addition to algebraic simplifications, following canonicalizations
+are performed:
+</p>
+<ul>
+<li> For commutative and comparison operators, a constant is always made the
+second operand.  If a machine only supports a constant as the second
+operand, only patterns that match a constant in the second operand need
+be supplied.
+
+</li><li> For associative operators, a sequence of operators will always chain
+to the left; for instance, only the left operand of an integer <code>plus</code>
+can itself be a <code>plus</code>.  <code>and</code>, <code>ior</code>, <code>xor</code>,
+<code>plus</code>, <code>mult</code>, <code>smin</code>, <code>smax</code>, <code>umin</code>, and
+<code>umax</code> are associative when applied to integers, and sometimes to
+floating-point.
+
+</li><li> <a name="index-neg_002c-canonicalization-of"></a>
+<a name="index-not_002c-canonicalization-of"></a>
+<a name="index-mult_002c-canonicalization-of"></a>
+<a name="index-plus_002c-canonicalization-of"></a>
+<a name="index-minus_002c-canonicalization-of"></a>
+For these operators, if only one operand is a <code>neg</code>, <code>not</code>,
+<code>mult</code>, <code>plus</code>, or <code>minus</code> expression, it will be the
+first operand.
+
+</li><li> In combinations of <code>neg</code>, <code>mult</code>, <code>plus</code>, and
+<code>minus</code>, the <code>neg</code> operations (if any) will be moved inside
+the operations as far as possible.  For instance,
+<code>(neg (mult A B))</code> is canonicalized as <code>(mult (neg A) B)</code>, but
+<code>(plus (mult (neg B) C) A)</code> is canonicalized as
+<code>(minus A (mult B C))</code>.
+
+</li><li> <a name="index-compare_002c-canonicalization-of"></a>
+For the <code>compare</code> operator, a constant is always the second operand
+if the first argument is a condition code register or <code>(cc0)</code>.
+
+</li><li> For instructions that inherently set a condition code register, the
+<code>compare</code> operator is always written as the first RTL expression of
+the <code>parallel</code> instruction pattern.  For example,
+
+<div class="smallexample">
+<pre class="smallexample">(define_insn &quot;&quot;
+  [(set (reg:CCZ FLAGS_REG)
+	(compare:CCZ
+	  (plus:SI
+	    (match_operand:SI 1 &quot;register_operand&quot; &quot;%r&quot;)
+	    (match_operand:SI 2 &quot;register_operand&quot; &quot;r&quot;))
+	  (const_int 0)))
+   (set (match_operand:SI 0 &quot;register_operand&quot; &quot;=r&quot;)
+	(plus:SI (match_dup 1) (match_dup 2)))]
+  &quot;&quot;
+  &quot;addl %0, %1, %2&quot;)
+</pre></div>
+
+</li><li> An operand of <code>neg</code>, <code>not</code>, <code>mult</code>, <code>plus</code>, or
+<code>minus</code> is made the first operand under the same conditions as
+above.
+
+</li><li> <code>(ltu (plus <var>a</var> <var>b</var>) <var>b</var>)</code> is converted to
+<code>(ltu (plus <var>a</var> <var>b</var>) <var>a</var>)</code>. Likewise with <code>geu</code> instead
+of <code>ltu</code>.
+
+</li><li> <code>(minus <var>x</var> (const_int <var>n</var>))</code> is converted to
+<code>(plus <var>x</var> (const_int <var>-n</var>))</code>.
+
+</li><li> Within address computations (i.e., inside <code>mem</code>), a left shift is
+converted into the appropriate multiplication by a power of two.
+
+</li><li> <a name="index-ior_002c-canonicalization-of"></a>
+<a name="index-and_002c-canonicalization-of"></a>
+<a name="index-De-Morgan_0027s-law"></a>
+De Morgan&rsquo;s Law is used to move bitwise negation inside a bitwise
+logical-and or logical-or operation.  If this results in only one
+operand being a <code>not</code> expression, it will be the first one.
+
+<p>A machine that has an instruction that performs a bitwise logical-and of one
+operand with the bitwise negation of the other should specify the pattern
+for that instruction as
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_insn &quot;&quot;
+  [(set (match_operand:<var>m</var> 0 &hellip;)
+        (and:<var>m</var> (not:<var>m</var> (match_operand:<var>m</var> 1 &hellip;))
+                     (match_operand:<var>m</var> 2 &hellip;)))]
+  &quot;&hellip;&quot;
+  &quot;&hellip;&quot;)
+</pre></div>
+
+<p>Similarly, a pattern for a &ldquo;NAND&rdquo; instruction should be written
+</p>
+<div class="smallexample">
+<pre class="smallexample">(define_insn &quot;&quot;
+  [(set (match_operand:<var>m</var> 0 &hellip;)
+        (ior:<var>m</var> (not:<var>m</var> (match_operand:<var>m</var> 1 &hellip;))
+                     (not:<var>m</var> (match_operand:<var>m</var> 2 &hellip;))))]
+  &quot;&hellip;&quot;
+  &quot;&hellip;&quot;)
+</pre></div>
+
+<p>In both cases, it is not necessary to include patterns for the many
+logically equivalent RTL expressions.
+</p>
+</li><li> <a name="index-xor_002c-canonicalization-of"></a>
+The only possible RTL expressions involving both bitwise exclusive-or
+and bitwise negation are <code>(xor:<var>m</var> <var>x</var> <var>y</var>)</code>
+and <code>(not:<var>m</var> (xor:<var>m</var> <var>x</var> <var>y</var>))</code>.
+
+</li><li> The sum of three items, one of which is a constant, will only appear in
+the form
+
+<div class="smallexample">
+<pre class="smallexample">(plus:<var>m</var> (plus:<var>m</var> <var>x</var> <var>y</var>) <var>constant</var>)
+</pre></div>
+
+</li><li> <a name="index-zero_005fextract_002c-canonicalization-of"></a>
+<a name="index-sign_005fextract_002c-canonicalization-of"></a>
+Equality comparisons of a group of bits (usually a single bit) with zero
+will be written using <code>zero_extract</code> rather than the equivalent
+<code>and</code> or <code>sign_extract</code> operations.
+
+</li><li> <a name="index-mult_002c-canonicalization-of-1"></a>
+<code>(sign_extend:<var>m1</var> (mult:<var>m2</var> (sign_extend:<var>m2</var> <var>x</var>)
+(sign_extend:<var>m2</var> <var>y</var>)))</code> is converted to <code>(mult:<var>m1</var>
+(sign_extend:<var>m1</var> <var>x</var>) (sign_extend:<var>m1</var> <var>y</var>))</code>, and likewise
+for <code>zero_extend</code>.
+
+</li><li> <code>(sign_extend:<var>m1</var> (mult:<var>m2</var> (ashiftrt:<var>m2</var>
+<var>x</var> <var>s</var>) (sign_extend:<var>m2</var> <var>y</var>)))</code> is converted
+to <code>(mult:<var>m1</var> (sign_extend:<var>m1</var> (ashiftrt:<var>m2</var>
+<var>x</var> <var>s</var>)) (sign_extend:<var>m1</var> <var>y</var>))</code>, and likewise for
+patterns using <code>zero_extend</code> and <code>lshiftrt</code>.  If the second
+operand of <code>mult</code> is also a shift, then that is extended also.
+This transformation is only applied when it can be proven that the
+original operation had sufficient precision to prevent overflow.
+
+</li></ul>
+
+<p>Further canonicalization rules are defined in the function
+<code>commutative_operand_precedence</code> in <samp>gcc/rtlanal.c</samp>.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="Expander-Definitions.html#Expander-Definitions" accesskey="n" rel="next">Expander Definitions</a>, Previous: <a href="Looping-Patterns.html#Looping-Patterns" accesskey="p" rel="prev">Looping Patterns</a>, Up: <a href="Machine-Desc.html#Machine-Desc" accesskey="u" rel="up">Machine Desc</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

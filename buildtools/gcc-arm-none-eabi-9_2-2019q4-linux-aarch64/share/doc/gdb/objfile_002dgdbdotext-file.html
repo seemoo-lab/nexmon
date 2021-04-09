@@ -1,0 +1,167 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: objfile-gdbdotext file</title>
+
+<meta name="description" content="Debugging with GDB: objfile-gdbdotext file">
+<meta name="keywords" content="Debugging with GDB: objfile-gdbdotext file">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Auto_002dloading-extensions.html#Auto_002dloading-extensions" rel="up" title="Auto-loading extensions">
+<link href="dotdebug_005fgdb_005fscripts-section.html#dotdebug_005fgdb_005fscripts-section" rel="next" title="dotdebug_gdb_scripts section">
+<link href="Auto_002dloading-extensions.html#Auto_002dloading-extensions" rel="prev" title="Auto-loading extensions">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="objfile_002dgdbdotext-file"></a>
+<div class="header">
+<p>
+Next: <a href="dotdebug_005fgdb_005fscripts-section.html#dotdebug_005fgdb_005fscripts-section" accesskey="n" rel="next">dotdebug_gdb_scripts section</a>, Up: <a href="Auto_002dloading-extensions.html#Auto_002dloading-extensions" accesskey="u" rel="up">Auto-loading extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="The-objfile_002dgdb_002eext-file"></a>
+<h4 class="subsection">23.4.1 The <samp><var>objfile</var>-gdb.<var>ext</var></samp> file</h4>
+<a name="index-objfile_002dgdb_002egdb"></a>
+<a name="index-objfile_002dgdb_002epy"></a>
+<a name="index-objfile_002dgdb_002escm"></a>
+
+<p>When a new object file is read, <small>GDB</small> looks for a file named
+<samp><var>objfile</var>-gdb.<var>ext</var></samp> (we call it <var>script-name</var> below),
+where <var>objfile</var> is the object file&rsquo;s name and
+where <var>ext</var> is the file extension for the extension language:
+</p>
+<dl compact="compact">
+<dt><code><samp><var>objfile</var>-gdb.gdb</samp></code></dt>
+<dd><p>GDB&rsquo;s own command language
+</p></dd>
+<dt><code><samp><var>objfile</var>-gdb.py</samp></code></dt>
+<dd><p>Python
+</p></dd>
+<dt><code><samp><var>objfile</var>-gdb.scm</samp></code></dt>
+<dd><p>Guile
+</p></dd>
+</dl>
+
+<p><var>script-name</var> is formed by ensuring that the file name of <var>objfile</var>
+is absolute, following all symlinks, and resolving <code>.</code> and <code>..</code>
+components, and appending the <samp>-gdb.<var>ext</var></samp> suffix.
+If this file exists and is readable, <small>GDB</small> will evaluate it as a
+script in the specified extension language.
+</p>
+<p>If this file does not exist, then <small>GDB</small> will look for
+<var>script-name</var> file in all of the directories as specified below.
+</p>
+<p>Note that loading of these files requires an accordingly configured
+<code>auto-load safe-path</code> (see <a href="Auto_002dloading-safe-path.html#Auto_002dloading-safe-path">Auto-loading safe path</a>).
+</p>
+<p>For object files using <samp>.exe</samp> suffix <small>GDB</small> tries to load first the
+scripts normally according to its <samp>.exe</samp> filename.  But if no scripts are
+found <small>GDB</small> also tries script filenames matching the object file without
+its <samp>.exe</samp> suffix.  This <samp>.exe</samp> stripping is case insensitive and it
+is attempted on any platform.  This makes the script filenames compatible
+between Unix and MS-Windows hosts.
+</p>
+<dl compact="compact">
+<dd><a name="set-auto_002dload-scripts_002ddirectory"></a><a name="index-set-auto_002dload-scripts_002ddirectory"></a>
+</dd>
+<dt><code>set auto-load scripts-directory <span class="roman">[</span><var>directories</var><span class="roman">]</span></code></dt>
+<dd><p>Control <small>GDB</small> auto-loaded scripts location.  Multiple directory entries
+may be delimited by the host platform path separator in use
+(&lsquo;<samp>:</samp>&rsquo; on Unix, &lsquo;<samp>;</samp>&rsquo; on MS-Windows and MS-DOS).
+</p>
+<p>Each entry here needs to be covered also by the security setting
+<code>set auto-load safe-path</code> (see <a href="Auto_002dloading-safe-path.html#set-auto_002dload-safe_002dpath">set auto-load safe-path</a>).
+</p>
+<a name="with_002dauto_002dload_002ddir"></a><p>This variable defaults to <samp>$debugdir:$datadir/auto-load</samp>.  The default
+<code>set auto-load safe-path</code> value can be also overriden by <small>GDB</small>
+configuration option <samp>--with-auto-load-dir</samp>.
+</p>
+<p>Any reference to <samp>$debugdir</samp> will get replaced by
+<var>debug-file-directory</var> value (see <a href="Separate-Debug-Files.html#Separate-Debug-Files">Separate Debug Files</a>) and any
+reference to <samp>$datadir</samp> will get replaced by <var>data-directory</var> which is
+determined at <small>GDB</small> startup (see <a href="Data-Files.html#Data-Files">Data Files</a>).  <samp>$debugdir</samp> and
+<samp>$datadir</samp> must be placed as a directory component &mdash; either alone or
+delimited by <samp>/</samp> or <samp>\</samp> directory separators, depending on the host
+platform.
+</p>
+<p>The list of directories uses path separator (&lsquo;<samp>:</samp>&rsquo; on GNU and Unix
+systems, &lsquo;<samp>;</samp>&rsquo; on MS-Windows and MS-DOS) to separate directories, similarly
+to the <code>PATH</code> environment variable.
+</p>
+<a name="show-auto_002dload-scripts_002ddirectory"></a><a name="index-show-auto_002dload-scripts_002ddirectory"></a>
+</dd>
+<dt><code>show auto-load scripts-directory</code></dt>
+<dd><p>Show <small>GDB</small> auto-loaded scripts location.
+</p>
+<a name="add_002dauto_002dload_002dscripts_002ddirectory"></a><a name="index-add_002dauto_002dload_002dscripts_002ddirectory"></a>
+</dd>
+<dt><code>add-auto-load-scripts-directory <span class="roman">[</span><var>directories</var>&hellip;<span class="roman">]</span></code></dt>
+<dd><p>Add an entry (or list of entries) to the list of auto-loaded scripts locations.
+Multiple entries may be delimited by the host platform path separator in use.
+</p></dd>
+</dl>
+
+<p><small>GDB</small> does not track which files it has already auto-loaded this way.
+<small>GDB</small> will load the associated script every time the corresponding
+<var>objfile</var> is opened.
+So your <samp>-gdb.<var>ext</var></samp> file should be careful to avoid errors if it
+is evaluated more than once.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="dotdebug_005fgdb_005fscripts-section.html#dotdebug_005fgdb_005fscripts-section" accesskey="n" rel="next">dotdebug_gdb_scripts section</a>, Up: <a href="Auto_002dloading-extensions.html#Auto_002dloading-extensions" accesskey="u" rel="up">Auto-loading extensions</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

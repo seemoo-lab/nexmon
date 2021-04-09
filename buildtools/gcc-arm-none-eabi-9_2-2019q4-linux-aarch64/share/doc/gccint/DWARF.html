@@ -1,0 +1,236 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Funding Free Software", the Front-Cover
+Texts being (a) (see below), and with the Back-Cover Texts being (b)
+(see below).  A copy of the license is included in the section entitled
+"GNU Free Documentation License".
+
+(a) The FSF's Front-Cover Text is:
+
+A GNU Manual
+
+(b) The FSF's Back-Cover Text is:
+
+You have freedom to copy and modify this GNU Manual, like GNU
+     software.  Copies published by the Free Software Foundation raise
+     funds for GNU development. -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>GNU Compiler Collection (GCC) Internals: DWARF</title>
+
+<meta name="description" content="GNU Compiler Collection (GCC) Internals: DWARF">
+<meta name="keywords" content="GNU Compiler Collection (GCC) Internals: DWARF">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Option-Index.html#Option-Index" rel="index" title="Option Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Debugging-Info.html#Debugging-Info" rel="up" title="Debugging Info">
+<link href="VMS-Debug.html#VMS-Debug" rel="next" title="VMS Debug">
+<link href="File-Names-and-DBX.html#File-Names-and-DBX" rel="prev" title="File Names and DBX">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="DWARF"></a>
+<div class="header">
+<p>
+Next: <a href="VMS-Debug.html#VMS-Debug" accesskey="n" rel="next">VMS Debug</a>, Previous: <a href="File-Names-and-DBX.html#File-Names-and-DBX" accesskey="p" rel="prev">File Names and DBX</a>, Up: <a href="Debugging-Info.html#Debugging-Info" accesskey="u" rel="up">Debugging Info</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="Macros-for-DWARF-Output"></a>
+<h4 class="subsection">18.21.5 Macros for DWARF Output</h4>
+
+<p>Here are macros for DWARF output.
+</p>
+<dl>
+<dt><a name="index-DWARF2_005fDEBUGGING_005fINFO"></a>Macro: <strong>DWARF2_DEBUGGING_INFO</strong></dt>
+<dd><p>Define this macro if GCC should produce dwarf version 2 format
+debugging output in response to the <samp>-g</samp> option.
+</p>
+<dl>
+<dt><a name="index-TARGET_005fDWARF_005fCALLING_005fCONVENTION"></a>Target Hook: <em>int</em> <strong>TARGET_DWARF_CALLING_CONVENTION</strong> <em>(const_tree <var>function</var>)</em></dt>
+<dd><p>Define this to enable the dwarf attribute <code>DW_AT_calling_convention</code> to
+be emitted for each function.  Instead of an integer return the enum
+value for the <code>DW_CC_</code> tag.
+</p></dd></dl>
+
+<p>To support optional call frame debugging information, you must also
+define <code>INCOMING_RETURN_ADDR_RTX</code> and either set
+<code>RTX_FRAME_RELATED_P</code> on the prologue insns if you use RTL for the
+prologue, or call <code>dwarf2out_def_cfa</code> and <code>dwarf2out_reg_save</code>
+as appropriate from <code>TARGET_ASM_FUNCTION_PROLOGUE</code> if you don&rsquo;t.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-DWARF2_005fFRAME_005fINFO"></a>Macro: <strong>DWARF2_FRAME_INFO</strong></dt>
+<dd><p>Define this macro to a nonzero value if GCC should always output
+Dwarf 2 frame information.  If <code>TARGET_EXCEPT_UNWIND_INFO</code>
+(see <a href="Exception-Region-Output.html#Exception-Region-Output">Exception Region Output</a>) returns <code>UI_DWARF2</code>, and
+exceptions are enabled, GCC will output this information not matter
+how you define <code>DWARF2_FRAME_INFO</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fDEBUG_005fUNWIND_005fINFO"></a>Target Hook: <em>enum unwind_info_type</em> <strong>TARGET_DEBUG_UNWIND_INFO</strong> <em>(void)</em></dt>
+<dd><p>This hook defines the mechanism that will be used for describing frame
+unwind information to the debugger.  Normally the hook will return
+<code>UI_DWARF2</code> if DWARF 2 debug information is enabled, and
+return <code>UI_NONE</code> otherwise.
+</p>
+<p>A target may return <code>UI_DWARF2</code> even when DWARF 2 debug information
+is disabled in order to always output DWARF 2 frame information.
+</p>
+<p>A target may return <code>UI_TARGET</code> if it has ABI specified unwind tables.
+This will suppress generation of the normal debug frame unwind information.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-DWARF2_005fASM_005fLINE_005fDEBUG_005fINFO"></a>Macro: <strong>DWARF2_ASM_LINE_DEBUG_INFO</strong></dt>
+<dd><p>Define this macro to be a nonzero value if the assembler can generate Dwarf 2
+line debug info sections.  This will result in much more compact line number
+tables, and hence is desirable if it works.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-DWARF2_005fASM_005fVIEW_005fDEBUG_005fINFO"></a>Macro: <strong>DWARF2_ASM_VIEW_DEBUG_INFO</strong></dt>
+<dd><p>Define this macro to be a nonzero value if the assembler supports view
+assignment and verification in <code>.loc</code>.  If it does not, but the
+user enables location views, the compiler may have to fallback to
+internal line number tables.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fRESET_005fLOCATION_005fVIEW"></a>Target Hook: <em>int</em> <strong>TARGET_RESET_LOCATION_VIEW</strong> <em>(rtx_insn *<var></var>)</em></dt>
+<dd><p>This hook, if defined, enables -ginternal-reset-location-views, and
+uses its result to override cases in which the estimated min insn
+length might be nonzero even when a PC advance (i.e., a view reset)
+cannot be taken for granted.
+</p>
+<p>If the hook is defined, it must return a positive value to indicate
+the insn definitely advances the PC, and so the view number can be
+safely assumed to be reset; a negative value to mean the insn
+definitely does not advance the PC, and os the view number must not
+be reset; or zero to decide based on the estimated insn length.
+</p>
+<p>If insn length is to be regarded as reliable, set the hook to
+<code>hook_int_rtx_insn_0</code>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fWANT_005fDEBUG_005fPUB_005fSECTIONS"></a>Target Hook: <em>bool</em> <strong>TARGET_WANT_DEBUG_PUB_SECTIONS</strong></dt>
+<dd><p>True if the <code>.debug_pubtypes</code> and <code>.debug_pubnames</code> sections should be emitted.  These sections are not used on most platforms, and in particular GDB does not use them.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fDELAY_005fSCHED2"></a>Target Hook: <em>bool</em> <strong>TARGET_DELAY_SCHED2</strong></dt>
+<dd><p>True if sched2 is not to be run at its normal place.
+This usually means it will be run as part of machine-specific reorg.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fDELAY_005fVARTRACK"></a>Target Hook: <em>bool</em> <strong>TARGET_DELAY_VARTRACK</strong></dt>
+<dd><p>True if vartrack is not to be run at its normal place.
+This usually means it will be run as part of machine-specific reorg.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fNO_005fREGISTER_005fALLOCATION"></a>Target Hook: <em>bool</em> <strong>TARGET_NO_REGISTER_ALLOCATION</strong></dt>
+<dd><p>True if register allocation and the passes
+following it should not be run.  Usually true only for virtual assembler
+targets.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-ASM_005fOUTPUT_005fDWARF_005fDELTA"></a>Macro: <strong>ASM_OUTPUT_DWARF_DELTA</strong> <em>(<var>stream</var>, <var>size</var>, <var>label1</var>, <var>label2</var>)</em></dt>
+<dd><p>A C statement to issue assembly directives that create a difference
+<var>lab1</var> minus <var>lab2</var>, using an integer of the given <var>size</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-ASM_005fOUTPUT_005fDWARF_005fVMS_005fDELTA"></a>Macro: <strong>ASM_OUTPUT_DWARF_VMS_DELTA</strong> <em>(<var>stream</var>, <var>size</var>, <var>label1</var>, <var>label2</var>)</em></dt>
+<dd><p>A C statement to issue assembly directives that create a difference
+between the two given labels in system defined units, e.g. instruction
+slots on IA64 VMS, using an integer of the given size.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-ASM_005fOUTPUT_005fDWARF_005fOFFSET"></a>Macro: <strong>ASM_OUTPUT_DWARF_OFFSET</strong> <em>(<var>stream</var>, <var>size</var>, <var>label</var>, <var>offset</var>, <var>section</var>)</em></dt>
+<dd><p>A C statement to issue assembly directives that create a
+section-relative reference to the given <var>label</var> plus <var>offset</var>, using
+an integer of the given <var>size</var>.  The label is known to be defined in the
+given <var>section</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-ASM_005fOUTPUT_005fDWARF_005fPCREL"></a>Macro: <strong>ASM_OUTPUT_DWARF_PCREL</strong> <em>(<var>stream</var>, <var>size</var>, <var>label</var>)</em></dt>
+<dd><p>A C statement to issue assembly directives that create a self-relative
+reference to the given <var>label</var>, using an integer of the given <var>size</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-ASM_005fOUTPUT_005fDWARF_005fDATAREL"></a>Macro: <strong>ASM_OUTPUT_DWARF_DATAREL</strong> <em>(<var>stream</var>, <var>size</var>, <var>label</var>)</em></dt>
+<dd><p>A C statement to issue assembly directives that create a reference to the
+given <var>label</var> relative to the dbase, using an integer of the given <var>size</var>.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-ASM_005fOUTPUT_005fDWARF_005fTABLE_005fREF"></a>Macro: <strong>ASM_OUTPUT_DWARF_TABLE_REF</strong> <em>(<var>label</var>)</em></dt>
+<dd><p>A C statement to issue assembly directives that create a reference to
+the DWARF table identifier <var>label</var> from the current section.  This
+is used on some systems to avoid garbage collecting a DWARF table which
+is referenced by a function.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-TARGET_005fASM_005fOUTPUT_005fDWARF_005fDTPREL"></a>Target Hook: <em>void</em> <strong>TARGET_ASM_OUTPUT_DWARF_DTPREL</strong> <em>(FILE *<var>file</var>, int <var>size</var>, rtx <var>x</var>)</em></dt>
+<dd><p>If defined, this target hook is a function which outputs a DTP-relative
+reference to the given TLS symbol of the specified size.
+</p></dd></dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="VMS-Debug.html#VMS-Debug" accesskey="n" rel="next">VMS Debug</a>, Previous: <a href="File-Names-and-DBX.html#File-Names-and-DBX" accesskey="p" rel="prev">File Names and DBX</a>, Up: <a href="Debugging-Info.html#Debugging-Info" accesskey="u" rel="up">Debugging Info</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Option-Index.html#Option-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

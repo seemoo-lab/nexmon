@@ -1,0 +1,209 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: RISC-V-Directives</title>
+
+<meta name="description" content="Using as: RISC-V-Directives">
+<meta name="keywords" content="Using as: RISC-V-Directives">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="RISC_002dV_002dDependent.html#RISC_002dV_002dDependent" rel="up" title="RISC-V-Dependent">
+<link href="RISC_002dV_002dFormats.html#RISC_002dV_002dFormats" rel="next" title="RISC-V-Formats">
+<link href="RISC_002dV_002dOptions.html#RISC_002dV_002dOptions" rel="prev" title="RISC-V-Options">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="RISC_002dV_002dDirectives"></a>
+<div class="header">
+<p>
+Next: <a href="RISC_002dV_002dFormats.html#RISC_002dV_002dFormats" accesskey="n" rel="next">RISC-V-Formats</a>, Previous: <a href="RISC_002dV_002dOptions.html#RISC_002dV_002dOptions" accesskey="p" rel="prev">RISC-V-Options</a>, Up: <a href="RISC_002dV_002dDependent.html#RISC_002dV_002dDependent" accesskey="u" rel="up">RISC-V-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="RISC_002dV-Directives"></a>
+<h4 class="subsection">9.38.2 RISC-V Directives</h4>
+<a name="index-machine-directives_002c-RISC_002dV"></a>
+<a name="index-RISC_002dV-machine-directives"></a>
+
+<p>The following table lists all available RISC-V specific directives.
+</p>
+<dl compact="compact">
+<dd>
+<a name="index-align-directive-1"></a>
+</dd>
+<dt><code>.align <var>size-log-2</var></code></dt>
+<dd><p>Align to the given boundary, with the size given as log2 the number of bytes to
+align to.
+</p>
+<a name="index-Data-directives"></a>
+</dd>
+<dt><code>.half <var>value</var></code></dt>
+<dt><code>.word <var>value</var></code></dt>
+<dt><code>.dword <var>value</var></code></dt>
+<dd><p>Emits a half-word, word, or double-word value at the current position.
+</p>
+<a name="index-DTP_002drelative-data-directives"></a>
+</dd>
+<dt><code>.dtprelword <var>value</var></code></dt>
+<dt><code>.dtpreldword <var>value</var></code></dt>
+<dd><p>Emits a DTP-relative word (or double-word) at the current position.  This is
+meant to be used by the compiler in shared libraries for DWARF debug info for
+thread local variables.
+</p>
+<a name="index-BSS-directive"></a>
+</dd>
+<dt><code>.bss</code></dt>
+<dd><p>Sets the current section to the BSS section.
+</p>
+<a name="index-LEB128-directives"></a>
+</dd>
+<dt><code>.uleb128 <var>value</var></code></dt>
+<dt><code>.sleb128 <var>value</var></code></dt>
+<dd><p>Emits a signed or unsigned LEB128 value at the current position.  This only
+accepts constant expressions, because symbol addresses can change with
+relaxation, and we don&rsquo;t support relocations to modify LEB128 values at link
+time.
+</p>
+<a name="index-Option-directive"></a>
+<a name="index-option-directive"></a>
+</dd>
+<dt><code>.option <var>argument</var></code></dt>
+<dd><p>Modifies RISC-V specific assembler options inline with the assembly code.
+This is used when particular instruction sequences must be assembled with a
+specific set of options.  For example, since we relax addressing sequences to
+shorter GP-relative sequences when possible the initial load of GP must not be
+relaxed and should be emitted as something like
+</p>
+<div class="smallexample">
+<pre class="smallexample">	.option push
+	.option norelax
+	la gp, __global_pointer$
+	.option pop
+</pre></div>
+
+<p>in order to produce after linker relaxation the expected
+</p>
+<div class="smallexample">
+<pre class="smallexample">	auipc gp, %pcrel_hi(__global_pointer$)
+	addi gp, gp, %pcrel_lo(__global_pointer$)
+</pre></div>
+
+<p>instead of just
+</p>
+<div class="smallexample">
+<pre class="smallexample">	addi gp, gp, 0
+</pre></div>
+
+<p>It&rsquo;s not expected that options are changed in this manner during regular use,
+but there are a handful of esoteric cases like the one above where users need
+to disable particular features of the assembler for particular code sequences.
+The complete list of option arguments is shown below:
+</p>
+<dl compact="compact">
+<dt><code>push</code></dt>
+<dt><code>pop</code></dt>
+<dd><p>Pushes or pops the current option stack.  These should be used whenever
+changing an option in line with assembly code in order to ensure the user&rsquo;s
+command-line options are respected for the bulk of the file being assembled.
+</p>
+</dd>
+<dt><code>rvc</code></dt>
+<dt><code>norvc</code></dt>
+<dd><p>Enables or disables the generation of compressed instructions.  Instructions
+are opportunistically compressed by the RISC-V assembler when possible, but
+sometimes this behavior is not desirable.
+</p>
+</dd>
+<dt><code>pic</code></dt>
+<dt><code>nopic</code></dt>
+<dd><p>Enables or disables position-independent code generation.  Unless you really
+know what you&rsquo;re doing, this should only be at the top of a file.
+</p>
+</dd>
+<dt><code>relax</code></dt>
+<dt><code>norelax</code></dt>
+<dd><p>Enables or disables relaxation.  The RISC-V assembler and linker
+opportunistically relax some code sequences, but sometimes this behavior is not
+desirable.
+</p></dd>
+</dl>
+
+<a name="index-INSN-directives"></a>
+</dd>
+<dt><code>.insn <var>value</var></code></dt>
+<dt><code>.insn <var>value</var></code></dt>
+<dd><p>This directive permits the numeric representation of an instructions
+and makes the assembler insert the operands according to one of the
+instruction formats for &lsquo;<samp>.insn</samp>&rsquo; (<a href="RISC_002dV_002dFormats.html#RISC_002dV_002dFormats">RISC-V-Formats</a>).
+For example, the instruction &lsquo;<samp>add a0, a1, a2</samp>&rsquo; could be written as
+&lsquo;<samp>.insn r 0x33, 0, 0, a0, a1, a2</samp>&rsquo;.
+</p>
+<a name="index-_002eattribute-directive_002c-RISC_002dV"></a>
+</dd>
+<dt><code>.attribute <var>tag</var>, <var>value</var></code></dt>
+<dd><p>Set the object attribute <var>tag</var> to <var>value</var>.
+</p>
+<p>The <var>tag</var> is either an attribute number, or one of the following:
+<code>Tag_RISCV_arch</code>, <code>Tag_RISCV_stack_align</code>,
+<code>Tag_RISCV_unaligned_access</code>, <code>Tag_RISCV_priv_spec</code>,
+<code>Tag_RISCV_priv_spec_minor</code>, <code>Tag_RISCV_priv_spec_revision</code>.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="RISC_002dV_002dFormats.html#RISC_002dV_002dFormats" accesskey="n" rel="next">RISC-V-Formats</a>, Previous: <a href="RISC_002dV_002dOptions.html#RISC_002dV_002dOptions" accesskey="p" rel="prev">RISC-V-Options</a>, Up: <a href="RISC_002dV_002dDependent.html#RISC_002dV_002dDependent" accesskey="u" rel="up">RISC-V-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

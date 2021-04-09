@@ -1,0 +1,193 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: i386-Mnemonics</title>
+
+<meta name="description" content="Using as: i386-Mnemonics">
+<meta name="keywords" content="Using as: i386-Mnemonics">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="i386_002dDependent.html#i386_002dDependent" rel="up" title="i386-Dependent">
+<link href="i386_002dRegs.html#i386_002dRegs" rel="next" title="i386-Regs">
+<link href="i386_002dChars.html#i386_002dChars" rel="prev" title="i386-Chars">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="i386_002dMnemonics"></a>
+<div class="header">
+<p>
+Next: <a href="i386_002dRegs.html#i386_002dRegs" accesskey="n" rel="next">i386-Regs</a>, Previous: <a href="i386_002dSyntax.html#i386_002dSyntax" accesskey="p" rel="prev">i386-Syntax</a>, Up: <a href="i386_002dDependent.html#i386_002dDependent" accesskey="u" rel="up">i386-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="i386_002dMnemonics-1"></a>
+<h4 class="subsection">9.16.4 i386-Mnemonics</h4>
+<a name="Instruction-Naming"></a>
+<h4 class="subsubsection">9.16.4.1 Instruction Naming</h4>
+
+<a name="index-i386-instruction-naming"></a>
+<a name="index-instruction-naming_002c-i386"></a>
+<a name="index-x86_002d64-instruction-naming"></a>
+<a name="index-instruction-naming_002c-x86_002d64"></a>
+
+<p>Instruction mnemonics are suffixed with one character modifiers which
+specify the size of operands.  The letters &lsquo;<samp>b</samp>&rsquo;, &lsquo;<samp>w</samp>&rsquo;, &lsquo;<samp>l</samp>&rsquo;
+and &lsquo;<samp>q</samp>&rsquo; specify byte, word, long and quadruple word operands.  If
+no suffix is specified by an instruction then <code>as</code> tries to
+fill in the missing suffix based on the destination register operand
+(the last one by convention).  Thus, &lsquo;<samp>mov %ax, %bx</samp>&rsquo; is equivalent
+to &lsquo;<samp>movw %ax, %bx</samp>&rsquo;; also, &lsquo;<samp>mov $1, %bx</samp>&rsquo; is equivalent to
+&lsquo;<samp>movw $1, bx</samp>&rsquo;.  Note that this is incompatible with the AT&amp;T Unix
+assembler which assumes that a missing mnemonic suffix implies long
+operand size.  (This incompatibility does not affect compiler output
+since compilers always explicitly specify the mnemonic suffix.)
+</p>
+<p>Almost all instructions have the same names in AT&amp;T and Intel format.
+There are a few exceptions.  The sign extend and zero extend
+instructions need two sizes to specify them.  They need a size to
+sign/zero extend <em>from</em> and a size to zero extend <em>to</em>.  This
+is accomplished by using two instruction mnemonic suffixes in AT&amp;T
+syntax.  Base names for sign extend and zero extend are
+&lsquo;<samp>movs&hellip;</samp>&rsquo; and &lsquo;<samp>movz&hellip;</samp>&rsquo; in AT&amp;T syntax (&lsquo;<samp>movsx</samp>&rsquo;
+and &lsquo;<samp>movzx</samp>&rsquo; in Intel syntax).  The instruction mnemonic suffixes
+are tacked on to this base name, the <em>from</em> suffix before the
+<em>to</em> suffix.  Thus, &lsquo;<samp>movsbl %al, %edx</samp>&rsquo; is AT&amp;T syntax for
+&ldquo;move sign extend <em>from</em> %al <em>to</em> %edx.&rdquo;  Possible suffixes,
+thus, are &lsquo;<samp>bl</samp>&rsquo; (from byte to long), &lsquo;<samp>bw</samp>&rsquo; (from byte to word),
+&lsquo;<samp>wl</samp>&rsquo; (from word to long), &lsquo;<samp>bq</samp>&rsquo; (from byte to quadruple word),
+&lsquo;<samp>wq</samp>&rsquo; (from word to quadruple word), and &lsquo;<samp>lq</samp>&rsquo; (from long to
+quadruple word).
+</p>
+<a name="index-encoding-options_002c-i386"></a>
+<a name="index-encoding-options_002c-x86_002d64"></a>
+
+<p>Different encoding options can be specified via pseudo prefixes:
+</p>
+<ul>
+<li> &lsquo;<samp>{disp8}</samp>&rsquo; &ndash; prefer 8-bit displacement.
+
+</li><li> &lsquo;<samp>{disp32}</samp>&rsquo; &ndash; prefer 32-bit displacement.
+
+</li><li> &lsquo;<samp>{load}</samp>&rsquo; &ndash; prefer load-form instruction.
+
+</li><li> &lsquo;<samp>{store}</samp>&rsquo; &ndash; prefer store-form instruction.
+
+</li><li> &lsquo;<samp>{vex2}</samp>&rsquo; &ndash; prefer 2-byte VEX prefix for VEX instruction.
+
+</li><li> &lsquo;<samp>{vex3}</samp>&rsquo; &ndash; prefer 3-byte VEX prefix for VEX instruction.
+
+</li><li> &lsquo;<samp>{evex}</samp>&rsquo; &ndash;  encode with EVEX prefix.
+
+</li><li> &lsquo;<samp>{rex}</samp>&rsquo; &ndash; prefer REX prefix for integer and legacy vector
+instructions (x86-64 only).  Note that this differs from the &lsquo;<samp>rex</samp>&rsquo;
+prefix which generates REX prefix unconditionally.
+
+</li><li> &lsquo;<samp>{nooptimize}</samp>&rsquo; &ndash; disable instruction size optimization.
+</li></ul>
+
+<a name="index-conversion-instructions_002c-i386"></a>
+<a name="index-i386-conversion-instructions"></a>
+<a name="index-conversion-instructions_002c-x86_002d64"></a>
+<a name="index-x86_002d64-conversion-instructions"></a>
+<p>The Intel-syntax conversion instructions
+</p>
+<ul>
+<li> &lsquo;<samp>cbw</samp>&rsquo; &mdash; sign-extend byte in &lsquo;<samp>%al</samp>&rsquo; to word in &lsquo;<samp>%ax</samp>&rsquo;,
+
+</li><li> &lsquo;<samp>cwde</samp>&rsquo; &mdash; sign-extend word in &lsquo;<samp>%ax</samp>&rsquo; to long in &lsquo;<samp>%eax</samp>&rsquo;,
+
+</li><li> &lsquo;<samp>cwd</samp>&rsquo; &mdash; sign-extend word in &lsquo;<samp>%ax</samp>&rsquo; to long in &lsquo;<samp>%dx:%ax</samp>&rsquo;,
+
+</li><li> &lsquo;<samp>cdq</samp>&rsquo; &mdash; sign-extend dword in &lsquo;<samp>%eax</samp>&rsquo; to quad in &lsquo;<samp>%edx:%eax</samp>&rsquo;,
+
+</li><li> &lsquo;<samp>cdqe</samp>&rsquo; &mdash; sign-extend dword in &lsquo;<samp>%eax</samp>&rsquo; to quad in &lsquo;<samp>%rax</samp>&rsquo;
+(x86-64 only),
+
+</li><li> &lsquo;<samp>cqo</samp>&rsquo; &mdash; sign-extend quad in &lsquo;<samp>%rax</samp>&rsquo; to octuple in
+&lsquo;<samp>%rdx:%rax</samp>&rsquo; (x86-64 only),
+</li></ul>
+
+<p>are called &lsquo;<samp>cbtw</samp>&rsquo;, &lsquo;<samp>cwtl</samp>&rsquo;, &lsquo;<samp>cwtd</samp>&rsquo;, &lsquo;<samp>cltd</samp>&rsquo;, &lsquo;<samp>cltq</samp>&rsquo;, and
+&lsquo;<samp>cqto</samp>&rsquo; in AT&amp;T naming.  <code>as</code> accepts either naming for these
+instructions.
+</p>
+<a name="index-jump-instructions_002c-i386"></a>
+<a name="index-call-instructions_002c-i386"></a>
+<a name="index-jump-instructions_002c-x86_002d64"></a>
+<a name="index-call-instructions_002c-x86_002d64"></a>
+<p>Far call/jump instructions are &lsquo;<samp>lcall</samp>&rsquo; and &lsquo;<samp>ljmp</samp>&rsquo; in
+AT&amp;T syntax, but are &lsquo;<samp>call far</samp>&rsquo; and &lsquo;<samp>jump far</samp>&rsquo; in Intel
+convention.
+</p>
+<a name="AT_0026T-Mnemonic-versus-Intel-Mnemonic"></a>
+<h4 class="subsubsection">9.16.4.2 AT&amp;T Mnemonic versus Intel Mnemonic</h4>
+
+<a name="index-i386-mnemonic-compatibility"></a>
+<a name="index-mnemonic-compatibility_002c-i386"></a>
+
+<p><code>as</code> supports assembly using Intel mnemonic.
+<code>.intel_mnemonic</code> selects Intel mnemonic with Intel syntax, and
+<code>.att_mnemonic</code> switches back to the usual AT&amp;T mnemonic with AT&amp;T
+syntax for compatibility with the output of <code>gcc</code>.
+Several x87 instructions, &lsquo;<samp>fadd</samp>&rsquo;, &lsquo;<samp>fdiv</samp>&rsquo;, &lsquo;<samp>fdivp</samp>&rsquo;,
+&lsquo;<samp>fdivr</samp>&rsquo;, &lsquo;<samp>fdivrp</samp>&rsquo;, &lsquo;<samp>fmul</samp>&rsquo;, &lsquo;<samp>fsub</samp>&rsquo;, &lsquo;<samp>fsubp</samp>&rsquo;,
+&lsquo;<samp>fsubr</samp>&rsquo; and &lsquo;<samp>fsubrp</samp>&rsquo;,  are implemented in AT&amp;T System V/386
+assembler with different mnemonics from those in Intel IA32 specification.
+<code>gcc</code> generates those instructions with AT&amp;T mnemonic.
+</p>
+<hr>
+<div class="header">
+<p>
+Next: <a href="i386_002dRegs.html#i386_002dRegs" accesskey="n" rel="next">i386-Regs</a>, Previous: <a href="i386_002dSyntax.html#i386_002dSyntax" accesskey="p" rel="prev">i386-Syntax</a>, Up: <a href="i386_002dDependent.html#i386_002dDependent" accesskey="u" rel="up">i386-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

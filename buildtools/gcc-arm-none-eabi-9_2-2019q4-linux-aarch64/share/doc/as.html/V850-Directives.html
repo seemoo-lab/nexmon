@@ -1,0 +1,148 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- This file documents the GNU Assembler "as".
+
+Copyright (C) 1991-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3
+or any later version published by the Free Software Foundation;
+with no Invariant Sections, with no Front-Cover Texts, and with no
+Back-Cover Texts.  A copy of the license is included in the
+section entitled "GNU Free Documentation License".
+ -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Using as: V850 Directives</title>
+
+<meta name="description" content="Using as: V850 Directives">
+<meta name="keywords" content="Using as: V850 Directives">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="AS-Index.html#AS-Index" rel="index" title="AS Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="V850_002dDependent.html#V850_002dDependent" rel="up" title="V850-Dependent">
+<link href="V850-Opcodes.html#V850-Opcodes" rel="next" title="V850 Opcodes">
+<link href="V850-Floating-Point.html#V850-Floating-Point" rel="prev" title="V850 Floating Point">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="V850-Directives"></a>
+<div class="header">
+<p>
+Next: <a href="V850-Opcodes.html#V850-Opcodes" accesskey="n" rel="next">V850 Opcodes</a>, Previous: <a href="V850-Floating-Point.html#V850-Floating-Point" accesskey="p" rel="prev">V850 Floating Point</a>, Up: <a href="V850_002dDependent.html#V850_002dDependent" accesskey="u" rel="up">V850-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="V850-Machine-Directives"></a>
+<h4 class="subsection">9.49.4 V850 Machine Directives</h4>
+
+<a name="index-machine-directives_002c-V850"></a>
+<a name="index-V850-machine-directives"></a>
+<dl compact="compact">
+<dd><a name="index-offset-directive_002c-V850"></a>
+</dd>
+<dt><code>.offset <var>&lt;expression&gt;</var></code></dt>
+<dd><p>Moves the offset into the current section to the specified amount.
+</p>
+<a name="index-section-directive_002c-V850"></a>
+</dd>
+<dt><code>.section &quot;name&quot;, &lt;type&gt;</code></dt>
+<dd><p>This is an extension to the standard .section directive.  It sets the
+current section to be &lt;type&gt; and creates an alias for this section
+called &quot;name&quot;.
+</p>
+<a name="index-_002ev850-directive_002c-V850"></a>
+</dd>
+<dt><code>.v850</code></dt>
+<dd><p>Specifies that the assembled code should be marked as being targeted at
+the V850 processor.  This allows the linker to detect attempts to link
+such code with code assembled for other processors.
+</p>
+<a name="index-_002ev850e-directive_002c-V850"></a>
+</dd>
+<dt><code>.v850e</code></dt>
+<dd><p>Specifies that the assembled code should be marked as being targeted at
+the V850E processor.  This allows the linker to detect attempts to link
+such code with code assembled for other processors.
+</p>
+<a name="index-_002ev850e1-directive_002c-V850"></a>
+</dd>
+<dt><code>.v850e1</code></dt>
+<dd><p>Specifies that the assembled code should be marked as being targeted at
+the V850E1 processor.  This allows the linker to detect attempts to link
+such code with code assembled for other processors.
+</p>
+<a name="index-_002ev850e2-directive_002c-V850"></a>
+</dd>
+<dt><code>.v850e2</code></dt>
+<dd><p>Specifies that the assembled code should be marked as being targeted at
+the V850E2 processor.  This allows the linker to detect attempts to link
+such code with code assembled for other processors.
+</p>
+<a name="index-_002ev850e2v3-directive_002c-V850"></a>
+</dd>
+<dt><code>.v850e2v3</code></dt>
+<dd><p>Specifies that the assembled code should be marked as being targeted at
+the V850E2V3 processor.  This allows the linker to detect attempts to link
+such code with code assembled for other processors.
+</p>
+<a name="index-_002ev850e2v4-directive_002c-V850"></a>
+</dd>
+<dt><code>.v850e2v4</code></dt>
+<dd><p>Specifies that the assembled code should be marked as being targeted at
+the V850E3V5 processor.  This allows the linker to detect attempts to link
+such code with code assembled for other processors.
+</p>
+<a name="index-_002ev850e3v5-directive_002c-V850"></a>
+</dd>
+<dt><code>.v850e3v5</code></dt>
+<dd><p>Specifies that the assembled code should be marked as being targeted at
+the V850E3V5 processor.  This allows the linker to detect attempts to link
+such code with code assembled for other processors.
+</p>
+</dd>
+</dl>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="V850-Opcodes.html#V850-Opcodes" accesskey="n" rel="next">V850 Opcodes</a>, Previous: <a href="V850-Floating-Point.html#V850-Floating-Point" accesskey="p" rel="prev">V850 Floating Point</a>, Up: <a href="V850_002dDependent.html#V850_002dDependent" accesskey="u" rel="up">V850-Dependent</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="AS-Index.html#AS-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<!-- Copyright (C) 1988-2019 Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with the
+Invariant Sections being "Free Software" and "Free Software Needs
+Free Documentation", with the Front-Cover Texts being "A GNU Manual,"
+and with the Back-Cover Texts as in (a) below.
+
+(a) The FSF's Back-Cover Text is: "You are free to copy and modify
+this GNU Manual.  Buying copies from GNU Press supports the FSF in
+developing GNU and promoting software freedom." -->
+<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<head>
+<title>Debugging with GDB: tfind</title>
+
+<meta name="description" content="Debugging with GDB: tfind">
+<meta name="keywords" content="Debugging with GDB: tfind">
+<meta name="resource-type" content="document">
+<meta name="distribution" content="global">
+<meta name="Generator" content="makeinfo">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<link href="index.html#Top" rel="start" title="Top">
+<link href="Concept-Index.html#Concept-Index" rel="index" title="Concept Index">
+<link href="index.html#SEC_Contents" rel="contents" title="Table of Contents">
+<link href="Analyze-Collected-Data.html#Analyze-Collected-Data" rel="up" title="Analyze Collected Data">
+<link href="tdump.html#tdump" rel="next" title="tdump">
+<link href="Analyze-Collected-Data.html#Analyze-Collected-Data" rel="prev" title="Analyze Collected Data">
+<style type="text/css">
+<!--
+a.summary-letter {text-decoration: none}
+blockquote.smallquotation {font-size: smaller}
+div.display {margin-left: 3.2em}
+div.example {margin-left: 3.2em}
+div.indentedblock {margin-left: 3.2em}
+div.lisp {margin-left: 3.2em}
+div.smalldisplay {margin-left: 3.2em}
+div.smallexample {margin-left: 3.2em}
+div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
+div.smalllisp {margin-left: 3.2em}
+kbd {font-style:oblique}
+pre.display {font-family: inherit}
+pre.format {font-family: inherit}
+pre.menu-comment {font-family: serif}
+pre.menu-preformatted {font-family: serif}
+pre.smalldisplay {font-family: inherit; font-size: smaller}
+pre.smallexample {font-size: smaller}
+pre.smallformat {font-family: inherit; font-size: smaller}
+pre.smalllisp {font-size: smaller}
+span.nocodebreak {white-space:nowrap}
+span.nolinebreak {white-space:nowrap}
+span.roman {font-family:serif; font-weight:normal}
+span.sansserif {font-family:sans-serif; font-weight:normal}
+ul.no-bullet {list-style: none}
+-->
+</style>
+
+
+</head>
+
+<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a name="tfind"></a>
+<div class="header">
+<p>
+Next: <a href="tdump.html#tdump" accesskey="n" rel="next">tdump</a>, Up: <a href="Analyze-Collected-Data.html#Analyze-Collected-Data" accesskey="u" rel="up">Analyze Collected Data</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<hr>
+<a name="tfind-n"></a>
+<h4 class="subsection">13.2.1 <code>tfind <var>n</var></code></h4>
+
+<a name="index-tfind"></a>
+<a name="index-select-trace-snapshot"></a>
+<a name="index-find-trace-snapshot"></a>
+<p>The basic command for selecting a trace snapshot from the buffer is
+<code>tfind <var>n</var></code>, which finds trace snapshot number <var>n</var>,
+counting from zero.  If no argument <var>n</var> is given, the next
+snapshot is selected.
+</p>
+<p>Here are the various forms of using the <code>tfind</code> command.
+</p>
+<dl compact="compact">
+<dt><code>tfind start</code></dt>
+<dd><p>Find the first snapshot in the buffer.  This is a synonym for
+<code>tfind 0</code> (since 0 is the number of the first snapshot).
+</p>
+</dd>
+<dt><code>tfind none</code></dt>
+<dd><p>Stop debugging trace snapshots, resume <em>live</em> debugging.
+</p>
+</dd>
+<dt><code>tfind end</code></dt>
+<dd><p>Same as &lsquo;<samp>tfind none</samp>&rsquo;.
+</p>
+</dd>
+<dt><code>tfind</code></dt>
+<dd><p>No argument means find the next trace snapshot or find the first
+one if no trace snapshot is selected.
+</p>
+</dd>
+<dt><code>tfind -</code></dt>
+<dd><p>Find the previous trace snapshot before the current one.  This permits
+retracing earlier steps.
+</p>
+</dd>
+<dt><code>tfind tracepoint <var>num</var></code></dt>
+<dd><p>Find the next snapshot associated with tracepoint <var>num</var>.  Search
+proceeds forward from the last examined trace snapshot.  If no
+argument <var>num</var> is given, it means find the next snapshot collected
+for the same tracepoint as the current snapshot.
+</p>
+</dd>
+<dt><code>tfind pc <var>addr</var></code></dt>
+<dd><p>Find the next snapshot associated with the value <var>addr</var> of the
+program counter.  Search proceeds forward from the last examined trace
+snapshot.  If no argument <var>addr</var> is given, it means find the next
+snapshot with the same value of PC as the current snapshot.
+</p>
+</dd>
+<dt><code>tfind outside <var>addr1</var>, <var>addr2</var></code></dt>
+<dd><p>Find the next snapshot whose PC is outside the given range of
+addresses (exclusive).
+</p>
+</dd>
+<dt><code>tfind range <var>addr1</var>, <var>addr2</var></code></dt>
+<dd><p>Find the next snapshot whose PC is between <var>addr1</var> and
+<var>addr2</var> (inclusive).
+</p>
+</dd>
+<dt><code>tfind line <span class="roman">[</span><var>file</var>:<span class="roman">]</span><var>n</var></code></dt>
+<dd><p>Find the next snapshot associated with the source line <var>n</var>.  If
+the optional argument <var>file</var> is given, refer to line <var>n</var> in
+that source file.  Search proceeds forward from the last examined
+trace snapshot.  If no argument <var>n</var> is given, it means find the
+next line other than the one currently being examined; thus saying
+<code>tfind line</code> repeatedly can appear to have the same effect as
+stepping from line to line in a <em>live</em> debugging session.
+</p></dd>
+</dl>
+
+<p>The default arguments for the <code>tfind</code> commands are specifically
+designed to make it easy to scan through the trace buffer.  For
+instance, <code>tfind</code> with no argument selects the next trace
+snapshot, and <code>tfind -</code> with no argument selects the previous
+trace snapshot.  So, by giving one <code>tfind</code> command, and then
+simply hitting <tt class="key">RET</tt> repeatedly you can examine all the trace
+snapshots in order.  Or, by saying <code>tfind -</code> and then hitting
+<tt class="key">RET</tt> repeatedly you can examine the snapshots in reverse order.
+The <code>tfind line</code> command with no argument selects the snapshot
+for the next source line executed.  The <code>tfind pc</code> command with
+no argument selects the next snapshot with the same program counter
+(PC) as the current frame.  The <code>tfind tracepoint</code> command with
+no argument selects the next trace snapshot collected by the same
+tracepoint as the current one.
+</p>
+<p>In addition to letting you scan through the trace buffer manually,
+these commands make it easy to construct <small>GDB</small> scripts that
+scan through the trace buffer and print out whatever collected data
+you are interested in.  Thus, if we want to examine the PC, FP, and SP
+registers from each trace frame in the buffer, we can say this:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) <b>tfind start</b>
+(gdb) <b>while ($trace_frame != -1)</b>
+&gt; printf &quot;Frame %d, PC = %08X, SP = %08X, FP = %08X\n&quot;, \
+          $trace_frame, $pc, $sp, $fp
+&gt; tfind
+&gt; end
+
+Frame 0, PC = 0020DC64, SP = 0030BF3C, FP = 0030BF44
+Frame 1, PC = 0020DC6C, SP = 0030BF38, FP = 0030BF44
+Frame 2, PC = 0020DC70, SP = 0030BF34, FP = 0030BF44
+Frame 3, PC = 0020DC74, SP = 0030BF30, FP = 0030BF44
+Frame 4, PC = 0020DC78, SP = 0030BF2C, FP = 0030BF44
+Frame 5, PC = 0020DC7C, SP = 0030BF28, FP = 0030BF44
+Frame 6, PC = 0020DC80, SP = 0030BF24, FP = 0030BF44
+Frame 7, PC = 0020DC84, SP = 0030BF20, FP = 0030BF44
+Frame 8, PC = 0020DC88, SP = 0030BF1C, FP = 0030BF44
+Frame 9, PC = 0020DC8E, SP = 0030BF18, FP = 0030BF44
+Frame 10, PC = 00203F6C, SP = 0030BE3C, FP = 0030BF14
+</pre></div>
+
+<p>Or, if we want to examine the variable <code>X</code> at each source line in
+the buffer:
+</p>
+<div class="smallexample">
+<pre class="smallexample">(gdb) <b>tfind start</b>
+(gdb) <b>while ($trace_frame != -1)</b>
+&gt; printf &quot;Frame %d, X == %d\n&quot;, $trace_frame, X
+&gt; tfind line
+&gt; end
+
+Frame 0, X = 1
+Frame 7, X = 2
+Frame 13, X = 255
+</pre></div>
+
+<hr>
+<div class="header">
+<p>
+Next: <a href="tdump.html#tdump" accesskey="n" rel="next">tdump</a>, Up: <a href="Analyze-Collected-Data.html#Analyze-Collected-Data" accesskey="u" rel="up">Analyze Collected Data</a> &nbsp; [<a href="index.html#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="Concept-Index.html#Concept-Index" title="Index" rel="index">Index</a>]</p>
+</div>
+
+
+
+</body>
+</html>
