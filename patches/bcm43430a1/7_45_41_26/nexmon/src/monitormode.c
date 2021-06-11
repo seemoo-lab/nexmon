@@ -72,7 +72,7 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p)
     frame->flags = IEEE80211_RADIOTAP_F_FCS;
     frame->chan_freq = wlc_phy_channel2freq(CHSPEC_CHANNEL(sts->chanspec));
     frame->chan_flags = 0;
-    frame->dbm_antsignal = sts->rssi;
+    frame->dbm_antsignal = sts->signal;
 
 	memcpy(p_new->data + sizeof(struct nexmon_radiotap_header), p->data + 6, p->len - 6);
 
