@@ -1855,6 +1855,8 @@ typedef struct wl_po {
 #define	WLC_PHY_TYPE_LCN	8
 #define	WLC_PHY_TYPE_LCN40	10
 #define WLC_PHY_TYPE_AC		11
+// found the bcm43430 PHY_TYPE at https://github.com/rushup/Kitra710-kernel/blob/master/drivers/net/wireless/bcmdhd/include/bcmsrom_tbl.h#L1069
+#define WLC_PHY_TYPE_LCN20	12
 #define	WLC_PHY_TYPE_NULL	0xf
 
 /* Values for PM */

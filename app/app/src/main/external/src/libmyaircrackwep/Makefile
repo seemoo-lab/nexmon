@@ -17,7 +17,7 @@ $(UTILITIES_PATH)/libssl/local/armeabi/libssl.a: FORCE
 
 $(UTILITIES_PATH)/libcrypto/local/armeabi/libcrypto.a: FORCE
 	cd $(UTILITIES_PATH)/libcrypto && make
-	
+
 FORCE:
 
 clean:
