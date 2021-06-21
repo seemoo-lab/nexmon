@@ -50,6 +50,9 @@ else ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
 else ifeq ($(findstring 4.4,$(shell uname -r)),4.4)
 	@printf "\033[0;31m  BUILDING DRIVER for kernel 4.4\033[0m brcmfmac_kernel44/brcmfmac.ko (details: log/driver.log)\n" $@
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel44 -j2 >log/driver.log
+else ifeq ($(findstring 5.4,$(shell uname -r)),5.4)
+	@printf "\033[0;31m  BUILDING DRIVER for kernel 5.4\033[0m brcmfmac_kernel54/brcmfmac.ko (details: log/driver.log)\n" $@
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel54 -j2 >log/driver.log
 endif
 else
 	$(warning Warning: Driver can not be compiled on this platform, execute the make command on a raspberry pi)
@@ -181,19 +184,19 @@ endif
 install-firmware: brcmfmac43430-sdio.bin brcmfmac.ko
 ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
 	@printf "\033[0;31m  COPYING\033[0m brcmfmac43430-sdio.bin => /lib/firmware/brcm/brcmfmac43430-sdio.bin\n"
-	$(Q)cp brcmfmac43430-sdio.bin /lib/firmware/brcm/brcmfmac43430-sdio.bin
+	$(Q)sudo cp brcmfmac43430-sdio.bin /lib/firmware/brcm/brcmfmac43430-sdio.bin
 ifeq ($(shell lsmod | grep "^brcmfmac" | wc -l), 1)
 	@printf "\033[0;31m  UNLOADING\033[0m brcmfmac\n"
-	$(Q)rmmod brcmfmac
+	$(Q)sudo rmmod brcmfmac
 endif
-	$(Q)modprobe brcmutil
+	$(Q)sudo modprobe brcmutil
 	@printf "\033[0;31m  RELOADING\033[0m brcmfmac\n"
 ifeq ($(findstring 4.14,$(shell uname -r)),4.14)
-	$(Q)insmod brcmfmac_4.14.y-nexmon/brcmfmac.ko
+	$(Q)sudo insmod brcmfmac_4.14.y-nexmon/brcmfmac.ko
 else ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
-	$(Q)insmod brcmfmac_kernel49/brcmfmac.ko
+	$(Q)sudo insmod brcmfmac_kernel49/brcmfmac.ko
 else ifeq ($(findstring 4.4,$(shell uname -r)),4.4)
-	$(Q)insmod brcmfmac_kernel44/brcmfmac.ko
+	$(Q)sudo insmod brcmfmac_kernel44/brcmfmac.ko
 endif
 else
 	$(warning Warning: Cannot install firmware on this arch., bcm43430-sdio.bin needs to be copied manually into /lib/firmware/brcm/ on your RPI3)
