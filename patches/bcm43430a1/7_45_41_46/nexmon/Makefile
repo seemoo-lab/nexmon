@@ -41,7 +41,10 @@ init: FORCE
 
 brcmfmac.ko: check-nexmon-setup-env
 ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
-ifeq ($(findstring 4.14,$(shell uname -r)),4.14)
+ifeq ($(findstring 4.19,$(shell uname -r)),4.19)
+	@printf "\033[0;31m  BUILDING DRIVER for kernel 4.19\033[0m brcmfmac_4.19.y-nexmon/brcmfmac.ko (details: log/driver.log)\n" $@
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_4.19.y-nexmon -j2 >log/driver.log
+else ifeq ($(findstring 4.14,$(shell uname -r)),4.14)
 	@printf "\033[0;31m  BUILDING DRIVER for kernel 4.14\033[0m brcmfmac_4.14.y-nexmon/brcmfmac.ko (details: log/driver.log)\n" $@
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_4.14.y-nexmon -j2 >log/driver.log
 else ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
@@ -188,7 +191,9 @@ ifeq ($(shell lsmod | grep "^brcmfmac" | wc -l), 1)
 endif
 	$(Q)modprobe brcmutil
 	@printf "\033[0;31m  RELOADING\033[0m brcmfmac\n"
-ifeq ($(findstring 4.14,$(shell uname -r)),4.14)
+ifeq ($(findstring 4.19,$(shell uname -r)),4.19)
+	$(Q)insmod brcmfmac_4.19.y-nexmon/brcmfmac.ko
+else ifeq ($(findstring 4.14,$(shell uname -r)),4.14)
 	$(Q)insmod brcmfmac_4.14.y-nexmon/brcmfmac.ko
 else ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
 	$(Q)insmod brcmfmac_kernel49/brcmfmac.ko
@@ -218,7 +223,10 @@ clean-firmware: FORCE
 
 clean: clean-firmware
 ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
-ifeq ($(findstring 4.14,$(shell uname -r)),4.14)
+ifeq ($(findstring 4.19,$(shell uname -r)),4.19)
+	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_4.19.y-nexmon clean
+else ifeq ($(findstring 4.14,$(shell uname -r)),4.14)
 	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_4.14.y-nexmon clean
 else ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
