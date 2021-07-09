@@ -41,6 +41,7 @@ bcm43430a1<sup>1</sup>    | 7_45_41_26           | Raspberry Pi 3 and Zero W 
 bcm43430a1<sup>1</sup>    | 7_45_41_46           | Raspberry Pi 3 and Zero W | Raspbian Stretch             |  X  |  X  |  X  |  X  |  X  |  O 
 bcm43451b1                | 7_63_43_0            | iPhone 6                  | iOS 10.1.1 (14B100)          |     |     |     |  X  |  X  |    
 bcm43455                  | 7_45_77_0_hw         | Huawei P9                 | Android 7 Stock              |  X  |  X  |  X  |  X  |  X  |    
+bcm43455                  | 7_45_88_10_C0        | LG G5                     | Android 7 Stock              |     |     |     |  X  |  X  |  
 bcm43455                  | 7_120_5_1_sta_C0     | Galaxy J7 2017            | ?                            |     |     |     |  X  |  X  |    
 bcm43455                  | 7_45_77_0_hw(8-2017) | Huawei P9                 | Android 7 Stock              |  X  |  X  |  X  |  X  |  X  |    
 bcm43455<sup>5</sup>      | 7_46_77_11_hw        | Huawei P9                 | Android 8 China Stock        |  X  |  X  |  X  |  X  |  X  |    
