@@ -160,13 +160,13 @@ install-firmware: fw_bcmdhd.bin
 	$(Q)adb shell 'su -c "ifconfig wlan0 down && ifconfig wlan0 up"'
 
 backup-firmware: FORCE
-	adb shell 'su -c "cp /vendor/firmware/fw_bcmdhd.bin /sdcard/fw_bcmdhd.orig.bin"'
+	adb shell 'su -c "cp /system/etc/wifi/bcmdhd_sta.bin /sdcard/fw_bcmdhd.orig.bin"'
 	adb pull /sdcard/fw_bcmdhd.orig.bin
 
 install-backup: fw_bcmdhd.orig.bin
 	adb shell 'su -c "mount -o rw,remount /system"' && \
 	adb push $< /sdcard/ && \
-	adb shell 'su -c "cp /sdcard/fw_bcmdhd.bin /vendor/firmware/fw_bcmdhd.bin"'
+	adb shell 'su -c "cp /sdcard/fw_bcmdhd.bin /system/etc/wifi/bcmdhd_sta.bin"'
 	adb shell 'su -c "ifconfig wlan0 down && ifconfig wlan0 up"'
 
 clean-firmware: FORCE
