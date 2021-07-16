@@ -1,0 +1,4 @@
+In order to be able to build the kernel module brcmfmac.ko for an up-to-date Armbian 21.05.6
+(Kernel version 5.10.43-sunxi), it is necessary that kernel header and sources
+have been installed using armbian-config.
+

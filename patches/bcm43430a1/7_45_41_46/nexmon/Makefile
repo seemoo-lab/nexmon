@@ -24,7 +24,7 @@ CFLAGS= \
 	-DUCODESIZE=$(UCODESIZE) \
 	-DGIT_VERSION=\"$(GIT_VERSION)\" \
 	-DBUILD_NUMBER=\"$$(cat BUILD_NUMBER)\" \
-	-Wall -Werror -O2 -nostdlib -nostartfiles -ffreestanding -mthumb -march=$(NEXMON_ARCH) \
+	-Wall -Werror -O2 -Wno-address-of-packed-member -nostdlib -nostartfiles -ffreestanding -mthumb -march=$(NEXMON_ARCH) \
 	-ffunction-sections -fdata-sections \
 	-I$(NEXMON_ROOT)/patches/include \
 	-Iinclude \
@@ -43,19 +43,23 @@ brcmfmac.ko: check-nexmon-setup-env
 ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
 ifeq ($(findstring 4.14,$(shell uname -r)),4.14)
 	@printf "\033[0;31m  BUILDING DRIVER for kernel 4.14\033[0m brcmfmac_4.14.y-nexmon/brcmfmac.ko (details: log/driver.log)\n" $@
-	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_4.14.y-nexmon -j2 >log/driver.log
-else ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_4.14.y-nexmon  >log/driver.log
+else ifeq ($(findstring 4.9.,$(shell uname -r)),4.9.)
 	@printf "\033[0;31m  BUILDING DRIVER for kernel 4.9\033[0m brcmfmac_kernel49/brcmfmac.ko (details: log/driver.log)\n" $@
-	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel49 -j2 >log/driver.log
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel49  >log/driver.log
 else ifeq ($(findstring 4.4,$(shell uname -r)),4.4)
 	@printf "\033[0;31m  BUILDING DRIVER for kernel 4.4\033[0m brcmfmac_kernel44/brcmfmac.ko (details: log/driver.log)\n" $@
-	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel44 -j2 >log/driver.log
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel44  >log/driver.log
+else ifeq ($(findstring 5.10,$(shell uname -r)),5.10)
+	@printf "\033[0;31m  BUILDING DRIVER for kernel 5.10\033[0m brcmfmac_kernel510/brcmfmac.ko (details: log/driver.log)\n" $@
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel510  >log/driver.log
 endif
 else
 	$(warning Warning: Driver can not be compiled on this platform, execute the make command on a raspberry pi)
 endif
 
 obj/%.o: src/%.c
+	$(Q)mkdir -p obj gen log
 	@printf "\033[0;31m  COMPILING\033[0m %s => %s (details: log/compiler.log)\n" $< $@
 	$(Q)cat gen/nexmon.pre 2>>log/error.log | gawk '{ if ($$3 != "$@") print; }' > tmp && mv tmp gen/nexmon.pre
 	$(Q)$(CC)gcc $(CFLAGS) -c $< -o $@ >>log/compiler.log
@@ -190,7 +194,7 @@ endif
 	@printf "\033[0;31m  RELOADING\033[0m brcmfmac\n"
 ifeq ($(findstring 4.14,$(shell uname -r)),4.14)
 	$(Q)insmod brcmfmac_4.14.y-nexmon/brcmfmac.ko
-else ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
+else ifeq ($(findstring 4.9.,$(shell uname -r)),4.9.)
 	$(Q)insmod brcmfmac_kernel49/brcmfmac.ko
 else ifeq ($(findstring 4.4,$(shell uname -r)),4.4)
 	$(Q)insmod brcmfmac_kernel44/brcmfmac.ko
@@ -220,13 +224,13 @@ clean: clean-firmware
 ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
 ifeq ($(findstring 4.14,$(shell uname -r)),4.14)
 	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
-	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_4.14.y-nexmon clean
-else ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
+	+$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_4.14.y-nexmon clean
+else ifeq ($(findstring 4.9.,$(shell uname -r)),4.9.)
 	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
-	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel49 clean
+	+$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel49 clean
 else ifeq ($(findstring 4.4,$(shell uname -r)),4.4)
 	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
-	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel44 clean
+	+$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_kernel44 clean
 endif
 endif
 	$(Q)rm -f BUILD_NUMBER

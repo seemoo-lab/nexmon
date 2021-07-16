@@ -4,3 +4,5 @@ brcmfmac/brcmfmac.mod.c
 brcmfmac/modules.order
 brcmfmac43430-sdio.bin
 BUILD_NUMBER
+*~
+*.o
