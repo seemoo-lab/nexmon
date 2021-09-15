@@ -16,8 +16,8 @@
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ccflags-y += \
-	-I$(NEXMON_ROOT)/patches/bcm43455c0/7_45_189/nexmon/brcmfmac_5.4.y-nexmon	\
-	-I$(NEXMON_ROOT)/patches/bcm43455c0/7_45_189/nexmon/brcmfmac_5.4.y-nexmon/include \
+	-I$(NEXMON_ROOT)/patches/bcm43455c0/7_45_206/nexmon/brcmfmac_5.10.y-nexmon	\
+	-I$(NEXMON_ROOT)/patches/bcm43455c0/7_45_206/nexmon/brcmfmac_5.10.y-nexmon/include \
 	-DDEBUG
 
 obj-$(CONFIG_BRCMFMAC) += brcmfmac.o
