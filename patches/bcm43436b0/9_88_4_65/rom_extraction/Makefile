@@ -103,7 +103,7 @@ gen/flashpatches.mk: gen/nexmon2.pre $(OBJS) $(FW_PATH)/definitions.mk
 		-v ramstart=$(RAMSTART) \
 		-v out_file=$(RAM_FILE) \
 		-v src_file=gen/patch.elf \
-		-f $(NEXMON_ROOT)/buildtools/scripts/flashpatches.mk.awk > $@
+		-f $(NEXMON_ROOT)/buildtools/scripts/flashpatches.bcm43596.mk.awk > $@
 
 gen/memory.ld: $(FW_PATH)/definitions.mk
 	@printf "\033[0;31m  GENERATING LINKER FILE\033[0m %s\n" $@
