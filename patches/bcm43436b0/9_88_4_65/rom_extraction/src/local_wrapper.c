@@ -53,7 +53,6 @@
 #endif
 
 AT(CHIP_VER_BCM43436b0, FW_VER_9_88_4_65, 0x400E8)
-AT(CHIP_VER_BCM43455c0, FW_VER_7_45_154, 0x2005c4)
 int
 fp_apply_patches(void)
 RETURN_DUMMY

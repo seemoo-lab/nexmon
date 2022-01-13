@@ -43,8 +43,6 @@
 #include <rates.h>              // rates used to build the ratespec for frame injection
 #include <local_wrapper.h>
 
-#define FP_CONFIG_ORIGBASE 0x1800
-#define FP_CONFIG_ORIGEND 0x1AF8
 
 struct fp_config {
 	unsigned int *target_addr;
@@ -71,5 +69,4 @@ fp_apply_patches_hook(void)
 }
 // Hook call to fp_apply_patches in c_main
 __attribute__((at(0x4101a, "", CHIP_VER_BCM43436b0, FW_VER_9_88_4_65)))
-__attribute__((at(0x19ca50, "", CHIP_VER_BCM43455c0, FW_VER_7_45_154)))
 BPatch(fp_apply_patches, fp_apply_patches_hook);

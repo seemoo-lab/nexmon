@@ -22,6 +22,8 @@ CFLAGS= \
         -DHNDRTE_RECLAIM_0_END_PTR=$(HNDRTE_RECLAIM_0_END_PTR) \
         -DTEMPLATERAMSTART_PTR=$(TEMPLATERAMSTART_PTR) \
 	-DPATCHSTART=$(PATCHSTART) \
+	-DFP_CONFIG_ORIGBASE=$(FP_CONFIG_ORIGBASE) \
+	-DFP_CONFIG_ORIGEND=$(FP_CONFIG_ORIGEND) \
 	-DUCODESIZE=$(UCODESIZE) \
 	-DGIT_VERSION=\"$(GIT_VERSION)\" \
 	-DBUILD_NUMBER=\"$$(cat BUILD_NUMBER)\" \
@@ -42,9 +44,14 @@ init: FORCE
 
 brcmfmac.ko: check-nexmon-setup-env
 ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
-ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
-	@printf "\033[0;31m  BUILDING DRIVER for kernel 4.9\033[0m brcmfmac_4.9.y-nexmon/brcmfmac.ko (details: log/driver.log)\n" $@
-	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_4.9.y-nexmon -j2 >log/driver.log
+ifeq ($(findstring 5.4,$(shell uname -r)),5.4)
+	@printf "\033[0;31m  BUILDING DRIVER for kernel 5.4\033[0m brcmfmac_5.4.y-nexmon/brcmfmac.ko (details: log/driver.log)\n" $@
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_5.4.y-nexmon -j2 >log/driver.log
+else ifeq ($(findstring 5.10,$(shell uname -r)),5.10)
+	@printf "\033[0;31m  BUILDING DRIVER for kernel 5.10\033[0m brcmfmac_5.10.y-nexmon/brcmfmac.ko (details: log/driver.log)\n" $@
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_5.10.y-nexmon -j2 >log/driver.log
+else
+	$(warning Warning: Kernel version not supported)
 endif
 else
 	$(warning Warning: Driver can not be compiled on this platform, execute the make command on a raspberry pi)
@@ -175,20 +182,22 @@ endif
 
 dump-rom: FORCE
 	@printf "\033[0;31m  DUMPING ROM TO\033[0m /var/root/romdump.bin\n"
-	nexutil -g0x602 -l1024 -i -v0x0 -r > rom.bin && for n in {1..704}; do nexutil -g0x602 -l1024 -i -v$$(($$n*1024)) -r >> rom.bin; done
+	nexutil -g0x602 -l1024 -i -v$(ROMSTART) -r > rom.bin && for n in {1..639}; do nexutil -g0x602 -l1024 -i -v$$((($$n*1024)+$(ROMSTART))) -r >> rom.bin; done
 
-install-firmware: brcmfmac43455-sdio.bin brcmfmac.ko
+install-firmware: $(RAM_FILE) brcmfmac.ko
 ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
-	@printf "\033[0;31m  COPYING\033[0m brcmfmac43455-sdio.bin => /lib/firmware/brcm/brcmfmac43455-sdio.bin\n"
-	$(Q)cp brcmfmac43455-sdio.bin /lib/firmware/brcm/brcmfmac43455-sdio.bin
+	@printf "\033[0;31m  COPYING\033[0m $(RAM_FILE) => /lib/firmware/brcm/$(RAM_FILE)\n"
+	$(Q)cp $(RAM_FILE) /lib/firmware/brcm/$(RAM_FILE)
 ifeq ($(shell lsmod | grep "^brcmfmac" | wc -l), 1)
 	@printf "\033[0;31m  UNLOADING\033[0m brcmfmac\n"
 	$(Q)rmmod brcmfmac
 endif
 	$(Q)modprobe brcmutil
 	@printf "\033[0;31m  RELOADING\033[0m brcmfmac\n"
-ifeq ($(findstring 4.9,$(shell uname -r)),4.9)
-	$(Q)insmod brcmfmac_4.9.y-nexmon/brcmfmac.ko
+ifeq ($(findstring 5.4,$(shell uname -r)),5.4)
+	$(Q)insmod brcmfmac_5.4.y-nexmon/brcmfmac.ko
+else ifeq ($(findstring 5.10,$(shell uname -r)),5.10)
+	$(Q)insmod brcmfmac_5.10.y-nexmon/brcmfmac.ko
 endif
 else
 	$(warning Warning: Cannot install firmware on this arch., bcm43430-sdio.bin needs to be copied manually into /lib/firmware/brcm/ on your RPI3)
