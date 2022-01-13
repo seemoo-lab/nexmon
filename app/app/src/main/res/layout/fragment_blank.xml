@@ -34,7 +34,7 @@ android:src="@drawable/nexmon_logo_color"/>
         android:textAlignment="center" />
 
     <Button
-        android:text="Grant Root, Permission &amp; Check Installation"
+        android:text="Check Installation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"

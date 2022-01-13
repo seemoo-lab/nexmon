@@ -18,6 +18,7 @@
 
 package de.tu_darmstadt.seemoo.nexmon.sharky;
 
+import android.os.Environment;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.Nullable;
@@ -329,7 +330,7 @@ public class Packet implements Parcelable {
         Log.e("Packet", "crashed");
         Log.d("Packet", "(JNIDEBUG) In nativeCrashed(): " + Integer.toString(_dissection_ptr) + ", writing crashed packet to /sdcard/crash.pcap");
         try {
-            DataOutputStream os = new DataOutputStream(new FileOutputStream("/sdcard/crash.pcap"));
+            DataOutputStream os = new DataOutputStream(new FileOutputStream(Environment.getExternalStorageDirectory().getPath() + "/crash.pcap"));
             byte pcap_header[] = {(byte) 0xd4, (byte) 0xc3, (byte) 0xb2, (byte) 0xa1,        // magic number
                     (byte) 0x02, (byte) 0x00, (byte) 0x04, (byte) 0x00,    // version numbers
                     (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,    // thiszone

@@ -35,12 +35,10 @@ import de.tu_darmstadt.seemoo.nexmon.net.MonitorModeService;
 public class WiresharkService extends Service implements IFrameReceiver {
 
     private final IBinder mBinder = new MyBinder();
-    private ArrayList<SharkListElement> sharkListElement = new ArrayList<SharkListElement>();
+    private final ArrayList<SharkListElement> sharkListElement = new ArrayList<SharkListElement>();
     private PcapFileWriter writer;
     private int receivedPackets;
     private boolean isCapturing = false;
-
-    private long startTime;
 
     @Override
     public void onCreate() {
@@ -79,7 +77,7 @@ public class WiresharkService extends Service implements IFrameReceiver {
     public void startLiveCapturing() {
 
         if (!isCapturing) {
-            startTime = System.currentTimeMillis();
+            long startTime = System.currentTimeMillis();
             sharkListElement.clear();
             receivedPackets = 0;
             MyApplication.deleteTempFile();

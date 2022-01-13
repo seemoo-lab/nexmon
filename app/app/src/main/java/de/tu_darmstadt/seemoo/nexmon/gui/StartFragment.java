@@ -58,10 +58,6 @@ public class StartFragment extends Fragment {
     ImageView ivNexmon;
     Button btnRoot;
 
-    Handler guiHandler;
-
-    CatLoadingView loadingView;
-
     private static final int GUI_UPDATE_TEXT = 11;
     private static final int GUI_SHOW_LOADING = 12;
     private static final int GUI_DISMISS_LOADING = 13;

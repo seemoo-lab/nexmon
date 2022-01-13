@@ -12,21 +12,12 @@ import de.tu_darmstadt.seemoo.nexmon.sharky.Packet;
  * Created by fabian on 9/15/16.
  */
 public class ArpReplayAttack extends Attack implements IFrameReceiver {
-
-    private String stationMac;
-    private boolean useCustomStationMac;
-    private String arpFile;
-    private boolean useArpFile;
     private byte[] arpData;
     private int seqNum = 0;
     private int sendCounter = 0;
 
     public ArpReplayAttack(AccessPoint ap, String stationMac, boolean useCustomStationMac, String arpFile, boolean useArpFile) {
         super(ap);
-        this.stationMac = stationMac;
-        this.arpFile = arpFile;
-        this.useCustomStationMac = useCustomStationMac;
-        this.useArpFile = useArpFile;
     }
 
     @Override
@@ -86,34 +77,27 @@ public class ArpReplayAttack extends Attack implements IFrameReceiver {
 
 
     public void arpReplayUpdateStats(int sentPackets) {
-
         String info = "\n" + DELIMITER + "\n";
         info += "Packets sent: " + sentPackets + "\n";
         info += DELIMITER + "\n";
-
         updateAttackText(info, AttackInfoString.ATTACK_UPDATE_SUCCESS, getGuid());
-
     }
 
     @Override
     public void packetReceived(Packet packet) {
-
         while(!Packet.blocked.compareAndSet(false, true))
             try {
                 Thread.sleep(1);
             } catch(Exception e) {e.printStackTrace();}
 
-            if(arpData == null && isArpRequest(packet)) {
-                String info = "ARP Request Received!\n";
-                updateAttackText(info, AttackInfoString.ATTACK_UPDATE_SUCCESS, getGuid());
+        if(arpData == null && isArpRequest(packet)) {
+            String info = "ARP Request Received!\n";
+            updateAttackText(info, AttackInfoString.ATTACK_UPDATE_SUCCESS, getGuid());
 
-                arpData = new byte[packet._dataLen - 4];
-                for(int i = 0; i < arpData.length; i++) {
-                    arpData[i] = packet._rawData[i];
-                }
-            }
-
-
+            arpData = new byte[packet._dataLen - 4];
+            if (arpData.length >= 0)
+                System.arraycopy(packet._rawData, 0, arpData, 0, arpData.length);
+        }
         packet.cleanDissection();
         Packet.blocked.set(false);
     }
@@ -129,7 +113,7 @@ public class ArpReplayAttack extends Attack implements IFrameReceiver {
         if(lenString == null || lenString.isEmpty())
             return false;
 
-        len = Integer.valueOf(lenString);
+        len = Integer.parseInt(lenString);
 
         if(len != 36)
             return false;
@@ -142,7 +126,7 @@ public class ArpReplayAttack extends Attack implements IFrameReceiver {
         if(seq == null || bssid == null || client == null || dest == null)
             return false;
 
-        seqNum = Integer.valueOf(seq);
+        seqNum = Integer.parseInt(seq);
 
         if(!bssid.equals(getAp().getBssid()))
             return false;

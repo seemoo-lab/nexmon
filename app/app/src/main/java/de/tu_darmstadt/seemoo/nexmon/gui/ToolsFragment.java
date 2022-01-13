@@ -55,7 +55,7 @@ public class ToolsFragment extends Fragment {
     private final static int GUI_SHOW_LOADING = 112;
     private final static int GUI_DISMISS_LOADING = 113;
 
-	private String sdCardPath;
+	private final String sdCardPath;
     private CatLoadingView loadingView;
     private Handler guiHandler;
     private CheckBox chkRawproxy;
@@ -86,8 +86,7 @@ public class ToolsFragment extends Fragment {
      * @return A new instance of fragment.
      */
     public static ToolsFragment newInstance() {
-    	ToolsFragment fragment = new ToolsFragment();
-        return fragment;
+        return new ToolsFragment();
     }
 
 

@@ -7,6 +7,7 @@ assets: \
 	assets/nexmon/fw_bcm4330_5_90_100_41_sta.bin \
 	assets/nexmon/fw_bcm4339_6_37_34_43.bin \
 	assets/nexmon/fw_bcm4358_7_112_200_17_sta.bin \
+	assets/nexmon/fw_bcm4335b0_6.30.171.1_sta.bin \
 	assets/nexmon \
 	assets/nexmon/rawproxy \
 	assets/nexmon/rawproxyreverse \
@@ -36,6 +37,10 @@ assets/nexmon/fw_bcm4339_6_37_34_43.bin: FORCE
 assets/nexmon/fw_bcm4358_7_112_200_17_sta.bin: FORCE
 	make -C $(PATCHES_PATH)/bcm4358/7_112_200_17_sta/nexmon
 	cp $(PATCHES_PATH)/bcm4358/7_112_200_17_sta/nexmon/fw_bcmdhd.bin $@
+
+assets/nexmon/fw_bcm4335b0_6.30.171.1_sta.bin: FORCE
+	make -C $(PATCHES_PATH)/bcm4335b0/6.30.171.1_sta/nexmon
+	cp $(PATCHES_PATH)/bcm4335b0/6.30.171.1_sta/nexmon/fw_bcmdhd.bin $@
 
 assets/nexmon/rawproxy: FORCE
 	make -C $(UTILITIES_PATH)/rawproxy

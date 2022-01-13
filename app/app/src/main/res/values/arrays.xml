@@ -13,6 +13,7 @@
 
     <string-array name="smartphones">
         <item>BCM4330 (Galaxy S2)</item>
+        <item>BCM4335b0 (Galaxy S4)</item>
         <item>BCM4339 (Nexus 5)</item>
         <item>BCM4358 (Nexus 6P)</item>
     </string-array>
@@ -21,6 +22,13 @@
         <item>/system</item>                   <!-- mount point -->
         <item>/system/etc/wifi/</item>                   <!-- firmware path end-->
         <item>fw_bcm4330_5_90_100_41_sta.bin</item>                   <!-- firmware name beginning -->
+        <item>bcmdhd_sta.bin</item>                   <!-- firmware name end -->
+    </string-array>
+
+    <string-array name="bcm4335b0">       <!-- Samsung Galaxy S4 -->
+        <item>/system</item>                   <!-- mount point -->
+        <item>/system/etc/wifi/</item>                   <!-- firmware path end-->
+        <item>fw_bcm4335b0_6.30.171.1_sta.bin</item>                   <!-- firmware name beginning -->
         <item>bcmdhd_sta.bin</item>                   <!-- firmware name end -->
     </string-array>
 

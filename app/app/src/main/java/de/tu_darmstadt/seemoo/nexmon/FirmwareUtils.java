@@ -12,6 +12,7 @@ public class FirmwareUtils {
     public static final String DEVICE_NEXUS5 = "Nexus 5";
     public static final String DEVICE_NEXUS6P = "Nexus 6P";
     public static final String DEVICE_SGS2 = "GT-I9100";
+    public static final String DEVICE_SGS4 = "GT-I9505";
 
     public static String getFirmwareName() {
         return "";

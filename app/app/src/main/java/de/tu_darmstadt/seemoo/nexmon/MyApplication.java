@@ -19,6 +19,7 @@
 package de.tu_darmstadt.seemoo.nexmon;
 
 
+import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.Application;
 import android.app.Notification;
@@ -80,7 +81,7 @@ public class MyApplication extends Application {
 
     public static final String WLAN_INTERFACE = "wlan0";
 
-    private static Context context;
+    public static Context context;
 
     private static ActivityManager activityManager;
 
@@ -383,7 +384,6 @@ public class MyApplication extends Application {
 
     public void initLibs() {
         String r = "";
-
         try {
             System.loadLibrary("wireshark_helper");
             System.loadLibrary("nexmonpentestsuite");
@@ -395,7 +395,6 @@ public class MyApplication extends Application {
         } catch (UnsatisfiedLinkError e) {
             isLibInstalledCorrectly = false;
         }
-
         Log.d(TAG, r);
     }
 

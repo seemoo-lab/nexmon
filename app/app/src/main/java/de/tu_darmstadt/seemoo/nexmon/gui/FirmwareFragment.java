@@ -124,8 +124,6 @@ public class FirmwareFragment extends Fragment implements View.OnClickListener {
                         break;
                     default:
                         break;
-
-
                 }
             }
         };
@@ -218,11 +216,13 @@ public class FirmwareFragment extends Fragment implements View.OnClickListener {
 
         String Model = android.os.Build.MODEL;
         if(Model.contains(FirmwareUtils.DEVICE_NEXUS6P)) {
-            spnDevice.setSelection(2);
+            spnDevice.setSelection(3);
         } else if(Model.contains(FirmwareUtils.DEVICE_NEXUS5)) {
-            spnDevice.setSelection(1);
+            spnDevice.setSelection(2);
         } else if(Model.contains(FirmwareUtils.DEVICE_SGS2)) {
             spnDevice.setSelection(0);
+        }else if(Model.contains(FirmwareUtils.DEVICE_SGS4)) {
+            spnDevice.setSelection(1);
         }
         evaluateFirmware();
     }
@@ -380,30 +380,28 @@ public class FirmwareFragment extends Fragment implements View.OnClickListener {
 
     public void onClickPrintFirmwareVersion(String fullPath) {
         final Command command = new Command(COMMAND_FIRMWARE_VERSION, "strings " + fullPath + " | grep \"CRC:\"") {
-
             boolean fwidFound = false;
 
             @Override
             public void commandOutput(int id, String line) {
                 if(id == COMMAND_FIRMWARE_VERSION) {
                     String out;
-
+                    Log.d("FIRMWARE", line);
                     fwidFound = true;
                     try {
                         String radioChip = line.substring(0, 10);
-                        String rChip[] = radioChip.split("[a-zA-Z]+");
+                        String[] rChip = radioChip.split("[a-zA-Z]+");
                         String radioId = "bcm" + rChip[0];
 
-                        String rVersion[] = line.split(" Version: ");
-                        String rVersion2[] = rVersion[1].split(" ");
+                        String[] rVersion = line.split(" Version: ");
+                        String[] rVersion2 = rVersion[1].split(" ");
                         String radioVersion = rVersion2[0].trim();
                         out = "Radio chip: " + radioId + "\nFirmware version: " + radioVersion + "\n";
                     } catch(Exception e) {
                         e.printStackTrace();
                         out = line + "\n";
                     }
-                    Message msg = guiHandler.obtainMessage(UPDATE_TV_FIRMWARE_VERSION, out);
-                    guiHandler.sendMessage(msg);
+                    guiHandler.sendMessage(guiHandler.obtainMessage(UPDATE_TV_FIRMWARE_VERSION, out));
                 }
                 super.commandOutput(id, line);
             }
@@ -435,6 +433,8 @@ public class FirmwareFragment extends Fragment implements View.OnClickListener {
 
         if(item.startsWith("BCM4330 "))
             fwInfo = getResources().getStringArray(R.array.bcm4330);
+        else if(item.startsWith("BCM4335b0 "))
+            fwInfo = getResources().getStringArray(R.array.bcm4335b0);
         else if(item.startsWith("BCM4339 "))
             fwInfo = getResources().getStringArray(R.array.bcm4339);
         else if(item.startsWith("BCM4358 "))
