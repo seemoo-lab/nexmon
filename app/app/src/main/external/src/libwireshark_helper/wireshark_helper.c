@@ -145,7 +145,7 @@ typedef struct {
 } write_field_data_t;
 
 void
-Java_de_tu_darmstadt_seemoo_nexmon_MyApplication_wiresharkTestGetAll(JNIEnv* env, jclass thiz)
+Java_de_tu_1darmstadt_seemoo_nexmon_MyApplication_wiresharkTestGetAll(JNIEnv* env, jclass thiz)
 {
   FILE *bf;
   unsigned char *data_buffer;
@@ -223,7 +223,7 @@ Java_de_tu_darmstadt_seemoo_nexmon_MyApplication_wiresharkTestGetAll(JNIEnv* env
 
 
 void
-Java_de_tu_darmstadt_seemoo_nexmon_sharky_Packet_dissectCleanup(JNIEnv* env, jclass thiz, jint ptr)
+Java_de_tu_1darmstadt_seemoo_nexmon_sharky_Packet_dissectCleanup(JNIEnv* env, jclass thiz, jint ptr)
 {
   
   _env=env;
@@ -248,7 +248,7 @@ dissectCleanup(int ptr)
 
 
 jint
-Java_de_tu_darmstadt_seemoo_nexmon_sharky_Packet_dissectPacket(JNIEnv* env, jclass thiz, jbyteArray header, jbyteArray data, jint encap)
+Java_de_tu_1darmstadt_seemoo_nexmon_sharky_Packet_dissectPacket(JNIEnv* env, jclass thiz, jbyteArray header, jbyteArray data, jint encap)
 {
 	
 	jint ret;
@@ -325,7 +325,7 @@ wiresharkGetAll(int wfd_ptr)
 
 // Return a list of all the fields
 jobjectArray
-Java_de_tu_darmstadt_seemoo_nexmon_sharky_Packet_wiresharkGetAll(JNIEnv* env, jclass thiz, jint wfd_ptr)
+Java_de_tu_1darmstadt_seemoo_nexmon_sharky_Packet_wiresharkGetAll(JNIEnv* env, jclass thiz, jint wfd_ptr)
 {
   jobjectArray fields = 0;
 	jstring      str;
@@ -580,7 +580,7 @@ void myoutput_fields_free(output_fields_t* fields)
 
 
 jstring
-Java_de_tu_darmstadt_seemoo_nexmon_sharky_Packet_wiresharkGet(JNIEnv* env, jclass thiz, jint wfd_ptr, jstring param)
+Java_de_tu_1darmstadt_seemoo_nexmon_sharky_Packet_wiresharkGet(JNIEnv* env, jclass thiz, jint wfd_ptr, jstring param)
 {
 	gchar *field;
 	char *str_result;
@@ -606,7 +606,7 @@ Java_de_tu_darmstadt_seemoo_nexmon_sharky_Packet_wiresharkGet(JNIEnv* env, jclas
 
 // Mainly a rip-off of the main() function in tshark
 jint
-Java_de_tu_darmstadt_seemoo_nexmon_MyApplication_wiresharkInit( JNIEnv* env, jclass thiz )
+Java_de_tu_1darmstadt_seemoo_nexmon_MyApplication_wiresharkInit( JNIEnv* env, jclass thiz )
 {
   char                *init_progfile_dir_error;
   int                  opt;

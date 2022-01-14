@@ -393,9 +393,12 @@ public class MyApplication extends Application {
                 r += "Failed to initialize wireshark library...\n";
 
         } catch (UnsatisfiedLinkError e) {
+            Log.d("LINK", e.toString());
             isLibInstalledCorrectly = false;
         }
         Log.d(TAG, r);
+        Log.d("InitLibs", (String.valueOf(isLibInstalledCorrectly)));
+        //Log.d("libsDir", getApplicationInfo().nativeLibraryDir);
     }
 
 

@@ -58,7 +58,7 @@ include $(PREBUILT_SHARED_LIBRARY)
 
 #include $(CLEAR_VARS)
 #LOCAL_MODULE := reaver
-#LOCAL_SRC_FILES := ../../libs/armeabi/libreaver.so
+#LOCAL_SRC_FILES := ../../libs/arm/libreaver.so
 #include $(PREBUILT_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
