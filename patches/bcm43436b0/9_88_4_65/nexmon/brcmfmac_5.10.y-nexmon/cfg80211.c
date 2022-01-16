@@ -2894,6 +2894,8 @@ brcmf_cfg80211_set_power_mgmt(struct wiphy *wiphy, struct net_device *ndev,
 	 * preference in cfg struct to apply this to
 	 * FW later while initializing the dongle
 	 */
+	brcmf_info("Forcing power management\n");
+	enabled = false;
 	cfg->pwr_save = enabled;
 	if (!check_vif_up(ifp->vif)) {
 
