@@ -287,13 +287,13 @@ struct wlc_hw_info {
 };
 
 #define HNDRTE_DEV_NAME_MAX 16
-
+/* /!\ This struct has been ported from 7_45_41_46 for bcm43430a1. Only the required fields have been checked/fixed! /!\ */
 typedef struct hndrte_dev {
     char                        name[HNDRTE_DEV_NAME_MAX];
-    struct hndrte_devfuncs      *funcs;
     uint32                      devid;
-    void                        *softc;     /* Software context */
     uint32                      flags;      /* RTEDEVFLAG_XXXX */
+    struct hndrte_devfuncs      *funcs;
+    void                        *softc;     /* Software context */
     struct hndrte_dev           *next;
     struct hndrte_dev           *chained;
     void                        *pdev;
@@ -414,21 +414,21 @@ struct wlc_if {
     } u;
     struct wlc_if_stats  _cnt;
 };
-
+/* /!\ This struct has been ported from 7_45_41_46 for bcm43430a1. Only the required fields have been checked/fixed! /!\ */
 struct wlc_info {
     struct wlc_pub *pub;                /* 0x000 */
     struct osl_info *osh;               /* 0x004 */
     struct wl_info  *wl;                /* 0x008 */
-    volatile struct d11regs *regs;      /* 0x00C */
-    struct wlc_hw_info *hw;             /* 0x010 */
-    int PAD;                            /* 0x014 */
+    int pad;                            /* 0x00C */
+    volatile struct d11regs *regs;      /* 0x010 */
+    struct wlc_hw_info *hw;             /* 0x014 */
     int PAD;                            /* 0x018 */
-    void *core;                         /* 0x01C */
-    struct wlcband *band;               /* 0x020 */
+    int PAD;                            /* 0x01C */
+    void *core;                         /* 0x020 */
     int PAD;                            /* 0x024 */
-    struct wlcband *bandstate[2];       /* 0x028 */
-    int PAD;                            /* 0x030 */
-    int PAD;                            /* 0x034 */
+    int PAD;                            /* 0x028 */
+    struct wlcband *band;               /* 0x02C */
+    struct wlcband *bandstate[2];       /* 0x030 */
     int PAD;                            /* 0x038 */
     int PAD;                            /* 0x03C */
     int PAD;                            /* 0x040 */
@@ -547,7 +547,7 @@ struct wlc_info {
     int PAD;                            /* 0x1FC */
     int PAD;                            /* 0x200 */
     int PAD;                            /* 0x204 */
-    int monitor;                        /* 0x208 CHECKED */
+    int PAD;                            /* 0x208 */
     int PAD;                            /* 0x20C */
     int PAD;                            /* 0x210 */
     int PAD;                            /* 0x214 */
@@ -567,7 +567,7 @@ struct wlc_info {
     int PAD;                            /* 0x248 */
     unsigned short tx_prec_map;         /* 0x24C */
     short PAD;                          /* 0x24E */
-    int PAD;                            /* 0x250 */
+    int monitor;                        /* 0x250 */
     int PAD;                            /* 0x254 */
     int PAD;                            /* 0x258 */
     int PAD;                            /* 0x25C */
@@ -578,7 +578,7 @@ struct wlc_info {
     int PAD;                            /* 0x270 */
     int PAD;                            /* 0x274 */
     int PAD;                            /* 0x278 */
-    void *eventq;                       /* 0x27C CHECKED */
+    void *eventq;                       /* 0x27C */
     int PAD;                            /* 0x280 */
     int PAD;                            /* 0x284 */
     int PAD;                            /* 0x288 */
@@ -759,9 +759,9 @@ struct wlc_info {
     int PAD;                            /* 0X540 */
     int PAD;                            /* 0X544 */
     int PAD;                            /* 0X548 */
-    int PAD;                            /* 0X54C */
-    int PAD;                            /* 0X550 */
-    int PAD;                            /* 0X554 */
+    struct wlc_if *wlcif_list;          /* 0X54C */
+    void *active_queue;                 /* 0X550 */
+    void *active_queue_2;               /* 0X554 */
     int PAD;                            /* 0X558 */
     int PAD;                            /* 0X55C */
     int PAD;                            /* 0X560 */
@@ -780,7 +780,7 @@ struct wlc_info {
     int PAD;                            /* 0X594 */
     int PAD;                            /* 0X598 */
     int PAD;                            /* 0X59C */
-    struct wlc_if *wlcif_list;          /* 0X5A0 CHECKED for 7.45.41.26*/
+    int PAD;                            /* 0X5A0 */
     int PAD;                            /* 0X5A4 */
     int PAD;                            /* 0X5A8 */
     int PAD;                            /* 0X5AC */
@@ -798,7 +798,7 @@ struct wlc_info {
     int PAD;                            /* 0X5DC */
     int PAD;                            /* 0X5E0 */
     int PAD;                            /* 0X5E4 */
-    void *active_queue;                 /* 0X5E8 */
+    int PAD;                            /* 0X5E8 */
     int PAD;                            /* 0X5EC */
     int PAD;                            /* 0X5F0 */
     int PAD;                            /* 0X5F4 */
