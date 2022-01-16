@@ -271,18 +271,20 @@ struct wlc_hw_info {
     int vars;                   /* 0x7C */
     int vars_size;              /* 0x80 */
     int PAD;                    /* 0x84 */
-    struct d11regs* regs;       /* 0x88 CHECKED */
-//    int physhim;                /* 0x88 */
-    int phy_sh;                 /* 0x8C */
-    int PAD;                    /* 0x90 */
-    struct wlc_hwband *band;    /* 0x94 CHECKED */
-    int PAD[5];                 /* 0x98 */
-    char up;                    /* 0x98 */
-    char PAD;                   /* 0x9a */
-    int PAD[19];                /* 0x9c */
+    int PAD;
+    int PAD;
+    struct d11regs* regs;       /* 0x90  */
+//    int physhim;                
+    int phy_sh;
+    int PAD;                    
+    struct wlc_hwband *band;
+    int PAD[5];
+    char up;                   
+    char PAD;                   
+    int PAD[19];                
     int maccontrol;
     int PAD[18];
-    sk_buff *some_skbuff_ptr; // @ 0x134
+    sk_buff *some_skbuff_ptr; 
 
 };
 
