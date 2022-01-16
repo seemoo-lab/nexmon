@@ -181,8 +181,12 @@ ifndef NEXMON_SETUP_ENV
 endif
 
 dump-rom: FORCE
-	@printf "\033[0;31m  DUMPING ROM TO\033[0m /var/root/romdump.bin\n"
+	@printf "\033[0;31m  DUMPING ROM TO\033[0m rom.bin\n"
 	nexutil -g0x602 -l1024 -i -v$(ROMSTART) -r > rom.bin && for n in {1..639}; do nexutil -g0x602 -l1024 -i -v$$((($$n*1024)+$(ROMSTART))) -r >> rom.bin; done
+
+patched-dump-rom: FORCE
+	@printf "\033[0;31m  DUMPING PATCHED ROM TO\033[0m rom_patched.bin\n"
+	nexutil -g0x603 -l1024 -i -v$(ROMSTART) -r > rom_patched.bin && for n in {1..639}; do nexutil -g0x603 -l1024 -i -v$$((($$n*1024)+$(ROMSTART))) -r >> rom_patched.bin; done
 
 install-firmware: $(RAM_FILE) brcmfmac.ko
 ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
