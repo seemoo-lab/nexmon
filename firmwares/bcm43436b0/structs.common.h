@@ -1235,7 +1235,6 @@ struct scb {
     int PAD;
     int PAD;
     int PAD;
-    int PAD;
     void *bsscfg;
 } __attribute__((packed));
 
