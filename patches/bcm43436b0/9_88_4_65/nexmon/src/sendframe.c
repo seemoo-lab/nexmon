@@ -59,6 +59,7 @@ sendframe(struct wlc_info *wlc, struct sk_buff *p, unsigned int fifo, unsigned i
     printf("wlc->band->hwrs_scb:%p\n", wlc->band->hwrs_scb);
     */
 
+    p->scb = wlc->band->hwrs_scb;
     if (wlc->band->bandtype == WLC_BAND_5G && rate < RATES_RATE_6M) {
         rate = RATES_RATE_6M;
     }
@@ -73,3 +74,34 @@ sendframe(struct wlc_info *wlc, struct sk_buff *p, unsigned int fifo, unsigned i
     return ret;
 }
 
+/*
+ Based on jlinktu's patch for bcm43455c0
+https://github.com/seemoo-lab/nexmon/issues/335#issuecomment-738928287
+*/
+__attribute__((naked))
+void
+check_scb(void)
+{
+     asm(
+        "cmp r5, #0\n"             // check if pkt->scb is null
+        "bne nonnull\n"
+        "add lr,lr,0x14c\n"        // if null adapt lr to jump out of pkt dequeue loop
+        "b return\n"
+        "nonnull:\n"
+        "ldr.w r3,[r5,#0xc]\n"    // get scb->cfg (crashed the chip when scb was null)
+        "return:\n"
+        "push {lr}\n"
+        "pop {pc}\n"
+    );
+}
+
+__attribute__((at(0x3489e, "", CHIP_VER_BCM43436b0, FW_VER_9_88_4_65)))
+__attribute__((naked))
+void
+patch_null_pointer_scb(void)
+{
+    asm(
+        "bl check_scb\n"    // branch to null pointer check instead of accessing possibly invalid cfg
+    );
+
+}
