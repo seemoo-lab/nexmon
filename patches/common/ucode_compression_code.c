@@ -972,7 +972,7 @@ wlc_ucode_write_compressed(struct wlc_hw_info *wlc_hw, const int ucode[], const 
 {
     /* state: Decompression state buffer to pass to tinflate_block(). */
     DecompressionState state;
-
+    printf("Decompressing ucode at %p (len: %d) at %p\n", ucode_compressed_bin, ucode_compressed_bin_len, wlc_hw);
     /**** Clear decompression state buffer. ****/
     state.state     = INITIAL;
     state.out_ofs   = 0;
@@ -982,8 +982,10 @@ wlc_ucode_write_compressed(struct wlc_hw_info *wlc_hw, const int ucode[], const 
     /* No other fields need to be cleared. */
 
     /**** Call tinflate_partial() to do the actual decompression. ****/
-    tinflate_partial(ucode_compressed_bin, ucode_compressed_bin_len,
+    int res = tinflate_partial(ucode_compressed_bin, ucode_compressed_bin_len,
         wlc_hw, 100000, 0, &state, sizeof(state), tinflate_write_objmem, tinflate_read_objmem);
+    printf("Decompression res:%d\n", res);
+    
 }
 
 void
