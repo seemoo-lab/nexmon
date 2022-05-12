@@ -192,26 +192,32 @@ install-firmware: $(RAM_FILE) brcmfmac.ko
 ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
 	@printf "\033[0;31m  COPYING\033[0m $(RAM_FILE) => /lib/firmware/brcm/$(RAM_FILE)\n"
 	$(Q)cp $(RAM_FILE) /lib/firmware/brcm/$(RAM_FILE)
+ifneq ("$(wildcard $(DRIVER_FOLDER_NAME)/brcmfmac.ko)", "")
 ifeq ($(shell lsmod | grep "^brcmfmac" | wc -l), 1)
 	@printf "\033[0;31m  UNLOADING\033[0m brcmfmac\n"
 	$(Q)rmmod brcmfmac
 endif
 	$(Q)modprobe brcmutil
 	@printf "\033[0;31m  RELOADING\033[0m brcmfmac\n"
-ifeq ($(findstring 5.4,$(shell uname -r)),5.4)
-	$(Q)insmod brcmfmac_5.4.y-nexmon/brcmfmac.ko
-else ifeq ($(findstring 5.10,$(shell uname -r)),5.10)
-	$(Q)insmod brcmfmac_5.10.y-nexmon/brcmfmac.ko
+	$(Q)insmod $(DRIVER_FOLDER_NAME)/brcmfmac.ko
+else
+	$(warning Warning: Driver not compiled)
 endif
 else
-	$(warning Warning: Cannot install firmware on this arch., bcm43430-sdio.bin needs to be copied manually into /lib/firmware/brcm/ on your RPI3)
+	$(warning Warning: Cannot install firmware on this arch, $(RAM_FILE) needs to be copied manually into /lib/firmware/brcm/ on your RPI3)
 endif
 
 clean-firmware: FORCE
 	@printf "\033[0;31m  CLEANING\033[0m\n"
-	$(Q)rm -fr $(RAM_FILE) obj gen log src/ucode_compressed.c src/templateram.c
+	$(Q)rm -fr $(RAM_FILE) obj gen log src/ucode_compressed.c src/templateram.c ucode_compressed.bin
 
 clean: clean-firmware
+ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
+ifneq ("$(wildcard $(DRIVER_FOLDER_NAME))", "")
+	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$(DRIVER_FOLDER_NAME) clean
+endif
+endif
 	$(Q)rm -f BUILD_NUMBER
 
 FORCE:
