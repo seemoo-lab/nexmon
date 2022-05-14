@@ -133,7 +133,8 @@ To be able to communicate with the firmware without root priviledges, we created
   * Generate a backup of your original firmware file: `make backup-firmware`
   * Install the patched firmware on your RPI3: `make install-firmware`
 * Install nexutil: from the root directory of our repository switch to the nexutil folder: `cd utilities/nexutil/`. Compile and install nexutil: `make && make install`.
-* *Optional*: remove wpa_supplicant for better control over the WiFi interface: `apt-get remove wpasupplicant`
+* *Optional*: remove wpa_supplicant for better control over the WiFi interface: `apt-get remove wpasupplicant`  
+Also, disabling power saving features (`iw dev wlan0 set power_save off`) can help prevent firmware crashes.
 * **Note:** To connect to regular access points you have to execute `nexutil -m0` first
 
 ### Using the Monitor Mode patch
