@@ -43,18 +43,20 @@ init: FORCE
 	$(Q)mkdir -p obj gen log
 
 brcmfmac.ko: check-nexmon-setup-env
+ifneq ("$(wildcard $(DRIVER_FOLDER_NAME))", "")
 ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
-ifeq ($(findstring 5.4,$(shell uname -r)),5.4)
-	@printf "\033[0;31m  BUILDING DRIVER for kernel 5.4\033[0m brcmfmac_5.4.y-nexmon/brcmfmac.ko (details: log/driver.log)\n" $@
-	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_5.4.y-nexmon -j2 >log/driver.log
-else ifeq ($(findstring 5.10,$(shell uname -r)),5.10)
-	@printf "\033[0;31m  BUILDING DRIVER for kernel 5.10\033[0m brcmfmac_5.10.y-nexmon/brcmfmac.ko (details: log/driver.log)\n" $@
-	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac_5.10.y-nexmon -j2 >log/driver.log
-else
-	$(warning Warning: Kernel version not supported)
-endif
+	@printf "\033[0;31m  BUILDING DRIVER for kernel $(KERNEL_VERSION)\033[0m brcmfmac_$(KERNEL_VERSION).y-nexmon/brcmfmac.ko (details: log/driver.log)\n" $@
+	$(Q)mkdir -p log
+	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$(DRIVER_FOLDER_NAME) -j4 >log/driver.log
+else ifeq ($(shell uname -m),$(filter $(shell uname -m), aarch64))
+	@printf "\033[0;31m  BUILDING DRIVER for kernel $(KERNEL_VERSION)\033[0m brcmfmac_$(KERNEL_VERSION).y-nexmon/brcmfmac.ko (details: log/driver.log)\n" $@
+	$(Q)mkdir -p log
+	$(Q)ARCH="arm64" make -C /lib/modules/$(shell uname -r)/build M=$(DRIVER_FOLDER_NAME) -j2 >log/driver.log
 else
 	$(warning Warning: Driver can not be compiled on this platform, execute the make command on a raspberry pi)
+endif
+else
+	$(warning Warning: Driver for kernel $(KERNEL_VERSION) not found)
 endif
 
 
@@ -189,7 +191,7 @@ patched-dump-rom: FORCE
 	nexutil -g0x603 -l1024 -i -v$(ROMSTART) -r > rom_patched.bin && for n in {1..639}; do nexutil -g0x603 -l1024 -i -v$$((($$n*1024)+$(ROMSTART))) -r >> rom_patched.bin; done
 
 install-firmware: $(RAM_FILE) brcmfmac.ko
-ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
+ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l aarch64))
 	@printf "\033[0;31m  COPYING\033[0m $(RAM_FILE) => /lib/firmware/brcm/$(RAM_FILE)\n"
 	$(Q)cp $(RAM_FILE) /lib/firmware/brcm/$(RAM_FILE)
 ifneq ("$(wildcard $(DRIVER_FOLDER_NAME)/brcmfmac.ko)", "")
@@ -212,7 +214,7 @@ clean-firmware: FORCE
 	$(Q)rm -fr $(RAM_FILE) obj gen log src/ucode_compressed.c src/templateram.c ucode_compressed.bin
 
 clean: clean-firmware
-ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
+ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l aarch64))
 ifneq ("$(wildcard $(DRIVER_FOLDER_NAME))", "")
 	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$(DRIVER_FOLDER_NAME) clean

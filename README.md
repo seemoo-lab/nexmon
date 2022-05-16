@@ -115,16 +115,24 @@ To be able to communicate with the firmware without root priviledges, we created
 * Start a UDP connection for example to activate monitor mode: `nexutil -X<cookie> -m1`
 
 ## Build patches for bcm43430a1 on the RPI3/Zero W or bcm434355c0 on the RPI3+/RPI4 or bcm43436b0 on the RPI Zero 2W using Raspbian/Raspberry Pi OS (recommended)
-**Note:** We currently support Kernel Version 4.4 (deprecated), 4.9, 4.14, 4.19, 5.4 and 5.10. Raspbian contains firmware version 7.45.154 for the bcm43455c0. We also support the newer firmware release 7.45.189 from Cypress. Raspberry Pi OS contains firmware version 7.45.206. Please, try which works best for you.
+**Note:** We currently support Kernel Version 4.4 (deprecated), 4.9, 4.14, 4.19, 5.4, 5.10 and 5.15. Raspbian contains firmware version 7.45.154 for the bcm43455c0. We also support the newer firmware release 7.45.189 from Cypress. Raspberry Pi OS contains firmware version 7.45.206. Please, try which works best for you.
 * Make sure the following commands are executed as root: `sudo su`
 * Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
 * Install the kernel headers to build the driver and some dependencies: `sudo apt install raspberrypi-kernel-headers git libgmp3-dev gawk qpdf bison flex make autoconf libtool texinfo`
 * Clone our repository: `git clone https://github.com/seemoo-lab/nexmon.git`
 * Go into the root directory of our repository: `cd nexmon`
-* Check if `/usr/lib/arm-linux-gnueabihf/libisl.so.10` exists, if not, compile it from source:
+* ### On 32bit Raspbian/Raspberry Pi OS
+  * Check if `/usr/lib/arm-linux-gnueabihf/libisl.so.10` exists, if not, compile it from source:
   * `cd buildtools/isl-0.10`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libisl.so /usr/lib/arm-linux-gnueabihf/libisl.so.10`
-* Check if `/usr/lib/arm-linux-gnueabihf/libmpfr.so.4` exists, if not, compile it from source:
+  * Check if `/usr/lib/arm-linux-gnueabihf/libmpfr.so.4` exists, if not, compile it from source:
   * `cd buildtools/mpfr-3.1.4`, `autoreconf -f -i`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libmpfr.so /usr/lib/arm-linux-gnueabihf/libmpfr.so.4`
+* ### On 64bit Raspberry Pi OS
+  * `sudo dpkg --add-architecture armhf`
+  * `sudo apt-get update`
+  * `sudo apt-get install libc6:armhf libisl23:armhf libmpfr6:armhf libmpc3:armhf libstdc++6:armhf`
+  * `sudo ln -s /usr/lib/arm-linux-gnueabihf/libisl.so.23.0.0  /usr/lib/arm-linux-gnueabihf/libisl.so.10`
+  * `sudo ln -s /usr/lib/arm-linux-gnueabihf/libmpfr.so.6.1.0 /usr/lib/arm-linux-gnueabihf/libmpfr.so.4`
+
 * Then you can setup the build environment for compiling firmware patches
   * Setup the build environment: `source setup_env.sh`
   * Compile some build tools and extract the ucode and flashpatches from the original firmware files: `make`
