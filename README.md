@@ -237,6 +237,7 @@ make rom.bin
       * `ucode_compression.c`: [tinflate](http://achurch.org/tinflate.c) based ucode decompression
       * `radiotap.c`: RadioTap header parser
       * `helper.c`: Helpful utility functions
+    * `driver`: Patched brcmfmac driver
     * `include`: Common include files
       * `firmware_version.h`: Definitions of chip and firmware versions
       * `patcher.h`: Macros use to perform patching for existing firmware code (e.g., BPatch patches a branch instruction)
