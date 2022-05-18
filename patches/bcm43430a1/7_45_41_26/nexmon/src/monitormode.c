@@ -74,10 +74,14 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p)
     frame->chan_flags = 0;
     frame->dbm_antsignal = sts->signal;
 
-	memcpy(p_new->data + sizeof(struct nexmon_radiotap_header), p->data + 6, p->len - 6);
+    memcpy(p_new->data + sizeof(struct nexmon_radiotap_header), p->data + 6, p->len - 6);
 
-	p_new->len -= 6;
-	wl->dev->chained->funcs->xmit(wl->dev, wl->dev->chained, p_new);
+    p_new->len -= 6;
+
+    if (wl->wlc->wlcif_list->next)
+        wl->wlc->wlcif_list->wlif->dev->chained->funcs->xmit(wl->wlc->wlcif_list->wlif->dev, wl->wlc->wlcif_list->wlif->dev->chained, p_new);
+    else
+        wl->dev->chained->funcs->xmit(wl->dev, wl->dev->chained, p_new);
 }
 
 void
