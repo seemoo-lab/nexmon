@@ -114,7 +114,7 @@ To be able to communicate with the firmware without root priviledges, we created
 * Set the security cookie as root: `nexutil -x<cookie (uint)>`
 * Start a UDP connection for example to activate monitor mode: `nexutil -X<cookie> -m1`
 
-## Build patches for bcm43430a1 on the RPI3/Zero W or bcm434355c0 on the RPI3+/RPI4 or bcm43436b0 on the RPI Zero 2W using Raspbian/Raspberry Pi OS (recommended)
+## Build patches for bcm43430a1 on the RPI3/Zero W or bcm43455c0 on the RPI3+/RPI4 or bcm43436b0 on the RPI Zero 2W using Raspbian/Raspberry Pi OS (recommended)
 **Note:** We currently support Kernel Version 4.4 (deprecated), 4.9, 4.14, 4.19, 5.4, 5.10 and 5.15. Raspbian contains firmware version 7.45.154 for the bcm43455c0. We also support the newer firmware release 7.45.189 from Cypress. Raspberry Pi OS contains firmware version 7.45.206. Please, try which works best for you.
 * Make sure the following commands are executed as root: `sudo su`
 * Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
