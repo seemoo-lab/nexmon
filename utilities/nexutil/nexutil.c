@@ -48,7 +48,6 @@
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
 #ifdef BUILD_ON_RPI
-#include <types.h> //not sure why it was removed, but it is needed for typedefs like `uint`
 #include <linux/if.h>
 #else
 #include <net/if.h>
@@ -60,6 +59,8 @@
 #include <wlcnt.h>
 
 #include <nexioctls.h>
+
+typedef uint32_t uint;
 
 #include <typedefs.h>
 #include <bcmwifi_channels.h>
