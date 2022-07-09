@@ -863,6 +863,7 @@ int brcmf_net_mon_attach(struct brcmf_if *ifp)
 
 	ndev = ifp->ndev;
 	ndev->netdev_ops = &brcmf_netdev_ops_mon;
+	memcpy(ndev->dev_addr, ifp->mac_addr, ETH_ALEN);
 
 	err = cfg80211_register_netdevice(ndev);
 	if (err)
