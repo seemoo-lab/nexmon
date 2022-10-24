@@ -1097,15 +1097,15 @@ struct wlc_info {
     int PAD;                            /* 0X5E8 */
     int PAD;                            /* 0X5EC */
     int PAD;                            /* 0X5F0 */
-    int PAD;                            /* 0X5F4 */
+    uint hwrxoff;                       /* 0X5F4 */
     int PAD;                            /* 0X5F8 */
     int PAD;                            /* 0X5FC */
 };
 
 struct wlc_pub {
     struct wlc_info *wlc;               /* 0x000 */
-    int PAD;                            /* 0x004 */
-    int PAD;                            /* 0x008 */
+    uint8 cur_etheraddr[6];             /* 0x004 */
+    uint16 PAD;                         /* 0x00A */
     int PAD;                            /* 0x00C */
     int PAD;                            /* 0x010 */
     void *osh;                          /* 0x014 */

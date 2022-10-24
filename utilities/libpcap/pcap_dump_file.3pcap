@@ -17,7 +17,7 @@
 .\" WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
 .\" MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.TH PCAP_DUMP_FILE 3PCAP "5 April 2008"
+.TH PCAP_DUMP_FILE 3PCAP "3 January 2014"
 .SH NAME
 pcap_dump_file \- get the standard I/O stream for a savefile being written
 .SH SYNOPSIS
@@ -33,6 +33,6 @@ FILE *pcap_dump_file(pcap_dumper_t *p);
 .SH DESCRIPTION
 .B pcap_dump_file()
 returns the standard I/O stream of the ``savefile'' opened by
-.BR pcap_dump_open() .
+.BR pcap_dump_open(3PCAP) .
 .SH SEE ALSO
 pcap(3PCAP)

@@ -5,50 +5,59 @@ Nexmon is our C-based firmware patching framework for Broadcom/Cypress WiFi chip
 that enables you to write your own firmware patches, for example, to enable monitor
 mode with radiotap headers and frame injection.
 
-This fork is a clone of nexmon with no analytics, appart from the fact that you will feel less watched, you can install it and run it without the gapps.
-Build it yourself, read the manual.
-There is a library that won't compile with the rest, you will find it from the error message, and fix it by issuing a 'make' in the appropriate folder somewhere in /app/app/src/main/external/src  
+Below, you find an overview what is possible with nexmon. This repository mainly
+focuses on enabling monitor mode and frame injection on many chips. If you want
+additional features, the following projects might be interesting for you:
 
-Before we started to work on this repository, we developed patches for the Nexus 5 (with bcm4339 WiFi chip) in the [bcm-public](https://github.com/seemoo-lab/bcm-public)  repository and those for the Raspberry Pi 3 (with bcm43430a1 WiFi chip) in the [bcm-rpi3](https://github.com/seemoo-lab/bcm-rpi3) repository. To remove the development overhead of maintaining multiple separate repositories, we decided to merge them in this repository and add support for some additional devices. In contrast to the former repositories, here, you can only build the firmware patch without drivers and kernels. The Raspberry Pi 3 makes an exception, as here it is always required to also build the driver.
+* http://nexmon.org/jammer: A real Wi-Fi jammer that allows to overlay ongoing frame transmissions with an arbitrary jamming signal.
+  * It uses the Wi-Fi chip as a Software-defined Radio to generate jamming signals
+  * It allows using non-standard channels such as 80 MHz bandwidth in the 2.4 GHz bands
+  * It allows to set arbitrary transmission powers
+  * It allows patching the D11 core's real-time MAC implementation
+* http://nexmon.org/csi: Channel State Information extractor for various Wi-Fi chips
+  * It allows to extract CSI of up to 4x4 MIMO transmissions at 80 MHz bandwidth
+* http://nexmon.org/debugger: Debugging ARM microcontrollers without JTAG access
+  * It allows low-level access to debugging registers to set breakpoints and watchpoints and allows single stepping
+* http://nexmon.org/covert_channel: Covert Channel that hides information in Wi-Fi signals
+  * More advanced Software-defined Radio capabilities than the jammer
+  * Example application for channel state information extraction
+* http://nexmon.org/sdr: Use your Wi-Fi chip as Software-defined Radio
+  * Currently only transmissions are working in both 2.4 and 5 GHz Wi-Fi bands
 
-# Give Feedback
-We setup a survey to learn about who uses Nexmon to which purpose and how we could improve Nexmon. We would be happy if every Nexmon user filled out this survey: https://nexmon.org/survey
+![NexMon logo](https://github.com/seemoo-lab/nexmon/raw/master/gfx/nexmon_overview.svg)
 
 # WARNING
 Our software may damage your hardware and may void your hardware’s warranty! You use our tools at your own risk and responsibility! If you don't like these terms, don't use nexmon!
 
-# Important changes
-* We started to collect usage statistics. In the file [STATISTICS.md](STATISTICS.md), you can find information on which data we collect and how you can opt-out of the statistics collection
-* Starting with commit 4f8697743dc46ffc37d87d960825367531baeef9 the brcmfmac driver for the RPi3 can now be used as a regular interface. You need to use nexutil to activate monitor mode (`nexutil -m2` for monitor mode with radiotap headers), which will automtically adjust the interface type.
-* Starting with commit 184480edd6696392aae5f818f305f244606f2d17 you can choose different monitor mode options using nexutil. Use `nexutil -m1` to activate monitor mode without radiotap headers, `nexutil -m2` to activate it with radiotap headers. The numbers were chosen as non-Nexmon firmwares also support native monitor mode without radiotap headers by activating monitor mode with `nexutil -m1`.
-* Starting with commit 1bcfdc95b4395c2e8bdd962791ae20c4ba602f5b we changed the nexutil interface. Instead of calling `nexutil -m true` to activate monitor mode, you should now write `nexutil -m1`. To get the current monitor mode state execute `nexutil -m` instead of `nexutil -n`.
-
 # Supported Devices
 The following devices are currently supported by our nexmon firmware patch.
 
-WiFi Chip                 | Firmware Version     | Used in                   | Operating System          |  M  | RT  |  I  | FP  | UC  | CT 
-------------------------- | -------------------- | ------------------------- | ------------------------- | --- | --- | --- | --- | --- | ---
-bcm4330                   | 5_90_100_41_sta      | Samsung Galaxy S2         | Cyanogenmod 13.0          |  X  |  X  |     |  X  |  X  |  O 
-bcm4335b0                 | 6.30.171.1_sta       | Samsung Galaxy S4         | LineageOS 14.1            |  X  |  X  |  X  |     |  X  |  O 
-bcm4339                   | 6_37_34_43           | Nexus 5                   | Android 6 Stock           |  X  |  X  |  X  |  X  |  X  |  O 
-bcm43430a1<sup>1</sup>    | 7_45_41_26           | Raspberry Pi 3 and Zero W | Raspbian 8                |  X  |  X  |  X  |  X  |  X  |  O 
-bcm43430a1<sup>1</sup>    | 7_45_41_46           | Raspberry Pi 3 and Zero W | Raspbian Stretch          |  X  |  X  |  X  |  X  |  X  |  O 
-bcm43451b1                | 7_63_43_0            | iPhone 6                  | iOS 10.1.1 (14B100)       |     |     |     |  X  |  X  |    
-bcm43455                  | 7_45_77_0_hw         | Huawei P9                 | Android 7 Stock           |  X  |  X  |  X  |  X  |  X  |    
-bcm43455                  | 7_120_5_1_sta_C0     | Galaxy J7 2017            | ?                         |     |     |     |  X  |  X  |    
-bcm43455                  | 7_45_77_0_hw(8-2017) | Huawei P9                 | Android 7 Stock           |  X  |  X  |  X  |  X  |  X  |    
-bcm43455<sup>5</sup>      | 7_46_77_11_hw        | Huawei P9                 | Android 8 China Stock     |  X  |  X  |  X  |  X  |  X  |    
-bcm43455                  | 7_45_59_16           | Sony Xperia Z5 Compact    | LineageOS 14.1            |  X  |  X  |  X  |  X  |  X  |    
-bcm43455c0                | 7_45_154             | Raspberry Pi B3+/B4       | Raspbian Kernel 4.9/14/19 |  X  |  X  |     |  X  |  X  |    
-bcm43455c0                | 7_45_189             | Raspberry Pi B3+/B4       | Raspbian Kernel 4.14/19   |  X  |  X  |     |  X  |  X  |    
-bcm4356                   | 7_35_101_5_sta       | Nexus 6                   | Android 7.1.2             |  X  |  X  |     |  X  |  X  |  O 
-bcm4358                   | 7_112_200_17_sta     | Nexus 6P                  | Android 7 Stock           |  X  |  X  |     |  X  |  X  |  O 
-bcm4358                   | 7_112_201_3_sta      | Nexus 6P                  | Android 7.1.2 Stock       |  X  |  X  |     |  X  |  X  |  O 
-bcm4358<sup>2</sup>       | 7_112_300_14_sta     | Nexus 6P                  | Android 8.0.0 Stock       |  X  |  X  |  X  |  X  |  X  |  O 
-bcm43596a0<sup>3</sup>    | 9_75_155_45_sta_c0   | Samsung Galaxy S7         | Android 7 Stock           |  X  |     |     |  O  |  X  |    
-bcm43596a0<sup>3,2</sup>  | 9_96_4_sta_c0        | Samsung Galaxy S7         | LineageOS 14.1            |  X  |  X  |  X  |  O  |  X  |    
-bcm4375b1<sup>3,5,6</sup> | 18_38_18_sta         | Samsung Galaxy S10        | LineageOS 16              |     |     |     |  O  |  X  |    
-qca9500<sup>4</sup>       | 4-1-0_55             | TP-Link Talon AD7200      | Custom LEDE Image         |     |     |     |     |     |    
+WiFi Chip                 | Firmware Version     | Used in                   | Operating System             |  M  | RT  |  I  | FP  | UC  | CT 
+------------------------- | -------------------- | ------------------------- | ---------------------------- | --- | --- | --- | --- | --- | ---
+bcm4330                   | 5_90_100_41_sta      | Samsung Galaxy S2         | Cyanogenmod 13.0             |  X  |  X  |     |  X  |  X  |  O 
+bcm4335b0                 | 6.30.171.1_sta       | Samsung Galaxy S4         | LineageOS 14.1               |  X  |  X  |  X  |     |  X  |  O 
+bcm4339                   | 6_37_34_43           | Nexus 5                   | Android 6 Stock              |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43430a1<sup>1</sup>    | 7_45_41_26           | Raspberry Pi 3 and Zero W | Raspbian 8                   |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43430a1<sup>1</sup>    | 7_45_41_46           | Raspberry Pi 3 and Zero W | Raspbian Stretch             |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43451b1                | 7_63_43_0            | iPhone 6                  | iOS 10.1.1 (14B100)          |     |     |     |  X  |  X  |    
+bcm43455                  | 7_45_77_0_hw         | Huawei P9                 | Android 7 Stock              |  X  |  X  |  X  |  X  |  X  |    
+bcm43455                  | 7_120_5_1_sta_C0     | Galaxy J7 2017            | ?                            |     |     |     |  X  |  X  |    
+bcm43455                  | 7_45_77_0_hw(8-2017) | Huawei P9                 | Android 7 Stock              |  X  |  X  |  X  |  X  |  X  |    
+bcm43455<sup>5</sup>      | 7_46_77_11_hw        | Huawei P9                 | Android 8 China Stock        |  X  |  X  |  X  |  X  |  X  |    
+bcm43455                  | 7_45_59_16           | Sony Xperia Z5 Compact    | LineageOS 14.1               |  X  |  X  |  X  |  X  |  X  |    
+bcm43455c0                | 7_45_154             | Raspberry Pi B3+/B4       | Raspbian Kernel 4.9/14/19    |  X  |  X  |     |  X  |  X  |    
+bcm43455c0                | 7_45_189             | Raspberry Pi B3+/B4       | Raspbian Kernel 4.14/19, 5.4 |  X  |  X  |     |  X  |  X  |    
+bcm43455c0                | 7_45_206             | Raspberry Pi B3+/B4       | Raspberry Pi OS Kernel 5.4   |  X  |  X  |  X  |  X  |  X  |    
+bcm43436b0<sup>3</sup>    | 9_88_4_65            | Raspberry Pi Zero 2 W     | Raspberry Pi OS Kernel 5.10  |  X  |  X  |  X  |  X  |  X  |    
+bcm4356                   | 7_35_101_5_sta       | Nexus 6                   | Android 7.1.2                |  X  |  X  |     |  X  |  X  |  O 
+bcm4358                   | 7_112_200_17_sta     | Nexus 6P                  | Android 7 Stock              |  X  |  X  |     |  X  |  X  |  O 
+bcm4358                   | 7_112_201_3_sta      | Nexus 6P                  | Android 7.1.2 Stock          |  X  |  X  |     |  X  |  X  |  O 
+bcm4358<sup>2</sup>       | 7_112_300_14_sta     | Nexus 6P                  | Android 8.0.0 Stock          |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43596a0<sup>3</sup>    | 9_75_155_45_sta_c0   | Samsung Galaxy S7         | Android 7 Stock              |  X  |     |     |  O  |  X  |    
+bcm43596a0<sup>3,2</sup>  | 9_96_4_sta_c0        | Samsung Galaxy S7         | LineageOS 14.1               |  X  |  X  |  X  |  O  |  X  |    
+bcm4375b1<sup>3,5,6</sup> | 18_38_18_sta         | Samsung Galaxy S10        | Rooted + disabled SELinux    |  X  |  X  |  X  |  O  |  X  |    
+bcm4375b1<sup>3,5,6</sup> | 18_41_8_9_sta        | Samsung Galaxy S20        | Rooted + disabled SELinux    |  X  |  X  |  X  |  O  |  X  |    
+qca9500<sup>4</sup>       | 4-1-0_55             | TP-Link Talon AD7200      | Custom LEDE Image            |     |     |     |     |     |    
 
 <sup>1</sup> bcm43430a1 was wrongly labeled bcm43438 in the past.
 
@@ -105,26 +114,35 @@ To be able to communicate with the firmware without root priviledges, we created
 * Set the security cookie as root: `nexutil -x<cookie (uint)>`
 * Start a UDP connection for example to activate monitor mode: `nexutil -X<cookie> -m1`
 
-## Build patches for bcm43430a1 on the RPI3/Zero W or bcm434355c0 on the RPI3+/RPI4 using Raspbian (recommended)
-**Note:** We currently support Kernel Version 4.4 (depricated), 4.9, 4.14 and 4.19. Raspbian contains firmware version 7.45.154 for the bcm43455c0. We also support the newer firmware release 7.45.189 from Cypress. Please, try which works best for you.
+## Build patches for bcm43430a1 on the RPI3/Zero W or bcm434355c0 on the RPI3+/RPI4 or bcm43436b0 on the RPI Zero 2W using Raspbian/Raspberry Pi OS (recommended)
+**Note:** We currently support Kernel Version 4.4 (deprecated), 4.9, 4.14, 4.19, 5.4, 5.10 and 5.15. Raspbian contains firmware version 7.45.154 for the bcm43455c0. We also support the newer firmware release 7.45.189 from Cypress. Raspberry Pi OS contains firmware version 7.45.206. Please, try which works best for you.
 * Make sure the following commands are executed as root: `sudo su`
 * Upgrade your Raspbian installation: `apt-get update && apt-get upgrade`
-* Install the kernel headers to build the driver and some dependencies: `sudo apt install raspberrypi-kernel-headers git libgmp3-dev gawk qpdf bison flex make`
+* Install the kernel headers to build the driver and some dependencies: `sudo apt install raspberrypi-kernel-headers git libgmp3-dev gawk qpdf bison flex make autoconf libtool texinfo`
 * Clone our repository: `git clone https://github.com/seemoo-lab/nexmon.git`
 * Go into the root directory of our repository: `cd nexmon`
-* Check if `/usr/lib/arm-linux-gnueabihf/libisl.so.10` exists, if not, compile it from source:
+* ### On 32bit Raspbian/Raspberry Pi OS
+  * Check if `/usr/lib/arm-linux-gnueabihf/libisl.so.10` exists, if not, compile it from source:
   * `cd buildtools/isl-0.10`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libisl.so /usr/lib/arm-linux-gnueabihf/libisl.so.10`
-* Check if `/usr/lib/arm-linux-gnueabihf/libmpfr.so.4` exists, if not, compile it from source:
+  * Check if `/usr/lib/arm-linux-gnueabihf/libmpfr.so.4` exists, if not, compile it from source:
   * `cd buildtools/mpfr-3.1.4`, `autoreconf -f -i`, `./configure`, `make`, `make install`, `ln -s /usr/local/lib/libmpfr.so /usr/lib/arm-linux-gnueabihf/libmpfr.so.4`
+* ### On 64bit Raspberry Pi OS
+  * `sudo dpkg --add-architecture armhf`
+  * `sudo apt-get update`
+  * `sudo apt-get install libc6:armhf libisl23:armhf libmpfr6:armhf libmpc3:armhf libstdc++6:armhf`
+  * `sudo ln -s /usr/lib/arm-linux-gnueabihf/libisl.so.23.0.0  /usr/lib/arm-linux-gnueabihf/libisl.so.10`
+  * `sudo ln -s /usr/lib/arm-linux-gnueabihf/libmpfr.so.6.1.0 /usr/lib/arm-linux-gnueabihf/libmpfr.so.4`
+
 * Then you can setup the build environment for compiling firmware patches
   * Setup the build environment: `source setup_env.sh`
   * Compile some build tools and extract the ucode and flashpatches from the original firmware files: `make`
-* Go to the *patches* folder for the bcm43430a1/bcm43455c0 chipset: `cd patches/bcm43430a1/7_45_41_46/nexmon/` / `patches/bcm43455c0/<7_45_154 or 7_45_189>/nexmon/`
+* Go to the *patches* folder for the bcm43430a1/bcm43455c0/bcm43436b0 chipset: `cd patches/bcm43430a1/7_45_41_46/nexmon/` / `patches/bcm43455c0/<7_45_154 or 7_45_189>/nexmon/` / `cd patches/bcm43436b0/9_88_4_65/nexmon/`
   * Compile a patched firmware: `make`
   * Generate a backup of your original firmware file: `make backup-firmware`
   * Install the patched firmware on your RPI3: `make install-firmware`
 * Install nexutil: from the root directory of our repository switch to the nexutil folder: `cd utilities/nexutil/`. Compile and install nexutil: `make && make install`.
-* *Optional*: remove wpa_supplicant for better control over the WiFi interface: `apt-get remove wpasupplicant`
+* *Optional*: remove wpa_supplicant for better control over the WiFi interface: `apt-get remove wpasupplicant`  
+Also, disabling power saving features (`iw dev wlan0 set power_save off`) can help prevent firmware crashes.
 * **Note:** To connect to regular access points you have to execute `nexutil -m0` first
 
 ### Using the Monitor Mode patch
@@ -219,6 +237,7 @@ make rom.bin
       * `ucode_compression.c`: [tinflate](http://achurch.org/tinflate.c) based ucode decompression
       * `radiotap.c`: RadioTap header parser
       * `helper.c`: Helpful utility functions
+    * `driver`: Patched brcmfmac driver
     * `include`: Common include files
       * `firmware_version.h`: Definitions of chip and firmware versions
       * `patcher.h`: Macros use to perform patching for existing firmware code (e.g., BPatch patches a branch instruction)

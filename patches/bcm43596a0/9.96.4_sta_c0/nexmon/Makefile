@@ -121,12 +121,16 @@ fw_bcmdhd.complete.bin: fw_bcmdhd.bin $(FW_PATH)/$(ROM_FILE)
 # ucode compression related
 ###################################################################
 
+gen/ucode.asm: $(FW_PATH)/ucode.bin
+	$(NEXMON_ROOT)/buildtools/b43new/disassembler/b43-dasm $< $@ --arch 15 --format raw-le32
+	$(NEXMON_ROOT)/buildtools/b43new/debug/b43-beautifier --asmfile $@ --defs $(NEXMON_ROOT)/buildtools/b43new/debug/include > tmp && mv tmp $@
+
 ifneq ($(wildcard src/ucode.asm), )
 gen/ucode.bin: src/ucode.asm
 	@printf "\033[0;31m  ASSEMBLING UCODE\033[0m %s => %s\n" $< $@
 
-ifneq ($(wildcard $(NEXMON_ROOT)/buildtools/b43/assembler/b43-asm.bin), )
-	$(Q)PATH=$(PATH):$(NEXMON_ROOT)/buildtools/b43/assembler $(NEXMON_ROOT)/buildtools/b43/assembler/b43-asm $< $@ --format raw-le32
+ifneq ($(wildcard $(NEXMON_ROOT)/buildtools/b43new/assembler/b43-asm.bin), )
+	$(Q)PATH=$(PATH):$(NEXMON_ROOT)/buildtools/b43new/assembler $(NEXMON_ROOT)/buildtools/b43new/assembler/b43-asm $< $@ --format raw-le32
 else
 	$(error Warning: please compile b43-asm.bin first)
 endif
