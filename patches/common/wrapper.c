@@ -893,6 +893,11 @@ void
 wlc_ucode_write(void *wlc_hw, const int ucode[], const unsigned int nbytes)
 VOID_DUMMY
 
+AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x332E0)
+void
+wlc_dump_ucode_fatal(void *wlc)
+VOID_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x5D3F4)
 int
 wlc_valid_chanspec_db(void *wlc_cm, unsigned short chanspec)
@@ -1006,6 +1011,7 @@ pkt_buf_free_skb_ram(void *osh, void *p, int send)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x1C3CE8)
+AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C3F34)
 int
 read_radio_reg(void *pi, short addr)
 RETURN_DUMMY
