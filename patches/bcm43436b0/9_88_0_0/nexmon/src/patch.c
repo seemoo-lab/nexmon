@@ -47,13 +47,13 @@ int capabilities = NEX_CAP_MONITOR_MODE | NEX_CAP_MONITOR_MODE_RADIOTAP | NEX_CA
 __attribute__((at(WLC_UCODE_WRITE_BL_HOOK_ADDR, "", CHIP_VER_ALL, FW_VER_ALL)))
 BLPatch(wlc_ucode_write_compressed, wlc_ucode_write_compressed);
 
-//__attribute__((at(HNDRTE_RECLAIM_0_END_PTR, "", CHIP_VER_ALL, FW_VER_ALL)))
-//GenericPatch4(hndrte_reclaim_0_end, PATCHSTART);
+__attribute__((at(HNDRTE_RECLAIM_0_END_PTR, "", CHIP_VER_ALL, FW_VER_ALL)))
+GenericPatch4(hndrte_reclaim_0_end, PATCHSTART);
 
-//extern unsigned char templateram_bin[];
+extern unsigned char templateram_bin[];
 
 // Moving template ram to another place in the ucode region
-//#if TEMPLATERAMSTART_PTR != 0
-//__attribute__((at(TEMPLATERAMSTART_PTR, "", CHIP_VER_ALL, FW_VER_ALL)))
-//GenericPatch4(templateram_bin, templateram_bin);
-//#endif
+#if TEMPLATERAMSTART_PTR != 0
+__attribute__((at(TEMPLATERAMSTART_PTR, "", CHIP_VER_ALL, FW_VER_ALL)))
+GenericPatch4(templateram_bin, templateram_bin);
+#endif
