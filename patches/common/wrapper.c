@@ -120,6 +120,7 @@ AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x880B90)
 AT(CHIP_VER_BCM43430a1, FW_VER_ALL, 0x880B90)
 AT(CHIP_VER_BCM4358, FW_VER_7_112_300_14, 0x18234c)
 AT(CHIP_VER_BCM43455c0, FW_VER_ALL, 0x9BE4C)
+AT(CHIP_VER_BCM4366c0, FW_VER_ALL, 0x1214C)
 void
 free(void *p)
 VOID_DUMMY
@@ -241,6 +242,11 @@ AT(CHIP_VER_BCM43455, FW_VER_7_46_77_11, 0x19F660)
 AT(CHIP_VER_BCM43455, FW_VER_7_45_59_16, 0x19F3B0)
 void *
 malloc(unsigned int size, char alignment)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4366c0, FW_VER_ALL, 0x12134)
+void *
+mallocz(unsigned int size)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x880E20)
@@ -741,6 +747,7 @@ RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8C8EC)
 AT(CHIP_VER_BCM4335b0, FW_VER_ALL, 0x402E0)
+AT(CHIP_VER_BCM4366c0, FW_VER_ALL, 0xA2408)
 int
 wlc_prec_enq(void *wlc, void *q, void *p, int preq)
 RETURN_DUMMY
@@ -778,6 +785,7 @@ AT(CHIP_VER_BCM43596a0, FW_VER_ALL, 0x470cc)
 AT(CHIP_VER_BCM43455, FW_VER_ALL, 0x31CE8)
 AT(CHIP_VER_BCM43455c0, FW_VER_ALL, 0x31CE8)
 AT(CHIP_VER_BCM43436b0, FW_VER_9_88_4_65, 0xbd4c)
+AT(CHIP_VER_BCM4366c0, FW_VER_10_10_122_20, 0x230F54)
 int
 wlc_sendctl(void *wlc, void *p, void *qi, void *scb, unsigned int fifo, unsigned int rate_override, char enq_only)
 RETURN_DUMMY
@@ -1620,6 +1628,7 @@ RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8CA4C)
 AT(CHIP_VER_BCM4335b0, FW_VER_ALL, 0x42C18)
+AT(CHIP_VER_BCM4366c0, FW_VER_ALL, 0xA2C58)
 void
 wlc_send_q(void *wlc, void *qi)
 VOID_DUMMY
@@ -1848,6 +1857,31 @@ RETURN_DUMMY
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C10C2)
 uint8
 wlc_phy_set_txpwr_clamp_acphy(void *pi)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4366c0, FW_VER_ALL, 0x7E050)
+int
+wlc_stf_doiovar(void *hdl, void *vi, uint32 actionid, const char *name, void *p, uint plen, void *a, int alen, int vsize, void *wlcif)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4366c0, FW_VER_ALL, 0x1CED4)
+void *
+wl_init_timer(void *wl, void (*fn)(void* arg), void *arg, const char *name)
+RETURN_DUMMY
+
+AT(CHIP_VER_BCM4366c0, FW_VER_ALL, 0x1CEBC)
+void
+wl_free_timer(void *wl, void *t)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4366c0, FW_VER_ALL, 0x1CD1C)
+void
+wl_add_timer(void *wl, void *t, uint ms, int periodic)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM4366c0, FW_VER_ALL, 0x1CDC4)
+uint
+wl_del_timer(void *wl, void *t)
 RETURN_DUMMY
 
 #undef VOID_DUMMY
