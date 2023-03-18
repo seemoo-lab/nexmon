@@ -56,6 +56,18 @@
 
 #include <linux/netlink.h>
 
+#ifdef USE_VENDOR_CMD
+#include <netlink/netlink.h>
+#include <netlink/genl/genl.h>
+#include <netlink/genl/family.h>
+#include <netlink/genl/ctrl.h>
+#include <linux/nl80211.h>
+#include <byteswap.h>
+
+#define BROADCOM_OUI 0x001018
+#define BRCMF_VNDR_CMDS_DCMD 1
+#endif
+
 #define WLC_IOCTL_MAGIC          0x14e46c77
 #define DHD_IOCTL_MAGIC          0x00444944
 
@@ -72,6 +84,7 @@
 #define NEXIO_TYPE_IOCTL		0
 #define NEXIO_TYPE_UDP			1
 #define NEXIO_TYPE_NETLINK		2
+#define NEXIO_TYPE_VENDOR_CMD	3
 
 struct nexio {
 	int type;
@@ -80,6 +93,12 @@ struct nexio {
 	int sock_rx_frame;
 	int sock_tx;
 	unsigned int securitycookie;
+#ifdef USE_VENDOR_CMD
+	struct nl_sock *nl_sock;
+	int nl80211_id;
+	struct nl_cb *nl_cb;
+	int res;
+#endif
 };
 
 struct nex_ioctl {
@@ -105,6 +124,15 @@ struct nexudp_ioctl_header {
     char payload[1];
 } __attribute__((packed));
 
+#ifdef USE_VENDOR_CMD
+struct brcmf_vndr_dcmd_hdr {
+	unsigned int cmd;
+	int len;
+	unsigned int offset;
+	unsigned int set;
+	unsigned int magic;
+} __attribute__((packed));
+#endif
 
 static int
 __nex_driver_io(struct ifreq *ifr, struct nex_ioctl *ioc)
@@ -215,6 +243,118 @@ __nex_driver_netlink(struct nexio *nexio, struct nex_ioctl *ioc)
         return ret;
 }
 
+#ifdef USE_VENDOR_CMD
+static int
+__nex_driver_vendor_cmd_valid_handler(struct nl_msg *msg, void *arg)
+{
+	struct nlattr *attr;
+	struct genlmsghdr *gnlh;
+	char *data;
+	int len;
+	struct nex_ioctl *ioc = (struct nex_ioctl *) arg;
+
+	gnlh = nlmsg_data(nlmsg_hdr(msg));
+	attr = nla_find(genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NL80211_ATTR_VENDOR_DATA);
+	if (!attr) {
+		printf("%s: no NL80211_ATTR_VENDOR_DATA found in response\n", __FUNCTION__);
+		return NL_SKIP;
+	}
+
+	data = (char *) nla_data(attr) + sizeof(uint32_t);
+	len = nla_len(attr) - 3 * sizeof(uint32_t);
+
+	if (ioc->buf == NULL) {
+		printf("%s: can not return data, no nex ioctl buffer\n", __FUNCTION__);
+		return NL_SKIP;
+	}
+
+    len = (len > ioc->len) ? ioc->len : len;
+	if (ioc->set == 0 && len > 0)
+		memcpy(ioc->buf, data, len);
+
+	return NL_OK;
+}
+
+static int
+__nex_driver_finish_handler(struct nl_msg *msg, void *arg)
+{
+	int *ret = arg;
+	*ret = 0;
+	return NL_SKIP;
+}
+
+static int
+__nex_driver_ack_handler(struct nl_msg *msg, void *arg)
+{
+	int *ret = arg;
+	*ret = 0;
+	return NL_STOP;
+}
+
+static int
+__nex_driver_vendor_cmd(struct nexio *nexio, struct nex_ioctl *ioc)
+{
+	int ret = 0;
+	unsigned int devidx;
+	char *dcmd_buf;
+	struct brcmf_vndr_dcmd_hdr *dcmd_hdr;
+	struct nl_msg *msg;
+
+	devidx = if_nametoindex(nexio->ifr->ifr_name);
+	if (!devidx) {
+		printf("%s: error getting interface index\n", __FUNCTION__);
+		return -ENODEV;
+	}
+
+	dcmd_buf = (char *) malloc(sizeof(struct brcmf_vndr_dcmd_hdr) + ioc->len);
+	if (!dcmd_buf) {
+		printf("%s: error allocating vendor dcommand buffer\n", __FUNCTION__);
+		return -ENOMEM;
+	}
+
+	dcmd_hdr = (struct brcmf_vndr_dcmd_hdr *) dcmd_buf;
+	dcmd_hdr->cmd = ioc->cmd;
+	dcmd_hdr->len = ioc->len;
+	dcmd_hdr->offset = sizeof(struct brcmf_vndr_dcmd_hdr);
+	dcmd_hdr->set = ioc->set;
+	dcmd_hdr->magic = ioc->driver;
+
+	if (ioc->len > 0)
+		memcpy(dcmd_buf + sizeof(struct brcmf_vndr_dcmd_hdr), ioc->buf, ioc->len);
+
+	msg = nlmsg_alloc();
+	if (!msg) {
+		printf("%s: error allocating netlink message\n", __FUNCTION__);
+		free(dcmd_buf);
+		return -ENOMEM;
+	}
+
+	genlmsg_put(msg, 0, 0, nexio->nl80211_id, 0, 0, NL80211_CMD_VENDOR, 0);
+	nla_put_u32(msg, NL80211_ATTR_IFINDEX, devidx);
+	nla_put_u32(msg, NL80211_ATTR_VENDOR_ID, BROADCOM_OUI);
+	nla_put_u32(msg, NL80211_ATTR_VENDOR_SUBCMD, BRCMF_VNDR_CMDS_DCMD);
+	nla_put(msg, NL80211_ATTR_VENDOR_DATA, sizeof(struct brcmf_vndr_dcmd_hdr) + ioc->len, dcmd_buf);
+	free(dcmd_buf);
+
+	ret = nl_send_auto(nexio->nl_sock, msg);
+	if (ret < 0) {
+		printf("%s: error sending netlink message\n", __FUNCTION__);
+		goto out;
+	}
+
+	nl_cb_set(nexio->nl_cb, NL_CB_VALID, NL_CB_CUSTOM, __nex_driver_vendor_cmd_valid_handler, ioc);
+
+	nexio->res = 1;
+	while (nexio->res > 0)
+		nl_recvmsgs(nexio->nl_sock, nexio->nl_cb);
+
+out:
+	nl_cb_put(nexio->nl_cb);
+	nlmsg_free(msg);
+	return ret;
+}
+#endif
+
 /* This function is called by ioctl_setinformation_fe or ioctl_queryinformation_fe
  * for executing  remote commands or local commands
  */
@@ -243,6 +383,11 @@ nex_ioctl(struct nexio *nexio, int cmd, void *buf, int len, bool set)
 		case NEXIO_TYPE_NETLINK:
 			ret = __nex_driver_netlink(nexio, &ioc);
 			break;
+#ifdef USE_VENDOR_CMD
+		case NEXIO_TYPE_VENDOR_CMD:
+			ret = __nex_driver_vendor_cmd(nexio, &ioc);
+			break;
+#endif
 		default:
 			printf("%s: not initialized correctly\n", __FUNCTION__);
 	}
@@ -369,3 +514,58 @@ nex_init_netlink(void)
 
     return nexio;
 }
+
+#ifdef USE_VENDOR_CMD
+struct nexio *
+nex_init_vendor_cmd(const char *ifname)
+{
+	int err;
+
+	struct nexio *nexio = (struct nexio *) malloc(sizeof(struct nexio));
+	memset(nexio, 0, sizeof(struct nexio));
+
+	nexio->ifr = (struct ifreq *) malloc(sizeof(struct ifreq));
+	memset(nexio->ifr, 0, sizeof(struct ifreq));
+	snprintf(nexio->ifr->ifr_name, sizeof(nexio->ifr->ifr_name), "%s", ifname);
+
+	nexio->nl_sock = nl_socket_alloc();
+	if (!nexio->nl_sock) {
+		printf("%s: failed to allocate netlink socket, error %d\n", __FUNCTION__, -ENOMEM);
+		free(nexio);
+		return 0;
+	}
+
+	if (genl_connect(nexio->nl_sock)) {
+		printf("%s: failed to connect to generic netlink, error %d\n", __FUNCTION__, -ENOLINK);
+		nl_close(nexio->nl_sock);
+		nl_socket_free(nexio->nl_sock);
+		free(nexio);
+		return 0;
+	}
+
+	nexio->nl80211_id = genl_ctrl_resolve(nexio->nl_sock, "nl80211");
+	if (nexio->nl80211_id < 0) {
+		printf("%s: nl80211 not found, error %d\n", __FUNCTION__, -ENOENT);
+		nl_close(nexio->nl_sock);
+		nl_socket_free(nexio->nl_sock);
+		free(nexio);
+		return 0;
+	}
+
+	nexio->nl_cb = nl_cb_alloc(NL_CB_DEFAULT);
+	if (!nexio->nl_cb) {
+		printf("%s: problem allocating netlink callback, error %d\n", __FUNCTION__, -ENOMEM);
+		nl_close(nexio->nl_sock);
+		nl_socket_free(nexio->nl_sock);
+		free(nexio);
+		return 0;
+	}
+
+	nl_cb_set(nexio->nl_cb, NL_CB_FINISH, NL_CB_CUSTOM, __nex_driver_finish_handler, &(nexio->res));
+	nl_cb_set(nexio->nl_cb, NL_CB_ACK, NL_CB_CUSTOM, __nex_driver_ack_handler, &(nexio->res));
+
+	nexio->type = NEXIO_TYPE_VENDOR_CMD;
+
+	return nexio;
+}
+#endif

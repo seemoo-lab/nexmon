@@ -1,5 +1,9 @@
 .*
 !/.gitignore
-ucode.bin
+*ucode.bin
+*ucode[x0-9].bin
+dlarray*.bin
 flashpatches.c
 templateram.bin
+templateram[0-9].bin
+vasip.bin
