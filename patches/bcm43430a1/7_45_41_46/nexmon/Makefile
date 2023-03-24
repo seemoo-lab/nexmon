@@ -179,8 +179,8 @@ endif
 backup-firmware:
 ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l aarch64))
 	$(Q)cp /lib/firmware/brcm/brcmfmac43430-sdio.bin brcmfmac43430-sdio.bin.orig
-	$(Q)cp /lib/firmware/brcm/brcmfmac43430-sdio.clm_blob brcmfmac43430-sdio.clm_blob 2>/dev/null
-	$(Q)cp /lib/firmware/brcm/brcmfmac43430-sdio.raspberrypi,3-model-b.clm_blob brcmfmac43430-sdio.raspberrypi,3-model-b.clm_blob 2>/dev/null
+	$(Q)cp /lib/firmware/brcm/brcmfmac43430-sdio.clm_blob brcmfmac43430-sdio.clm_blob 2>/dev/null || true
+	$(Q)cp /lib/firmware/brcm/brcmfmac43430-sdio.raspberrypi,3-model-b.clm_blob brcmfmac43430-sdio.raspberrypi,3-model-b.clm_blob 2>/dev/null || true
 else
 	$(warning Warning: Cannot backup the original firmware on this arch.)
 endif
