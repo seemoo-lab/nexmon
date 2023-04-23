@@ -739,7 +739,8 @@ static struct wireless_dev *brcmf_cfg80211_add_iface(struct wiphy *wiphy,
 	case NL80211_IFTYPE_MESH_POINT:
 		return ERR_PTR(-EOPNOTSUPP);
 	case NL80211_IFTYPE_MONITOR:
-		return brcmf_mon_add_vif(wiphy, name, params);
+		wdev = brcmf_mon_add_vif(wiphy, name, params);
+		break;
 	case NL80211_IFTYPE_AP:
 		wdev = brcmf_ap_add_vif(wiphy, name, params);
 		break;
