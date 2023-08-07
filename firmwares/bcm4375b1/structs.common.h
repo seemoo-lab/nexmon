@@ -38,6 +38,31 @@
 #include <types.h>
 #include <bcmcdc.h>
 
+struct hnd_cons {
+    uint   vcons_in;
+    uint   vcons_out;
+    char   *buf;
+    uint   buf_size;
+    uint   idx;
+    uint   out_idx;
+    uint   cbuf_idx;
+    char   cbuf[];
+} __attribute__((packed));
+
+struct hnd_debug {
+    uint32  magic;
+    uint32  version;
+    uint32  fwid;
+    char    epivers[32];
+    void    *trap_ptr;
+    struct hnd_cons *console;
+    uint32  ram_base;
+    uint32  ram_size;
+    uint32  rom_base;
+    uint32  rom_size;
+    void    *event_log_top;
+} __attribute__((packed));
+
 /* used for PAPD cal */
 typedef struct _acphy_txgains {
     uint16 txlpf;
@@ -78,7 +103,7 @@ struct ratesel_txparams {
 struct wlc_hw_info {
     struct wlc_info *wlc;       /* 0x00 */
     int PAD;                    /* 0x04 */
-    int PAD;                    /* 0x08 */
+    void *osh;                  /* 0x08 */
     int PAD;                    /* 0x0c */
     int PAD;                    /* 0x10 */
     struct dma_info *di[6];     /* 0x14 - only 4 bytes */
@@ -89,7 +114,7 @@ struct wlc_hw_info {
     int PAD;                    // 0x3c
     int PAD;                    // 0x40
     unsigned int corerev;       // 0x44 verified bcm4375b1
-    int PAD;                    // 0x48
+    uint32 macunit;             // 0x48
     int PAD;                    // 0x4c
     int PAD;                    // 0x50
     int PAD;                    // 0x54
@@ -105,28 +130,29 @@ struct wlc_hw_info {
     char ucode_loaded;          /* 0x76 */
     char PAD;                   /* 0x77 */
     int PAD;                    /* 0x78 */
-    int sih;                    /* 0x7c */
-    int vars;                   /* 0x80 */
-    int vars_size;              /* 0x84 */
-    int PAD;                    /* 0x88 */
+    int PAD;                    /* 0x7c */
+    int sih;                    /* 0x80 */
+    int vars;                   /* 0x84 */
+    int vars_size;              /* 0x88 */
     struct d11regs* regs;       /* 0x8c for bcm4375c0 */
-    int phy_sh;                 /* 0x90 */
+    int regoffsets;             /* 0x90 */
     int PAD;                    /* 0x94 */
     int PAD;                    // 0x98
     int PAD;                    // 0x9c
     int PAD;                    // 0xa0
     int PAD;                    // 0xa4
     int PAD;                    // 0xa8
-    char up;                    // 0xac verified wl_dpc
-    char PAD;
-    char PAD;
-    char PAD;
+    uint16 SRL;                 // 0xac 
+    uint16 LRL;                 // ae
     int PAD;                    // 0xb0
-    int PAD;                    // 0xb4
+    uint8 up;                   // 0xb4
+    uint8 PAD;                  // 0xb5
+    uint8 PAD;                  // 0xb6
+    uint8 PAD;                  // 0xb7
     int PAD;                    // 0xb8
     int PAD;                    // 0xbc
     int PAD;                    // 0xc0
-    int PAD;                    // 0xc4
+    uint16 chanspec;            // 0xc4
     int PAD;                    // 0xc8
     int PAD;                    // 0xcc
     int PAD;                    // 0xd0
@@ -281,6 +307,53 @@ struct osl_info {
 	int PAD[1];
 	void *callback_when_dropped;
 	unsigned int bustype;
+} __attribute__((packed));
+
+struct lbuf {
+    union {                    /* 0x000 */
+        uint32  u32;
+        struct {
+            uint16  pktid;
+            uint8   refcnt;
+            uint8   poolid;
+        };
+    } mem;
+    union {                    /* 0x004 */
+        uint32 offsets;
+        struct {
+            uint32 head_off : 21;
+            uint32 end_off  : 11;
+        };
+    };
+    uint8 *data;               /* 0x008 */
+    uint16 len;                /* 0x00c */
+    uint16 PAD;                /* 0x00e */
+    uint32 flags;              /* 0x010 */
+    union {                    /* 0x014 */
+        uint32 reset;
+        struct {
+            union {
+                uint16 dmapad;
+                uint16 rxcpl_id;
+                uint16 dma_index;
+            };
+            union {
+                uint8  dataOff;
+                uint8  hwa_rxOff;
+            };
+            uint8  ifidx;
+        };
+    };
+    union {                     /* 0x018 */
+        struct {
+            uint16 nextid;
+            uint16 linkid;
+        };
+        void * freelist;
+    };
+//    struct sk_buff *next;      /* 0x018 */
+//    struct sk_buff *link;      /* 0x01c */
+    uint32 pkttag[7];          /* 0x020 */
 } __attribute__((packed));
 
 typedef struct sk_buff {
@@ -823,10 +896,10 @@ struct wlc_info {
     int PAD;                            /* 0x0A0 */
     int PAD;                            /* 0x0A4 */
     int PAD;                            /* 0x0A8 */
-    int PAD;                            /* 0x0AC */
+    void *cmi;                          /* 0x0AC verified bcm4375b1*/
     int PAD;                            /* 0x0B0 */
     int PAD;                            /* 0x0B4 */
-    int PAD;                            /* 0x0B8 */
+    void *scan;                         /* 0x0B8 verified bcm4375b1*/
     int PAD;                            /* 0x0BC */
     int PAD;                            /* 0x0C0 */
     int PAD;                            /* 0x0C4 */
@@ -867,7 +940,7 @@ struct wlc_info {
     int PAD;                            /* 0x150 */
     int PAD;                            /* 0x154 */
     int PAD;                            /* 0x158 */
-    void *cmi;                          /* 0x15C */
+    int PAD;                            /* 0x15C */
     int PAD;                            /* 0x160 */
     int PAD;                            /* 0x164 */
     unsigned int monitor;               /* 0x168 verified bcm4375b1*/
@@ -947,12 +1020,14 @@ struct wlc_info {
     int PAD;                            /* 0x280 */
     int PAD;                            /* 0x284 */
     int PAD;                            /* 0x288 */
-    int PAD;                            /* 0x28C */
+    uint16 PAD;                         /* 0x28C */
+    uint16 chanspec;                    /* 0x28E */
     int PAD;                            /* 0x290 */
     int PAD;                            /* 0x294 */
     int PAD;                            /* 0x298 */
     int PAD;                            /* 0x29C */
-    int PAD;                            /* 0x2A0 */
+    uint16 SRL;                         /* 0x2A0 */
+    uint16 LRL;                         /* 0x2A2 */
     int PAD;                            /* 0x2A4 */
     int PAD;                            /* 0x2A8 */
     int PAD;                            /* 0x2AC */
