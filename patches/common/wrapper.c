@@ -278,6 +278,7 @@ AT(CHIP_VER_BCM43455, FW_VER_7_46_77_11, 0x19A538)
 AT(CHIP_VER_BCM43455, FW_VER_7_45_59_16, 0x19A0C8)
 AT(CHIP_VER_BCM43436b0, FW_VER_ALL, 0x8041D4)
 AT(CHIP_VER_BCM4375b1, FW_VER_ALL, 0x143980)
+AT(CHIP_VER_BCM4389c1, FW_VER_20_101_36_2, 0x2122EE)
 int
 memcpy(void *dst, void *src, int len)
 RETURN_DUMMY
@@ -1227,6 +1228,11 @@ int
 wlc_ioctl(void *wlc, int cmd, void *arg, int len, void *wlc_if)
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM4389c1, FW_VER_20_101_36_2, 0x283984)
+int
+wlc_doioctl(void *ctx, uint cmd, void *arg, uint len, void *wlcif)
+RETURN_DUMMY
+
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x19B25C)
 int
 wlc_iovar_change_handler(void *wlc, int a2, int cmd, char *a4, unsigned int a6, int a7, int a8, int a9, int wlcif)
@@ -1935,9 +1941,15 @@ wlc_find_wlc_for_chanspec(void *wlc, uint16 chanspec)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4375b1, FW_VER_18_41_113_sta, 0x1D2EAC)
+AT(CHIP_VER_BCM4389c1, FW_VER_20_101_36_2, 0x272E5C)
 void *
 hnd_debug_info_get(void)
 RETURN_DUMMY
+
+AT(CHIP_VER_BCM4389c1, FW_VER_20_101_36_2, 0x32EFB0)
+void
+hnd_tcam_load_default(unsigned int rambase)
+VOID_DUMMY
 
 #undef VOID_DUMMY
 #undef RETURN_DUMMY
