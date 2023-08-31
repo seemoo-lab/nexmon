@@ -54,6 +54,7 @@
 #define CHIP_VER_BCM4366c0                106
 #define CHIP_VER_BCM43436b0               107
 #define CHIP_VER_BCM4389c1                108
+#define CHIP_VER_BCM43439a0               109
 
 #define FW_VER_ALL                          0
 
@@ -130,5 +131,8 @@
 
 // for CHIP_VER_BCM4389c1
 #define FW_VER_20_101_36_2                 810
+
+// for CHIP_VER_BCM43439a0
+#define FW_VER_7_95_49_2271bb6             910
 
 #endif /*FIRMWARE_VERSION_H*/
