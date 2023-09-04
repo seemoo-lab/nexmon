@@ -2,10 +2,12 @@ include definitions.mk
 
 all: $(RAM_FILE) clm.bin ucode.bin templateram.bin flashpatches.c
 
+$(RAM_FILE): SHELL:=$(shell which bash)
 $(RAM_FILE): w43439A0_7_95_49_00_combined.h
 	@printf "\033[0;31m  EXTRACTING FIRMWARE BLOB\033[0m\n"
 	@$(Q)HEX_COMBINED=$$(head -n-4 $< | tail -n+2 | sed -r 's/((0x)|[, ])//g' | tr -d '\n');FW_LEN=$$(grep CYW43_WIFI_FW_LEN $< | sed -r 's/.*\(([0-9]+)\).*/\1/g');FW_LEN_HEX=$$(($$FW_LEN << 1));printf "%s" "$${HEX_COMBINED::$$FW_LEN_HEX}" | xxd -r -p > "$@"
 
+clm.bin: SHELL:=$(shell which bash)
 clm.bin: w43439A0_7_95_49_00_combined.h
 	@printf "\033[0;31m  EXTRACTING CLM BLOB\033[0m\n"
 	@$(Q)HEX_COMBINED=$$(head -n-4 $< | tail -n+2 | sed -r 's/((0x)|[, ])//g' | tr -d '\n');FW_LEN=$$(grep CYW43_WIFI_FW_LEN $< | sed -r 's/.*\(([0-9]+)\).*/\1/g');CLM_OFF_HEX=$$(((($$FW_LEN + 511) & ~511) << 1));CLM_LEN=$$(grep CYW43_CLM_LEN $< | sed -r 's/.*\(([0-9]+)\).*/\1/g');CLM_LEN_HEX=$$(($$CLM_LEN << 1));printf "%s" "$${HEX_COMBINED:$$CLM_OFF_HEX:$$CLM_LEN_HEX}" | xxd -r -p > "$@"
