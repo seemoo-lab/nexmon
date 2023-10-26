@@ -9,6 +9,25 @@
 #define PAD     _XSTR(__LINE__)
 #endif
 
+struct wl_rxsts {
+    uint    pkterror;
+    uint    phytype;
+    uint16  chanspec;
+    uint16  datarate;
+    uint8   mcs;
+    uint8   htflags;
+    uint    antenna;
+    uint    pktlength;
+    uint32  mactime;
+    uint    sq;
+    int32   signal;
+    int32   noise;
+    uint    preamble;
+    uint    encoding;
+    uint    nfrmtype;
+    struct wl_if *wlif;
+} __attribute__((packed));
+
 struct sk_buff {
     union {                         /* 0x000 */
         uint32  u32;
@@ -953,6 +972,47 @@ struct wlc_hw_info {
     uint32 PAD;                       /* 0x168 */
 } __attribute__((packed));
 
+struct wlc_if_stats {
+    /* transmit stat counters */
+    uint32  txframe;        /* tx data frames */
+    uint32  txbyte;         /* tx data bytes */
+    uint32  txerror;        /* tx data errors (derived: sum of others) */
+    uint32  txnobuf;        /* tx out of buffer errors */
+    uint32  txrunt;         /* tx runt frames */
+    uint32  txfail;         /* tx failed frames */
+    uint32  rxframe;        /* rx data frames */
+    uint32  rxbyte;         /* rx data bytes */
+    uint32  rxerror;        /* rx data errors (derived: sum of others) */
+    uint32  rxnobuf;        /* rx out of buffer errors */
+    uint32  rxrunt;         /* rx runt frames */
+    uint32  rxfragerr;      /* rx fragment errors */
+    uint32  txretry;        /* tx retry frames */
+    uint32  txretrie;       /* tx multiple retry frames */
+    uint32  txfrmsnt;       /* tx sent frames */
+    uint32  txmulti;        /* tx mulitcast sent frames */
+    uint32  txfrag;         /* tx fragments sent */
+    uint32  rxmulti;        /* rx multicast frames */
+};
+
+struct wl_if {
+    struct wlc_if *wlcif;
+    struct hndrte_dev *dev;
+};
+
+struct wlc_if {
+    struct wlc_if    *next;
+    uint8       type;
+    uint8       index;
+    uint8       flags;
+    struct wl_if     *wlif;
+    void *qi;
+    union {
+        struct scb *scb;
+        struct wlc_bsscfg *bsscfg;
+    } u;
+    struct wlc_if_stats  _cnt;
+};
+
 struct wlc_info {
     void *pub;                        /* 0x000 */
     void *osh;                        /* 0x004 */
@@ -1083,7 +1143,7 @@ struct wlc_info {
     uint32 PAD;                       /* 0x1f8 */
     uint32 PAD;                       /* 0x1fc */
     uint32 PAD;                       /* 0x200 */
-    uint32 PAD;                       /* 0x204 */
+    uint32 monitor;                   /* 0x204 */
     uint32 PAD;                       /* 0x208 */
     uint32 PAD;                       /* 0x20c */
     uint32 PAD;                       /* 0x210 */
@@ -1320,7 +1380,7 @@ struct wlc_info {
     uint32 PAD;                       /* 0x5ac */
     uint32 PAD;                       /* 0x5b0 */
     uint32 PAD;                       /* 0x5b4 */
-    uint32 PAD;                       /* 0x5b8 */
+    struct wlc_if *wlcif_list;        /* 0x5b8 */
     uint32 PAD;                       /* 0x5bc */
     uint32 PAD;                       /* 0x5c0 */
     uint32 PAD;                       /* 0x5c4 */
