@@ -87,12 +87,18 @@ struct phy_pub {
     uint32 PAD;                       /* 0x018 */
 } __attribute__((packed));
 
+struct wlc_phy_shim_info {
+    struct wlc_hw_info *wlc_hw;       /* 0x000 */
+    void *wlc;                        /* 0x004 */
+    void *wl;                         /* 0x008 */
+} __attribute__((packed));
+
 struct shared_phy {
     struct phy_info *phy_head;        /* 0x000 */
     uint32 unit;                      /* 0x004 */
     struct osl_info *osh;             /* 0x008 */
     void *sih;                        /* 0x00c */
-    void *physhim;                    /* 0x010 */
+    struct wlc_phy_shim_info *physhim;/* 0x010 */
     uint32 corerev;                   /* 0x014 */
     uint32 machwcap;                  /* 0x018 */
     uint32 PAD;                       /* 0x01c */
