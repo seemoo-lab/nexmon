@@ -298,6 +298,7 @@ AT(CHIP_VER_BCM43451b1, FW_VER_ALL, 0x24b8)
 AT(CHIP_VER_BCM43455, FW_VER_ALL, 0x37E8)
 AT(CHIP_VER_BCM43455c0, FW_VER_ALL, 0x37e8)
 AT(CHIP_VER_BCM43436b0, FW_VER_ALL, 0x8042DC)
+AT(CHIP_VER_BCM43439a0, FW_VER_ALL, 0x8070AC)
 void *
 memset(void *dst, int value, int len)
 RETURN_DUMMY
@@ -708,6 +709,11 @@ AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x45200)
 AT(CHIP_VER_BCM43455c0, FW_VER_ALL, 0x4A8CC)
 void
 wlc_bmac_write_template_ram(void *wlc_hw, int offset, int len, void *buf)
+VOID_DUMMY
+
+AT(CHIP_VER_BCM43439a0, FW_VER_ALL, 0x84FA30)
+void
+wlc_bmac_templateptr_wreg(void *wlc_hw, int offset)
 VOID_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8CBFC)
@@ -1238,6 +1244,7 @@ udelay(int a1)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4375b1, FW_VER_ALL, 0x142240)
+AT(CHIP_VER_BCM43439a0, FW_VER_ALL, 0x80BAB4)
 void
 hnd_delay(uint32 us)
 VOID_DUMMY
