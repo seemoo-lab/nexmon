@@ -983,7 +983,13 @@ wlc_ucode_write_compressed(struct wlc_hw_info *wlc_hw, const int ucode[], const 
 
     /**** Call tinflate_partial() to do the actual decompression. ****/
     int res = tinflate_partial(ucode_compressed_bin, ucode_compressed_bin_len,
-        wlc_hw, 100000, 0, &state, sizeof(state), tinflate_write_objmem, tinflate_read_objmem);
+        wlc_hw,
+#ifdef TINFLATE_OUTPUT_SIZE
+        TINFLATE_OUTPUT_SIZE,
+#else
+        100000,
+#endif
+        0, &state, sizeof(state), tinflate_write_objmem, tinflate_read_objmem);
     printf("Decompression res:%d\n", res);
     
 }
@@ -1004,7 +1010,13 @@ wlc_ucode_write_compressed_args(struct wlc_hw_info *wlc_hw, const int ucode[], c
 
     /**** Call tinflate_partial() to do the actual decompression. ****/
     tinflate_partial(ucode, nbytes,
-        wlc_hw, 100000, 0, &state, sizeof(state), tinflate_write_objmem, tinflate_read_objmem);
+        wlc_hw,
+#ifdef TINFLATE_OUTPUT_SIZE
+        TINFLATE_OUTPUT_SIZE,
+#else
+        100000,
+#endif
+        0, &state, sizeof(state), tinflate_write_objmem, tinflate_read_objmem);
 }
 
 void
@@ -1023,5 +1035,11 @@ wlc_ucodex_write_compressed_args(struct wlc_hw_info *wlc_hw, const int ucodex[],
 
     /**** Call tinflate_partial() to do the actual decompression. ****/
     tinflate_partial(ucodex, nbytes,
-        wlc_hw, 100000, 0, &state, sizeof(state), tinflate_write_objmemx, tinflate_read_objmemx);
+        wlc_hw,
+#ifdef TINFLATE_OUTPUT_SIZE
+        TINFLATE_OUTPUT_SIZE,
+#else
+        100000,
+#endif
+        0, &state, sizeof(state), tinflate_write_objmemx, tinflate_read_objmemx);
 }
