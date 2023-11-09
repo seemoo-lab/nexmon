@@ -50,9 +50,14 @@ wlc_doioctl_hook(void *wlc, int cmd, char *arg, int len, void *wlc_if)
 
         case NEX_GET_CONSOLE:
         {
+            uint32 offset, read_len;
             struct hnd_debug *hnd_debug = (struct hnd_debug *)hnd_debug_info_get();
-            if (len > 0) {
-                memcpy(arg, hnd_debug->console->buf, len);
+            if (len >= sizeof(uint32)) {
+                offset = *(uint32 *)arg;
+                if (offset >= hnd_debug->console->buf_size)
+                    break;
+                read_len = ((offset + len) >= hnd_debug->console->buf_size) ? (hnd_debug->console->buf_size - offset) : len;
+                memcpy(arg, hnd_debug->console->buf + offset, read_len);
                 ret = IOCTL_SUCCESS;
             }
             break;
