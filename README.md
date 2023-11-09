@@ -39,6 +39,7 @@ bcm4335b0                 | 6.30.171.1_sta       | Samsung Galaxy S4         | L
 bcm4339                   | 6_37_34_43           | Nexus 5                   | Android 6 Stock              |  X  |  X  |  X  |  X  |  X  |  O 
 bcm43430a1<sup>1</sup>    | 7_45_41_26           | Raspberry Pi 3 and Zero W | Raspbian 8                   |  X  |  X  |  X  |  X  |  X  |  O 
 bcm43430a1<sup>1</sup>    | 7_45_41_46           | Raspberry Pi 3 and Zero W | Raspbian Stretch             |  X  |  X  |  X  |  X  |  X  |  O 
+bcm43439a0<sup>7</sup>    | 7_95_49 (2271bb6 CY) | Raspberry Pi Pico W       | Pico SDK                     |  X  |  X  |     |  X  |  X  |    
 bcm43451b1                | 7_63_43_0            | iPhone 6                  | iOS 10.1.1 (14B100)          |     |     |     |  X  |  X  |    
 bcm43455                  | 7_45_77_0_hw         | Huawei P9                 | Android 7 Stock              |  X  |  X  |  X  |  X  |  X  |    
 bcm43455                  | 7_120_5_1_sta_C0     | Galaxy J7 2017            | ?                            |     |     |     |  X  |  X  |    
@@ -57,6 +58,8 @@ bcm43596a0<sup>3</sup>    | 9_75_155_45_sta_c0   | Samsung Galaxy S7         | A
 bcm43596a0<sup>3,2</sup>  | 9_96_4_sta_c0        | Samsung Galaxy S7         | LineageOS 14.1               |  X  |  X  |  X  |  O  |  X  |    
 bcm4375b1<sup>3,5,6</sup> | 18_38_18_sta         | Samsung Galaxy S10        | Rooted + disabled SELinux    |  X  |  X  |  X  |  O  |  X  |    
 bcm4375b1<sup>3,5,6</sup> | 18_41_8_9_sta        | Samsung Galaxy S20        | Rooted + disabled SELinux    |  X  |  X  |  X  |  O  |  X  |    
+bcm4389c1<sup>5,8,9</sup> | 20_101_36_2 (r994653)| Google Pixel 7 and 7 Pro  | Rooted with [Magisk](https://github.com/topjohnwu/Magisk)           |     |     |     |  X  |  X  |    
+bcm4398d0<sup>5,8,9</sup> | 24_671_6_9 (r1031525)| Google Pixel 8            | Rooted with [Magisk](https://github.com/topjohnwu/Magisk)           |     |     |     |  X  |  X  |    
 qca9500<sup>4</sup>       | 4-1-0_55             | TP-Link Talon AD7200      | Custom LEDE Image            |     |     |     |     |     |    
 
 <sup>1</sup> bcm43430a1 was wrongly labeled bcm43438 in the past.
@@ -70,6 +73,12 @@ qca9500<sup>4</sup>       | 4-1-0_55             | TP-Link Talon AD7200      | C
 <sup>5</sup> Disabled the execution protection (called Execute Never) on region 1, because it interferes with the nexmon code (Permission fault on Section)
 
 <sup>6</sup> To use nexutil, you need to deactivate SELinux or set it to permissive
+
+<sup>7</sup> See [pico-nexmon](https://github.com/seemoo-lab/pico-nexmon) for example applications using Pico SDK with nexmon.
+
+<sup>8</sup> flash patches need to be 16 bytes long and aligned on a 16 byte boundary.
+
+<sup>9</sup> Uses [Magisk](https://github.com/topjohnwu/Magisk) module to install firmware, nexutil, and set SELinux policies.
 
 ## Legend
 - M = Monitor Mode
