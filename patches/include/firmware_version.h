@@ -56,6 +56,7 @@
 #define CHIP_VER_BCM4389c1                108
 #define CHIP_VER_BCM43439a0               109
 #define CHIP_VER_BCM4398d0               1001
+#define CHIP_VER_BCM6715b0               1002
 
 #define FW_VER_ALL                          0
 
@@ -138,5 +139,8 @@
 
 // for CHIP_VER_BCM4398d0
 #define FW_VER_24_671_6_9_r1031525        1010
+
+// define CHIP_VER_BCM6715b0
+#define FW_VER_17_10_188_6401_r808804_ax86upro 1020
 
 #endif /*FIRMWARE_VERSION_H*/
