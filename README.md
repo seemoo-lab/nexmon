@@ -58,6 +58,7 @@ bcm43596a0<sup>3</sup>    | 9_75_155_45_sta_c0   | Samsung Galaxy S7         | A
 bcm43596a0<sup>3,2</sup>  | 9_96_4_sta_c0        | Samsung Galaxy S7         | LineageOS 14.1               |  X  |  X  |  X  |  O  |  X  |    
 bcm4375b1<sup>3,5,6</sup> | 18_38_18_sta         | Samsung Galaxy S10        | Rooted + disabled SELinux    |  X  |  X  |  X  |  O  |  X  |    
 bcm4375b1<sup>3,5,6</sup> | 18_41_8_9_sta        | Samsung Galaxy S20        | Rooted + disabled SELinux    |  X  |  X  |  X  |  O  |  X  |    
+bcm4389c1<sup>5,8,9</sup> | 20_82_42_sta (r994653) | Samsung Galaxy S22 Plus | Android 14, Rooted with [Magisk](https://github.com/topjohnwu/Magisk)           |     |     |     |  X  |  X  |    
 bcm4389c1<sup>5,8,9</sup> | 20_101_36_2 (r994653)| Google Pixel 7 and 7 Pro  | Rooted with [Magisk](https://github.com/topjohnwu/Magisk)           |     |     |     |  X  |  X  |    
 bcm4398d0<sup>5,8,9</sup> | 24_671_6_9 (r1031525)| Google Pixel 8            | Rooted with [Magisk](https://github.com/topjohnwu/Magisk)           |     |     |     |  X  |  X  |    
 bcm6715b0<sup>5</sup> | 17_10_188_6401 (r808804)| Asus RT-AX86U Pro | Stock firmware 3.0.0.4_388.23565 |     |     |     |  /  |  X  |    
