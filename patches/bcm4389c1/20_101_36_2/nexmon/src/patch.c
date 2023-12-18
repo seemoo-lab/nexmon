@@ -70,7 +70,7 @@ GenericPatch4(ucode1_len, &ucode1_compressed_bin_len);
 __attribute__((at(UCODE2START_PTR, "", CHIP_VER_ALL, FW_VER_ALL)))
 GenericPatch4(ucode2_start, ucode2_compressed_bin);
 __attribute__((at(UCODE2SIZE_PTR, "", CHIP_VER_ALL, FW_VER_ALL)))
-GenericPatch4(ucode2_len, &ucode_compressed_bin_len);
+GenericPatch4(ucode2_len, &ucode2_compressed_bin_len);
 
 // Moving template ram to another place in the ucode region
 __attribute__((at(TEMPLATERAM0START_PTR, "", CHIP_VER_ALL, FW_VER_ALL)))
