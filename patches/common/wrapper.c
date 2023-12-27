@@ -2040,6 +2040,11 @@ int
 wlc_bmac_process_ucode_sr(void *wlc_hw)
 RETURN_DUMMY
 
+AT(CHIP_VER_BCM4366c0, FW_VER_ALL, 0xA1E48)
+void
+wlc_phy_get_rxgain_acphy(void *pi, void *rxgain, int16 *tot_gain, uint8 force_gain_type)
+VOID_DUMMY
+
 #undef VOID_DUMMY
 #undef RETURN_DUMMY
 #undef AT
