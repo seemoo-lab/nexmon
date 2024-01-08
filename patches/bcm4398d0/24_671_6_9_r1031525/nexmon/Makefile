@@ -59,7 +59,7 @@ nexmon-magisk/system/bin:
 
 nexmon-magisk/system/bin/nexutil: $(NEXMON_ROOT)/utilities/nexutil nexmon-magisk/system/bin
 	@printf "\033[0;31m  BUILDING\033[0m nexutil %s\n" $@
-	$(Q)make -C $<
+	$(Q)make APP_ABI=arm64-v8a -C $<
 	$(Q)cp $(NEXMON_ROOT)/utilities/nexutil/libs/arm64-v8a/nexutil $@
 
 nexmon-magisk.zip: $(RAM_FILE) nexmon-magisk nexmon-magisk/system/bin/nexutil nexmon-magisk/system/vendor/firmware
