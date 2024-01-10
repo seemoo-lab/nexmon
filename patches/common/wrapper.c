@@ -385,6 +385,7 @@ pkt_buf_get_skb(void *osh, unsigned int len)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4375b1, FW_VER_18_41_113_sta, 0x186E58)
+AT(CHIP_VER_BCM4389c1, FW_VER_ALL, 0x160DC)
 void *
 hnd_pkt_get(void *osh, uint len)
 RETURN_DUMMY
@@ -408,6 +409,7 @@ pkt_buf_free_skb(void *osh, void *p, int send)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4375b1, FW_VER_18_41_113_sta, 0x186EC8)
+AT(CHIP_VER_BCM4389c1, FW_VER_ALL, 0x1A19B0)
 void
 hnd_pkt_free(void *osh, void* p, bool send)
 VOID_DUMMY
@@ -703,6 +705,7 @@ AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_26_r640327, 0x1BEAC)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x1C0F8)
 AT(CHIP_VER_BCM43436b0, FW_VER_9_88_4_65, 0x1B242)
 AT(CHIP_VER_BCM43439a0, FW_VER_ALL, 0x84F3E0)
+AT(CHIP_VER_BCM4389c1, FW_VER_ALL, 0x1A0FB0)
 void
 wlc_bmac_read_tsf(void *wlc_hw, unsigned int *tsf_l_ptr, unsigned int *tsf_h_ptr)
 VOID_DUMMY
