@@ -747,7 +747,7 @@ struct wlc_cmn_info {
 
 struct wlc_info {
     struct wlc_pub *pub;              /* 0x000 */
-    uint32 PAD;                       /* 0x004 */
+    void *osh;                        /* 0x004 */
     struct wl_info *wl;               /* 0x008 */
     struct wlc_cmn_info *cmn;         /* 0x00c */
     uint32 PAD;                       /* 0x010 */
@@ -1246,7 +1246,10 @@ struct hnd_dev {
     char name[16];                    /* 0x000 */
     uint32 devid;                     /* 0x010 */
     uint32 flags;                     /* 0x014 */
-    struct hnd_dev_ops *ops;          /* 0x018 */
+    union {
+        struct hnd_dev_ops *ops;          /* 0x018 */
+        struct hnd_dev_ops *funcs;        /* 0x018 */
+    };
     void *softc;                      /* 0x01c */
     struct hnd_dev *next;             /* 0x020 */
     struct hnd_dev *chained;          /* 0x024 */
