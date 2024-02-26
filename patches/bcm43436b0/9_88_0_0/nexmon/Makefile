@@ -1,5 +1,5 @@
-SHELL = /bin/bash
 GIT_VERSION := $(shell git describe --abbrev=4 --dirty --always --tags)
+SHELL := /bin/bash
 include ../version.mk
 include $(FW_PATH)/definitions.mk
 
@@ -9,20 +9,23 @@ FW_SRCS=$(wildcard $(FW_PATH)/*.c)
 
 OBJS=$(addprefix obj/,$(notdir $(LOCAL_SRCS:.c=.o)) $(notdir $(COMMON_SRCS:.c=.o)) $(notdir $(FW_SRCS:.c=.o)))
 
-KERNEL_VERSION = $(shell uname -r | sed 's/\([0-9]\+\.[0-9]\+\)\..*/\1/')
-DRIVER_FOLDER_NAME = $(NEXMON_ROOT)/patches/driver/brcmfmac_$(KERNEL_VERSION).y-nexmon
-
 CFLAGS= \
 	-fplugin=$(CCPLUGIN) \
 	-fplugin-arg-nexmon-objfile=$@ \
 	-fplugin-arg-nexmon-prefile=gen/nexmon.pre \
 	-fplugin-arg-nexmon-chipver=$(NEXMON_CHIP_NUM) \
 	-fplugin-arg-nexmon-fwver=$(NEXMON_FW_VERSION_NUM) \
+	-fno-strict-aliasing \
 	-DNEXMON_CHIP=$(NEXMON_CHIP) \
 	-DNEXMON_FW_VERSION=$(NEXMON_FW_VERSION) \
 	-DWLC_UCODE_WRITE_BL_HOOK_ADDR=$(WLC_UCODE_WRITE_BL_HOOK_ADDR) \
+	-DUCODESTART_PTR=$(UCODESTART_PTR) \
+	-DUCODESIZE_PTR=$(UCODESIZE_PTR) \
 	-DHNDRTE_RECLAIM_0_END_PTR=$(HNDRTE_RECLAIM_0_END_PTR) \
 	-DTEMPLATERAMSTART_PTR=$(TEMPLATERAMSTART_PTR) \
+	-DVASIPSTART_PTR=$(VASIPSTART_PTR) \
+	-DFP_CONFIG_ORIGBASE=$(FP_CONFIG_ORIGBASE) \
+	-DFP_CONFIG_ORIGEND=$(FP_CONFIG_ORIGEND) \
 	-DPATCHSTART=$(PATCHSTART) \
 	-DUCODESIZE=$(UCODESIZE) \
 	-DGIT_VERSION=\"$(GIT_VERSION)\" \
@@ -33,7 +36,7 @@ CFLAGS= \
 	-Iinclude \
 	-I$(FW_PATH)
 
-all: $(RAM_FILE) fw_bcmdhd.bin
+all: $(RAM_FILE)
 
 init: FORCE
 	$(Q)if ! test -f BUILD_NUMBER; then echo 0 > BUILD_NUMBER; fi
@@ -41,24 +44,6 @@ init: FORCE
 	$(Q)touch src/version.c
 	$(Q)make -s -f $(NEXMON_ROOT)/patches/common/header.mk
 	$(Q)mkdir -p obj gen log
-
-fw_bcmdhd.bin: check-nexmon-setup-env
-ifneq ("$(wildcard $(DRIVER_FOLDER_NAME))", "")
-ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
-	@printf "\033[0;31m  BUILDING DRIVER for kernel $(KERNEL_VERSION)\033[0m fw_bcmdhd_$(KERNEL_VERSION).y-nexmon/fw_bcmdhd.bin (details: log/driver.log)\n" $@
-	$(Q)mkdir -p log
-	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$(DRIVER_FOLDER_NAME) -j4 >log/driver.log
-else ifeq ($(shell uname -m),$(filter $(shell uname -m), aarch64))
-	@printf "\033[0;31m  BUILDING DRIVER for kernel $(KERNEL_VERSION)\033[0m brcmfmac_$(KERNEL_VERSION).y-nexmon/fw_bcmdhd.bin (details: log/driver.log)\n" $@
-	$(Q)mkdir -p log
-	$(Q)ARCH="arm64" make -C /lib/modules/$(shell uname -r)/build M=$(DRIVER_FOLDER_NAME) -j2 >log/driver.log
-else
-	$(warning Warning: Driver can not be compiled on this platform, execute the make command on a raspberry pi)
-endif
-else
-	$(warning Warning: Driver for kernel $(KERNEL_VERSION) not found)
-endif
-
 
 obj/%.o: src/%.c
 	@printf "\033[0;31m  COMPILING\033[0m %s => %s (details: log/compiler.log)\n" $< $@
@@ -75,30 +60,35 @@ obj/%.o: $(FW_PATH)/%.c
 	$(Q)cat gen/nexmon.pre 2>>log/error.log | gawk '{ if ($$3 != "$@") print; }' > tmp && mv tmp gen/nexmon.pre
 	$(Q)$(CC)gcc $(CFLAGS) -c $< -o $@ >>log/compiler.log
 
-gen/nexmon.ld: $(OBJS)
-	@printf "\033[0;31m  GENERATING LINKER FILE\033[0m gen/nexmon.pre => %s\n" $@
-	$(Q)sort gen/nexmon.pre | gawk -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.ld.awk > $@
+gen/nexmon2.pre: $(OBJS)
+	@printf "\033[0;31m  PREPARING\033[0m %s => %s\n" "gen/nexmon.pre" $@
+	$(Q)cat gen/nexmon.pre | awk '{ if ($$3 != "obj/flashpatches.o" && $$3 != "obj/wrapper.o" && $$3 != "obj/local_wrapper.o") { print $$0; } }' > tmp
+	$(Q)cat gen/nexmon.pre | awk '{ if ($$3 == "obj/flashpatches.o" || $$3 == "obj/wrapper.o" || $$3 == "obj/local_wrapper.o") { print $$0; } }' >> tmp
+	$(Q)cat tmp | awk '{ if ($$1 ~ /^0x/) { if ($$3 != "obj/flashpatches.o" && $$3 != "obj/wrapper.o" && $$3 != "obj/local_wrapper.o") { if (!x[$$1]++) { print $$0; } } else { if (!x[$$1]) { print $$0; } } } else { print $$0; } }' > gen/nexmon2.pre
 
-gen/nexmon.mk: $(OBJS) $(FW_PATH)/definitions.mk
+gen/nexmon.ld: gen/nexmon2.pre $(OBJS)
+	@printf "\033[0;31m  GENERATING LINKER FILE\033[0m gen/nexmon.pre => %s\n" $@
+	$(Q)sort gen/nexmon2.pre | gawk -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.ld.awk > $@
+
+gen/nexmon.mk: gen/nexmon2.pre $(OBJS) $(FW_PATH)/definitions.mk
 	@printf "\033[0;31m  GENERATING MAKE FILE\033[0m gen/nexmon.pre => %s\n" $@
 	$(Q)printf "$(RAM_FILE): gen/patch.elf FORCE\n" > $@
-	$(Q)sort gen/nexmon.pre | \
+	$(Q)sort gen/nexmon2.pre | \
 		gawk -v src_file=gen/patch.elf -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.mk.1.awk | \
 		gawk -v ramstart=$(RAMSTART) -f $(NEXMON_ROOT)/buildtools/scripts/nexmon.mk.2.awk >> $@
 	$(Q)printf "\nFORCE:\n" >> $@
 	$(Q)gawk '!a[$$0]++' $@ > tmp && mv tmp $@
 
-gen/flashpatches.ld: $(OBJS)
+gen/flashpatches.ld: gen/nexmon2.pre $(OBJS)
 	@printf "\033[0;31m  GENERATING LINKER FILE\033[0m gen/nexmon.pre => %s\n" $@
-	$(Q)sort gen/nexmon.pre | \
+	$(Q)sort gen/nexmon2.pre | \
 		gawk -f $(NEXMON_ROOT)/buildtools/scripts/flashpatches.ld.awk > $@
 
-gen/flashpatches.mk: $(OBJS) $(FW_PATH)/definitions.mk
+gen/flashpatches.mk: gen/nexmon2.pre $(OBJS) $(FW_PATH)/definitions.mk
 	@printf "\033[0;31m  GENERATING MAKE FILE\033[0m gen/nexmon.pre => %s\n" $@
-	$(Q)cat gen/nexmon.pre | gawk \
+	$(Q)cat gen/nexmon2.pre | gawk \
 		-v fp_data_base=$(FP_DATA_BASE) \
 		-v fp_config_base=$(FP_CONFIG_BASE) \
-		-v fp_data_end_ptr=$(FP_DATA_END_PTR) \
 		-v fp_config_base_ptr_1=$(FP_CONFIG_BASE_PTR_1) \
 		-v fp_config_end_ptr_1=$(FP_CONFIG_END_PTR_1) \
 		-v fp_config_base_ptr_2=$(FP_CONFIG_BASE_PTR_2) \
@@ -106,14 +96,14 @@ gen/flashpatches.mk: $(OBJS) $(FW_PATH)/definitions.mk
 		-v ramstart=$(RAMSTART) \
 		-v out_file=$(RAM_FILE) \
 		-v src_file=gen/patch.elf \
-		-f $(NEXMON_ROOT)/buildtools/scripts/flashpatches.bcm43596.mk.awk > $@
+		-f $(NEXMON_ROOT)/buildtools/scripts/flashpatches.bcm4375.mk.awk > $@
 
 gen/memory.ld: $(FW_PATH)/definitions.mk
 	@printf "\033[0;31m  GENERATING LINKER FILE\033[0m %s\n" $@
 	$(Q)printf "rom : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $(ROMSTART) $(ROMSIZE) > $@
 	$(Q)printf "ram : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $(RAMSTART) $(RAMSIZE) >> $@
 	$(Q)printf "patch : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $(PATCHSTART) $(PATCHSIZE) >> $@
-	$(Q)printf "ucode : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $(UCODESTART) $$(($(UCODESIZE) - $(PATCHSIZE))) >> $@
+	$(Q)printf "ucode : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $(UCODESTART) $$(($(FP_CONFIG_BASE) - $(UCODESTART))) >> $@
 	$(Q)printf "fpconfig : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $(FP_CONFIG_BASE) $(FP_CONFIG_SIZE) >> $@
 
 gen/patch.elf: patch.ld gen/nexmon.ld gen/flashpatches.ld gen/memory.ld $(OBJS)
@@ -127,33 +117,21 @@ $(RAM_FILE): init gen/patch.elf $(FW_PATH)/$(RAM_FILE) gen/nexmon.mk gen/flashpa
 	@printf "\033[0;31m  APPLYING PATCHES\033[0m gen/nexmon.mk => %s (details: log/patches.log)\n" $@
 	$(Q)make -f gen/nexmon.mk >>log/patches.log 2>>log/flashpatches.log
 
-gen/dummy.idc: $(RAM_FILE)
-	@printf "\033[0;31m  GENERATING IDC FILE\033[0m gen/nexmon.pre => %s\n" $@
-	$(Q)cat gen/nexmon.pre | gawk 'BEGIN { printf "#import <idc.idc>\n\nstatic main() {\n" } { if (!seen[$$0]++ && $$2 == "DUMMY") { printf "\tMakeName(%s,\"%s\");\n",$$1,$$4 }; } END { printf "}\n" }' > $@
+fw_bcm43436b0.complete.clean.bin: $(FW_PATH)/$(RAM_FILE) $(FW_PATH)/$(ROM_FILE)
+	dd if=$(FW_PATH)/$(ROM_FILE) of=$@ bs=1 status=none conv=notrunc seek=$$(($(ROMSTART)))
+	dd if=$< of=$@ bs=1 status=none conv=notrunc seek=$$(($(RAMSTART)))
+
+fw_bcm43436b0.complete.bin: $(RAM_FILE) $(FW_PATH)/$(ROM_FILE)
+	dd if=$(FW_PATH)/$(ROM_FILE) of=$@ bs=1 status=none conv=notrunc seek=$$(($(ROMSTART)))
+	dd if=$< of=$@ bs=1 status=none conv=notrunc seek=$$(($(RAMSTART)))
 
 ###################################################################
 # ucode compression related
 ###################################################################
 
-gen/ucode.asm: $(FW_PATH)/ucode.bin
-	$(NEXMON_ROOT)/buildtools/b43/disassembler/b43-dasm $< $@ --arch 15 --format raw-le32
-#	$(NEXMON_ROOT)/buildtools/b43/debug/b43-beautifier --asmfile $@ --defs $(NEXMON_ROOT)/buildtools/b43/debug/include > tmp && mv tmp $@
-
-ifneq ($(wildcard src/ucode.asm), )
-gen/ucode.bin: src/ucode.asm
-	@printf "\033[0;31m  ASSEMBLING UCODE\033[0m %s => %s\n" $< $@
-
-ifneq ($(wildcard $(NEXMON_ROOT)/buildtools/b43/assembler/b43-asm.bin), )
-	$(Q)PATH=$(PATH):$(NEXMON_ROOT)/buildtools/b43/assembler $(NEXMON_ROOT)/buildtools/b43/assembler/b43-asm $< $@ --format raw-le32
-else
-	$(error Warning: please compile b43-asm.bin first)
-endif
-
-else
 gen/ucode.bin: $(FW_PATH)/ucode.bin
 	@printf "\033[0;31m  COPYING UCODE\033[0m %s => %s\n" $< $@
 	$(Q)cp $< $@
-endif
 
 gen/ucode_compressed.bin: gen/ucode.bin
 	@printf "\033[0;31m  COMPRESSING UCODE\033[0m %s => %s\n" $< $@
@@ -169,6 +147,11 @@ src/templateram.c: $(FW_PATH)/templateram.bin
 	$(Q)printf "#pragma NEXMON targetregion \"ucode\"\n\n" > $@
 	$(Q)cd $(dir $<) && xxd -i $(notdir $<) >> $(shell pwd)/$@
 
+src/vasip.c: $(FW_PATH)/vasip.bin
+	@printf "\033[0;31m  GENERATING C FILE\033[0m %s => %s\n" $< $@
+	$(Q)printf "#pragma NEXMON targetregion \"ucode\"\n\n" > $@
+	$(Q)cd $(dir $<) && xxd -i $(notdir $<) >> $(shell pwd)/$@
+
 ###################################################################
 
 check-nexmon-setup-env:
@@ -176,43 +159,30 @@ ifndef NEXMON_SETUP_ENV
 	$(error run 'source setup_env.sh' first in the repository\'s root directory)
 endif
 
-backup-firmware:
-ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l aarch64))
-	cp /lib/firmware/brcm/$(RAM_FILE) $(RAM_FILE).orig
-else
-	$(warning Warning: Cannot backup the original firmware on this arch.)
-endif
+dump-rom: FORCE
+	@printf "\033[0;31m  DUMPING ROM TO\033[0m /var/root/romdump.bin\n"
+	adb shell "su -c 'nexutil -g0x602 -l1024 -i -v0x0 -r'" > rom.bin && for n in {1..1343}; do adb shell "su -c 'nexutil -g0x602 -l1024 -i -v$$(($$n*1024)) -r'" >> rom.bin; done
 
-install-firmware: $(RAM_FILE) brcmfmac.ko
-ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l aarch64))
-	@printf "\033[0;31m  COPYING\033[0m $(RAM_FILE) => /lib/firmware/brcm/$(RAM_FILE)\n"
-	$(Q)cp $(RAM_FILE) /lib/firmware/brcm/$(RAM_FILE)
-ifneq ("$(wildcard $(DRIVER_FOLDER_NAME)/brcmfmac.ko)", "")
-ifeq ($(shell lsmod | grep "^brcmfmac" | wc -l), 1)
-	@printf "\033[0;31m  UNLOADING\033[0m brcmfmac\n"
-	$(Q)rmmod brcmfmac
-endif
-	$(Q)modprobe brcmutil
-	@printf "\033[0;31m  RELOADING\033[0m brcmfmac\n"
-	$(Q)insmod $(DRIVER_FOLDER_NAME)/brcmfmac.ko
-else
-	$(warning Warning: Driver not compiled)
-endif
-else
-	$(warning Warning: Cannot install firmware on this arch, $(RAM_FILE) needs to be copied manually into /lib/firmware/brcm/ on your RPI3)
-endif
+install-firmware: $(RAM_FILE)
+	@printf "\033[0;31m  REMOUNTING /system\033[0m\n"
+	$(Q)adb shell 'su -c "mount -o rw,remount /vendor"'
+	@printf "\033[0;31m  COPYING TO PHONE\033[0m %s => /sdcard/%s\n" $< $<
+	$(Q)adb push $< /sdcard/ >> log/adb.log 2>> log/adb.log
+	@printf "\033[0;31m  COPYING\033[0m /sdcard/$(RAM_FILE) => /vendor/firmware/$(RAM_FILE)\n"
+	$(Q)adb shell 'su -c "cp /sdcard/$(RAM_FILE) /vendor/firmware/$(RAM_FILE)"'
+	@printf "\033[0;31m  RELOADING FIRMWARE\033[0m\n"
+	$(Q)adb shell 'su -c "ifconfig wlan0 down && ifconfig wlan0 up"'
+
+install-remote: $(RAM_FILE)
+	scp $(RAM_FILE) s20:~
+	ssh s20 "cp bcmdhd_sta.bin_b1 /data/tmpfs/"
+#	ssh s20 "unchroot /data/tmpfs/install"
 
 clean-firmware: FORCE
 	@printf "\033[0;31m  CLEANING\033[0m\n"
-	$(Q)rm -fr $(RAM_FILE) obj gen log src/ucode_compressed.c src/templateram.c ucode_compressed.bin
+	$(Q)rm -fr $(RAM_FILE) obj gen log src/ucode_compressed.c src/templateram.c src/vasip.c
 
 clean: clean-firmware
-ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l aarch64))
-ifneq ("$(wildcard $(DRIVER_FOLDER_NAME))", "")
-	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
-	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$(DRIVER_FOLDER_NAME) clean
-endif
-endif
 	$(Q)rm -f BUILD_NUMBER
 
 FORCE:
