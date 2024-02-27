@@ -164,7 +164,7 @@ dump-rom: FORCE
 	adb shell "su -c 'nexutil -g0x602 -l1024 -i -v0x0 -r'" > rom.bin && for n in {1..1343}; do adb shell "su -c 'nexutil -g0x602 -l1024 -i -v$$(($$n*1024)) -r'" >> rom.bin; done
 
 install-firmware: $(RAM_FILE)
-	@printf "\033[0;31m  REMOUNTING /system\033[0m\n"
+	@printf "\033[0;31m  REMOUNTING /vendor\033[0m\n"
 	$(Q)adb shell 'su -c "mount -o rw,remount /vendor"'
 	@printf "\033[0;31m  COPYING TO PHONE\033[0m %s => /sdcard/%s\n" $< $<
 	$(Q)adb push $< /sdcard/ >> log/adb.log 2>> log/adb.log
