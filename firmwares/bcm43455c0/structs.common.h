@@ -173,6 +173,33 @@ struct wl_rxsts {
     uint32      ampdu_counter;      /* AMPDU counter for sniffer */
 } __attribute__((packed));
 
+struct wl_rxsts_0x40 {
+    uint32 pkterror;
+    uint32 phytype;
+    uint16 chanspec;
+    uint16 datarate;
+    uint8 mcs;
+    uint8 htflags;
+    uint32 antenna;
+    uint32 pktlength;
+    uint32 mactime;
+    uint32 sq;
+    int32 signal;
+    int32 noise;
+    uint32 preamble;
+    uint32 encoding;
+    uint32 nfrmtype;
+    uint8 nss;
+    uint8 coding;
+    uint16 aid;
+    uint8 gid;
+    uint8 bw;
+    uint16 vhtflags;
+    uint8 bw_nonht;
+    uint8 PAD;
+    uint32 ampdu_counter;
+} __attribute__((packed));
+
 /* status per error RX pkt */
 #define WL_RXS_CRC_ERROR        0x00000001 /* CRC Error in packet */
 #define WL_RXS_RUNT_ERROR       0x00000002 /* Runt packet */
@@ -1100,6 +1127,175 @@ struct wlc_info {
     uint hwrxoff;                       /* 0X5F4 */
     int PAD;                            /* 0X5F8 */
     int PAD;                            /* 0X5FC */
+    uint32 PAD;                       /* 0x600 */
+    uint32 PAD;                       /* 0x604 */
+    uint32 PAD;                       /* 0x608 */
+    uint32 PAD;                       /* 0x60c */
+    uint32 PAD;                       /* 0x610 */
+    uint32 PAD;                       /* 0x614 */
+    uint32 PAD;                       /* 0x618 */
+    uint32 PAD;                       /* 0x61c */
+    uint32 PAD;                       /* 0x620 */
+    uint32 PAD;                       /* 0x624 */
+    uint32 PAD;                       /* 0x628 */
+    uint32 PAD;                       /* 0x62c */
+    uint32 PAD;                       /* 0x630 */
+    uint32 PAD;                       /* 0x634 */
+    uint32 PAD;                       /* 0x638 */
+    uint32 PAD;                       /* 0x63c */
+    uint32 PAD;                       /* 0x640 */
+    uint32 PAD;                       /* 0x644 */
+    uint32 PAD;                       /* 0x648 */
+    uint32 PAD;                       /* 0x64c */
+    uint32 PAD;                       /* 0x650 */
+    uint32 PAD;                       /* 0x654 */
+    uint32 PAD;                       /* 0x658 */
+    uint32 PAD;                       /* 0x65c */
+    uint32 monitor_ampdu_rspec;       /* 0x660 */
+    void *monitor_amsdu_pkts;         /* 0x664 */
+    uint32 monitor_ampdu_counter;     /* 0x668 */
+    uint32 PAD;                       /* 0x66c */
+    uint32 PAD;                       /* 0x670 */
+    uint32 PAD;                       /* 0x674 */
+    uint32 PAD;                       /* 0x678 */
+    uint32 PAD;                       /* 0x67c */
+    uint32 PAD;                       /* 0x680 */
+    uint32 PAD;                       /* 0x684 */
+    uint32 PAD;                       /* 0x688 */
+    uint32 PAD;                       /* 0x68c */
+    uint32 PAD;                       /* 0x690 */
+    uint32 PAD;                       /* 0x694 */
+    uint32 PAD;                       /* 0x698 */
+    uint32 PAD;                       /* 0x69c */
+    uint32 PAD;                       /* 0x6a0 */
+    uint32 PAD;                       /* 0x6a4 */
+    uint32 PAD;                       /* 0x6a8 */
+    uint32 PAD;                       /* 0x6ac */
+    uint32 PAD;                       /* 0x6b0 */
+    uint32 PAD;                       /* 0x6b4 */
+    uint32 PAD;                       /* 0x6b8 */
+    uint32 PAD;                       /* 0x6bc */
+    uint32 PAD;                       /* 0x6c0 */
+    uint32 PAD;                       /* 0x6c4 */
+    uint32 PAD;                       /* 0x6c8 */
+    uint32 PAD;                       /* 0x6cc */
+    uint32 PAD;                       /* 0x6d0 */
+    uint32 PAD;                       /* 0x6d4 */
+    uint32 PAD;                       /* 0x6d8 */
+    uint32 PAD;                       /* 0x6dc */
+    uint32 PAD;                       /* 0x6e0 */
+    uint32 PAD;                       /* 0x6e4 */
+    uint32 PAD;                       /* 0x6e8 */
+    uint32 PAD;                       /* 0x6ec */
+    uint32 PAD;                       /* 0x6f0 */
+    uint32 PAD;                       /* 0x6f4 */
+    uint32 PAD;                       /* 0x6f8 */
+    uint32 PAD;                       /* 0x6fc */
+    uint32 PAD;                       /* 0x700 */
+    uint32 PAD;                       /* 0x704 */
+    uint32 PAD;                       /* 0x708 */
+    uint32 PAD;                       /* 0x70c */
+    uint32 PAD;                       /* 0x710 */
+    uint32 PAD;                       /* 0x714 */
+    uint32 PAD;                       /* 0x718 */
+    uint32 PAD;                       /* 0x71c */
+    uint32 PAD;                       /* 0x720 */
+    uint32 PAD;                       /* 0x724 */
+    uint32 PAD;                       /* 0x728 */
+    uint32 PAD;                       /* 0x72c */
+    uint32 PAD;                       /* 0x730 */
+    uint32 PAD;                       /* 0x734 */
+    uint32 PAD;                       /* 0x738 */
+    uint32 PAD;                       /* 0x73c */
+    uint32 PAD;                       /* 0x740 */
+    uint32 PAD;                       /* 0x744 */
+    uint32 PAD;                       /* 0x748 */
+    uint32 PAD;                       /* 0x74c */
+    uint32 PAD;                       /* 0x750 */
+    uint32 PAD;                       /* 0x754 */
+    uint32 PAD;                       /* 0x758 */
+    uint32 PAD;                       /* 0x75c */
+    uint32 PAD;                       /* 0x760 */
+    uint32 PAD;                       /* 0x764 */
+    uint32 PAD;                       /* 0x768 */
+    uint32 PAD;                       /* 0x76c */
+    uint32 PAD;                       /* 0x770 */
+    uint32 PAD;                       /* 0x774 */
+    uint32 PAD;                       /* 0x778 */
+    uint32 PAD;                       /* 0x77c */
+    uint32 PAD;                       /* 0x780 */
+    uint32 PAD;                       /* 0x784 */
+    uint32 PAD;                       /* 0x788 */
+    uint32 PAD;                       /* 0x78c */
+    uint32 PAD;                       /* 0x790 */
+    uint32 PAD;                       /* 0x794 */
+    uint32 PAD;                       /* 0x798 */
+    uint32 PAD;                       /* 0x79c */
+    uint32 PAD;                       /* 0x7a0 */
+    uint32 PAD;                       /* 0x7a4 */
+    uint32 PAD;                       /* 0x7a8 */
+    uint32 PAD;                       /* 0x7ac */
+    uint32 PAD;                       /* 0x7b0 */
+    uint32 PAD;                       /* 0x7b4 */
+    uint32 PAD;                       /* 0x7b8 */
+    uint32 PAD;                       /* 0x7bc */
+    uint32 PAD;                       /* 0x7c0 */
+    uint32 PAD;                       /* 0x7c4 */
+    uint32 PAD;                       /* 0x7c8 */
+    uint32 PAD;                       /* 0x7cc */
+    uint32 PAD;                       /* 0x7d0 */
+    uint32 PAD;                       /* 0x7d4 */
+    uint32 PAD;                       /* 0x7d8 */
+    uint32 PAD;                       /* 0x7dc */
+    uint32 PAD;                       /* 0x7e0 */
+    uint32 PAD;                       /* 0x7e4 */
+    uint32 PAD;                       /* 0x7e8 */
+    uint32 PAD;                       /* 0x7ec */
+    uint32 PAD;                       /* 0x7f0 */
+    uint32 PAD;                       /* 0x7f4 */
+    uint32 PAD;                       /* 0x7f8 */
+    uint32 PAD;                       /* 0x7fc */
+    uint32 PAD;                       /* 0x800 */
+    uint32 PAD;                       /* 0x804 */
+    uint32 PAD;                       /* 0x808 */
+    uint32 PAD;                       /* 0x80c */
+    uint32 PAD;                       /* 0x810 */
+    uint32 PAD;                       /* 0x814 */
+    uint32 PAD;                       /* 0x818 */
+    uint32 PAD;                       /* 0x81c */
+    uint32 PAD;                       /* 0x820 */
+    uint32 PAD;                       /* 0x824 */
+    uint32 PAD;                       /* 0x828 */
+    uint32 PAD;                       /* 0x82c */
+    uint32 PAD;                       /* 0x830 */
+    uint32 PAD;                       /* 0x834 */
+    uint32 PAD;                       /* 0x838 */
+    uint32 PAD;                       /* 0x83c */
+    uint32 PAD;                       /* 0x840 */
+    uint32 PAD;                       /* 0x844 */
+    uint32 PAD;                       /* 0x848 */
+    uint32 PAD;                       /* 0x84c */
+    uint32 PAD;                       /* 0x850 */
+    uint32 PAD;                       /* 0x854 */
+    uint32 PAD;                       /* 0x858 */
+    uint32 PAD;                       /* 0x85c */
+    uint32 PAD;                       /* 0x860 */
+    uint32 PAD;                       /* 0x864 */
+    uint32 PAD;                       /* 0x868 */
+    uint32 PAD;                       /* 0x86c */
+    uint32 PAD;                       /* 0x870 */
+    uint32 PAD;                       /* 0x874 */
+    uint32 PAD;                       /* 0x878 */
+    uint32 PAD;                       /* 0x87c */
+    uint32 PAD;                       /* 0x880 */
+    uint32 PAD;                       /* 0x884 */
+    uint32 PAD;                       /* 0x888 */
+    uint32 PAD;                       /* 0x88c */
+    uint32 PAD;                       /* 0x890 */
+    uint32 PAD;                       /* 0x894 */
+    uint32 PAD;                       /* 0x898 */
+    uint32 PAD;                       /* 0x89c */
+    uint32 PAD;                       /* 0x8a0 */
 };
 
 struct wlc_pub {
