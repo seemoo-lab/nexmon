@@ -196,10 +196,10 @@ ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l aarch64))
 	$(Q)update-alternatives --install /lib/firmware/cypress/cyfmac43455-sdio.bin cyfmac43455-sdio.bin /lib/firmware/nexmon/$(RAM_FILE) 30
 	$(Q)update-alternatives --set cyfmac43455-sdio.bin /lib/firmware/nexmon/$(RAM_FILE)
 ifneq ("$(wildcard $(DRIVER_FOLDER_NAME)/brcmfmac.ko)", "")
-ifeq ($(shell lsmod | grep "^brcmfmac" | wc -l), 1)
-	@printf "\033[0;31m  UNLOADING\033[0m brcmfmac\n"
-	$(Q)rmmod brcmfmac
-endif
+	@for module in $$(lsmod | grep "^brcmfmac" | awk '{print $$1}'); do \
+		printf "\033[0;31m  UNLOADING\033[0m $$module\n"; \
+		rmmod $$module; \
+	done
 	$(Q)modprobe brcmutil
 	@printf "\033[0;31m  RELOADING\033[0m brcmfmac\n"
 	$(Q)insmod $(DRIVER_FOLDER_NAME)/brcmfmac.ko
