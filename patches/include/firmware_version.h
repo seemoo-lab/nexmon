@@ -125,5 +125,6 @@
 
 // for CHIP_VER_BCM43436b0
 #define FW_VER_9_88_4_65                   710
+#define FW_VER_9_88_0_00                   711
 
 #endif /*FIRMWARE_VERSION_H*/

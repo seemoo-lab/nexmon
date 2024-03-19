@@ -32,21 +32,41 @@
  *                                                                         *
  **************************************************************************/
 
-#ifndef STRUCTS_H
-#define STRUCTS_H
+#pragma NEXMON targetregion "patch"
 
-/* band types */
-#define WLC_BAND_AUTO       0   /* auto-select */
-#define WLC_BAND_5G     	1   /* 5 Ghz */
-#define WLC_BAND_2G     	2   /* 2.4 Ghz */
-#define WLC_BAND_ALL        3   /* all bands */
+#include <firmware_version.h>   // definition of firmware version macros
+#include <debug.h>              // contains macros to access the debug hardware
+#include <wrapper.h>            // wrapper definitions for functions that already exist in the firmware
+#include <structs.h>            // structures that are used by the code in the firmware
+#include <helper.h>             // useful helper functions
+#include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
+#include <rates.h>              // rates used to build the ratespec for frame injection
+#include <local_wrapper.h>
 
-#ifndef	PAD
-#define	_PADLINE(line)	pad ## line
-#define	_XSTR(line)	_PADLINE(line)
-#define	PAD		_XSTR(__LINE__)
-#endif
 
-#include "../structs.common.h"
+struct fp_config {
+	unsigned int *target_addr;
+	unsigned int data_ptr;
+};
 
-#endif /*STRUCTS_H */
+unsigned int fp_orig_data[(FP_CONFIG_ORIGEND - FP_CONFIG_ORIGBASE) / sizeof(struct fp_config)][3] = { 0 };
+unsigned int fp_orig_data_len = (FP_CONFIG_ORIGEND - FP_CONFIG_ORIGBASE) / sizeof(struct fp_config);
+
+int
+fp_apply_patches_hook(void)
+{
+	struct fp_config *fpc = (struct fp_config *) FP_CONFIG_ORIGBASE;
+	int i;
+
+	for (i = 0; i < fp_orig_data_len; i++) {
+		fp_orig_data[i][0] = (unsigned int) (fpc)->target_addr;
+		fp_orig_data[i][1] = ((fpc)->target_addr)[0];
+		fp_orig_data[i][2] = ((fpc)->target_addr)[1];
+		fpc++;
+	}
+
+	return fp_apply_patches();
+}
+// Hook call to fp_apply_patches in c_main
+__attribute__((at(0x4101a, "", CHIP_VER_BCM43436b0, FW_VER_9_88_0_00)))
+BPatch(fp_apply_patches, fp_apply_patches_hook);
