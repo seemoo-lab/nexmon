@@ -95,7 +95,7 @@ check_scb(void)
     );
 }
 
-__attribute__((at(0x3489e, "", CHIP_VER_BCM43436b0, FW_VER_9_88_0_00)))
+__attribute__((at(0x3489e, "", CHIP_VER_BCM43436b0, FW_VER_9_88_0_0)))
 __attribute__((naked))
 void
 patch_null_pointer_scb(void)
