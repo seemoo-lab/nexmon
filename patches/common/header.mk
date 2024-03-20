@@ -27,7 +27,14 @@ header: FORCE
 	@printf "    Our software may damage your hardware and may void your hardware’s    \n"
 	@printf "     warranty! You use our tools at your own risk and responsibility      \n"
 	@printf "\n\n"
-	@printf "\033[0;31m  CREATING DIRECTORIES\033[0m obj, gen, log\n" $< $@
+ifeq ("$(wildcard $(NEXMON_ROOT)/DISABLE_STATISTICS)","")
+	@printf "\033[0;31m  COLLECTING STATISTICS\033[0m read $(NEXMON_ROOT)/STATISTICS.md for more information\n"
+	@make -s -f $(NEXMON_ROOT)/patches/common/statistics.mk
+else
+	@printf "\033[0;31m  STATISTICS DISABLED\033[0m to enable: delete $(NEXMON_ROOT)/DISABLE_STATISTICS\n"
+endif
+
+
 
 FORCE:
 	

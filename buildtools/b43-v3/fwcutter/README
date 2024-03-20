@@ -1,0 +1,47 @@
+			BCM43XX Linux Driver Project
+			============================
+
+
+About this software
+-------------------
+
+b43-fwcutter is a tool which can extract firmware from various source files.
+It's written for BCM43xx driver files.
+
+The project page is http://bcm43xx.berlios.de/
+
+
+Usage
+-----
+
+b43-fwcutter FILE		extracts the firmware from a source FILE to
+				the current directory, creating a directory
+				"b43" or "b43legacy" with files in it.
+b43-fwcutter -i FILE		identify the driver file; print information
+				but don't extract.
+b43-fwcutter -w /tmp FILE	extract and write firmware to /tmp.
+b43-fwcutter -l			prints a list of supported driver source files.
+
+After extraction, copy the "b43" or "b43legacy" directory to your firmware
+directory (usually /lib/firmware or similar, see below). Alternatively you
+can use the -w option to b43-fwcutter.
+
+Different distributions use different directories to load firmware from.
+If the driver complains about missing firmware files look for the correct
+directory. For some distributions you have to use /lib/hotplug/firmware
+or /usr/lib/hotplug/firmware but other directories are also possible.
+
+Because firmware file are stored in big endian, extraction doesn't depend
+on the system you're using. You can use extracted firmware from any driver
+on any system and also copy the extracted files to any other system (e.g.
+if extraction on the target system isn't feasible.)
+
+
+Where can I find some driver source files?
+------------------------------------------
+
+Please check the references at
+http://www.linuxwireless.org/en/users/Drivers/bcm43xx#devicefirmware
+
+It is recommended that you extract firmware for both b43 and b43legacy in
+order to support both types of cards on your system.

@@ -1914,7 +1914,7 @@ __argp_failure (const struct argp_state *state, int status, int errnum,
 
           if (errnum)
             {
-              char buf[200];
+              //char buf[200];
 
 #ifdef USE_IN_LIBIO
               if (_IO_fwide (stream, 0) > 0)

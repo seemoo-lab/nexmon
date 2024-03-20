@@ -49,6 +49,7 @@
 #include <linux/sockios.h>
 #include <linux/wireless.h>
 #include <monitormode.h>
+#include <string.h>
 
 #define WLC_GET_MONITOR                 107
 #define WLC_SET_MONITOR                 108

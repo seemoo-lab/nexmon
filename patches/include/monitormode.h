@@ -39,3 +39,4 @@
 #define MONITOR_IPV4_UDP        (1 << 3) // 8
 #define MONITOR_LOG_ONLY        (1 << 4) // 16
 #define MONITOR_ACTIVATE_BADFCS (1 << 5) // 32
+#define MONITOR_STS             (1 << 6) // 64

@@ -18,7 +18,7 @@
 
 package de.tu_darmstadt.seemoo.nexmon.gui;
 
-
+import android.app.Fragment;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -60,7 +60,7 @@ import de.tu_darmstadt.seemoo.nexmon.sharky.SharkListElement;
 import de.tu_darmstadt.seemoo.nexmon.sharky.WiresharkService;
 
 
-public class SharkFragment extends TrackingFragment {
+public class SharkFragment extends Fragment {
 
     public static final int PACKET_AMOUNT_TO_SHOW = 500;
     private static final int UPDATE_LISTVIEW_STATIC = 14;
@@ -174,11 +174,6 @@ public class SharkFragment extends TrackingFragment {
         if(!sharkList.isEmpty())
             tvWiresharkInfo.setVisibility(View.GONE);
 
-    }
-
-    @Override
-    public String getTrackingName() {
-        return "Screen: Wireshark";
     }
 
     @Override

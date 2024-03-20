@@ -48,7 +48,7 @@ import de.tu_darmstadt.seemoo.nexmon.stations.Attack;
  * Use the {@link AttackInfoFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class AttackInfoFragment extends TrackingFragment {
+public class AttackInfoFragment extends Fragment {
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_ATTACK = "ATTACK";
@@ -156,11 +156,6 @@ public class AttackInfoFragment extends TrackingFragment {
         intent.putExtra(Attack.ATTACK_ID, attack.getGuid());
         MyApplication.getAppContext().sendBroadcast(intent);
 
-    }
-
-    @Override
-    public String getTrackingName() {
-        return "Screen: AttackInfo";
     }
 
     @Override
