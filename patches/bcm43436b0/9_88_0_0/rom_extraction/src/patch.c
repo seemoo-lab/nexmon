@@ -32,39 +32,24 @@
  *                                                                         *
  **************************************************************************/
 
-#ifndef LOCAL_WRAPPER_C
-#define LOCAL_WRAPPER_C
+#pragma NEXMON targetregion "patch"
 
 #include <firmware_version.h>
-#include <structs.h>
-#include <stdarg.h>
+#include <wrapper.h>	// wrapper definitions for functions that already exist in the firmware
+#include <structs.h>	// structures that are used by the code in the firmware
+#include <patcher.h>
 
-#ifndef WRAPPER_H
-    // if this file is not included in the wrapper.h file, create dummy functions
-    #define VOID_DUMMY { ; }
-    #define RETURN_DUMMY { ; return 0; }
+// Hook the call to wlc_ucode_write in wlc_ucode_download
+__attribute__((at(WLC_UCODE_WRITE_BL_HOOK_ADDR, "", CHIP_VER_ALL, FW_VER_ALL)))
+BLPatch(wlc_ucode_write_compressed, wlc_ucode_write_compressed);
 
-    #define AT(CHIPVER, FWVER, ADDR) __attribute__((weak, at(ADDR, "dummy", CHIPVER, FWVER)))
-#else
-    // if this file is included in the wrapper.h file, create prototypes
-    #define VOID_DUMMY ;
-    #define RETURN_DUMMY ;
-    #define AT(CHIPVER, FWVER, ADDR)
+__attribute__((at(HNDRTE_RECLAIM_0_END_PTR, "", CHIP_VER_ALL, FW_VER_ALL)))
+GenericPatch4(hndrte_reclaim_0_end, PATCHSTART);
+
+extern unsigned char templateram_bin[];
+
+// Moving template ram to another place in the ucode region
+#if TEMPLATERAMSTART_PTR != 0
+__attribute__((at(TEMPLATERAMSTART_PTR, "", CHIP_VER_ALL, FW_VER_ALL)))
+GenericPatch4(templateram_bin, templateram_bin);
 #endif
-
-AT(CHIP_VER_BCM43436b0, FW_VER_9_88_0_00, 0x400E8)
-int
-fp_apply_patches(void)
-RETURN_DUMMY
-
-AT(CHIP_VER_BCM43436b0, FW_VER_9_88_0_00, 0x8302D4)
-int
-wlc_ioctl(void *wlc, int cmd, void *arg, int len, void *wlc_if)
-RETURN_DUMMY
-
-
-#undef VOID_DUMMY
-#undef RETURN_DUMMY
-#undef AT
-
-#endif /*LOCAL_WRAPPER_C*/

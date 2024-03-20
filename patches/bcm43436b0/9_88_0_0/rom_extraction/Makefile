@@ -18,9 +18,9 @@ CFLAGS= \
 	-fno-strict-aliasing \
 	-DNEXMON_CHIP=$(NEXMON_CHIP) \
 	-DNEXMON_FW_VERSION=$(NEXMON_FW_VERSION) \
-        -DWLC_UCODE_WRITE_BL_HOOK_ADDR=$(WLC_UCODE_WRITE_BL_HOOK_ADDR) \
-        -DHNDRTE_RECLAIM_0_END_PTR=$(HNDRTE_RECLAIM_0_END_PTR) \
-        -DTEMPLATERAMSTART_PTR=$(TEMPLATERAMSTART_PTR) \
+	-DWLC_UCODE_WRITE_BL_HOOK_ADDR=$(WLC_UCODE_WRITE_BL_HOOK_ADDR) \
+	-DHNDRTE_RECLAIM_0_END_PTR=$(HNDRTE_RECLAIM_0_END_PTR) \
+	-DTEMPLATERAMSTART_PTR=$(TEMPLATERAMSTART_PTR) \
 	-DPATCHSTART=$(PATCHSTART) \
 	-DFP_CONFIG_ORIGBASE=$(FP_CONFIG_ORIGBASE) \
 	-DFP_CONFIG_ORIGEND=$(FP_CONFIG_ORIGEND) \
@@ -34,6 +34,8 @@ CFLAGS= \
 	-I$(FW_PATH)
 
 all: $(RAM_FILE) brcmfmac.ko
+
+firmware-only: $(RAM_FILE)
 
 init: FORCE
 	$(Q)if ! test -f BUILD_NUMBER; then echo 0 > BUILD_NUMBER; fi
@@ -119,7 +121,7 @@ gen/memory.ld: $(FW_PATH)/definitions.mk
 	$(Q)printf "rom : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $(ROMSTART) $(ROMSIZE) > $@
 	$(Q)printf "ram : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $(RAMSTART) $(RAMSIZE) >> $@
 	$(Q)printf "patch : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $(PATCHSTART) $(PATCHSIZE) >> $@
-	$(Q)printf "ucode : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $(UCODESTART) $$(($(FP_CONFIG_BASE) - $(UCODESTART))) >> $@
+	$(Q)printf "ucode : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $$(($(UCODESTART) - 4)) $$(($(PATCHSTART) - $(UCODESTART))) >> $@
 	$(Q)printf "fpconfig : ORIGIN = 0x%08x, LENGTH = 0x%08x\n" $(FP_CONFIG_BASE) $(FP_CONFIG_SIZE) >> $@
 
 gen/patch.elf: patch.ld gen/nexmon.ld gen/flashpatches.ld gen/memory.ld $(OBJS)
@@ -189,7 +191,7 @@ dump-rom: FORCE
 
 patched-dump-rom: FORCE
 	@printf "\033[0;31m  DUMPING PATCHED ROM TO\033[0m rom_patched.bin\n"
-	nexutil -g0x603 -l1024 -i -v$(ROMSTART) -r > rom_patched.bin && for n in {1..639}; do nexutil -g0x603 -l1024 -i -v$$((($$n*1024)+$(ROMSTART))) -r >> rom_patched.bin; done
+	nexutil -g0x603 -l1024 -i -v$(ROMSTART) -r > rom_patched.bin && for n in {1..581}; do nexutil -g0x603 -l1024 -i -v$$((($$n*1024)+$(ROMSTART))) -r >> rom_patched.bin; done
 
 install-firmware: $(RAM_FILE) brcmfmac.ko
 ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l aarch64))
