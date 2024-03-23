@@ -47,5 +47,5 @@ GenericPatch4(version_patch, version);
 __attribute__((at(0x9F90, "", CHIP_VER_BCM43436b0, FW_VER_9_88_0_0)))
 GenericPatch4(date_patch, date);
 
-__attribute__((at(0x9FE7, "", CHIP_VER_BCM43436b0, FW_VER_9_88_0_0)))
+__attribute__((at(0x9F7E, "", CHIP_VER_BCM43436b0, FW_VER_9_88_0_0)))
 GenericPatch4(time_patch, time);
