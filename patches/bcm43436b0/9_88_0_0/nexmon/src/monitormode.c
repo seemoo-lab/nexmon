@@ -116,6 +116,6 @@ wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
     }
 }
 
-__attribute__((at(0x0082ea60, "flashpatch", CHIP_VER_BCM43436b0, FW_VER_ALL)))
+__attribute__((at(0x0082ea36, "flashpatch", CHIP_VER_BCM43436b0, FW_VER_ALL)))
 BPatch(flash_patch_25_overwrite, wl_monitor_hook);
 

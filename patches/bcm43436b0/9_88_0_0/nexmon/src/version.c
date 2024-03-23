@@ -41,11 +41,11 @@ char version[] = "9.88.0.00 (nexmon.org: " GIT_VERSION "-" BUILD_NUMBER ")";
 char date[] = __DATE__;
 char time[] = __TIME__;
 
-__attribute__((at(0xA8C0, "", CHIP_VER_BCM43436b0, FW_VER_9_88_0_0)))
+__attribute__((at(0x9F84, "", CHIP_VER_BCM43436b0, FW_VER_9_88_0_0)))
 GenericPatch4(version_patch, version);
 
-__attribute__((at(0xA8CC, "", CHIP_VER_BCM43436b0, FW_VER_9_88_0_0)))
+__attribute__((at(0x9F90, "", CHIP_VER_BCM43436b0, FW_VER_9_88_0_0)))
 GenericPatch4(date_patch, date);
 
-__attribute__((at(0xA8BC, "", CHIP_VER_BCM43436b0, FW_VER_9_88_0_0)))
+__attribute__((at(0x9FE7, "", CHIP_VER_BCM43436b0, FW_VER_9_88_0_0)))
 GenericPatch4(time_patch, time);
