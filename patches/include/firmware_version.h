@@ -57,6 +57,8 @@
 #define CHIP_VER_BCM43439a0               109
 #define CHIP_VER_BCM4398d0               1001
 #define CHIP_VER_BCM6715b0               1002
+#define CHIP_VER_BCM43684b0              1003
+#define CHIP_VER_BCM43684c0              1004
 
 #define FW_VER_ALL                          0
 
@@ -145,5 +147,13 @@
 
 // define CHIP_VER_BCM6715b0
 #define FW_VER_17_10_188_6401_r808804_ax86upro 1020
+#define FW_VER_17_10_188_6401_r808804_ax82uv2  1021
+
+// define CHIP_VER_BCM43684b0
+#define FW_VER_17_10_157_2809_r801046_ax86u 1030
+#define FW_VER_17_10_121_41_r796515_ax88u   1031
+
+// define CHIP_VER_BCM43684c0
+#define FW_VER_17_10_157_2809_r801046_axe11000 1040
 
 #endif /*FIRMWARE_VERSION_H*/
