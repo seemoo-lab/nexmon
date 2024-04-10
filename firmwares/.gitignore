@@ -12,6 +12,7 @@ rom.bin
 clm.bin
 d11ucode_*.bin
 d11ucodex_*.bin
+d11smc*.bin
 sr_source_code_*.bin
 rtecdc_dongle.bin
 rtecdc_pageable.bin
