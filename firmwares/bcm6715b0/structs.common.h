@@ -42,14 +42,54 @@ struct sk_buf {
 typedef struct sk_buff sk_buff;
 typedef struct sk_buff lbuf;
 
-struct wlc_info {
-    uint32 PAD;                       /* 0x000 */
+struct wl_info {
+    uint32 unit;                      /* 0x000 */
     uint32 PAD;                       /* 0x004 */
-    uint32 PAD;                       /* 0x008 */
-    uint32 PAD;                       /* 0x00c */
+    struct wlc_info *wlc;             /* 0x008 */
+    struct wlc_hw_info *wlc_hw;       /* 0x00c */
     uint32 PAD;                       /* 0x010 */
     uint32 PAD;                       /* 0x014 */
     uint32 PAD;                       /* 0x018 */
+    uint32 PAD;                       /* 0x01c */
+    uint32 PAD;                       /* 0x020 */
+    uint32 PAD;                       /* 0x024 */
+    uint32 PAD;                       /* 0x028 */
+    uint32 PAD;                       /* 0x02c */
+    uint32 PAD;                       /* 0x030 */
+    uint32 PAD;                       /* 0x034 */
+    uint32 PAD;                       /* 0x038 */
+    uint32 PAD;                       /* 0x03c */
+    uint32 PAD;                       /* 0x040 */
+    uint32 PAD;                       /* 0x044 */
+    uint32 PAD;                       /* 0x048 */
+    uint32 PAD;                       /* 0x04c */
+    uint32 PAD;                       /* 0x050 */
+    uint32 PAD;                       /* 0x054 */
+    uint32 PAD;                       /* 0x058 */
+    uint32 PAD;                       /* 0x05c */
+    uint32 PAD;                       /* 0x060 */
+    uint32 PAD;                       /* 0x064 */
+    uint32 PAD;                       /* 0x068 */
+    uint32 PAD;                       /* 0x06c */
+    uint32 PAD;                       /* 0x070 */
+    uint32 PAD;                       /* 0x074 */
+    uint32 PAD;                       /* 0x078 */
+    uint32 PAD;                       /* 0x07c */
+    uint32 PAD;                       /* 0x080 */
+    uint32 PAD;                       /* 0x084 */
+    uint32 PAD;                       /* 0x088 */
+    uint32 PAD;                       /* 0x08c */
+    uint32 PAD;                       /* 0x090 */
+} __attribute__((packed));
+
+struct wlc_info {
+    uint32 PAD;                       /* 0x000 */
+    void *osh;                        /* 0x004 */
+    struct wl_info *wl;               /* 0x008 */
+    uint32 PAD;                       /* 0x00c */
+    uint32 PAD;                       /* 0x010 */
+    uint32 PAD;                       /* 0x014 */
+    struct wlc_hw_info *hw;           /* 0x018 */
     uint32 PAD;                       /* 0x01c */
     uint32 PAD;                       /* 0x020 */
     uint32 PAD;                       /* 0x024 */
@@ -632,8 +672,8 @@ struct wlc_info {
 struct wlc_hw_info {
     struct wlc_info *wlc;             /* 0x000 */
     uint32 PAD;                       /* 0x004 */
-    uint32 PAD;                       /* 0x008 */
-    uint32 PAD;                       /* 0x00c */
+    void *osh;                        /* 0x008 */
+    uint32 unit;                      /* 0x00c */
     uint32 PAD;                       /* 0x010 */
     uint32 PAD;                       /* 0x014 */
     uint32 PAD;                       /* 0x018 */
