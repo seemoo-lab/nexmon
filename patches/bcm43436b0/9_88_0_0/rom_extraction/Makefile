@@ -33,7 +33,7 @@ CFLAGS= \
 	-Iinclude \
 	-I$(FW_PATH)
 
-all: $(RAM_FILE) brcmfmac.ko
+all: $(RAM_FILE)
 
 firmware-only: $(RAM_FILE)
 
@@ -43,24 +43,6 @@ init: FORCE
 	$(Q)touch src/version.c
 	$(Q)make -s -f $(NEXMON_ROOT)/patches/common/header.mk
 	$(Q)mkdir -p obj gen log
-
-brcmfmac.ko: check-nexmon-setup-env
-ifneq ("$(wildcard $(DRIVER_FOLDER_NAME))", "")
-ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l))
-	@printf "\033[0;31m  BUILDING DRIVER for kernel $(KERNEL_VERSION)\033[0m brcmfmac_$(KERNEL_VERSION).y-nexmon/brcmfmac.ko (details: log/driver.log)\n" $@
-	$(Q)mkdir -p log
-	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$(DRIVER_FOLDER_NAME) -j4 >log/driver.log
-else ifeq ($(shell uname -m),$(filter $(shell uname -m), aarch64))
-	@printf "\033[0;31m  BUILDING DRIVER for kernel $(KERNEL_VERSION)\033[0m brcmfmac_$(KERNEL_VERSION).y-nexmon/brcmfmac.ko (details: log/driver.log)\n" $@
-	$(Q)mkdir -p log
-	$(Q)ARCH="arm64" make -C /lib/modules/$(shell uname -r)/build M=$(DRIVER_FOLDER_NAME) -j2 >log/driver.log
-else
-	$(warning Warning: Driver can not be compiled on this platform, execute the make command on a raspberry pi)
-endif
-else
-	$(warning Warning: Driver for kernel $(KERNEL_VERSION) not found)
-endif
-
 
 obj/%.o: src/%.c
 	@printf "\033[0;31m  COMPILING\033[0m %s => %s (details: log/compiler.log)\n" $< $@
@@ -185,32 +167,20 @@ ifndef NEXMON_SETUP_ENV
 endif
 
 dump-rom: FORCE
-	@printf "\033[0;31m  DUMPING ROM TO\033[0m rom.bin\n"
-	adb shell su -c 'nexutil -g0x602 -l1024 -i -v$(ROMSTART) -r > /sdcard/rom.bin && for n in {1..581}; do nexutil -g0x602 -l1024 -i -v$$((($$n*1024)+$(ROMSTART))) -r >> /sdcard/rom.bin; done'
+	@printf "\033[0;31m  DUMPING ROM TO\033[0m /sdcard/rom.bin\n"
+	adb shell "su -c 'nexutil -g0x602 -l1024 -i -v$(ROMSTART) -r > /sdcard/rom.bin'" && adb shell "su -c 'for n in `seq 1 581`; do nexutil -g0x602 -l1024 -i -v$$((($$n*1024)+$(ROMSTART))) -r >> rom.bin; done'"
+	@printf "\033[0;31m  PULLING FILE TO\033[0m ./rom.bin\n"
 	adb pull /sdcard/rom.bin
 
-patched-dump-rom: FORCE
-	@printf "\033[0;31m  DUMPING PATCHED ROM TO\033[0m rom_patched.bin\n"
-	nexutil -g0x603 -l1024 -i -v$(ROMSTART) -r > rom_patched.bin && for n in {1..581}; do nexutil -g0x603 -l1024 -i -v$$((($$n*1024)+$(ROMSTART))) -r >> rom_patched.bin; done
-
-install-firmware: $(RAM_FILE) brcmfmac.ko
-ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l aarch64))
-	@printf "\033[0;31m  COPYING\033[0m $(RAM_FILE) => /lib/firmware/brcm/$(RAM_FILE)\n"
-	$(Q)cp $(RAM_FILE) /lib/firmware/brcm/$(RAM_FILE)
-ifneq ("$(wildcard $(DRIVER_FOLDER_NAME)/brcmfmac.ko)", "")
-ifeq ($(shell lsmod | grep "^brcmfmac" | wc -l), 1)
-	@printf "\033[0;31m  UNLOADING\033[0m brcmfmac\n"
-	$(Q)rmmod brcmfmac
-endif
-	$(Q)modprobe brcmutil
-	@printf "\033[0;31m  RELOADING\033[0m brcmfmac\n"
-	$(Q)insmod $(DRIVER_FOLDER_NAME)/brcmfmac.ko
-else
-	$(warning Warning: Driver not compiled)
-endif
-else
-	$(warning Warning: Cannot install firmware on this arch, $(RAM_FILE) needs to be copied manually into /lib/firmware/brcm/ on your RPI3)
-endif
+install-firmware: $(RAM_FILE)
+	@printf "\033[0;31m  REMOUNTING /vendor\033[0m\n"
+	$(Q)adb shell 'su -c "mount -o rw,remount /vendor"'
+	@printf "\033[0;31m  COPYING TO PHONE\033[0m %s => /sdcard/%s\n" $< $<
+	$(Q)adb push $< /sdcard/ >> log/adb.log 2>> log/adb.log
+	@printf "\033[0;31m  COPYING\033[0m /sdcard/$(RAM_FILE) => /vendor/firmware/$(RAM_FILE)\n"
+	$(Q)adb shell 'su -c "cp /sdcard/$(RAM_FILE) /vendor/firmware/$(RAM_FILE)"'
+	@printf "\033[0;31m  RELOADING FIRMWARE\033[0m\n"
+	$(Q)adb shell 'su -c "ifconfig wlan0 down && ifconfig wlan0 up"'
 
 clean-firmware: FORCE
 	@printf "\033[0;31m  CLEANING\033[0m\n"

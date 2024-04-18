@@ -19,7 +19,7 @@ rom.bin: ../rom.bin
 	@printf "\033[0;31m  APPLYING FLASHPATCHES TO CLEAN ROM\033[0m\n"
 	$(Q)$(NEXMON_ROOT)/buildtools/flash_patch_extractor/fpext -x -r $(RAM_FILE) -s $(RAMSTART) -b $(FP_CONFIG_ORIGBASE) -e $(FP_CONFIG_ORIGEND) -i $< -o $@ -t $(ROMSTART) > /dev/null
 
-complete.bin: brcmfmac43436-sdio.bin rom.bin
+complete.bin: fw_bcm43436b0.bin rom.bin
 	@printf "\033[0;31m  CONCATENATING RAM AND ROM\033[0m\n"
 	$(Q)dd if=rom.bin of=$@ bs=1 status=none conv=notrunc seek=$$(($(ROMSTART)))
 	$(Q)dd if=$< of=$@ bs=1 status=none conv=notrunc seek=$$(($(RAMSTART)))
