@@ -168,7 +168,7 @@ endif
 
 dump-rom: FORCE
 	@printf "\033[0;31m  DUMPING ROM TO\033[0m /sdcard/rom.bin\n"
-	adb shell "su -c 'nexutil -g0x602 -l1024 -i -v$(ROMSTART) -r > /sdcard/rom.bin'" && adb shell "su -c 'for n in `seq 1 581`; do nexutil -g0x602 -l1024 -i -v$$((($$n*1024)+$(ROMSTART))) -r >> rom.bin; done'"
+	adb shell "su -c 'nexutil -g0x602 -l1024 -i -v$(ROMSTART) -r > /sdcard/rom.bin'" && adb shell "su -c 'for n in `seq 1 581`; do nexutil -g0x602 -l1024 -i -v$$((($$n*1024)+$(ROMSTART))) -r >> /sdcard/rom.bin; done'"
 	@printf "\033[0;31m  PULLING FILE TO\033[0m ./rom.bin\n"
 	adb pull /sdcard/rom.bin
 
@@ -187,12 +187,6 @@ clean-firmware: FORCE
 	$(Q)rm -fr $(RAM_FILE) obj gen log src/ucode_compressed.c src/templateram.c ucode_compressed.bin
 
 clean: clean-firmware
-ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l aarch64))
-ifneq ("$(wildcard $(DRIVER_FOLDER_NAME))", "")
-	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
-	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$(DRIVER_FOLDER_NAME) clean
-endif
-endif
 	$(Q)rm -f BUILD_NUMBER
 
 FORCE:
