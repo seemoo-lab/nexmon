@@ -4,7 +4,7 @@ all: ucode.bin templateram.bin flashpatches.c
 
 ucode.bin: $(RAM_FILE) definitions.mk
 	@printf "\033[0;31m  EXTRACTING UCODE\033[0m\n"
-	$(Q)$(NEXMON_ROOT)/buildtools/ucode_extractor/ucodeext -r $< -b $(UCODESTART) -l $(UCODESIZE) -o $@
+	$(Q)"$(NEXMON_ROOT)/buildtools/ucode_extractor/ucodeext" -r $< -b $(UCODESTART) -l $(UCODESIZE) -o $@
 
 templateram.bin: $(RAM_FILE) definitions.mk
 	@printf "\033[0;31m  EXTRACTING TEMPLATERAM\033[0m\n"
@@ -13,11 +13,11 @@ templateram.bin: $(RAM_FILE) definitions.mk
 flashpatches.c: $(RAM_FILE) definitions.mk
 	@printf "\033[0;31m  EXTRACTING FLASHPATCHES\033[0m\n"
 	$(Q)printf "#include <patcher.h>\n\n" > flashpatches.c
-	$(Q)$(NEXMON_ROOT)/buildtools/flash_patch_extractor/fpext -r $< -s $(RAMSTART) -b $(FP_CONFIG_ORIGBASE) -e $(FP_CONFIG_ORIGEND) >> $@
+	$(Q)"$(NEXMON_ROOT)/buildtools/flash_patch_extractor/fpext" -r $< -s $(RAMSTART) -b $(FP_CONFIG_ORIGBASE) -e $(FP_CONFIG_ORIGEND) >> $@
 
 rom.bin: ../rom.bin
 	@printf "\033[0;31m  APPLYING FLASHPATCHES TO CLEAN ROM\033[0m\n"
-	$(Q)$(NEXMON_ROOT)/buildtools/flash_patch_extractor/fpext -r $(RAM_FILE) -s $(RAMSTART) -b $(FP_CONFIG_ORIGBASE) -e $(FP_CONFIG_ORIGEND) -i $< -o $@ -t $(ROMSTART) > /dev/null
+	$(Q)"$(NEXMON_ROOT)/buildtools/flash_patch_extractor/fpext" -r $(RAM_FILE) -s $(RAMSTART) -b $(FP_CONFIG_ORIGBASE) -e $(FP_CONFIG_ORIGEND) -i $< -o $@ -t $(ROMSTART) > /dev/null
 
 complete.bin: brcmfmac43430-sdio.bin rom.bin
 	@printf "\033[0;31m  CONCATENATING RAM AND ROM\033[0m\n"
