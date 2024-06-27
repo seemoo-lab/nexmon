@@ -312,7 +312,7 @@ struct wlcband {
     char gmode;                         /* 0x015 */
     char PAD;
     char PAD;
-    void *hwrs_scb;                     /* CHECKED */
+    struct scb *hwrs_scb;                     /* CHECKED */
     int defrateset;
     int rspec_override;
     int mrspec_override;
@@ -485,7 +485,7 @@ struct wlc_info {
     int PAD;                            /* 0x270 */
     int PAD;                            /* 0x274 */
     int PAD;                            /* 0x278 */
-    int PAD;                            /* 0x27C */
+    void *eventq;                       /* 0x27C CHECKED */
     int PAD;                            /* 0x280 */
     int PAD;                            /* 0x284 */
     int PAD;                            /* 0x288 */
@@ -1108,6 +1108,40 @@ struct wlc_bsscfg {
     int PAD;                            /* 0X57C */
     int PAD;                            /* 0X580 */
     int PAD;                            /* 0X584 */
+} __attribute__((packed));
+
+// Checked
+struct wlc_event_msg {
+    uint16 flag1;
+    uint16 flag2;
+    uint32 event_type;
+    uint32 status;
+    uint32 reason;
+    uint32 auth_type;
+    uint32 datalen;
+    int PAD;
+    int PAD;
+    int PAD;
+} __attribute__((packed));
+
+// Checked
+struct wlc_event {
+    struct wlc_event_msg event;
+    int PAD;
+    int PAD;
+    int PAD;
+    int PAD;
+    int PAD;
+    void *data;                     /* 0x038 */
+    int PAD;
+} __attribute__((packed));
+
+struct scb {
+    int PAD;
+    int PAD;
+    int PAD;
+    int PAD;
+    void *bsscfg;
 } __attribute__((packed));
 
 struct hnddma_pub {

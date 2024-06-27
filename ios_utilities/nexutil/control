@@ -1,0 +1,10 @@
+Package: org.nexmon.nexutil
+Name: nexutil
+Depends: 
+Version: 0.0.1
+Architecture: iphoneos-arm
+Description: An awesome tool of some sort!!
+Maintainer: seemoo
+Author: seemoo
+Section: System
+Tag: role::hacker

@@ -1,0 +1,73 @@
+#!/usr/bin/env python
+"""
+#   A small script to dump the contents of a brcm80211 initvals section
+#
+#   Copyright (C) 2010  Michael Buesch <m@bues.ch>
+#
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License version 2
+#   as published by the Free Software Foundation.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+"""
+
+import sys
+
+
+def usage():
+	print "brcm80211 initvals section dumper"
+	print "Prints a .initvals assembly section to stdout."
+	print ""
+	print "Copyright (C) 2010 Michael Buesch <m@bues.ch>"
+	print "Licensed under the GNU/GPL version 2"
+	print ""
+	print "Usage: brcm80211-ivaldump FILE"
+	print ""
+	print "FILE is the file that is going to be dumped"
+	return
+
+if len(sys.argv) != 2:
+	usage()
+	sys.exit(1)
+
+filename = sys.argv[1]
+
+try:
+	ivals = file(filename).read()
+except IOError, e:
+	print "Could not read the initvals file: %s" % e.strerror
+	sys.exit(1)
+
+if len(ivals) == 0 or len(ivals) % 8 != 0:
+	print "The input file is malformed."
+	sys.exit(1)
+
+sectname = filename.split('/')[-1]
+if sectname.endswith(".fw"):
+	sectname = sectname[:-3]
+print ".initvals(%s)" % sectname
+for idx in range(0, len(ivals), 8):
+	addr = ord(ivals[idx + 0])
+	addr |= ord(ivals[idx + 1]) << 8
+	size = ord(ivals[idx + 2])
+	size |= ord(ivals[idx + 3]) << 8
+	value = ord(ivals[idx + 4])
+	value |= ord(ivals[idx + 5]) << 8
+	value |= ord(ivals[idx + 6]) << 16
+	value |= ord(ivals[idx + 7]) << 24
+
+	if addr == 0xFFFF:
+		break
+	if size == 4:
+		print "\tmmio32\t0x%08X, 0x%04X" % (value, addr)
+	elif size == 2:
+		if value & 0xFFFF0000:
+			print "The input file is malformed (invalid value for 16bit field)"
+			sys.exit(1)
+		print "\tmmio16\t0x%04X, 0x%04X" % (value, addr)
+	else:
+		print "The input file is malformed (invalid size field: 0x%04X)" % size
+		sys.exit(1)
