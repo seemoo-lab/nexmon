@@ -44,40 +44,21 @@
 #include <nexioctls.h>          // ioctls added in the nexmon patch
 #include <capabilities.h>       // capabilities included in a nexmon patch
 
-char
+void
 sendframe(struct wlc_info *wlc, struct sk_buff *p, unsigned int fifo, unsigned int rate)
 {
-    char ret;
-    /*
-    printf("wlc->hw->up:%02X\n", wlc->hw->up);
-    printf("p:%p\n", p);
-    printf("p->len:%d\n", p->len);
-    printf("wlc:%p\n", wlc);
-    printf("wlc->active_queue:%p\n", wlc->active_queue);
-    printf("wlc->band:%p\n", wlc->band);
-    printf("wlc->band->bandtype:%d wlc->band->bandunit:%d wlc->band->phytype:%d wlc->band->phyrev:%d \n", wlc->band->bandtype, wlc->band->bandunit, wlc->band->phytype, wlc->band->phyrev);
-    printf("wlc->band->hwrs_scb:%p\n", wlc->band->hwrs_scb);
-    */
-
-    p->scb = wlc->band->hwrs_scb;
     if (wlc->band->bandtype == WLC_BAND_5G && rate < RATES_RATE_6M) {
         rate = RATES_RATE_6M;
     }
 
     if (wlc->hw->up) {
-        ret = wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 0);
+        wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 0);
     } else {
-        ret = wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 1);
+        wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 1);
         printf("ERR: wlc down\n");
     }
-    //printf("Sendctl returned:%d\n\n", ret);
-    return ret;
 }
 
-/*
- Based on jlinktu's patch for bcm43455c0
-https://github.com/seemoo-lab/nexmon/issues/335#issuecomment-738928287
-*/
 __attribute__((naked))
 void
 check_scb(void)
@@ -94,8 +75,8 @@ check_scb(void)
         "pop {pc}\n"
     );
 }
-
-__attribute__((at(0x3489e, "", CHIP_VER_BCM43436b0, FW_VER_9_88_0_0)))
+ 
+__attribute__((at(0x33736, "", CHIP_VER_BCM43436b0, FW_VER_9_88_0_0)))
 __attribute__((naked))
 void
 patch_null_pointer_scb(void)
