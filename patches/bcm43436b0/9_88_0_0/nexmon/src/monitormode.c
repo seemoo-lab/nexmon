@@ -42,7 +42,6 @@
 #include "d11.h"
 #include "brcm.h"
 
-//#define RADIOTAP_MCS
 #include <ieee80211_radiotap.h>
 
 #define MONITOR_DISABLED  0
@@ -76,23 +75,17 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p)
 
     p_new->len -= 6;
     
-    /*printf("wl:%p wl->wlc:%p wl->wlc->wlcif_list:%p wl->wlc->wlcif_list->next:%p\n", wl, wl->wlc, wl->wlc->wlcif_list, wl->wlc->wlcif_list->next);
-    printf("wl:%p wl->dev:%p wl->dev->chained:%p wl->dev->chained->funcs:%p wl->dev->chained->funcs->xmit:%p\n", wl, wl->dev, wl->dev->chained, wl->dev->chained->funcs, wl->dev->chained->funcs->xmit);*/
     if (wl->wlc->wlcif_list->next)
     {
         wl->wlc->wlcif_list->wlif->dev->chained->funcs->xmit(wl->wlc->wlcif_list->wlif->dev, wl->wlc->wlcif_list->wlif->dev->chained, p_new);
-    }
-    else
-    {
+    } else {
         wl->dev->chained->funcs->xmit(wl->dev, wl->dev->chained, p_new);
     }
-        
 }
 
 void
 wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
     int monitor = wl->wlc->monitor & 0xFF;
-    //printf("wl_monitor_hook enter. wl: %p, sts: %p, p: %p wlc: %p monitor: %d\n", wl, sts, p, wl->wlc, monitor);
     switch(monitor) {
         case MONITOR_RADIOTAP:
                 wl_monitor_radiotap(wl, sts, p);
@@ -115,5 +108,7 @@ wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
             break;
     }
 }
-//__attribute__((at(0x8778A6, "flashpatch", CHIP_VER_BCM43436b0, FW_VER_ALL)))
-//BLPatch(wl_monitor_hook_fp, wl_monitor_hook);
+__attribute__((at(0x8778A6, "flashpatch", CHIP_VER_BCM43436b0, FW_VER_ALL)))
+__attribute__((naked))
+void
+bw_wl_monitor_hook(void) { asm("b.w wl_monitor_hook\n"); }
