@@ -45,7 +45,6 @@
 #include <capabilities.h>       // capabilities included in a nexmon patch
 #include <sendframe.h>          // sendframe functionality
 #include <version.h>            // version information
-//#include <bcmpcie.h>
 #include <argprintf.h>          // allows to execute argprintf to print into the arg buffer
 
 int 
@@ -56,6 +55,7 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 
     switch (cmd) {
         case NEX_GET_CONSOLE:
+	{
             goto Empty;
             Empty: ;
             struct hnd_debug *hnd_debug = (struct hnd_debug *)hnd_debug_info_get();
@@ -64,6 +64,7 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
                 ret = IOCTL_SUCCESS;
             }
             break;
+	}
 
         case NEX_GET_CAPABILITIES:
             if (len == 4) {
@@ -76,21 +77,6 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
             if (len > 0) {
                 arg[len-1] = 0;
                 printf("ioctl: %s\n", arg);
-                ret = IOCTL_SUCCESS;
-            }
-            break;
-
-        case 500: // dump wlif list
-            {
-                struct wlc_if *wlcif = wlc->wlcif_list;
-
-                for (wlcif = wlc->wlcif_list;  wlcif != 0; wlcif = wlcif->next) {
-                    char ifname[32];
-                    strncpy(ifname, wlcif->wlif == 0 ? wlc->wl->dev->name : wlcif->wlif->dev->name, sizeof(ifname));
-                    ifname[sizeof(ifname) - 1] = '\0';
-                    argprintf(" \"%s\" 0x%p type=%02x index=%02x flags=%02x\n", ifname, wlcif, wlcif->type, wlcif->index, wlcif->flags);
-		    }
-
                 ret = IOCTL_SUCCESS;
             }
             break;
