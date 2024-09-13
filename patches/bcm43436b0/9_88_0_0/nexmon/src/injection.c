@@ -15,7 +15,7 @@
  *                                                                         *
  * This file is part of NexMon.                                            *
  *                                                                         *
- * Copyright (c) 2016 NexMon Team                                          *
+ * Copyright (c) 2024 NexMon Team                                          *
  *                                                                         *
  * NexMon is free software: you can redistribute it and/or modify          *
  * it under the terms of the GNU General Public License as published by    *
@@ -35,8 +35,8 @@
 #pragma NEXMON targetregion "patch"
 
 #include <firmware_version.h>
-#include <wrapper.h>	// wrapper definitions for functions that already exist in the firmware
-#include <structs.h>	// structures that are used by the code in the firmware
+#include <wrapper.h>
+#include <structs.h>
 #include <patcher.h>
 #include <helper.h>
 #include <ieee80211_radiotap.h>
@@ -95,7 +95,6 @@ wl_send_hook(struct hndrte_dev *src, struct hndrte_dev *dev, struct sk_buff *p)
     struct wl_info *wl = (struct wl_info *) dev->softc;
     struct wlc_info *wlc = wl->wlc;
 
-    //printf("wlc->monitor:%d p:%p p->data:%p ((short *) p->data)[0]:%02X\n", wlc->monitor, p, p->data, ((short *) p->data)[0]);
     if (wlc->monitor && p != 0 && p->data != 0 && ((short *) p->data)[0] == 0) {
         return inject_frame(wl, p);
     } else {
@@ -103,5 +102,5 @@ wl_send_hook(struct hndrte_dev *src, struct hndrte_dev *dev, struct sk_buff *p)
     }
 }
 
-__attribute__((at(0x3e4ec, "", CHIP_VER_BCM43436b0, FW_VER_9_88_0_0)))
+__attribute__((at(0x3E4EC, "", CHIP_VER_BCM43436b0, FW_VER_9_88_0_0)))
 GenericPatch4(wl_send_hook, wl_send_hook + 1);
