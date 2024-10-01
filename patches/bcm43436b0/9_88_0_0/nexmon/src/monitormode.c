@@ -112,3 +112,13 @@ __attribute__((at(0x8778A6, "flashpatch", CHIP_VER_BCM43436b0, FW_VER_ALL)))
 __attribute__((naked))
 void
 bw_wl_monitor_hook(void) { asm("b.w wl_monitor_hook\n"); }
+
+void
+wlc_monitor_hook(struct wlc_info *wlc, void *wrxh, void *p, void *wlcif)
+{
+    pkt_buf_free_skb(wlc->osh, p, 0);
+}
+__attribute__((at(0x875A5A, "flashpatch", CHIP_VER_BCM43436b0, FW_VER_ALL)))
+__attribute__((naked))
+void
+bw_wlc_monitor_hook(void) { asm("b.w wlc_monitor_hook\n"); }
