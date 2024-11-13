@@ -49,11 +49,9 @@ sendframe(struct wlc_info *wlc, struct sk_buff *p, unsigned int fifo, unsigned i
     }
 
     if (wlc->hw->up) {
-//        ret = wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 0);
-	printf("%s: wlc 0x%08x p 0x%08x queue 0x%08x scb 0x%08x fifo %d rate %d\n", __FUNCTION__, wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate);
-	ret = 0;
+        ret = wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 0);
     } else {
-//        ret = wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 1);
+        ret = wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 1);
         printf("ERR: wlc down\n");
     }
     return ret;
