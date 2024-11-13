@@ -108,7 +108,7 @@ wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
             break;
     }
 }
-__attribute__((at(0x8778A6, "flashpatch", CHIP_VER_BCM43436b0, FW_VER_ALL)))
-__attribute__((naked))
-void
-bw_wl_monitor_hook(void) { asm("b.w wl_monitor_hook\n"); }
+//__attribute__((at(0x8778A6, "flashpatch", CHIP_VER_BCM43436b0, FW_VER_ALL)))
+//__attribute__((naked))
+//void
+//bw_wl_monitor_hook(void) { asm("b.w wl_monitor_hook\n"); }
