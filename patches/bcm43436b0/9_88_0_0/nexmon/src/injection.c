@@ -43,6 +43,24 @@
 #include <sendframe.h>
 #include "d11.h"
 #include "brcm.h"
+#include "local_wrapper.h"
+
+uint32
+debug_hook_1(uint32 a1, uint32 a2, uint32 a3)
+{
+    uint32 ret = sub_808114(a1, a2, a3);
+    if (ret) {
+        uint32 *retp = (uint32 *)ret;
+        uint32 *retpp = (uint32 *)retp[11];
+        if (!retpp) {
+            printf("%s: retpp null!\n", __FUNCTION__);
+            ret = 0;
+        }
+    }
+    return ret;
+}
+__attribute__((at(0x33878, "", CHIP_VER_BCM43436b0, FW_VER_9_88_0_0)))
+BLPatch(debug_hook_1, debug_hook_1)
 
 int
 inject_frame(struct wl_info *wl, sk_buff *p) {
@@ -101,3 +119,6 @@ wl_send_hook(struct hndrte_dev *src, struct hndrte_dev *dev, struct sk_buff *p)
         return wl_send(src, dev, p);
     }
 }
+
+__attribute__((at(0x3E4EC, "", CHIP_VER_BCM43436b0, FW_VER_9_88_0_0)))
+GenericPatch4(wl_send_hook, wl_send_hook + 1);
