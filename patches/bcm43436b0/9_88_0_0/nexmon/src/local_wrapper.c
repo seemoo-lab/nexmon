@@ -52,11 +52,6 @@
     #define AT(CHIPVER, FWVER, ADDR)
 #endif
 
-AT(CHIP_VER_BCM43436b0, FW_VER_ALL, 0x808114)
-uint32
-sub_808114(uint32 a1, uint32 a2, uint32 a3)
-RETURN_DUMMY
-
 #undef VOID_DUMMY
 #undef RETURN_DUMMY
 #undef AT
