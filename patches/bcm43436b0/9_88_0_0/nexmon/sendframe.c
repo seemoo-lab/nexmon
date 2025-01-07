@@ -15,7 +15,7 @@
  *                                                                         *
  * This file is part of NexMon.                                            *
  *                                                                         *
- * Copyright (c) 2016 NexMon Team                                          *
+ * Copyright (c) 2024 NexMon Team                                          *
  *                                                                         *
  * NexMon is free software: you can redistribute it and/or modify          *
  * it under the terms of the GNU General Public License as published by    *
@@ -32,33 +32,55 @@
  *                                                                         *
  **************************************************************************/
 
-#ifndef LOCAL_WRAPPER_C
-#define LOCAL_WRAPPER_C
+#pragma NEXMON targetregion "patch"
 
-#include <firmware_version.h>
-#include <structs.h>
-#include <stdarg.h>
+#include <wrapper.h>            // wrapper definitions for functions that already exist in the firmware
+#include <structs.h>            // structures that are used by the code in the firmware
+#include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
+#include <rates.h>              // rates used to build the ratespec for frame injection
 
-#ifndef WRAPPER_H
-    // if this file is not included in the wrapper.h file, create dummy functions
-    #define VOID_DUMMY { ; }
-    #define RETURN_DUMMY { ; return 0; }
+char
+sendframe(struct wlc_info *wlc, struct sk_buff *p, unsigned int fifo, unsigned int rate)
+{
+    char ret;
+    p->scb = wlc->band->hwrs_scb;
+    if (wlc->band->bandtype == WLC_BAND_5G && rate < RATES_RATE_6M) {
+        rate = RATES_RATE_6M;
+    }
 
-    #define AT(CHIPVER, FWVER, ADDR) __attribute__((weak, at(ADDR, "dummy", CHIPVER, FWVER)))
-#else
-    // if this file is included in the wrapper.h file, create prototypes
-    #define VOID_DUMMY ;
-    #define RETURN_DUMMY ;
-    #define AT(CHIPVER, FWVER, ADDR)
-#endif
+    if (wlc->hw->up) {
+        ret = wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 0);
+    } else {
+        ret = wlc_sendctl(wlc, p, wlc->active_queue, wlc->band->hwrs_scb, fifo, rate, 1);
+        printf("ERR: wlc down\n");
+    }
+    return ret;
+}
 
-AT(CHIP_VER_BCM43436b0, FW_VER_ALL, 0x808114)
-uint32
-sub_808114(uint32 a1, uint32 a2, uint32 a3)
-RETURN_DUMMY
+__attribute__((naked))
+void
+check_scb(void)
+{
+     asm(
+        "cmp r5, #0\n"             // check if pkt->scb is null
+        "bne nonnull\n"
+        "add lr,lr,0x14c\n"        // if null adapt lr to jump out of pkt dequeue loop
+        "b return\n"
+        "nonnull:\n"
+        "ldr.w r3,[r5,#0xc]\n"    // get scb->cfg (crashed the chip when scb was null)
+        "return:\n"
+        "push {lr}\n"
+        "pop {pc}\n"
+    );
+}
 
-#undef VOID_DUMMY
-#undef RETURN_DUMMY
-#undef AT
+__attribute__((at(0x33736, "", CHIP_VER_BCM43436b0, FW_VER_9_88_0_0)))
+__attribute__((naked))
+void
+patch_null_pointer_scb(void)
+{
+    asm(
+        "bl check_scb\n"    // branch to null pointer check instead of accessing possibly invalid cfg
+    );
 
-#endif /*LOCAL_WRAPPER_C*/
+}

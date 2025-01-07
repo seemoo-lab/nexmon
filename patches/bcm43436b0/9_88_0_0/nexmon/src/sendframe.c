@@ -67,7 +67,7 @@ check_scb(void)
      asm(
         "cmp r5, #0\n"             // check if pkt->scb is null
         "bne nonnull\n"
-        "add lr,lr,0x14c\n"        // if null adapt lr to jump out of pkt dequeue loop
+        "add lr,lr,0x14e\n"        // if null adapt lr to jump out of pkt dequeue loop
         "b return\n"
         "nonnull:\n"
         "ldr.w r3,[r5,#0xc]\n"    // get scb->cfg (crashed the chip when scb was null)
