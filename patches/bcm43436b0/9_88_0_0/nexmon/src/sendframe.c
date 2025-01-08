@@ -65,25 +65,26 @@ void
 check_scb(void)
 {
      asm(
-        "cmp r5, #0\n"             // check if pkt->scb is null
+        "ldr r5, [r2,#0x2c]\n"
+        "cmp r5, #0\n"          // check if pkt->scb is null
         "bne nonnull\n"
-        "add lr,lr,0x14e\n"        // if null adapt lr to jump out of pkt dequeue loop
+        "add lr,lr,0x14e\n"     // if null adapt lr to jump out of pkt dequeue loop
         "b return\n"
         "nonnull:\n"
-        "ldr.w r3,[r5,#0xc]\n"    // get scb->cfg (crashed the chip when scb was null)
+        "ldr r3,[r5,#0xc]\n"    // get scb->cfg (crashed the chip when scb was null)
         "return:\n"
         "push {lr}\n"
         "pop {pc}\n"
     );
 }
 
-__attribute__((at(0x33736, "", CHIP_VER_BCM43436b0, FW_VER_9_88_4_65)))
+__attribute__((at(0x33734, "", CHIP_VER_BCM43436b0, FW_VER_9_88_0_0)))
 __attribute__((naked))
 void
 patch_null_pointer_scb(void)
 {
     asm(
-        "bl check_scb\n"    // branch to null pointer check instead of accessing possibly invalid cfg
+        "bl.w check_scb\n"  // branch to null pointer check instead of accessing possibly invalid cfg
     );
 
 }
