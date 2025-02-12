@@ -84,6 +84,30 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p)
 }
 
 void
+wl_monitor_orig(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
+    struct sk_buff *mon_pkt;
+    struct wlc_info *wlc = wl->wlc;
+    void *osh = wlc->osh;
+    uint8 *pkttag = ((uint8 *)p) + 0x20;
+    uint32 *pkttag32 = (uint32 *)pkttag;
+    uint8 *mon_pkttag;
+    uint32 *mon_pkttag32;
+    uint len = p->len - 6;
+    if (!(mon_pkt = (struct sk_buff *)pkt_buf_get_skb(osh, len))) {
+        printf("%s: failed to get mon pkt\n", __FUNCTION__);
+        return;
+    }
+    memcpy(mon_pkt->data, p->data + 6, len);
+    mon_pkttag = ((uint8 *)mon_pkt) + 0x20;;
+    mon_pkttag32 = (uint32 *)mon_pkttag;
+    mon_pkttag[4] = pkttag[4]; // rxchannel
+    mon_pkttag[7] = pkttag[7]; // rssi
+    mon_pkttag32[4] = pkttag32[4]; // rspec
+    
+    wl_sendup(wl, 0, mon_pkt);
+}
+
+void
 wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
     int monitor = wl->wlc->monitor & 0xFF;
     switch(monitor) {
@@ -92,7 +116,7 @@ wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
             break;
 
         case MONITOR_IEEE80211:
-                wl_monitor(wl, sts, p);
+                wl_monitor_orig(wl, sts, p);
             break;
 
         case MONITOR_LOG_ONLY:
@@ -108,7 +132,14 @@ wl_monitor_hook(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p) {
             break;
     }
 }
-__attribute__((at(0x8778A6, "flashpatch", CHIP_VER_BCM43436b0, FW_VER_ALL)))
-__attribute__((naked))
+
+/* flashpatches are considered 8 byte long and must be 8 byte aligned */
+__attribute__((at(0x82EA60, "flashpatch", CHIP_VER_BCM43436b0, FW_VER_ALL)))
 void
-bw_wl_monitor_hook(void) { asm("bl.w wl_monitor_hook\n"); }
+flash_patch_95(void)
+{
+    asm(
+        "b.w wl_monitor_hook\n"
+        ".byte 0x97, 0x89, 0x43, 0x68\n"
+        );
+}
