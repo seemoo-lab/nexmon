@@ -167,15 +167,15 @@ ifndef NEXMON_SETUP_ENV
 endif
 
 dump-rom: FORCE
-	@printf "\033[0;31m  DUMPING ROM TO\033[0m /sdcard/rom.bin\n"
-	adb shell "su -c 'nexutil -g0x602 -l1024 -i -v$(ROMSTART) -r > /sdcard/rom.bin'" && adb shell "su -c 'for n in `seq 1 581`; do nexutil -g0x602 -l1024 -i -v$$((($$n*1024)+$(ROMSTART))) -r >> /sdcard/rom.bin; done'"
-	@printf "\033[0;31m  PULLING FILE TO\033[0m ./rom.bin\n"
-	adb pull /sdcard/rom.bin
+	@printf "\033[0;31m  MAKE SURE PATCHED FIRMWARE IS INSTALLED FOR DUMPING\n"
+	@printf "\033[0;31m  PLEASE RUN THE FOLLOWING COMMAND THROUGH adb shell\n"
+	@printf '\033[0m nexutil -g0x602 -l1024 -i -v$(ROMSTART) -r > /sdcard/rom.bin && for n in `seq 1 581`; do nexutil -g0x602 -l1024 -i -v$$((($$n*1024)+$(ROMSTART))) -r >> /sdcard/rom.bin; done)\n'
+	@printf "\033[0;31m  WHEN READY, PULL THE FILE WITH\033[0m adb pull /sdcard/rom.bin\n"
 
 install-firmware: $(RAM_FILE)
 	@printf "\033[0;31m  REMOUNTING /vendor\033[0m\n"
 	$(Q)adb shell 'su -c "mount -o rw,remount /vendor"'
-	@printf "\033[0;31m  COPYING TO PHONE\033[0m %s => /sdcard/%s\n" $< $<
+	@printf "\033[0;31m  COPYING TO WATCH\033[0m %s => /sdcard/%s\n" $< $<
 	$(Q)adb push $< /sdcard/ >> log/adb.log 2>> log/adb.log
 	@printf "\033[0;31m  COPYING\033[0m /sdcard/$(RAM_FILE) => /vendor/firmware/$(RAM_FILE)\n"
 	$(Q)adb shell 'su -c "cp /sdcard/$(RAM_FILE) /vendor/firmware/$(RAM_FILE)"'
