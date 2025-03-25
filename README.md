@@ -50,6 +50,7 @@ bcm43455c0                | 7_45_154             | Raspberry Pi B3+/B4       | R
 bcm43455c0                | 7_45_189             | Raspberry Pi B3+/B4       | Raspbian Kernel 4.14/19, 5.4 |  X  |  X  |     |  X  |  X  |    
 bcm43455c0                | 7_45_206             | Raspberry Pi B3+/B4       | Raspberry Pi OS Kernel 5.4   |  X  |  X  |  X  |  X  |  X  |    
 bcm43455c0                | 7_45_234 (4ca95bb CY)| Raspberry Pi B3+/B4/5     | Raspberry Pi OS              |     |     |     |  X  |  X  |    
+bcm43436b0<sup>3</sup>    | 9_88_0_0             | TicWatch Pro / Pro 3      | WearOS 2                     |  X  |  X  |  X  |  X  |  X  |    
 bcm43436b0<sup>3</sup>    | 9_88_4_65            | Raspberry Pi Zero 2 W     | Raspberry Pi OS Kernel 5.10  |  X  |  X  |  X  |  X  |  X  |    
 bcm4356                   | 7_35_101_5_sta       | Nexus 6                   | Android 7.1.2                |  X  |  X  |     |  X  |  X  |  O 
 bcm4358                   | 7_112_200_17_sta     | Nexus 6P                  | Android 7 Stock              |  X  |  X  |     |  X  |  X  |  O 
