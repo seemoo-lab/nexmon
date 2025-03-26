@@ -1,0 +1,47 @@
+This is a set of tools for debugging the b43 driver and/or firmware.
+Note that it is licensed under the GNU GPL version 3 ONLY!
+
+Installing:
+	Run the install.py script as root.
+
+*******************************************************************************
+*  b43-fwdump                                                                 *
+*******************************************************************************
+
+b43-fwdump is an utility for dumping the current status of the device firmware
+on a running device. It has some auto-detection mechanisms. So if you have
+only one card in the machine, it will dump the firmware state of that card, if
+called without any parameters.
+Use the --shm option, if you want a Shared Memory dump.
+Use the --binary option, if you want b43-fwdump to automatically dump the
+disassembled code at the current PC. This is convenient for debugging
+firmware crashes.
+
+Note that b43-fwdump _must_ be run as root, as it needs direct access to the
+hardware through debugfs.
+Debugfs must be mounted and you must have a recent driver with support for raw
+hardware access through debugfs.
+If you get error messages about missing debugfs files, make sure to upgrade to
+the latest development snapshot of the b43 driver.
+
+*******************************************************************************
+*  b43-beautifier                                                             *
+*******************************************************************************
+
+b43-beautifier is a tool to replace constant expressions in raw disassembled
+firmware code with human-readable #defined names.
+
+The tool requires either the disassembled source code or a binary (which it
+will disassemble then) to start with. See the --asmfile and --binfile
+parameters.
+It also requires a path to the directory containing the hardware definitions.
+This is the "common" subdirectory found in the b43-ucode GIT repository.
+See the --defs parameter.
+
+
+
+
+Please be careful when using these tools. Some of them have direct access to
+the hardware, so you can easily crash something.
+
+	Michael

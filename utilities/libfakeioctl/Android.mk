@@ -15,6 +15,6 @@ include $(BUILD_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libnexio
-LOCAL_SRC_FILES := $(LOCAL_PATH)/../libnexio/local/armeabi/libnexio.a
+LOCAL_SRC_FILES := $(LOCAL_PATH)/../libnexio/local/$(TARGET_ARCH_ABI)/libnexio.a
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../libnexio
 include $(PREBUILT_STATIC_LIBRARY)
