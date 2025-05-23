@@ -1,28 +1,40 @@
+
 /*
- * Copyright (C) 1999-2013, Broadcom Corporation
- * 
- *      Unless you and Broadcom execute a separate written software license
- * agreement governing use of this software, this software is licensed to you
- * under the terms of the GNU General Public License version 2 (the "GPL"),
- * available at http://www.broadcom.com/licenses/GPLv2.php, with the
- * following added to such license:
- * 
- *      As a special exception, the copyright holders of this software give you
- * permission to link this software with independent modules, and to copy and
- * distribute the resulting executable under terms of your choice, provided that
- * you also meet, for each linked independent module, the terms and conditions of
- * the license of that module.  An independent module is a module which is not
- * derived from this software.  The special exception does not apply to any
- * modifications of the software.
- * 
- *      Notwithstanding the above, under no circumstances may you combine this
- * software in any way with any other Broadcom software provided under a license
- * other than the GPL, without Broadcom's express prior written consent.
- * $Id: typedefs.h 397286 2013-04-18 01:42:19Z $
+ * Copyright (C) 2023, Broadcom. All Rights Reserved.
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ *
  */
 
 #ifndef _TYPEDEFS_H_
 #define _TYPEDEFS_H_
+
+#ifndef TYPEDEF_USHORT
+typedef unsigned short	ushort;
+#endif
+
+#ifndef TYPEDEF_ULONG
+typedef unsigned long	ulong;
+#endif
+
+
+#if defined(BCMQT)
+#define VEL_FULLCHIP_SIM 1 /* Veloce simulation of entire chip */
+#define VEL_COREONLY_SIM 2 /* Veloce simulation of just the WLAN core/slice */
+#endif /* BCMQT */
+
+#if (!defined(EDK_RELEASE_VERSION) || (EDK_RELEASE_VERSION < 0x00020000)) || \
+	!defined(BWL_NO_INTERNAL_STDLIB_SUPPORT)
 
 #ifdef SITE_TYPEDEFS
 
@@ -60,33 +72,50 @@
 #define TRUE	true
 #endif
 
-#else	/* ! __cplusplus */
-
-
 #endif	/* ! __cplusplus */
 
+#if !defined(TYPEDEF_UINTPTR)
 #if defined(__LP64__)
 #define TYPEDEF_UINTPTR
 typedef unsigned long long int uintptr;
 #endif
+#endif /* TYPEDEF_UINTPTR */
 
+#if defined(_RTE_) && !defined(_RTE_SIM_)
+#define _NEED_SIZE_T_
+#endif
 
+#if defined(_MINOSL_)
+#define _NEED_SIZE_T_
+#endif
 
-
+#if defined(TARGETOS_nucleus)
+/* for 'size_t' type */
+#include <stddef.h>
+#endif /* TARGETOS_nucleus */
+/* float_t types conflict with the same typedefs from the standard ANSI-C
+** math.h header file. Don't re-typedef them here.
+*/
+#if defined(TARGETOS_nucleus)
+#define TYPEDEF_FLOAT_T
+#endif /* TARGETOS_nucleus */
 
 #if defined(_NEED_SIZE_T_)
 typedef long unsigned int size_t;
 #endif
 
-
-
-
+#ifdef _MSC_VER	/* Microsoft C */
+#define TYPEDEF_INT64
+#define TYPEDEF_UINT64
+typedef signed __int64	int64;
+typedef unsigned __int64 uint64;
+#endif
 
 #if defined(__sparc__)
 #define TYPEDEF_ULONG
 #endif
 
-
+#if defined(linux)
 /*
  * If this is either a Linux hybrid build or the per-port code of a hybrid build
  * then use the Linux header files to get some of the typedefs.  Otherwise, define
@@ -94,7 +123,6 @@ typedef long unsigned int size_t;
  * a duplicate typedef error; there is no way to "undefine" a typedef.
  * We know when it's per-port code because each file defines LINUX_PORT at the top.
  */
-#if !defined(LINUX_HYBRID) || defined(LINUX_PORT)
 #define TYPEDEF_UINT
 #ifndef TARGETENV_android
 #define TYPEDEF_USHORT
@@ -113,10 +141,13 @@ typedef long unsigned int size_t;
 #endif
 #endif	/* == 2.6.18 */
 #endif	/* __KERNEL__ */
-#endif  /* !defined(LINUX_HYBRID) || defined(LINUX_PORT) */
+#endif	/* linux */
 
-
-
+#if !defined(linux) && !defined(_CFE_) && !defined(_RTE_) && !defined(_MINOSL_) && \
+	!defined(__DJGPP__) && !defined(__BOB__) && !defined(TARGETOS_nucleus)
+#define TYPEDEF_UINT
+#define TYPEDEF_USHORT
+#endif
 
 /* Do not support the (u)int64 types with strict ansi for GNU C */
 #if defined(__GNUC__) && defined(__STRICT_ANSI__)
@@ -137,32 +168,31 @@ typedef long unsigned int size_t;
 
 #endif /* __ICL */
 
-#if !defined(__DJGPP__)
+#if !defined(_CFE_) && !defined(_RTE_) && !defined(_MINOSL_) && !defined(__DJGPP__) && \
+	!defined(__BOB__) && !defined(TARGETOS_nucleus)
 
 /* pick up ushort & uint from standard types.h */
-#if defined(__KERNEL__)
+#if defined(linux) && defined(__KERNEL__)
 
 /* See note above */
-#if !defined(LINUX_HYBRID) || defined(LINUX_PORT)
+#ifdef USER_MODE
+#include <sys/types.h>
+#else
 #include <linux/types.h>	/* sys/types.h and linux/types.h are oil and water */
-#endif /* !defined(LINUX_HYBRID) || defined(LINUX_PORT) */
+#endif /* USER_MODE */
 
 #else
-
 
 #include <sys/types.h>
 
 #endif /* linux && __KERNEL__ */
 
-#endif 
-
-
+#endif /* !PMON && !_CFE_ && !_RTE_  && !_MINOSL_ && !__DJGPP__ */
 
 /* use the default typedefs in the next section of this file */
 #define USE_TYPEDEF_DEFAULTS
 
 #endif /* SITE_TYPEDEFS */
-
 
 /*
  * Default Typedefs
@@ -171,9 +201,9 @@ typedef long unsigned int size_t;
 #ifdef USE_TYPEDEF_DEFAULTS
 #undef USE_TYPEDEF_DEFAULTS
 
-#ifndef TYPEDEF_BOOL
+#if !defined(__bool_true_false_are_defined) && !defined(TYPEDEF_BOOL)
 typedef	/* @abstract@ */ unsigned char	bool;
-#endif
+#endif /* endif TYPEDEF_BOOL */
 
 /* define uchar, ushort, uint, ulong */
 
@@ -287,16 +317,16 @@ typedef float64 float_t;
 #define	PTRSZ	sizeof(char*)
 #endif
 
-
 /* Detect compiler type. */
-#if defined(__GNUC__) || defined(__lint)
+#ifdef _MSC_VER
+	#define BWL_COMPILER_MICROSOFT
+#elif defined(__GNUC__) || defined(__lint)
 	#define BWL_COMPILER_GNU
 #elif defined(__CC_ARM) && __CC_ARM
 	#define BWL_COMPILER_ARMCC
 #else
 	#error "Unknown compiler!"
-#endif 
-
+#endif /* _MSC_VER */
 
 #ifndef INLINE
 	#if defined(BWL_COMPILER_MICROSOFT)
@@ -307,7 +337,7 @@ typedef float64 float_t;
 		#define INLINE	__inline
 	#else
 		#define INLINE
-	#endif 
+	#endif /* _MSC_VER */
 #endif /* INLINE */
 
 #undef TYPEDEF_BOOL
@@ -336,9 +366,43 @@ typedef float64 float_t;
 /* Avoid warning for discarded const or volatile qualifier in special cases (-Wcast-qual) */
 #define DISCARD_QUAL(ptr, type) ((type *)(uintptr)(ptr))
 
+#else /* !EDK_RELEASE_VERSION || (EDK_RELEASE_VERSION < 0x00020000) */
+
+#include <sys/types.h>
+#include <strings.h>
+#include <stdlib.h>
+
+#ifdef stderr
+#undef stderr
+#define stderr stdout
+#endif
+
+typedef UINT8   uint8;
+typedef UINT16  uint16;
+typedef UINT32  uint32;
+typedef UINT64  uint64;
+typedef INT8    int8;
+typedef INT16   int16;
+typedef INT32   int32;
+typedef INT64   int64;
+
+typedef BOOLEAN       bool;
+typedef unsigned char uchar;
+typedef UINTN         uintptr;
+
+#define UNUSED_PARAMETER(x) (void)(x)
+#define DISCARD_QUAL(ptr, type) ((type *)(uintptr)(ptr))
+#define INLINE
+#define	AUTO	(-1) /* Auto = -1 */
+#define	ON	1  /* ON = 1 */
+#define	OFF	0
+
+#endif /* !EDK_RELEASE_VERSION || (EDK_RELEASE_VERSION < 0x00020000) */
+
 /*
  * Including the bcmdefs.h here, to make sure everyone including typedefs.h
  * gets this automatically
 */
 #include <bcmdefs.h>
+
 #endif /* _TYPEDEFS_H_ */
