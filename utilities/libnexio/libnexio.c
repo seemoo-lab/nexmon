@@ -552,14 +552,7 @@ nex_init_vendor_cmd(const char *ifname)
 		return 0;
 	}
 
-	nexio->nl_cb = nl_cb_alloc(NL_CB_DEFAULT);
-	if (!nexio->nl_cb) {
-		printf("%s: problem allocating netlink callback, error %d\n", __FUNCTION__, -ENOMEM);
-		nl_close(nexio->nl_sock);
-		nl_socket_free(nexio->nl_sock);
-		free(nexio);
-		return 0;
-	}
+	nexio->nl_cb = nl_socket_get_cb(nexio->nl_sock);
 
 	nl_cb_set(nexio->nl_cb, NL_CB_FINISH, NL_CB_CUSTOM, __nex_driver_finish_handler, &(nexio->res));
 	nl_cb_set(nexio->nl_cb, NL_CB_ACK, NL_CB_CUSTOM, __nex_driver_ack_handler, &(nexio->res));
