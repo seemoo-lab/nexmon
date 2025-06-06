@@ -710,6 +710,11 @@ int mergebssids(char * bssidlist, unsigned char * bssid)
 	mac[17] = 0;
 
 	tmp2 = list = strdup(bssidlist);
+	if (list == NULL)
+	{
+		perror( "strdup failed" );
+		return -1;
+	}
 
 	// skip first element (because it doesn't have to be converted
 	// It already has the good value
