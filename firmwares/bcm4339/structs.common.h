@@ -468,10 +468,10 @@ struct phy_info_acphy {
     int PAD;                            // 0x104
     int PAD;                            // 0x108
     int PAD;                            // 0x10c
-    int PAD;                            // 0x110
-    int PAD;                            // 0x114
-    int PAD;                            // 0x118
-    int PAD;                            // 0x11c
+    uint32 pstart;                      // 0x110
+    uint32 pstop;                       // 0x114
+    uint32 pfirst;                      // 0x118
+    uint32 plast;                       // 0x11c
     int PAD;                            // 0x120
     int PAD;                            // 0x124
     int PAD;                            // 0x128
@@ -529,17 +529,17 @@ struct phy_info_acphy {
 struct phy_info {
     struct phy_pub pubpi_ro;            // 0x000
     struct shared_phy *sh;              // 0x01c
-    int PAD;                            // 0x020
-    int PAD;                            // 0x024
-    int PAD;                            // 0x028
-    int PAD;                            // 0x02c
-    int PAD;                            // 0x030
-    int PAD;                            // 0x034
-    int PAD;                            // 0x038
-    int PAD;                            // 0x03c
-    int PAD;                            // 0x040
-    int PAD;                            // 0x044
-    int PAD;                            // 0x048
+    void   (*fn_init)(void *);                                                      // 0x020
+    void   (*fn_calinit)(void *);                                                   // 0x024
+    void   (*fn_chanset)(void *, uint16);                                           // 0x028
+    void   (*fn_txpwrrecalc)(void *);                                               // 0x02c
+    int    (*fn_longtrn)(void *, int);                                              // 0x030
+    void   (*fn_txiqccget)(void *, uint16 *, uint16 *);                             // 0x034
+    void   (*fn_txiqccmimoget)(void *, uint16 *, uint16 *, uint16 *, uint16 *);     // 0x038
+    void   (*fn_txiqccset)(void *, uint16, uint16);                                 // 0x03c
+    void   (*fn_txiqccmimoset)(void *, uint16, uint16, uint16, uint16);             // 0x040
+    uint16 (*fn_txloccget)(void *);                                                 // 0x044
+    void   (*fn_txloccset)(void *pi, uint16 didq);                            // 0x048
     int PAD;                            // 0x04c
     int PAD;                            // 0x050
     int PAD;                            // 0x054
@@ -1774,6 +1774,15 @@ struct hnddma_pub {
     unsigned int txnobuf;           /* tx out of dma descriptors */
 } __attribute__((packed));
 
+typedef volatile struct {
+    uint32 control;
+    uint32 ptr;
+    uint32 addrlow;
+    uint32 addrhigh;
+    uint32 status0;
+    uint32 status1;
+} dma64regs_t;
+
 struct dma_info {
     struct hnddma_pub hnddma;   /* exported structure */
     int msg_level;              /* message level pointer */
@@ -1784,8 +1793,8 @@ struct dma_info {
     bool dma64;                 /* this dma engine is operating in 64-bit mode */
     bool addrext;               /* this dma engine supports DmaExtendedAddrChanges */
     char gap2[2];
-    void *txregs;               /* 64-bit dma tx engine registers */
-    void *rxregs;               /* 64-bit dma rx engine registers */
+    dma64regs_t *txregs;        /* 64-bit dma tx engine registers */
+    dma64regs_t *rxregs;        /* 64-bit dma rx engine registers */
     void *txd;                  /* pointer to dma64 tx descriptor ring */
     void *rxd;                  /* pointer to dma64 rx descriptor ring */
     short dmadesc_align;        /* alignment requirement for dma descriptors */
@@ -1899,7 +1908,7 @@ struct d11regs {
     unsigned int tplatewrdata;   /* 0x134 */
     unsigned int PAD[2];     /* 0x138 - 0x13C */
 
-    /* PMQ registers */
+    /* Power Management Queue (PMQ) registers */
     union pmqreg pmqreg;    /* 0x140 */
     unsigned int pmqpatl;        /* 0x144 */
     unsigned int pmqpath;        /* 0x148 */
@@ -2104,7 +2113,7 @@ struct d11regs {
     unsigned short PAD;                 /* SPR_TX_STATUS3                   0x51e */
 
     union {
-        struct {
+        struct { // d11regs
             /* Transmit control */
             uint16  xmtfifodef;     /* 0x520 */
             uint16  xmtfifo_frame_cnt;      /* 0x522 */     /* Corerev >= 16 */
@@ -2261,7 +2270,7 @@ struct d11regs {
             uint16  PAD[0x380];     /* 0x800 - 0xEFE */
         } d11regs;
 
-        struct {
+        struct { // d11regs_nexmon_old
             /* Transmit control */
             unsigned short xmtfifodef;          /* SPR_TXE0_FIFO_Def                0x520 */
             unsigned short xmtfifo_frame_cnt;   /* SPR_TXE0_0x22                    0x522 *//* Corerev >= 16 */
@@ -2400,7 +2409,7 @@ struct d11regs {
             unsigned short PAD[0x380]; /* 0x800 - 0xEFE */
         } d11regs_nexmon_old;
 
-        struct {
+        struct { // d11acregs
             uint16  XmtFIFOFullThreshold;   /* 0x520 */
             uint16  XmtFifoFrameCnt;    /* 0x522 */
             uint16  PAD[1];
@@ -2672,6 +2681,19 @@ struct hndrte_timer
     bool    _freedone;
 } __attribute__((packed));
 
+struct tdls_iovar {
+    uint8 ea[6];
+    uint8 mode;         /* mode: depends on iovar */
+    uint8 chanspec[2];
+    uint8 PAD;
+    uint8 PAD;
+    uint8 PAD;
+    uint8 PAD;
+    uint8 PAD;
+    uint8 PAD;
+    uint8 PAD;
+} __attribute__((packed));
+
 /*== maccontrol register ==*/
 #define MCTL_GMODE      (1U << 31)
 #define MCTL_DISCARD_PMQ    (1 << 30)
@@ -2739,6 +2761,25 @@ struct udp_header {
         uint16 checksum_coverage;   /* UDPLITE: checksum_coverage */
     } len_chk_cov;
     uint16 checksum;
+} __attribute__((packed));
+
+struct icmp_header {
+    uint8 type;
+    uint8 code;
+    uint16 checksum;
+} __attribute__((packed));
+
+struct icmp_ping_header {
+    uint16 identifier;
+    uint16 sequence_number;
+} __attribute__((packed));
+
+struct ethernet_ip_icmp_ping_header {
+    struct ethernet_header ethernet;
+    struct ip_header ip;
+    struct icmp_header icmp;
+    struct icmp_ping_header ping;
+    uint8 payload[];
 } __attribute__((packed));
 
 struct ethernet_ip_udp_header {

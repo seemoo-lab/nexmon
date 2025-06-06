@@ -48,7 +48,12 @@ wlc_ioctl_7xx(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
     int ret = IOCTL_ERROR;
 
     switch (cmd) {
-
+    	case 700:
+    	{
+    		printf("d11regs %08x\n", wlc->band->pi->regs);
+    		ret = IOCTL_SUCCESS;
+    	}
+    	break;
     }
 
     return ret;

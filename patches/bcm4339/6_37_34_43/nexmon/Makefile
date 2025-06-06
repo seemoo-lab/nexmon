@@ -17,6 +17,9 @@ CFLAGS= \
 	-fno-strict-aliasing \
 	-DNEXMON_CHIP=$(NEXMON_CHIP) \
 	-DNEXMON_FW_VERSION=$(NEXMON_FW_VERSION) \
+	-DWLC_UCODE_WRITE_BL_HOOK_ADDR=$(WLC_UCODE_WRITE_BL_HOOK_ADDR) \
+	-DHNDRTE_RECLAIM_0_END_PTR=$(HNDRTE_RECLAIM_0_END_PTR) \
+	-DTEMPLATERAMSTART_PTR=$(TEMPLATERAMSTART_PTR) \
 	-DPATCHSTART=$(PATCHSTART) \
 	-DUCODESIZE=$(UCODESIZE) \
 	-DGIT_VERSION=\"$(GIT_VERSION)\" \
@@ -34,6 +37,7 @@ init: FORCE
 	$(Q)echo $$(($$(cat BUILD_NUMBER) + 1)) > BUILD_NUMBER
 	$(Q)touch src/version.c
 	$(Q)make -s -f $(NEXMON_ROOT)/patches/common/header.mk
+	@printf "\033[0;31m  CREATING DIRECTORIES\033[0m obj, gen, log\n"
 	$(Q)mkdir -p obj gen log
 
 obj/%.o: src/%.c

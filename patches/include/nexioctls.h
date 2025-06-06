@@ -56,6 +56,16 @@
 #define NEX_CLEAR_CONSOLE               417
 #define NEX_GET_CHANSPEC_OVERRIDE       418
 #define NEX_SET_CHANSPEC_OVERRIDE       419
+#define NEX_GET_AMPDU_TX				420
+#define NEX_SET_AMPDU_TX				421
+#define NEX_TRIGGER_EVENT               422
+#define NEX_TRIGGER_TDLS_DISCOVER       423
+#define NEX_TRIGGER_TDLS_SETUP          424
+#define NEX_TRIGGER_TDLS_TEARDOWN       425
+#define NEX_WRITE_TEMPLATE_RAM          426
+#define NEX_SDR_START_TRANSMISSION      427
+#define NEX_SDR_STOP_TRANSMISSION       428
+
 
 // IOCTLs used in original firmware
 #define WLC_GET_MAGIC                     0

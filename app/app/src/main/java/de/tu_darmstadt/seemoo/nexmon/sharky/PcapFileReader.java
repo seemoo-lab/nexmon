@@ -19,6 +19,7 @@
 package de.tu_darmstadt.seemoo.nexmon.sharky;
 
 import android.annotation.SuppressLint;
+import android.util.Log;
 
 import java.io.FileInputStream;
 import java.nio.ByteOrder;
@@ -37,7 +38,7 @@ public class PcapFileReader {
     private FileChannel channel;
     private MappedByteBuffer buffer;
     private HashMap<Integer, Integer> posMap;
-    private int wtapLinktype = 23;
+    private Packet.LinkType linktype = Packet.LinkType.IEEE_802_11_WLAN_RADIOTAP;
 
 
     public PcapFileReader(String fileName) {
@@ -45,15 +46,10 @@ public class PcapFileReader {
         int pcapLinktype = getBuffer().getInt(20);
         calcPositions();
 
-        if(pcapLinktype == Packet.PCAP_LINKTYPE_RADIOTAP) {
-            wtapLinktype = Packet.WTAP_LINKTYPE_RADIOTAP;
+        linktype = Packet.LinkType.getLinktypeFromPcapValue(pcapLinktype);
 
-
-        } else if(pcapLinktype == Packet.PCAP_LINKTYPE_ETHERNET) {
-            wtapLinktype = Packet.WTAP_LINKTYPE_ETHERNET;
-        } else {
+        if (linktype == null)
             throw new UnsupportedOperationException("Unknown File Format.");
-        }
     }
 
     public int getAmountOfPackets() {
@@ -131,8 +127,7 @@ public class PcapFileReader {
 
 
     public Packet getPacket(int offset) {
-
-        Packet packet = new Packet(wtapLinktype);
+        Packet packet = new Packet(linktype);
         try {
             packet._rawHeader = new byte[PCAP_PACKET_HEADER_LENGTH];
             getBuffer().position(offset);

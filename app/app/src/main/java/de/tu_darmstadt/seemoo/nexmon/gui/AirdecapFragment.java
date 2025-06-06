@@ -18,6 +18,7 @@
 
 package de.tu_darmstadt.seemoo.nexmon.gui;
 
+import android.app.Fragment;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Environment;
@@ -51,7 +52,7 @@ import de.tu_darmstadt.seemoo.nexmon.sharky.PcapFileReader;
 /**
  * Created by fabian on 8/25/16.
  */
-public class AirdecapFragment extends TrackingFragment {
+public class AirdecapFragment extends Fragment {
 
     private static final int SHOW_LOADING = 80;
     private static final int DISMISS_LOADING = 81;
@@ -90,11 +91,6 @@ public class AirdecapFragment extends TrackingFragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-    }
-
-    @Override
-    public String getTrackingName() {
-        return "Screen: Airdecap";
     }
 
     @Override
@@ -254,7 +250,6 @@ public class AirdecapFragment extends TrackingFragment {
                     scanStart += scanAmount;
                 }
 
-
                 guiHandler.sendEmptyMessage(UPDATE_SPINNER);
                 guiHandler.sendEmptyMessage(DISMISS_LOADING);
             }
@@ -269,7 +264,7 @@ public class AirdecapFragment extends TrackingFragment {
                     guiHandler.sendEmptyMessage(SHOW_LOADING);
 
                     // TODO should be static access.
-                    Packet packet = new Packet(23);
+                    Packet packet = new Packet(Packet.LinkType.IEEE_802_11_WLAN_RADIOTAP);
                     packet.decrypt(bssid, ssid, passphrase, fileDir, encryption);
 
                     guiHandler.sendEmptyMessage(DISMISS_LOADING);
