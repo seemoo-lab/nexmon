@@ -14,9 +14,9 @@ libs/armeabi/nexutil: Android.mk nexutil.c ../libargp/local/armeabi/libargp.a ..
 else
 nexutil: nexutil.c ../libnexio/libnexio.a FORCE
 ifeq ($(USE_VENDOR_CMD),1)
-	gcc -static -o nexutil nexutil.c bcmwifi_channels.c b64-encode.c b64-decode.c -DUSE_VENDOR_CMD -DBUILD_ON_RPI -DVERSION=\"$(GIT_VERSION)\" -I. -I../../patches/include -I../libnexio -L../libnexio/ -lnexio -I../libargp $(shell pkg-config --cflags --libs libnl-3.0 libnl-genl-3.0) -lpthread
+	gcc -static -o nexutil nexutil.c bcmutils.c bcmwifi_channels.c b64-encode.c b64-decode.c -DUSE_VENDOR_CMD -DBUILD_ON_RPI -DVERSION=\"$(GIT_VERSION)\" -I. -I./include -I../../patches/include -I../libnexio -L../libnexio/ -lnexio -I../libargp $(shell pkg-config --cflags --libs libnl-3.0 libnl-genl-3.0) -lpthread
 else
-	gcc -static -o nexutil nexutil.c bcmwifi_channels.c b64-encode.c b64-decode.c -DBUILD_ON_RPI -DVERSION=\"$GIT_VERSION\" -DUSE_NETLINK -I. -I../../patches/include -I../libnexio -L../libnexio/ -lnexio -I../libargp
+	gcc -static -o nexutil nexutil.c bcmutils.c bcmwifi_channels.c b64-encode.c b64-decode.c -DBUILD_ON_RPI -DVERSION=\"$GIT_VERSION\" -DUSE_NETLINK -I. -I./include -I../../patches/include -I../libnexio -L../libnexio/ -lnexio -I../libargp
 endif
 endif
 
