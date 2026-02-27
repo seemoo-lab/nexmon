@@ -1,0 +1,77 @@
+2016-06-11  Daiki Ueno  <ueno@gnu.org>
+
+	build: Fix unintentional soname bump
+	* gettext-runtime/intl/Makefile.in: Revert LTV_CURRENT and increment
+	LTV_REVISION.
+	* gettext-tools/libgettextpo/Makefile.am: Likewise.
+
+2016-06-09  Daiki Ueno  <ueno@gnu.org>
+
+	Prepare for 0.19.8
+
+2016-05-25  Daiki Ueno  <ueno@gnu.org>
+
+	intl: Pacify pre-C99 compilers
+	* gettext-runtime/intl/plural-exp.h (HAVE_STRUCT_INITIALIZER): New
+	macro, based on the check previously in plural-exp.c.  Also add check
+	for __SUNPRO_C for Solaris Studio C compiler.
+	(GERMANIC_PLURAL): Define as 'struct expression' not 'const struct
+	expression' if struct/union initializers are not supported by the
+	compiler.
+	* gettext-runtime/intl/plural-exp.c: Use HAVE_STRUCT_INITIALIZER.
+	Reported by Dagobert Michelsen and investigated by pan7 in:
+	https://savannah.gnu.org/support/?108743
+
+2016-01-20  KO Myung-Hun  <komh78@gmail.com>
+
+	intl: Support UNIXROOT in BINDTEXTDOMAIN () on EMX
+	$UNIXROOT is a drive on which a root of FHS is.
+
+	* gettext-runtime/intl/bindtextdom.c (BINDTEXTDOMAIN): Prepend
+	$UNIXROOT to dirname if it is started '/' or it is an empty string.
+
+2016-01-02  Daiki Ueno  <ueno@gnu.org>
+
+	maint: Update copyright year
+
+2015-12-28  Daiki Ueno  <ueno@gnu.org>
+
+	Prepare for 0.19.7
+
+2015-12-10  KO Myung-Hun  <komh78@gmail.com>  (tiny change)
+
+	intl: Fix name resolution failures on kLIBC
+	kLIBC already has _nl_default_dirname and _nl_msg_cat_cntr in its own
+	gettext implmenetation.
+	* gettext-runtime/intl/dcigettext.c: Do not declare _nl_default_dirname
+	on kLIBC.
+	* gettext-runtime/intl/gettextP.h: Define _nl_msg_cat_cntr to
+	libintl_nl_msg_cat_cntr on kLIBC.
+
+	build: Do not include os2compat.[ch]
+	kLIBC does not need os2compat.[ch]
+	* gettext-runtime/configure.ac (AH_BOTTOM): Do not include
+	intl/os2compat.h on kLIBC.
+	* gettext-runtime/intl/osdep.c: Do not include os2compat.c on kLIBC.
+	* gettext-tools/configure.ac (AH_BOTTOM): Do not include
+	intl/os2compat.h on kLIBC.
+
+2015-10-15  Daiki Ueno  <ueno@gnu.org>
+
+	build: Generate ChangeLogs for intl and po
+	* autogen.sh: Create empty ChangeLog files under intl and po.
+	* Makefile.am (gen-ChangeLogs): Rename from gen-ChangeLog.  Generate
+	ChangeLog files for */intl and */po as well as top-level.
+	* gettext-runtime/intl/ChangeLog.0: Rename from ChangeLog.
+	* gettext-runtime/po/ChangeLog.0: Rename from ChangeLog.
+	* gettext-tools/po/ChangeLog.1: Rename from ChangeLog.
+
+2015-10-14  Mike Frysinger  <vapier@chromium.org>
+
+	intl/localename: control langinfo.h inclusion
+	This header is only used to work around buggy behavior in old versions
+	of glibc, so do not include it all the time.  Otherwise we get build
+	failures on systems that do not provide langinfo.h.
+
+	* gettext-runtime/intl/localename.c: Wrap langinfo.h include with same
+	ifdefs used in the source later on.

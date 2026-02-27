@@ -1,0 +1,26 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="tud.seemoo.pentest.MyActivity">
+
+    <item
+        android:id="@+id/action_change_channel"
+        android:orderInCategory="100"
+        android:showAsAction="ifRoom"
+        android:icon="@drawable/ic_router_white_24dp"
+        android:title="Channel"
+        />
+
+    <item
+        android:id="@+id/action_toggle_finder"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="Start" />
+
+    <item
+        android:id="@+id/action_save_handshakes"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="Save Handshakes" />
+
+
+</menu>

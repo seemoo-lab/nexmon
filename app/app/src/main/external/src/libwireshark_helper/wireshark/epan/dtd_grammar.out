@@ -1,0 +1,600 @@
+State 0:
+          dtd ::= * doctype
+          dtd ::= * dtd_parts
+          doctype ::= * TAG_START DOCTYPE_KW NAME OPEN_BRACKET dtd_parts CLOSE_BRACKET TAG_STOP
+          dtd_parts ::= * dtd_parts element
+          dtd_parts ::= * dtd_parts attlist
+          dtd_parts ::= * element
+          dtd_parts ::= * attlist
+          attlist ::= * TAG_START ATTLIST_KW NAME attrib_list TAG_STOP
+          element ::= * TAG_START ELEMENT_KW NAME sub_elements TAG_STOP
+
+                     TAG_START shift  20
+                           dtd accept
+                       doctype shift  23
+                     dtd_parts shift  7
+                       element shift  69
+                       attlist shift  70
+
+State 1:
+          sub_elements ::= * sub_elements STAR
+          sub_elements ::= * sub_elements PLUS
+          sub_elements ::= * sub_elements QUESTION
+          sub_elements ::= * OPEN_PARENS ELEM_DATA CLOSE_PARENS
+          sub_elements ::= OPEN_PARENS * ELEM_DATA CLOSE_PARENS
+          sub_elements ::= * OPEN_PARENS element_list COMMA ELEM_DATA CLOSE_PARENS
+          sub_elements ::= OPEN_PARENS * element_list COMMA ELEM_DATA CLOSE_PARENS
+          sub_elements ::= * OPEN_PARENS element_list PIPE ELEM_DATA CLOSE_PARENS
+          sub_elements ::= OPEN_PARENS * element_list PIPE ELEM_DATA CLOSE_PARENS
+          sub_elements ::= * OPEN_PARENS element_list CLOSE_PARENS
+          sub_elements ::= OPEN_PARENS * element_list CLOSE_PARENS
+          sub_elements ::= * EMPTY_KW
+          element_list ::= * element_list COMMA element_child
+          element_list ::= * element_list PIPE element_child
+          element_list ::= * element_child
+          element_list ::= * sub_elements
+          element_list ::= * element_list COMMA sub_elements
+          element_list ::= * element_list PIPE sub_elements
+          element_child ::= * NAME
+          element_child ::= * NAME STAR
+          element_child ::= * NAME QUESTION
+          element_child ::= * NAME PLUS
+
+                          NAME shift  18
+                   OPEN_PARENS shift  1
+                     ELEM_DATA shift  27
+                      EMPTY_KW shift  59
+                  sub_elements shift  15
+                  element_list shift  16
+                 element_child shift  67
+
+State 2:
+          enumeration ::= * OPEN_PARENS enum_list CLOSE_PARENS
+          enumeration ::= OPEN_PARENS * enum_list CLOSE_PARENS
+          enum_list ::= * enum_list PIPE enum_item
+          enum_list ::= * enum_item
+          enum_list ::= * enumeration
+          enum_list ::= * enum_list PIPE enumeration
+          enum_item ::= * NAME
+          enum_item ::= * QUOTED
+
+                          NAME shift  48
+                        QUOTED shift  49
+                   OPEN_PARENS shift  2
+                   enumeration shift  51
+                     enum_list shift  22
+                     enum_item shift  50
+
+State 3:
+          doctype ::= TAG_START DOCTYPE_KW NAME OPEN_BRACKET * dtd_parts CLOSE_BRACKET TAG_STOP
+          dtd_parts ::= * dtd_parts element
+          dtd_parts ::= * dtd_parts attlist
+          dtd_parts ::= * element
+          dtd_parts ::= * attlist
+          attlist ::= * TAG_START ATTLIST_KW NAME attrib_list TAG_STOP
+          element ::= * TAG_START ELEMENT_KW NAME sub_elements TAG_STOP
+
+                     TAG_START shift  21
+                     dtd_parts shift  9
+                       element shift  69
+                       attlist shift  70
+
+State 4:
+          sub_elements ::= * sub_elements STAR
+          sub_elements ::= * sub_elements PLUS
+          sub_elements ::= * sub_elements QUESTION
+          sub_elements ::= * OPEN_PARENS ELEM_DATA CLOSE_PARENS
+          sub_elements ::= * OPEN_PARENS element_list COMMA ELEM_DATA CLOSE_PARENS
+          sub_elements ::= OPEN_PARENS element_list COMMA * ELEM_DATA CLOSE_PARENS
+          sub_elements ::= * OPEN_PARENS element_list PIPE ELEM_DATA CLOSE_PARENS
+          sub_elements ::= * OPEN_PARENS element_list CLOSE_PARENS
+          sub_elements ::= * EMPTY_KW
+          element_list ::= element_list COMMA * element_child
+          element_list ::= element_list COMMA * sub_elements
+          element_child ::= * NAME
+          element_child ::= * NAME STAR
+          element_child ::= * NAME QUESTION
+          element_child ::= * NAME PLUS
+
+                          NAME shift  18
+                   OPEN_PARENS shift  1
+                     ELEM_DATA shift  28
+                      EMPTY_KW shift  59
+                  sub_elements shift  17
+                 element_child shift  60
+
+State 5:
+          sub_elements ::= * sub_elements STAR
+          sub_elements ::= * sub_elements PLUS
+          sub_elements ::= * sub_elements QUESTION
+          sub_elements ::= * OPEN_PARENS ELEM_DATA CLOSE_PARENS
+          sub_elements ::= * OPEN_PARENS element_list COMMA ELEM_DATA CLOSE_PARENS
+          sub_elements ::= * OPEN_PARENS element_list PIPE ELEM_DATA CLOSE_PARENS
+          sub_elements ::= OPEN_PARENS element_list PIPE * ELEM_DATA CLOSE_PARENS
+          sub_elements ::= * OPEN_PARENS element_list CLOSE_PARENS
+          sub_elements ::= * EMPTY_KW
+          element_list ::= element_list PIPE * element_child
+          element_list ::= element_list PIPE * sub_elements
+          element_child ::= * NAME
+          element_child ::= * NAME STAR
+          element_child ::= * NAME QUESTION
+          element_child ::= * NAME PLUS
+
+                          NAME shift  18
+                   OPEN_PARENS shift  1
+                     ELEM_DATA shift  29
+                      EMPTY_KW shift  59
+                  sub_elements shift  19
+                 element_child shift  65
+
+State 6:
+          enumeration ::= * OPEN_PARENS enum_list CLOSE_PARENS
+          enum_list ::= enum_list PIPE * enum_item
+          enum_list ::= enum_list PIPE * enumeration
+          enum_item ::= * NAME
+          enum_item ::= * QUOTED
+
+                          NAME shift  48
+                        QUOTED shift  49
+                   OPEN_PARENS shift  2
+                   enumeration shift  47
+                     enum_item shift  46
+
+State 7:
+      (1) dtd ::= dtd_parts *
+          dtd_parts ::= dtd_parts * element
+          dtd_parts ::= dtd_parts * attlist
+          attlist ::= * TAG_START ATTLIST_KW NAME attrib_list TAG_STOP
+          element ::= * TAG_START ELEMENT_KW NAME sub_elements TAG_STOP
+
+                             $ reduce 1
+                     TAG_START shift  21
+                       element shift  33
+                       attlist shift  34
+
+State 8:
+          attrib ::= NAME * att_type att_default
+          att_type ::= * ATT_TYPE
+          att_type ::= * enumeration
+          enumeration ::= * OPEN_PARENS enum_list CLOSE_PARENS
+
+                      ATT_TYPE shift  43
+                   OPEN_PARENS shift  2
+                      att_type shift  11
+                   enumeration shift  44
+
+State 9:
+          doctype ::= TAG_START DOCTYPE_KW NAME OPEN_BRACKET dtd_parts * CLOSE_BRACKET TAG_STOP
+          dtd_parts ::= dtd_parts * element
+          dtd_parts ::= dtd_parts * attlist
+          attlist ::= * TAG_START ATTLIST_KW NAME attrib_list TAG_STOP
+          element ::= * TAG_START ELEMENT_KW NAME sub_elements TAG_STOP
+
+                     TAG_START shift  21
+                 CLOSE_BRACKET shift  32
+                       element shift  33
+                       attlist shift  34
+
+State 10:
+          attlist ::= TAG_START ATTLIST_KW NAME * attrib_list TAG_STOP
+          attrib_list ::= * attrib_list attrib
+          attrib_list ::= * attrib
+          attrib ::= * NAME att_type att_default
+
+                          NAME shift  8
+                   attrib_list shift  12
+                        attrib shift  52
+
+State 11:
+          attrib ::= NAME att_type * att_default
+          att_default ::= * ATT_DEF
+          att_default ::= * ATT_DEF_WITH_VALUE QUOTED
+          att_default ::= * QUOTED
+          att_default ::= * IMPLIED_KW
+          att_default ::= * REQUIRED_KW
+
+                       ATT_DEF shift  38
+            ATT_DEF_WITH_VALUE shift  25
+                        QUOTED shift  40
+                    IMPLIED_KW shift  41
+                   REQUIRED_KW shift  42
+                   att_default shift  37
+
+State 12:
+          attlist ::= TAG_START ATTLIST_KW NAME attrib_list * TAG_STOP
+          attrib_list ::= attrib_list * attrib
+          attrib ::= * NAME att_type att_default
+
+                          NAME shift  8
+                      TAG_STOP shift  35
+                        attrib shift  36
+
+State 13:
+          element ::= TAG_START ELEMENT_KW NAME * sub_elements TAG_STOP
+          sub_elements ::= * sub_elements STAR
+          sub_elements ::= * sub_elements PLUS
+          sub_elements ::= * sub_elements QUESTION
+          sub_elements ::= * OPEN_PARENS ELEM_DATA CLOSE_PARENS
+          sub_elements ::= * OPEN_PARENS element_list COMMA ELEM_DATA CLOSE_PARENS
+          sub_elements ::= * OPEN_PARENS element_list PIPE ELEM_DATA CLOSE_PARENS
+          sub_elements ::= * OPEN_PARENS element_list CLOSE_PARENS
+          sub_elements ::= * EMPTY_KW
+
+                   OPEN_PARENS shift  1
+                      EMPTY_KW shift  59
+                  sub_elements shift  14
+
+State 14:
+          element ::= TAG_START ELEMENT_KW NAME sub_elements * TAG_STOP
+          sub_elements ::= sub_elements * STAR
+          sub_elements ::= sub_elements * PLUS
+          sub_elements ::= sub_elements * QUESTION
+
+                      TAG_STOP shift  53
+                          STAR shift  54
+                          PLUS shift  55
+                      QUESTION shift  56
+
+State 15:
+          sub_elements ::= sub_elements * STAR
+          sub_elements ::= sub_elements * PLUS
+          sub_elements ::= sub_elements * QUESTION
+     (37) element_list ::= sub_elements *
+
+                          STAR shift  54
+                          PLUS shift  55
+                      QUESTION shift  56
+                     {default} reduce 37
+
+State 16:
+          sub_elements ::= OPEN_PARENS element_list * COMMA ELEM_DATA CLOSE_PARENS
+          sub_elements ::= OPEN_PARENS element_list * PIPE ELEM_DATA CLOSE_PARENS
+          sub_elements ::= OPEN_PARENS element_list * CLOSE_PARENS
+          element_list ::= element_list * COMMA element_child
+          element_list ::= element_list * PIPE element_child
+          element_list ::= element_list * COMMA sub_elements
+          element_list ::= element_list * PIPE sub_elements
+
+                  CLOSE_PARENS shift  66
+                          PIPE shift  5
+                         COMMA shift  4
+
+State 17:
+          sub_elements ::= sub_elements * STAR
+          sub_elements ::= sub_elements * PLUS
+          sub_elements ::= sub_elements * QUESTION
+     (38) element_list ::= element_list COMMA sub_elements *
+
+                          STAR shift  54
+                          PLUS shift  55
+                      QUESTION shift  56
+                     {default} reduce 38
+
+State 18:
+     (40) element_child ::= NAME *
+          element_child ::= NAME * STAR
+          element_child ::= NAME * QUESTION
+          element_child ::= NAME * PLUS
+
+                          STAR shift  61
+                          PLUS shift  63
+                      QUESTION shift  62
+                     {default} reduce 40
+
+State 19:
+          sub_elements ::= sub_elements * STAR
+          sub_elements ::= sub_elements * PLUS
+          sub_elements ::= sub_elements * QUESTION
+     (39) element_list ::= element_list PIPE sub_elements *
+
+                          STAR shift  54
+                          PLUS shift  55
+                      QUESTION shift  56
+                     {default} reduce 39
+
+State 20:
+          doctype ::= TAG_START * DOCTYPE_KW NAME OPEN_BRACKET dtd_parts CLOSE_BRACKET TAG_STOP
+          attlist ::= TAG_START * ATTLIST_KW NAME attrib_list TAG_STOP
+          element ::= TAG_START * ELEMENT_KW NAME sub_elements TAG_STOP
+
+                    DOCTYPE_KW shift  30
+                    ATTLIST_KW shift  24
+                    ELEMENT_KW shift  26
+
+State 21:
+          attlist ::= TAG_START * ATTLIST_KW NAME attrib_list TAG_STOP
+          element ::= TAG_START * ELEMENT_KW NAME sub_elements TAG_STOP
+
+                    ATTLIST_KW shift  24
+                    ELEMENT_KW shift  26
+
+State 22:
+          enumeration ::= OPEN_PARENS enum_list * CLOSE_PARENS
+          enum_list ::= enum_list * PIPE enum_item
+          enum_list ::= enum_list * PIPE enumeration
+
+                  CLOSE_PARENS shift  45
+                          PIPE shift  6
+
+State 23:
+      (0) dtd ::= doctype *
+
+                             $ reduce 0
+
+State 24:
+          attlist ::= TAG_START ATTLIST_KW * NAME attrib_list TAG_STOP
+
+                          NAME shift  10
+
+State 25:
+          att_default ::= ATT_DEF_WITH_VALUE * QUOTED
+
+                        QUOTED shift  39
+
+State 26:
+          element ::= TAG_START ELEMENT_KW * NAME sub_elements TAG_STOP
+
+                          NAME shift  13
+
+State 27:
+          sub_elements ::= OPEN_PARENS ELEM_DATA * CLOSE_PARENS
+
+                  CLOSE_PARENS shift  57
+
+State 28:
+          sub_elements ::= OPEN_PARENS element_list COMMA ELEM_DATA * CLOSE_PARENS
+
+                  CLOSE_PARENS shift  58
+
+State 29:
+          sub_elements ::= OPEN_PARENS element_list PIPE ELEM_DATA * CLOSE_PARENS
+
+                  CLOSE_PARENS shift  64
+
+State 30:
+          doctype ::= TAG_START DOCTYPE_KW * NAME OPEN_BRACKET dtd_parts CLOSE_BRACKET TAG_STOP
+
+                          NAME shift  31
+
+State 31:
+          doctype ::= TAG_START DOCTYPE_KW NAME * OPEN_BRACKET dtd_parts CLOSE_BRACKET TAG_STOP
+
+                  OPEN_BRACKET shift  3
+
+State 32:
+          doctype ::= TAG_START DOCTYPE_KW NAME OPEN_BRACKET dtd_parts CLOSE_BRACKET * TAG_STOP
+
+                      TAG_STOP shift  68
+
+State 33:
+      (3) dtd_parts ::= dtd_parts element *
+
+                     {default} reduce 3
+
+State 34:
+      (4) dtd_parts ::= dtd_parts attlist *
+
+                     {default} reduce 4
+
+State 35:
+      (7) attlist ::= TAG_START ATTLIST_KW NAME attrib_list TAG_STOP *
+
+                     {default} reduce 7
+
+State 36:
+      (9) attrib_list ::= attrib_list attrib *
+
+                     {default} reduce 9
+
+State 37:
+     (11) attrib ::= NAME att_type att_default *
+
+                     {default} reduce 11
+
+State 38:
+     (14) att_default ::= ATT_DEF *
+
+                     {default} reduce 14
+
+State 39:
+     (15) att_default ::= ATT_DEF_WITH_VALUE QUOTED *
+
+                     {default} reduce 15
+
+State 40:
+     (16) att_default ::= QUOTED *
+
+                     {default} reduce 16
+
+State 41:
+     (17) att_default ::= IMPLIED_KW *
+
+                     {default} reduce 17
+
+State 42:
+     (18) att_default ::= REQUIRED_KW *
+
+                     {default} reduce 18
+
+State 43:
+     (12) att_type ::= ATT_TYPE *
+
+                     {default} reduce 12
+
+State 44:
+     (13) att_type ::= enumeration *
+
+                     {default} reduce 13
+
+State 45:
+     (19) enumeration ::= OPEN_PARENS enum_list CLOSE_PARENS *
+
+                     {default} reduce 19
+
+State 46:
+     (20) enum_list ::= enum_list PIPE enum_item *
+
+                     {default} reduce 20
+
+State 47:
+     (23) enum_list ::= enum_list PIPE enumeration *
+
+                     {default} reduce 23
+
+State 48:
+     (24) enum_item ::= NAME *
+
+                     {default} reduce 24
+
+State 49:
+     (25) enum_item ::= QUOTED *
+
+                     {default} reduce 25
+
+State 50:
+     (21) enum_list ::= enum_item *
+
+                     {default} reduce 21
+
+State 51:
+     (22) enum_list ::= enumeration *
+
+                     {default} reduce 22
+
+State 52:
+     (10) attrib_list ::= attrib *
+
+                     {default} reduce 10
+
+State 53:
+      (8) element ::= TAG_START ELEMENT_KW NAME sub_elements TAG_STOP *
+
+                     {default} reduce 8
+
+State 54:
+     (26) sub_elements ::= sub_elements STAR *
+
+                     {default} reduce 26
+
+State 55:
+     (27) sub_elements ::= sub_elements PLUS *
+
+                     {default} reduce 27
+
+State 56:
+     (28) sub_elements ::= sub_elements QUESTION *
+
+                     {default} reduce 28
+
+State 57:
+     (29) sub_elements ::= OPEN_PARENS ELEM_DATA CLOSE_PARENS *
+
+                     {default} reduce 29
+
+State 58:
+     (30) sub_elements ::= OPEN_PARENS element_list COMMA ELEM_DATA CLOSE_PARENS *
+
+                     {default} reduce 30
+
+State 59:
+     (33) sub_elements ::= EMPTY_KW *
+
+                     {default} reduce 33
+
+State 60:
+     (34) element_list ::= element_list COMMA element_child *
+
+                     {default} reduce 34
+
+State 61:
+     (41) element_child ::= NAME STAR *
+
+                     {default} reduce 41
+
+State 62:
+     (42) element_child ::= NAME QUESTION *
+
+                     {default} reduce 42
+
+State 63:
+     (43) element_child ::= NAME PLUS *
+
+                     {default} reduce 43
+
+State 64:
+     (31) sub_elements ::= OPEN_PARENS element_list PIPE ELEM_DATA CLOSE_PARENS *
+
+                     {default} reduce 31
+
+State 65:
+     (35) element_list ::= element_list PIPE element_child *
+
+                     {default} reduce 35
+
+State 66:
+     (32) sub_elements ::= OPEN_PARENS element_list CLOSE_PARENS *
+
+                     {default} reduce 32
+
+State 67:
+     (36) element_list ::= element_child *
+
+                     {default} reduce 36
+
+State 68:
+      (2) doctype ::= TAG_START DOCTYPE_KW NAME OPEN_BRACKET dtd_parts CLOSE_BRACKET TAG_STOP *
+
+                     {default} reduce 2
+
+State 69:
+      (5) dtd_parts ::= element *
+
+                     {default} reduce 5
+
+State 70:
+      (6) dtd_parts ::= attlist *
+
+                     {default} reduce 6
+
+----------------------------------------------------
+Symbols:
+    0: $:
+    1: TAG_START
+    2: DOCTYPE_KW
+    3: NAME
+    4: OPEN_BRACKET
+    5: CLOSE_BRACKET
+    6: TAG_STOP
+    7: ATTLIST_KW
+    8: ELEMENT_KW
+    9: ATT_TYPE
+   10: ATT_DEF
+   11: ATT_DEF_WITH_VALUE
+   12: QUOTED
+   13: IMPLIED_KW
+   14: REQUIRED_KW
+   15: OPEN_PARENS
+   16: CLOSE_PARENS
+   17: PIPE
+   18: STAR
+   19: PLUS
+   20: QUESTION
+   21: ELEM_DATA
+   22: COMMA
+   23: EMPTY_KW
+   24: error:
+   25: dtd: TAG_START
+   26: doctype: TAG_START
+   27: dtd_parts: TAG_START
+   28: element: TAG_START
+   29: attlist: TAG_START
+   30: attrib_list: NAME
+   31: sub_elements: OPEN_PARENS EMPTY_KW
+   32: attrib: NAME
+   33: att_type: ATT_TYPE OPEN_PARENS
+   34: att_default: ATT_DEF ATT_DEF_WITH_VALUE QUOTED IMPLIED_KW REQUIRED_KW
+   35: enumeration: OPEN_PARENS
+   36: enum_list: NAME QUOTED OPEN_PARENS
+   37: enum_item: NAME QUOTED
+   38: element_list: NAME OPEN_PARENS EMPTY_KW
+   39: element_child: NAME

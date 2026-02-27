@@ -1,0 +1,81 @@
+2016-06-09  Daiki Ueno  <ueno@gnu.org>
+
+	Update translations
+	* gettext-runtime/po/eo.po: Update from Felipe Castro <fefcas@gmail.com>
+	* gettext-runtime/po/hr.po: Update from Božidar Putanec <bozidarp@yahoo.com>
+	* gettext-runtime/po/sv.po: Update from Göran Uddeborg <goeran@uddeborg.se>
+	* gettext-tools/examples/po/eo.po: Update from Felipe Castro <fefcas@gmail.com>
+	* gettext-tools/examples/po/hr.po: Update from Božidar Putanec <bozidarp@yahoo.com>
+	* gettext-tools/examples/po/sv.po: Update from Göran Uddeborg <goeran@uddeborg.se>
+	* gettext-tools/po/bg.po: Update from Roumen Petrov <transl@roumenpetrov.info>
+	* gettext-tools/po/es.po: Update from Antonio Ceballos <aceballos@gmail.com>
+	* gettext-tools/po/fr.po: Update from Stéphane Aulery <lkppo@free.fr>
+	* gettext-tools/po/ja.po: Update from Masahito Yamaga <ma@yama-ga.com>
+	* gettext-tools/po/ko.po: Update from Changwoo Ryu <cwryu@debian.org>
+	* gettext-tools/po/nl.po: Update from Benno Schulenberg <benno@vertaalt.nl>
+	* gettext-tools/po/pl.po: Update from Rafał Maszkowski <rzm@icm.edu.pl>
+	* gettext-tools/po/sk.po: Update from Marcel Telka <marcel@telka.sk>
+	* gettext-tools/po/sr.po: Update from Мирослав Николић <miroslavnikolic@rocketmail.com>
+	* gettext-tools/po/sv.po: Update from Göran Uddeborg <goeran@uddeborg.se>
+	* gettext-tools/po/tr.po: Update from Nilgün Belma Bugüner <nilgun@buguner.name.tr>
+	* gettext-tools/po/uk.po: Update from Yuri Chornoivan <yurchor@ukr.net>
+	* gettext-tools/po/vi.po: Update from Trần Ngọc Quân <vnwildman@gmail.com>
+
+2016-01-02  Daiki Ueno  <ueno@gnu.org>
+
+	maint: Update copyright year
+
+2015-12-28  Daiki Ueno  <ueno@gnu.org>
+
+	Update translations
+	* gettext-runtime/po/fr.po: Update from Stéphane Aulery <lkppo@free.fr>.
+	* gettext-runtime/po/nb.po: Update from Johnny A. Solbu <johnny@solbu.net>.
+	* gettext-runtime/po/pt_BR.po: Update from Rafael Ferreira <rffontenelle@gmail.com>.
+	* gettext-runtime/po/sr.po: Update from Мирослав Николић <miroslavnikolic@rocketmail.com>.
+	* gettext-runtime/po/zh_TW.po: Update from Wei-Lun Chao <bluebat@member.fsf.org>.
+	* gettext-tools/examples/po/fr.po: Update from Stéphane Aulery <lkppo@free.fr>.
+	* gettext-tools/examples/po/nb.po: Update from Johnny A. Solbu <johnny@solbu.net>.
+	* gettext-tools/examples/po/pt_BR.po: Update from Rafael Ferreira <rffontenelle@gmail.com>.
+	* gettext-tools/examples/po/sr.po: Update from Мирослав Николић <miroslavnikolic@rocketmail.com>.
+	* gettext-tools/examples/po/zh_TW.po: Update from Wei-Lun Chao <bluebat@member.fsf.org>.
+	* gettext-tools/po/bg.po: Update from Roumen Petrov <transl@roumenpetrov.info>.
+	* gettext-tools/po/es.po: Update from Antonio Ceballos <aceballos@gmail.com>.
+	* gettext-tools/po/fr.po: Update from Stéphane Aulery <lkppo@free.fr>.
+	* gettext-tools/po/ja.po: Update from Masahito Yamaga <ma@yama-ga.com>.
+	* gettext-tools/po/nl.po: Update from Benno Schulenberg <benno@vertaalt.nl>.
+	* gettext-tools/po/pt_BR.po: Update from Rafael Fontenelle <rffontenelle@gmail.com>.
+	* gettext-tools/po/sk.po: Update from Marcel Telka <marcel@telka.sk>.
+	* gettext-tools/po/sl.po: Update from Primoz PETERLIN <primozz.peterlin@gmail.com>.
+	* gettext-tools/po/sr.po: Update from Мирослав Николић <miroslavnikolic@rocketmail.com>.
+	* gettext-tools/po/uk.po: Update from Yuri Chornoivan <yurchor@ukr.net>.
+	* gettext-tools/po/vi.po: Update from Trần Ngọc Quân <vnwildman@gmail.com>.
+
+2015-12-10  Daiki Ueno  <ueno@gnu.org>
+
+	gettext-tools: Update POTFILES.in
+	* gettext-tools/po/POTFILES.in: Add newly added files.
+
+2015-12-04  Daiki Ueno  <ueno@gnu.org>
+
+	xgettext: Rewrite Glade scanner in ITS
+	* gettext-tools/its/glade.loc: New file.
+	* gettext-tools/its/glade1.its: New file.
+	* gettext-tools/its/glade2.its: New file.
+	* gettext-tools/its/gtkbuilder.its: New file.
+	* gettext-tools/its/Makefile.am (dist_its_DATA): Add new files.
+	* gettext-tools/src/Makefile.am (xgettext_SOURCES): Remove x-glade.c.
+	* gettext-tools/src/x-glade.c: Remove.
+	* gettext-tools/src/x-glade.h (EXTENSIONS_GLADE): Set language field to
+	NULL.
+	(SCANNERS_GLADE): Set func field to NULL.
+	* gettext-tools/po/POTFILES.in: Remove x-glade.c
+
+2015-10-15  Daiki Ueno  <ueno@gnu.org>
+
+	build: Generate ChangeLogs for intl and po
+	* autogen.sh: Create empty ChangeLog files under intl and po.
+	* Makefile.am (gen-ChangeLogs): Rename from gen-ChangeLog.  Generate
+	ChangeLog files for */intl and */po as well as top-level.
+	* gettext-runtime/intl/ChangeLog.0: Rename from ChangeLog.
+	* gettext-runtime/po/ChangeLog.0: Rename from ChangeLog.
+	* gettext-tools/po/ChangeLog.1: Rename from ChangeLog.

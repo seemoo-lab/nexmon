@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="de.tu_darmstadt.seemoo.nexmon">
+
+    <uses-sdk
+        android:minSdkVersion="23"
+        android:targetSdkVersion="23" />
+
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Get permission for reliable local dispatching on non-Google Play devices. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <application
+        android:name="de.tu_darmstadt.seemoo.nexmon.MyApplication"
+        android:allowBackup="true"
+        android:icon="@mipmap/x_logo"
+        android:label="@string/app_name"
+        tools:replace="android:theme"
+        android:theme="@android:style/Theme.Material"
+        android:largeHeap="true">
+        <activity
+            android:name="de.tu_darmstadt.seemoo.nexmon.gui.MyActivity"
+            android:label="@string/app_name"
+            android:screenOrientation="portrait"
+            android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="de.tu_darmstadt.seemoo.nexmon.gui.AttackInfoActivity"
+            android:label="Attack Info"
+            android:launchMode="standard">
+        </activity>
+
+        <activity
+            android:name="de.tu_darmstadt.seemoo.nexmon.gui.SurveyNotificationActivity"
+            android:launchMode="standard">
+        </activity>
+
+        <activity
+            android:name="com.nononsenseapps.filepicker.FilePickerActivity"
+            android:label="@string/app_name"
+            android:theme="@style/FilePickerTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.GET_CONTENT" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+
+
+
+        <service android:name="de.tu_darmstadt.seemoo.nexmon.sharky.WiresharkService" />
+        <service android:name="de.tu_darmstadt.seemoo.nexmon.stations.APfinderService" />
+        <service android:name="de.tu_darmstadt.seemoo.nexmon.stations.AttackService" />
+        <service android:name="de.tu_darmstadt.seemoo.nexmon.net.RawSocketReceiveService"/>
+        <service android:name="de.tu_darmstadt.seemoo.nexmon.net.MonitorModeService"/>
+
+        <receiver
+            android:name="de.tu_darmstadt.seemoo.nexmon.stations.AttackInstanceReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="de.tu_darmstadt.seemoo.nexmon.ATTACK_INSTANCES" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

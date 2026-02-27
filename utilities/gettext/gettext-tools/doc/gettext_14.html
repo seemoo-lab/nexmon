@@ -1,0 +1,51 @@
+<HTML>
+<HEAD>
+<!-- This HTML file has been created by texi2html 1.52b
+     from gettext.texi on 11 June 2016 -->
+
+<META HTTP-EQUIV="content-type" CONTENT="text/html; charset=UTF-8">
+<TITLE>GNU gettext utilities - 14  The Installer's and Distributor's View</TITLE>
+</HEAD>
+<BODY>
+Go to the <A HREF="gettext_1.html">first</A>, <A HREF="gettext_13.html">previous</A>, <A HREF="gettext_15.html">next</A>, <A HREF="gettext_25.html">last</A> section, <A HREF="gettext_toc.html">table of contents</A>.
+<P><HR><P>
+
+
+<H1><A NAME="SEC247" HREF="gettext_toc.html#TOC247">14  The Installer's and Distributor's View</A></H1>
+<P>
+<A NAME="IDX1212"></A>
+<A NAME="IDX1213"></A>
+<A NAME="IDX1214"></A>
+<A NAME="IDX1215"></A>
+
+</P>
+<P>
+By default, packages fully using GNU <CODE>gettext</CODE>, internally,
+are installed in such a way as to allow translation of
+messages.  At <EM>configuration</EM> time, those packages should
+automatically detect whether the underlying host system already provides
+the GNU <CODE>gettext</CODE> functions.  If not,
+the GNU <CODE>gettext</CODE> library should be automatically prepared
+and used.  Installers may use special options at configuration
+time for changing this behavior.  The command <SAMP>&lsquo;./configure
+--with-included-gettext&rsquo;</SAMP> bypasses system <CODE>gettext</CODE> to
+use the included GNU <CODE>gettext</CODE> instead,
+while <SAMP>&lsquo;./configure --disable-nls&rsquo;</SAMP>
+produces programs totally unable to translate messages.
+
+</P>
+<P>
+<A NAME="IDX1216"></A>
+Internationalized packages have usually many <TT>&lsquo;<VAR>ll</VAR>.po&rsquo;</TT>
+files.  Unless
+translations are disabled, all those available are installed together
+with the package.  However, the environment variable <CODE>LINGUAS</CODE>
+may be set, prior to configuration, to limit the installed set.
+<CODE>LINGUAS</CODE> should then contain a space separated list of two-letter
+codes, stating which languages are allowed.
+
+</P>
+<P><HR><P>
+Go to the <A HREF="gettext_1.html">first</A>, <A HREF="gettext_13.html">previous</A>, <A HREF="gettext_15.html">next</A>, <A HREF="gettext_25.html">last</A> section, <A HREF="gettext_toc.html">table of contents</A>.
+</BODY>
+</HTML>

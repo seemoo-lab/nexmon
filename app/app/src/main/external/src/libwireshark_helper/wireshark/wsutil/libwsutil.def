@@ -1,0 +1,75 @@
+; wsutil.def
+; $Id: libwsutil.def 36548 2011-04-10 21:36:05Z guy $
+
+; Add symbols that should be exported out of libwsutil.dll
+;
+; DATA symbols must be declared WS_VAR_IMPORT in the header file!
+;
+; NOTE: TABS DON'T WORK IN THIS FILE, USE SPACES INSTEAD!!!
+;
+EXPORTS
+
+; file_util.c
+getenv_utf8
+ws_stdio_fopen
+ws_stdio_freopen
+ws_stdio_mkdir
+ws_stdio_open
+ws_stdio_remove
+ws_stdio_rename
+ws_stdio_stat64
+ws_stdio_unlink
+ws_init_dll_search_path
+ws_load_library
+ws_module_open
+
+; inet_aton.c
+inet_aton
+
+; inet_ntop.c
+; Note: inet_v6defs.h renames this function for Windows (only)
+ws_inet_ntop
+
+; inet_pton.c
+; Note: inet_v6defs.h renames this function for Windows (only)
+ws_inet_pton
+
+; mpeg-audio.c
+mpa_bitrate
+mpa_frequency
+mpa_layer
+mpa_padding
+mpa_samples
+mpa_version
+
+; privileges.c
+init_process_policies
+get_cur_groupname
+get_cur_username
+npf_sys_is_running
+relinquish_special_privs_perm
+running_with_special_privs
+started_with_special_privs
+
+; strptime.c
+strptime
+
+; str_util.c
+ascii_strdown_inplace
+ascii_strup_inplace
+
+; type_util.c
+type_util_gdouble_to_guint64
+type_util_guint64_to_gdouble
+
+; unicode-utils.c
+utf_16to8
+utf_8to16
+utf_8to16_snprintf
+
+; wsgetopt.c
+getopt
+optarg DATA
+optind DATA
+opterr DATA
+optopt DATA

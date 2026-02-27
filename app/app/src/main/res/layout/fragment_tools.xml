@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin">
+
+    <ScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+
+                <TextView
+                    android:id="@+id/tvInstallUtilitiesHeading"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingBottom="10dp"
+                    android:paddingTop="20dp"
+                    android:text="Binary Installation"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvInstallUtilities"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingBottom="10dp"
+                    android:text="This app comes with the following utilities. You can select which of them you want to install:" />
+
+                <CheckBox
+                    android:id="@+id/chkRawproxy"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top"
+                    android:text="rawproxy: is needed to receive frames in this app."
+                    android:textColor="@android:color/tab_indicator_text" />
+
+                <CheckBox
+                    android:id="@+id/chkRawproxyreverse"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top"
+                    android:text="rawproxyreverse: is needed to inject frames from this app."
+                    android:textColor="@android:color/tab_indicator_text" />
+
+                <CheckBox
+                    android:id="@+id/chkNexutil"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top"
+                    android:text="nexutil: sends ioctls to the WiFi firmware of Broadcom chips to change and check the status of monitor mode and promiscuous mode."
+                    android:textColor="@android:color/tab_indicator_text" />
+
+                <CheckBox
+                    android:id="@+id/chkLibfakeioctl"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top"
+                    android:text="libfakeioctl: library used with LD_PRELOAD to hook ioctl calls to fake an interface type to indicate a monitor mode interface."
+                    android:textColor="@android:color/tab_indicator_text" />
+
+                <CheckBox
+                    android:id="@+id/chkDhdutil"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top"
+                    android:text="dhdutil: is a debugging utility for the bcmdhd driver."
+                    android:textColor="@android:color/tab_indicator_text" />
+
+                <CheckBox
+                    android:id="@+id/chkTcpdump"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top"
+                    android:text="tcpdump: is a packet sniffer."
+                    android:textColor="@android:color/tab_indicator_text" />
+
+                <CheckBox
+                    android:id="@+id/chkAircrack"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top"
+                    android:text="aircrack-ng: a WiFi penetration testing suite."
+                    android:textColor="@android:color/tab_indicator_text" />
+
+                <CheckBox
+                    android:id="@+id/chkNetcat"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top"
+                    android:text="netcat: the swiss army knife for arbitrary TCP and UDP connections."
+                    android:textColor="@android:color/tab_indicator_text" />
+
+                <CheckBox
+                    android:id="@+id/chkIw"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top"
+                    android:text="iw: wireless device manipulation utility."
+                    android:textColor="@android:color/tab_indicator_text" />
+
+                <CheckBox
+                    android:id="@+id/chkWirelessTools"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top"
+                    android:text="wireless-tools: iwconfig, iwlist and iwpriv."
+                    android:textColor="@android:color/tab_indicator_text" />
+
+                <CheckBox
+                    android:id="@+id/chkMdk3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top"
+                    android:text="mdk3: proof-of-concept tool to exploit common IEEE 802.11 protocol weaknesses."
+                    android:textColor="@android:color/tab_indicator_text" />
+
+                <CheckBox
+                    android:id="@+id/chkSocat"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top"
+                    android:text="socat: Multipurpose relay (SOcket CAT)."
+                    android:textColor="@android:color/tab_indicator_text" />
+
+                <TextView
+                    android:id="@+id/tvBinInstallLocation"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingBottom="10dp"
+                    android:paddingTop="10dp"
+                    android:text="Select target location for install. You need to make sure that it exists. /su/... is available in systemless SuperSU installations, but /su/lib/ is not in the library search path. Start with the binary target location:" />
+
+                <Spinner
+                    android:id="@+id/spnBinInstallLocation"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal" />
+
+                <TextView
+                    android:id="@+id/tvLibInstallLocation"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingBottom="10dp"
+                    android:paddingTop="10dp"
+                    android:text="Select the library target location:" />
+
+                <Spinner
+                    android:id="@+id/spnLibInstallLocation"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal" />
+
+                <TextView
+                    android:id="@+id/tvInstallHint"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingBottom="10dp"
+                    android:paddingTop="10dp"
+                    android:text="Click to start installation. This might disable your over the air update capabilities:" />
+
+                <Button
+                    android:id="@+id/btnInstall"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Install binaries and libraries" />
+
+
+        </LinearLayout>
+    </ScrollView>
+</RelativeLayout>

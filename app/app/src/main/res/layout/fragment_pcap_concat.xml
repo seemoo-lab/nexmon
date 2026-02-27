@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+
+    <TextView
+        android:text=""
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/tv_merge_info"
+        android:paddingTop="15dp"
+        android:paddingBottom="15dp"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:paddingTop="15dp"
+        android:paddingBottom="15dp">
+
+
+
+        <EditText
+        android:layout_width="0dp"
+        android:layout_weight="0.7"
+        android:layout_height="wrap_content"
+        android:id="@+id/et_pcap_concat_src1"
+        android:text="Source File" />
+
+    <Button
+        android:layout_width="0dp"
+        android:layout_weight="0.3"
+        android:layout_height="wrap_content"
+        android:text="Select"
+        android:id="@+id/btn_pcap_concat_src1"
+        android:layout_gravity="right" />
+        </LinearLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:paddingBottom="15dp"
+        android:paddingTop="15dp">
+        <EditText
+            android:layout_width="0dp"
+            android:layout_weight="0.7"
+            android:layout_height="wrap_content"
+            android:id="@+id/et_pcap_concat_src2"
+            android:text="Source File" />
+
+        <Button
+            android:layout_width="0dp"
+            android:layout_weight="0.3"
+            android:layout_height="wrap_content"
+            android:text="Select"
+            android:id="@+id/btn_pcap_concat_src2"
+            android:layout_gravity="right" />
+    </LinearLayout>
+
+
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:paddingBottom="15dp"
+                android:paddingTop="15dp">
+                <EditText
+                    android:layout_width="0dp"
+                    android:layout_weight="0.7"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/et_pcap_concat_dst"
+                    android:text="Destination Filedir"
+                    android:paddingTop="15dp"
+                    android:paddingBottom="15dp" />
+
+                <Button
+                    android:layout_width="0dp"
+                    android:layout_weight="0.3"
+                    android:layout_height="wrap_content"
+                    android:text="Select"
+                    android:id="@+id/btn_pcap_concat_dst"
+                    android:layout_gravity="right" />
+            </LinearLayout>
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Merge"
+        android:id="@+id/btn_pcap_concat"
+        android:layout_gravity="center_horizontal"
+        android:paddingTop="15dp"
+        android:paddingBottom="15dp"
+        android:layout_marginTop="35dp" />
+            </LinearLayout>
+    </ScrollView>
+</LinearLayout>

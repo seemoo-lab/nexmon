@@ -1,0 +1,33 @@
+Bluetooth:
+packet-bthci*
+
+IP:
+packet-ip
+packet-ipars
+
+802.11:
+packet-radiotap
+packet-ieee80211
+
+zigbee:
+packet-iee802154
+
+am__objects_3 = libdissectors_la-packet-bthci_acl.lo \
+	libdissectors_la-packet-bthci_cmd.lo \
+	libdissectors_la-packet-bthci_evt.lo \
+	libdissectors_la-packet-bthci_sco.lo \
+  libdissectors_la-packet-eth.lo \
+  libdissectors_la-packet-ethertype.lo \
+	libdissectors_la-packet-ieee80211.lo \
+	libdissectors_la-packet-ieee802154.lo \
+	libdissectors_la-packet-ip.lo libdissectors_la-packet-ipars.lo \
+	libdissectors_la-packet-radiotap.lo \
+	libdissectors_la-packet-radiotap-iter.lo \
+	libdissectors_la-packet-zbee-aps.lo \
+	libdissectors_la-packet-zbee-nwk.lo \
+	libdissectors_la-packet-zbee-security.lo \
+	libdissectors_la-packet-zbee-zcl.lo \
+	libdissectors_la-packet-zbee-zdp.lo \
+	libdissectors_la-packet-zbee-zdp-binding.lo \
+	libdissectors_la-packet-zbee-zdp-discovery.lo \
+	libdissectors_la-packet-zbee-zdp-management.lo 

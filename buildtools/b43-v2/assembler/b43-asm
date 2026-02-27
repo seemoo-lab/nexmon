@@ -1,0 +1,65 @@
+#!/bin/sh
+#
+#  b43-asm preprocessing frontend
+#
+#  Copyright (c) 2010 Michael Buesch <m@bues.ch>
+#  Licensed under the GNU/GPL version 2.
+#
+
+
+# The b43-asm backend binary
+B43_ASM="b43-asm.bin"
+# The C preprocessor binary
+CPP="gcc -E"
+
+
+# This variable is changed by the installer scripts.
+installed=0
+if [ $installed -eq 0 ] && [ -x "./$B43_ASM" ]; then
+	B43_ASM="./$B43_ASM"
+fi
+
+# Probe the CPP binary
+$CPP --help >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+	echo "ERROR: Failed to execute the C preprocessor \"$CPP\""
+	exit 1
+fi
+# Probe the b43-asm binary
+$B43_ASM a b --help >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+	echo "ERROR: Failed to execute the b43-asm binary \"$B43_ASM\""
+	exit 2
+fi
+
+if [ $# -lt 2 ]; then
+	$B43_ASM --help
+	exit 3
+fi
+infile="$1"
+shift
+outfile="$1"
+shift
+
+cpp_args=
+if [ "$1" = "--cpp-args" ]; then
+	shift
+	while [ "$1" != "--" ]; do
+		if [ $# -eq 0 ]; then
+			echo "ERROR: --cpp-args must be terminated by --"
+			exit 4
+		fi
+		cpp_args="$cpp_args $1"
+		shift
+	done
+	shift
+fi
+
+if [ "$infile" != "-" ]; then
+	if ! [ -r "$infile" ]; then
+		echo "ERROR: Can not read input file \"$infile\""
+		exit 5
+	fi
+fi
+
+$CPP -x c++ -traditional-cpp $cpp_args "$infile" | $B43_ASM "-" "$outfile" --__real_infile "$infile" $@

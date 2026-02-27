@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+
+    android:paddingLeft="10dp">
+
+
+    <com.github.johnkil.print.PrintView
+        android:id="@+id/arrow_icon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:paddingTop="4dp"
+        app:iconColor="@color/white"
+        app:iconFont="fonts/material-icon-font.ttf"
+        app:iconSize="12dp"
+        app:iconText="@string/ic_keyboard_arrow_right" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tv_treenode_desc"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_marginLeft="2dp"
+            android:text="text 1"
+            android:textColor="@color/white"
+            android:textSize="12sp" />
+
+
+    </LinearLayout>
+
+</LinearLayout>

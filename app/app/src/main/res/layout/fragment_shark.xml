@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <TextView
+        android:text="You can start the capturing and dissection of frames with the button at the upper right corner. It is also possible to load a PCAP file or save the captured data.\nClick on a specific frame to get detailed information.\n"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/tv_wireshark_info"
+        android:paddingBottom="15dp"
+        android:paddingTop="15dp"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp" />
+
+    <RelativeLayout
+        android:id="@+id/rl_control"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/b_back"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_centerVertical="true"
+            android:layout_marginLeft="14dp"
+            android:padding="10dp"
+            android:src="@drawable/ic_navigate_before_white_24dp" />
+
+        <ImageView
+            android:id="@+id/b_forward"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:layout_marginRight="14dp"
+            android:padding="10dp"
+            android:src="@drawable/ic_navigate_next_white_24dp" />
+
+        <TextView
+            android:id="@+id/tv_packets_showing"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            android:text=""
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    </RelativeLayout>
+
+
+    <ListView
+        android:id="@+id/lv_shark"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"></ListView>
+
+</LinearLayout>

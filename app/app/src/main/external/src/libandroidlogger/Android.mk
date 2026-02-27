@@ -1,0 +1,9 @@
+LOCAL_PATH:=$(call my-dir)
+
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES:=android-logger.c
+LOCAL_MODULE:=libandroidlogger
+LOCAL_C_INCLUDES:= .
+LOCAL_LDLIBS := -llog
+LOCAL_CFLAGS += -D_REVISION=0 -DRADIOTAP_SUPPORT_OVERRIDES
+include $(BUILD_SHARED_LIBRARY)

@@ -1,0 +1,12 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test invalid or incomplete input
+
+: ${MSGUNFMT=msgunfmt}
+
+for n in 1 2 3 4 5 6; do
+  LANGUAGE= LC_ALL=C ${MSGUNFMT} "$abs_srcdir"/overflow-$n.mo 2>mu-3.err >/dev/null
+  test $? != 0 || Exit 1
+  grep ' is truncated' mu-3.err >/dev/null || Exit 1
+done

@@ -1,0 +1,19 @@
+*** lib/regexec.c.orig	Mon May 24 12:36:55 2010
+--- lib/regexec.c	Mon May 24 12:34:41 2010
+***************
+*** 3425,3431 ****
+    else
+      {
+        dest_states = (re_dfastate_t **)
+! 	malloc (ndests * 3 * sizeof (re_dfastate_t *));
+        if (BE (dest_states == NULL, 0))
+  	{
+  out_free:
+--- 3425,3431 ----
+    else
+      {
+        dest_states = (re_dfastate_t **)
+! 	re_malloc (re_dfastate_t *, ndests * 3);
+        if (BE (dest_states == NULL, 0))
+  	{
+  out_free:

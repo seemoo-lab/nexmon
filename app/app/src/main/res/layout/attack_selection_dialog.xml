@@ -1,0 +1,83 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:layout_centerHorizontal="true"
+    tools:context="de.tu_darmstadt.seemoo.nexmon.gui.AttackSelectionDialog">
+
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Fake Auth Attack"
+        android:visibility="gone"
+        android:id="@+id/btn_attack_fakeauth" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="DeAuth Attack"
+        android:id="@+id/btn_attack_deauth"
+        android:layout_marginTop="20dp"
+        android:paddingTop="15dp"
+        android:paddingBottom="15dp" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="ARP Replay Attack"
+        android:id="@+id/btn_arp_replay_attack"
+        android:visibility="visible"
+        android:layout_gravity="center_horizontal" />
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Beacon Flood Attack"
+        android:id="@+id/btn_beacon_flood_attack"
+        android:layout_gravity="center_horizontal"
+        android:paddingTop="15dp"
+        android:paddingBottom="15dp" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Auth Flood Attack"
+        android:visibility="gone"
+        android:id="@+id/btn_auth_flood_attack"
+        android:layout_gravity="center_horizontal" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Michael TKIP Exploit Attack"
+        android:visibility="gone"
+        android:id="@+id/btn_countermeasures_attack"
+        android:layout_gravity="center_horizontal" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="WIDS Attack"
+        android:visibility="gone"
+        android:id="@+id/btn_wids_attack"
+        android:layout_gravity="center_horizontal" />
+
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Unity Media Router Attack"
+        android:id="@+id/btn_upc_attack"
+        android:layout_gravity="center_horizontal"
+        android:paddingTop="15dp"
+        android:paddingBottom="15dp" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Reaver WPS Attack"
+        android:id="@+id/btn_reaver_attack"
+        android:layout_gravity="center_horizontal"
+        android:visibility="gone" />
+</LinearLayout>

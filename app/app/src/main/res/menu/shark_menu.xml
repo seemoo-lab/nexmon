@@ -1,0 +1,37 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="tud.seemoo.pentest.MyActivity">
+
+    <item
+        android:id="@+id/action_change_channel_shark"
+        android:orderInCategory="100"
+        android:showAsAction="ifRoom"
+        android:icon="@drawable/ic_router_white_24dp"
+        android:title="Channel"
+        />
+
+    <item
+        android:id="@+id/action_toggle_capturing"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="Stop live capturing" />
+
+    <item
+        android:id="@+id/action_load_file"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="Load PCAP file" />
+
+    <item
+        android:id="@+id/action_save_file"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="Save as PCAP file" />
+
+    <item
+        android:id="@+id/action_clear_list"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="Clear list" />
+
+</menu>

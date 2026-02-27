@@ -1,0 +1,19 @@
+*** modules/fnmatch.orig	2011-06-02 22:42:23.000000000 +0200
+--- modules/fnmatch	2011-06-02 22:42:43.000000000 +0200
+***************
+*** 11,17 ****
+  Depends-on:
+  extensions
+  snippet/arg-nonnull
+! alloca          [test -n "$FNMATCH_H"]
+  stdbool         [test -n "$FNMATCH_H"]
+  wchar           [test -n "$FNMATCH_H"]
+  wctype-h        [test -n "$FNMATCH_H"]
+--- 11,17 ----
+  Depends-on:
+  extensions
+  snippet/arg-nonnull
+! alloca-opt      [test -n "$FNMATCH_H"]
+  stdbool         [test -n "$FNMATCH_H"]
+  wchar           [test -n "$FNMATCH_H"]
+  wctype-h        [test -n "$FNMATCH_H"]

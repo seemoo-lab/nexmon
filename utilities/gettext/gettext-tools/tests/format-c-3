@@ -1,0 +1,42 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test ISO C 99 <inttypes.h> format string directives.
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} -o fc3.tmp --omit-header --no-location "$abs_srcdir"/format-c-3-prg.c || Exit 1
+LC_ALL=C tr -d '\r' < fc3.tmp > fc3.pot || Exit 1
+
+cat <<EOF > fc3.ok
+#, c-format
+msgid "father of %<PRId8> children"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} fc3.ok fc3.pot || Exit 1
+
+cat <<EOF > fc3-de.po
+#, c-format
+msgid "father of %<PRId8> children"
+msgstr "Vater von %<PRId8> Kindern"
+EOF
+
+test -d fc3-dir || mkdir fc3-dir
+test -d fc3-dir/de || mkdir fc3-dir/de
+test -d fc3-dir/de/LC_MESSAGES || mkdir fc3-dir/de/LC_MESSAGES
+
+: ${MSGFMT=msgfmt}
+${MSGFMT} -o fc3-dir/de/LC_MESSAGES/fc3.mo fc3-de.po
+
+: ${MSGUNFMT=msgunfmt}
+${MSGUNFMT} -o fc3-de.po.tmp fc3-dir/de/LC_MESSAGES/fc3.mo || Exit 1
+LC_ALL=C tr -d '\r' < fc3-de.po.tmp > fc3-de.po.un || Exit 1
+
+: ${DIFF=diff}
+${DIFF} fc3-de.po fc3-de.po.un || Exit 1
+
+LANGUAGE= ../fc3 de_DE
+result=$?
+
+exit $result

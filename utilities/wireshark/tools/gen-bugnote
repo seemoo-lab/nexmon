@@ -1,0 +1,65 @@
+#!/bin/bash
+#
+# Given a Wireshark bug ID, fetch its title and prepare an entry suitable
+# for pasting into the release notes. Requires curl, grep, and sed.
+#
+# Usage: gen-bugnote <bug number>
+#
+# Copyright 2013 Gerald Combs
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
+
+bz_url_pfx="https://bugs.wireshark.org/bugzilla/show_bug.cgi?id="
+bug_id="$1"
+
+recode_cmd="cat"
+hash recode > /dev/null 2>&1 && recode_cmd="recode html..utf8"
+
+case "$OSTYPE" in
+    darwin*)
+        clipboard_cmd="pbcopy -Pascii"
+        ;;
+    cygwin*)
+        clipboard_cmd="cat > /dev/clipboard"
+        ;;
+    linux*)
+        clipboard_cmd="xsel --clipboard"
+        ;;
+    *)
+        echo "Unable to copy to clipboard"
+        clipboard_cmd="cat > /dev/null"
+        ;;
+esac
+
+if [ -z "$bug_id" ] ; then
+    echo "Usage: " `basename $0` " <bug id>"
+    exit 1
+fi
+
+bug_title=`
+    curl -s -o - "https://bugs.wireshark.org/bugzilla/show_bug.cgi?id=$bug_id" |
+    grep -i '<title>' |
+    sed \
+        -e 's:.*<title>.*ndash; ::' \
+        -e 's:</title>.*::' \
+        -e 's/[^\.]$/&./' \
+    `
+
+echo -e "* $bug_title (ws-buglink:$bug_id[])\n" \
+        | $recode_cmd \
+        | $clipboard_cmd
+
+echo "Copied $bug_id: $bug_title"

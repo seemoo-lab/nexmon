@@ -1,0 +1,55 @@
+$Id: INSTALL,v 1.1.1.1 2004/05/18 01:50:44 kgibbs Exp $
+
+Platform Specific Notes
+
+FreeBSD
+
+  If you use a cc or c++ other than the system one, threads may not be
+  detected properly.  To work around this set the following environment 
+  variables:
+
+    setenv CC /usr/bin/cc
+    setenv CXX /usr/bin/c++
+
+---
+
+Windows (Cygwin)
+
+  configure / make as normal:
+
+  $ ../iperf2-code/configure
+  $ make
+
+  The result requires Cygwin on client machines.
+
+---
+
+Windows (Cygwin + i686-w64-mingw32)
+
+  Use Cygwin Setup to install i686-w64-mingw32 and related packages
+
+  Configure as a cross-compile:
+
+  $ ../iperf2-code/configure -host i686-w64-mingw32
+  $ make
+
+  The result runs natively on WinXP and above without requiring Cygwin
+
+---
+
+Windows (MinGW + Msys)
+
+  Install MinGW+Msys
+  	  https://sourceforge.net/projects/mingw/
+	  http://www.mingw.org/wiki/MinGW
+	  http://www.mingw.org/wiki/MSYS
+
+  configure / make as normal:
+
+  $ ../iperf2-code/configure
+  $ make
+
+  The result runs natively on WinXP and above without requiring
+  MinGW+Msys on client machines.
+
+---

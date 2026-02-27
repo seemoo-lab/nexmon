@@ -1,0 +1,30 @@
+Description:
+
+Files:
+
+Depends-on:
+
+configure.ac:
+
+Makefile.am:
+AUTOMAKE_OPTIONS += no-dependencies
+
+# Hmm... is this still necessary?
+AM_CPPFLAGS += -I$(top_builddir)/intl -I$(top_srcdir)/intl
+
+# Parametrization of the 'relocatable' module.
+AM_CPPFLAGS += -DDEPENDS_ON_LIBICONV=1 -DDEPENDS_ON_LIBINTL=1
+
+# Tell the mingw or Cygwin linker which symbols to export.
+if WOE32DLL
+AM_CPPFLAGS += @INTL_EXPORTS_FLAGS@
+endif
+
+Include:
+
+License:
+GPL
+
+Maintainer:
+Bruno Haible
+

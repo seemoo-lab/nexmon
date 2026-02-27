@@ -1,0 +1,29 @@
+#!/bin/sh
+# Print the team's address (to stdout) and output additional instructions
+# (to stderr).
+projectsdir="$1"
+progdir="$2"
+catalog="$3"  # e.g. "pt_BR"
+language="$4" # e.g. "pt"
+
+url=`cat "$projectsdir/GNOME/teams.url"`
+html=`"$progdir/urlget" "$url" "$projectsdir/GNOME/teams.html"`
+sed_addnl='s,</li>,</li>\
+,g'
+sed_extract_address='s,^.*"/teams/'"$catalog"'">[^<>]*</a>.*<a href=[^<>]*>\(.*\)</a>.*<a href=[^<>]*>.*</a>.*,\1,p'
+address=`echo "$html" | tr '\012' '|' | sed -e "$sed_addnl" | sed -n -e "$sed_extract_address"`
+if test -n "$address"; then
+  (echo "Please consider joining your translation team, and visit"
+   echo "  $address"
+   echo "  http://l10n.gnome.org/"
+  ) 1>&2
+else
+  (echo "A translation team for your "`if test "$catalog" = "$language"; then echo "language ($language)"; else echo "local dialect ($catalog)"; fi`
+   echo "may not exist yet.  Please visit"
+   echo "  $url"
+   echo "  http://l10n.gnome.org/"
+   echo "and decide whether you want to create a new translation team."
+  ) 1>&2
+  address=
+fi
+exit 0

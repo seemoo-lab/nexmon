@@ -1,0 +1,22 @@
+Description:
+Information about terminal capabilities.
+
+Files:
+lib/termcap.h
+
+Depends-on:
+termcap
+
+configure.ac:
+
+Makefile.am:
+
+Include:
+"termcap.h"
+
+License:
+LGPL
+
+Maintainer:
+Bruno Haible
+

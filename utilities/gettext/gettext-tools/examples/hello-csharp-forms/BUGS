@@ -1,0 +1,2 @@
+Correct display of characters depends on the C# execution engine. For example,
+in pnet 0.6.0.1, Western fonts display fine but East Asian fonts don't work.

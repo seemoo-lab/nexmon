@@ -1,0 +1,1097 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>gdbus-codegen: GIO Reference Manual</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<link rel="home" href="index.html" title="GIO Reference Manual">
+<link rel="up" href="tools.html" title="GIO Tools">
+<link rel="prev" href="gdbus.html" title="gdbus">
+<link rel="next" href="gresource-tool.html" title="gresource">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="5"><tr valign="middle">
+<td width="100%" align="left" class="shortcuts"></td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
+<td><a accesskey="u" href="tools.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
+<td><a accesskey="p" href="gdbus.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
+<td><a accesskey="n" href="gresource-tool.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+</tr></table>
+<div lang="en" class="refentry">
+<a name="gdbus-codegen"></a><div class="titlepage"></div>
+<div class="refnamediv"><table width="100%"><tr>
+<td valign="top">
+<h2><span class="refentrytitle">gdbus-codegen</span></h2>
+<p>gdbus-codegen — D-Bus code and documentation generator</p>
+</td>
+<td class="gallery_image" valign="top" align="right"></td>
+</tr></table></div>
+<div class="refsynopsisdiv">
+<h2>Synopsis</h2>
+<div class="cmdsynopsis"><p><code class="command">gdbus-codegen</code>  [<code class="option">-h</code>, <code class="option">--help</code>] [<code class="option">--interface-prefix</code> <em class="replaceable"><code>org.project.Prefix</code></em>] [<code class="option">--generate-c-code</code> <em class="replaceable"><code>OUTFILES</code></em>] [<code class="option">--c-namespace</code> <em class="replaceable"><code>YourProject</code></em>] [<code class="option">--c-generate-object-manager</code>] [<code class="option">--generate-docbook</code> <em class="replaceable"><code>OUTFILES</code></em>] [<code class="option">--xml-files</code> <em class="replaceable"><code>FILE</code></em>]  [
+        <code class="option">--annotate</code>
+        <em class="replaceable"><code>ELEMENT</code></em>
+        <em class="replaceable"><code>KEY</code></em>
+        <em class="replaceable"><code>VALUE</code></em>
+      ]...   FILE  [
+       FILE... 
+    ]</p></div>
+</div>
+<div class="refsect1">
+<a name="id-1.4.26.7.5"></a><h2>Description</h2>
+<p>
+    <span class="command"><strong>gdbus-codegen</strong></span> is used to generate code and/or
+    documentation for one or more D-Bus interfaces. The tool reads
+    <a class="ulink" href="http://dbus.freedesktop.org/doc/dbus-specification.html#introspection-format" target="_top">D-Bus
+    Introspection XML</a> files and generates output files. The
+    tool currently supports generating C code (via
+    <code class="option">--generate-c-code</code>) and Docbook XML (via
+    <code class="option">--generate-docbook</code>).
+  </p>
+</div>
+<div class="refsect1">
+<a name="id-1.4.26.7.6"></a><h2>Generating C code</h2>
+<p>
+    When generating C code, a
+    <a href="/home/desrt/Install/jhbuild/share/gtk-doc/html/gobject/GTypeModule.html"><span class="type">GInterface</span></a>-derived type is generated for each D-Bus
+    interface. Additionally, for every generated type,
+    <span class="type">FooBar</span>, two concrete instantiable types,
+    <span class="type">FooBarProxy</span> and <span class="type">FooBarSkeleton</span>, implementing
+    said interface are also generated. The former is derived from
+    <a class="link" href="GDBusProxy.html" title="GDBusProxy"><span class="type">GDBusProxy</span></a> and intended for use on the client side
+    while the latter is derived from the
+    <a class="link" href="GDBusInterfaceSkeleton.html" title="GDBusInterfaceSkeleton"><span class="type">GDBusInterfaceSkeleton</span></a> type making it easy to export on a
+    <a class="link" href="GDBusConnection.html" title="GDBusConnection"><span class="type">GDBusConnection</span></a> either directly or via a
+    <a class="link" href="GDBusObjectManagerServer.html" title="GDBusObjectManagerServer"><span class="type">GDBusObjectManagerServer</span></a> instance.
+  </p>
+<p>
+    The name of each generated C type is derived from the D-Bus
+    interface name stripped with the prefix given with
+    <code class="option">--interface-prefix</code> and with the dots removed and
+    initial characters capitalized. For example, for the D-Bus
+    interface <code class="literal">com.acme.Coyote</code> the name used is
+    <code class="literal">ComAcmeCoyote</code>. For the D-Bus interface
+    <code class="literal">org.project.Bar.Frobnicator</code> with
+    <code class="option">--interface-prefix</code>
+    <code class="literal">org.project.</code>, the name used is
+    <code class="literal">BarFrobnicator</code>.
+  </p>
+<p>
+    For methods, signals and properties, if not specified, the name
+    defaults to the name of the method, signal or property.
+  </p>
+<p>
+    Two forms of the name are used - the CamelCase form and the
+    lower-case form. The CamelCase form is used for the <a href="../gobject-Type-Information.html#GType"><span class="type">GType</span></a> and
+    struct name, while lower-case form is used in function names. The
+    lower-case form is calculated by converting from CamelCase to
+    lower-case and inserting underscores at word boundaries (using
+    certain heuristics).
+  </p>
+<p>
+    If the value given by the <code class="literal">org.gtk.GDBus.C.Name</code>
+    annotation or the <code class="option">--c-namespace</code> option contains
+    an underscore (sometimes called <span class="emphasis"><em>Ugly_Case</em></span>),
+    then the camel-case name is derived by removing all underscores,
+    and the lower-case name is derived by lower-casing the
+    string. This is useful in some situations where abbreviations are
+    used. For example, if the annotation is used on the interface
+    <code class="literal">net.MyCorp.MyApp.iSCSITarget</code> with the value
+    <code class="literal">iSCSI_Target</code> the CamelCase form is
+    <code class="literal">iSCSITarget</code> while the lower-case form is
+    <code class="literal">iscsi_target</code>. If the annotation is used on the
+    method <code class="literal">EjectTheiPod</code> with the value
+    <code class="literal">Eject_The_iPod</code>, the lower-case form is
+    <code class="literal">eject_the_ipod</code>.
+  </p>
+</div>
+<div class="refsect1">
+<a name="id-1.4.26.7.7"></a><h2>Generating Docbook documentation</h2>
+<p>
+    Each generated Docbook XML file (see the
+    <code class="option">--generate-docbook</code> option for details) is a <a class="ulink" href="http://www.docbook.org/tdg/en/html/refentry.html" target="_top"><code class="literal">RefEntry</code></a>
+    article describing the D-Bus interface.
+  </p>
+</div>
+<div class="refsect1">
+<a name="id-1.4.26.7.8"></a><h2>Options</h2>
+<p>
+    The following options are supported:
+  </p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><code class="option">-h</code>, <code class="option">--help</code></span></p></td>
+<td><p>
+          Show help and exit.
+        </p></td>
+</tr>
+<tr>
+<td><p><span class="term"><code class="option">--xml-files</code> <em class="replaceable"><code>FILE</code></em></span></p></td>
+<td><p>
+          The D-Bus introspection XML file.
+        </p></td>
+</tr>
+<tr>
+<td><p><span class="term"><code class="option">--interface-prefix</code> <em class="replaceable"><code>org.project.Prefix.</code></em></span></p></td>
+<td><p>
+          A prefix to strip from all D-Bus interface names when
+          calculating the typename for the C binding and the Docbook
+          <a class="ulink" href="http://www.docbook.org/tdg/en/html/primary.html" target="_top">sortas
+          attribute</a>.
+        </p></td>
+</tr>
+<tr>
+<td><p><span class="term"><code class="option">--generate-docbook</code> <em class="replaceable"><code>OUTFILES</code></em></span></p></td>
+<td><p>
+          Generate Docbook Documentation for each D-Bus interface and
+          put it in <code class="filename">OUTFILES-NAME.xml</code> where
+          <code class="literal">NAME</code> is a place-holder for the interface
+          name, e.g. <code class="literal">net.Corp.FooBar</code> and so on.
+        </p></td>
+</tr>
+<tr>
+<td><p><span class="term"><code class="option">--generate-c-code</code> <em class="replaceable"><code>OUTFILES</code></em></span></p></td>
+<td><p>
+          Generate C code for all D-Bus interfaces and put it in
+          <code class="filename">OUTFILES.c</code> and
+          <code class="filename">OUTFILES.h</code>.
+        </p></td>
+</tr>
+<tr>
+<td><p><span class="term"><code class="option">--c-namespace</code> <em class="replaceable"><code>YourProject</code></em></span></p></td>
+<td><p>
+          The namespace to use for generated C code. This is expected
+          to be in <a class="ulink" href="http://en.wikipedia.org/wiki/CamelCase" target="_top">CamelCase</a>
+          or <span class="emphasis"><em>Ugly_Case</em></span> (see above).
+        </p></td>
+</tr>
+<tr>
+<td><p><span class="term"><code class="option">--c-generate-object-manager</code></span></p></td>
+<td><p>
+          If this option is passed, suitable <a class="link" href="GDBusObject.html" title="GDBusObject"><span class="type">GDBusObject</span></a>,
+          <a class="link" href="GDBusObjectProxy.html" title="GDBusObjectProxy"><span class="type">GDBusObjectProxy</span></a>, <a class="link" href="GDBusObjectSkeleton.html" title="GDBusObjectSkeleton"><span class="type">GDBusObjectSkeleton</span></a> and
+          <a class="link" href="GDBusObjectManagerClient.html" title="GDBusObjectManagerClient"><span class="type">GDBusObjectManagerClient</span></a> subclasses are generated.
+        </p></td>
+</tr>
+<tr>
+<td><p><span class="term"><code class="option">--annotate</code> <em class="replaceable"><code>ELEMENT</code></em> <em class="replaceable"><code>KEY</code></em> <em class="replaceable"><code>VALUE</code></em></span></p></td>
+<td>
+<p>
+          Used to inject D-Bus annotations into the given XML
+          files. It can be used with interfaces, methods, signals,
+          properties and arguments in the following way:
+        </p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15</pre></td>
+        <td class="listing_code"><pre class="programlisting">gdbus<span class="gtkdoc opt">-</span>codegen <span class="gtkdoc opt">--</span>c<span class="gtkdoc opt">-</span><span class="keyword">namespace</span> MyApp                           \
+  <span class="gtkdoc opt">--</span>generate<span class="gtkdoc opt">-</span>c<span class="gtkdoc opt">-</span>code myapp<span class="gtkdoc opt">-</span>generated                         \
+  <span class="gtkdoc opt">--</span>annotate <span class="string">&quot;org.project.InterfaceName&quot;</span>                    \
+    org<span class="gtkdoc opt">.</span>gtk<span class="gtkdoc opt">.</span>GDBus<span class="gtkdoc opt">.</span>C<span class="gtkdoc opt">.</span>Name MyFrobnicator                      \
+  <span class="gtkdoc opt">--</span>annotate <span class="string">&quot;org.project.InterfaceName:Property&quot;</span>           \
+    bar bat                                                 \
+  <span class="gtkdoc opt">--</span>annotate <span class="string">&quot;org.project.InterfaceName.Method()&quot;</span>           \
+    org<span class="gtkdoc opt">.</span>freedesktop<span class="gtkdoc opt">.</span>DBus<span class="gtkdoc opt">.</span>Deprecated <span class="keyword">true</span>                    \
+  <span class="gtkdoc opt">--</span>annotate <span class="string">&quot;org.project.InterfaceName.Method()[arg_name]&quot;</span> \
+    snake hiss                                              \
+  <span class="gtkdoc opt">--</span>annotate <span class="string">&quot;org.project.InterfaceName::Signal&quot;</span>            \
+    cat meow                                                \
+  <span class="gtkdoc opt">--</span>annotate <span class="string">&quot;org.project.InterfaceName::Signal[arg_name]&quot;</span>  \
+    dog wuff                                                \
+  myapp<span class="gtkdoc opt">-</span>dbus<span class="gtkdoc opt">-</span>interfaces<span class="gtkdoc opt">.</span>xml</pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+          Any UTF-8 string can be used for <em class="replaceable"><code>KEY</code></em> and <em class="replaceable"><code>VALUE</code></em>.
+        </p>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect1">
+<a name="id-1.4.26.7.9"></a><h2>Supported D-Bus Annotations</h2>
+<p>
+    The following D-Bus annotations are supported by
+    <span class="command"><strong>gdbus-codegen</strong></span>:
+  </p>
+<div class="variablelist"><table border="0" class="variablelist">
+<colgroup>
+<col align="left" valign="top">
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td><p><span class="term"><code class="literal">org.freedesktop.DBus.Deprecated</code></span></p></td>
+<td>
+<p>
+          Can be used on any <code class="literal">&lt;interface&gt;</code>,
+          <code class="literal">&lt;method&gt;</code>,
+          <code class="literal">&lt;signal&gt;</code> and
+          <code class="literal">&lt;property&gt;</code> element to specify that
+          the element is deprecated if its value is
+          <code class="literal">true</code>. Note that this annotation is
+          defined in the <a class="ulink" href="http://dbus.freedesktop.org/doc/dbus-specification.html#introspection-format" target="_top">D-Bus
+          specification</a> and can only assume the values
+          <code class="literal">true</code> and <code class="literal">false</code>. In
+          particular, you cannot specify the version that the element
+          was deprecated in nor any helpful deprecation message. Such
+          information should be added to the element documentation
+          instead.
+        </p>
+<p>
+          When generating C code, this annotation is used to add
+          <a href="../glib-Miscellaneous-Macros.html#G-GNUC-DEPRECATED:CAPS"><span class="type">G_GNUC_DEPRECATED</span></a> to generated functions for the element.
+        </p>
+<p>
+          When generating Docbook XML, a deprecation warning will
+          appear along the documentation for the element.
+        </p>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><code class="literal">org.gtk.GDBus.Since</code></span></p></td>
+<td>
+<p>
+          Can be used on any <code class="literal">&lt;interface&gt;</code>,
+          <code class="literal">&lt;method&gt;</code>,
+          <code class="literal">&lt;signal&gt;</code> and
+          <code class="literal">&lt;property&gt;</code> element to specify the
+          version (any free-form string but compared using a
+          version-aware sort function) the element appeared in.
+        </p>
+<p>
+          When generating C code, this field is used to ensure
+          function pointer order for preserving ABI/API, see <a class="xref" href="gdbus-codegen.html#gdbus-code-stability" title="Stability Guarantees">the section called “Stability Guarantees”</a>.
+        </p>
+<p>
+          When generating Docbook XML, the value of this tag appears
+          in the documentation.
+        </p>
+</td>
+</tr>
+<tr>
+<td><p><span class="term"><code class="literal">org.gtk.GDBus.DocString</code></span></p></td>
+<td><p>
+          A string with Docbook content for documentation. This annotation can
+          be used on <code class="literal">&lt;interface&gt;</code>,
+          <code class="literal">&lt;method&gt;</code>,
+          <code class="literal">&lt;signal&gt;</code>,
+          <code class="literal">&lt;property&gt;</code> and
+          <code class="literal">&lt;arg&gt;</code> elements.
+        </p></td>
+</tr>
+<tr>
+<td><p><span class="term"><code class="literal">org.gtk.GDBus.DocString.Short</code></span></p></td>
+<td><p>
+          A string with Docbook content for short/brief
+          documentation. This annotation can only be used on
+          <code class="literal">&lt;interface&gt;</code> elements.
+        </p></td>
+</tr>
+<tr>
+<td><p><span class="term"><code class="literal">org.gtk.GDBus.C.Name</code></span></p></td>
+<td><p>
+          Can be used on any <code class="literal">&lt;interface&gt;</code>,
+          <code class="literal">&lt;method&gt;</code>,
+          <code class="literal">&lt;signal&gt;</code> and
+          <code class="literal">&lt;property&gt;</code> element to specify the
+          name to use when generating C code. The value is expected to
+          be in <a class="ulink" href="http://en.wikipedia.org/wiki/CamelCase" target="_top">CamelCase</a>
+          or <span class="emphasis"><em>Ugly_Case</em></span> (see above).
+        </p></td>
+</tr>
+<tr>
+<td><p><span class="term"><code class="literal">org.gtk.GDBus.C.ForceGVariant</code></span></p></td>
+<td><p>
+          If set to a non-empty string, a <a href="../glib-GVariant.html#GVariant"><span class="type">GVariant</span></a> instance will
+          be used instead of the natural C type. This annotation can
+          be used on any <code class="literal">&lt;arg&gt;</code> and
+          <code class="literal">&lt;property&gt;</code> element.
+        </p></td>
+</tr>
+<tr>
+<td><p><span class="term"><code class="literal">org.gtk.GDBus.C.UnixFD</code></span></p></td>
+<td><p>
+          If set to a non-empty string, the generated code will
+          include parameters to exchange file descriptors using the
+          <a class="link" href="GUnixFDList.html" title="GUnixFDList"><span class="type">GUnixFDList</span></a> type. This annotation can be used on
+          <code class="literal">&lt;method&gt;</code> elements.
+        </p></td>
+</tr>
+</tbody>
+</table></div>
+<p>
+    As an easier alternative to using the
+    <code class="literal">org.gtk.GDBus.DocString</code> annotation, note that
+    parser used by <span class="command"><strong>gdbus-codegen</strong></span> parses XML
+    comments in a way similar to <a class="ulink" href="http://www.gtk.org/gtk-doc/" target="_top">gtk-doc</a>:
+</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc opt">&lt;!--</span>
+  net<span class="gtkdoc opt">.</span>Corp<span class="gtkdoc opt">.</span>Bar<span class="gtkdoc opt">:</span>
+  &#64;short_description<span class="gtkdoc opt">:</span> A <span class="gtkdoc kwb">short</span> description
+
+  A <span class="gtkdoc opt">&lt;</span>emphasis<span class="gtkdoc opt">&gt;</span>longer<span class="gtkdoc opt">&lt;/</span>emphasis<span class="gtkdoc opt">&gt;</span> description<span class="gtkdoc opt">.</span>
+
+  This is a <span class="keyword">new</span> paragraph<span class="gtkdoc opt">.</span>
+<span class="gtkdoc opt">--&gt;</span>
+<span class="gtkdoc opt">&lt;</span>interface name<span class="gtkdoc opt">=</span><span class="string">&quot;net.corp.Bar&quot;</span><span class="gtkdoc opt">&gt;</span>
+  <span class="gtkdoc opt">&lt;!--</span>
+    FooMethod<span class="gtkdoc opt">:</span>
+    &#64;greeting<span class="gtkdoc opt">:</span> The docs <span class="keyword">for</span> greeting parameter<span class="gtkdoc opt">.</span>
+    &#64;response<span class="gtkdoc opt">:</span> The docs <span class="keyword">for</span> response parameter<span class="gtkdoc opt">.</span>
+
+    The docs <span class="keyword">for</span> the actual method<span class="gtkdoc opt">.</span>
+  <span class="gtkdoc opt">--&gt;</span>
+  <span class="gtkdoc opt">&lt;</span>method name<span class="gtkdoc opt">=</span><span class="string">&quot;FooMethod&quot;</span><span class="gtkdoc opt">&gt;</span>
+    <span class="gtkdoc opt">&lt;</span>arg name<span class="gtkdoc opt">=</span><span class="string">&quot;greeting&quot;</span> direction<span class="gtkdoc opt">=</span><span class="string">&quot;in&quot;</span> type<span class="gtkdoc opt">=</span><span class="string">&quot;s&quot;</span><span class="gtkdoc opt">/&gt;</span>
+    <span class="gtkdoc opt">&lt;</span>arg name<span class="gtkdoc opt">=</span><span class="string">&quot;response&quot;</span> direction<span class="gtkdoc opt">=</span><span class="string">&quot;out&quot;</span> type<span class="gtkdoc opt">=</span><span class="string">&quot;s&quot;</span><span class="gtkdoc opt">/&gt;</span>
+  <span class="gtkdoc opt">&lt;/</span>method<span class="gtkdoc opt">&gt;</span>
+
+  <span class="gtkdoc opt">&lt;!--</span>
+    BarSignal<span class="gtkdoc opt">:</span>
+    &#64;blah<span class="gtkdoc opt">:</span> The docs <span class="keyword">for</span> blah parameter<span class="gtkdoc opt">.</span>
+    &#64;boo<span class="gtkdoc opt">:</span> The docs <span class="keyword">for</span> boo parameter<span class="gtkdoc opt">.</span>
+    &#64;since<span class="gtkdoc opt">:</span> <span class="number">2.30</span>
+
+    The docs <span class="keyword">for</span> the actual signal<span class="gtkdoc opt">.</span>
+  <span class="gtkdoc opt">--&gt;</span>
+  <span class="gtkdoc opt">&lt;</span>signal name<span class="gtkdoc opt">=</span><span class="string">&quot;BarSignal&quot;</span><span class="gtkdoc opt">&gt;</span>
+    <span class="gtkdoc opt">&lt;</span>arg name<span class="gtkdoc opt">=</span><span class="string">&quot;blah&quot;</span> type<span class="gtkdoc opt">=</span><span class="string">&quot;s&quot;</span><span class="gtkdoc opt">/&gt;</span>
+    <span class="gtkdoc opt">&lt;</span>arg name<span class="gtkdoc opt">=</span><span class="string">&quot;boo&quot;</span> type<span class="gtkdoc opt">=</span><span class="string">&quot;s&quot;</span><span class="gtkdoc opt">/&gt;</span>
+  <span class="gtkdoc opt">&lt;/</span>signal<span class="gtkdoc opt">&gt;</span>
+
+  <span class="gtkdoc opt">&lt;!--</span> BazProperty<span class="gtkdoc opt">:</span> The docs <span class="keyword">for</span> the property<span class="gtkdoc opt">. --&gt;</span>
+  <span class="gtkdoc opt">&lt;</span>property name<span class="gtkdoc opt">=</span><span class="string">&quot;BazProperty&quot;</span> type<span class="gtkdoc opt">=</span><span class="string">&quot;s&quot;</span> access<span class="gtkdoc opt">=</span><span class="string">&quot;read&quot;</span><span class="gtkdoc opt">/&gt;</span>
+<span class="gtkdoc opt">&lt;/</span>interface<span class="gtkdoc opt">&gt;</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+  </p>
+<p>
+    Note that <code class="literal">@since</code> can be used in any inline
+    documentation bit (e.g. for interfaces, methods, signals and
+    properties) to set the <code class="literal">org.gtk.GDBus.Since</code>
+    annotation. For the <code class="literal">org.gtk.GDBus.DocString</code>
+    annotation (and inline comments), note that substrings of the form
+    <code class="literal">#net.Corp.Bar</code>,
+    <code class="literal">net.Corp.Bar.FooMethod()</code>,
+    <code class="literal">#net.Corp.Bar::BarSignal</code> and
+    <code class="literal">#net.Corp.InlineDocs:BazProperty</code> are all
+    expanded to links to the respective interface, method, signal and
+    property.
+    Additionally, substrings starting with <code class="literal">@</code> and <code class="literal">%</code> characters are rendered as
+    <a class="ulink" href="http://www.docbook.org/tdg/en/html/parameter.html" target="_top">parameter</a> and
+    <a class="ulink" href="http://www.docbook.org/tdg/en/html/constant.html" target="_top">constant</a> respectively.
+  </p>
+<p>
+    If both XML comments and
+    <code class="literal">org.gtk.GDBus.DocString</code> or
+    <code class="literal">org.gtk.GDBus.DocString.Short</code> annotations are
+    present, the latter wins.
+  </p>
+</div>
+<div class="refsect1">
+<a name="id-1.4.26.7.10"></a><h2>Example</h2>
+<p>
+    Consider the following D-Bus Introspection XML.
+  </p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc opt">&lt;</span>node<span class="gtkdoc opt">&gt;</span>
+  <span class="gtkdoc opt">&lt;</span>interface name<span class="gtkdoc opt">=</span><span class="string">&quot;net.Corp.MyApp.Frobber&quot;</span><span class="gtkdoc opt">&gt;</span>
+    <span class="gtkdoc opt">&lt;</span>method name<span class="gtkdoc opt">=</span><span class="string">&quot;HelloWorld&quot;</span><span class="gtkdoc opt">&gt;</span>
+      <span class="gtkdoc opt">&lt;</span>arg name<span class="gtkdoc opt">=</span><span class="string">&quot;greeting&quot;</span> direction<span class="gtkdoc opt">=</span><span class="string">&quot;in&quot;</span> type<span class="gtkdoc opt">=</span><span class="string">&quot;s&quot;</span><span class="gtkdoc opt">/&gt;</span>
+      <span class="gtkdoc opt">&lt;</span>arg name<span class="gtkdoc opt">=</span><span class="string">&quot;response&quot;</span> direction<span class="gtkdoc opt">=</span><span class="string">&quot;out&quot;</span> type<span class="gtkdoc opt">=</span><span class="string">&quot;s&quot;</span><span class="gtkdoc opt">/&gt;</span>
+    <span class="gtkdoc opt">&lt;/</span>method<span class="gtkdoc opt">&gt;</span>
+
+    <span class="gtkdoc opt">&lt;</span>signal name<span class="gtkdoc opt">=</span><span class="string">&quot;Notification&quot;</span><span class="gtkdoc opt">&gt;</span>
+      <span class="gtkdoc opt">&lt;</span>arg name<span class="gtkdoc opt">=</span><span class="string">&quot;icon_blob&quot;</span> type<span class="gtkdoc opt">=</span><span class="string">&quot;ay&quot;</span><span class="gtkdoc opt">/&gt;</span>
+      <span class="gtkdoc opt">&lt;</span>arg name<span class="gtkdoc opt">=</span><span class="string">&quot;height&quot;</span> type<span class="gtkdoc opt">=</span><span class="string">&quot;i&quot;</span><span class="gtkdoc opt">/&gt;</span>
+      <span class="gtkdoc opt">&lt;</span>arg name<span class="gtkdoc opt">=</span><span class="string">&quot;messages&quot;</span> type<span class="gtkdoc opt">=</span><span class="string">&quot;as&quot;</span><span class="gtkdoc opt">/&gt;</span>
+    <span class="gtkdoc opt">&lt;/</span>signal<span class="gtkdoc opt">&gt;</span>
+
+    <span class="gtkdoc opt">&lt;</span>property name<span class="gtkdoc opt">=</span><span class="string">&quot;Verbose&quot;</span> type<span class="gtkdoc opt">=</span><span class="string">&quot;b&quot;</span> access<span class="gtkdoc opt">=</span><span class="string">&quot;readwrite&quot;</span><span class="gtkdoc opt">/&gt;</span>
+  <span class="gtkdoc opt">&lt;/</span>interface<span class="gtkdoc opt">&gt;</span>
+<span class="gtkdoc opt">&lt;/</span>node<span class="gtkdoc opt">&gt;</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+    If <span class="command"><strong>gdbus-codegen</strong></span> is used on this file like this:
+  </p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4</pre></td>
+        <td class="listing_code"><pre class="programlisting">gdbus<span class="gtkdoc opt">-</span>codegen <span class="gtkdoc opt">--</span>generate<span class="gtkdoc opt">-</span>c<span class="gtkdoc opt">-</span>code myapp<span class="gtkdoc opt">-</span>generated       \
+              <span class="gtkdoc opt">--</span>c<span class="gtkdoc opt">-</span><span class="keyword">namespace</span> MyApp                     \
+              <span class="gtkdoc opt">--</span>interface<span class="gtkdoc opt">-</span>prefix net<span class="gtkdoc opt">.</span>corp<span class="gtkdoc opt">.</span>MyApp<span class="gtkdoc opt">.</span>      \
+              net<span class="gtkdoc opt">.</span>Corp<span class="gtkdoc opt">.</span>MyApp<span class="gtkdoc opt">.</span>Frobber<span class="gtkdoc opt">.</span>xml</pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+    two files called
+    <code class="filename">myapp-generated.[ch]</code> are
+    generated. The files provide an abstract
+    <a href="../gobject-Type-Information.html#GTypeInterface"><span class="type">GTypeInterface</span></a>-derived type called
+    <span class="type">MyAppFrobber</span> as well as two instantiable types with
+    the same name but suffixed with <span class="type">Proxy</span> and
+    <span class="type">Skeleton</span>. The generated file, roughly, contains the
+    following facilities:
+  </p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="comment">/* GType macros for the three generated types */</span>
+<span class="gtkdoc ppc">#define MY_APP_TYPE_FROBBER (my_app_frobber_get_type ())</span>
+<span class="gtkdoc ppc">#define MY_APP_TYPE_FROBBER_SKELETON (my_app_frobber_skeleton_get_type ())</span>
+<span class="gtkdoc ppc">#define MY_APP_TYPE_FROBBER_PROXY (my_app_frobber_proxy_get_type ())</span>
+
+<span class="gtkdoc kwc">typedef</span> <span class="gtkdoc kwb">struct</span> _MyAppFrobber MyAppFrobber<span class="gtkdoc opt">;</span> <span class="comment">/* Dummy typedef */</span>
+
+<span class="gtkdoc kwc">typedef</span> <span class="gtkdoc kwb">struct</span>
+<span class="gtkdoc opt">{</span>
+  GTypeInterface parent_iface<span class="gtkdoc opt">;</span>
+
+  <span class="comment">/* Signal handler for the ::notification signal */</span>
+  <span class="gtkdoc kwb">void</span> <span class="gtkdoc opt">(*</span>notification<span class="gtkdoc opt">) (</span>MyAppFrobber <span class="gtkdoc opt">*</span>proxy<span class="gtkdoc opt">,</span>
+                        GVariant <span class="gtkdoc opt">*</span>icon_blob<span class="gtkdoc opt">,</span>
+                        gint height<span class="gtkdoc opt">,</span>
+                        <span class="gtkdoc kwb">const</span> gchar<span class="gtkdoc opt">*</span> <span class="gtkdoc kwb">const</span> <span class="gtkdoc opt">*</span>messages<span class="gtkdoc opt">);</span>
+
+  <span class="comment">/* Signal handler for the ::handle-hello-world signal */</span>
+  <span class="function"><a href="../glib-Basic-Types.html#gboolean">gboolean</a></span> <span class="gtkdoc opt">(*</span>handle_hello_world<span class="gtkdoc opt">) (</span>MyAppFrobber <span class="gtkdoc opt">*</span>proxy<span class="gtkdoc opt">,</span>
+                                  GDBusMethodInvocation <span class="gtkdoc opt">*</span>invocation<span class="gtkdoc opt">,</span>
+                                  <span class="gtkdoc kwb">const</span> gchar <span class="gtkdoc opt">*</span>greeting<span class="gtkdoc opt">);</span>
+<span class="gtkdoc opt">}</span> MyAppFrobberIface<span class="gtkdoc opt">;</span>
+
+<span class="comment">/* Asynchronously calls HelloWorld() */</span>
+<span class="gtkdoc kwb">void</span>
+<span class="function">my_app_frobber_call_hello_world</span> <span class="gtkdoc opt">(</span>MyAppFrobber <span class="gtkdoc opt">*</span>proxy<span class="gtkdoc opt">,</span>
+                                 <span class="gtkdoc kwb">const</span> gchar <span class="gtkdoc opt">*</span>greeting<span class="gtkdoc opt">,</span>
+                                 GCancellable <span class="gtkdoc opt">*</span>cancellable<span class="gtkdoc opt">,</span>
+                                 GAsyncReadyCallback callback<span class="gtkdoc opt">,</span>
+                                 gpointer user_data<span class="gtkdoc opt">);</span>
+gboolean
+<span class="function">my_app_frobber_call_hello_world_finish</span> <span class="gtkdoc opt">(</span>MyAppFrobber <span class="gtkdoc opt">*</span>proxy<span class="gtkdoc opt">,</span>
+                                        gchar <span class="gtkdoc opt">**</span>out_response<span class="gtkdoc opt">,</span>
+                                        GAsyncResult <span class="gtkdoc opt">*</span>res<span class="gtkdoc opt">,</span>
+                                        GError <span class="gtkdoc opt">**</span>error<span class="gtkdoc opt">);</span>
+
+<span class="comment">/* Synchronously calls HelloWorld(). Blocks calling thread. */</span>
+gboolean
+<span class="function">my_app_frobber_call_hello_world_sync</span> <span class="gtkdoc opt">(</span>MyAppFrobber <span class="gtkdoc opt">*</span>proxy<span class="gtkdoc opt">,</span>
+                                      <span class="gtkdoc kwb">const</span> gchar <span class="gtkdoc opt">*</span>greeting<span class="gtkdoc opt">,</span>
+                                      gchar <span class="gtkdoc opt">**</span>out_response<span class="gtkdoc opt">,</span>
+                                      GCancellable <span class="gtkdoc opt">*</span>cancellable<span class="gtkdoc opt">,</span>
+                                      GError <span class="gtkdoc opt">**</span>error<span class="gtkdoc opt">);</span>
+
+<span class="comment">/* Completes handling the HelloWorld() method call */</span>
+<span class="gtkdoc kwb">void</span>
+<span class="function">my_app_frobber_complete_hello_world</span> <span class="gtkdoc opt">(</span>MyAppFrobber <span class="gtkdoc opt">*</span>object<span class="gtkdoc opt">,</span>
+                                     GDBusMethodInvocation <span class="gtkdoc opt">*</span>invocation<span class="gtkdoc opt">,</span>
+                                     <span class="gtkdoc kwb">const</span> gchar <span class="gtkdoc opt">*</span>response<span class="gtkdoc opt">);</span>
+
+<span class="comment">/* Emits the ::notification signal / Notification() D-Bus signal */</span>
+<span class="gtkdoc kwb">void</span>
+<span class="function">my_app_frobber_emit_notification</span> <span class="gtkdoc opt">(</span>MyAppFrobber <span class="gtkdoc opt">*</span>object<span class="gtkdoc opt">,</span>
+                                  GVariant <span class="gtkdoc opt">*</span>icon_blob<span class="gtkdoc opt">,</span>
+                                  gint height<span class="gtkdoc opt">,</span>
+                                  <span class="gtkdoc kwb">const</span> gchar<span class="gtkdoc opt">*</span> <span class="gtkdoc kwb">const</span> <span class="gtkdoc opt">*</span>messages<span class="gtkdoc opt">);</span>
+
+<span class="comment">/* Gets the :verbose GObject property / Verbose D-Bus property.</span>
+<span class="comment"> * Does no blocking I/O.</span>
+<span class="comment"> */</span>
+gboolean <span class="function">my_app_frobber_get_verbose</span> <span class="gtkdoc opt">(</span>MyAppFrobber <span class="gtkdoc opt">*</span>object<span class="gtkdoc opt">);</span>
+
+<span class="comment">/* Sets the :verbose GObject property / Verbose D-Bus property.</span>
+<span class="comment"> * Does no blocking I/O.</span>
+<span class="comment"> */</span>
+<span class="gtkdoc kwb">void</span> <span class="function">my_app_frobber_set_verbose</span> <span class="gtkdoc opt">(</span>MyAppFrobber <span class="gtkdoc opt">*</span>object<span class="gtkdoc opt">,</span>
+                                 gboolean      value<span class="gtkdoc opt">);</span>
+
+<span class="comment">/* Gets the interface info */</span>
+GDBusInterfaceInfo <span class="gtkdoc opt">*</span><span class="function">my_app_frobber_interface_info</span> <span class="gtkdoc opt">(</span><span class="gtkdoc kwb">void</span><span class="gtkdoc opt">);</span>
+
+<span class="comment">/* Creates a new skeleton object, ready to be exported */</span>
+MyAppFrobber <span class="gtkdoc opt">*</span><span class="function">my_app_frobber_skeleton_new</span> <span class="gtkdoc opt">(</span><span class="gtkdoc kwb">void</span><span class="gtkdoc opt">);</span>
+
+<span class="comment">/* Client-side proxy constructors.</span>
+<span class="comment"> *</span>
+<span class="comment"> * Additionally, _new_for_bus(), _new_for_bus_finish() and</span>
+<span class="comment"> * _new_for_bus_sync() proxy constructors are also generated.</span>
+<span class="comment"> */</span>
+<span class="gtkdoc kwb">void</span>
+<span class="function">my_app_frobber_proxy_new</span>        <span class="gtkdoc opt">(</span>GDBusConnection     <span class="gtkdoc opt">*</span>connection<span class="gtkdoc opt">,</span>
+                                 GDBusProxyFlags      flags<span class="gtkdoc opt">,</span>
+                                 <span class="gtkdoc kwb">const</span> gchar         <span class="gtkdoc opt">*</span>name<span class="gtkdoc opt">,</span>
+                                 <span class="gtkdoc kwb">const</span> gchar         <span class="gtkdoc opt">*</span>object_path<span class="gtkdoc opt">,</span>
+                                 GCancellable        <span class="gtkdoc opt">*</span>cancellable<span class="gtkdoc opt">,</span>
+                                 GAsyncReadyCallback  callback<span class="gtkdoc opt">,</span>
+                                 gpointer             user_data<span class="gtkdoc opt">);</span>
+MyAppFrobber <span class="gtkdoc opt">*</span>
+<span class="function">my_app_frobber_proxy_new_finish</span> <span class="gtkdoc opt">(</span>GAsyncResult        <span class="gtkdoc opt">*</span>res<span class="gtkdoc opt">,</span>
+                                 GError             <span class="gtkdoc opt">**</span>error<span class="gtkdoc opt">);</span>
+MyAppFrobber <span class="gtkdoc opt">*</span>
+<span class="function">my_app_frobber_proxy_new_sync</span>   <span class="gtkdoc opt">(</span>GDBusConnection     <span class="gtkdoc opt">*</span>connection<span class="gtkdoc opt">,</span>
+                                 GDBusProxyFlags      flags<span class="gtkdoc opt">,</span>
+                                 <span class="gtkdoc kwb">const</span> gchar         <span class="gtkdoc opt">*</span>name<span class="gtkdoc opt">,</span>
+                                 <span class="gtkdoc kwb">const</span> gchar         <span class="gtkdoc opt">*</span>object_path<span class="gtkdoc opt">,</span>
+                                 GCancellable        <span class="gtkdoc opt">*</span>cancellable<span class="gtkdoc opt">,</span>
+                                 GError             <span class="gtkdoc opt">**</span>error<span class="gtkdoc opt">);</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+    Thus, for every D-Bus method, there will be three C functions for
+    calling the method, one <a href="../gobject-The-Base-Object-Type.html#GObject-struct"><span class="type">GObject</span></a> signal for handling an incoming
+    call and one C function for completing an incoming call. For every
+    D-Bus signal, there's one <a href="../gobject-The-Base-Object-Type.html#GObject-struct"><span class="type">GObject</span></a> signal and one C function for
+    emitting it. For every D-Bus property, two C functions are
+    generated (one setter, one getter) and one <a href="../gobject-The-Base-Object-Type.html#GObject-struct"><span class="type">GObject</span></a> property. The
+    following table summarizes the generated facilities and where they
+    are applicable:
+  </p>
+<div class="informaltable"><table class="informaltable" border="1">
+<colgroup>
+<col>
+<col>
+<col>
+</colgroup>
+<thead><tr>
+<th> </th>
+<th>Client</th>
+<th>Server</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Types</td>
+<td>Use <span class="type">MyAppFrobberProxy</span>
+</td>
+<td>Any type implementing the <span class="type">MyAppFrobber</span> interface</td>
+</tr>
+<tr>
+<td>Methods</td>
+<td>Use <code class="function"><code class="function">m_a_f_hello_world()</code></code> to call.</td>
+<td>Receive via the <code class="function"><code class="function">handle_hello_world()</code></code> signal handler. Complete the call with <code class="function"><code class="function">m_a_f_complete_hello_world()</code></code>
+</td>
+</tr>
+<tr>
+<td>Signals</td>
+<td>Connect to the <code class="function">::notification</code> GObject signal.</td>
+<td>Use <code class="function"><code class="function">m_a_f_emit_notification()</code></code> to emit signal.</td>
+</tr>
+<tr>
+<td>Properties (Reading)</td>
+<td>Use <code class="function"><code class="function">m_a_f_get_verbose()</code></code> or <em class="parameter"><code>:verbose</code></em>.</td>
+<td>Implement <a href="../gobject-The-Base-Object-Type.html#GObject-struct"><span class="type">GObject</span></a>'s <code class="function"><code class="function">get_property()</code></code> vfunc.</td>
+</tr>
+<tr>
+<td>Properties (writing)</td>
+<td>Use <code class="function"><code class="function">m_a_f_set_verbose()</code></code> or <em class="parameter"><code>:verbose</code></em>.</td>
+<td>Implement <a href="../gobject-The-Base-Object-Type.html#GObject-struct"><span class="type">GObject</span></a>'s <code class="function"><code class="function">set_property()</code></code> vfunc.</td>
+</tr>
+</tbody>
+</table></div>
+<div class="refsect2">
+<a name="id-1.4.26.7.10.10"></a><h3>Client-side usage</h3>
+<p>
+      You can use the generated proxy type with the generated
+      constructors:
+    </p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13</pre></td>
+        <td class="listing_code"><pre class="programlisting">MyAppFrobber <span class="gtkdoc opt">*</span>proxy<span class="gtkdoc opt">;</span>
+GError <span class="gtkdoc opt">*</span>error<span class="gtkdoc opt">;</span>
+
+error <span class="gtkdoc opt">=</span> NULL<span class="gtkdoc opt">;</span>
+proxy <span class="gtkdoc opt">=</span> <span class="function">my_app_frobber_proxy_new_for_bus_sync</span> <span class="gtkdoc opt">(</span>
+            G_BUS_TYPE_SESSION<span class="gtkdoc opt">,</span>
+            G_DBUS_PROXY_FLAGS_NONE<span class="gtkdoc opt">,</span>
+            <span class="string">&quot;net.Corp.MyApp&quot;</span><span class="gtkdoc opt">,</span>              <span class="comment">/* bus name */</span>
+            <span class="string">&quot;/net/Corp/MyApp/SomeFrobber&quot;</span><span class="gtkdoc opt">,</span> <span class="comment">/* object */</span>
+            NULL<span class="gtkdoc opt">,</span>                          <span class="comment">/* GCancellable* */</span>
+            <span class="gtkdoc opt">&amp;</span>error<span class="gtkdoc opt">);</span>
+<span class="comment">/* do stuff with proxy */</span>
+<span class="function"><a href="../gobject-The-Base-Object-Type.html#g-object-unref">g_object_unref</a></span> <span class="gtkdoc opt">(</span>proxy<span class="gtkdoc opt">);</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+      Instead of using the generic <a class="link" href="GDBusProxy.html" title="GDBusProxy"><span class="type">GDBusProxy</span></a> facilities, one can use
+      the generated methods such as
+      <code class="function"><code class="function">my_app_frobber_call_hello_world()</code></code> to invoke
+      the <code class="function">net.Corp.MyApp.Frobber.HelloWorld()</code>
+      D-Bus method, connect to the the
+      <code class="function">::notification</code> GObject signal to receive
+      the <code class="function">net.Corp.MyApp.Frobber::Notication</code>
+      D-Bus signal and get/set the
+      <em class="parameter"><code>net.Corp.MyApp.Frobber:Verbose</code></em> D-Bus
+      Property using either the GObject property
+      <em class="parameter"><code>:verbose</code></em> or the
+      <code class="function"><code class="function">my_app_get_verbose()</code></code> and
+      <code class="function"><code class="function">my_app_set_verbose()</code></code> methods. Use the
+      standard <a href="../gobject-The-Base-Object-Type.html#GObject-notify"><span class="type">“notify”</span></a> signal to listen to property changes.
+    </p>
+<p>
+      Note that all property access is via <a class="link" href="GDBusProxy.html" title="GDBusProxy"><span class="type">GDBusProxy</span></a>'s
+      property cache so no I/O is ever done when reading properties.
+      Also note that setting a property will cause the
+      <a class="ulink" href="http://dbus.freedesktop.org/doc/dbus-specification.html#standard-interfaces-properties" target="_top">org.freedesktop.DBus.Properties.Set</a> method to be
+      called on the remote object. This call, however, is asynchronous
+      so setting a property won't block. Further, the change is
+      delayed and no error checking is possible.
+    </p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="id-1.4.26.7.10.11"></a><h3>Server-side usage</h3>
+<p>
+      The generated <span class="type">MyAppFrobber</span> interface is designed so
+      it is easy to implement it in a <a href="../gobject-The-Base-Object-Type.html#GObject-struct"><span class="type">GObject</span></a>
+      subclass. For example, to handle
+      <code class="function"><code class="function">HelloWorld()</code></code> method invocations, set the
+      vfunc for <code class="function"><code class="function">handle_hello_hello_world()</code></code> in the
+      <span class="type">MyAppFrobberIface</span> structure. Similary, to handle
+      the <em class="parameter"><code>net.Corp.MyApp.Frobber:Verbose</code></em>
+      property override the <em class="parameter"><code>:verbose</code></em> <a href="../gobject-The-Base-Object-Type.html#GObject-struct"><span class="type">GObject</span></a>
+      property from the subclass. To emit a signal, use
+      e.g. <code class="function"><code class="function">my_app_emit_signal()</code></code> or
+      <a href="../gobject-Signals.html#g-signal-emit-by-name"><code class="function">g_signal_emit_by_name()</code></a>.
+    </p>
+<p>
+      Instead of subclassing, it is often easier to use the generated
+      <span class="type">MyAppFrobberSkeleton</span> subclass. To handle incoming
+      method calls, use <code class="function"><a href="../gobject-Signals.html#g-signal-connect"><code class="function">g_signal_connect()</code></a></code> with
+      the <code class="function">::handle-*</code> signals and instead of
+      overriding <a href="../gobject-The-Base-Object-Type.html#GObject-struct"><span class="type">GObject</span></a>'s
+      <code class="function"><code class="function">get_property()</code></code> and
+      <code class="function"><code class="function">set_property()</code></code> vfuncs, use
+      <a href="../gobject-The-Base-Object-Type.html#g-object-get"><code class="function">g_object_get()</code></a> and
+      <a href="../gobject-The-Base-Object-Type.html#g-object-set"><code class="function">g_object_set()</code></a> or the generated property
+      getters and setters (the generated class has an internal
+      property bag implementation).
+    </p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc kwb">static</span> gboolean
+<span class="function">on_handle_hello_world</span> <span class="gtkdoc opt">(</span>MyAppFrobber           <span class="gtkdoc opt">*</span>interface<span class="gtkdoc opt">,</span>
+                       GDBusMethodInvocation  <span class="gtkdoc opt">*</span>invocation<span class="gtkdoc opt">,</span>
+                       <span class="gtkdoc kwb">const</span> gchar            <span class="gtkdoc opt">*</span>greeting<span class="gtkdoc opt">,</span>
+                       gpointer                user_data<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  <span class="keyword">if</span> <span class="gtkdoc opt">(</span><span class="function"><a href="../glib-String-Utility-Functions.html#g-strcmp0">g_strcmp0</a></span> <span class="gtkdoc opt">(</span>greeting<span class="gtkdoc opt">,</span> <span class="string">&quot;Boo&quot;</span><span class="gtkdoc opt">) !=</span> <span class="number">0</span><span class="gtkdoc opt">)</span>
+    <span class="gtkdoc opt">{</span>
+      gchar <span class="gtkdoc opt">*</span>response<span class="gtkdoc opt">;</span>
+      response <span class="gtkdoc opt">=</span> <span class="function"><a href="../glib-String-Utility-Functions.html#g-strdup-printf">g_strdup_printf</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;Word! You said `%s'.&quot;</span><span class="gtkdoc opt">,</span> greeting<span class="gtkdoc opt">);</span>
+      <span class="function">my_app_complete_hello_world</span> <span class="gtkdoc opt">(</span>interface<span class="gtkdoc opt">,</span> invocation<span class="gtkdoc opt">,</span> response<span class="gtkdoc opt">);</span>
+      <span class="function"><a href="../glib-Memory-Allocation.html#g-free">g_free</a></span> <span class="gtkdoc opt">(</span>response<span class="gtkdoc opt">);</span>
+    <span class="gtkdoc opt">}</span>
+  <span class="keyword">else</span>
+    <span class="gtkdoc opt">{</span>
+      <span class="function"><a href="GDBusMethodInvocation.html#g-dbus-method-invocation-return-error">g_dbus_method_invocation_return_error</a></span> <span class="gtkdoc opt">(</span>invocation<span class="gtkdoc opt">,</span>
+                 MY_APP_ERROR<span class="gtkdoc opt">,</span>
+                 MY_APP_ERROR_NO_WHINING<span class="gtkdoc opt">,</span>
+                 <span class="string">&quot;Hey, %s, there will be no whining!&quot;</span><span class="gtkdoc opt">,</span>
+                 <span class="function"><a href="GDBusMethodInvocation.html#g-dbus-method-invocation-get-sender">g_dbus_method_invocation_get_sender</a></span> <span class="gtkdoc opt">(</span>invocation<span class="gtkdoc opt">));</span>
+    <span class="gtkdoc opt">}</span>
+  <span class="keyword">return</span> TRUE<span class="gtkdoc opt">;</span>
+<span class="gtkdoc opt">}</span>
+
+  <span class="gtkdoc opt">[...]</span>
+
+  interface <span class="gtkdoc opt">=</span> <span class="function">my_app_frobber_skeleton_new</span> <span class="gtkdoc opt">();</span>
+  <span class="function">my_app_frobber_set_verbose</span> <span class="gtkdoc opt">(</span>interface<span class="gtkdoc opt">,</span> TRUE<span class="gtkdoc opt">);</span>
+
+  <span class="function"><a href="../gobject-Signals.html#g-signal-connect">g_signal_connect</a></span> <span class="gtkdoc opt">(</span>interface<span class="gtkdoc opt">,</span>
+                    <span class="string">&quot;handle-hello-world&quot;</span><span class="gtkdoc opt">,</span>
+                    <span class="function"><a href="../gobject-Closures.html#G-CALLBACK:CAPS">G_CALLBACK</a></span> <span class="gtkdoc opt">(</span>on_handle_hello_world<span class="gtkdoc opt">),</span>
+                    some_user_data<span class="gtkdoc opt">);</span>
+
+  <span class="gtkdoc opt">[...]</span>
+
+  error <span class="gtkdoc opt">=</span> NULL<span class="gtkdoc opt">;</span>
+  <span class="keyword">if</span> <span class="gtkdoc opt">(!</span><span class="function"><a href="GDBusInterfaceSkeleton.html#g-dbus-interface-skeleton-export">g_dbus_interface_skeleton_export</a></span> <span class="gtkdoc opt">(</span><span class="function">G_DBUS_INTERFACE_SKELETON</span> <span class="gtkdoc opt">(</span>interface<span class="gtkdoc opt">),</span>
+                                         connection<span class="gtkdoc opt">,</span>
+                                         <span class="string">&quot;/path/of/dbus_object&quot;</span><span class="gtkdoc opt">,</span>
+                                         <span class="gtkdoc opt">&amp;</span>error<span class="gtkdoc opt">))</span>
+    <span class="gtkdoc opt">{</span>
+      <span class="comment">/* handle error */</span>
+    <span class="gtkdoc opt">}</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+      To facilitate atomic changesets (multiple properties changing at
+      the same time), <a href="../gobject-The-Base-Object-Type.html#GObject-notify"><span class="type">“notify”</span></a> signals are queued up when
+      received. The queue is drained in an idle handler (which is called from the
+      <a href="../glib-The-Main-Event-Loop.html#g-main-context-push-thread-default">thread-default main loop</a>
+      of the thread where the skeleton object was
+      contructed) and will cause emissions of the <a class="ulink" href="http://dbus.freedesktop.org/doc/dbus-specification.html#standard-interfaces-properties" target="_top">org.freedesktop.DBus.Properties::PropertiesChanged</a>
+      signal with all the properties that have changed. Use
+      <a class="link" href="GDBusInterfaceSkeleton.html#g-dbus-interface-skeleton-flush" title="g_dbus_interface_skeleton_flush ()"><code class="function">g_dbus_interface_skeleton_flush()</code></a> or
+      <a class="link" href="GDBusObjectSkeleton.html#g-dbus-object-skeleton-flush" title="g_dbus_object_skeleton_flush ()"><code class="function">g_dbus_object_skeleton_flush()</code></a> to empty the queue
+      immediately. Use <a href="../gobject-The-Base-Object-Type.html#g-object-freeze-notify"><code class="function">g_object_freeze_notify()</code></a> and
+      <a href="../gobject-The-Base-Object-Type.html#g-object-thaw-notify"><code class="function">g_object_thaw_notify()</code></a> for atomic changesets if on a different
+      thread.
+    </p>
+</div>
+</div>
+<div class="refsect1">
+<a name="id-1.4.26.7.11"></a><h2>C Type Mapping</h2>
+<p>
+    Scalar types
+    (type-strings
+    <a href="../glib-GVariantType.html#G-VARIANT-TYPE-BOOLEAN:CAPS">'b'</a>,
+    <a href="../glib-GVariantType.html#G-VARIANT-TYPE-BYTE:CAPS">'y'</a>,
+    <a href="../glib-GVariantType.html#G-VARIANT-TYPE-INT16:CAPS">'n'</a>,
+    <a href="../glib-GVariantType.html#G-VARIANT-TYPE-UINT16:CAPS">'q'</a>,
+    <a href="../glib-GVariantType.html#G-VARIANT-TYPE-INT32:CAPS">'i'</a>,
+    <a href="../glib-GVariantType.html#G-VARIANT-TYPE-UINT32:CAPS">'u'</a>,
+    <a href="../glib-GVariantType.html#G-VARIANT-TYPE-INT64:CAPS">'x'</a>,
+    <a href="../glib-GVariantType.html#G-VARIANT-TYPE-UINT64:CAPS">'t'</a> and
+    <a href="../glib-GVariantType.html#G-VARIANT-TYPE-DOUBLE:CAPS">'d'</a>)
+    ),
+    strings (type-strings
+    <a href="../glib-GVariantType.html#G-VARIANT-TYPE-STRING:CAPS">'s'</a>,
+    <a href="../glib-GVariantType.html#G-VARIANT-TYPE-BYTESTRING:CAPS">'ay'</a>,
+    <a href="../glib-GVariantType.html#G-VARIANT-TYPE-OBJECT-PATH:CAPS">'o'</a> and
+    <a href="../glib-GVariantType.html#G-VARIANT-TYPE-SIGNATURE:CAPS">'g'</a>) and
+    arrays of string (type-strings
+    <a href="../glib-GVariantType.html#G-VARIANT-TYPE-STRING-ARRAY:CAPS">'as'</a>,
+    <a href="../glib-GVariantType.html#G-VARIANT-TYPE-OBJECT-PATH-ARRAY:CAPS">'ao'</a> and
+    <a href="../glib-GVariantType.html#G-VARIANT-TYPE-BYTESTRING-ARRAY:CAPS">'aay'</a>)
+    are mapped to the natural types,
+    e.g. <a href="../glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a>, <a href="../glib-Basic-Types.html#gdouble"><span class="type">gdouble</span></a>, <a href="../glib-Basic-Types.html#gint"><span class="type">gint</span></a>, <a href="../gobject-Standard-Parameter-and-Value-Types.html#gchararray">gchar*</a>,
+    <a href="../glib-String-Utility-Functions.html#GStrv">gchar**</a> and
+    so on. Everything else is mapped to the <a href="../glib-GVariant.html#GVariant"><span class="type">GVariant</span></a>
+    type.
+  </p>
+<p>
+    This automatic mapping can be turned off by using the annotation
+    <code class="literal">org.gtk.GDBus.C.ForceGVariant</code> - if used then a
+    <a href="../glib-GVariant.html#GVariant"><span class="type">GVariant</span></a> is always exchanged instead of the
+    corresponding native C type. This annotation may be convenient to
+    use when using
+    bytestrings (type-string <a href="../glib-GVariantType.html#G-VARIANT-TYPE-BYTESTRING:CAPS">'ay'</a>)
+    for data that could have embedded NUL bytes.
+  </p>
+</div>
+<div class="refsect1">
+<a name="gdbus-code-stability"></a><h2>Stability Guarantees</h2>
+<p>
+    The generated C functions are guaranteed to not change their ABI
+    that is, if a method, signal or property does not change its
+    signature in the introspection XML, the generated C functions will
+    not change its C ABI either. The ABI of the generated instance and
+    class structures will be preserved as well.
+  </p>
+<p>
+    The ABI of the generated <a href="../gobject-Type-Information.html#GType"><span class="type">GType</span></a>s will be preserved only if
+    the <code class="literal">org.gtk.GDBus.Since</code> annotation is used
+    judiciously — this is because the VTable for the <a href="/home/desrt/Install/jhbuild/share/gtk-doc/html/gobject/GTypeModule.html"><span class="type">GInterface</span></a>
+    relies on functions pointers for signal handlers. Specifically, if
+    a D-Bus method, property or signal or is added to a D-Bus
+    interface, then ABI of the generated <a href="/home/desrt/Install/jhbuild/share/gtk-doc/html/gobject/GTypeModule.html"><span class="type">GInterface</span></a> type is preserved
+    if, and only if, each added method, property signal is annotated
+    with they <code class="literal">org.gtk.GDBus.Since</code> annotation using
+    a greater version number than previous versions.
+  </p>
+<p>
+    The generated C code currently happens to be annotated with <a class="ulink" href="http://www.gtk.org/gtk-doc/" target="_top">gtk-doc</a> / <a class="ulink" href="https://wiki.gnome.org/Projects/GObjectIntrospection" target="_top">GObject
+    Introspection</a> comments / annotations. The layout and
+    contents might change in the future so no guarantees about
+    e.g. <code class="literal">SECTION</code> usage etc. is given.
+  </p>
+<p>
+    While the generated Docbook for D-Bus interfaces isn't expected to
+    change, no guarantees are given at this point.
+  </p>
+<p>
+    It is important to note that the generated code should not be
+    checked into revision control systems, nor it should be included
+    in distributed source archives.
+  </p>
+</div>
+<div class="refsect1">
+<a name="id-1.4.26.7.13"></a><h2>Bugs</h2>
+<p>
+    Please send bug reports to either the distribution bug tracker
+    or the upstream bug tracker at
+    <a class="ulink" href="https://bugzilla.gnome.org/enter_bug.cgi?product=glib" target="_top">https://bugzilla.gnome.org/enter_bug.cgi?product=glib</a>.
+  </p>
+</div>
+<div class="refsect1">
+<a name="id-1.4.26.7.14"></a><h2>See also</h2>
+<p>
+    <span class="citerefentry"><span class="refentrytitle">gdbus</span>(1)</span>
+  </p>
+</div>
+</div>
+<div class="footer">
+<hr>Generated by GTK-Doc V1.25.1</div>
+</body>
+</html>

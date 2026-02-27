@@ -1,0 +1,41 @@
+#! /bin/sh
+
+# These two variables are required, otherwise looking for
+# programs along the PATH will not work.
+PATH_SEPARATOR=:
+PATH_EXPAND=y
+
+# This is required in for "test -f foo" to find foo.exe
+export TEST_FINDS_EXE=y
+
+# The root of the DJGPP tree serves as the default prefix
+# for all paths that are hardcoded in the binaries.
+# When installing the installation prefix must be supplied.
+test "x$prefix" = xNONE && prefix='/dev/env/DJDIR'
+
+# This is required for config.status script to be run, since
+# ./configure runs it by invoking ${CONFIG_SHELL-/bin/sh}
+# CONFIG_SHELL=${CONFIG_SHELL='sh'}
+
+# These are set here so the generated Makefile's will be good
+# for every DJGPP installation, not only the one where the
+# package was configured.
+# $INSTALL must be an absolute path name, otherwise config.status
+# will try to prepend ./ and ../ to it when it goes into subdirs.
+INSTALL=${INSTALL='/dev/env/DJDIR/bin/ginstall -c'}
+PERL=${PERL='/dev/env/DJDIR/bin/perl'}
+RANLIB=${RANLIB='ranlib'}
+DVIPS=${DVIPS='/dev/env/DJDIR/bin/dvips'}
+TEXI2PDF=${TEXI2PDF='/dev/env/DJDIR/bin/texi2pdf'}
+
+# A sane defualt for emacs.
+ac_cv_path_EMACS=${EMACS='/dev/env/DJDIR/gnu/emacs/bin/emacs'}
+
+# These are set here so the generated libtool will be good
+# for every DJGPP installation, not only the one where the
+# package was configured.
+NM=${NM='nm'}
+LD=${LD='ld'}
+
+# Force the test for 'ln -s' to report 'cp -p'.
+ac_cv_prog_LN_S='cp -p'

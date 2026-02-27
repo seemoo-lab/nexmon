@@ -1,0 +1,36 @@
+Jul  3 2009  Compatibility with modern gcc, fixed buffer overflow due to growth
+             of OpenSSL SHA1_CTX variable from 64 to 96 bytes.
+Jun  4 2009  Lots of cool stuff including reading hashfiles from stdin,
+             new liberal handling for 4-way handshake data, -2 option, fixed
+             NULL deref when dealing with radiotap packet capture headers.
+Mar 20 2008  New support for OSX and FreeBSD systems; thanks to Dennis
+             Herrmann for the FreeBSD patch.  Added "make install" support
+	     with patch from Thomas d'Otreppe.  Made OpenSSL mandatory for
+	     WPA support.  Added support for 802.11e QoS traffic.
+Oct 03 2007  Added suppor for radiotap headers in packet captures.
+             Thanks to Robin Wood for getting this started, and for the
+	     kick in the pants.
+Jan 01 2007  Fixed a segfault handling WPA2 networks (SHA1.len != MD5.len)
+May 03 2006  Added support for WPA2/PSK networks.
+Oct 20 2005  Minor fixes to handling PSK length appropriately.
+Oct 12 2005  Added support to precompute the PMK in a hashfile with genpmk
+Nov 02 2004  Changed name to coWPAtty, thanks T. Brian Granier for the tip.
+Oct 12 2004  Fixed bug that occured from the lack of a multicast key delivery
+             following the four-way handshake.  Thanks Seth Fogie for the caps.
+Sep 22 2004  Fixed bug in parsing frames that caused the SPA to be incorrectly
+             reported.
+Sep 12 2004  Removed code to load words into memory before processing.  Added
+             functionality to read words from STDIN to interoperate with John
+             the Ripper or other tools.
+Aug 21 2004  Fixed logic to handle incomplete four-way TKIP exchanges with an
+             error message and exit.
+Aug 20 2004  Added Makefile option to use OpenSSL's SHA1 functions instead of
+             the assembler code - big performance boost from 4.2 to 9.09
+             passphrases/second.  P4 3GHz gets ~47.4 passphrases/second.
+Aug 19 2004  Optimized hmac-sha1 handling specific to pbdfk2 by caching
+             repetitive values.  Resulted in 25% performance gain.
+Aug 18 2004  Load words into memory instead of reverting to a read for each
+             new word.  Minor performance gain.
+Aug 11 2004  Merged patch from dragorn to use i386-optimized code from Ted 
+             Krovetz.  My system's performance went from 2.37 passphrases/sec to
+             3.13/sec.  Thanks dragorn!

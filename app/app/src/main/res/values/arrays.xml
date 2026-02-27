@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string-array name="firmware_names">
+        <item>bcmdhd_sta.bin</item>
+        <item>fw_bcmdhd.bin</item>
+    </string-array>
+
+    <string-array name="firmware_paths">
+        <item>/system/etc/wifi/</item>
+        <item>/vendor/firmware/</item>
+    </string-array>
+
+    <string-array name="smartphones">
+        <item>BCM4330 (Galaxy S2)</item>
+        <item>BCM4339 (Nexus 5)</item>
+        <item>BCM4358 (Nexus 6P)</item>
+    </string-array>
+
+    <string-array name="bcm4330">       <!-- Samsung Galaxy S2 -->
+        <item>/system</item>                   <!-- mount point -->
+        <item>/system/etc/wifi/</item>                   <!-- firmware path end-->
+        <item>fw_bcm4330_5_90_100_41_sta.bin</item>                   <!-- firmware name beginning -->
+        <item>bcmdhd_sta.bin</item>                   <!-- firmware name end -->
+    </string-array>
+
+    <string-array name="bcm4339">       <!-- Nexus 5 -->
+        <item>/system</item>                   <!-- mount point -->
+        <item>/vendor/firmware/</item>                   <!-- firmware path end-->
+        <item>fw_bcm4339_6_37_34_43.bin</item>                   <!-- firmware name beginning -->
+        <item>fw_bcmdhd.bin</item>                   <!-- firmware name end -->
+    </string-array>
+
+    <string-array name="bcm4358">           <!-- Nexus 6P -->
+        <item>/vendor</item>                <!-- mount point -->
+        <item>/vendor/firmware/</item>      <!-- firmware path end-->
+        <item>fw_bcm4358_7_112_200_17_sta.bin</item>         <!-- firmware name beginning -->
+        <item>fw_bcmdhd.bin</item>          <!-- firmware name end -->
+    </string-array>
+
+
+    <string-array name="binInstallLocations">
+        <item>/system/bin</item>
+        <item>/system/xbin</item>
+        <item>/vendor/bin</item>
+        <item>/su/bin</item>
+        <item>/su/xbin</item>
+    </string-array>
+    <string-array name="libInstallLocations">
+        <item>/system/lib</item>
+        <item>/vendor/lib</item>
+        <item>/su/lib</item>
+    </string-array>
+    <string-array name="entries_list_channel_text">
+        <item>Channel 01 : 2.412 GHz</item>
+        <item>Channel 02 : 2.417 GHz</item>
+        <item>Channel 03 : 2.422 GHz</item>
+        <item>Channel 04 : 2.427 GHz</item>
+        <item>Channel 05 : 2.432 GHz</item>
+        <item>Channel 06 : 2.437 GHz</item>
+        <item>Channel 07 : 2.442 GHz</item>
+        <item>Channel 08 : 2.447 GHz</item>
+        <item>Channel 09 : 2.452 GHz</item>
+        <item>Channel 10 : 2.457 GHz</item>
+        <item>Channel 11 : 2.462 GHz</item>
+        <item>Channel 36 : 5.18 GHz</item>
+        <item>Channel 40 : 5.2 GHz</item>
+        <item>Channel 44 : 5.22 GHz</item>
+        <item>Channel 48 : 5.24 GHz</item>
+        <item>Channel 149 : 5.745 GHz</item>
+        <item>Channel 153 : 5.765 GHz</item>
+        <item>Channel 157 : 5.785 GHz</item>
+        <item>Channel 161 : 5.805 GHz</item>
+        <item>Channel 165 : 5.825 GHz</item>
+    </string-array>
+
+    <string-array name="entries_list_channel_value">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+        <item>9</item>
+        <item>10</item>
+        <item>11</item>
+        <item>36</item>
+        <item>40</item>
+        <item>44</item>
+        <item>48</item>
+        <item>149</item>
+        <item>153</item>
+        <item>157</item>
+        <item>161</item>
+        <item>165</item>
+    </string-array>
+</resources>

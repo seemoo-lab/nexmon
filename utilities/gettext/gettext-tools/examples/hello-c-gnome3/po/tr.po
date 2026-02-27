@@ -1,0 +1,55 @@
+# Turkish translations for Gnu Gettext Package.
+# Copyright (C) 2004 Free Software Foundation, Inc.
+# Nilgün Belma Bugüner <nilgun@superonline.com>, 2003,2004
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-c-gnome3 0.14-pre1\n"
+"Report-Msgid-Bugs-To: bug-gnu-gettext@gnu.org\n"
+"PO-Revision-Date: 2004-01-21 06:17+0300\n"
+"Last-Translator: Nilgün Belma Bugüner <nilgun@superonline.com>\n"
+"Language-Team: Turkish <gnu-tr-u12a@lists.sourceforge.net>\n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 1.0\n"
+
+#: hello.c:79
+#, fuzzy, c-format
+msgid ""
+"<big>Hello world!</big>\n"
+"This program is running as process number <b>%d</b>."
+msgstr "Bu yazılım, %d süreç kimliği ile çalışıyor."
+
+#: hello.c:84
+msgid "<big><u>This is another text</u></big>"
+msgstr ""
+
+#: hello.c:86
+msgid "<big><i>This is yet another text</i></big>"
+msgstr ""
+
+#: hello.desktop.in.in:4
+msgid "Hello"
+msgstr ""
+
+#: hello.desktop.in.in:5
+msgid "Hello, world!"
+msgstr "Merhaba Dünyalı!"
+
+#: hello.ui:5
+msgid "Example Application"
+msgstr ""
+
+#: hello.ui:33
+msgid "Update text"
+msgstr ""
+
+#: hello.gschema.xml:7
+msgid "Use XML markup"
+msgstr ""
+
+#: hello.gschema.xml:8
+msgid "Whether to use XML markup in the text."
+msgstr ""

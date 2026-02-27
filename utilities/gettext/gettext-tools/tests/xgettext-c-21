@@ -1,0 +1,49 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test C support: invalid NUL termination
+
+: ${XGETTEXT=xgettext}
+
+${XGETTEXT} --add-comments --no-location --no-wrap \
+	    -o - "$abs_srcdir"/xg-c-21.c \
+  | grep -v 'POT-Creation-Date' > xg-c-21.tmp.po || Exit 1
+LC_ALL=C tr -d '\r' < xg-c-21.tmp.po > xg-c-21.po || Exit 1
+
+cat <<\EOF > xg-c-21.ok
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "\n"
+msgstr ""
+
+msgid "\\u"
+msgstr ""
+
+msgid "\\U"
+msgstr ""
+
+msgid "\\u3"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-c-21.ok xg-c-21.po
+result=$?
+
+exit $result

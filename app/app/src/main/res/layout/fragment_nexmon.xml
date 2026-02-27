@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Nexmon PenTestSuite
+  ~ Copyright (C) 2016 Fabian Knapp
+  ~
+  ~ This program is free software; you can redistribute it and/or
+  ~ modify it under the terms of the GNU General Public License 2
+  ~ as published by the Free Software Foundation.
+  ~
+  ~ This program is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~ GNU General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU General Public License
+  ~ along with this program; if not, write to the Free Software
+  ~ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+  -->
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin">
+
+    <ScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:id="@+id/linDisclaimerDependent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvInstallFirmwareHeading"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingBottom="10dp"
+                    android:paddingTop="20dp"
+                    android:text="Firmware Installation:"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvInstallFirmwareIntroduction"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingBottom="10dp"
+                    android:text="In the following, you can overwrite your WiFi firmware. This only works for the following radio chips and firmwares:\n\nBCM4339 (Nexus 5) - 6.37.34.43\nBCM4358 (Nexus 6P) - 7.112.200.17-sta\nBCM4330 (SGS 2) - 5.90.100.41-sta\nCheck your firmware version before proceeding!" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@android:color/darker_gray"/>
+
+                <TextView
+                    android:id="@+id/tvSpinnerDevice"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Device:"
+                    android:paddingBottom="10dp"
+                    android:paddingTop="10dp"
+                    android:textStyle="bold"/>
+
+                <Spinner
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/spnDevice"
+                    android:paddingBottom="15dp"
+                    android:entries="@array/smartphones"
+                    android:spinnerMode="dropdown"
+                    android:paddingTop="15dp" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@android:color/darker_gray"/>
+
+                <TextView
+                    android:id="@+id/tvFirmwarePathDescription"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Firmware Path:"
+                    android:paddingBottom="10dp"
+                    android:paddingTop="10dp"
+                    android:textStyle="bold"/>
+
+                <TextView
+                    android:id="@+id/tvFirmwarePath"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:paddingBottom="10dp"
+
+                    android:text="Search or select a firmware file." />
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:divider="?android:dividerVertical"
+                    android:showDividers="middle"
+                    android:orientation="horizontal"
+                    android:paddingBottom="10dp">
+                <Button
+                    android:id="@+id/btnSearchFirmware"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
+                    android:text="Search Firmware" />
+
+                <Button
+                    android:id="@+id/btnSelectFirmware"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
+                    android:text="Select Firmware" />
+                    </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@android:color/darker_gray"/>
+                <TextView
+                    android:id="@+id/tvFirmwareVersionDescription"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Firmware Version:"
+                    android:paddingBottom="10dp"
+                    android:paddingTop="10dp"
+
+                    android:textStyle="bold"/>
+                <TextView
+                    android:id="@+id/tvFirmwareVersionOutput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="monospace"
+                    android:paddingBottom="10dp"
+                    android:text="Search or select a firmware file." />
+
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@android:color/darker_gray"/>
+                <TextView
+                    android:id="@+id/tvFirmwareBackup"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="10dp"
+                    android:text="Create a backup of the currently installed firmware at your external storage. If another backup exists, you need to manually delete it first." />
+
+                <Button
+                    android:id="@+id/btnCreateFirmwareBackup"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Create firmware backup" />
+
+                <TextView
+                    android:id="@+id/tvFirmwareRestoreBackup"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingBottom="10dp"
+                    android:text="Restore the backup from external storage." />
+
+                <Button
+                    android:id="@+id/btnRestoreFirmwareBackup"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Restore firmware backup" />
+
+                <TextView
+                    android:id="@+id/tvInstallNexmonFirmware"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingBottom="10dp"
+                    android:text="Install the Nexmon firmware with monitor mode and frame injection capabilities. Regular WiFi operations should continue to work, if the patch is based on a matching firmware version." />
+
+                <Button
+                    android:id="@+id/btnInstallNexmonFirmware"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Install Nexmon Firmware" />
+
+        </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</RelativeLayout>

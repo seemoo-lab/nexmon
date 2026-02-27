@@ -3,22 +3,61 @@
 
 #include "types.h"
 
-void *
+extern struct hndrte_timer *
+schedule_work(void *context, void *data, void *mainfn, int ms, int periodic);
+
+extern struct hndrte_timer *
+schedule_delayed_work(void *context, void *data, void *mainfn, int ms, int periodic, int delay_ms);
+
+extern void *
 skb_push(sk_buff *p, unsigned int len);
 
-void *
+extern void *
 skb_pull(sk_buff *p, unsigned int len);
 
-void
+extern void
 hexdump(char *desc, void *addr, int len);
 
-// somehow the strings are not removed during optimization, so that they end up in the binary, hence, move the functions somewhere else, where they are only included if they are needed.
+extern unsigned short
+bcm_qdbm_to_mw(unsigned char qdbm);
+
+extern unsigned char
+bcm_mw_to_qdbm(unsigned short mw);
+
+extern void
+set_chanspec(struct wlc_info *wlc, unsigned short chanspec);
+
+extern unsigned int
+get_chanspec(struct wlc_info *wlc);
+
+extern void
+set_mpc(struct wlc_info *wlc, uint32 mpc);
+
+extern uint32
+get_mpc(struct wlc_info *wlc);
+
+extern void
+set_monitormode(struct wlc_info *wlc, uint32 monitor);
+
+extern void
+set_scansuppress(struct wlc_info *wlc, uint32 scansuppress);
+
+extern uint32
+get_scansuppress(struct wlc_info *wlc);
+
+extern void
+set_intioctl(struct wlc_info *wlc, uint32 cmd, uint32 arg);
+
+extern uint32
+get_intioctl(struct wlc_info *wlc, uint32 cmd);
+
+#define HTONS(A) ((((uint16)(A) & 0xff00) >> 8) | (((uint16)(A) & 0x00ff) << 8))
+
 inline uint16
 htons(uint16 a)
 {
-	return (a & 0xff00) >> 8 | (a & 0xff) << 8;
+    return (a & 0xff00) >> 8 | (a & 0xff) << 8;
 }
-/*
 
 inline uint32
 htonl(uint32 a)
@@ -36,7 +75,7 @@ inline uint32
 ntohl(uint32 a)
 {
 	return htonl(a);
-}*/
+}
 
 inline void *
 get_stack_ptr() {
@@ -44,6 +83,8 @@ get_stack_ptr() {
     __asm("mov %0, sp" : "=r" (stack));
     return stack;
 }
+
+#define ARRAYSIZE(a) (sizeof(a)/sizeof(a[0]))
 
 /*
 inline int

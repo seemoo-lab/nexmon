@@ -1,0 +1,18 @@
+diff --git a/spawn-pipe.c b/spawn-pipe.c
+index 656980d..b7fa95b 100644
+--- a/spawn-pipe.c
++++ b/spawn-pipe.c
+@@ -48,6 +48,13 @@
+ 
+ #endif
+ 
++/* environ is the exported symbol referencing the internal
++   __cygwin_environ variable on cygwin64:
++   <https://cygwin.com/ml/cygwin/2013-06/msg00228.html>.  */
++#if defined __CYGWIN__ && defined __x86_64__
++extern DLL_VARIABLE char **environ;
++#endif
++
+ 
+ #ifdef EINTR
+ 

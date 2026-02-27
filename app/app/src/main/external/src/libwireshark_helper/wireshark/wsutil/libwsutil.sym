@@ -1,0 +1,17 @@
+ws_inet_pton
+mpa_bitrate
+mpa_frequency
+mpa_layer
+mpa_padding
+mpa_samples
+mpa_version
+init_process_policies
+get_cur_groupname
+get_cur_username
+relinquish_special_privs_perm
+running_with_special_privs
+started_with_special_privs
+ascii_strdown_inplace
+ascii_strup_inplace
+type_util_gdouble_to_guint64
+type_util_guint64_to_gdouble

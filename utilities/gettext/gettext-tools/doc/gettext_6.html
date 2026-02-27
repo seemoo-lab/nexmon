@@ -1,0 +1,548 @@
+<HTML>
+<HEAD>
+<!-- This HTML file has been created by texi2html 1.52b
+     from gettext.texi on 11 June 2016 -->
+
+<META HTTP-EQUIV="content-type" CONTENT="text/html; charset=UTF-8">
+<TITLE>GNU gettext utilities - 6  Creating a New PO File</TITLE>
+</HEAD>
+<BODY>
+Go to the <A HREF="gettext_1.html">first</A>, <A HREF="gettext_5.html">previous</A>, <A HREF="gettext_7.html">next</A>, <A HREF="gettext_25.html">last</A> section, <A HREF="gettext_toc.html">table of contents</A>.
+<P><HR><P>
+
+
+<H1><A NAME="SEC37" HREF="gettext_toc.html#TOC37">6  Creating a New PO File</A></H1>
+<P>
+<A NAME="IDX250"></A>
+
+</P>
+<P>
+When starting a new translation, the translator creates a file called
+<TT>&lsquo;<VAR>LANG</VAR>.po&rsquo;</TT>, as a copy of the <TT>&lsquo;<VAR>package</VAR>.pot&rsquo;</TT> template
+file with modifications in the initial comments (at the beginning of the file)
+and in the header entry (the first entry, near the beginning of the file).
+
+</P>
+<P>
+The easiest way to do so is by use of the <SAMP>&lsquo;msginit&rsquo;</SAMP> program.
+For example:
+
+</P>
+
+<PRE>
+$ cd <VAR>PACKAGE</VAR>-<VAR>VERSION</VAR>
+$ cd po
+$ msginit
+</PRE>
+
+<P>
+The alternative way is to do the copy and modifications by hand.
+To do so, the translator copies <TT>&lsquo;<VAR>package</VAR>.pot&rsquo;</TT> to
+<TT>&lsquo;<VAR>LANG</VAR>.po&rsquo;</TT>.  Then she modifies the initial comments and
+the header entry of this file.
+
+</P>
+
+
+
+<H2><A NAME="SEC38" HREF="gettext_toc.html#TOC38">6.1  Invoking the <CODE>msginit</CODE> Program</A></H2>
+
+<P>
+<A NAME="IDX251"></A>
+<A NAME="IDX252"></A>
+
+<PRE>
+msginit [<VAR>option</VAR>]
+</PRE>
+
+<P>
+<A NAME="IDX253"></A>
+<A NAME="IDX254"></A>
+The <CODE>msginit</CODE> program creates a new PO file, initializing the meta
+information with values from the user's environment.
+
+</P>
+<P>
+Here are more details.  The following header fields of a PO file are
+automatically filled, when possible.
+
+</P>
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;Project-Id-Version&rsquo;</SAMP>
+<DD>
+The value is guessed from the <CODE>configure</CODE> script or any other files
+in the current directory.
+
+<DT><SAMP>&lsquo;PO-Revision-Date&rsquo;</SAMP>
+<DD>
+The value is taken from the <CODE>PO-Creation-Data</CODE> in the input POT
+file, or the current date is used.
+
+<DT><SAMP>&lsquo;Last-Translator&rsquo;</SAMP>
+<DD>
+The value is taken from user's password file entry and the mailer
+configuration files.
+
+<DT><SAMP>&lsquo;Language-Team, Language&rsquo;</SAMP>
+<DD>
+These values are set according to the current locale and the predefined
+list of translation teams.
+
+<DT><SAMP>&lsquo;MIME-Version, Content-Type, Content-Transfer-Encoding&rsquo;</SAMP>
+<DD>
+These values are set according to the content of the POT file and the
+current locale.  If the POT file contains charset=UTF-8, it means that
+the POT file contains non-ASCII characters, and we keep the UTF-8
+encoding.  Otherwise, when the POT file is plain ASCII, we use the
+locale's encoding.
+
+<DT><SAMP>&lsquo;Plural-Forms&rsquo;</SAMP>
+<DD>
+The value is first looked up from the embedded table.
+
+As an experimental feature, you can instruct <CODE>msginit</CODE> to use the
+information from Unicode CLDR, by setting the <CODE>GETTEXTCLDRDIR</CODE>
+environment variable.
+
+</DL>
+
+
+
+<H3><A NAME="SEC39" HREF="gettext_toc.html#TOC39">6.1.1  Input file location</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-i <VAR>inputfile</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--input=<VAR>inputfile</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX255"></A>
+<A NAME="IDX256"></A>
+Input POT file.
+
+</DL>
+
+<P>
+If no <VAR>inputfile</VAR> is given, the current directory is searched for the
+POT file.  If it is <SAMP>&lsquo;-&rsquo;</SAMP>, standard input is read.
+
+</P>
+
+
+<H3><A NAME="SEC40" HREF="gettext_toc.html#TOC40">6.1.2  Output file location</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-o <VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--output-file=<VAR>file</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX257"></A>
+<A NAME="IDX258"></A>
+Write output to specified PO file.
+
+</DL>
+
+<P>
+If no output file is given, it depends on the <SAMP>&lsquo;--locale&rsquo;</SAMP> option or the
+user's locale setting.  If it is <SAMP>&lsquo;-&rsquo;</SAMP>, the results are written to
+standard output.
+
+</P>
+
+
+<H3><A NAME="SEC41" HREF="gettext_toc.html#TOC41">6.1.3  Input file syntax</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-P&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--properties-input&rsquo;</SAMP>
+<DD>
+<A NAME="IDX259"></A>
+<A NAME="IDX260"></A>
+Assume the input file is a Java ResourceBundle in Java <CODE>.properties</CODE>
+syntax, not in PO file syntax.
+
+<DT><SAMP>&lsquo;--stringtable-input&rsquo;</SAMP>
+<DD>
+<A NAME="IDX261"></A>
+Assume the input file is a NeXTstep/GNUstep localized resource file in
+<CODE>.strings</CODE> syntax, not in PO file syntax.
+
+</DL>
+
+
+
+<H3><A NAME="SEC42" HREF="gettext_toc.html#TOC42">6.1.4  Output details</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-l <VAR>ll_CC</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--locale=<VAR>ll_CC</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX262"></A>
+<A NAME="IDX263"></A>
+Set target locale.  <VAR>ll</VAR> should be a language code, and <VAR>CC</VAR> should
+be a country code.  The command <SAMP>&lsquo;locale -a&rsquo;</SAMP> can be used to output a list
+of all installed locales.  The default is the user's locale setting.
+
+<DT><SAMP>&lsquo;--no-translator&rsquo;</SAMP>
+<DD>
+<A NAME="IDX264"></A>
+Declares that the PO file will not have a human translator and is instead
+automatically generated.
+
+<DT><SAMP>&lsquo;--color&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--color=<VAR>when</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX265"></A>
+Specify whether or when to use colors and other text attributes.
+See section <A HREF="gettext_9.html#SEC150">9.11.1  The <CODE>--color</CODE> option</A> for details.
+
+<DT><SAMP>&lsquo;--style=<VAR>style_file</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX266"></A>
+Specify the CSS style rule file to use for <CODE>--color</CODE>.
+See section <A HREF="gettext_9.html#SEC152">9.11.3  The <CODE>--style</CODE> option</A> for details.
+
+<DT><SAMP>&lsquo;-p&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--properties-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX267"></A>
+<A NAME="IDX268"></A>
+Write out a Java ResourceBundle in Java <CODE>.properties</CODE> syntax.  Note
+that this file format doesn't support plural forms and silently drops
+obsolete messages.
+
+<DT><SAMP>&lsquo;--stringtable-output&rsquo;</SAMP>
+<DD>
+<A NAME="IDX269"></A>
+Write out a NeXTstep/GNUstep localized resource file in <CODE>.strings</CODE> syntax.
+Note that this file format doesn't support plural forms.
+
+<DT><SAMP>&lsquo;-w <VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--width=<VAR>number</VAR>&rsquo;</SAMP>
+<DD>
+<A NAME="IDX270"></A>
+<A NAME="IDX271"></A>
+Set the output page width.  Long strings in the output files will be
+split across multiple lines in order to ensure that each line's width
+(= number of screen columns) is less or equal to the given <VAR>number</VAR>.
+
+<DT><SAMP>&lsquo;--no-wrap&rsquo;</SAMP>
+<DD>
+<A NAME="IDX272"></A>
+Do not break long message lines.  Message lines whose width exceeds the
+output page width will not be split into several lines.  Only file reference
+lines which are wider than the output page width will be split.
+
+</DL>
+
+
+
+<H3><A NAME="SEC43" HREF="gettext_toc.html#TOC43">6.1.5  Informative output</A></H3>
+
+<DL COMPACT>
+
+<DT><SAMP>&lsquo;-h&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--help&rsquo;</SAMP>
+<DD>
+<A NAME="IDX273"></A>
+<A NAME="IDX274"></A>
+Display this help and exit.
+
+<DT><SAMP>&lsquo;-V&rsquo;</SAMP>
+<DD>
+<DT><SAMP>&lsquo;--version&rsquo;</SAMP>
+<DD>
+<A NAME="IDX275"></A>
+<A NAME="IDX276"></A>
+Output version information and exit.
+
+</DL>
+
+
+
+<H2><A NAME="SEC44" HREF="gettext_toc.html#TOC44">6.2  Filling in the Header Entry</A></H2>
+<P>
+<A NAME="IDX277"></A>
+
+</P>
+<P>
+The initial comments "SOME DESCRIPTIVE TITLE", "YEAR" and
+"FIRST AUTHOR &#60;EMAIL@ADDRESS&#62;, YEAR" ought to be replaced by sensible
+information.  This can be done in any text editor; if Emacs is used
+and it switched to PO mode automatically (because it has recognized
+the file's suffix), you can disable it by typing <KBD>M-x fundamental-mode</KBD>.
+
+</P>
+<P>
+Modifying the header entry can already be done using PO mode: in Emacs,
+type <KBD>M-x po-mode RET</KBD> and then <KBD>RET</KBD> again to start editing the
+entry.  You should fill in the following fields.
+
+</P>
+<DL COMPACT>
+
+<DT>Project-Id-Version
+<DD>
+This is the name and version of the package.  Fill it in if it has not
+already been filled in by <CODE>xgettext</CODE>.
+
+<DT>Report-Msgid-Bugs-To
+<DD>
+This has already been filled in by <CODE>xgettext</CODE>.  It contains an email
+address or URL where you can report bugs in the untranslated strings:
+
+
+<UL>
+<LI>Strings which are not entire sentences, see the maintainer guidelines
+
+in section <A HREF="gettext_4.html#SEC19">4.3  Preparing Translatable Strings</A>.
+<LI>Strings which use unclear terms or require additional context to be
+
+understood.
+<LI>Strings which make invalid assumptions about notation of date, time or
+
+money.
+<LI>Pluralisation problems.
+
+<LI>Incorrect English spelling.
+
+<LI>Incorrect formatting.
+
+</UL>
+
+<DT>POT-Creation-Date
+<DD>
+This has already been filled in by <CODE>xgettext</CODE>.
+
+<DT>PO-Revision-Date
+<DD>
+You don't need to fill this in.  It will be filled by the PO file editor
+when you save the file.
+
+<DT>Last-Translator
+<DD>
+Fill in your name and email address (without double quotes).
+
+<DT>Language-Team
+<DD>
+Fill in the English name of the language, and the email address or
+homepage URL of the language team you are part of.
+
+Before starting a translation, it is a good idea to get in touch with
+your translation team, not only to make sure you don't do duplicated work,
+but also to coordinate difficult linguistic issues.
+
+<A NAME="IDX278"></A>
+In the Free Translation Project, each translation team has its own mailing
+list.  The up-to-date list of teams can be found at the Free Translation
+Project's homepage, <A HREF="http://translationproject.org/">http://translationproject.org/</A>, in the "Teams"
+area.
+
+<DT>Language
+<DD>
+Fill in the language code of the language.  This can be in one of three
+forms:
+
+
+<UL>
+<LI>
+
+<SAMP>&lsquo;<VAR>ll</VAR>&rsquo;</SAMP>, an ISO 639 two-letter language code (lowercase).
+See section <A HREF="gettext_17.html#SEC331">A  Language Codes</A> for the list of codes.
+
+<LI>
+
+<SAMP>&lsquo;<VAR>ll</VAR>_<VAR>CC</VAR>&rsquo;</SAMP>, where <SAMP>&lsquo;<VAR>ll</VAR>&rsquo;</SAMP> is an ISO 639 two-letter
+language code (lowercase) and <SAMP>&lsquo;<VAR>CC</VAR>&rsquo;</SAMP> is an ISO 3166 two-letter
+country code (uppercase).  The country code specification is not redundant:
+Some languages have dialects in different countries.  For example,
+<SAMP>&lsquo;de_AT&rsquo;</SAMP> is used for Austria, and <SAMP>&lsquo;pt_BR&rsquo;</SAMP> for Brazil.  The country
+code serves to distinguish the dialects. See section <A HREF="gettext_17.html#SEC331">A  Language Codes</A> and
+section <A HREF="gettext_18.html#SEC334">B  Country Codes</A> for the lists of codes.
+
+<LI>
+
+<SAMP>&lsquo;<VAR>ll</VAR>_<VAR>CC</VAR>@<VAR>variant</VAR>&rsquo;</SAMP>, where <SAMP>&lsquo;<VAR>ll</VAR>&rsquo;</SAMP> is an
+ISO 639 two-letter language code (lowercase), <SAMP>&lsquo;<VAR>CC</VAR>&rsquo;</SAMP> is an
+ISO 3166 two-letter country code (uppercase), and <SAMP>&lsquo;<VAR>variant</VAR>&rsquo;</SAMP> is
+a variant designator. The variant designator (lowercase) can be a script
+designator, such as <SAMP>&lsquo;latin&rsquo;</SAMP> or <SAMP>&lsquo;cyrillic&rsquo;</SAMP>.
+</UL>
+
+The naming convention <SAMP>&lsquo;<VAR>ll</VAR>_<VAR>CC</VAR>&rsquo;</SAMP> is also the way locales are
+named on systems based on GNU libc.  But there are three important differences:
+
+
+<UL>
+<LI>
+
+In this PO file field, but not in locale names, <SAMP>&lsquo;<VAR>ll</VAR>_<VAR>CC</VAR>&rsquo;</SAMP>
+combinations denoting a language's main dialect are abbreviated as
+<SAMP>&lsquo;<VAR>ll</VAR>&rsquo;</SAMP>.  For example, <SAMP>&lsquo;de&rsquo;</SAMP> is equivalent to <SAMP>&lsquo;de_DE&rsquo;</SAMP>
+(German as spoken in Germany), and <SAMP>&lsquo;pt&rsquo;</SAMP> to <SAMP>&lsquo;pt_PT&rsquo;</SAMP> (Portuguese as
+spoken in Portugal) in this context.
+
+<LI>
+
+In this PO file field, suffixes like <SAMP>&lsquo;.<VAR>encoding</VAR>&rsquo;</SAMP> are not used.
+
+<LI>
+
+In this PO file field, variant designators that are not relevant to message
+translation, such as <SAMP>&lsquo;@euro&rsquo;</SAMP>, are not used.
+</UL>
+
+So, if your locale name is <SAMP>&lsquo;de_DE.UTF-8&rsquo;</SAMP>, the language specification in
+PO files is just <SAMP>&lsquo;de&rsquo;</SAMP>.
+
+<DT>Content-Type
+<DD>
+<A NAME="IDX279"></A>
+<A NAME="IDX280"></A>
+Replace <SAMP>&lsquo;CHARSET&rsquo;</SAMP> with the character encoding used for your language,
+in your locale, or UTF-8.  This field is needed for correct operation of the
+<CODE>msgmerge</CODE> and <CODE>msgfmt</CODE> programs, as well as for users whose
+locale's character encoding differs from yours (see section <A HREF="gettext_11.html#SEC188">11.2.4  How to specify the output character set <CODE>gettext</CODE> uses</A>).
+
+<A NAME="IDX281"></A>
+You get the character encoding of your locale by running the shell command
+<SAMP>&lsquo;locale charmap&rsquo;</SAMP>.  If the result is <SAMP>&lsquo;C&rsquo;</SAMP> or <SAMP>&lsquo;ANSI_X3.4-1968&rsquo;</SAMP>,
+which is equivalent to <SAMP>&lsquo;ASCII&rsquo;</SAMP> (= <SAMP>&lsquo;US-ASCII&rsquo;</SAMP>), it means that your
+locale is not correctly configured.  In this case, ask your translation
+team which charset to use.  <SAMP>&lsquo;ASCII&rsquo;</SAMP> is not usable for any language
+except Latin.
+
+<A NAME="IDX282"></A>
+Because the PO files must be portable to operating systems with less advanced
+internationalization facilities, the character encodings that can be used
+are limited to those supported by both GNU <CODE>libc</CODE> and GNU
+<CODE>libiconv</CODE>.  These are:
+<CODE>ASCII</CODE>, <CODE>ISO-8859-1</CODE>, <CODE>ISO-8859-2</CODE>, <CODE>ISO-8859-3</CODE>,
+<CODE>ISO-8859-4</CODE>, <CODE>ISO-8859-5</CODE>, <CODE>ISO-8859-6</CODE>, <CODE>ISO-8859-7</CODE>,
+<CODE>ISO-8859-8</CODE>, <CODE>ISO-8859-9</CODE>, <CODE>ISO-8859-13</CODE>, <CODE>ISO-8859-14</CODE>,
+<CODE>ISO-8859-15</CODE>,
+<CODE>KOI8-R</CODE>, <CODE>KOI8-U</CODE>, <CODE>KOI8-T</CODE>,
+<CODE>CP850</CODE>, <CODE>CP866</CODE>, <CODE>CP874</CODE>,
+<CODE>CP932</CODE>, <CODE>CP949</CODE>, <CODE>CP950</CODE>, <CODE>CP1250</CODE>, <CODE>CP1251</CODE>,
+<CODE>CP1252</CODE>, <CODE>CP1253</CODE>, <CODE>CP1254</CODE>, <CODE>CP1255</CODE>, <CODE>CP1256</CODE>,
+<CODE>CP1257</CODE>, <CODE>GB2312</CODE>, <CODE>EUC-JP</CODE>, <CODE>EUC-KR</CODE>, <CODE>EUC-TW</CODE>,
+<CODE>BIG5</CODE>, <CODE>BIG5-HKSCS</CODE>, <CODE>GBK</CODE>, <CODE>GB18030</CODE>, <CODE>SHIFT_JIS</CODE>,
+<CODE>JOHAB</CODE>, <CODE>TIS-620</CODE>, <CODE>VISCII</CODE>, <CODE>GEORGIAN-PS</CODE>, <CODE>UTF-8</CODE>.
+
+<A NAME="IDX283"></A>
+In the GNU system, the following encodings are frequently used for the
+corresponding languages.
+
+<A NAME="IDX284"></A>
+
+<UL>
+<LI><CODE>ISO-8859-1</CODE> for
+
+Afrikaans, Albanian, Basque, Breton, Catalan, Cornish, Danish, Dutch,
+English, Estonian, Faroese, Finnish, French, Galician, German,
+Greenlandic, Icelandic, Indonesian, Irish, Italian, Malay, Manx,
+Norwegian, Occitan, Portuguese, Spanish, Swedish, Tagalog, Uzbek,
+Walloon,
+<LI><CODE>ISO-8859-2</CODE> for
+
+Bosnian, Croatian, Czech, Hungarian, Polish, Romanian, Serbian, Slovak,
+Slovenian,
+<LI><CODE>ISO-8859-3</CODE> for Maltese,
+
+<LI><CODE>ISO-8859-5</CODE> for Macedonian, Serbian,
+
+<LI><CODE>ISO-8859-6</CODE> for Arabic,
+
+<LI><CODE>ISO-8859-7</CODE> for Greek,
+
+<LI><CODE>ISO-8859-8</CODE> for Hebrew,
+
+<LI><CODE>ISO-8859-9</CODE> for Turkish,
+
+<LI><CODE>ISO-8859-13</CODE> for Latvian, Lithuanian, Maori,
+
+<LI><CODE>ISO-8859-14</CODE> for Welsh,
+
+<LI><CODE>ISO-8859-15</CODE> for
+
+Basque, Catalan, Dutch, English, Finnish, French, Galician, German, Irish,
+Italian, Portuguese, Spanish, Swedish, Walloon,
+<LI><CODE>KOI8-R</CODE> for Russian,
+
+<LI><CODE>KOI8-U</CODE> for Ukrainian,
+
+<LI><CODE>KOI8-T</CODE> for Tajik,
+
+<LI><CODE>CP1251</CODE> for Bulgarian, Belarusian,
+
+<LI><CODE>GB2312</CODE>, <CODE>GBK</CODE>, <CODE>GB18030</CODE>
+
+for simplified writing of Chinese,
+<LI><CODE>BIG5</CODE>, <CODE>BIG5-HKSCS</CODE>
+
+for traditional writing of Chinese,
+<LI><CODE>EUC-JP</CODE> for Japanese,
+
+<LI><CODE>EUC-KR</CODE> for Korean,
+
+<LI><CODE>TIS-620</CODE> for Thai,
+
+<LI><CODE>GEORGIAN-PS</CODE> for Georgian,
+
+<LI><CODE>UTF-8</CODE> for any language, including those listed above.
+
+</UL>
+
+<A NAME="IDX285"></A>
+<A NAME="IDX286"></A>
+When single quote characters or double quote characters are used in
+translations for your language, and your locale's encoding is one of the
+ISO-8859-* charsets, it is best if you create your PO files in UTF-8
+encoding, instead of your locale's encoding.  This is because in UTF-8
+the real quote characters can be represented (single quote characters:
+U+2018, U+2019, double quote characters: U+201C, U+201D), whereas none of
+ISO-8859-* charsets has them all.  Users in UTF-8 locales will see the
+real quote characters, whereas users in ISO-8859-* locales will see the
+vertical apostrophe and the vertical double quote instead (because that's
+what the character set conversion will transliterate them to).
+
+<A NAME="IDX287"></A>
+To enter such quote characters under X11, you can change your keyboard
+mapping using the <CODE>xmodmap</CODE> program.  The X11 names of the quote
+characters are "leftsinglequotemark", "rightsinglequotemark",
+"leftdoublequotemark", "rightdoublequotemark", "singlelowquotemark",
+"doublelowquotemark".
+
+Note that only recent versions of GNU Emacs support the UTF-8 encoding:
+Emacs 20 with Mule-UCS, and Emacs 21.  As of January 2001, XEmacs doesn't
+support the UTF-8 encoding.
+
+The character encoding name can be written in either upper or lower case.
+Usually upper case is preferred.
+
+<DT>Content-Transfer-Encoding
+<DD>
+Set this to <CODE>8bit</CODE>.
+
+<DT>Plural-Forms
+<DD>
+This field is optional.  It is only needed if the PO file has plural forms.
+You can find them by searching for the <SAMP>&lsquo;msgid_plural&rsquo;</SAMP> keyword.  The
+format of the plural forms field is described in section <A HREF="gettext_11.html#SEC190">11.2.6  Additional functions for plural forms</A> and
+section <A HREF="gettext_12.html#SEC211">12.6  Translating plural forms</A>.
+</DL>
+
+<P><HR><P>
+Go to the <A HREF="gettext_1.html">first</A>, <A HREF="gettext_5.html">previous</A>, <A HREF="gettext_7.html">next</A>, <A HREF="gettext_25.html">last</A> section, <A HREF="gettext_toc.html">table of contents</A>.
+</BODY>
+</HTML>

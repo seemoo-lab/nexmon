@@ -1,0 +1,83 @@
+coWPAtty - Brute-force dictionary attack against WPA-PSK.
+
+Copyright(c) 2004, Joshua Wright <jwright@hasborg.com>
+
+FAQ
+
+Please send questions to the author, and I'll do my best to update this file
+to answer common questions.
+
+--------------------------------------------------------------------------------
+
+Q: Why is it taking so long to test password entries for the correct WPA-PSK
+   key?
+A: The design of the WPA-PSK algorithms is such that it is difficult to mount
+   an effective dictionary attack.  When mounting a dictionary attack, the
+   passphrase we are testing has to be hashed with 4096 iterations of the 
+   HMAC-SHA1 algorithm (which is really 8192 full SHA1 invocations).  This
+   takes a long time, and has to be repeated for each word in the dictionary
+   file.
+
+Q: What kind of performance can I expect with coWPAtty?
+A: I've done my best to optimize the code to squeeze out as much performance as
+   possible.  The OpenSSL SHA1 code is faster then the C and i386-assembler
+   implementations that are included with the tool, and the default option in
+   the Makefile.  Here are the results from the two systems I use for
+   development and testing:
+
+   Processor: Intel Pentium 3 450Mhz, 897.84 bogomips, 9.8 passphrases/second
+   Processor: Intel Pentium 4 3.8GHz, 5570.56 bogomips, 69.3 passphrases/second
+
+Q: How can I accelerate the dictionary cracking process?
+A: Make sure you are using the OpenSSL libraries on your system (openssl.org).
+   If you are running an OpenSSL package that came with your Linux vendor, try
+   downloading and compile your own local version, using optimizations for your
+   processor.  Don't expect this to result in a major performance increase
+   though.
+   The best thing to do is run coWPAtty on the system with the fastest
+   processor you have access to.  If you have success running coWPAtty on
+   systems other than Intel 32-bit systems, please drop me a line.
+   Alternatively, you can distribute the cracking load across multiple systems.
+   Simply split the dictionary file into multiple pieces, and distribute the
+   pieces to each system you want to use in the cracking process, along with a
+   copy of the code and the capture file.
+
+Q: My passphrase isn't reported by coWPAtty, even though I know it's in the
+   dictionary file. What gives?
+A: Make sure you have supplied the correct SSID on the command-line.  An
+   incorrect SSID will cause coWPAtty to be unable to identify the correct
+   passphrase.  Also make sure the dictionary is a unix text file not 
+   DOS.  DOS text files have a control character at the end of each line 
+   that will be used as part of the passphrase and screw up the 
+   resulting hashes.
+
+Q: Is the SSID case-sensitive?
+A: Yes.  Be certain you have the correct case for the SSID.
+
+Q: Why don't you add code to automatically cull the SSID from beacon frames?
+A: If the SSID is cloaked in beacon frames, you need to extract it from the
+   association request information from the client station.  I could add this
+   parser, but it's easier to get it from a tool like Kismet.
+
+Q: What is the pertinent information for the sample capture file?
+A: Use the following information for the sample WPA four-way handshake in the
+   eap-test.dump file:
+
+   SSID: "somethingclever"
+   Passphrase: "family movie night"
+
+Q: Does your choice of the name coWPAtty reflect your feelings about the IEEE
+   802.11i specification?
+A: No, not at all.  In fact, the coWPAtty name was selected to reflect the
+   quality of this tool.  The IEEE 802.11i committee did a good job designing
+   TKIP with the problems with paucity of processing capacity and desire to
+   be applied with a software upgrade to existing hardware.  The use of the
+   pbkdf2 algorithm to hash the PSK was a good call - it makes dictionary
+   attacks such as this one much less effective.
+
+Q: Why does the same code work for WPA1-PSK and WPA2-PSK?
+A: The PBKDF2 function is common between both systems.
+
+Q: What's up with Ken Jennings?
+A: That's what I'd like to know too!  Maybe he can take a look at this code for
+   me when he's not busy kicking everyone's ass on Jeopardy.

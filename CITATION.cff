@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - given-names: Matthias
+    family-names: Schulz
+    email: mschulz@seemoo.tu-darmstadt.de
+    affiliation: Secure Mobile Networking Lab
+  - given-names: Daniel
+    family-names: Wegemer
+    email: dwegemer@seemoo.tu-darmstadt.de
+    affiliation: Secure Mobile Networking Lab
+  - given-names: Matthias
+    family-names: Hollick
+    email: mhollick@seemoo.tu-darmstadt.de
+    affiliation: Secure Mobile Networking Lab
+title: "Nexmon: The C-based Firmware Patching Framework"
+version: 2.2.2
+type: software
+date-released: 2017-09-29
+url: "https://github.com/seemoo-lab/nexmon"
+keywords:
+  - rpi
+  - framework
+  - firmware
+  - broadcom
+  - smartphone
+  - patching
+  - nexmon
+license: GPL-3.0
