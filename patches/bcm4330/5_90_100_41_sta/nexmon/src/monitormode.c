@@ -68,7 +68,7 @@ wl_monitor_radiotap(struct wl_info *wl, struct wl_rxsts *sts, struct sk_buff *p,
     }
 
     // We figured out that frames larger than 2032 will not arrive in user space
-    if (p_len_new > 2032) {
+    if (p_len_new > 2032 || p->len <= 6) {
         printf("ERR: frame too large\n");
         return;
     } else {
