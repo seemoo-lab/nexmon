@@ -19,26 +19,54 @@
 package de.tu_darmstadt.seemoo.nexmon.sharky;
 
 import android.os.Environment;
+import android.util.Log;
 
 import java.io.DataOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 
+import de.tu_darmstadt.seemoo.nexmon.net.MonitorModeService;
+
 public class PcapFileWriter {
 
-    private final static byte PCAP_HEADER[] = {
-            (byte) 0xd4, (byte) 0xc3, (byte) 0xb2, (byte) 0xa1,    // magic number
-            (byte) 0x02, (byte) 0x00, (byte) 0x04, (byte) 0x00,    // version numbers
-            (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,    // thiszone
-            (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,    // sigfigs
-            (byte) 0xff, (byte) 0xff, (byte) 0x00, (byte) 0x00,    // snaplen
-            (byte) 0x7f, (byte) 0x00, (byte) 0x00, (byte) 0x00};    // wifi
+    public static class PcapHeader {
+        public static byte[] getBytes(int linktype) {
+            ByteBuffer buf = ByteBuffer.allocate(24);
+            buf.order(ByteOrder.LITTLE_ENDIAN);
+            buf.putInt(0xa1b2c3d4);                     // magic number
+            buf.putShort((short) 0x0002);               // major version number
+            buf.putShort((short) 0x0004);               // minor version numbers
+            buf.putInt(0);                              // GTM to local correction
+            buf.putInt(0);                              // accuracy of timestamps
+            buf.putInt(0x0000ffff);                     // max length of captured packets, in octets
+            buf.putInt(linktype);  // data link type
+
+            return buf.array();
+        }
+
+        public static byte[] getBytesWithoutLinktype() {
+            ByteBuffer buf = ByteBuffer.allocate(20);
+            buf.order(ByteOrder.LITTLE_ENDIAN);
+            buf.putInt(0xa1b2c3d4);                     // magic number
+            buf.putShort((short) 0x0002);               // major version number
+            buf.putShort((short) 0x0004);               // minor version numbers
+            buf.putInt(0);                              // GTM to local correction
+            buf.putInt(0);                              // accuracy of timestamps
+            buf.putInt(0x0000ffff);                     // max length of captured packets, in octets
+
+            return buf.array();
+        }
+    }
+
     private DataOutputStream outputStream;
     private String fileName;
     private String filePath;
+    private boolean isFirstFrame = true;
 
 
     public PcapFileWriter(String filePath, String fileName) {
@@ -49,7 +77,10 @@ public class PcapFileWriter {
 
         try {
             outputStream = new DataOutputStream(new FileOutputStream(this.filePath + this.fileName));
-            outputStream.write(PCAP_HEADER);
+            //outputStream.write(PcapHeader.getBytes(Packet.PCAP_LINKTYPE_IEEE802_11));
+            //outputStream.write(PcapHeader.getBytes(Packet.PCAP_LINKTYPE_RADIOTAP));
+            outputStream.write(PcapHeader.getBytesWithoutLinktype());
+            //outputStream.write(PcapHeader.getBytes(Packet.LinkType.IEEE_802_11_WLAN_RADIOTAP.getPcapLinktype()));
             outputStream.close();
         } catch (IOException e) {
             e.printStackTrace();
@@ -97,9 +128,24 @@ public class PcapFileWriter {
         }
     }
 
+    private void handleFirstFrame(Packet packet) throws IOException {
+        if (isFirstFrame) {
+            isFirstFrame = false;
+
+            ByteBuffer buf = ByteBuffer.allocate(4);
+            buf.order(ByteOrder.LITTLE_ENDIAN);
+            buf.putInt(packet._encap.getPcapLinktype());
+
+            outputStream.write(buf.array());
+
+            Log.d("PCAP", filePath + fileName);
+        }
+    }
+
     public boolean writePacket(Packet packet) {
         try {
             outputStream = new DataOutputStream(new FileOutputStream(filePath + fileName, true));
+            handleFirstFrame(packet);
             outputStream.write(packet._rawHeader);
             outputStream.write(packet._rawData);
             outputStream.close();
@@ -116,6 +162,7 @@ public class PcapFileWriter {
             outputStream = new DataOutputStream(new FileOutputStream(filePath + fileName, true));
 
             for (Packet packet : packets) {
+                handleFirstFrame(packet);
                 outputStream.write(packet._rawHeader);
                 outputStream.write(packet._rawData);
             }

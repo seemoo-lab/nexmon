@@ -2,6 +2,8 @@ NEXMON_CHIP=CHIP_VER_BCM4339
 NEXMON_CHIP_NUM=`$(NEXMON_ROOT)/buildtools/scripts/getdefine.sh $(NEXMON_CHIP)`
 NEXMON_FW_VERSION=FW_VER_6_37_32_RC23_34_43_r639704
 NEXMON_FW_VERSION_NUM=`$(NEXMON_ROOT)/buildtools/scripts/getdefine.sh $(NEXMON_FW_VERSION)`
+RXE_RXHDR_LEN=32
+RXE_RXHDR_EXTRA=8
 
 NEXMON_ARCH=armv7-r
 
@@ -36,3 +38,16 @@ FP_CONFIG_BASE=$$(($(PATCHSTART) - $(FP_CONFIG_SIZE)))
 FP_DATA_BASE=0x1D1800
 FP_CONFIG_ORIGBASE=0x1d2000
 FP_CONFIG_ORIGEND=0x1d2948
+
+INITVALS=0x1d4044
+
+##########################################
+# definitions for the nexmon patch       #
+##########################################
+# required by patch.c
+WLC_UCODE_WRITE_BL_HOOK_ADDR = 0x1F4F14
+HNDRTE_RECLAIM_0_END_PTR = 0x1816E0
+TEMPLATERAMSTART_PTR = 0x185544
+
+# required by version.c
+VERSION_PTR=0x1F2470

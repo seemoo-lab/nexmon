@@ -1,0 +1,88 @@
+#!/usr/bin/env python
+"""
+#  b43 firmware assembly code beautifier
+#
+#  Copyright (C) 2008-2010 Michael Buesch <m@bues.ch>
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License version 3
+#  as published by the Free Software Foundation.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
+import getopt
+import sys
+from libb43 import *
+
+
+def usage():
+	print "b43 firmware assembly code beautifier"
+	print ""
+	print "Copyright (C) 2008 Michael Buesch <m@bues.ch>"
+	print "Licensed under the GNU/GPL version 3"
+	print ""
+	print "Usage: b43-beautifier [OPTIONS]"
+	print ""
+	print "-h|--help            Print this help text"
+	print "-a|--asmfile [FILE]  Assembly code source file"
+	print "-d|--defs [DIR]      Directory containing the defs files"
+	print ""
+	print "The options  -d  and  -a  are essential."
+	print "The \"include\" directory can be used for --defs"
+
+def parseArgs():
+	global opt_asmfile
+	global opt_defsfiles
+
+	opt_asmfile = None
+	opt_defsfiles = None
+
+	try:
+		(opts, args) = getopt.getopt(sys.argv[1:],
+			"ha:d:",
+			[ "help", "asmfile=", "defs=" ])
+	except getopt.GetoptError:
+		usage()
+		sys.exit(1)
+
+	for (o, v) in opts:
+		if o in ("-h", "--help"):
+			usage()
+			sys.exit(0)
+		if o in ("-a", "--asmfile"):
+			opt_asmfile = v
+		if o in ("-d", "--defs"):
+			opt_defsfiles = v
+
+	if not opt_asmfile:
+		print "Must provide --asmfile"
+		sys.exit(1)
+	if not opt_defsfiles:
+		print "Must provide --defs"
+		sys.exit(1)
+
+def main():
+	parseArgs()
+
+	try:
+		asm = file(opt_asmfile).read()
+	except IOError, e:
+		print "Could not read asmfile %s: %s" % (e.filename, e.strerror)
+		return 1
+	try:
+		b = B43Beautifier(asm, opt_defsfiles)
+		sys.stdout.write(b.getAsm())
+	except B43Exception:
+		return 1
+	return 0
+
+if __name__ == "__main__":
+	sys.exit(main())
+

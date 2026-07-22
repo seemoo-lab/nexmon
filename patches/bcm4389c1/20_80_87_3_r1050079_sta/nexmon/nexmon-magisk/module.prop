@@ -1,0 +1,6 @@
+id=nexmon-magisk
+name=nexmon-magisk
+version=1.0
+versionCode=1
+author=Jakob Link <jlink@seemoo.de>
+description=Overwrite wifi firmware, install nexutil, allow upd_socket ioctl in magisk context

@@ -2,7 +2,7 @@ UTILITIES_PATH = ../../../../utilities
 PATCHES_PATH = ../../../../patches
 
 all: assets/nexmon assets libs/armeabi
-	
+
 assets: \
 	assets/nexmon/fw_bcm4330_5_90_100_41_sta.bin \
 	assets/nexmon/fw_bcm4339_6_37_34_43.bin \
@@ -20,7 +20,7 @@ assets: \
 	assets/nexmon/mdk3 \
 	assets/nexmon/socat \
 	assets/nexmon/libfakeioctl.so \
-	FORCE 
+	FORCE
 
 assets/nexmon: FORCE
 	mkdir -p assets/nexmon/

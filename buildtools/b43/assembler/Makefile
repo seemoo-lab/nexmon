@@ -24,7 +24,8 @@ CFLAGS		+= -std=gnu99 -D_GNU_SOURCE \
 		   -Wshadow -Wpointer-arith
 SPARSEFLAGS	= $(CFLAGS) -D__transparent_union__=__unused__ -D_STRING_ARCH_unaligned=1 \
 		  -D__builtin_stpcpy=stpcpy
-LDFLAGS		+= -lfl
+#LDFLAGS		+= -lfl
+LDFLAGS		+= -ll
 
 BIN		= b43-asm.bin
 SRCS		= parser.c scanner.c main.c initvals.c util.c args.c

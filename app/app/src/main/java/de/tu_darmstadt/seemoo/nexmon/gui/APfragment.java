@@ -18,6 +18,7 @@
 
 package de.tu_darmstadt.seemoo.nexmon.gui;
 
+import android.app.Fragment;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -55,7 +56,7 @@ import de.tu_darmstadt.seemoo.nexmon.stations.Handshake;
 import de.tu_darmstadt.seemoo.nexmon.stations.Station;
 
 
-public class APfragment extends TrackingFragment implements CurrentChannelListener {
+public class APfragment extends Fragment implements CurrentChannelListener {
 
     public static final int UPDATE_LIST = 30;
     public static final int UPDATE_LIST_COMPLETE = 31;
@@ -270,11 +271,6 @@ public class APfragment extends TrackingFragment implements CurrentChannelListen
         IntentFilter intentFilter = new IntentFilter("de.tu_darmstadt.seemoo.nexmon.NEW_AP");
         getActivity().registerReceiver(APfinderServiceReceiver, intentFilter);
         contUpdate();
-    }
-
-    @Override
-    public String getTrackingName() {
-        return "Screen: Airodump";
     }
 
     private void toggleApFinder() {

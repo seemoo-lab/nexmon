@@ -1,5 +1,6 @@
 package de.tu_darmstadt.seemoo.nexmon.gui;
 
+import android.app.Fragment;
 import android.content.Intent;
 import android.content.res.AssetManager;
 import android.os.Build;
@@ -17,8 +18,6 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.analytics.HitBuilders;
-import com.google.android.gms.analytics.Tracker;
 import com.nononsenseapps.filepicker.FilePickerActivity;
 import com.roger.catloadinglibrary.CatLoadingView;
 import com.stericson.RootShell.exceptions.RootDeniedException;
@@ -37,7 +36,7 @@ import de.tu_darmstadt.seemoo.nexmon.MyApplication;
 import de.tu_darmstadt.seemoo.nexmon.R;
 
 
-public class FirmwareFragment extends TrackingFragment implements View.OnClickListener {
+public class FirmwareFragment extends Fragment implements View.OnClickListener {
 
     private static final int UPDATE_TV_FIRMWARE_VERSION = 50;
     private static final int UPDATE_BUTTON_ENABLED = 51;
@@ -228,14 +227,12 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
         evaluateFirmware();
     }
 
-
-
     private void setContentVisibility() {
         if(!(new File(fwPathEnd + fwNameEnd).exists())) {
             btnCreateFirmwareBackup.setEnabled(false);
             btnRestoreFirmwareBackup.setEnabled(false);
             btnInstallNexmonFirmware.setEnabled(false);
-        }else if ((new File(sdCardPath + fwNameEnd + ".bac")).exists()) {
+        }else if ((new File(sdCardPath + "nexmon/" + fwNameEnd + ".bac")).exists()) {
             btnCreateFirmwareBackup.setEnabled(false);
             btnInstallNexmonFirmware.setEnabled(true);
             btnRestoreFirmwareBackup.setEnabled(true);
@@ -250,7 +247,7 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
 
     public void onClickCreateFirmwareBackup() {
         evaluateFirmware();
-        final Command command = new Command(COMMAND_BACKUP_FIRMWARE, "cp " + fwPathEnd + fwNameEnd + " " + sdCardPath + fwNameEnd + ".bac") {
+        final Command command = new Command(COMMAND_BACKUP_FIRMWARE, "cp " + fwPathEnd + fwNameEnd + " " + sdCardPath + "nexmon/" + fwNameEnd + ".bac") {
 
             @Override
             public void commandOutput(int id, String line) {
@@ -287,7 +284,7 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
 
     public void onClickRestoreFirmwareBackup() {
         evaluateFirmware();
-        Command command = new Command(COMMAND_FIRMWARE_RESTORE, "mount -o rw,remount " + mountPoint, "cp " + sdCardPath + fwNameEnd + ".bac " + fwPathEnd + fwNameEnd) {
+        Command command = new Command(COMMAND_FIRMWARE_RESTORE, "mount -o rw,remount " + mountPoint, "cp " + sdCardPath + "nexmon/" + fwNameEnd + ".bac " + fwPathEnd + fwNameEnd) {
             @Override
             public void commandOutput(int id, String line) {
                 if(id == COMMAND_FIRMWARE_RESTORE)
@@ -312,19 +309,15 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
     }
 
     public void onClickInstallNexmonFirmware() {
-            final Command command = new Command(COMMAND_RESTART_WLAN, "ifconfig wlan0 down", "ifconfig wlan0 up") {
-
-                @Override
-                public void commandCompleted(int id, int exitcode) {
-                    if(id == COMMAND_RESTART_WLAN) {
-                        MyApplication.evaluateAll();
-                    }
-
-                    super.commandCompleted(id, exitcode);
+        final Command command = new Command(COMMAND_RESTART_WLAN, "ifconfig wlan0 down", "ifconfig wlan0 up") {
+            @Override
+            public void commandCompleted(int id, int exitcode) {
+                if(id == COMMAND_RESTART_WLAN) {
+                    MyApplication.evaluateAll();
                 }
-
-            };
-
+                super.commandCompleted(id, exitcode);
+            }
+        };
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -333,7 +326,6 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
                     guiHandler.sendEmptyMessage(GUI_SHOW_LOADING);
 
                     extractAssets();
-                    //MyApplication.toast("Installing firmware ...");
                     copyExtractedAsset(fwPathEnd, fwNameBeginning);
                     //Log.e("INSTALL PATH", "fwPathEnd: " + fwPathEnd + " fwNameEnd: " + fwNameEnd + " fwNameBeginning: " + fwNameBeginning);
                     RootTools.getShell(true).add(command);
@@ -342,7 +334,6 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
                 } catch(Exception e) {e.printStackTrace();}
             }
         }).start();
-
     }
 
 
@@ -357,11 +348,14 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
         AssetManager assetManager = MyApplication.getAssetManager();
         String[] files = null;
         files = assetManager.list("nexmon");
+        File folder = new File(sdCardPath + "/nexmon");
+        if (!folder.exists()) folder.mkdir();
+
         if (files != null) for (String filename : files) {
             InputStream in = null;
             OutputStream out = null;
             in = assetManager.open("nexmon/" + filename);
-            File outFile = new File(sdCardPath, filename);
+            File outFile = new File(sdCardPath + "/nexmon", filename);
             out = new FileOutputStream(outFile);
             copyFile(in, out);
             if (in != null) in.close();
@@ -372,7 +366,7 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
     private void copyExtractedAsset(String installLocation, String filename) throws TimeoutException, IOException, RootDeniedException {
 
         RootTools.getShell(true).add(new Command(0, "mount -o rw,remount " + mountPoint,
-                "cp " + sdCardPath + filename + " " + installLocation + fwNameEnd,
+                "cp " + sdCardPath + "nexmon/" + filename + " " + installLocation + fwNameEnd,
                 "chmod 755 " + installLocation + fwNameEnd) {
 
             @Override
@@ -408,24 +402,12 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
                         e.printStackTrace();
                         out = line + "\n";
                     }
-
                     Message msg = guiHandler.obtainMessage(UPDATE_TV_FIRMWARE_VERSION, out);
                     guiHandler.sendMessage(msg);
-
-                    // Get tracker.
-                    Tracker t = MyApplication.getDefaultTracker();
-                    // Build and send an Event.
-                    t.send(new HitBuilders.EventBuilder()
-                            .setCategory("Firmware Version")
-                            .setLabel("Device: " + Build.MODEL)
-                            .setAction("Version: " + out)
-                            .build());
                 }
-
                 super.commandOutput(id, line);
-
             }
-
+            
             @Override
             public void commandCompleted(int id, int exitcode) {
                 super.commandCompleted(id, exitcode);
@@ -435,7 +417,6 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
                 }
             }
         };
-
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -446,9 +427,7 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
                 }
             }
         }).start();
-
     }
-
     private void evaluateFirmware() {
         String item = spnDevice.getSelectedItem().toString();
 
@@ -479,24 +458,14 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
             fwPathEnd = "";
             fwNameEnd = "";
         }
-
         setContentVisibility();
     }
-
 
     @Override
     public void onClick(View v) {
         switch(v.getId()) {
             case R.id.btnInstallNexmonFirmware:
                 onClickInstallNexmonFirmware();
-                // Get tracker.
-                Tracker t = MyApplication.getDefaultTracker();
-                // Build and send an Event.
-                t.send(new HitBuilders.EventBuilder()
-                        .setCategory("Firmware")
-                        .setLabel("Device: " + Build.MODEL + " FW: " + tvFirmwareVersionOutput.getText())
-                        .setAction("Install")
-                        .build());
                 break;
             case R.id.btnRestoreFirmwareBackup:
                 onClickRestoreFirmwareBackup();
@@ -531,10 +500,5 @@ public class FirmwareFragment extends TrackingFragment implements View.OnClickLi
                 guiHandler.sendMessage(msg);
             }
         }
-    }
-
-    @Override
-    public String getTrackingName() {
-        return "Screen: Firmware";
     }
 }

@@ -276,7 +276,6 @@ public class AttackSelectionDialog extends DialogFragment implements Attack.IAtt
     @Override
     public void onClick(View v) {
         String attack = (String) v.getTag();
-
         if(!MyApplication.isInjectionAvailable() || !MyApplication.isRawproxyreverseAvailable()) {
             switch (attack) {
                 case Attack.ATTACK_FAKE_AUTH:

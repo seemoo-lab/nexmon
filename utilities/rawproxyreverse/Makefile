@@ -16,7 +16,7 @@ clean:
 
 install: libs/armeabi/rawproxyreverse
 	adb push $< /sdcard/
-	adb shell 'su -c "mount -o remount,rw /system"'
+	adb shell 'su -c "mount -o rw,remount /system"'
 	adb shell 'su -c "cp /sdcard/rawproxyreverse /system/bin/rawproxyreverse"'
 
 FORCE:

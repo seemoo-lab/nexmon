@@ -18,6 +18,8 @@
 
 package de.tu_darmstadt.seemoo.nexmon.net;
 
+import android.util.Log;
+
 import de.tu_darmstadt.seemoo.nexmon.sharky.Packet;
 
 public class FrameReceiver {
@@ -36,14 +38,26 @@ public class FrameReceiver {
 
 
     public void receivePaketSocket(byte[] packets, byte[] header) {
+        Packet packet;
 
-        Packet packet = new Packet(23);
+        switch (MonitorModeService.monitorModeType) {
+            case MONITOR_IEEE80211:
+            case MONITOR_IEEE80211_BADFCS:
+                packet = new Packet(Packet.LinkType.IEEE_802_11);
+                break;
+            case MONITOR_RADIOTAP:
+            case MONITOR_RADIOTAP_BADFCS:
+                packet = new Packet(Packet.LinkType.IEEE_802_11_WLAN_RADIOTAP);
+                break;
+            default:
+                return;
+        }
+
         packet._rawData = packets;
         packet._rawHeader = header;
         packet._headerLen = header.length;
         packet._dataLen = packets.length;
 
         observer.packetReceived(packet);
-
     }
 }

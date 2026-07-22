@@ -36,4 +36,7 @@ int
 argprintf(const char *format, ...);
 
 void
+arghexdump(char *desc, void *addr, int len);
+
+void
 argprintf_init(char *arg, int len);
