@@ -51,7 +51,7 @@ typedef struct _wsp_status_code_t {
 	const gchar	*name;
 	guint32		 packets;
 } wsp_status_code_t;
-/* used to keep track of the statictics for an entire program interface */
+/* used to keep track of the statistics for an entire program interface */
 typedef struct _wsp_stats_t {
 	char 		*filter;
 	wsp_pdu_t 	*pdu_stats;
