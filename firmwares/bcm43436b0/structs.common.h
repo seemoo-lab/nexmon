@@ -1343,6 +1343,31 @@ struct dma32diag {  /* diag access */
     unsigned int pad;        /* reserved */
 };
 
+struct hnd_cons {
+    uint   vcons_in;
+    uint   vcons_out;
+    char   *buf;
+    uint   buf_size;
+    uint   idx;
+    uint   out_idx;
+    uint   cbuf_idx;
+    char   cbuf[];
+} __attribute__((packed));
+
+struct hnd_debug {
+    uint32  magic;
+    uint32  version;
+    uint32  fwid;
+    char    epivers[32];
+    void    *trap_ptr;
+    struct hnd_cons *console;
+    uint32  ram_base;
+    uint32  ram_size;
+    uint32  rom_base;
+    uint32  rom_size;
+    void    *event_log_top;
+} __attribute__((packed));
+
 /*
  * Host Interface Registers
  */
