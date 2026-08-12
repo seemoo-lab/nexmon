@@ -1,0 +1,97 @@
+# definitions.mk — bcm4389c1 / 20_101_90_r1098710 (Pixel 6 oriole, FWID 01-3f632e0d)
+# Re-based from nexmon's 20_101_57_r1035009 by disassembling our fw_bcmdhd.bin.
+# Reproduce with: tools/fw_re/{nexrebase.py,blscan.py,r2open.sh} (capstone + radare2).
+# Cross-validated: _datarc3_start=UCODE0START=0x37658c; _datarc3_end=FP_CONFIG_ORIGBASE=0x3ace20;
+# all TEMPLATERAM sizes == stock; UCODE2 size == stock; ptr-table layouts match stock.
+# STILL TO CONFIRM before trusting a code-injecting build: VERSION_PTR_4 (only 3 word-refs found),
+# ROMSTART/ROMSIZE (architectural), structs.h. The empty-patch boot-test validates the rest.
+
+NEXMON_CHIP=CHIP_VER_BCM4389c1
+NEXMON_CHIP_NUM=`$(NEXMON_ROOT)/buildtools/scripts/getdefine.sh $(NEXMON_CHIP)`
+NEXMON_FW_VERSION=FW_VER_20_101_90_r1098710
+NEXMON_FW_VERSION_NUM=`$(NEXMON_ROOT)/buildtools/scripts/getdefine.sh $(NEXMON_FW_VERSION)`
+
+NEXMON_ARCH=armv7-a
+
+RAM_FILE=fw_bcmdhd.bin
+RAMSTART=0x00200000
+RAMSIZE=0x002A0000
+
+ROM_FILE=rom.bin
+ROMSTART=0x00001000
+ROMSIZE=0x001DA000
+
+# ucode (loader = wlc_ucode_download; D11a/b/s = UCODE0/1/2)
+# _PTR values are the wlc_ucode_download literal-pool slots (outside the ucode blob),
+# not the inline data words. Firmware does size = *(*(SIZE_PTR)) (double-deref) and
+# start = *(START_PTR); SIZE_PTR = START_PTR-4, mirroring stock (UCODE0SIZE_PTR=START_PTR-4).
+# Putting SIZE_PTR at the pool (not the inline size word @0x38bd8c etc.) keeps nexmon's
+# gp4_ucodeN_len patch OUT of the compressed-ucode section (was the linker-overlap bug).
+UCODE0START=0x37658C
+UCODE0SIZE=0x15800
+UCODE0START_PTR=0x35437C
+UCODE0SIZE_PTR=0x354378
+
+UCODE1START=0x38BD90
+UCODE1SIZE=0x14708
+UCODE1START_PTR=0x354374
+UCODE1SIZE_PTR=0x354370
+
+UCODE2START=0x3A049C
+UCODE2SIZE=0x4BC8
+UCODE2START_PTR=0x354384
+UCODE2SIZE_PTR=0x354380
+
+HNDRTE_RECLAIM_3_END_PTR=0x275DF8
+HNDRTE_RECLAIM_3_ORIG_END=0x3ACE20
+
+WLC_UCODE_WRITE_BL_HOOK_ADDR=0x354326
+
+# templateram = sr_source_code_86_2_{aux,dig,main,scan}; sizes identical to stock
+TEMPLATERAM0START_PTR=0x376408
+TEMPLATERAM0START=0x3A5068
+TEMPLATERAM0SIZE=0x1AC4
+
+TEMPLATERAM1START_PTR=0x376410
+TEMPLATERAM1START=0x3A6B2C
+TEMPLATERAM1SIZE=0x2DCC
+
+TEMPLATERAM2START_PTR=0x376404
+TEMPLATERAM2START=0x3A98F8
+TEMPLATERAM2SIZE=0x22C4
+
+TEMPLATERAM3START_PTR=0x37640C
+TEMPLATERAM3START=0x3ABBBC
+TEMPLATERAM3SIZE=0x1264
+
+# rom patches / TCAM (via hnd_tcam_* disassembly)
+FP_DATA_BASE=0x208000
+FP_DATA_END=0x20F800
+FP_DATA_LAST_PTR=0x332EAC
+FP_CONFIG_ORIGBASE=0x3ACE20
+FP_CONFIG_ORIGEND=0x3AE940
+# hnd_tcam_load_default
+FP_CONFIG_BASE_PTR_1=0x33303C
+FP_CONFIG_END_PTR_1=0x333038
+# hnd_tcam_verify
+FP_CONFIG_BASE_PTR_2=0x332E5C
+FP_CONFIG_END_PTR_2=0x332E60
+# hnd_tcam_stat
+FP_CONFIG_BASE_PTR_3=0x332F98
+FP_CONFIG_END_PTR_3=0x332F9C
+# hnd_tcam_reclaim
+FP_CONFIG_BASE_PTR_4=0x34C794
+FP_CONFIG_END_PTR_4=0x34C798
+
+N_EXTRA_FP=2
+FP_CONFIG_SIZE=$$(($(FP_CONFIG_ORIGEND) - $(FP_CONFIG_ORIGBASE) + 8 * $(N_EXTRA_FP)))
+FP_CONFIG_BASE=$$(($(FP_CONFIG_ORIGBASE) - 8 * $(N_EXTRA_FP)))
+
+PATCHSIZE=0x9000
+PATCHSTART=$$(($(FP_CONFIG_BASE) - $(PATCHSIZE)))
+
+VERSION_PTR_1=0x27FB4C
+VERSION_PTR_2=0x34CC88
+VERSION_PTR_3=0x34E77C
+VERSION_PTR_4=0x27FB4C
+DATETIME_PTR=0x27FB50
