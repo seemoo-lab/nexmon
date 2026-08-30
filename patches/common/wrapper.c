@@ -818,7 +818,7 @@ AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0xA024)
 AT(CHIP_VER_BCM4330, FW_VER_ALL, 0x81C51C)
 AT(CHIP_VER_BCM43439a0, FW_VER_ALL, 0x8929FC)
 int
-wlc_d11hdrs(void *wlc, void *p, void *scb, int short_preamble, unsigned int frag, unsigned int nfrag, unsigned int queue, int next_frag_len, int key, int rspec_override)
+wlc_d11hdrs(void *wlc, void *p, void *scb, int short_preamble, unsigned int frag, unsigned int nfrag, unsigned int queue, int next_frag_len, int key, int rspec_override, short *txh_off)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8C97C)
