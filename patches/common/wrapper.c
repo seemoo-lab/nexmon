@@ -284,6 +284,7 @@ AT(CHIP_VER_BCM43455c0, FW_VER_7_45_189, 0x19A018)
 AT(CHIP_VER_BCM43455c0, FW_VER_7_45_206, 0x19A0F8)
 AT(CHIP_VER_BCM43455c0, FW_VER_7_45_241, 0x19A0F8)
 AT(CHIP_VER_BCM43455c0, FW_VER_7_45_234_4ca95bb_CY, 0x19A0E8)
+AT(CHIP_VER_BCM43455c0, FW_VER_7_45_265_28bca26_CY, 0x19A0F8)
 AT(CHIP_VER_BCM43909b0, FW_VER_ALL, 0x64588)
 AT(CHIP_VER_BCM4361b0, FW_VER_ALL, 0x116D6C)
 AT(CHIP_VER_BCM4366c0, FW_VER_10_10_122_20, 0x45D8)
@@ -824,6 +825,7 @@ AT(CHIP_VER_BCM4330, FW_VER_ALL, 0x81C51C)
 AT(CHIP_VER_BCM43439a0, FW_VER_ALL, 0x8929FC)
 // 7.45.206: unique 48-byte prologue match against 7.45.265's 0x1A6D58
 AT(CHIP_VER_BCM43455c0, FW_VER_7_45_206, 0x1A63EC)
+AT(CHIP_VER_BCM43455c0, FW_VER_7_45_265_28bca26_CY, 0x1A6D58)
 int
 wlc_d11hdrs(void *wlc, void *p, void *scb, int short_preamble, unsigned int frag, unsigned int nfrag, unsigned int queue, int next_frag_len, int key, int rspec_override, short *txh_off)
 RETURN_DUMMY
@@ -926,6 +928,7 @@ AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x9ED6)
 AT(CHIP_VER_BCM43439a0, FW_VER_ALL, 0x82B8FC)
 // 7.45.206: unique 24-byte prologue match against 7.45.265's 0x1A598C
 AT(CHIP_VER_BCM43455c0, FW_VER_7_45_206, 0x1A4FA4)
+AT(CHIP_VER_BCM43455c0, FW_VER_7_45_265_28bca26_CY, 0x1A598C)
 void *
 wlc_get_txh_info(void *wlc, void *p, void *txh)
 RETURN_DUMMY
@@ -938,6 +941,7 @@ AT(CHIP_VER_BCM43455c0, FW_VER_7_45_154, 0x1A1D00)
 AT(CHIP_VER_BCM43455c0, FW_VER_7_45_189, 0x1A6A84)
 AT(CHIP_VER_BCM43455c0, FW_VER_7_45_206, 0x1A1EEC)
 AT(CHIP_VER_BCM43455c0, FW_VER_7_45_234_4ca95bb_CY, 0x1A7BB0)
+AT(CHIP_VER_BCM43455c0, FW_VER_7_45_265_28bca26_CY, 0x1A2830)
 AT(CHIP_VER_BCM43436b0, FW_VER_9_88_4_65, 0xa6d8)
 AT(CHIP_VER_BCM43439a0, FW_VER_ALL, 0x818F28)
 AT(CHIP_VER_BCM4389c1, FW_VER_20_101_57_r1035009, 0x27EF9C)
@@ -955,6 +959,7 @@ AT(CHIP_VER_BCM4330, FW_VER_ALL, 0x8182F8)
 AT(CHIP_VER_BCM43455c0, FW_VER_7_45_154, 0x1a2438)
 AT(CHIP_VER_BCM43455c0, FW_VER_7_45_189, 0x1A71BC)
 AT(CHIP_VER_BCM43455c0, FW_VER_7_45_234_4ca95bb_CY, 0x1A82E8)
+AT(CHIP_VER_BCM43455c0, FW_VER_7_45_265_28bca26_CY, 0x1A2F68)
 AT(CHIP_VER_BCM4361b0, FW_VER_13_38_55_1_sta, 0x177994)
 int
 wl_sendup(void *wl, void *wlif, void *p)
@@ -979,6 +984,14 @@ AT(CHIP_VER_BCM43455, FW_VER_ALL, 0x1ED5C)
 AT(CHIP_VER_BCM43455c0, FW_VER_7_45_154, 0x1A270C)
 AT(CHIP_VER_BCM43455c0, FW_VER_7_45_189, 0x1A7490)
 AT(CHIP_VER_BCM43455c0, FW_VER_7_45_234_4ca95bb_CY, 0x1A85BC)
+// Not called by any 7.45.265 patch source (monitormode.c hooks the wl_monitor
+// call *site* directly via BLPatch instead) - kept for parity with 154/189/234_CY
+// and in case a future patch needs it. Weakest evidence in this port: only a
+// 16-byte signature match, though corroborated by the uniform -0x5380 delta
+// from 234_CY seen on wl_send/wl_sendup, and by being the sole BL target at
+// the wl_monitor call site (monitormode.c's 0x1A7604). See
+// REVERSE_ENGINEERING_NOTES.md, "bcm43455c0 / 7.45.265 port".
+AT(CHIP_VER_BCM43455c0, FW_VER_7_45_265_28bca26_CY, 0x1A323C)
 AT(CHIP_VER_BCM43436b0, FW_VER_9_88_4_65, 0xae0a)
 AT(CHIP_VER_BCM43439a0, FW_VER_ALL, 0x818838)
 void
@@ -1565,6 +1578,7 @@ AT(CHIP_VER_BCM43455c0, FW_VER_7_45_154, 0x1C9FA4)
 AT(CHIP_VER_BCM43455c0, FW_VER_7_45_189, 0x1CF494)
 AT(CHIP_VER_BCM43455c0, FW_VER_7_45_206, 0x1CCF20)
 AT(CHIP_VER_BCM43455c0, FW_VER_7_45_234_4ca95bb_CY, 0x1D3A40)
+AT(CHIP_VER_BCM43455c0, FW_VER_7_45_265_28bca26_CY, 0x1CF9EC)
 AT(CHIP_VER_BCM43455, FW_VER_7_46_77_11, 0x1D2E70)
 AT(CHIP_VER_BCM43455, FW_VER_7_45_59_16, 0x1D0628)
 int
@@ -1767,6 +1781,7 @@ wlc_phy_txpwrctrl_ison_acphy(void *pi)
 RETURN_DUMMY
 
 AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x191654)
+AT(CHIP_VER_BCM43455c0, FW_VER_7_45_265_28bca26_CY, 0x1A769C)
 int
 wlc_prep_pdu(void *wlc, void *p, int *fifo)
 RETURN_DUMMY
@@ -1819,6 +1834,7 @@ AT(CHIP_VER_BCM4375b1, FW_VER_ALL, 0x143860)
 // 7.45.206: unique 48-byte prologue match against 7.45.265's 0x1AB5AC.
 // Confirmed live as the type-0x4 trap at epc 0x1AABB0 (ldr [scb+0xe8] with pkt->scb NULL).
 AT(CHIP_VER_BCM43455c0, FW_VER_7_45_206, 0x1AAB66)
+AT(CHIP_VER_BCM43455c0, FW_VER_7_45_265_28bca26_CY, 0x1AB5AC)
 void
 wlc_send_q(void *wlc, void *qi)
 VOID_DUMMY
@@ -1971,6 +1987,7 @@ AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0xf680)
 AT(CHIP_VER_BCM43439a0, FW_VER_ALL, 0x834194)
 // 7.45.206: unique 16-byte prologue match against 7.45.265's 0x1AD2F4
 AT(CHIP_VER_BCM43455c0, FW_VER_7_45_206, 0x1ACC20)
+AT(CHIP_VER_BCM43455c0, FW_VER_7_45_265_28bca26_CY, 0x1AD2F4)
 void
 wlc_txfifo(void *wlc, int fifo, void *p, void *txh, unsigned char commit, char txpktpend)
 VOID_DUMMY
