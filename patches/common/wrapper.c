@@ -90,6 +90,11 @@ AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x4E44)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_26_r640327, 0x4E44)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x4F30)
 AT(CHIP_VER_BCM4398d0, FW_VER_ALL, 0x256A10)
+// relocated from FW_VER_7_45_41_46 (0x4F30) by byte-signature match, unique at
+// every length up to 96B; prologue is instruction-for-instruction identical.
+// No static callers in either version - the DMA ops are dispatched indirectly
+// through the di vtable, so a caller search cannot corroborate this one.
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_98, 0x56b0)
 void *
 dma_rx(void *di)
 RETURN_DUMMY
@@ -98,6 +103,10 @@ AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8c6cc)
 AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x5070)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_26_r640327, 0x5070)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x515C)
+// relocated from FW_VER_7_45_41_46 (0x515C) by byte-signature match, unique at
+// every length up to 96B; prologue is instruction-for-instruction identical.
+// Indirectly dispatched like dma_rx, so no static callers to corroborate.
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_98, 0x58ac)
 void *
 dma_rxfill(void *di)
 RETURN_DUMMY
@@ -271,6 +280,7 @@ AT(CHIP_VER_BCM4356, FW_VER_ALL, 0x2E5C)
 AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x2360)
 AT(CHIP_VER_BCM43430a1, FW_VER_ALL, 0x880B80)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x2390)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_98, 0x24ec)      // relocated from FW_VER_7_45_41_46 (0x2390) by byte-signature match (48B, unique hit); corroborated - the 7.45.98 RAM RX routine itself calls 0x24ec. Without this, 7_45_98 fell through to the FW_VER_ALL entry 0x880B80, which is NOT memcpy on this chip (a 5-instruction stub that loads one word and returns), so every memcpy silently did nothing
 AT(CHIP_VER_BCM4330, FW_VER_ALL, 0x809344)
 AT(CHIP_VER_BCM4335b0, FW_VER_ALL, 0x12D20)
 AT(CHIP_VER_BCM43596a0, FW_VER_ALL, 0x1d2c)
@@ -390,6 +400,7 @@ AT(CHIP_VER_BCM4356, FW_VER_ALL, 0x89A3C)
 AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x625C)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_26_r640327, 0x625C)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x6348)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_98, 0x6c30)      // relocated from FW_VER_7_45_41_46 (0x6348): byte-signature match fails here because the body contains a relative BL, so verified by disassembly instead - instruction-for-instruction identical, same ROM callee 0x808744
 AT(CHIP_VER_BCM4330, FW_VER_ALL, 0x80E358)
 AT(CHIP_VER_BCM4335b0, FW_VER_ALL, 0x18B04)
 AT(CHIP_VER_BCM43596a0, FW_VER_ALL, 0x6054)
@@ -418,6 +429,7 @@ AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x8FD1C)
 AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x62A0)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_26_r640327, 0x62A0)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x638C)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_98, 0x6c74)      // relocated from FW_VER_7_45_41_46 (0x638C) by byte-signature match (32B prologue, unique hit)
 AT(CHIP_VER_BCM4330, FW_VER_ALL, 0x80E300)
 AT(CHIP_VER_BCM4335b0, FW_VER_ALL, 0x18A98)
 AT(CHIP_VER_BCM43596a0, FW_VER_ALL, 0x5FE8)
@@ -737,6 +749,8 @@ AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x8CB9C)
 AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x1BEAC)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_26_r640327, 0x1BEAC)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x1C0F8)
+// relocated from FW_VER_7_45_41_46 (0x1C0F8) by byte-signature match (32B prologue, unique hit)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_98, 0x20abc)
 AT(CHIP_VER_BCM43436b0, FW_VER_9_88_4_65, 0x1B242)
 AT(CHIP_VER_BCM43439a0, FW_VER_ALL, 0x84F3E0)
 AT(CHIP_VER_BCM43455c0, FW_VER_ALL, 0x9C76C)
@@ -821,6 +835,8 @@ AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_40_r581243, 0x18C4C8)
 AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x9F38)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_26_r640327, 0x9F38)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0xA024)
+// relocated from FW_VER_7_45_41_46 (0xA024) by byte-signature match (32B prologue, unique hit)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_98, 0xbf50)
 AT(CHIP_VER_BCM4330, FW_VER_ALL, 0x81C51C)
 AT(CHIP_VER_BCM43439a0, FW_VER_ALL, 0x8929FC)
 // 7.45.206: unique 48-byte prologue match against 7.45.265's 0x1A6D58
@@ -925,6 +941,8 @@ RETURN_DUMMY
 AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x9DEA)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_26_r640327, 0x9DEA)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x9ED6)
+// relocated from FW_VER_7_45_41_46 (0x9ED6) by byte-signature match (32B prologue, unique hit)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_98, 0xbe02)
 AT(CHIP_VER_BCM43439a0, FW_VER_ALL, 0x82B8FC)
 // 7.45.206: unique 24-byte prologue match against 7.45.265's 0x1A598C
 AT(CHIP_VER_BCM43455c0, FW_VER_7_45_206, 0x1A4FA4)
@@ -936,6 +954,7 @@ RETURN_DUMMY
 AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x7ef8)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_26_r640327, 0x7ef8)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x7fe4)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_98, 0x9f40)      // recovered from the stock value of the function pointer that injection.c's GenericPatch4 overwrites (0x40fe0 holds 0x9f41 = 0x9f40|thumb), the same way 41.46's 0x39674 holds 0x7fe5. Byte/prologue signature search fails here: 7.45.98 recompiled it with a different register list (e92d 4ff0 vs 4ff7) and 'sub sp,#20' instead of pushing r0-r2
 AT(CHIP_VER_BCM4358, FW_VER_7_112_300_14, 0x199b64)
 AT(CHIP_VER_BCM43455c0, FW_VER_7_45_154, 0x1A1D00)
 AT(CHIP_VER_BCM43455c0, FW_VER_7_45_189, 0x1A6A84)
@@ -968,6 +987,9 @@ RETURN_DUMMY
 AT(CHIP_VER_BCM43596a0, FW_VER_9_96_4_sta_c0, 0x1624AC)
 AT(CHIP_VER_BCM43455c0, FW_VER_7_45_154, 0x1a2438)
 AT(CHIP_VER_BCM43455c0, FW_VER_7_45_189, 0x1A71BC)
+// 7.45.98's RAM wl_monitor (0xa5e2) ends in "b.w 0xa46c" with (wl, 0, p_new, 1),
+// mirroring the ROM copy at 0x819510 which tail-calls 0x880f10 the same way.
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_98, 0xa46c)
 void
 wl_sendup_newdrv(void *wl, void *wlif, void *p, int numpkt)
 VOID_DUMMY
@@ -975,6 +997,10 @@ VOID_DUMMY
 AT(CHIP_VER_BCM4358, FW_VER_ALL, 0x18628)
 AT(CHIP_VER_BCM4356, FW_VER_7_35_101_5_sta, 0x199112)
 AT(CHIP_VER_BCM43438, FW_VER_ALL, 0x819510)
+// 7.45.98 bypasses the ROM copy at 0x819510 (its stock flash-patch table
+// redirects the enclosing ROM RX routine into RAM at 0xd4e4); the live copy
+// this version actually calls is the RAM one at 0xa5e2.
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_98, 0xa5e2)
 AT(CHIP_VER_BCM43430a1, FW_VER_ALL, 0x819510)
 AT(CHIP_VER_BCM4339, FW_VER_ALL, 0x270F0)
 AT(CHIP_VER_BCM4330, FW_VER_ALL, 0x817ACC)
@@ -1553,6 +1579,8 @@ AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x1C4D8C)
 AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0x23278)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_26_r640327, 0x23278)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0x236a4)
+// relocated from FW_VER_7_45_41_46 (0x236a4) by byte-signature match (32B prologue, unique hit)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_98, 0x29df4)
 AT(CHIP_VER_BCM4330, FW_VER_ALL, 0x826F3C)
 AT(CHIP_VER_BCM43436b0, FW_VER_9_88_4_65, 0x8644)
 AT(CHIP_VER_BCM43439a0, FW_VER_ALL, 0x86C37C)
@@ -1984,6 +2012,8 @@ AT(CHIP_VER_BCM4339, FW_VER_6_37_32_RC23_34_43_r639704, 0x193834)
 AT(CHIP_VER_BCM43438, FW_VER_7_45_41_26_r640327, 0xF4A8)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_26_r640327, 0xF4A8)
 AT(CHIP_VER_BCM43430a1, FW_VER_7_45_41_46, 0xf680)
+// relocated from FW_VER_7_45_41_46 (0xf680) by byte-signature match (32B prologue, unique hit)
+AT(CHIP_VER_BCM43430a1, FW_VER_7_45_98, 0x11ed0)
 AT(CHIP_VER_BCM43439a0, FW_VER_ALL, 0x834194)
 // 7.45.206: unique 16-byte prologue match against 7.45.265's 0x1AD2F4
 AT(CHIP_VER_BCM43455c0, FW_VER_7_45_206, 0x1ACC20)
