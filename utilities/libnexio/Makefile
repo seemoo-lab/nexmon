@@ -11,7 +11,7 @@ libs/armeabi/libnexio.a: libnexio.c
 ifeq ($(USE_VENDOR_CMD),1)
 	gcc -c libnexio.c -o libnexio.o -DUSE_VENDOR_CMD -DVERSION=\"$(GIT_VERSION)\" -I../../patches/include $(shell pkg-config --cflags --libs libnl-3.0 libnl-genl-3.0)
 else
-	gcc -std=gnu11 -fcommon -c libnexio.c -o libnexio.o -DBUILD_ON_RPI -DVERSION=\"$GIT_VERSION\" -I../../patches/include
+	gcc -std=gnu11 -fcommon -c libnexio.c -o libnexio.o -DBUILD_ON_RPI -DVERSION=\"$(GIT_VERSION)\" -I../../patches/include
 endif
 	ar rcs libnexio.a libnexio.o
 endif
