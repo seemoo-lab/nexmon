@@ -9,101 +9,88 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Protocol Spec:
+ *   https://tools.ietf.org/html/draft-foschiano-erspan-03
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- */
-
-/*
- * TODO:
- *	Find out the Unknown values
+ * For ERSPAN packets, the "protocol type" field value in the GRE header
+ * is 0x88BE (types I and II) or 0x22EB (type III).
  *
- * Specs:
- *	No real specs exist. Some general description can be found at:
- *	http://www.cisco.com/en/US/products/hw/routers/ps368/products_configuration_guide_chapter09186a008069952a.html
+ * For 0x88BE, if the GRE header doesn't have the "sequence number present"
+ * flag set, it's type I, with no ERSPAN header, otherwise it has an
+ * ERSPAN header (it's supposed to be type II, but we look at the version
+ * in the ERSPAN header; should we report an error if it's not version 1?).
  *
- *	Some information on ERSPAN type III can be found at:
- *	http://www.cisco.com/en/US/docs/switches/datacenter/nexus1000/sw/4_0_4_s_v_1_3/system_management/configuration/guide/n1000v_system_9span.html
- *
- *	For ERSPAN packets, the "protocol type" field value in the GRE header
- *	is 0x88BE (version 1) or 0x22EB (version 2).
- *
- *	ERSPAN type II is version 1
- *	ERSPAN type III is version 2
- *
- * 0000000: d4c3 b2a1 0200 0400 0000 0000 0000 0000 <-- pcap header
- * 0000010: ffff 0000
- * 0000010:           7100 0000 <-- 0x71 (DLT_TYPE) = linux_cooked_capture (of course not)
- * 0000010:                     7507 f845 11d1 0500 <-- pcap record header
- * 0000020: 7a00 0000 7a00 0000
- * 0000020:                     0000 030a 0000 0000 <-- unknown
- * 0000030: 0000 0000
- * 0000030:           0000 88be <-- GRE header (version 1)
- * 0000030:                     1002 0001 0000 0380 <-- ERSPAN header (01: erspan-id)
- * 0000040: 00d0 b7a7 7480 0015 c721 75c0 0800 4500 <-- Ethernet packet
- * ...
- *
- *
+ * For 0x22EB, it always has an ERSPAN header (it's supposed to be type III,
+ * but we look at the version in the ERSPAN header; should we report an
+ * error if it's not version 2?).
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/prefs.h>
 #include <epan/expert.h>
+#include <epan/tfs.h>
 #include "packet-gre.h"
 
 void proto_register_erspan(void);
 void proto_reg_handoff_erspan(void);
 
-static int proto_erspan = -1;
+static int proto_erspan;
 
-static gint ett_erspan = -1;
+static int ett_erspan;
 
-static int hf_erspan_version = -1;
-static int hf_erspan_vlan = -1;
-static int hf_erspan_priority = -1;
-static int hf_erspan_encap = -1;
-static int hf_erspan_truncated = -1;
-static int hf_erspan_spanid = -1;
-static int hf_erspan_index = -1;
-static int hf_erspan_timestamp = -1;
-static int hf_erspan_direction2 = -1;
+static int hf_erspan_version;
+static int hf_erspan_vlan;
+static int hf_erspan_cos;
+static int hf_erspan_encap;
+static int hf_erspan_truncated;
+static int hf_erspan_spanid;
+static int hf_erspan_reserved;
+static int hf_erspan_index;
+static int hf_erspan_timestamp;
+static int hf_erspan_direction;
 
-static int hf_erspan_bso = -1;
-static int hf_erspan_sgt = -1;
-static int hf_erspan_p = -1;
-static int hf_erspan_ft = -1;
-static int hf_erspan_hw = -1;
-static int hf_erspan_gra = -1;
-static int hf_erspan_o = -1;
+static int hf_erspan_bso;
+static int hf_erspan_sgt;
+static int hf_erspan_p;
+static int hf_erspan_ft;
+static int hf_erspan_hw;
+static int hf_erspan_gra;
+static int hf_erspan_o;
 
+/* Optional Sub-header */
+static int hf_erspan_platid;
+/* Platform ID = 1 */
+static int hf_erspan_pid1_rsvd1;
+static int hf_erspan_pid1_domain_id;
+static int hf_erspan_pid1_port_index;
+/* Platform ID = 3 */
+static int hf_erspan_pid3_rsvd1;
+static int hf_erspan_pid3_port_index;
+static int hf_erspan_pid3_timestamp;
+/* Platform ID = 4 */
+static int hf_erspan_pid4_rsvd1;
+static int hf_erspan_pid4_rsvd2;
+static int hf_erspan_pid4_rsvd3;
+/* Platform ID = 5 or 6 */
+static int hf_erspan_pid5_switchid;
+static int hf_erspan_pid5_port_index;
+static int hf_erspan_pid5_timestamp;
+/* Platform ID = 7 (or 0) */
+static int hf_erspan_pid7_rsvd1;
+static int hf_erspan_pid7_source_index;
+static int hf_erspan_pid7_timestamp;
+/* ID: 0x0, 0x2, 0x8-0x63 are reserved. */
+static int hf_erspan_pid_rsvd;
 
-static expert_field ei_erspan_version_unknown = EI_INIT;
+static expert_field ei_erspan_version_unknown;
 
 #define PROTO_SHORT_NAME "ERSPAN"
 #define PROTO_LONG_NAME "Encapsulated Remote Switch Packet ANalysis"
 
-/* Global ERSPAN Preference */
-static gboolean pref_fake_erspan = FALSE;
-
-#define ERSPAN_DIRECTION_INCOMING 0
-#define ERSPAN_DIRECTION_OUTGOING 1
-static const value_string erspan_direction_vals[] = {
-	{ERSPAN_DIRECTION_INCOMING, "Incoming"},
-	{ERSPAN_DIRECTION_OUTGOING, "Outgoing"},
-	{0, NULL},
-};
+static const true_false_string tfs_direction = { "Egress", "Ingress" };
 
 #define ERSPAN_ENCAP_00 0
 #define ERSPAN_ENCAP_01 1
@@ -114,18 +101,40 @@ static const value_string erspan_encap_vals[] = {
 	{ERSPAN_ENCAP_01, "Originally ISL encapsulated"},
 	{ERSPAN_ENCAP_10, "Originally 802.1Q encapsulated"},
 	{ERSPAN_ENCAP_11, "VLAN tag preserved in frame"},
+
 	{0, NULL}
+};
+
+static const value_string erspan_bso_vals[] = {
+	{0, "Good or unknown integrity"},
+	{1, "Short frame"},
+	{2, "Oversized frame"},
+	{3, "CRC or alignment error"},
+
+	{0, NULL},
 };
 
 static const value_string erspan_truncated_vals[] = {
 	{0, "Not truncated"},
 	{1, "Truncated"},
+
+	{0, NULL},
+};
+
+#define ERSPAN_FT_ETHERNET	0
+#define ERSPAN_FT_IP		2
+
+static const value_string erspan_ft_vals[] = {
+	{ERSPAN_FT_ETHERNET, "Ethernet"},
+	{ERSPAN_FT_IP, "IP"},
+
 	{0, NULL},
 };
 
 static const value_string erspan_version_vals[] = {
 	{1, "Type II"},
 	{2, "Type III"},
+
 	{0, NULL},
 };
 
@@ -134,118 +143,296 @@ static const value_string erspan_granularity_vals[] = {
 	{1, "100 nanoseconds"},
 	{2, "IEEE 1588"},
 	{3, "Custom granularity"},
+
 	{0, NULL}
 };
 
 static dissector_handle_t ethnofcs_handle;
 
 static int
-dissect_erspan(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
+dissect_erspan(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
 	proto_item *ti;
-	proto_item *ti_ver;
 	proto_tree *erspan_tree = NULL;
-	tvbuff_t *eth_tvb;
-	guint32 offset = 0;
-	guint16 version;
+	tvbuff_t *frame_tvb;
+	uint32_t offset = 0;
+	uint32_t version;
+	uint32_t frame_type = ERSPAN_FT_ETHERNET;
+
+	ti = proto_tree_add_item(tree, proto_erspan, tvb, offset, -1,
+	    ENC_NA);
+	erspan_tree = proto_item_add_subtree(ti, ett_erspan);
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, PROTO_SHORT_NAME);
 	col_set_str(pinfo->cinfo, COL_INFO, PROTO_SHORT_NAME ":");
 
+	/*
+	 * Dissect the version field, which is present in all versions
+	 * of the header.
+	 */
+	proto_tree_add_item_ret_uint(erspan_tree, hf_erspan_version, tvb,
+		offset, 2, ENC_BIG_ENDIAN, &version);
 
-	if (tree) {
-		ti = proto_tree_add_item(tree, proto_erspan, tvb, offset, -1,
-		    ENC_NA);
-		erspan_tree = proto_item_add_subtree(ti, ett_erspan);
-	}
+	/* Put the version in the header. */
+	proto_item_append_text(ti, " %s", val_to_str_const(version, erspan_version_vals, "Unknown"));
 
-	if(pref_fake_erspan) {
-		/* Some vendors don't include ERSPAN Header...*/
-		eth_tvb = tvb_new_subset_remaining(tvb, offset);
-		call_dissector(ethnofcs_handle, eth_tvb, pinfo, tree);
-		return tvb_captured_length(tvb);
-	}
+	/*
+	 * Now dissect the rest of the header, based on the version.
+	 */
+	switch (version) {
+	case 1: {
+		uint32_t vlan, vlan_encap;
 
-
-	version = tvb_get_ntohs(tvb, offset) >> 12;
-	if (tree) {
-		ti_ver = proto_tree_add_item(erspan_tree, hf_erspan_version, tvb, offset, 2,
-			ENC_BIG_ENDIAN);
-		if ((version != 1) && (version != 2 )) {
-			expert_add_info(pinfo, ti_ver, &ei_erspan_version_unknown);
-			return 2;
-		}
-		proto_tree_add_item(erspan_tree, hf_erspan_vlan, tvb, offset, 2,
-			ENC_BIG_ENDIAN);
+		proto_tree_add_item_ret_uint(erspan_tree, hf_erspan_vlan, tvb, offset, 2,
+			ENC_BIG_ENDIAN, &vlan);
 		offset += 2;
 
-		proto_tree_add_item(erspan_tree, hf_erspan_priority, tvb, offset, 2,
+		proto_tree_add_item(erspan_tree, hf_erspan_cos, tvb, offset, 2,
 			ENC_BIG_ENDIAN);
-
-		if (version == 1)
-			proto_tree_add_item(erspan_tree, hf_erspan_encap, tvb,
-				offset, 2, ENC_BIG_ENDIAN);
-		else
-			proto_tree_add_item(erspan_tree, hf_erspan_bso, tvb, offset, 2,
-				ENC_BIG_ENDIAN);
-
-
+		proto_tree_add_item_ret_uint(erspan_tree, hf_erspan_encap, tvb,
+			offset, 2, ENC_BIG_ENDIAN, &vlan_encap);
+		if (pinfo->vlan_id == 0 && vlan_encap != ERSPAN_ENCAP_11) {
+			pinfo->vlan_id = vlan;
+		}
 		proto_tree_add_item(erspan_tree, hf_erspan_truncated, tvb, offset, 2,
 			ENC_BIG_ENDIAN);
 		proto_tree_add_item(erspan_tree, hf_erspan_spanid, tvb, offset, 2,
 			ENC_BIG_ENDIAN);
 		offset += 2;
 
-		if (version == 1) {
-			proto_tree_add_item(erspan_tree, hf_erspan_index, tvb,
-				offset, 4, ENC_BIG_ENDIAN);
-			offset += 4;
+		proto_tree_add_item(erspan_tree, hf_erspan_reserved, tvb,
+			offset, 4, ENC_BIG_ENDIAN);
+		proto_tree_add_item(erspan_tree, hf_erspan_index, tvb,
+			offset, 4, ENC_BIG_ENDIAN);
+		offset += 4;
+		break;
 		}
-		else {
-			proto_tree_add_item(erspan_tree, hf_erspan_timestamp, tvb,
-				offset, 4, ENC_BIG_ENDIAN);
-			offset += 4;
+	case 2: {
+		uint32_t subheader = 0;
+		uint32_t vlan;
 
-			proto_tree_add_item(erspan_tree, hf_erspan_sgt, tvb,
-				offset, 2, ENC_BIG_ENDIAN);
-			offset += 2;
+		proto_tree_add_item_ret_uint(erspan_tree, hf_erspan_vlan, tvb, offset, 2,
+			ENC_BIG_ENDIAN, &vlan);
+		pinfo->vlan_id = vlan;
+		offset += 2;
 
-			proto_tree_add_item(erspan_tree, hf_erspan_p, tvb,
-				offset, 2, ENC_BIG_ENDIAN);
+		proto_tree_add_item(erspan_tree, hf_erspan_cos, tvb, offset, 2,
+			ENC_BIG_ENDIAN);
+		proto_tree_add_item(erspan_tree, hf_erspan_bso, tvb, offset, 2,
+			ENC_BIG_ENDIAN);
+		proto_tree_add_item(erspan_tree, hf_erspan_truncated, tvb, offset, 2,
+			ENC_BIG_ENDIAN);
+		proto_tree_add_item(erspan_tree, hf_erspan_spanid, tvb, offset, 2,
+			ENC_BIG_ENDIAN);
+		offset += 2;
 
-			proto_tree_add_item(erspan_tree, hf_erspan_ft, tvb,
-				offset, 2, ENC_BIG_ENDIAN);
+		proto_tree_add_item(erspan_tree, hf_erspan_timestamp, tvb,
+			offset, 4, ENC_BIG_ENDIAN);
+		offset += 4;
 
-			proto_tree_add_item(erspan_tree, hf_erspan_hw, tvb,
-				offset, 2, ENC_BIG_ENDIAN);
+		proto_tree_add_item(erspan_tree, hf_erspan_sgt, tvb,
+			offset, 2, ENC_BIG_ENDIAN);
+		offset += 2;
 
-			proto_tree_add_item(erspan_tree, hf_erspan_direction2, tvb,
-				offset, 2, ENC_BIG_ENDIAN);
+		proto_tree_add_item(erspan_tree, hf_erspan_p, tvb,
+			offset, 2, ENC_BIG_ENDIAN);
 
-			proto_tree_add_item(erspan_tree, hf_erspan_gra, tvb,
-				offset, 2, ENC_BIG_ENDIAN);
+		proto_tree_add_item_ret_uint(erspan_tree, hf_erspan_ft, tvb,
+			offset, 2, ENC_BIG_ENDIAN, &frame_type);
 
-			proto_tree_add_item(erspan_tree, hf_erspan_o, tvb,
-				offset, 2, ENC_BIG_ENDIAN);
-			offset += 2;
+		proto_tree_add_item(erspan_tree, hf_erspan_hw, tvb,
+			offset, 2, ENC_BIG_ENDIAN);
+
+		proto_tree_add_item(erspan_tree, hf_erspan_direction, tvb,
+			offset, 2, ENC_BIG_ENDIAN);
+
+		proto_tree_add_item(erspan_tree, hf_erspan_gra, tvb,
+			offset, 2, ENC_BIG_ENDIAN);
+
+		proto_tree_add_item_ret_uint(erspan_tree, hf_erspan_o, tvb,
+			offset, 2, ENC_BIG_ENDIAN, &subheader);
+		offset += 2;
+
+		/* Platform Specific SubHeader, 8 octets, optional */
+		if (subheader) {
+			int32_t platform_id = tvb_get_ntohl(tvb, offset) >> 26;
+
+			proto_tree_add_item(erspan_tree, hf_erspan_platid, tvb,
+					offset, 4, ENC_BIG_ENDIAN);
+
+			switch (platform_id) {
+				case 1:
+					proto_tree_add_item(erspan_tree, hf_erspan_pid1_rsvd1,
+						tvb, offset, 4, ENC_BIG_ENDIAN);
+					proto_tree_add_item(erspan_tree, hf_erspan_pid1_domain_id,
+						tvb, offset, 4, ENC_BIG_ENDIAN);
+					offset += 4;
+
+					proto_tree_add_item(erspan_tree, hf_erspan_pid1_port_index,
+						tvb, offset, 4, ENC_BIG_ENDIAN);
+					offset += 4;
+					break;
+
+				case 3:
+					proto_tree_add_item(erspan_tree, hf_erspan_pid3_rsvd1,
+						tvb, offset, 4, ENC_BIG_ENDIAN);
+					proto_tree_add_item(erspan_tree, hf_erspan_pid3_port_index,
+						tvb, offset, 4, ENC_BIG_ENDIAN);
+					offset += 4;
+
+					proto_tree_add_item(erspan_tree, hf_erspan_pid3_timestamp,
+						tvb, offset, 4, ENC_BIG_ENDIAN);
+					offset += 4;
+					break;
+
+				case 4:
+					proto_tree_add_item(erspan_tree, hf_erspan_pid4_rsvd1, tvb,
+						offset, 4, ENC_BIG_ENDIAN);
+					proto_tree_add_item(erspan_tree, hf_erspan_pid4_rsvd2, tvb,
+						offset, 4, ENC_BIG_ENDIAN);
+					offset += 4;
+
+					proto_tree_add_item(erspan_tree, hf_erspan_pid4_rsvd3, tvb,
+						offset, 4, ENC_BIG_ENDIAN);
+					offset += 4;
+					break;
+
+				case 5:
+				case 6:
+					proto_tree_add_item(erspan_tree, hf_erspan_pid5_switchid,
+						tvb, offset, 4, ENC_BIG_ENDIAN);
+					proto_tree_add_item(erspan_tree, hf_erspan_pid5_port_index,
+						tvb, offset, 4, ENC_BIG_ENDIAN);
+					offset += 4;
+
+					proto_tree_add_item(erspan_tree, hf_erspan_pid5_timestamp,
+						tvb, offset, 4, ENC_BIG_ENDIAN);
+					offset += 4;
+					break;
+
+				case 7:
+				case 0: /* In some implementations it is used as an alias to 0x07. */
+					proto_tree_add_item(erspan_tree, hf_erspan_pid7_rsvd1,
+						tvb, offset, 4, ENC_BIG_ENDIAN);
+					proto_tree_add_item(erspan_tree, hf_erspan_pid7_source_index,
+						tvb, offset, 4, ENC_BIG_ENDIAN);
+					offset += 4;
+
+					proto_tree_add_item(erspan_tree, hf_erspan_pid7_timestamp,
+						tvb, offset, 4, ENC_BIG_ENDIAN);
+					offset += 4;
+					break;
+				default:
+					/* ID: 0x0, 0x2, 0x8-0x63 are reserved. */
+					proto_tree_add_item(erspan_tree, hf_erspan_pid_rsvd,
+						tvb, offset, 8, ENC_BIG_ENDIAN);
+					offset += 8;
+					break;
+
+			}
 		}
+		break;
+		}
+	default: {
+		proto_item *ti_ver;
 
-	}
-	else {
-		offset += 8;
-		if (version == 2)
-			offset += 12;
+		ti_ver = proto_tree_add_item(erspan_tree, hf_erspan_version, tvb, offset, 2,
+			ENC_BIG_ENDIAN);
+		expert_add_info(pinfo, ti_ver, &ei_erspan_version_unknown);
+		return 2;
+		}
 	}
 
-	eth_tvb = tvb_new_subset_remaining(tvb, offset);
-	call_dissector(ethnofcs_handle, eth_tvb, pinfo, tree);
+	frame_tvb = tvb_new_subset_remaining(tvb, offset);
+	switch (frame_type) {
+
+	case ERSPAN_FT_ETHERNET:
+		call_dissector(ethnofcs_handle, frame_tvb, pinfo, tree);
+		break;
+
+	default:
+		call_data_dissector(frame_tvb, pinfo, tree);
+		break;
+	}
 	return tvb_captured_length(tvb);
+}
+
+static int
+dissect_erspan_88BE(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+{
+	bool has_erspan_header;
+
+	/*
+	 * Frames with a GRE type of 0x88BE have an ERSPAN header iff
+	 * the "sequence number present" flag is set in the GRE header.
+	 */
+	if (data == NULL) {
+		/*
+		 * We weren't handed the GRE flags or version.
+		 *
+		 * This can happen if a Linux cooked capture is done and
+		 * we get a packet from an "ipgre" interface.
+		 *
+		 * For now, we just assume this is Type I, with no
+		 * header.
+		 */
+		has_erspan_header = false;
+	} else {
+		gre_hdr_info_t *gre_hdr_info = (gre_hdr_info_t *)data;
+
+		if (gre_hdr_info->flags_and_ver & GRE_SEQUENCE) {
+			/*
+			 * "sequence number present" set, so it has a
+			 * header.
+			 */
+			has_erspan_header = true;
+		} else {
+			/*
+			 * Not present, so no header.
+			 */
+			has_erspan_header = false;
+		}
+	}
+
+	if (has_erspan_header) {
+		/*
+		 * We have a header, so dissect it, and then handle
+		 * the payload.
+		 */
+		return dissect_erspan(tvb, pinfo, tree, data);
+	} else {
+		/*
+		 * No header, so just hand the payload off to the
+		 * Ethernet dissector.  Put in a placeholder for
+		 * ERSPAN.
+		 */
+		proto_item *ti;
+
+		ti = proto_tree_add_item(tree, proto_erspan, tvb, 0, 0,
+		    ENC_NA);
+		proto_item_append_text(ti, " Type I");
+
+		col_set_str(pinfo->cinfo, COL_PROTOCOL, PROTO_SHORT_NAME);
+		col_set_str(pinfo->cinfo, COL_INFO, PROTO_SHORT_NAME ":");
+
+		call_dissector(ethnofcs_handle, tvb, pinfo, tree);
+		return tvb_captured_length(tvb);
+	}
+}
+
+static int
+dissect_erspan_22EB(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+{
+	/*
+	 * Frames with a GRE type of 0x22EB always have an ERSPAN
+	 * header.
+	 */
+	return dissect_erspan(tvb, pinfo, tree, data);
 }
 
 void
 proto_register_erspan(void)
 {
-	module_t *erspan_module;
 	expert_module_t* expert_erspan;
 
 	static hf_register_info hf[] = {
@@ -258,8 +445,8 @@ proto_register_erspan(void)
 		{ "Vlan",	"erspan.vlan", FT_UINT16, BASE_DEC, NULL,
 			0x0fff, NULL, HFILL }},
 
-		{ &hf_erspan_priority,
-		{ "Priority",	"erspan.priority", FT_UINT16, BASE_DEC, NULL,
+		{ &hf_erspan_cos,
+		{ "COS",	"erspan.cos", FT_UINT16, BASE_DEC, NULL,
 			0xe000, NULL, HFILL }},
 
 		{ &hf_erspan_encap,
@@ -267,7 +454,7 @@ proto_register_erspan(void)
 			0x1800, NULL, HFILL }},
 
 		{ &hf_erspan_bso,
-		{ "Bad/Short/Oversized",	"erspan.bso", FT_UINT16, BASE_DEC, VALS(erspan_truncated_vals),
+		{ "Bad/Short/Oversized",	"erspan.bso", FT_UINT16, BASE_DEC, VALS(erspan_bso_vals),
 			0x1800, NULL, HFILL }},
 
 
@@ -279,18 +466,22 @@ proto_register_erspan(void)
 		{ "SpanID",	"erspan.spanid", FT_UINT16, BASE_DEC, NULL,
 			0x03ff, NULL, HFILL }},
 
+		{ &hf_erspan_reserved,
+		{ "Reserved",	"erspan.reserved", FT_UINT32, BASE_DEC, NULL,
+			0xfff00000, NULL, HFILL }},
+
 		{ &hf_erspan_index,
 		{ "Index",	"erspan.index", FT_UINT32, BASE_DEC, NULL,
-			0xfffff, NULL, HFILL }},
+			0x000fffff, NULL, HFILL }},
 
 		{ &hf_erspan_timestamp,
 		{ "Timestamp",	"erspan.timestamp", FT_UINT32, BASE_DEC, NULL,
-			0xffffffff, NULL, HFILL }},
+			0x0, NULL, HFILL }},
 
 
 		{ &hf_erspan_sgt,
 		{ "Security Group Tag",	"erspan.sgt", FT_UINT16, BASE_DEC, NULL,
-			0xffff, NULL, HFILL }},
+			0x0, NULL, HFILL }},
 
 		{ &hf_erspan_p,
 		{ "Has Ethernet PDU",	"erspan.p", FT_UINT16, BASE_DEC, NULL,
@@ -298,7 +489,7 @@ proto_register_erspan(void)
 
 
 		{ &hf_erspan_ft,
-		{ "Frame Type",	"erspan.ft", FT_UINT16, BASE_DEC, NULL,
+		{ "Frame Type",	"erspan.ft", FT_UINT16, BASE_DEC, VALS(erspan_ft_vals),
 			0x7C00, NULL, HFILL }},
 
 		{ &hf_erspan_hw,
@@ -309,17 +500,92 @@ proto_register_erspan(void)
 		{ "Timestamp granularity", "erspan.gra", FT_UINT16, BASE_DEC, VALS(erspan_granularity_vals),
 			0x0006, NULL, HFILL }},
 
+		{ &hf_erspan_direction,
+		{ "Direction",	"erspan.direction", FT_BOOLEAN, 16, TFS(&tfs_direction),
+			0x0008, NULL, HFILL }},
 
 		{ &hf_erspan_o,
 		{ "Optional Sub headers", "erspan.o", FT_UINT16, BASE_DEC, NULL,
 			0x0001, NULL, HFILL }},
 
-		{ &hf_erspan_direction2,
-		{ "Direction",	"erspan.direction2", FT_UINT16, BASE_DEC, VALS(erspan_direction_vals),
-			0x0008, NULL, HFILL }},
+		/* Sub-header Fields, optional */
+		{ &hf_erspan_platid,
+		{ "Platform ID", "erspan.platid", FT_UINT32, BASE_DEC, NULL,
+			0xfc000000, NULL, HFILL }},
+
+		/* ID = 1 */
+		{ &hf_erspan_pid1_rsvd1,
+		{ "Reserved", "erspan.pid1.rsvd1", FT_UINT32, BASE_DEC, NULL,
+			0x03fff000, NULL, HFILL }},
+
+		{ &hf_erspan_pid1_domain_id,
+		{ "VSM Domain ID", "erspan.pid1.vsmid", FT_UINT32, BASE_DEC, NULL,
+			0x00000fff, NULL, HFILL }},
+
+		{ &hf_erspan_pid1_port_index,
+		{ "Port ID/Index", "erspan.pid1.port_index", FT_UINT32, BASE_DEC, NULL,
+			0x0, NULL, HFILL }},
+
+		/* ID = 3 */
+		{ &hf_erspan_pid3_rsvd1,
+		{ "Reserved", "erspan.pid3.rsvd1", FT_UINT32, BASE_DEC, NULL,
+			0x03ffc000, NULL, HFILL }},
+
+		{ &hf_erspan_pid3_port_index,
+		{ "Port ID/Index", "erspan.pid3.port_index", FT_UINT32, BASE_DEC, NULL,
+			0x00003fff, NULL, HFILL }},
+
+		{ &hf_erspan_pid3_timestamp,
+		{ "Upper 32-bit Timestamp", "erspan.pid3.timestamp", FT_UINT32, BASE_DEC, NULL,
+			0x0, NULL, HFILL }},
+
+		/* ID = 4 */
+		{ &hf_erspan_pid4_rsvd1,
+		{ "Reserved", "erspan.pid4.rsvd1", FT_UINT32, BASE_DEC, NULL,
+			0x03ffc000, NULL, HFILL }},
+
+		{ &hf_erspan_pid4_rsvd2,
+		{ "Reserved", "erspan.pid4.rsvd2", FT_UINT32, BASE_DEC, NULL,
+			0x00003fff, NULL, HFILL }},
+
+		{ &hf_erspan_pid4_rsvd3,
+		{ "Reserved", "erspan.pid4.rsvd3", FT_UINT32, BASE_DEC, NULL,
+			0xffffffff, NULL, HFILL }},
+
+		/* ID = 5 or 6 */
+		{ &hf_erspan_pid5_switchid,
+		{ "Switch ID", "erspan.pid5.switchid", FT_UINT32, BASE_DEC, NULL,
+			0x03ff0000, NULL, HFILL }},
+
+		{ &hf_erspan_pid5_port_index,
+		{ "Port ID/Index", "erspan.pid5.port_index", FT_UINT32, BASE_DEC, NULL,
+			0x0000ffff, NULL, HFILL }},
+
+		{ &hf_erspan_pid5_timestamp,
+		{ "Timestamp (seconds)", "erspan.pid5.timestamp", FT_UINT32, BASE_DEC, NULL,
+			0x0, NULL, HFILL }},
+
+		/* ID = 7 (or 0) */
+		{ &hf_erspan_pid7_rsvd1,
+		{ "Reserved", "erspan.pid7.rsvd1", FT_UINT32, BASE_DEC, NULL,
+			0x03f00000, NULL, HFILL }},
+
+		{ &hf_erspan_pid7_source_index,
+		{ "Source Index", "erspan.pid7.source_index", FT_UINT32, BASE_DEC, NULL,
+			0x000fffff, NULL, HFILL }},
+
+		{ &hf_erspan_pid7_timestamp,
+		{ "Upper 32-bit Timestamp", "erspan.pid7.timestamp", FT_UINT32, BASE_DEC, NULL,
+			0x0, NULL, HFILL }},
+
+		/* Reserved */
+		{ &hf_erspan_pid_rsvd,
+		{ "Reserved", "erspan.pid.rsvd", FT_UINT64, BASE_DEC, NULL,
+			0x03ffffff, NULL, HFILL }},
+
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_erspan,
 	};
 
@@ -333,31 +599,26 @@ proto_register_erspan(void)
 	expert_erspan = expert_register_protocol(proto_erspan);
 	expert_register_field_array(expert_erspan, ei, array_length(ei));
 
-	/* register dissection preferences */
-	erspan_module = prefs_register_protocol(proto_erspan, NULL);
-
-	prefs_register_bool_preference(erspan_module, "fake_erspan",
-				"FORCE to decode fake ERSPAN frame",
-				"When set, dissector will FORCE to decode directly Ethernet Frame"
-				"Some vendor use fake ERSPAN frame (with not ERSPAN Header)",
-				&pref_fake_erspan);
+	register_dissector("erspan", dissect_erspan, proto_erspan);
 }
 
 void
 proto_reg_handoff_erspan(void)
 {
-	dissector_handle_t erspan_handle;
+	dissector_handle_t erspan_88BE_handle;
+	dissector_handle_t erspan_22EB_handle;
 
 	ethnofcs_handle = find_dissector_add_dependency("eth_withoutfcs", proto_erspan);
 
-	erspan_handle = create_dissector_handle(dissect_erspan, proto_erspan);
-	dissector_add_uint("gre.proto", GRE_ERSPAN_88BE, erspan_handle);
-	dissector_add_uint("gre.proto", GRE_ERSPAN_22EB, erspan_handle);
+	erspan_88BE_handle = create_dissector_handle(dissect_erspan_88BE, proto_erspan);
+	dissector_add_uint("gre.proto", GRE_ERSPAN_88BE, erspan_88BE_handle);
+	erspan_22EB_handle = create_dissector_handle(dissect_erspan_22EB, proto_erspan);
+	dissector_add_uint("gre.proto", GRE_ERSPAN_22EB, erspan_22EB_handle);
 
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

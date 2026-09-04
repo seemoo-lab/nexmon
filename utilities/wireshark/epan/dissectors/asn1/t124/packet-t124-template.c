@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  */
 
@@ -27,6 +15,7 @@
 #include <epan/packet.h>
 #include <epan/exceptions.h>
 #include <epan/conversation.h>
+#include <wsutil/array.h>
 
 #include <epan/asn1.h>
 #include "packet-per.h"
@@ -46,23 +35,23 @@ void proto_register_t124(void);
 void proto_reg_handoff_t124(void);
 
 /* Initialize the protocol and registered fields */
-static int proto_t124 = -1;
-static proto_tree *top_tree = NULL;
+static int proto_t124;
+static proto_tree *top_tree;
 
 #include "packet-t124-hf.c"
 
 /* Initialize the subtree pointers */
-static int ett_t124 = -1;
-static int ett_t124_connectGCCPDU = -1;
+static int ett_t124;
+static int ett_t124_connectGCCPDU;
 
-static int hf_t124_ConnectData = -1;
-static int hf_t124_connectGCCPDU = -1;
-static int hf_t124_DomainMCSPDU_PDU = -1;
+static int hf_t124_ConnectData;
+static int hf_t124_connectGCCPDU;
+static int hf_t124_DomainMCSPDU_PDU;
 
-static guint32 channelId = -1;
+static uint32_t channelId = -1;
 
-static dissector_table_t t124_ns_dissector_table=NULL;
-static dissector_table_t t124_sd_dissector_table=NULL;
+static dissector_table_t t124_ns_dissector_table;
+static dissector_table_t t124_sd_dissector_table;
 
 #include "packet-t124-ett.c"
 
@@ -82,7 +71,7 @@ register_t124_ns_dissector(const char *nsKey, dissector_t dissector, int proto)
   dissector_add_string("t124.ns", nsKey, dissector_handle);
 }
 
-void register_t124_sd_dissector(packet_info *pinfo _U_, guint32 channelId_param, dissector_t dissector, int proto)
+void register_t124_sd_dissector(packet_info *pinfo _U_, uint32_t channelId_param, dissector_t dissector, int proto)
 {
   /* XXX: we should keep the sub-dissectors list per conversation
      as the same channels may be used.
@@ -96,7 +85,7 @@ void register_t124_sd_dissector(packet_info *pinfo _U_, guint32 channelId_param,
 
 }
 
-guint32 t124_get_last_channelId(void)
+uint32_t t124_get_last_channelId(void)
 {
   return channelId;
 }
@@ -109,7 +98,7 @@ void t124_set_top_tree(proto_tree *tree)
 int dissect_DomainMCSPDU_PDU(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
 
   offset = dissect_t124_DomainMCSPDU(tvb, offset, &asn1_ctx, tree, hf_t124_DomainMCSPDU_PDU);
   offset += 7; offset >>= 3;
@@ -131,23 +120,23 @@ dissect_t124(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void *d
   item = proto_tree_add_item(parent_tree, proto_t124, tvb, 0, tvb_captured_length(tvb), ENC_NA);
   tree = proto_item_add_subtree(item, ett_t124);
 
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   dissect_t124_ConnectData(tvb, 0, &asn1_ctx, tree, hf_t124_ConnectData);
 
   return tvb_captured_length(tvb);
 }
 
-static gboolean
-dissect_t124_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void *data _U_)
+static bool
+dissect_t124_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void *data)
 {
   asn1_ctx_t asn1_ctx;
-  volatile gboolean failed = FALSE;
+  volatile bool failed = false;
 
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
 
   /*
    * We must catch all the "ran past the end of the packet" exceptions
-   * here and, if we catch one, just return FALSE.  It's too painful
+   * here and, if we catch one, just return false.  It's too painful
    * to have a version of dissect_per_sequence() that checks all
    * references to the tvbuff before making them and returning "no"
    * if they would fail.
@@ -157,17 +146,17 @@ dissect_t124_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, vo
   TRY {
     (void) dissect_per_sequence(tvb, 0, &asn1_ctx, NULL, hf_t124_connectGCCPDU, -1, t124Heur_sequence);
   } CATCH_BOUNDS_ERRORS {
-    failed = TRUE;
+    failed = true;
   } ENDTRY;
 
   if (!failed && ((asn1_ctx.external.direct_reference != NULL) &&
                   (strcmp(asn1_ctx.external.direct_reference, "0.0.20.124.0.1") == 0))) {
     dissect_t124(tvb, pinfo, parent_tree, data);
 
-    return TRUE;
+    return true;
   }
 
-  return FALSE;
+  return false;
 }
 
 /*--- proto_register_t124 -------------------------------------------*/
@@ -191,7 +180,7 @@ void proto_register_t124(void) {
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
 	  &ett_t124,
 	  &ett_t124_connectGCCPDU,
 #include "packet-t124-ettarr.c"
@@ -203,7 +192,7 @@ void proto_register_t124(void) {
   proto_register_field_array(proto_t124, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
 
-  t124_ns_dissector_table = register_dissector_table("t124.ns", "T.124 H.221 Non Standard Dissectors", proto_t124, FT_STRING, BASE_NONE);
+  t124_ns_dissector_table = register_dissector_table("t124.ns", "T.124 H.221 Non Standard Dissectors", proto_t124, FT_STRING, STRING_CASE_SENSITIVE);
   t124_sd_dissector_table = register_dissector_table("t124.sd", "T.124 H.221 Send Data Dissectors", proto_t124, FT_UINT32, BASE_HEX);
 
   register_dissector("t124", dissect_t124, proto_t124);

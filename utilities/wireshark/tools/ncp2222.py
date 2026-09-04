@@ -1,9 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Creates C code from a table of NCP type 0x2222 packet types.
 (And 0x3333, which are the replies, but the packets are more commonly
-refered to as type 0x2222; the 0x3333 replies are understood to be
+referred to as type 0x2222; the 0x3333 replies are understood to be
 part of the 0x2222 "family")
 
 The data-munging code was written by Gilbert Ramirez.
@@ -13,9 +13,9 @@ Many thanks to Novell for letting him work on this.
 Additional data sources:
 "Programmer's Guide to the NetWare Core Protocol" by Steve Conner and Dianne Conner.
 
-Novell provides info at:
+At one time, Novell provided a list of NCPs by number at:
 
-http://developer.novell.com/ndk/ncp.htm  (where you can download an
+http://developer.novell.com/ndk/ncp.htm  (where you could download an
 *.exe file which installs a PDF, although you may have to create a login
 to do this)
 
@@ -24,23 +24,35 @@ or
 http://developer.novell.com/ndk/doc/ncp/
 for a badly-formatted HTML version of the same PDF.
 
+Currently, NCP documentation can be found at:
+
+https://www.microfocus.com/documentation/open-enterprise-server-developer-documentation/ncp/
+
+with a list of NCPs by number at
+
+https://www.microfocus.com/documentation/open-enterprise-server-developer-documentation/ncp/ncpdocs/main.htm
+
+and some additional NCPs to support volumes > 16TB at
+
+https://www.microfocus.com/documentation/open-enterprise-server-developer-documentation/ncp/ncpdocs/16tb+.htm
+
+NDS information can be found at:
+
+https://www.microfocus.com/documentation/edirectory-developer-documentation/edirectory-libraries-for-c/
+
+and PDFs linked from there, and from
+
+https://www.novell.com/documentation/developer/ndslib/
+
+and HTML versions linked from there.
+
+The Novell eDirectory Schema Reference gives a "Transfer Format" for
+some types, which may be the way they're sent over the wire.
 
 Portions Copyright (c) 2000-2002 by Gilbert Ramirez <gram@alumni.rice.edu>.
 Portions Copyright (c) Novell, Inc. 2000-2003.
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+SPDX-License-Identifier: GPL-2.0-or-later
 """
 
 import os
@@ -149,7 +161,7 @@ class NamedList:
 
     def Name(self, new_name = None):
         "Get/Set name of list"
-        if new_name != None:
+        if new_name is not None:
             self.name = new_name
         return self.name
 
@@ -159,7 +171,7 @@ class NamedList:
 
     def Null(self):
         "Is there no list (different from an empty list)?"
-        return self.list == None
+        return self.list is None
 
     def Empty(self):
         "It the list empty (different from a null list)?"
@@ -229,7 +241,7 @@ class PTVC(NamedList):
 
             ptvc_rec = PTVCRecord(field, length, endianness, var, repeat, req_cond, info_str, code)
 
-            if expected_offset == None:
+            if expected_offset is None:
                 expected_offset = offset
 
             elif expected_offset == -1:
@@ -300,7 +312,7 @@ class PTVCBitfield(PTVC):
 
     def Code(self):
         ett_name = self.ETTName()
-        x = "static gint %s = -1;\n" % (ett_name,)
+        x = "static int %s;\n" % (ett_name,)
 
         x = x + "static const ptvc_record ptvc_%s[] = {\n" % (self.Name())
         for ptvc_rec in self.list:
@@ -357,7 +369,7 @@ class PTVCRecord:
             req_cond = "NO_REQ_COND"
         else:
             req_cond = global_req_cond[self.req_cond]
-            assert req_cond != None
+            assert req_cond is not None
 
         if isinstance(self.field, struct):
             return self.field.ReferenceString(var, repeat, req_cond)
@@ -465,7 +477,7 @@ class NCP:
 
     def FunctionCode(self, part=None):
         "Returns the function code for this NCP packet."
-        if part == None:
+        if part is None:
             return self.__code__
         elif part == 'high':
             if self.HasSubFunction():
@@ -661,7 +673,7 @@ class NCP:
         realizes that because Python lists are the input and
         output."""
 
-        if codes == None:
+        if codes is None:
             return self.codes
 
         # Sanity check
@@ -705,7 +717,7 @@ def srec(field, endianness=None, **kw):
 def _rec(start, length, field, endianness, kw):
     # If endianness not explicitly given, use the field's
     # default endiannes.
-    if endianness == None:
+    if endianness is None:
         endianness = field.Endianness()
 
     # Setting a var?
@@ -780,7 +792,7 @@ class Type:
         return self.ftype
 
     def Display(self, newval=None):
-        if newval != None:
+        if newval is not None:
             self.disp = newval
         return self.disp
 
@@ -860,7 +872,7 @@ class struct(PTVC, Type):
 
     def Code(self):
         ett_name = self.ETTName()
-        x = "static gint %s = -1;\n" % (ett_name,)
+        x = "static int %s;\n" % (ett_name,)
         x = x + "static const ptvc_record ptvc_%s[] = {\n" % (self.name,)
         for ptvc_rec in self.list:
             x = x +  "    %s,\n" % (ptvc_rec.Code())
@@ -1252,6 +1264,7 @@ AbortQueueFlag                  = val_string8("abort_q_flag", "Abort Queue Flag"
         [ 0x01, "Do Not Place Spool File, Examine Flags" ],
 ])
 AcceptedMaxSize                 = uint16("accepted_max_size", "Accepted Max Size")
+AcceptedMaxSize64               = uint64("accepted_max_size64", "Accepted Max Size")
 AccessControl                   = val_string8("access_control", "Access Control", [
         [ 0x00, "Open for read by this client" ],
         [ 0x01, "Open for write by this client" ],
@@ -2968,7 +2981,7 @@ NDSRequestFlags                 = bitfield16("nds_request_flags", "NDS Request F
         bf_boolean16(0x0800, "nds_request_flags_dn_ref", "Down Referral"),
 ])
 NDSStatus                       = uint32("nds_status", "NDS Status")
-NetBIOSBroadcastWasPropogated   = uint32("netbios_broadcast_was_propogated", "NetBIOS Broadcast Was Propogated")
+NetBIOSBroadcastWasPropagated   = uint32("netbios_broadcast_was_propagated", "NetBIOS Broadcast Was Propagated")
 NetIDNumber                     = uint32("net_id_number", "Net ID Number")
 NetIDNumber.Display("BASE_HEX")
 NetAddress                      = nbytes32("address", "Address")
@@ -3347,6 +3360,13 @@ PathCookieFlags                 = val_string16("path_cookie_flags", "Path Cookie
         [ 0x0001, "Last component is a File Name" ],
 ])
 PathCount                       = uint8("path_count", "Path Count")
+#
+# XXX - in at least some File Search Continue requests, the string
+# length value is longer than the string, and there's a NUL, followed
+# by other non-zero cruft, in the string.  Should this be an
+# "nstringz8", with FT_UINT_STRINGZPAD added to support it?  And
+# does that apply to any other values?
+#
 Path                            = nstring8("path", "Path")
 Path16              = nstring16("path16", "Path")
 PathAndName                     = stringz("path_and_name", "Path and Name")
@@ -3405,6 +3425,7 @@ PropertyType                    = val_string8("property_type", "Property Type", 
 ])
 PropertyValue                   = fw_string("property_value", "Property Value", 128)
 ProposedMaxSize                 = uint16("proposed_max_size", "Proposed Max Size")
+ProposedMaxSize64               = uint64("proposed_max_size64", "Proposed Max Size")
 protocolFlags                   = uint32("protocol_flags", "Protocol Flags")
 protocolFlags.Display("BASE_HEX")
 PurgeableBlocks                 = uint32("purgeable_blocks", "Purgeable Blocks")
@@ -5817,7 +5838,7 @@ def define_errors():
     errors[0xff0d] = "Object associated with ObjectID is not a manager"
     errors[0xff0e] = "Invalid initial semaphore value"
     errors[0xff0f] = "The semaphore handle is not valid"
-    errors[0xff10] = "SemaphoreHandle is not associated with a valid sempahore"
+    errors[0xff10] = "SemaphoreHandle is not associated with a valid semaphore"
     errors[0xff11] = "Invalid semaphore handle"
     errors[0xff12] = "Transaction tracking is not available"
     errors[0xff13] = "The transaction has not yet been written to disk"
@@ -5866,29 +5887,16 @@ def produce_code():
  * Portions Copyright (c) Gilbert Ramirez 2000-2002
  * Portions Copyright (c) Novell, Inc. 2000-2005
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <string.h>
-#include <glib.h>
 #include <epan/packet.h>
 #include <epan/dfilter/dfilter.h>
 #include <epan/exceptions.h>
-#include <ftypes/ftypes-int.h>
+#include <ftypes/ftypes.h>
 #include <epan/to_str.h>
 #include <epan/conversation.h>
 #include <epan/ptvcursor.h>
@@ -5896,14 +5904,13 @@ def produce_code():
 #include <epan/reassemble.h>
 #include <epan/tap.h>
 #include <epan/proto_data.h>
+#include <wsutil/array.h>
 #include "packet-ncp-int.h"
 #include "packet-ncp-nmas.h"
 #include "packet-ncp-sss.h"
 
 /* Function declarations for functions used in proto_register_ncp2222() */
 void proto_register_ncp2222(void);
-static void ncp_init_protocol(void);
-static void ncp_postseq_cleanup(void);
 
 /* Endianness macros */
 #define NO_ENDIANNESS   0
@@ -5919,10 +5926,10 @@ static int ptvc_struct_int_storage;
 
     if global_highest_var > -1:
         print("#define NUM_REPEAT_VARS    %d" % (global_highest_var + 1))
-        print("static guint repeat_vars[NUM_REPEAT_VARS];")
+        print("static unsigned repeat_vars[NUM_REPEAT_VARS];")
     else:
         print("#define NUM_REPEAT_VARS    0")
-        print("static guint *repeat_vars = NULL;")
+        print("static unsigned *repeat_vars = NULL;")
 
     print("""
 #define NO_VAR          NUM_REPEAT_VARS
@@ -5938,561 +5945,572 @@ static int ptvc_struct_int_storage;
 #define NREV    0x00000004
 #define NFLAGS  0x00000008
 
-static int hf_ncp_number_of_data_streams_long = -1;
-static int hf_ncp_func = -1;
-static int hf_ncp_length = -1;
-static int hf_ncp_subfunc = -1;
-static int hf_ncp_group = -1;
-static int hf_ncp_fragment_handle = -1;
-static int hf_ncp_completion_code = -1;
-static int hf_ncp_connection_status = -1;
-static int hf_ncp_req_frame_num = -1;
-static int hf_ncp_req_frame_time = -1;
-static int hf_ncp_fragment_size = -1;
-static int hf_ncp_message_size = -1;
-static int hf_ncp_nds_flag = -1;
-static int hf_ncp_nds_verb = -1;
-static int hf_ping_version = -1;
-/* static int hf_nds_version = -1; */
-/* static int hf_nds_flags = -1; */
-static int hf_nds_reply_depth = -1;
-static int hf_nds_reply_rev = -1;
-static int hf_nds_reply_flags = -1;
-static int hf_nds_p1type = -1;
-static int hf_nds_uint32value = -1;
-static int hf_nds_bit1 = -1;
-static int hf_nds_bit2 = -1;
-static int hf_nds_bit3 = -1;
-static int hf_nds_bit4 = -1;
-static int hf_nds_bit5 = -1;
-static int hf_nds_bit6 = -1;
-static int hf_nds_bit7 = -1;
-static int hf_nds_bit8 = -1;
-static int hf_nds_bit9 = -1;
-static int hf_nds_bit10 = -1;
-static int hf_nds_bit11 = -1;
-static int hf_nds_bit12 = -1;
-static int hf_nds_bit13 = -1;
-static int hf_nds_bit14 = -1;
-static int hf_nds_bit15 = -1;
-static int hf_nds_bit16 = -1;
-static int hf_outflags = -1;
-static int hf_bit1outflags = -1;
-static int hf_bit2outflags = -1;
-static int hf_bit3outflags = -1;
-static int hf_bit4outflags = -1;
-static int hf_bit5outflags = -1;
-static int hf_bit6outflags = -1;
-static int hf_bit7outflags = -1;
-static int hf_bit8outflags = -1;
-static int hf_bit9outflags = -1;
-static int hf_bit10outflags = -1;
-static int hf_bit11outflags = -1;
-static int hf_bit12outflags = -1;
-static int hf_bit13outflags = -1;
-static int hf_bit14outflags = -1;
-static int hf_bit15outflags = -1;
-static int hf_bit16outflags = -1;
-static int hf_bit1nflags = -1;
-static int hf_bit2nflags = -1;
-static int hf_bit3nflags = -1;
-static int hf_bit4nflags = -1;
-static int hf_bit5nflags = -1;
-static int hf_bit6nflags = -1;
-static int hf_bit7nflags = -1;
-static int hf_bit8nflags = -1;
-static int hf_bit9nflags = -1;
-static int hf_bit10nflags = -1;
-static int hf_bit11nflags = -1;
-static int hf_bit12nflags = -1;
-static int hf_bit13nflags = -1;
-static int hf_bit14nflags = -1;
-static int hf_bit15nflags = -1;
-static int hf_bit16nflags = -1;
-static int hf_bit1rflags = -1;
-static int hf_bit2rflags = -1;
-static int hf_bit3rflags = -1;
-static int hf_bit4rflags = -1;
-static int hf_bit5rflags = -1;
-static int hf_bit6rflags = -1;
-static int hf_bit7rflags = -1;
-static int hf_bit8rflags = -1;
-static int hf_bit9rflags = -1;
-static int hf_bit10rflags = -1;
-static int hf_bit11rflags = -1;
-static int hf_bit12rflags = -1;
-static int hf_bit13rflags = -1;
-static int hf_bit14rflags = -1;
-static int hf_bit15rflags = -1;
-static int hf_bit16rflags = -1;
-static int hf_cflags = -1;
-static int hf_bit1cflags = -1;
-static int hf_bit2cflags = -1;
-static int hf_bit3cflags = -1;
-static int hf_bit4cflags = -1;
-static int hf_bit5cflags = -1;
-static int hf_bit6cflags = -1;
-static int hf_bit7cflags = -1;
-static int hf_bit8cflags = -1;
-static int hf_bit9cflags = -1;
-static int hf_bit10cflags = -1;
-static int hf_bit11cflags = -1;
-static int hf_bit12cflags = -1;
-static int hf_bit13cflags = -1;
-static int hf_bit14cflags = -1;
-static int hf_bit15cflags = -1;
-static int hf_bit16cflags = -1;
-static int hf_bit1acflags = -1;
-static int hf_bit2acflags = -1;
-static int hf_bit3acflags = -1;
-static int hf_bit4acflags = -1;
-static int hf_bit5acflags = -1;
-static int hf_bit6acflags = -1;
-static int hf_bit7acflags = -1;
-static int hf_bit8acflags = -1;
-static int hf_bit9acflags = -1;
-static int hf_bit10acflags = -1;
-static int hf_bit11acflags = -1;
-static int hf_bit12acflags = -1;
-static int hf_bit13acflags = -1;
-static int hf_bit14acflags = -1;
-static int hf_bit15acflags = -1;
-static int hf_bit16acflags = -1;
-static int hf_vflags = -1;
-static int hf_bit1vflags = -1;
-static int hf_bit2vflags = -1;
-static int hf_bit3vflags = -1;
-static int hf_bit4vflags = -1;
-static int hf_bit5vflags = -1;
-static int hf_bit6vflags = -1;
-static int hf_bit7vflags = -1;
-static int hf_bit8vflags = -1;
-static int hf_bit9vflags = -1;
-static int hf_bit10vflags = -1;
-static int hf_bit11vflags = -1;
-static int hf_bit12vflags = -1;
-static int hf_bit13vflags = -1;
-static int hf_bit14vflags = -1;
-static int hf_bit15vflags = -1;
-static int hf_bit16vflags = -1;
-static int hf_eflags = -1;
-static int hf_bit1eflags = -1;
-static int hf_bit2eflags = -1;
-static int hf_bit3eflags = -1;
-static int hf_bit4eflags = -1;
-static int hf_bit5eflags = -1;
-static int hf_bit6eflags = -1;
-static int hf_bit7eflags = -1;
-static int hf_bit8eflags = -1;
-static int hf_bit9eflags = -1;
-static int hf_bit10eflags = -1;
-static int hf_bit11eflags = -1;
-static int hf_bit12eflags = -1;
-static int hf_bit13eflags = -1;
-static int hf_bit14eflags = -1;
-static int hf_bit15eflags = -1;
-static int hf_bit16eflags = -1;
-static int hf_infoflagsl = -1;
-static int hf_retinfoflagsl = -1;
-static int hf_bit1infoflagsl = -1;
-static int hf_bit2infoflagsl = -1;
-static int hf_bit3infoflagsl = -1;
-static int hf_bit4infoflagsl = -1;
-static int hf_bit5infoflagsl = -1;
-static int hf_bit6infoflagsl = -1;
-static int hf_bit7infoflagsl = -1;
-static int hf_bit8infoflagsl = -1;
-static int hf_bit9infoflagsl = -1;
-static int hf_bit10infoflagsl = -1;
-static int hf_bit11infoflagsl = -1;
-static int hf_bit12infoflagsl = -1;
-static int hf_bit13infoflagsl = -1;
-static int hf_bit14infoflagsl = -1;
-static int hf_bit15infoflagsl = -1;
-static int hf_bit16infoflagsl = -1;
-static int hf_infoflagsh = -1;
-static int hf_bit1infoflagsh = -1;
-static int hf_bit2infoflagsh = -1;
-static int hf_bit3infoflagsh = -1;
-static int hf_bit4infoflagsh = -1;
-static int hf_bit5infoflagsh = -1;
-static int hf_bit6infoflagsh = -1;
-static int hf_bit7infoflagsh = -1;
-static int hf_bit8infoflagsh = -1;
-static int hf_bit9infoflagsh = -1;
-static int hf_bit10infoflagsh = -1;
-static int hf_bit11infoflagsh = -1;
-static int hf_bit12infoflagsh = -1;
-static int hf_bit13infoflagsh = -1;
-static int hf_bit14infoflagsh = -1;
-static int hf_bit15infoflagsh = -1;
-static int hf_bit16infoflagsh = -1;
-static int hf_retinfoflagsh = -1;
-static int hf_bit1retinfoflagsh = -1;
-static int hf_bit2retinfoflagsh = -1;
-static int hf_bit3retinfoflagsh = -1;
-static int hf_bit4retinfoflagsh = -1;
-static int hf_bit5retinfoflagsh = -1;
-static int hf_bit6retinfoflagsh = -1;
-static int hf_bit7retinfoflagsh = -1;
-static int hf_bit8retinfoflagsh = -1;
-static int hf_bit9retinfoflagsh = -1;
-static int hf_bit10retinfoflagsh = -1;
-static int hf_bit11retinfoflagsh = -1;
-static int hf_bit12retinfoflagsh = -1;
-static int hf_bit13retinfoflagsh = -1;
-static int hf_bit14retinfoflagsh = -1;
-static int hf_bit15retinfoflagsh = -1;
-static int hf_bit16retinfoflagsh = -1;
-static int hf_bit1lflags = -1;
-static int hf_bit2lflags = -1;
-static int hf_bit3lflags = -1;
-static int hf_bit4lflags = -1;
-static int hf_bit5lflags = -1;
-static int hf_bit6lflags = -1;
-static int hf_bit7lflags = -1;
-static int hf_bit8lflags = -1;
-static int hf_bit9lflags = -1;
-static int hf_bit10lflags = -1;
-static int hf_bit11lflags = -1;
-static int hf_bit12lflags = -1;
-static int hf_bit13lflags = -1;
-static int hf_bit14lflags = -1;
-static int hf_bit15lflags = -1;
-static int hf_bit16lflags = -1;
-static int hf_l1flagsl = -1;
-static int hf_l1flagsh = -1;
-static int hf_bit1l1flagsl = -1;
-static int hf_bit2l1flagsl = -1;
-static int hf_bit3l1flagsl = -1;
-static int hf_bit4l1flagsl = -1;
-static int hf_bit5l1flagsl = -1;
-static int hf_bit6l1flagsl = -1;
-static int hf_bit7l1flagsl = -1;
-static int hf_bit8l1flagsl = -1;
-static int hf_bit9l1flagsl = -1;
-static int hf_bit10l1flagsl = -1;
-static int hf_bit11l1flagsl = -1;
-static int hf_bit12l1flagsl = -1;
-static int hf_bit13l1flagsl = -1;
-static int hf_bit14l1flagsl = -1;
-static int hf_bit15l1flagsl = -1;
-static int hf_bit16l1flagsl = -1;
-static int hf_bit1l1flagsh = -1;
-static int hf_bit2l1flagsh = -1;
-static int hf_bit3l1flagsh = -1;
-static int hf_bit4l1flagsh = -1;
-static int hf_bit5l1flagsh = -1;
-static int hf_bit6l1flagsh = -1;
-static int hf_bit7l1flagsh = -1;
-static int hf_bit8l1flagsh = -1;
-static int hf_bit9l1flagsh = -1;
-static int hf_bit10l1flagsh = -1;
-static int hf_bit11l1flagsh = -1;
-static int hf_bit12l1flagsh = -1;
-static int hf_bit13l1flagsh = -1;
-static int hf_bit14l1flagsh = -1;
-static int hf_bit15l1flagsh = -1;
-static int hf_bit16l1flagsh = -1;
-static int hf_nds_tree_name = -1;
-static int hf_nds_reply_error = -1;
-static int hf_nds_net = -1;
-static int hf_nds_node = -1;
-static int hf_nds_socket = -1;
-static int hf_add_ref_ip = -1;
-static int hf_add_ref_udp = -1;
-static int hf_add_ref_tcp = -1;
-static int hf_referral_record = -1;
-static int hf_referral_addcount = -1;
-static int hf_nds_port = -1;
-static int hf_mv_string = -1;
-static int hf_nds_syntax = -1;
-static int hf_value_string = -1;
-static int hf_nds_buffer_size = -1;
-static int hf_nds_ver = -1;
-static int hf_nds_nflags = -1;
-static int hf_nds_scope = -1;
-static int hf_nds_name = -1;
-static int hf_nds_comm_trans = -1;
-static int hf_nds_tree_trans = -1;
-static int hf_nds_iteration = -1;
-static int hf_nds_eid = -1;
-static int hf_nds_info_type = -1;
-static int hf_nds_all_attr = -1;
-static int hf_nds_req_flags = -1;
-static int hf_nds_attr = -1;
-static int hf_nds_crc = -1;
-static int hf_nds_referrals = -1;
-static int hf_nds_result_flags = -1;
-static int hf_nds_tag_string = -1;
-static int hf_value_bytes = -1;
-static int hf_replica_type = -1;
-static int hf_replica_state = -1;
-static int hf_replica_number = -1;
-static int hf_min_nds_ver = -1;
-static int hf_nds_ver_include = -1;
-static int hf_nds_ver_exclude = -1;
-/* static int hf_nds_es = -1; */
-static int hf_es_type = -1;
-/* static int hf_delim_string = -1; */
-static int hf_rdn_string = -1;
-static int hf_nds_revent = -1;
-static int hf_nds_rnum = -1;
-static int hf_nds_name_type = -1;
-static int hf_nds_rflags = -1;
-static int hf_nds_eflags = -1;
-static int hf_nds_depth = -1;
-static int hf_nds_class_def_type = -1;
-static int hf_nds_classes = -1;
-static int hf_nds_return_all_classes = -1;
-static int hf_nds_stream_flags = -1;
-static int hf_nds_stream_name = -1;
-static int hf_nds_file_handle = -1;
-static int hf_nds_file_size = -1;
-static int hf_nds_dn_output_type = -1;
-static int hf_nds_nested_output_type = -1;
-static int hf_nds_output_delimiter = -1;
-static int hf_nds_output_entry_specifier = -1;
-static int hf_es_value = -1;
-static int hf_es_rdn_count = -1;
-static int hf_nds_replica_num = -1;
-static int hf_nds_event_num = -1;
-static int hf_es_seconds = -1;
-static int hf_nds_compare_results = -1;
-static int hf_nds_parent = -1;
-static int hf_nds_name_filter = -1;
-static int hf_nds_class_filter = -1;
-static int hf_nds_time_filter = -1;
-static int hf_nds_partition_root_id = -1;
-static int hf_nds_replicas = -1;
-static int hf_nds_purge = -1;
-static int hf_nds_local_partition = -1;
-static int hf_partition_busy = -1;
-static int hf_nds_number_of_changes = -1;
-static int hf_sub_count = -1;
-static int hf_nds_revision = -1;
-static int hf_nds_base_class = -1;
-static int hf_nds_relative_dn = -1;
-/* static int hf_nds_root_dn = -1; */
-/* static int hf_nds_parent_dn = -1; */
-static int hf_deref_base = -1;
-/* static int hf_nds_entry_info = -1; */
-static int hf_nds_base = -1;
-static int hf_nds_privileges = -1;
-static int hf_nds_vflags = -1;
-static int hf_nds_value_len = -1;
-static int hf_nds_cflags = -1;
-static int hf_nds_acflags = -1;
-static int hf_nds_asn1 = -1;
-static int hf_nds_upper = -1;
-static int hf_nds_lower = -1;
-static int hf_nds_trustee_dn = -1;
-static int hf_nds_attribute_dn = -1;
-static int hf_nds_acl_add = -1;
-static int hf_nds_acl_del = -1;
-static int hf_nds_att_add = -1;
-static int hf_nds_att_del = -1;
-static int hf_nds_keep = -1;
-static int hf_nds_new_rdn = -1;
-static int hf_nds_time_delay = -1;
-static int hf_nds_root_name = -1;
-static int hf_nds_new_part_id = -1;
-static int hf_nds_child_part_id = -1;
-static int hf_nds_master_part_id = -1;
-static int hf_nds_target_name = -1;
-static int hf_nds_super = -1;
-static int hf_pingflags2 = -1;
-static int hf_bit1pingflags2 = -1;
-static int hf_bit2pingflags2 = -1;
-static int hf_bit3pingflags2 = -1;
-static int hf_bit4pingflags2 = -1;
-static int hf_bit5pingflags2 = -1;
-static int hf_bit6pingflags2 = -1;
-static int hf_bit7pingflags2 = -1;
-static int hf_bit8pingflags2 = -1;
-static int hf_bit9pingflags2 = -1;
-static int hf_bit10pingflags2 = -1;
-static int hf_bit11pingflags2 = -1;
-static int hf_bit12pingflags2 = -1;
-static int hf_bit13pingflags2 = -1;
-static int hf_bit14pingflags2 = -1;
-static int hf_bit15pingflags2 = -1;
-static int hf_bit16pingflags2 = -1;
-static int hf_pingflags1 = -1;
-static int hf_bit1pingflags1 = -1;
-static int hf_bit2pingflags1 = -1;
-static int hf_bit3pingflags1 = -1;
-static int hf_bit4pingflags1 = -1;
-static int hf_bit5pingflags1 = -1;
-static int hf_bit6pingflags1 = -1;
-static int hf_bit7pingflags1 = -1;
-static int hf_bit8pingflags1 = -1;
-static int hf_bit9pingflags1 = -1;
-static int hf_bit10pingflags1 = -1;
-static int hf_bit11pingflags1 = -1;
-static int hf_bit12pingflags1 = -1;
-static int hf_bit13pingflags1 = -1;
-static int hf_bit14pingflags1 = -1;
-static int hf_bit15pingflags1 = -1;
-static int hf_bit16pingflags1 = -1;
-static int hf_pingpflags1 = -1;
-static int hf_bit1pingpflags1 = -1;
-static int hf_bit2pingpflags1 = -1;
-static int hf_bit3pingpflags1 = -1;
-static int hf_bit4pingpflags1 = -1;
-static int hf_bit5pingpflags1 = -1;
-static int hf_bit6pingpflags1 = -1;
-static int hf_bit7pingpflags1 = -1;
-static int hf_bit8pingpflags1 = -1;
-static int hf_bit9pingpflags1 = -1;
-static int hf_bit10pingpflags1 = -1;
-static int hf_bit11pingpflags1 = -1;
-static int hf_bit12pingpflags1 = -1;
-static int hf_bit13pingpflags1 = -1;
-static int hf_bit14pingpflags1 = -1;
-static int hf_bit15pingpflags1 = -1;
-static int hf_bit16pingpflags1 = -1;
-static int hf_pingvflags1 = -1;
-static int hf_bit1pingvflags1 = -1;
-static int hf_bit2pingvflags1 = -1;
-static int hf_bit3pingvflags1 = -1;
-static int hf_bit4pingvflags1 = -1;
-static int hf_bit5pingvflags1 = -1;
-static int hf_bit6pingvflags1 = -1;
-static int hf_bit7pingvflags1 = -1;
-static int hf_bit8pingvflags1 = -1;
-static int hf_bit9pingvflags1 = -1;
-static int hf_bit10pingvflags1 = -1;
-static int hf_bit11pingvflags1 = -1;
-static int hf_bit12pingvflags1 = -1;
-static int hf_bit13pingvflags1 = -1;
-static int hf_bit14pingvflags1 = -1;
-static int hf_bit15pingvflags1 = -1;
-static int hf_bit16pingvflags1 = -1;
-static int hf_nds_letter_ver = -1;
-static int hf_nds_os_majver = -1;
-static int hf_nds_os_minver = -1;
-static int hf_nds_lic_flags = -1;
-static int hf_nds_ds_time = -1;
-static int hf_nds_ping_version = -1;
-static int hf_nds_search_scope = -1;
-static int hf_nds_num_objects = -1;
-static int hf_siflags = -1;
-static int hf_bit1siflags = -1;
-static int hf_bit2siflags = -1;
-static int hf_bit3siflags = -1;
-static int hf_bit4siflags = -1;
-static int hf_bit5siflags = -1;
-static int hf_bit6siflags = -1;
-static int hf_bit7siflags = -1;
-static int hf_bit8siflags = -1;
-static int hf_bit9siflags = -1;
-static int hf_bit10siflags = -1;
-static int hf_bit11siflags = -1;
-static int hf_bit12siflags = -1;
-static int hf_bit13siflags = -1;
-static int hf_bit14siflags = -1;
-static int hf_bit15siflags = -1;
-static int hf_bit16siflags = -1;
-static int hf_nds_segments = -1;
-static int hf_nds_segment = -1;
-static int hf_nds_segment_overlap = -1;
-static int hf_nds_segment_overlap_conflict = -1;
-static int hf_nds_segment_multiple_tails = -1;
-static int hf_nds_segment_too_long_segment = -1;
-static int hf_nds_segment_error = -1;
-static int hf_nds_segment_count = -1;
-static int hf_nds_reassembled_length = -1;
-static int hf_nds_verb2b_req_flags = -1;
-static int hf_ncp_ip_address = -1;
-static int hf_ncp_copyright = -1;
-static int hf_ndsprot1flag = -1;
-static int hf_ndsprot2flag = -1;
-static int hf_ndsprot3flag = -1;
-static int hf_ndsprot4flag = -1;
-static int hf_ndsprot5flag = -1;
-static int hf_ndsprot6flag = -1;
-static int hf_ndsprot7flag = -1;
-static int hf_ndsprot8flag = -1;
-static int hf_ndsprot9flag = -1;
-static int hf_ndsprot10flag = -1;
-static int hf_ndsprot11flag = -1;
-static int hf_ndsprot12flag = -1;
-static int hf_ndsprot13flag = -1;
-static int hf_ndsprot14flag = -1;
-static int hf_ndsprot15flag = -1;
-static int hf_ndsprot16flag = -1;
-static int hf_nds_svr_dst_name = -1;
-static int hf_nds_tune_mark = -1;
-/* static int hf_nds_create_time = -1; */
-static int hf_srvr_param_number = -1;
-static int hf_srvr_param_boolean = -1;
-static int hf_srvr_param_string = -1;
-static int hf_nds_svr_time = -1;
-static int hf_nds_crt_time = -1;
-static int hf_nds_number_of_items = -1;
-static int hf_nds_compare_attributes = -1;
-static int hf_nds_read_attribute = -1;
-static int hf_nds_write_add_delete_attribute = -1;
-static int hf_nds_add_delete_self = -1;
-static int hf_nds_privilege_not_defined = -1;
-static int hf_nds_supervisor = -1;
-static int hf_nds_inheritance_control = -1;
-static int hf_nds_browse_entry = -1;
-static int hf_nds_add_entry = -1;
-static int hf_nds_delete_entry = -1;
-static int hf_nds_rename_entry = -1;
-static int hf_nds_supervisor_entry = -1;
-static int hf_nds_entry_privilege_not_defined = -1;
-static int hf_nds_iterator = -1;
-static int hf_ncp_nds_iterverb = -1;
-static int hf_iter_completion_code = -1;
-/* static int hf_nds_iterobj = -1; */
-static int hf_iter_verb_completion_code = -1;
-static int hf_iter_ans = -1;
-static int hf_positionable = -1;
-static int hf_num_skipped = -1;
-static int hf_num_to_skip = -1;
-static int hf_timelimit = -1;
-static int hf_iter_index = -1;
-static int hf_num_to_get = -1;
-/* static int hf_ret_info_type = -1; */
-static int hf_data_size = -1;
-static int hf_this_count = -1;
-static int hf_max_entries = -1;
-static int hf_move_position = -1;
-static int hf_iter_copy = -1;
-static int hf_iter_position = -1;
-static int hf_iter_search = -1;
-static int hf_iter_other = -1;
-static int hf_nds_oid = -1;
-static int hf_ncp_bytes_actually_trans_64 = -1;
-static int hf_sap_name = -1;
-static int hf_os_name = -1;
-static int hf_vendor_name = -1;
-static int hf_hardware_name = -1;
-static int hf_no_request_record_found = -1;
-static int hf_search_modifier = -1;
-static int hf_search_pattern = -1;
+static int hf_ncp_number_of_data_streams_long;
+static int hf_ncp_func;
+static int hf_ncp_length;
+static int hf_ncp_subfunc;
+static int hf_ncp_group;
+static int hf_ncp_fragment_handle;
+static int hf_ncp_completion_code;
+static int hf_ncp_connection_status;
+static int hf_ncp_req_frame_num;
+static int hf_ncp_req_frame_time;
+static int hf_ncp_fragment_size;
+static int hf_ncp_message_size;
+static int hf_ncp_nds_flag;
+static int hf_ncp_nds_verb;
+static int hf_ping_version;
+/* static int hf_nds_version; */
+/* static int hf_nds_flags; */
+static int hf_nds_reply_depth;
+static int hf_nds_reply_rev;
+static int hf_nds_reply_flags;
+static int hf_nds_p1type;
+static int hf_nds_uint32value;
+static int hf_nds_bit1;
+static int hf_nds_bit2;
+static int hf_nds_bit3;
+static int hf_nds_bit4;
+static int hf_nds_bit5;
+static int hf_nds_bit6;
+static int hf_nds_bit7;
+static int hf_nds_bit8;
+static int hf_nds_bit9;
+static int hf_nds_bit10;
+static int hf_nds_bit11;
+static int hf_nds_bit12;
+static int hf_nds_bit13;
+static int hf_nds_bit14;
+static int hf_nds_bit15;
+static int hf_nds_bit16;
+static int hf_outflags;
+static int hf_bit1outflags;
+static int hf_bit2outflags;
+static int hf_bit3outflags;
+static int hf_bit4outflags;
+static int hf_bit5outflags;
+static int hf_bit6outflags;
+static int hf_bit7outflags;
+static int hf_bit8outflags;
+static int hf_bit9outflags;
+static int hf_bit10outflags;
+static int hf_bit11outflags;
+static int hf_bit12outflags;
+static int hf_bit13outflags;
+static int hf_bit14outflags;
+static int hf_bit15outflags;
+static int hf_bit16outflags;
+static int hf_bit1nflags;
+static int hf_bit2nflags;
+static int hf_bit3nflags;
+static int hf_bit4nflags;
+static int hf_bit5nflags;
+static int hf_bit6nflags;
+static int hf_bit7nflags;
+static int hf_bit8nflags;
+static int hf_bit9nflags;
+static int hf_bit10nflags;
+static int hf_bit11nflags;
+static int hf_bit12nflags;
+static int hf_bit13nflags;
+static int hf_bit14nflags;
+static int hf_bit15nflags;
+static int hf_bit16nflags;
+static int hf_bit1rflags;
+static int hf_bit2rflags;
+static int hf_bit3rflags;
+static int hf_bit4rflags;
+static int hf_bit5rflags;
+static int hf_bit6rflags;
+static int hf_bit7rflags;
+static int hf_bit8rflags;
+static int hf_bit9rflags;
+static int hf_bit10rflags;
+static int hf_bit11rflags;
+static int hf_bit12rflags;
+static int hf_bit13rflags;
+static int hf_bit14rflags;
+static int hf_bit15rflags;
+static int hf_bit16rflags;
+static int hf_cflags;
+static int hf_bit1cflags;
+static int hf_bit2cflags;
+static int hf_bit3cflags;
+static int hf_bit4cflags;
+static int hf_bit5cflags;
+static int hf_bit6cflags;
+static int hf_bit7cflags;
+static int hf_bit8cflags;
+static int hf_bit9cflags;
+static int hf_bit10cflags;
+static int hf_bit11cflags;
+static int hf_bit12cflags;
+static int hf_bit13cflags;
+static int hf_bit14cflags;
+static int hf_bit15cflags;
+static int hf_bit16cflags;
+static int hf_bit1acflags;
+static int hf_bit2acflags;
+static int hf_bit3acflags;
+static int hf_bit4acflags;
+static int hf_bit5acflags;
+static int hf_bit6acflags;
+static int hf_bit7acflags;
+static int hf_bit8acflags;
+static int hf_bit9acflags;
+static int hf_bit10acflags;
+static int hf_bit11acflags;
+static int hf_bit12acflags;
+static int hf_bit13acflags;
+static int hf_bit14acflags;
+static int hf_bit15acflags;
+static int hf_bit16acflags;
+static int hf_vflags;
+static int hf_bit1vflags;
+static int hf_bit2vflags;
+static int hf_bit3vflags;
+static int hf_bit4vflags;
+static int hf_bit5vflags;
+static int hf_bit6vflags;
+static int hf_bit7vflags;
+static int hf_bit8vflags;
+static int hf_bit9vflags;
+static int hf_bit10vflags;
+static int hf_bit11vflags;
+static int hf_bit12vflags;
+static int hf_bit13vflags;
+static int hf_bit14vflags;
+static int hf_bit15vflags;
+static int hf_bit16vflags;
+static int hf_eflags;
+static int hf_bit1eflags;
+static int hf_bit2eflags;
+static int hf_bit3eflags;
+static int hf_bit4eflags;
+static int hf_bit5eflags;
+static int hf_bit6eflags;
+static int hf_bit7eflags;
+static int hf_bit8eflags;
+static int hf_bit9eflags;
+static int hf_bit10eflags;
+static int hf_bit11eflags;
+static int hf_bit12eflags;
+static int hf_bit13eflags;
+static int hf_bit14eflags;
+static int hf_bit15eflags;
+static int hf_bit16eflags;
+static int hf_infoflagsl;
+static int hf_retinfoflagsl;
+static int hf_bit1infoflagsl;
+static int hf_bit2infoflagsl;
+static int hf_bit3infoflagsl;
+static int hf_bit4infoflagsl;
+static int hf_bit5infoflagsl;
+static int hf_bit6infoflagsl;
+static int hf_bit7infoflagsl;
+static int hf_bit8infoflagsl;
+static int hf_bit9infoflagsl;
+static int hf_bit10infoflagsl;
+static int hf_bit11infoflagsl;
+static int hf_bit12infoflagsl;
+static int hf_bit13infoflagsl;
+static int hf_bit14infoflagsl;
+static int hf_bit15infoflagsl;
+static int hf_bit16infoflagsl;
+static int hf_infoflagsh;
+static int hf_bit1infoflagsh;
+static int hf_bit2infoflagsh;
+static int hf_bit3infoflagsh;
+static int hf_bit4infoflagsh;
+static int hf_bit5infoflagsh;
+static int hf_bit6infoflagsh;
+static int hf_bit7infoflagsh;
+static int hf_bit8infoflagsh;
+static int hf_bit9infoflagsh;
+static int hf_bit10infoflagsh;
+static int hf_bit11infoflagsh;
+static int hf_bit12infoflagsh;
+static int hf_bit13infoflagsh;
+static int hf_bit14infoflagsh;
+static int hf_bit15infoflagsh;
+static int hf_bit16infoflagsh;
+static int hf_retinfoflagsh;
+static int hf_bit1retinfoflagsh;
+static int hf_bit2retinfoflagsh;
+static int hf_bit3retinfoflagsh;
+static int hf_bit4retinfoflagsh;
+static int hf_bit5retinfoflagsh;
+static int hf_bit6retinfoflagsh;
+static int hf_bit7retinfoflagsh;
+static int hf_bit8retinfoflagsh;
+static int hf_bit9retinfoflagsh;
+static int hf_bit10retinfoflagsh;
+static int hf_bit11retinfoflagsh;
+static int hf_bit12retinfoflagsh;
+static int hf_bit13retinfoflagsh;
+static int hf_bit14retinfoflagsh;
+static int hf_bit15retinfoflagsh;
+static int hf_bit16retinfoflagsh;
+static int hf_bit1lflags;
+static int hf_bit2lflags;
+static int hf_bit3lflags;
+static int hf_bit4lflags;
+static int hf_bit5lflags;
+static int hf_bit6lflags;
+static int hf_bit7lflags;
+static int hf_bit8lflags;
+static int hf_bit9lflags;
+static int hf_bit10lflags;
+static int hf_bit11lflags;
+static int hf_bit12lflags;
+static int hf_bit13lflags;
+static int hf_bit14lflags;
+static int hf_bit15lflags;
+static int hf_bit16lflags;
+static int hf_l1flagsl;
+static int hf_l1flagsh;
+static int hf_bit1l1flagsl;
+static int hf_bit2l1flagsl;
+static int hf_bit3l1flagsl;
+static int hf_bit4l1flagsl;
+static int hf_bit5l1flagsl;
+static int hf_bit6l1flagsl;
+static int hf_bit7l1flagsl;
+static int hf_bit8l1flagsl;
+static int hf_bit9l1flagsl;
+static int hf_bit10l1flagsl;
+static int hf_bit11l1flagsl;
+static int hf_bit12l1flagsl;
+static int hf_bit13l1flagsl;
+static int hf_bit14l1flagsl;
+static int hf_bit15l1flagsl;
+static int hf_bit16l1flagsl;
+static int hf_bit1l1flagsh;
+static int hf_bit2l1flagsh;
+static int hf_bit3l1flagsh;
+static int hf_bit4l1flagsh;
+static int hf_bit5l1flagsh;
+static int hf_bit6l1flagsh;
+static int hf_bit7l1flagsh;
+static int hf_bit8l1flagsh;
+static int hf_bit9l1flagsh;
+static int hf_bit10l1flagsh;
+static int hf_bit11l1flagsh;
+static int hf_bit12l1flagsh;
+static int hf_bit13l1flagsh;
+static int hf_bit14l1flagsh;
+static int hf_bit15l1flagsh;
+static int hf_bit16l1flagsh;
+static int hf_nds_tree_name;
+static int hf_nds_reply_error;
+static int hf_nds_net;
+static int hf_nds_node;
+static int hf_nds_socket;
+static int hf_add_ref_ip;
+static int hf_add_ref_udp;
+static int hf_add_ref_tcp;
+static int hf_referral_record;
+static int hf_referral_addcount;
+static int hf_nds_port;
+static int hf_mv_string;
+static int hf_nds_syntax;
+static int hf_value_string;
+static int hf_server_distinguished_name;
+static int hf_distinguished_name;
+static int hf_subject;
+static int hf_delimiter;
+static int hf_relative_distinguished_name;
+static int hf_root_distinguished_name;
+static int hf_parent_distinguished_name;
+static int hf_nds_buffer_size;
+static int hf_nds_ver;
+static int hf_nds_nflags;
+static int hf_nds_scope;
+static int hf_nds_name;
+static int hf_nds_comm_trans;
+static int hf_nds_tree_trans;
+static int hf_nds_iteration;
+static int hf_nds_eid;
+static int hf_nds_info_type;
+static int hf_nds_all_attr;
+static int hf_nds_req_flags;
+static int hf_nds_attr;
+static int hf_nds_crc;
+static int hf_nds_referrals;
+static int hf_nds_result_flags;
+static int hf_nds_tag_string;
+static int hf_value_bytes;
+static int hf_replica_type;
+static int hf_replica_state;
+static int hf_replica_number;
+static int hf_min_nds_ver;
+static int hf_nds_ver_include;
+static int hf_nds_ver_exclude;
+/* static int hf_nds_es; */
+static int hf_es_type;
+/* static int hf_delim_string; */
+static int hf_rdn_string;
+static int hf_nds_revent;
+static int hf_nds_rnum;
+static int hf_nds_name_type;
+static int hf_nds_rflags;
+static int hf_nds_eflags;
+static int hf_nds_depth;
+static int hf_nds_class_def_type;
+static int hf_nds_classes;
+static int hf_nds_return_all_classes;
+static int hf_nds_stream_flags;
+static int hf_nds_stream_name;
+static int hf_nds_file_handle;
+static int hf_nds_file_size;
+static int hf_nds_dn_output_type;
+static int hf_nds_nested_output_type;
+static int hf_nds_output_delimiter;
+static int hf_nds_output_entry_specifier;
+static int hf_es_value;
+static int hf_es_rdn_count;
+static int hf_nds_replica_num;
+static int hf_nds_event_num;
+static int hf_es_seconds;
+static int hf_nds_compare_results;
+static int hf_nds_parent;
+static int hf_nds_name_filter;
+static int hf_nds_class_filter;
+static int hf_nds_time_filter;
+static int hf_nds_partition_root_id;
+static int hf_nds_replicas;
+static int hf_nds_purge;
+static int hf_nds_local_partition;
+static int hf_partition_busy;
+static int hf_nds_number_of_changes;
+static int hf_sub_count;
+static int hf_nds_revision;
+static int hf_nds_base_class;
+static int hf_nds_relative_dn;
+/* static int hf_nds_root_dn; */
+/* static int hf_nds_parent_dn; */
+static int hf_deref_base;
+/* static int hf_nds_entry_info; */
+static int hf_nds_base;
+static int hf_nds_privileges;
+static int hf_nds_vflags;
+static int hf_nds_value_len;
+static int hf_nds_cflags;
+static int hf_nds_acflags;
+static int hf_nds_asn1;
+static int hf_nds_upper;
+static int hf_nds_lower;
+static int hf_nds_trustee_dn;
+static int hf_nds_attribute_dn;
+static int hf_nds_acl_add;
+static int hf_nds_acl_del;
+static int hf_nds_att_add;
+static int hf_nds_att_del;
+static int hf_nds_keep;
+static int hf_nds_new_rdn;
+static int hf_nds_time_delay;
+static int hf_nds_root_name;
+static int hf_nds_new_part_id;
+static int hf_nds_child_part_id;
+static int hf_nds_master_part_id;
+static int hf_nds_target_name;
+static int hf_nds_super;
+static int hf_pingflags2;
+static int hf_bit1pingflags2;
+static int hf_bit2pingflags2;
+static int hf_bit3pingflags2;
+static int hf_bit4pingflags2;
+static int hf_bit5pingflags2;
+static int hf_bit6pingflags2;
+static int hf_bit7pingflags2;
+static int hf_bit8pingflags2;
+static int hf_bit9pingflags2;
+static int hf_bit10pingflags2;
+static int hf_bit11pingflags2;
+static int hf_bit12pingflags2;
+static int hf_bit13pingflags2;
+static int hf_bit14pingflags2;
+static int hf_bit15pingflags2;
+static int hf_bit16pingflags2;
+static int hf_pingflags1;
+static int hf_bit1pingflags1;
+static int hf_bit2pingflags1;
+static int hf_bit3pingflags1;
+static int hf_bit4pingflags1;
+static int hf_bit5pingflags1;
+static int hf_bit6pingflags1;
+static int hf_bit7pingflags1;
+static int hf_bit8pingflags1;
+static int hf_bit9pingflags1;
+static int hf_bit10pingflags1;
+static int hf_bit11pingflags1;
+static int hf_bit12pingflags1;
+static int hf_bit13pingflags1;
+static int hf_bit14pingflags1;
+static int hf_bit15pingflags1;
+static int hf_bit16pingflags1;
+static int hf_pingpflags1;
+static int hf_bit1pingpflags1;
+static int hf_bit2pingpflags1;
+static int hf_bit3pingpflags1;
+static int hf_bit4pingpflags1;
+static int hf_bit5pingpflags1;
+static int hf_bit6pingpflags1;
+static int hf_bit7pingpflags1;
+static int hf_bit8pingpflags1;
+static int hf_bit9pingpflags1;
+static int hf_bit10pingpflags1;
+static int hf_bit11pingpflags1;
+static int hf_bit12pingpflags1;
+static int hf_bit13pingpflags1;
+static int hf_bit14pingpflags1;
+static int hf_bit15pingpflags1;
+static int hf_bit16pingpflags1;
+static int hf_pingvflags1;
+static int hf_bit1pingvflags1;
+static int hf_bit2pingvflags1;
+static int hf_bit3pingvflags1;
+static int hf_bit4pingvflags1;
+static int hf_bit5pingvflags1;
+static int hf_bit6pingvflags1;
+static int hf_bit7pingvflags1;
+static int hf_bit8pingvflags1;
+static int hf_bit9pingvflags1;
+static int hf_bit10pingvflags1;
+static int hf_bit11pingvflags1;
+static int hf_bit12pingvflags1;
+static int hf_bit13pingvflags1;
+static int hf_bit14pingvflags1;
+static int hf_bit15pingvflags1;
+static int hf_bit16pingvflags1;
+static int hf_nds_letter_ver;
+static int hf_nds_os_majver;
+static int hf_nds_os_minver;
+static int hf_nds_lic_flags;
+static int hf_nds_ds_time;
+static int hf_nds_ping_version;
+static int hf_nds_search_scope;
+static int hf_nds_num_objects;
+static int hf_siflags;
+static int hf_bit1siflags;
+static int hf_bit2siflags;
+static int hf_bit3siflags;
+static int hf_bit4siflags;
+static int hf_bit5siflags;
+static int hf_bit6siflags;
+static int hf_bit7siflags;
+static int hf_bit8siflags;
+static int hf_bit9siflags;
+static int hf_bit10siflags;
+static int hf_bit11siflags;
+static int hf_bit12siflags;
+static int hf_bit13siflags;
+static int hf_bit14siflags;
+static int hf_bit15siflags;
+static int hf_bit16siflags;
+static int hf_nds_segments;
+static int hf_nds_segment;
+static int hf_nds_segment_overlap;
+static int hf_nds_segment_overlap_conflict;
+static int hf_nds_segment_multiple_tails;
+static int hf_nds_segment_too_long_segment;
+static int hf_nds_segment_error;
+static int hf_nds_segment_count;
+static int hf_nds_reassembled_length;
+static int hf_nds_verb2b_req_flags;
+static int hf_ncp_ip_address;
+static int hf_ncp_copyright;
+static int hf_ndsprot1flag;
+static int hf_ndsprot2flag;
+static int hf_ndsprot3flag;
+static int hf_ndsprot4flag;
+static int hf_ndsprot5flag;
+static int hf_ndsprot6flag;
+static int hf_ndsprot7flag;
+static int hf_ndsprot8flag;
+static int hf_ndsprot9flag;
+static int hf_ndsprot10flag;
+static int hf_ndsprot11flag;
+static int hf_ndsprot12flag;
+static int hf_ndsprot13flag;
+static int hf_ndsprot14flag;
+static int hf_ndsprot15flag;
+static int hf_ndsprot16flag;
+static int hf_nds_svr_dst_name;
+static int hf_nds_tune_mark;
+/* static int hf_nds_create_time; */
+static int hf_srvr_param_number;
+static int hf_srvr_param_boolean;
+static int hf_srvr_param_string;
+static int hf_nds_svr_time;
+static int hf_nds_crt_time;
+static int hf_nds_number_of_items;
+static int hf_nds_compare_attributes;
+static int hf_nds_read_attribute;
+static int hf_nds_write_add_delete_attribute;
+static int hf_nds_add_delete_self;
+static int hf_nds_privilege_not_defined;
+static int hf_nds_supervisor;
+static int hf_nds_inheritance_control;
+static int hf_nds_browse_entry;
+static int hf_nds_add_entry;
+static int hf_nds_delete_entry;
+static int hf_nds_rename_entry;
+static int hf_nds_supervisor_entry;
+static int hf_nds_entry_privilege_not_defined;
+static int hf_nds_iterator;
+static int hf_ncp_nds_iterverb;
+static int hf_iter_completion_code;
+/* static int hf_nds_iterobj; */
+static int hf_iter_verb_completion_code;
+static int hf_iter_ans;
+static int hf_positionable;
+static int hf_num_skipped;
+static int hf_num_to_skip;
+static int hf_timelimit;
+static int hf_iter_index;
+static int hf_num_to_get;
+/* static int hf_ret_info_type; */
+static int hf_data_size;
+static int hf_this_count;
+static int hf_max_entries;
+static int hf_move_position;
+static int hf_iter_copy;
+static int hf_iter_position;
+static int hf_iter_search;
+static int hf_iter_other;
+static int hf_nds_oid;
+static int hf_ncp_bytes_actually_trans_64;
+static int hf_sap_name;
+static int hf_os_name;
+static int hf_vendor_name;
+static int hf_hardware_name;
+static int hf_no_request_record_found;
+static int hf_search_modifier;
+static int hf_search_pattern;
+static int hf_nds_acl_protected_attribute;
+static int hf_nds_acl_subject;
+static int hf_nds_acl_privileges;
 
-static expert_field ei_ncp_file_rights_change = EI_INIT;
-static expert_field ei_ncp_completion_code = EI_INIT;
-static expert_field ei_nds_reply_error = EI_INIT;
-static expert_field ei_ncp_destroy_connection = EI_INIT;
-static expert_field ei_nds_iteration = EI_INIT;
-static expert_field ei_ncp_eid = EI_INIT;
-static expert_field ei_ncp_file_handle = EI_INIT;
-static expert_field ei_ncp_connection_destroyed = EI_INIT;
-static expert_field ei_ncp_no_request_record_found = EI_INIT;
-static expert_field ei_ncp_file_rights = EI_INIT;
-static expert_field ei_iter_verb_completion_code = EI_INIT;
-static expert_field ei_ncp_connection_request = EI_INIT;
-static expert_field ei_ncp_connection_status = EI_INIT;
-static expert_field ei_ncp_op_lock_handle = EI_INIT;
-static expert_field ei_ncp_effective_rights = EI_INIT;
-static expert_field ei_ncp_server = EI_INIT;
-static expert_field ei_ncp_invalid_offset = EI_INIT;
-static expert_field ei_ncp_address_type = EI_INIT;
+static expert_field ei_ncp_file_rights_change;
+static expert_field ei_ncp_completion_code;
+static expert_field ei_nds_reply_error;
+static expert_field ei_ncp_destroy_connection;
+static expert_field ei_nds_iteration;
+static expert_field ei_ncp_eid;
+static expert_field ei_ncp_file_handle;
+static expert_field ei_ncp_connection_destroyed;
+static expert_field ei_ncp_no_request_record_found;
+static expert_field ei_ncp_file_rights;
+static expert_field ei_iter_verb_completion_code;
+static expert_field ei_ncp_connection_request;
+static expert_field ei_ncp_connection_status;
+static expert_field ei_ncp_op_lock_handle;
+static expert_field ei_ncp_effective_rights;
+static expert_field ei_ncp_server;
+static expert_field ei_ncp_invalid_offset;
+static expert_field ei_ncp_address_type;
+static expert_field ei_ncp_value_too_large;
 """)
 
     # Look at all packet types in the packets collection, and cull information
@@ -6530,7 +6548,7 @@ static expert_field ei_ncp_address_type = EI_INIT;
     sorted_vars = list(variables_used_hash.values())
     sorted_vars.sort()
     for var in sorted_vars:
-        print("static int " + var.HFName() + " = -1;")
+        print("static int " + var.HFName() + ";")
 
 
     # Print the value_string's
@@ -6557,7 +6575,7 @@ static expert_field ei_ncp_address_type = EI_INIT;
 
     # Print the errors table
     print("/* Error strings. */")
-    print("static const char *ncp_errors[] = {")
+    print("static const char * const ncp_errors[] = {")
     for code in errors_used_list:
         print('    /* %02d (0x%04x) */ "%s",' % (errors_used_hash[code], code, errors[code]))
     print("};\n")
@@ -6583,7 +6601,7 @@ static expert_field ei_ncp_address_type = EI_INIT;
 
     # Print the groups table
     print("/* Group strings. */")
-    print("static const char *ncp_groups[] = {")
+    print("static const char * const ncp_groups[] = {")
     for group in groups_used_list:
         print('    /* %02d (%s) */ "%s",' % (groups_used_hash[group], group, groups[group]))
     print("};\n")
@@ -6712,7 +6730,7 @@ static expert_field ei_ncp_address_type = EI_INIT;
 
     print("/* Forward declaration of expert info functions defined in ncp2222.inc */")
     for expert in expert_hash:
-        print("static void %s_expert_func(ptvcursor_t *ptvc, packet_info *pinfo, const ncp_record *ncp_rec, gboolean request);" % expert)
+        print("static void %s_expert_func(ptvcursor_t *ptvc, packet_info *pinfo, const ncp_record *ncp_rec, bool request);" % expert)
 
     # Print ncp_record packet records
     print("#define SUBFUNC_WITH_LENGTH      0x02")
@@ -6764,7 +6782,7 @@ static expert_field ei_ncp_address_type = EI_INIT;
             req_cond_size = "NO_REQ_COND_SIZE"
         else:
             req_cond_size = pkt.ReqCondSize()
-            if req_cond_size == None:
+            if req_cond_size is None:
                 msg.write("NCP packet %s needs a ReqCondSize*() call\n" \
                         % (pkt.CName(),))
                 sys.exit(1)
@@ -6782,7 +6800,7 @@ static expert_field ei_ncp_address_type = EI_INIT;
     print("};\n")
 
     print("/* ncp funcs that require a subfunc */")
-    print("static const guint8 ncp_func_requires_subfunc[] = {")
+    print("static const uint8_t ncp_func_requires_subfunc[] = {")
     hi_seen = {}
     for pkt in packets:
         if pkt.HasSubFunction():
@@ -6795,7 +6813,7 @@ static expert_field ei_ncp_address_type = EI_INIT;
 
 
     print("/* ncp funcs that have no length parameter */")
-    print("static const guint8 ncp_func_has_no_length_parameter[] = {")
+    print("static const uint8_t ncp_func_has_no_length_parameter[] = {")
     funcs = list(funcs_without_length.keys())
     funcs.sort()
     for func in funcs:
@@ -6869,7 +6887,7 @@ proto_register_ncp2222(void)
     /*
      * XXX - the page at
      *
-     *      http://www.odyssea.com/whats_new/tcpipnet/tcpipnet.html
+     *      https://web.archive.org/web/20030629082113/http://www.odyssea.com/whats_new/tcpipnet/tcpipnet.html
      *
      * says of the connection status "The Connection Code field may
      * contain values that indicate the status of the client host to
@@ -6879,7 +6897,7 @@ proto_register_ncp2222(void)
      *
      * The page at
      *
-     *      http://www.unm.edu/~network/presentations/course/appendix/appendix_f/tsld088.htm
+     *      https://web.archive.org/web/20090809191415/http://www.unm.edu/~network/presentations/course/appendix/appendix_f/tsld088.htm
      *
      * says that bit 0 is "bad service", bit 2 is "no connection
      * available", bit 4 is "service down", and bit 6 is "server
@@ -7659,6 +7677,27 @@ proto_register_ncp2222(void)
 
     { &hf_value_string,
     { "Value", "ncp.value_string", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }},
+
+    { &hf_server_distinguished_name,
+    { "Server Distinguished Name", "ncp.server_distinguished_name", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }},
+
+    { &hf_distinguished_name,
+    { "Distinguished Name", "ncp.distinguished_name", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }},
+
+    { &hf_subject,
+    { "Subject", "ncp.subject", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }},
+
+    { &hf_delimiter,
+    { "Delimiter", "ncp.delimiter", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }},
+
+    { &hf_relative_distinguished_name,
+    { "Relative Distinguished Name", "ncp.relative_distinguished_name", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }},
+
+    { &hf_root_distinguished_name,
+    { "Root Distinguished Name", "ncp.root_distinguished_name", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }},
+
+    { &hf_parent_distinguished_name,
+    { "Parent Distinguished Name", "ncp.parent_distinguished_name", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }},
 
     { &hf_nds_stream_name,
     { "Stream Name", "ncp.nds_stream_name", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }},
@@ -8463,7 +8502,7 @@ proto_register_ncp2222(void)
     { "Vendor Name", "ncp.vendor_name", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }},
 
     { &hf_hardware_name,
-    { "Hardware Name", "ncp.harware_name", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }},
+    { "Hardware Name", "ncp.hardware_name", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }},
 
     { &hf_no_request_record_found,
     { "No request record found. Parsing is impossible.", "ncp.no_request_record_found", FT_NONE, BASE_NONE, NULL, 0x0, NULL, HFILL }},
@@ -8473,6 +8512,15 @@ proto_register_ncp2222(void)
 
     { &hf_search_pattern,
     { "Search Pattern", "ncp.search_pattern", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }},
+
+    { &hf_nds_acl_protected_attribute,
+    { "Protected Attribute", "ncp.nds_acl_protected_attribute", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }},
+
+    { &hf_nds_acl_subject,
+    { "Subject", "ncp.nds_acl_subject", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }},
+
+    { &hf_nds_acl_privileges,
+    { "Subject", "ncp.nds_acl_privileges", FT_UINT32, BASE_HEX, NULL, 0x0, NULL, HFILL }},
 
 """)
     # Print the registration code for the hf variables
@@ -8486,7 +8534,7 @@ proto_register_ncp2222(void)
     print("    };\n")
 
     if ett_list:
-        print("    static gint *ett[] = {")
+        print("    static int *ett[] = {")
 
         for ett in ett_list:
             print("        &%s," % (ett,))
@@ -8513,6 +8561,7 @@ proto_register_ncp2222(void)
         { &ei_ncp_no_request_record_found, { "ncp.no_request_record_found", PI_SEQUENCE, PI_NOTE, "No request record found.", EXPFILL }},
         { &ei_ncp_invalid_offset, { "ncp.invalid_offset", PI_MALFORMED, PI_ERROR, "Invalid offset", EXPFILL }},
         { &ei_ncp_address_type, { "ncp.address_type.unknown", PI_PROTOCOL, PI_WARN, "Unknown Address Type", EXPFILL }},
+        { &ei_ncp_value_too_large, { "ncp.value_too_large", PI_MALFORMED, PI_ERROR, "Length value goes past the end of the packet", EXPFILL }},
     };
 
     expert_module_t* expert_ncp;
@@ -8527,7 +8576,14 @@ proto_register_ncp2222(void)
     expert_ncp = expert_register_protocol(proto_ncp);
     expert_register_field_array(expert_ncp, ei, array_length(ei));
     register_init_routine(&ncp_init_protocol);
-    register_postseq_cleanup_routine(&ncp_postseq_cleanup);""")
+    /* fragment */
+    reassembly_table_register(&nds_reassembly_table,
+                          &addresses_reassembly_table_functions);
+
+    ncp_req_hash = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), ncp_hash, ncp_equal);
+    ncp_req_eid_hash = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), ncp_eid_hash, ncp_eid_equal);
+
+    """)
 
     # End of proto_register_ncp2222()
     print("}")
@@ -8588,7 +8644,7 @@ def main():
 
         msg.write("Defined %d NCP types.\n" % (len(packets),))
         produce_code()
-    except:
+    except Exception:
         traceback.print_exc(20, msg)
         try:
             out_file.close()
@@ -11332,7 +11388,7 @@ def define_ncp2222():
             rec( 56, 2, IncomingPacketDiscardedNoDGroup ),
             rec( 58, 2, OutgoingPacketDiscardedNoTurboBuffer ),
             rec( 60, 2, IPXNotMyNetwork ),
-            rec( 62, 4, NetBIOSBroadcastWasPropogated ),
+            rec( 62, 4, NetBIOSBroadcastWasPropagated ),
             rec( 66, 4, TotalOtherPackets ),
             rec( 70, 4, TotalRoutedPackets ),
      ])
@@ -15537,6 +15593,16 @@ rec( 9, 4, ObjectID ),
             rec( 12, 1, SecurityFlag ),
     ])
     pkt.CompletionCodes([0x0000])
+    # 2222/62, 98
+    pkt = NCP(0x62, "Negotiate NDS connection buffer size", 'connection')
+    pkt.Request(15, [
+            rec( 7, 8, ProposedMaxSize64, ENC_BIG_ENDIAN, Info_str=(ProposedMaxSize, "Negotiate NDS connection - %d", ", %d")),
+    ])
+    pkt.Reply(18, [
+            rec( 8, 8, AcceptedMaxSize64, ENC_BIG_ENDIAN ),
+            rec( 16, 2, EchoSocket, ENC_BIG_ENDIAN ),
+    ])
+    pkt.CompletionCodes([0x0000])
     # 2222/63, 99
     pkt = NCP(0x63, "Undocumented Packet Burst", 'pburst')
     pkt.Request(7)
@@ -16859,7 +16925,7 @@ if __name__ == '__main__':
     main()
 
 #
-# Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+# Editor modelines  -  https://www.wireshark.org/tools/modelines.html
 #
 # Local variables:
 # c-basic-offset: 4

@@ -1,5 +1,4 @@
-/*
- * crc7.h
+/** @file
  *
  * Functions and types for CRC checks.
  *
@@ -7,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * Generated on Wed Jul 11 17:24:57 2012,
  * by pycrc v0.7.10, http://www.tty1.net/pycrc/
@@ -36,7 +23,7 @@
 #ifndef __CRC7__H__
 #define __CRC7__H__
 
-#include "ws_symbol_export.h"
+#include <wireshark.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,7 +40,7 @@ extern "C" {
  *
  * \return     The initial crc value.
  *****************************************************************************/
-static inline guint8 crc7init(void)
+static inline uint8_t crc7init(void)
 {
     return 0x00 << 1;
 }
@@ -67,7 +54,7 @@ static inline guint8 crc7init(void)
  * \param data_len Number of bytes in the \a data buffer.
  * \return         The updated crc value.
  *****************************************************************************/
-WS_DLL_PUBLIC guint8 crc7update(guint8 crc, const unsigned char *data, int data_len);
+WS_DLL_PUBLIC uint8_t crc7update(uint8_t crc, const unsigned char *data, int data_len);
 
 
 /**
@@ -76,7 +63,7 @@ WS_DLL_PUBLIC guint8 crc7update(guint8 crc, const unsigned char *data, int data_
  * \param crc  The current crc value.
  * \return     The final crc value.
  *****************************************************************************/
-static inline guint8 crc7finalize(guint8 crc)
+static inline uint8_t crc7finalize(uint8_t crc)
 {
     return (crc >> 1) ^ 0x00;
 }

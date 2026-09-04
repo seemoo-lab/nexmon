@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 - 2012 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -35,43 +23,45 @@
 void proto_register_sdh(void);
 void proto_reg_handoff_sdh(void);
 
-static int proto_sdh = -1;
+static int proto_sdh;
 
-static gint ett_sdh = -1;
+static int ett_sdh;
 
-static int hf_sdh_a1 = -1;
-static int hf_sdh_a2 = -1;
-static int hf_sdh_j0 = -1;
-static int hf_sdh_b1 = -1;
-static int hf_sdh_e1 = -1;
-static int hf_sdh_f1 = -1;
-static int hf_sdh_d1 = -1;
-static int hf_sdh_d2 = -1;
-static int hf_sdh_d3 = -1;
-static int hf_sdh_au = -1;
-static int hf_sdh_b2 = -1;
-static int hf_sdh_k1 = -1;
-static int hf_sdh_k2 = -1;
-static int hf_sdh_d4 = -1;
-static int hf_sdh_d5 = -1;
-static int hf_sdh_d6 = -1;
-static int hf_sdh_d7 = -1;
-static int hf_sdh_d8 = -1;
-static int hf_sdh_d9 = -1;
-static int hf_sdh_d10 = -1;
-static int hf_sdh_d11 = -1;
-static int hf_sdh_d12 = -1;
-static int hf_sdh_s1 = -1;
-static int hf_sdh_m1 = -1;
-static int hf_sdh_e2 = -1;
-static int hf_sdh_h1 = -1;
-static int hf_sdh_h2 = -1;
-static int hf_sdh_j1 = -1;
+static int hf_sdh_a1;
+static int hf_sdh_a2;
+static int hf_sdh_j0;
+static int hf_sdh_b1;
+static int hf_sdh_e1;
+static int hf_sdh_f1;
+static int hf_sdh_d1;
+static int hf_sdh_d2;
+static int hf_sdh_d3;
+static int hf_sdh_au;
+static int hf_sdh_b2;
+static int hf_sdh_k1;
+static int hf_sdh_k2;
+static int hf_sdh_d4;
+static int hf_sdh_d5;
+static int hf_sdh_d6;
+static int hf_sdh_d7;
+static int hf_sdh_d8;
+static int hf_sdh_d9;
+static int hf_sdh_d10;
+static int hf_sdh_d11;
+static int hf_sdh_d12;
+static int hf_sdh_s1;
+static int hf_sdh_m1;
+static int hf_sdh_e2;
+static int hf_sdh_h1;
+static int hf_sdh_h2;
+static int hf_sdh_j1;
 
-static gint sdh_data_rate = 1;
+static dissector_handle_t sdh_handle;
+
+static int sdh_data_rate = 1;
 
 static const enum_val_t data_rates[] = {
-  {"Attempt to guess", "Attempt to guess", -1},
+  {"Guess", "Attempt to guess", -1},
   {"OC-3",  "OC-3",   1},
   {"OC-12", "OC-12",  4},
   {"OC-24", "OC-24",  8},
@@ -79,7 +69,7 @@ static const enum_val_t data_rates[] = {
   {NULL, NULL, -1}
 };
 
-const value_string sdh_s1_vals[] = {
+static const value_string sdh_s1_vals[] = {
   { 0, "Quality unknown" },
   { 1, "Reserved" },
   { 2, "Rec G.811" },
@@ -102,7 +92,7 @@ const value_string sdh_s1_vals[] = {
 static int
 get_sdh_level(tvbuff_t *tvb, packet_info *pinfo)
 {
-  guint64 *hdr = NULL;
+  uint64_t *hdr = NULL;
 
   /*data rate has been set in the SDH options*/
   if(sdh_data_rate != -1) return sdh_data_rate;
@@ -150,16 +140,16 @@ dissect_sdh(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
     int     level = get_sdh_level(tvb, pinfo);
 
-    guint8  h1;
-    guint8  h2;
-    guint16 au;
+    uint8_t h1;
+    uint8_t h2;
+    uint16_t au;
     int auoffset;
 
     sdh_item = proto_tree_add_protocol_format(tree, proto_sdh, tvb, 0, -1, "SDH");
     sdh_tree = proto_item_add_subtree(sdh_item, ett_sdh);
 
-    h1  = tvb_get_guint8(tvb, 0*level+(3*level*COLUMNS));
-    h2  = tvb_get_guint8(tvb, 3*level+(3*level*COLUMNS));
+    h1  = tvb_get_uint8(tvb, 0*level+(3*level*COLUMNS));
+    h2  = tvb_get_uint8(tvb, 3*level+(3*level*COLUMNS));
     au  = (h2 | ((0x03 & h1) << 8));
 
     proto_tree_add_item(sdh_tree, hf_sdh_a1, tvb, 0*level, 3*level, ENC_NA);
@@ -260,7 +250,7 @@ proto_register_sdh(void)
     { "H2", "sdh.h2", FT_UINT8, BASE_HEX, NULL, 0x0, NULL, HFILL }},
 
   };
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_sdh,
   };
 
@@ -277,20 +267,17 @@ proto_register_sdh(void)
     "Data rate",
     &sdh_data_rate, data_rates, ENC_BIG_ENDIAN);
 
-  register_dissector("sdh", dissect_sdh, proto_sdh);
+  sdh_handle = register_dissector("sdh", dissect_sdh, proto_sdh);
 }
 
 void
 proto_reg_handoff_sdh(void)
 {
-  dissector_handle_t sdh_handle;
-
-  sdh_handle = find_dissector("sdh");
   dissector_add_uint("wtap_encap", WTAP_ENCAP_SDH, sdh_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

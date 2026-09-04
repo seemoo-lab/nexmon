@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>537</width>
-    <height>385</height>
+    <width>826</width>
+    <height>672</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -27,8 +27,8 @@
     <rect>
      <x>5</x>
      <y>10</y>
-     <width>529</width>
-     <height>371</height>
+     <width>821</width>
+     <height>661</height>
     </rect>
    </property>
    <property name="windowTitle">
@@ -44,89 +44,27 @@
     <attribute name="title">
      <string>Statistics</string>
     </attribute>
-    <widget class="QPushButton" name="chunkStatisticsButton">
-     <property name="geometry">
-      <rect>
-       <x>0</x>
-       <y>310</y>
-       <width>131</width>
-       <height>32</height>
-      </rect>
-     </property>
-     <property name="focusPolicy">
-      <enum>Qt::NoFocus</enum>
-     </property>
-     <property name="text">
-      <string>Chunk Statistics</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="setFilterButton">
-     <property name="geometry">
-      <rect>
-       <x>130</x>
-       <y>310</y>
-       <width>141</width>
-       <height>32</height>
-      </rect>
-     </property>
-     <property name="focusPolicy">
-      <enum>Qt::NoFocus</enum>
-     </property>
-     <property name="text">
-      <string>Filter Association</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="pushButton">
-     <property name="geometry">
-      <rect>
-       <x>390</x>
-       <y>310</y>
-       <width>114</width>
-       <height>32</height>
-      </rect>
-     </property>
-     <property name="focusPolicy">
-      <enum>Qt::NoFocus</enum>
-     </property>
-     <property name="text">
-      <string>Close</string>
-     </property>
-    </widget>
     <widget class="QWidget" name="gridLayoutWidget_3">
      <property name="geometry">
       <rect>
        <x>20</x>
        <y>40</y>
-       <width>481</width>
-       <height>201</height>
+       <width>781</width>
+       <height>231</height>
       </rect>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
-      <item row="3" column="0">
-       <widget class="QLabel" name="label_17">
-        <property name="text">
-         <string>Number of Data Chunks from EP2 to EP1: </string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_15">
-        <property name="text">
-         <string>Checksum Type:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_16">
-        <property name="text">
-         <string>Number of Data Chunks from EP1 to EP2: </string>
-        </property>
-       </widget>
-      </item>
       <item row="2" column="0">
        <widget class="QLabel" name="label_13">
         <property name="text">
          <string>Number of Data Bytes from EP1 to EP2:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QLabel" name="data21Label">
+        <property name="text">
+         <string>-</string>
         </property>
        </widget>
       </item>
@@ -137,135 +75,172 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
-       <widget class="QLabel" name="data12Label">
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_15">
         <property name="text">
-         <string>TextLabel</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QLabel" name="checksumLabel">
-        <property name="text">
-         <string>TextLabel</string>
+         <string>Checksum Type:</string>
         </property>
        </widget>
       </item>
       <item row="2" column="1">
        <widget class="QLabel" name="bytes12Label">
         <property name="text">
-         <string>TextLabel</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="1">
-       <widget class="QLabel" name="data21Label">
-        <property name="text">
-         <string>TextLabel</string>
+         <string>-</string>
         </property>
        </widget>
       </item>
       <item row="4" column="1">
        <widget class="QLabel" name="bytes21Label">
         <property name="text">
-         <string>TextLabel</string>
+         <string>-</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLabel" name="data12Label">
+        <property name="text">
+         <string>-</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_17">
+        <property name="text">
+         <string>Number of Data Chunks from EP2 to EP1: </string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLabel" name="checksumLabel">
+        <property name="text">
+         <string>-</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_16">
+        <property name="text">
+         <string>Number of Data Chunks from EP1 to EP2: </string>
         </property>
        </widget>
       </item>
      </layout>
+    </widget>
+    <widget class="QWidget" name="gridLayoutWidget_4">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>540</y>
+       <width>791</width>
+       <height>55</height>
+      </rect>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QPushButton" name="setFilterButton">
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
+        </property>
+        <property name="text">
+         <string>Filter Association</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="chunkStatisticsButton">
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
+        </property>
+        <property name="text">
+         <string>Chunk Statistics</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QDialogButtonBox" name="buttonBox">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="standardButtons">
+         <set>QDialogButtonBox::Close</set>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+    <widget class="QLabel" name="hintLabel">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>510</y>
+       <width>791</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>&lt;small&gt;&lt;i&gt;For complete analysis check SCTP preference Enable Association indexing&lt;/i&gt;&lt;/small&gt;</string>
+     </property>
     </widget>
    </widget>
    <widget class="QWidget" name="Endpoint_1">
     <attribute name="title">
      <string>Endpoint 1</string>
     </attribute>
-    <widget class="QPushButton" name="GraphTSN_1">
-     <property name="geometry">
-      <rect>
-       <x>0</x>
-       <y>310</y>
-       <width>114</width>
-       <height>32</height>
-      </rect>
-     </property>
-     <property name="focusPolicy">
-      <enum>Qt::NoFocus</enum>
-     </property>
-     <property name="text">
-      <string>Graph TSN</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="GraphBytes_1">
-     <property name="geometry">
-      <rect>
-       <x>110</x>
-       <y>310</y>
-       <width>114</width>
-       <height>32</height>
-      </rect>
-     </property>
-     <property name="focusPolicy">
-      <enum>Qt::NoFocus</enum>
-     </property>
-     <property name="text">
-      <string>Graph Bytes</string>
-     </property>
-    </widget>
     <widget class="QLabel" name="labelEP1">
      <property name="geometry">
       <rect>
        <x>10</x>
        <y>10</y>
-       <width>441</width>
-       <height>16</height>
+       <width>791</width>
+       <height>41</height>
       </rect>
      </property>
      <property name="text">
-      <string>Complete list of IP Addresses as provided in the INIT Chunk</string>
+      <string>Complete List of IP addresses from INIT Chunk:</string>
      </property>
     </widget>
     <widget class="QWidget" name="gridLayoutWidget">
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>170</y>
-       <width>520</width>
-       <height>138</height>
+       <y>210</y>
+       <width>791</width>
+       <height>301</height>
       </rect>
      </property>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="2" column="0">
-       <widget class="QLabel" name="label_213">
+      <item row="5" column="1">
+       <widget class="QLabel" name="label_226">
         <property name="text">
-         <string>Requested Number of Inbound Streams:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_211">
-        <property name="text">
-         <string>Port:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QLabel" name="label_222">
-        <property name="text">
-         <string>TextLabel</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_212">
-        <property name="text">
-         <string>Sent Verification Tag:</string>
+         <string>-</string>
         </property>
        </widget>
       </item>
       <item row="3" column="1">
        <widget class="QLabel" name="label_224">
         <property name="text">
-         <string>TextLabel</string>
+         <string>-</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLabel" name="label_222">
+        <property name="text">
+         <string>-</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="0">
+       <widget class="QLabel" name="label_216">
+        <property name="text">
+         <string>Minimum Number of Outbound Streams:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="label_215">
+        <property name="text">
+         <string>Provided Number of Outbound Streams:</string>
         </property>
        </widget>
       </item>
@@ -276,87 +251,120 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="QLabel" name="label_221">
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_212">
         <property name="text">
-         <string>TextLabel</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="0">
-       <widget class="QLabel" name="label_215">
-        <property name="text">
-         <string>Minimum Number of Outbound Streams:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="QLabel" name="label_223">
-        <property name="text">
-         <string>TextLabel</string>
+         <string>Sent Verification Tag:</string>
         </property>
        </widget>
       </item>
       <item row="4" column="1">
        <widget class="QLabel" name="label_225">
         <property name="text">
-         <string>TextLabel</string>
+         <string>-</string>
         </property>
        </widget>
       </item>
-      <item row="5" column="0">
-       <widget class="QLabel" name="label_216">
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_211">
         <property name="text">
-         <string>TextLabel</string>
+         <string>Port:</string>
         </property>
        </widget>
       </item>
-      <item row="5" column="1">
-       <widget class="QLabel" name="label_226">
+      <item row="2" column="1">
+       <widget class="QLabel" name="label_223">
         <property name="text">
-         <string>TextLabel</string>
+         <string>-</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLabel" name="label_221">
+        <property name="text">
+         <string>-</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_213">
+        <property name="text">
+         <string>Requested Number of Inbound Streams:</string>
         </property>
        </widget>
       </item>
      </layout>
     </widget>
-    <widget class="QPushButton" name="pushButton_2">
-     <property name="geometry">
-      <rect>
-       <x>390</x>
-       <y>310</y>
-       <width>114</width>
-       <height>32</height>
-      </rect>
-     </property>
-     <property name="focusPolicy">
-      <enum>Qt::NoFocus</enum>
-     </property>
-     <property name="text">
-      <string>Close</string>
-     </property>
-    </widget>
     <widget class="QListWidget" name="listWidgetEP1">
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>30</y>
-       <width>501</width>
-       <height>131</height>
+       <y>60</y>
+       <width>791</width>
+       <height>141</height>
       </rect>
      </property>
     </widget>
-    <widget class="QPushButton" name="GraphArwnd_1">
+    <widget class="QWidget" name="gridLayoutWidget_5">
      <property name="geometry">
       <rect>
-       <x>220</x>
-       <y>310</y>
-       <width>114</width>
-       <height>32</height>
+       <x>10</x>
+       <y>540</y>
+       <width>791</width>
+       <height>55</height>
+      </rect>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_3">
+      <item>
+       <widget class="QPushButton" name="GraphBytes_1">
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
+        </property>
+        <property name="text">
+         <string>Graph Bytes</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="GraphTSN_1">
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
+        </property>
+        <property name="text">
+         <string>Graph TSN</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="GraphArwnd_1">
+        <property name="text">
+         <string>Graph Arwnd</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QDialogButtonBox" name="buttonBox_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="standardButtons">
+         <set>QDialogButtonBox::Close</set>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+    <widget class="QLabel" name="hintLabel_2">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>520</y>
+       <width>791</width>
+       <height>20</height>
       </rect>
      </property>
      <property name="text">
-      <string>Graph Arwnd</string>
+      <string>&lt;small&gt;&lt;i&gt;For complete analysis check SCTP preference Enable Association indexing&lt;/i&gt;&lt;/small&gt;</string>
      </property>
     </widget>
    </widget>
@@ -364,45 +372,13 @@
     <attribute name="title">
      <string>Endpoint 2</string>
     </attribute>
-    <widget class="QPushButton" name="GraphTSN_2">
-     <property name="geometry">
-      <rect>
-       <x>0</x>
-       <y>310</y>
-       <width>114</width>
-       <height>32</height>
-      </rect>
-     </property>
-     <property name="focusPolicy">
-      <enum>Qt::NoFocus</enum>
-     </property>
-     <property name="text">
-      <string>Graph TSN</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="GraphBytes_2">
-     <property name="geometry">
-      <rect>
-       <x>110</x>
-       <y>310</y>
-       <width>114</width>
-       <height>32</height>
-      </rect>
-     </property>
-     <property name="focusPolicy">
-      <enum>Qt::NoFocus</enum>
-     </property>
-     <property name="text">
-      <string>Graph Bytes</string>
-     </property>
-    </widget>
     <widget class="QWidget" name="gridLayoutWidget_2">
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>170</y>
-       <width>511</width>
-       <height>141</height>
+       <y>210</y>
+       <width>791</width>
+       <height>301</height>
       </rect>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
@@ -416,14 +392,14 @@
       <item row="3" column="1">
        <widget class="QLabel" name="label_324">
         <property name="text">
-         <string>TextLabel</string>
+         <string>-</string>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
        <widget class="QLabel" name="label_321">
         <property name="text">
-         <string>TextLabel</string>
+         <string>-</string>
         </property>
        </widget>
       </item>
@@ -458,21 +434,21 @@
       <item row="1" column="1">
        <widget class="QLabel" name="label_322">
         <property name="text">
-         <string>TextLabel</string>
+         <string>-</string>
         </property>
        </widget>
       </item>
       <item row="2" column="1">
        <widget class="QLabel" name="label_323">
         <property name="text">
-         <string>TextLabel</string>
+         <string>-</string>
         </property>
        </widget>
       </item>
       <item row="5" column="1">
        <widget class="QLabel" name="label_326">
         <property name="text">
-         <string>TextLabel</string>
+         <string>-</string>
         </property>
        </widget>
       </item>
@@ -486,7 +462,7 @@
       <item row="4" column="1">
        <widget class="QLabel" name="label_325">
         <property name="text">
-         <string>TextLabel</string>
+         <string>-</string>
         </property>
        </widget>
       </item>
@@ -497,78 +473,93 @@
       <rect>
        <x>10</x>
        <y>10</y>
-       <width>441</width>
-       <height>16</height>
+       <width>791</width>
+       <height>41</height>
       </rect>
      </property>
      <property name="text">
-      <string>Complete list of IP Addresses as provided in the INIT-ACK Chunk</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="pushButton_3">
-     <property name="geometry">
-      <rect>
-       <x>390</x>
-       <y>310</y>
-       <width>114</width>
-       <height>32</height>
-      </rect>
-     </property>
-     <property name="focusPolicy">
-      <enum>Qt::NoFocus</enum>
-     </property>
-     <property name="text">
-      <string>Close</string>
+      <string>Complete List of IP addresses from INIT_ACK Chunk:</string>
      </property>
     </widget>
     <widget class="QListWidget" name="listWidgetEP2">
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>30</y>
-       <width>501</width>
-       <height>131</height>
+       <y>60</y>
+       <width>791</width>
+       <height>141</height>
       </rect>
      </property>
     </widget>
-    <widget class="QPushButton" name="GraphArwnd_2">
+    <widget class="QWidget" name="horizontalLayoutWidget">
      <property name="geometry">
       <rect>
-       <x>220</x>
-       <y>310</y>
-       <width>121</width>
-       <height>32</height>
+       <x>10</x>
+       <y>540</y>
+       <width>791</width>
+       <height>55</height>
+      </rect>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <item>
+       <widget class="QPushButton" name="GraphBytes_2">
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
+        </property>
+        <property name="text">
+         <string>Graph Bytes</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="GraphTSN_2">
+        <property name="focusPolicy">
+         <enum>Qt::NoFocus</enum>
+        </property>
+        <property name="text">
+         <string>Graph TSN</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="GraphArwnd_2">
+        <property name="text">
+         <string>Graph Arwnd</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QDialogButtonBox" name="buttonBox_3">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="standardButtons">
+         <set>QDialogButtonBox::Close</set>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+    <widget class="QLabel" name="hintLabel_3">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>520</y>
+       <width>791</width>
+       <height>20</height>
       </rect>
      </property>
      <property name="text">
-      <string>Graph a_rwnd</string>
+      <string>&lt;small&gt;&lt;i&gt;For complete analysis check SCTP preference Enable Association indexing&lt;/i&gt;&lt;/small&gt;</string>
      </property>
     </widget>
    </widget>
   </widget>
  </widget>
- <resources>
-  <include location="../../image/toolbar.qrc"/>
- </resources>
+ <resources/>
  <connections>
   <connection>
-   <sender>pushButton_2</sender>
-   <signal>clicked()</signal>
-   <receiver>SCTPAssocAnalyseDialog</receiver>
-   <slot>close()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>471</x>
-     <y>365</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>475</x>
-     <y>384</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>pushButton</sender>
+   <sender>buttonBox</sender>
    <signal>clicked()</signal>
    <receiver>SCTPAssocAnalyseDialog</receiver>
    <slot>close()</slot>
@@ -584,7 +575,23 @@
    </hints>
   </connection>
   <connection>
-   <sender>pushButton_3</sender>
+   <sender>buttonBox_2</sender>
+   <signal>clicked()</signal>
+   <receiver>SCTPAssocAnalyseDialog</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>471</x>
+     <y>365</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>475</x>
+     <y>384</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox_3</sender>
    <signal>clicked()</signal>
    <receiver>SCTPAssocAnalyseDialog</receiver>
    <slot>close()</slot>

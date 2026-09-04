@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -30,28 +18,28 @@
 void proto_reg_handoff_teklink(void);
 void proto_register_teklink(void);
 
-static int proto_teklink = -1;
-static int hf_teklink_procedure = -1;
-static int hf_teklink_unknown_long = -1;
-static int hf_teklink_unknown_string = -1;
-static int hf_teklink_cmd = -1;
-static int hf_teklink_user = -1;
-static int hf_teklink_host = -1;
-static int hf_teklink_location = -1;
-static int hf_teklink_tla_type = -1;
-static int hf_teklink_locked = -1;
-static int hf_teklink_vtc_srcnames = -1;
-static int hf_teklink_vtc_dstnames = -1;
-static int hf_teklink_vtc_sigpol = -1;
-static int hf_teklink_vtc_sigen = -1;
-static int hf_teklink_vtc_clksource = -1;
-static int hf_teklink_vtc_clkmode = -1;
-static int hf_teklink_vtc_clkedge = -1;
-static int hf_teklink_vtc_mode = -1;
-static int hf_teklink_vtc_edge = -1;
-static int hf_teklink_vtc_sigfeedback = -1;
+static int proto_teklink;
+static int hf_teklink_procedure;
+static int hf_teklink_unknown_long;
+static int hf_teklink_unknown_string;
+static int hf_teklink_cmd;
+static int hf_teklink_user;
+static int hf_teklink_host;
+static int hf_teklink_location;
+static int hf_teklink_tla_type;
+static int hf_teklink_locked;
+static int hf_teklink_vtc_srcnames;
+static int hf_teklink_vtc_dstnames;
+static int hf_teklink_vtc_sigpol;
+static int hf_teklink_vtc_sigen;
+static int hf_teklink_vtc_clksource;
+static int hf_teklink_vtc_clkmode;
+static int hf_teklink_vtc_clkedge;
+static int hf_teklink_vtc_mode;
+static int hf_teklink_vtc_edge;
+static int hf_teklink_vtc_sigfeedback;
 
-static gint ett_teklink = -1;
+static int ett_teklink;
 
 static const value_string teklink_vtc_srcnames[] = {
 	{ 0, "VTC_SRC_APPSIG0" },
@@ -170,14 +158,14 @@ static const value_string teklink_vtc_modes[] = {
 	{ 0, NULL },
 };
 
-static int dissect_teklink_tlaframeopen_call(tvbuff_t *tvb, packet_info *pinfo _U_,
+static int dissect_teklink_tlaframeopen_call(tvbuff_t *tvb, packet_info *pinfo,
 	proto_tree *tree, void* data _U_)
 {
 	int offset = 0;
 	offset = dissect_rpc_uint32(tvb, tree, hf_teklink_unknown_long, offset);
-	offset = dissect_rpc_string(tvb, tree, hf_teklink_unknown_string, offset, NULL);
-	offset = dissect_rpc_string(tvb, tree, hf_teklink_unknown_string, offset, NULL);
-	offset = dissect_rpc_string(tvb, tree, hf_teklink_unknown_string, offset, NULL);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_teklink_unknown_string, offset, NULL);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_teklink_unknown_string, offset, NULL);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_teklink_unknown_string, offset, NULL);
 	return offset;
 }
 
@@ -203,14 +191,14 @@ static int dissect_teklink_tlaframeopen_reply(tvbuff_t *tvb, packet_info *pinfo 
 	return offset;
 }
 
-static int dissect_teklink_get_software_version_reply(tvbuff_t *tvb, packet_info *pinfo _U_,
+static int dissect_teklink_get_software_version_reply(tvbuff_t *tvb, packet_info *pinfo,
 	proto_tree *tree, void* data _U_)
 {
 	int offset = 0;
 	offset = dissect_rpc_uint32(tvb, tree, hf_teklink_unknown_long, offset);
 	offset = dissect_rpc_uint32(tvb, tree, hf_teklink_unknown_long, offset);
-	offset = dissect_rpc_string(tvb, tree, hf_teklink_unknown_string, offset, NULL);
-	offset = dissect_rpc_string(tvb, tree, hf_teklink_unknown_string, offset, NULL);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_teklink_unknown_string, offset, NULL);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_teklink_unknown_string, offset, NULL);
 	return offset;
 }
 
@@ -233,7 +221,7 @@ static int dissect_teklink_call65_reply(tvbuff_t *tvb, packet_info *pinfo _U_,
 	return dissect_rpc_uint32(tvb, tree, hf_teklink_unknown_long, 0);
 }
 
-static int dissect_teklink_info_reply(tvbuff_t *tvb, packet_info *pinfo _U_,
+static int dissect_teklink_info_reply(tvbuff_t *tvb, packet_info *pinfo,
 	proto_tree *tree, void* data _U_)
 {
 	int offset = 0;
@@ -241,11 +229,11 @@ static int dissect_teklink_info_reply(tvbuff_t *tvb, packet_info *pinfo _U_,
 	offset = dissect_rpc_uint32(tvb, tree, hf_teklink_unknown_long, offset);
 	offset = dissect_rpc_uint32(tvb, tree, hf_teklink_tla_type, offset);
 	offset = dissect_rpc_uint32(tvb, tree, hf_teklink_unknown_long, offset);
-	offset = dissect_rpc_string(tvb, tree, hf_teklink_unknown_string, offset, NULL);
-	offset = dissect_rpc_string(tvb, tree, hf_teklink_location, offset, NULL);
-	offset = dissect_rpc_string(tvb, tree, hf_teklink_user, offset, NULL);
-	offset = dissect_rpc_string(tvb, tree, hf_teklink_host, offset, NULL);
-	offset = dissect_rpc_string(tvb, tree, hf_teklink_unknown_string, offset, NULL);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_teklink_unknown_string, offset, NULL);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_teklink_location, offset, NULL);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_teklink_user, offset, NULL);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_teklink_host, offset, NULL);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_teklink_unknown_string, offset, NULL);
 	return offset;
 }
 
@@ -277,26 +265,26 @@ static int dissect_teklink_vtc_sigstatall(tvbuff_t *tvb, packet_info *pinfo _U_,
 	return offset;
 }
 
-static int dissect_teklink_vtc_outen(tvbuff_t *tvb, packet_info *pinfo _U_,
+static int dissect_teklink_vtc_outen(tvbuff_t *tvb, packet_info *pinfo,
 	proto_tree *tree, void* data _U_)
 {
 	int offset = 0;
-	guint32 sig = tvb_get_ntohl(tvb, offset);
-	guint32 sigon = tvb_get_ntohl(tvb, offset + 4);
+	uint32_t sig = tvb_get_ntohl(tvb, offset);
+	uint32_t sigon = tvb_get_ntohl(tvb, offset + 4);
 
 	offset = dissect_rpc_uint32(tvb, tree, hf_teklink_vtc_dstnames, offset);
 	offset = dissect_rpc_uint32(tvb, tree, hf_teklink_vtc_sigen, offset);
 
 	col_append_fstr(pinfo->cinfo, COL_INFO," %s, %s ",
-			val_to_str(sig, teklink_vtc_dstnames, "Unknown destination %d"),
+			val_to_str(pinfo->pool, sig, teklink_vtc_dstnames, "Unknown destination %d"),
 			sigon ? "VTC_OUT_FORCE_ON" : "VTC_OUT_FORCE_OFF");
 	return offset;
 }
 
-static int dissect_teklink_vtc_map(tvbuff_t *tvb, packet_info *pinfo _U_,
+static int dissect_teklink_vtc_map(tvbuff_t *tvb, packet_info *pinfo,
 	proto_tree *tree, void* data _U_)
 {
-	guint32 src, dst;
+	uint32_t src, dst;
 	int offset = 0;
 
 	src = tvb_get_ntohl(tvb, offset);
@@ -306,15 +294,15 @@ static int dissect_teklink_vtc_map(tvbuff_t *tvb, packet_info *pinfo _U_,
 	offset = dissect_rpc_uint32(tvb, tree, hf_teklink_vtc_dstnames, offset);
 
 	col_append_fstr(pinfo->cinfo, COL_INFO," %s, %s ",
-			val_to_str(src, teklink_vtc_srcnames, "Unknown source %d"),
-			val_to_str(dst, teklink_vtc_dstnames, "Unknown destination %d"));
+			val_to_str(pinfo->pool, src, teklink_vtc_srcnames, "Unknown source %d"),
+			val_to_str(pinfo->pool, dst, teklink_vtc_dstnames, "Unknown destination %d"));
 	return offset;
 }
 
-static int dissect_teklink_vtc_clk(tvbuff_t *tvb, packet_info *pinfo _U_,
+static int dissect_teklink_vtc_clk(tvbuff_t *tvb, packet_info *pinfo,
 	proto_tree *tree, void* data _U_)
 {
-	guint32 sig, clksource, clkedge, clkmode;
+	uint32_t sig, clksource, clkedge, clkmode;
 	int offset = 0;
 
 	sig = tvb_get_ntohl(tvb, offset);
@@ -328,17 +316,17 @@ static int dissect_teklink_vtc_clk(tvbuff_t *tvb, packet_info *pinfo _U_,
 	offset = dissect_rpc_uint32(tvb, tree, hf_teklink_vtc_clkmode, offset);
 
 	col_append_fstr(pinfo->cinfo, COL_INFO,"  %s, %s, %s, %s",
-			val_to_str(sig, teklink_vtc_dstnames, "Unknown destination %d"),
-			val_to_str(clksource, teklink_vtc_clksource, "Unknown clocksource %d"),
-			val_to_str(clkedge, teklink_vtc_clkedge, "Unknown edge setting %d"),
-			val_to_str(clkmode, teklink_vtc_clkmode, "Unknown mode setting %d"));
+			val_to_str(pinfo->pool, sig, teklink_vtc_dstnames, "Unknown destination %d"),
+			val_to_str(pinfo->pool, clksource, teklink_vtc_clksource, "Unknown clocksource %d"),
+			val_to_str(pinfo->pool, clkedge, teklink_vtc_clkedge, "Unknown edge setting %d"),
+			val_to_str(pinfo->pool, clkmode, teklink_vtc_clkmode, "Unknown mode setting %d"));
 	return offset;
 }
 
-static int dissect_teklink_vtc_mode(tvbuff_t *tvb, packet_info *pinfo _U_,
+static int dissect_teklink_vtc_mode(tvbuff_t *tvb, packet_info *pinfo,
 	proto_tree *tree, void* data _U_)
 {
-	guint32 sig, edge, mode;
+	uint32_t sig, edge, mode;
 	int offset = 0;
 
 	sig = tvb_get_ntohl(tvb, offset);
@@ -351,16 +339,16 @@ static int dissect_teklink_vtc_mode(tvbuff_t *tvb, packet_info *pinfo _U_,
 	offset = dissect_rpc_uint32(tvb, tree, hf_teklink_vtc_mode, offset);
 
 	col_append_fstr(pinfo->cinfo, COL_INFO," %s, %s, %s",
-			val_to_str(sig, teklink_vtc_dstnames, "Unknown destination %d"),
-			val_to_str(edge, teklink_vtc_edge, "Unknown edge setting %d"),
-			val_to_str(mode, teklink_vtc_modes, "Unknown mode setting %d"));
+			val_to_str(pinfo->pool, sig, teklink_vtc_dstnames, "Unknown destination %d"),
+			val_to_str(pinfo->pool, edge, teklink_vtc_edge, "Unknown edge setting %d"),
+			val_to_str(pinfo->pool, mode, teklink_vtc_modes, "Unknown mode setting %d"));
 	return offset;
 }
 
-static int dissect_teklink_vtc_outsetup(tvbuff_t *tvb, packet_info *pinfo _U_,
+static int dissect_teklink_vtc_outsetup(tvbuff_t *tvb, packet_info *pinfo,
 	proto_tree *tree, void* data _U_)
 {
-	guint32 sig, en, pol, feedback;
+	uint32_t sig, en, pol, feedback;
 	int offset = 0;
 
 	sig = tvb_get_ntohl(tvb, offset);
@@ -374,23 +362,23 @@ static int dissect_teklink_vtc_outsetup(tvbuff_t *tvb, packet_info *pinfo _U_,
 	offset = dissect_rpc_uint32(tvb, tree, hf_teklink_vtc_sigfeedback, offset);
 
 	col_append_fstr(pinfo->cinfo, COL_INFO," %s, %s, %s, %s",
-			val_to_str(sig, teklink_vtc_dstnames, "Unknown destination %d"),
-			val_to_str(pol, teklink_vtc_sigpol, "Unknown signal polarity %d"),
-			val_to_str(en, teklink_vtc_sigen, "Unknown signal enable %d"),
-			val_to_str(feedback, teklink_vtc_sigfeedback, "Unknown signal feedback setting %d"));
+			val_to_str(pinfo->pool, sig, teklink_vtc_dstnames, "Unknown destination %d"),
+			val_to_str(pinfo->pool, pol, teklink_vtc_sigpol, "Unknown signal polarity %d"),
+			val_to_str(pinfo->pool, en, teklink_vtc_sigen, "Unknown signal enable %d"),
+			val_to_str(pinfo->pool, feedback, teklink_vtc_sigfeedback, "Unknown signal feedback setting %d"));
 	return offset;
 }
 
-static int dissect_teklink_vtc_res(tvbuff_t *tvb, packet_info *pinfo _U_,
+static int dissect_teklink_vtc_res(tvbuff_t *tvb, packet_info *pinfo,
 	proto_tree *tree, void* data _U_)
 {
 	int offset = 0;
-	guint32 sig = tvb_get_ntohl(tvb, offset);
+	uint32_t sig = tvb_get_ntohl(tvb, offset);
 
 	offset = dissect_rpc_uint32(tvb, tree, hf_teklink_vtc_dstnames, offset);
 
 	col_append_fstr(pinfo->cinfo, COL_INFO," %s",
-			val_to_str(sig, teklink_vtc_dstnames, "Unknown destination %d"));
+			val_to_str(pinfo->pool, sig, teklink_vtc_dstnames, "Unknown destination %d"));
 	return offset;
 }
 
@@ -545,10 +533,10 @@ proto_register_teklink(void)
 				"Signal Polarity", "teklink.signal.polarity", FT_UINT32, BASE_HEX,
 				VALS(teklink_vtc_sigpol), 0, NULL, HFILL }},
 		{ &hf_teklink_vtc_clkmode, {
-				"Clock Mode", "teklink.clock.polarity", FT_UINT32, BASE_HEX,
+				"Clock Mode", "teklink.clock.mode", FT_UINT32, BASE_HEX,
 				VALS(teklink_vtc_clkmode), 0, NULL, HFILL }},
 		{ &hf_teklink_vtc_clkedge, {
-				"Clock Edge", "teklink.clock.polarity", FT_UINT32, BASE_HEX,
+				"Clock Edge", "teklink.clock.clkedge", FT_UINT32, BASE_HEX,
 				VALS(teklink_vtc_clkedge), 0, NULL, HFILL }},
 		{ &hf_teklink_vtc_clksource, {
 				"Clock Source", "teklink.clock.source", FT_UINT32, BASE_HEX,
@@ -564,7 +552,7 @@ proto_register_teklink(void)
 				VALS(teklink_vtc_sigfeedback), 0, NULL, HFILL }}
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_teklink
 	};
 
@@ -582,7 +570,7 @@ proto_reg_handoff_teklink(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

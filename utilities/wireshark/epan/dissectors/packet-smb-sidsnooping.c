@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -26,7 +14,7 @@
 #include <epan/packet.h>
 #include <epan/epan_dissect.h>
 #include <epan/tap.h>
-#include <wsutil/report_err.h>
+#include <wsutil/report_message.h>
 #include "packet-dcerpc.h"
 #include "packet-dcerpc-nt.h"
 #include "packet-smb.h"
@@ -35,26 +23,26 @@
 void proto_register_smb_sidsnooping(void);
 
 #if 0
-static int hf_lsa = -1;
-static int hf_lsa_opnum = -1;
+static int hf_lsa;
+static int hf_lsa_opnum;
 #endif
-static int hf_lsa_info_level = -1;
-static int hf_lsa_domain = -1;
-static int hf_nt_domain_sid = -1;
-static int hf_samr_hnd = -1;
-static int hf_samr_rid = -1;
-static int hf_samr_acct_name = -1;
-static int hf_samr_level = -1;
+static int hf_lsa_info_level;
+static int hf_lsa_domain;
+static int hf_nt_domain_sid;
+static int hf_samr_hnd;
+static int hf_samr_rid;
+static int hf_samr_acct_name;
+static int hf_samr_level;
 
 
-GHashTable *sid_name_table = NULL;
+GHashTable *sid_name_table;
 
 
-static GHashTable *ctx_handle_table = NULL;
+static GHashTable *ctx_handle_table;
 
 
-static gboolean lsa_policy_information_tap_installed = FALSE;
-static gboolean samr_query_dispinfo_tap_installed = FALSE;
+static bool lsa_policy_information_tap_installed;
+static bool samr_query_dispinfo_tap_installed;
 
 
 const char *
@@ -79,8 +67,8 @@ add_sid_name_mapping(const char *sid, const char *name)
  * QueryDispInfo :
  * level  1 : user displayinfo 1
  */
-static int
-samr_query_dispinfo(void *dummy _U_, packet_info *pinfo, epan_dissect_t *edt, const void *pri)
+static tap_packet_status
+samr_query_dispinfo(void *dummy _U_, packet_info *pinfo, epan_dissect_t *edt, const void *pri, tap_flags_t flags _U_)
 {
 	const dcerpc_info *ri=(const dcerpc_info *)pri;
 	void *old_ctx=NULL;
@@ -100,25 +88,25 @@ samr_query_dispinfo(void *dummy _U_, packet_info *pinfo, epan_dissect_t *edt, co
 
 	gp=proto_get_finfo_ptr_array(edt->tree, hf_samr_level);
 	if(!gp || gp->len!=1){
-		return 0;
+		return TAP_PACKET_DONT_REDRAW;
 	}
 	fi=(field_info *)gp->pdata[0];
-	info_level=fi->value.value.sinteger;
+	info_level = fvalue_get_sinteger(fi->value);
 
 	if(info_level!=1){
-		return 0;
+		return TAP_PACKET_DONT_REDRAW;
 	}
 
 	if(!ri){
-		return 0;
+		return TAP_PACKET_DONT_REDRAW;
 	}
 	if(!ri->call_data){
-		return 0;
+		return TAP_PACKET_DONT_REDRAW;
 	}
 	if(ri->ptype == PDU_REQ){
 		gp=proto_get_finfo_ptr_array(edt->tree, hf_samr_hnd);
 		if(!gp || gp->len!=1){
-			return 0;
+			return TAP_PACKET_DONT_REDRAW;
 		}
 		fi=(field_info *)gp->pdata[0];
 
@@ -127,32 +115,32 @@ samr_query_dispinfo(void *dummy _U_, packet_info *pinfo, epan_dissect_t *edt, co
 			g_hash_table_remove(ctx_handle_table, GINT_TO_POINTER(pinfo->num));
 		}
 		if(!old_ctx){
-			old_ctx=wmem_memdup(wmem_file_scope(), fi->value.value.bytes->data, 20);
+			old_ctx=wmem_memdup(wmem_file_scope(), fvalue_get_bytes_data(fi->value), 20);
 		}
 		g_hash_table_insert(ctx_handle_table, GINT_TO_POINTER(pinfo->num), old_ctx);
 
-		return 0;
+		return TAP_PACKET_DONT_REDRAW;
 	}
 
 	if(!ri->call_data->req_frame){
-		return 0;
+		return TAP_PACKET_DONT_REDRAW;
 	}
 
 	old_ctx=g_hash_table_lookup(ctx_handle_table, GINT_TO_POINTER(ri->call_data->req_frame));
 	if(!old_ctx){
-		return 0;
+		return TAP_PACKET_DONT_REDRAW;
 	}
 
 	if (!dcerpc_fetch_polhnd_data((e_ctx_hnd *)old_ctx, &pol_name, NULL, NULL, NULL, ri->call_data->req_frame)) {
-		return 0;
+		return TAP_PACKET_DONT_REDRAW;
 	}
 
 	if (!pol_name)
-		return 0;
+		return TAP_PACKET_DONT_REDRAW;
 
 	sid=strstr(pol_name,"S-1-5");
 	if(!sid){
-		return 0;
+		return TAP_PACKET_DONT_REDRAW;
 	}
 
 	for(sid_len=4;1;sid_len++){
@@ -167,12 +155,12 @@ samr_query_dispinfo(void *dummy _U_, packet_info *pinfo, epan_dissect_t *edt, co
 
 	gp_rids=proto_get_finfo_ptr_array(edt->tree, hf_samr_rid);
 	if(!gp_rids || gp_rids->len<1){
-		return 0;
+		return TAP_PACKET_DONT_REDRAW;
 	}
 	num_rids=gp_rids->len;
 	gp_names=proto_get_finfo_ptr_array(edt->tree, hf_samr_acct_name);
 	if(!gp_names || gp_names->len<1){
-		return 0;
+		return TAP_PACKET_DONT_REDRAW;
 	}
 	num_names=gp_names->len;
 
@@ -187,12 +175,12 @@ samr_query_dispinfo(void *dummy _U_, packet_info *pinfo, epan_dissect_t *edt, co
 
 		fi_rid=(field_info *)gp_rids->pdata[num_rids-1];
 		fi_name=(field_info *)gp_names->pdata[num_rids-1];
-		g_strlcpy(sid_name_str, sid, 256);
+		(void) g_strlcpy(sid_name_str, sid, 256);
 		sid_name_str[len++]='-';
-		g_snprintf(sid_name_str+len, 256-len, "%d",fi_rid->value.value.sinteger);
-		add_sid_name_mapping(sid_name_str, fi_name->value.value.string);
+		snprintf(sid_name_str+len, 256-len, "%d", fvalue_get_sinteger(fi_rid->value));
+		add_sid_name_mapping(sid_name_str, fvalue_get_string(fi_name->value));
 	}
-	return 1;
+	return TAP_PACKET_REDRAW;
 }
 
 /*
@@ -201,21 +189,21 @@ samr_query_dispinfo(void *dummy _U_, packet_info *pinfo, epan_dissect_t *edt, co
  * level  5 : ACCOUNT_DOMAIN_INFO lsa.domain_sid -> lsa.domain
  * level 12 : DNS_DOMAIN_INFO     lsa.domain_sid -> lsa.domain
  */
-static int
-lsa_policy_information(void *dummy _U_, packet_info *pinfo _U_, epan_dissect_t *edt, const void *pri _U_)
+static tap_packet_status
+lsa_policy_information(void *dummy _U_, packet_info *pinfo _U_, epan_dissect_t *edt, const void *pri _U_, tap_flags_t flags _U_)
 {
 	GPtrArray *gp;
 	field_info *fi;
-	char *domain;
-	char *sid;
+	const char *domain;
+	const char *sid;
 	int info_level;
 
 	gp=proto_get_finfo_ptr_array(edt->tree, hf_lsa_info_level);
 	if(!gp || gp->len!=1){
-		return 0;
+		return TAP_PACKET_DONT_REDRAW;
 	}
 	fi=(field_info *)gp->pdata[0];
-	info_level=fi->value.value.sinteger;
+	info_level = fvalue_get_sinteger(fi->value);
 
 	switch(info_level){
 	case 3:
@@ -223,27 +211,27 @@ lsa_policy_information(void *dummy _U_, packet_info *pinfo _U_, epan_dissect_t *
 	case 12:
 		gp=proto_get_finfo_ptr_array(edt->tree, hf_lsa_domain);
 		if(!gp || gp->len!=1){
-			return 0;
+			return TAP_PACKET_DONT_REDRAW;
 		}
 		fi=(field_info *)gp->pdata[0];
-		domain=fi->value.value.string;
+		domain=fvalue_get_string(fi->value);
 
 		gp=proto_get_finfo_ptr_array(edt->tree, hf_nt_domain_sid);
 		if(!gp || gp->len!=1){
-			return 0;
+			return TAP_PACKET_DONT_REDRAW;
 		}
 		fi=(field_info *)gp->pdata[0];
-		sid=fi->value.value.string;
+		sid=fvalue_get_string(fi->value);
 
 		add_sid_name_mapping(sid, domain);
 		break;
 	}
-	return 0;
+	return TAP_PACKET_DONT_REDRAW;
 }
 
 
-static gint
-ctx_handle_equal(gconstpointer k1, gconstpointer k2)
+static int
+ctx_handle_equal(const void *k1, const void *k2)
 {
 	int sn1 = GPOINTER_TO_INT(k1);
 	int sn2 = GPOINTER_TO_INT(k2);
@@ -251,8 +239,8 @@ ctx_handle_equal(gconstpointer k1, gconstpointer k2)
 	return sn1==sn2;
 }
 
-static guint
-ctx_handle_hash(gconstpointer k)
+static unsigned
+ctx_handle_hash(const void *k)
 {
 	int sn = GPOINTER_TO_INT(k);
 
@@ -267,11 +255,11 @@ sid_snooping_init(void)
 
 	if(lsa_policy_information_tap_installed){
 		remove_tap_listener(&lsa_policy_information_tap_installed);
-		lsa_policy_information_tap_installed=FALSE;
+		lsa_policy_information_tap_installed=false;
 	}
 	if(samr_query_dispinfo_tap_installed){
 		remove_tap_listener(&samr_query_dispinfo_tap_installed);
-		samr_query_dispinfo_tap_installed=FALSE;
+		samr_query_dispinfo_tap_installed=false;
 	}
 
 	sid_name_table = g_hash_table_new_full(g_str_hash, g_str_equal,
@@ -281,7 +269,7 @@ sid_snooping_init(void)
    disabling it now so that it won't cause wireshark to abort due to
    unknown hf fields
  */
-sid_name_snooping=FALSE;
+sid_name_snooping=false;
 
 	if(!sid_name_snooping){
 		return;
@@ -305,30 +293,30 @@ sid_name_snooping=FALSE;
 	error_string=register_tap_listener("dcerpc",
 	    &lsa_policy_information_tap_installed,
 	    "lsa.policy_information and ( lsa.info.level or lsa.domain or nt.domain_sid )",
-	    TL_REQUIRES_PROTO_TREE, NULL, lsa_policy_information, NULL);
+	    TL_REQUIRES_PROTO_TREE, NULL, lsa_policy_information, NULL, NULL);
 	if(error_string){
 		/* error, we failed to attach to the tap. clean up */
 
 		report_failure( "Couldn't register proto_reg_handoff_smb_sidsnooping()/lsa_policy_information tap: %s\n",
 		    error_string->str);
-		g_string_free(error_string, TRUE);
+		g_string_free(error_string, true);
 		return;
 	}
-	lsa_policy_information_tap_installed=TRUE;
+	lsa_policy_information_tap_installed=true;
 
 	error_string=register_tap_listener("dcerpc",
 	    &samr_query_dispinfo_tap_installed,
 	    "samr and samr.opnum==40 and ( samr.handle or samr.rid or samr.acct_name or samr.level )",
-	    TL_REQUIRES_PROTO_TREE, NULL, samr_query_dispinfo, NULL);
+	    TL_REQUIRES_PROTO_TREE, NULL, samr_query_dispinfo, NULL, NULL);
 	if(error_string){
 		/* error, we failed to attach to the tap. clean up */
 
 		report_failure( "Couldn't register proto_reg_handoff_smb_sidsnooping()/samr_query_dispinfo tap: %s\n",
 		    error_string->str);
-		g_string_free(error_string, TRUE);
+		g_string_free(error_string, true);
 		return;
 	}
-	samr_query_dispinfo_tap_installed=TRUE;
+	samr_query_dispinfo_tap_installed=true;
 }
 
 static void
@@ -346,7 +334,7 @@ proto_register_smb_sidsnooping(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

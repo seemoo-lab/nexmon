@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * References:
  *  "A Painless Guide to CRC Error Detection Algorithms", Ross Williams
@@ -31,9 +19,7 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <wsutil/crc16.h>
-
 
 /*****************************************************************/
 
@@ -54,7 +40,7 @@
 /*                                                               */
 /*    Width   : 2 bytes.                                         */
 /*    Poly    : 0x1021                                           */
-/*    Reverse : TRUE.                                           */
+/*    Reverse : true.                                           */
 /*                                                               */
 /* For more information on the Rocksoft^tm Model CRC Algorithm,  */
 /* see the document titled "A Painless Guide to CRC Error        */
@@ -72,7 +58,7 @@
 /*                                                               */
 /*****************************************************************/
 
-static const guint crc16_ccitt_table_reverse[256] =
+static const unsigned crc16_ccitt_table_reverse[256] =
 {
     0x0000, 0x1189, 0x2312, 0x329B, 0x4624, 0x57AD, 0x6536, 0x74BF,
     0x8C48, 0x9DC1, 0xAF5A, 0xBED3, 0xCA6C, 0xDBE5, 0xE97E, 0xF8F7,
@@ -108,8 +94,8 @@ static const guint crc16_ccitt_table_reverse[256] =
     0x7BC7, 0x6A4E, 0x58D5, 0x495C, 0x3DE3, 0x2C6A, 0x1EF1, 0x0F78
 };
 
-/* Same as above, only without reverse (Reverse=FALSE) */
-static const guint crc16_ccitt_table[256] =
+/* Same as above, only without reverse (Reverse=false) */
+static const unsigned crc16_ccitt_table[256] =
 {
     0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50A5, 0x60C6, 0x70E7,
     0x8108, 0x9129, 0xA14A, 0xB16B, 0xC18C, 0xD1AD, 0xE1CE, 0xF1EF,
@@ -146,7 +132,7 @@ static const guint crc16_ccitt_table[256] =
 };
 
 /* This table was compiled using the polynom 0x5935 */
-static const guint crc16_precompiled_5935[256] =
+static const unsigned crc16_precompiled_5935[256] =
 {
     0x0000, 0x5935, 0xB26A, 0xEB5F, 0x3DE1, 0x64D4, 0x8F8B, 0xD6BE,
     0x7BC2, 0x22F7, 0xC9A8, 0x909D, 0x4623, 0x1F16, 0xF449, 0xAD7C,
@@ -183,7 +169,7 @@ static const guint crc16_precompiled_5935[256] =
 };
 
 /* This table was compiled using the polynom 0x755B */
-static const guint crc16_precompiled_755B[] =
+static const unsigned crc16_precompiled_755B[] =
 {
     0x0000, 0x755b, 0xeab6, 0x9fed, 0xa037, 0xd56c, 0x4a81, 0x3fda,     /* 0x00 */
     0x3535, 0x406e, 0xdf83, 0xaad8, 0x9502, 0xe059, 0x7fb4, 0x0aef,     /* 0x08 */
@@ -220,7 +206,7 @@ static const guint crc16_precompiled_755B[] =
 };
 
 /* This table was compiled using the polynom: 0x9949 */
-static const guint crc16_precompiled_9949_reverse[] =
+static const unsigned crc16_precompiled_9949_reverse[] =
 {
     0x0000, 0x0ED2, 0x1DA4, 0x1376, 0x3B48, 0x359A, 0x26EC, 0x283E,
     0x7690, 0x7842, 0x6B34, 0x65E6, 0x4DD8, 0x430A, 0x507C, 0x5EAE,
@@ -257,7 +243,7 @@ static const guint crc16_precompiled_9949_reverse[] =
 };
 
 /* This table was compiled using the polynom: 0x3D65 */
-static const guint crc16_precompiled_3D65_reverse[] =
+static const unsigned crc16_precompiled_3D65_reverse[] =
 {
     0x0000, 0x365E, 0x6CBC, 0x5AE2, 0xD978, 0xEF26, 0xB5C4, 0x839A,
     0xFF89, 0xC9D7, 0x9335, 0xA56B, 0x26F1, 0x10AF, 0x4A4D, 0x7C13,
@@ -293,54 +279,141 @@ static const guint crc16_precompiled_3D65_reverse[] =
     0x91AF, 0xA7F1, 0xFD13, 0xCB4D, 0x48D7, 0x7E89, 0x246B, 0x1235
 };
 
-static const guint16 crc16_ccitt_start = 0xFFFF;
-static const guint16 crc16_ccitt_xorout = 0xFFFF;
+/* This table was compiled using the polynom: 0x080F */
+static const unsigned crc16_precompiled_080F[] =
+{
+    0x0000, 0x080F, 0x101E, 0x1811, 0x203C, 0x2833, 0x3022, 0x382D,
+    0x4078, 0x4877, 0x5066, 0x5869, 0x6044, 0x684B, 0x705A, 0x7855,
+    0x80F0, 0x88FF, 0x90EE, 0x98E1, 0xA0CC, 0xA8C3, 0xB0D2, 0xB8DD,
+    0xC088, 0xC887, 0xD096, 0xD899, 0xE0B4, 0xE8BB, 0xF0AA, 0xF8A5,
+    0x09EF, 0x01E0, 0x19F1, 0x11FE, 0x29D3, 0x21DC, 0x39CD, 0x31C2,
+    0x4997, 0x4198, 0x5989, 0x5186, 0x69AB, 0x61A4, 0x79B5, 0x71BA,
+    0x891F, 0x8110, 0x9901, 0x910E, 0xA923, 0xA12C, 0xB93D, 0xB132,
+    0xC967, 0xC168, 0xD979, 0xD176, 0xE95B, 0xE154, 0xF945, 0xF14A,
+    0x13DE, 0x1BD1, 0x03C0, 0x0BCF, 0x33E2, 0x3BED, 0x23FC, 0x2BF3,
+    0x53A6, 0x5BA9, 0x43B8, 0x4BB7, 0x739A, 0x7B95, 0x6384, 0x6B8B,
+    0x932E, 0x9B21, 0x8330, 0x8B3F, 0xB312, 0xBB1D, 0xA30C, 0xAB03,
+    0xD356, 0xDB59, 0xC348, 0xCB47, 0xF36A, 0xFB65, 0xE374, 0xEB7B,
+    0x1A31, 0x123E, 0x0A2F, 0x0220, 0x3A0D, 0x3202, 0x2A13, 0x221C,
+    0x5A49, 0x5246, 0x4A57, 0x4258, 0x7A75, 0x727A, 0x6A6B, 0x6264,
+    0x9AC1, 0x92CE, 0x8ADF, 0x82D0, 0xBAFD, 0xB2F2, 0xAAE3, 0xA2EC,
+    0xDAB9, 0xD2B6, 0xCAA7, 0xC2A8, 0xFA85, 0xF28A, 0xEA9B, 0xE294,
+    0x27BC, 0x2FB3, 0x37A2, 0x3FAD, 0x0780, 0x0F8F, 0x179E, 0x1F91,
+    0x67C4, 0x6FCB, 0x77DA, 0x7FD5, 0x47F8, 0x4FF7, 0x57E6, 0x5FE9,
+    0xA74C, 0xAF43, 0xB752, 0xBF5D, 0x8770, 0x8F7F, 0x976E, 0x9F61,
+    0xE734, 0xEF3B, 0xF72A, 0xFF25, 0xC708, 0xCF07, 0xD716, 0xDF19,
+    0x2E53, 0x265C, 0x3E4D, 0x3642, 0x0E6F, 0x0660, 0x1E71, 0x167E,
+    0x6E2B, 0x6624, 0x7E35, 0x763A, 0x4E17, 0x4618, 0x5E09, 0x5606,
+    0xAEA3, 0xA6AC, 0xBEBD, 0xB6B2, 0x8E9F, 0x8690, 0x9E81, 0x968E,
+    0xEEDB, 0xE6D4, 0xFEC5, 0xF6CA, 0xCEE7, 0xC6E8, 0xDEF9, 0xD6F6,
+    0x3462, 0x3C6D, 0x247C, 0x2C73, 0x145E, 0x1C51, 0x0440, 0x0C4F,
+    0x741A, 0x7C15, 0x6404, 0x6C0B, 0x5426, 0x5C29, 0x4438, 0x4C37,
+    0xB492, 0xBC9D, 0xA48C, 0xAC83, 0x94AE, 0x9CA1, 0x84B0, 0x8CBF,
+    0xF4EA, 0xFCE5, 0xE4F4, 0xECFB, 0xD4D6, 0xDCD9, 0xC4C8, 0xCCC7,
+    0x3D8D, 0x3582, 0x2D93, 0x259C, 0x1DB1, 0x15BE, 0x0DAF, 0x05A0,
+    0x7DF5, 0x75FA, 0x6DEB, 0x65E4, 0x5DC9, 0x55C6, 0x4DD7, 0x45D8,
+    0xBD7D, 0xB572, 0xAD63, 0xA56C, 0x9D41, 0x954E, 0x8D5F, 0x8550,
+    0xFD05, 0xF50A, 0xED1B, 0xE514, 0xDD39, 0xD536, 0xCD27, 0xC528
+};
+
+/**
+ * Generated on Fri Jul 19 17:16:42 2019
+ * by pycrc v0.9.2, https://pycrc.org
+ * using the configuration:
+ *  - Width         = 16
+ *  - Poly          = 0x8005
+ *  - XorIn         = 0xffff
+ *  - ReflectIn     = True
+ *  - XorOut        = 0xffff
+ *  - ReflectOut    = True
+ *  - Algorithm     = table-driven
+ */
+static const unsigned crc16_usb_table[] = {
+    0x0000, 0xc0c1, 0xc181, 0x0140, 0xc301, 0x03c0, 0x0280, 0xc241,
+    0xc601, 0x06c0, 0x0780, 0xc741, 0x0500, 0xc5c1, 0xc481, 0x0440,
+    0xcc01, 0x0cc0, 0x0d80, 0xcd41, 0x0f00, 0xcfc1, 0xce81, 0x0e40,
+    0x0a00, 0xcac1, 0xcb81, 0x0b40, 0xc901, 0x09c0, 0x0880, 0xc841,
+    0xd801, 0x18c0, 0x1980, 0xd941, 0x1b00, 0xdbc1, 0xda81, 0x1a40,
+    0x1e00, 0xdec1, 0xdf81, 0x1f40, 0xdd01, 0x1dc0, 0x1c80, 0xdc41,
+    0x1400, 0xd4c1, 0xd581, 0x1540, 0xd701, 0x17c0, 0x1680, 0xd641,
+    0xd201, 0x12c0, 0x1380, 0xd341, 0x1100, 0xd1c1, 0xd081, 0x1040,
+    0xf001, 0x30c0, 0x3180, 0xf141, 0x3300, 0xf3c1, 0xf281, 0x3240,
+    0x3600, 0xf6c1, 0xf781, 0x3740, 0xf501, 0x35c0, 0x3480, 0xf441,
+    0x3c00, 0xfcc1, 0xfd81, 0x3d40, 0xff01, 0x3fc0, 0x3e80, 0xfe41,
+    0xfa01, 0x3ac0, 0x3b80, 0xfb41, 0x3900, 0xf9c1, 0xf881, 0x3840,
+    0x2800, 0xe8c1, 0xe981, 0x2940, 0xeb01, 0x2bc0, 0x2a80, 0xea41,
+    0xee01, 0x2ec0, 0x2f80, 0xef41, 0x2d00, 0xedc1, 0xec81, 0x2c40,
+    0xe401, 0x24c0, 0x2580, 0xe541, 0x2700, 0xe7c1, 0xe681, 0x2640,
+    0x2200, 0xe2c1, 0xe381, 0x2340, 0xe101, 0x21c0, 0x2080, 0xe041,
+    0xa001, 0x60c0, 0x6180, 0xa141, 0x6300, 0xa3c1, 0xa281, 0x6240,
+    0x6600, 0xa6c1, 0xa781, 0x6740, 0xa501, 0x65c0, 0x6480, 0xa441,
+    0x6c00, 0xacc1, 0xad81, 0x6d40, 0xaf01, 0x6fc0, 0x6e80, 0xae41,
+    0xaa01, 0x6ac0, 0x6b80, 0xab41, 0x6900, 0xa9c1, 0xa881, 0x6840,
+    0x7800, 0xb8c1, 0xb981, 0x7940, 0xbb01, 0x7bc0, 0x7a80, 0xba41,
+    0xbe01, 0x7ec0, 0x7f80, 0xbf41, 0x7d00, 0xbdc1, 0xbc81, 0x7c40,
+    0xb401, 0x74c0, 0x7580, 0xb541, 0x7700, 0xb7c1, 0xb681, 0x7640,
+    0x7200, 0xb2c1, 0xb381, 0x7340, 0xb101, 0x71c0, 0x7080, 0xb041,
+    0x5000, 0x90c1, 0x9181, 0x5140, 0x9301, 0x53c0, 0x5280, 0x9241,
+    0x9601, 0x56c0, 0x5780, 0x9741, 0x5500, 0x95c1, 0x9481, 0x5440,
+    0x9c01, 0x5cc0, 0x5d80, 0x9d41, 0x5f00, 0x9fc1, 0x9e81, 0x5e40,
+    0x5a00, 0x9ac1, 0x9b81, 0x5b40, 0x9901, 0x59c0, 0x5880, 0x9841,
+    0x8801, 0x48c0, 0x4980, 0x8941, 0x4b00, 0x8bc1, 0x8a81, 0x4a40,
+    0x4e00, 0x8ec1, 0x8f81, 0x4f40, 0x8d01, 0x4dc0, 0x4c80, 0x8c41,
+    0x4400, 0x84c1, 0x8581, 0x4540, 0x8701, 0x47c0, 0x4680, 0x8641,
+    0x8201, 0x42c0, 0x4380, 0x8341, 0x4100, 0x81c1, 0x8081, 0x4040
+};
+
+static const uint16_t crc16_ccitt_start = 0xFFFF;
+static const uint16_t crc16_ccitt_xorout = 0xFFFF;
+
+static const uint16_t crc16_usb_start = 0xFFFF;
+static const uint16_t crc16_usb_xorout = 0xFFFF;
 
 /* two types of crcs are possible: unreflected (bits shift left) and
  * reflected (bits shift right).
  */
-static guint16 crc16_unreflected(const guint8 *buf, guint len,
-                                 guint16 crc_in, const guint table[])
+static uint16_t crc16_unreflected(const uint8_t *buf, unsigned len,
+                                 uint16_t crc_in, const unsigned table[])
 {
-    /* we use guints, rather than guint16s, as they are likely to be
+    /* we use uints, rather than uint16s, as they are likely to be
        faster. We just ignore the top 16 bits and let them do what they want.
     */
-    guint crc16 = (guint)crc_in;
+    unsigned crc16 = (unsigned)crc_in;
 
     while( len-- != 0 )
         crc16 = table[((crc16 >> 8) ^ *buf++) & 0xff] ^ (crc16 << 8);
 
-    return (guint16)crc16;
+    return (uint16_t)crc16;
 }
 
-static guint16 crc16_reflected(const guint8 *buf, guint len,
-                                guint16 crc_in, const guint table[])
+static uint16_t crc16_reflected(const uint8_t *buf, unsigned len,
+                                uint16_t crc_in, const unsigned table[])
 {
-    /* we use guints, rather than guint16s, as they are likely to be
+    /* we use uints, rather than uint16s, as they are likely to be
        faster. We just ignore the top 16 bits and let them do what they want.
-       XXX - does any time saved not zero-extending guint16's to 32 bits
+       XXX - does any time saved not zero-extending uint16_t's to 32 bits
        into a register outweigh any increased cache footprint from the
        larger CRC table? */
-    guint crc16 = (guint)crc_in;
+    unsigned crc16 = (unsigned)crc_in;
 
     while( len-- != 0 )
        crc16 = table[(crc16 ^ *buf++) & 0xff] ^ (crc16 >> 8);
 
-    return (guint16)crc16;
+    return (uint16_t)crc16;
 }
 
-guint16 crc16_ccitt(const guint8 *buf, guint len)
+uint16_t crc16_ccitt(const uint8_t *buf, unsigned len)
 {
     return crc16_reflected(buf,len,crc16_ccitt_start,crc16_ccitt_table_reverse)
        ^ crc16_ccitt_xorout;
 }
 
-guint16 crc16_x25_ccitt_seed(const guint8 *buf, guint len, guint16 seed)
+uint16_t crc16_x25_ccitt_seed(const uint8_t *buf, unsigned len, uint16_t seed)
 {
     return crc16_unreflected(buf,len,seed,crc16_ccitt_table);
 }
 
-guint16 crc16_ccitt_seed(const guint8 *buf, guint len, guint16 seed)
+uint16_t crc16_ccitt_seed(const uint8_t *buf, unsigned len, uint16_t seed)
 {
     return crc16_reflected(buf,len,seed,crc16_ccitt_table_reverse)
        ^ crc16_ccitt_xorout;
@@ -349,33 +422,55 @@ guint16 crc16_ccitt_seed(const guint8 *buf, guint len, guint16 seed)
 /* ISO14443-3, section 6.2.4: For ISO14443-A, the polynomial 0x1021 is
    used, the initial register value shall be 0x6363, the final register
    value is not XORed with anything. */
-guint16 crc16_iso14443a(const guint8 *buf, guint len)
+uint16_t crc16_iso14443a(const uint8_t *buf, unsigned len)
 {
     return crc16_reflected(buf,len, 0x6363 ,crc16_ccitt_table_reverse);
 }
 
-guint16 crc16_0x5935(const guint8 *buf, guint32 len, guint16 seed)
+uint16_t crc16_usb(const uint8_t *buf, unsigned len)
+{
+    return crc16_reflected(buf, len, crc16_usb_start, crc16_usb_table)
+        ^ crc16_usb_xorout;
+}
+
+uint16_t crc16_0x5935(const uint8_t *buf, uint32_t len, uint16_t seed)
 {
     return crc16_unreflected(buf, len, seed, crc16_precompiled_5935);
 }
 
-guint16 crc16_0x755B(const guint8 *buf, guint32 len, guint16 seed)
+uint16_t crc16_0x755B(const uint8_t *buf, uint32_t len, uint16_t seed)
 {
     return crc16_unreflected(buf, len, seed, crc16_precompiled_755B);
 }
 
-guint16 crc16_0x9949_seed(const guint8 *buf, guint len, guint16 seed)
+uint16_t crc16_0x9949_seed(const uint8_t *buf, unsigned len, uint16_t seed)
 {
     return crc16_reflected(buf, len, seed, crc16_precompiled_9949_reverse);
 }
 
-guint16 crc16_0x3D65_seed(const guint8 *buf, guint len, guint16 seed)
+uint16_t crc16_0x3D65_seed(const uint8_t *buf, unsigned len, uint16_t seed)
 {
     return crc16_reflected(buf, len, seed, crc16_precompiled_3D65_reverse);
 }
 
+uint16_t crc16_0x080F_seed(const uint8_t *buf, unsigned len, uint16_t seed)
+{
+    uint16_t crc = seed;
+
+    if (len > 0)
+    {
+        while (len-- > 0)
+        {
+            uint8_t data = *buf++;
+            crc = crc16_precompiled_080F[((crc >> 8) ^ data)] ^ (crc << 8);
+        }
+    }
+
+    return crc;
+}
+
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

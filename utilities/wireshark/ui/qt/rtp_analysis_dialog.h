@@ -1,22 +1,10 @@
-/* rtp_analysis_dialog.h
+/** @file
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef RTP_ANALYSIS_DIALOG_H
@@ -24,15 +12,21 @@
 
 #include <config.h>
 
-#include <glib.h>
+#include <mutex>
 
 #include "epan/address.h"
 
 #include "ui/rtp_stream.h"
+#include "ui/tap-rtp-common.h"
 #include "ui/tap-rtp-analysis.h"
 
-#include <QAbstractButton>
 #include <QMenu>
+#include <QTreeWidget>
+#include <QLabel>
+#include <QFile>
+#include <QCheckBox>
+#include <QHBoxLayout>
+#include <QToolButton>
 
 #include "wireshark_dialog.h"
 
@@ -42,137 +36,142 @@ class RtpAnalysisDialog;
 
 class QCPGraph;
 class QTemporaryFile;
+class QDialogButtonBox;
 
-typedef enum {
-    TAP_RTP_NO_ERROR,
-    TAP_RTP_WRONG_LENGTH,
-    TAP_RTP_PADDING_ERROR,
-    TAP_RTP_FILE_IO_ERROR
-} rtp_error_type_t;
+class PacketList;
+class RtpBaseDialog;
 
+typedef struct {
+    rtpstream_info_t stream;
+    QVector<double> *time_vals;
+    QVector<double> *jitter_vals;
+    QVector<double> *diff_vals;
+    QVector<double> *delta_vals;
+    QTreeWidget *tree_widget;
+    QLabel *statistics_label;
+    QString *tab_name;
+    QCPGraph *jitter_graph;
+    QCPGraph *diff_graph;
+    QCPGraph *delta_graph;
+    QHBoxLayout *graphHorizontalLayout;
+    QCheckBox *stream_checkbox;
+    QCheckBox *jitter_checkbox;
+    QCheckBox *diff_checkbox;
+    QCheckBox *delta_checkbox;
+} tab_info_t;
+
+// Singleton by https://refactoring.guru/design-patterns/singleton/cpp/example#example-1
 class RtpAnalysisDialog : public WiresharkDialog
 {
     Q_OBJECT
 
 public:
-    explicit RtpAnalysisDialog(QWidget &parent, CaptureFile &cf, struct _rtp_stream_info *stream_fwd = 0, struct _rtp_stream_info *stream_rev = 0);
-    ~RtpAnalysisDialog();
+    /**
+     * Returns singleton
+     */
+    static RtpAnalysisDialog *openRtpAnalysisDialog(QWidget &parent, CaptureFile &cf, PacketList *packet_list);
+
+    /**
+     * Should not be clonnable and assignable
+     */
+    RtpAnalysisDialog(RtpAnalysisDialog &other) = delete;
+    void operator=(const RtpAnalysisDialog &) = delete;
+
+    /**
+     * @brief Common routine to add a "Analyze" button to a QDialogButtonBox.
+     * @param button_box Caller's QDialogButtonBox.
+     * @return The new "Analyze" button.
+     */
+    static QToolButton *addAnalyzeButton(QDialogButtonBox *button_box, RtpBaseDialog *dialog);
+
+    /** Replace/Add/Remove an RTP streams to analyse.
+     * Requires array of rtpstream_id_t.
+     *
+     * @param stream_ids structs with rtpstream_id
+     */
+    void replaceRtpStreams(QVector<rtpstream_id_t *> stream_ids);
+    void addRtpStreams(QVector<rtpstream_id_t *> stream_ids);
+    void removeRtpStreams(QVector<rtpstream_id_t *> stream_ids);
 
 signals:
     void goToPacket(int packet_num);
+    void rtpPlayerDialogReplaceRtpStreams(QVector<rtpstream_id_t *> stream_ids);
+    void rtpPlayerDialogAddRtpStreams(QVector<rtpstream_id_t *> stream_ids);
+    void rtpPlayerDialogRemoveRtpStreams(QVector<rtpstream_id_t *> stream_ids);
+    void updateFilter(QString filter, bool force = false);
+
+public slots:
+    void rtpPlayerReplace();
+    void rtpPlayerAdd();
+    void rtpPlayerRemove();
 
 protected slots:
     virtual void updateWidgets();
 
+protected:
+    explicit RtpAnalysisDialog(QWidget &parent, CaptureFile &cf);
+    ~RtpAnalysisDialog();
+
 private slots:
     void on_actionGoToPacket_triggered();
     void on_actionNextProblem_triggered();
-    void on_fJitterCheckBox_toggled(bool checked);
-    void on_fDiffCheckBox_toggled(bool checked);
-    void on_fDeltaCheckBox_toggled(bool checked);
-    void on_rJitterCheckBox_toggled(bool checked);
-    void on_rDiffCheckBox_toggled(bool checked);
-    void on_rDeltaCheckBox_toggled(bool checked);
-    void on_actionSaveAudio_triggered();
-    void on_actionSaveForwardAudio_triggered();
-    void on_actionSaveReverseAudio_triggered();
-    void on_actionSaveCsv_triggered();
-    void on_actionSaveForwardCsv_triggered();
-    void on_actionSaveReverseCsv_triggered();
+    void on_actionSaveOneCsv_triggered();
+    void on_actionSaveAllCsv_triggered();
     void on_actionSaveGraph_triggered();
-    void on_buttonBox_clicked(QAbstractButton *button);
     void on_buttonBox_helpRequested();
     void showStreamMenu(QPoint pos);
+    void showGraphMenu(const QPoint &pos);
     void graphClicked(QMouseEvent *event);
+    void closeTab(int index);
+    void rowCheckboxChanged(int checked);
+    void singleCheckboxChanged(int checked);
+    void on_actionPrepareFilterOne_triggered();
+    void on_actionPrepareFilterAll_triggered();
 
 private:
+    static RtpAnalysisDialog *pinstance_;
+    static std::mutex init_mutex_;
+    static std::mutex run_mutex_;
+
     Ui::RtpAnalysisDialog *ui;
-    enum StreamDirection { dir_both_, dir_forward_, dir_reverse_ };
+    enum StreamDirection { dir_all_, dir_one_ };
+    int tab_seq;
 
-    // XXX These are copied to and from rtp_stream_info_t structs. Should
-    // we just have a pair of those instead?
-    address src_fwd_;
-    guint32 port_src_fwd_;
-    address dst_fwd_;
-    guint32 port_dst_fwd_;
-    guint32 ssrc_fwd_;
-    guint32 packet_count_fwd_;
-    guint32 setup_frame_number_fwd_;
-    nstime_t start_rel_time_fwd_;
+    QVector<tab_info_t *> tabs_;
+    QMultiHash<unsigned, tab_info_t *> tab_hash_;
 
-    address src_rev_;
-    guint32 port_src_rev_;
-    address dst_rev_;
-    guint32 port_dst_rev_;
-    guint32 ssrc_rev_;
-    guint32 packet_count_rev_;
-    guint32 setup_frame_number_rev_;
-    nstime_t start_rel_time_rev_;
-
-    int num_streams_;
-
-    tap_rtp_stat_t fwd_statinfo_;
-    tap_rtp_stat_t rev_statinfo_;
-
-    QPushButton *player_button_;
-
-    QTemporaryFile *fwd_tempfile_;
-    QTemporaryFile *rev_tempfile_;
+    QToolButton *player_button_;
 
     // Graph data for QCustomPlot
     QList<QCPGraph *>graphs_;
-    QVector<double> fwd_time_vals_;
-    QVector<double> fwd_jitter_vals_;
-    QVector<double> fwd_diff_vals_;
-    QVector<double> fwd_delta_vals_;
 
-    QVector<double> rev_time_vals_;
-    QVector<double> rev_jitter_vals_;
-    QVector<double> rev_diff_vals_;
-    QVector<double> rev_delta_vals_;
-
-    rtpstream_tapinfo_t tapinfo_;
     QString err_str_;
-    rtp_error_type_t save_payload_error_;
 
     QMenu stream_ctx_menu_;
     QMenu graph_ctx_menu_;
 
-    void findStreams();
-
     // Tap callbacks
     static void tapReset(void *tapinfo_ptr);
-    static gboolean tapPacket(void *tapinfo_ptr, packet_info *pinfo, epan_dissect_t *, const void *rtpinfo_ptr);
+    static tap_packet_status tapPacket(void *tapinfo_ptr, packet_info *pinfo, epan_dissect_t *, const void *rtpinfo_ptr, tap_flags_t flags);
     static void tapDraw(void *tapinfo_ptr);
 
     void resetStatistics();
-    void addPacket(bool forward, packet_info *pinfo, const struct _rtp_info *rtpinfo);
-    void savePayload(QTemporaryFile *tmpfile, tap_rtp_stat_t *statinfo, packet_info *pinfo, const struct _rtp_info *rtpinfo);
+    void addPacket(tab_info_t *tab, packet_info *pinfo, const struct _rtp_info *rtpinfo);
     void updateStatistics();
     void updateGraph();
 
-    void showPlayer();
-
-    void saveAudio(StreamDirection direction);
+    void saveCsvHeader(QFile *save_file, QTreeWidget *tree);
+    void saveCsvData(QFile *save_file, QTreeWidget *tree);
     void saveCsv(StreamDirection direction);
 
-    guint32 processNode(proto_node *ptree_node, header_field_info *hfinformation, const gchar* proto_field, bool *ok);
-    guint32 getIntFromProtoTree(proto_tree *protocol_tree, const gchar *proto_name, const gchar *proto_field, bool *ok);
-
     bool eventFilter(QObject*, QEvent* event);
+
+    QVector<rtpstream_id_t *>getSelectedRtpIds();
+    int addTabUI(tab_info_t *new_tab);
+    tab_info_t *getTabInfoForCurrentTab();
+    void deleteTabInfo(tab_info_t *tab_info);
+    void clearLayout(QLayout *layout);
+    void addRtpStreamsPrivate(QVector<rtpstream_id_t *> stream_ids);
 };
 
 #endif // RTP_ANALYSIS_DIALOG_H
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

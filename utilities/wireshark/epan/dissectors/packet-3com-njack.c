@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -57,46 +45,49 @@ Specs:
 void proto_register_njack(void);
 void proto_reg_handoff_njack(void);
 
+static dissector_handle_t njack_handle;
+
 /* protocol handles */
-static int proto_njack = -1;
+static int proto_njack;
 
 /* ett handles */
-static int ett_njack = -1;
-static int ett_njack_tlv_header = -1;
+static int ett_njack;
+static int ett_njack_tlv_header;
 
 /* hf elements */
-static int hf_njack_magic = -1;
-static int hf_njack_type = -1;
+static int hf_njack_magic;
+static int hf_njack_type;
 /* type set/get response */
-static int hf_njack_tlv_length = -1;
-static int hf_njack_tlv_data = -1;
-static int hf_njack_tlv_version = -1;
-static int hf_njack_tlv_type = -1;
-static int hf_njack_tlv_typeip = -1;
-static int hf_njack_tlv_devicemac = -1;
-static int hf_njack_tlv_snmpwrite = -1;
-static int hf_njack_tlv_dhcpcontrol = -1;
-static int hf_njack_tlv_typestring = -1;
+static int hf_njack_tlv_length;
+static int hf_njack_tlv_data;
+static int hf_njack_tlv_version;
+static int hf_njack_tlv_type;
+static int hf_njack_tlv_typeip;
+static int hf_njack_tlv_devicemac;
+static int hf_njack_tlv_snmpwrite;
+static int hf_njack_tlv_dhcpcontrol;
+static int hf_njack_tlv_typestring;
 /* 1st TAB */
-static int hf_njack_tlv_countermode = -1;
-static int hf_njack_tlv_scheduling = -1;
-static int hf_njack_tlv_addtagscheme = -1;
-static int hf_njack_tlv_portingressmode = -1;
-static int hf_njack_tlv_maxframesize = -1;
-static int hf_njack_tlv_powerforwarding = -1;
+static int hf_njack_tlv_countermode;
+static int hf_njack_tlv_scheduling;
+static int hf_njack_tlv_addtagscheme;
+static int hf_njack_tlv_portingressmode;
+static int hf_njack_tlv_maxframesize;
+static int hf_njack_tlv_powerforwarding;
 /* type 07: set */
-static int hf_njack_set_length = -1;
-static int hf_njack_set_salt = -1;
-static int hf_njack_set_authdata = -1;
+static int hf_njack_set_length;
+static int hf_njack_set_salt;
+static int hf_njack_set_authdata;
 /* type 08: set result */
-static int hf_njack_setresult = -1;
+static int hf_njack_setresult;
 /* type 0b: get */
 /* type 0c: get response */
-static int hf_njack_getresp_unknown1 = -1;
+static int hf_njack_getresp_unknown1;
 
 #define PROTO_SHORT_NAME "NJACK"
 #define PROTO_LONG_NAME "3com Network Jack"
 
+#define NJACK_PORT_RANGE	"5264-5265"
 #define PORT_NJACK_PC	5264
 #define PORT_NJACK_SWITCH	5265
 
@@ -344,7 +335,7 @@ static const value_string njack_authfailtrap[] = {
 /* End SNMP TAB */
 
 static int
-dissect_portsettings(tvbuff_t *tvb, proto_tree *port_tree, guint32 offset)
+dissect_portsettings(tvbuff_t *tvb, proto_tree *port_tree, uint32_t offset)
 {
 	/* XXX This is still work in progress, the information here
 	 *     may be wrong and is obviously incomplete
@@ -377,14 +368,14 @@ dissect_portsettings(tvbuff_t *tvb, proto_tree *port_tree, guint32 offset)
 }
 
 static int
-dissect_tlvs(tvbuff_t *tvb, proto_tree *njack_tree, guint32 offset)
+dissect_tlvs(tvbuff_t *tvb, proto_tree *njack_tree, uint32_t offset)
 {
-	guint8      tlv_type;
-	guint8      tlv_length;
+	uint8_t     tlv_type;
+	uint8_t     tlv_length;
 	proto_item *tlv_tree;
 
 	for (;;) {
-		tlv_type = tvb_get_guint8(tvb, offset);
+		tlv_type = tvb_get_uint8(tvb, offset);
 		/* Special cases that don't have a length field */
 		if (tlv_type == NJACK_CMD_ENDOFPACKET) {
 			proto_tree_add_item(njack_tree, hf_njack_tlv_type,
@@ -398,7 +389,7 @@ dissect_tlvs(tvbuff_t *tvb, proto_tree *njack_tree, guint32 offset)
 			offset += 1;
 			continue;
 		}
-		tlv_length = tvb_get_guint8(tvb, offset + 1);
+		tlv_length = tvb_get_uint8(tvb, offset + 1);
 		tlv_tree = proto_tree_add_subtree_format(njack_tree, tvb,
 			offset, tlv_length + 2, ett_njack_tlv_header, NULL,
 			"T %02x, L %02x: %s",
@@ -482,7 +473,7 @@ dissect_tlvs(tvbuff_t *tvb, proto_tree *njack_tree, guint32 offset)
 		case NJACK_CMD_PRODUCTNAME:
 		case NJACK_CMD_SERIALNO:
 			proto_tree_add_item(tlv_tree, hf_njack_tlv_typestring,
-				tvb, offset, tlv_length, ENC_ASCII|ENC_NA);
+				tvb, offset, tlv_length, ENC_ASCII);
 			offset += tlv_length;
 			break;
 		case NJACK_CMD_PORT1:
@@ -507,9 +498,9 @@ dissect_tlvs(tvbuff_t *tvb, proto_tree *njack_tree, guint32 offset)
 }
 
 #if 0
-#include <wsutil/md5.h>
+#include <wsutil/wsgcrypt.h>
 
-static gboolean
+static bool
 verify_password(tvbuff_t *tvb, const char *password)
 {
 	/* 1. pad non-terminated password-string to a length of 32 bytes
@@ -518,17 +509,17 @@ verify_password(tvbuff_t *tvb, const char *password)
 	 * 3. Calculate MD5 of resulting packet and write it to offset 12 of packet
 	 */
 
-	gboolean      is_valid = TRUE;
-	const guint8 *packetdata;
-	guint32       length;
-	guint8       *workbuffer;
-	guint         i;
-	guint8        byte;
-	md5_state_t   md_ctx;
-	md5_byte_t   *digest;
+	bool          is_valid = true;
+	const uint8_t *packetdata;
+	uint32_t      length;
+	uint8_t      *workbuffer;
+	unsigned      i;
+	uint8_t       byte;
+	gcry_md_hd_t  md5_handle;
+	uint8_t      *digest;
 
-	workbuffer=wmem_alloc(wmem_packet_scope(), 32);
-	digest=wmem_alloc(wmem_packet_scope(), 16);
+	workbuffer=wmem_alloc(pinfo->pool, 32);
+	digest=wmem_alloc(pinfo->pool, 16);
 
 	length = tvb_get_ntohs(tvb, 6);
 	packetdata = tvb_get_ptr(tvb, 0, length);
@@ -538,19 +529,25 @@ verify_password(tvbuff_t *tvb, const char *password)
 	for (byte = 1; i<32; i++, byte++) {
 		workbuffer[i] = byte;
 	}
-	md5_init(&md_ctx);
-	md5_append(&md_ctx, workbuffer, 32);
-	md5_finish(&md_ctx, digest);
-	md5_init(&md_ctx);
-	md5_append(&md_ctx, packetdata, 12);
-	md5_append(&md_ctx, digest, 16);
-	md5_append(&md_ctx, packetdata + 28, length - 28);
-	md5_finish(&md_ctx, digest);
+
+	if (gcry_md_open (&md5_handle, GCRY_MD_MD5, 0)) {
+		return false;
+	}
+	gcry_md_write(md5_handle, workbuffer, 32);
+	memcpy(digest, gcry_md_read(md5_handle, 0), 16);
+	gcry_md_reset(md5_handle);
+
+	gcry_md_write(md5_handle, packetdata, 12);
+	gcry_md_write(md5_handle, digest, 16);
+	gcry_md_write(md5_handle, packetdata + 28, length - 28);
+	memcpy(digest, gcry_md_read(md5_handle, 0), 16);
+	gcry_md_close(md5_handle);
+
 	fprintf(stderr, "Calculated digest: "); /* debugging */
 	for (i = 0; i < 16; i++) {
 		fprintf(stderr, "%02X", digest[i]); /* debugging */
 		if (digest[i] != *(packetdata + 12 + i)) {
-			is_valid = FALSE;
+			is_valid = false;
 			break;
 		}
 	}
@@ -565,21 +562,21 @@ dissect_njack(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U
 {
 	proto_item *ti;
 	proto_tree *njack_tree;
-	guint32     offset     = 0;
-	guint8      packet_type;
-	guint8      setresult;
-	gint        remaining;
+	uint32_t    offset     = 0;
+	uint8_t     packet_type;
+	uint8_t     setresult;
+	int         remaining;
 
-	packet_type = tvb_get_guint8(tvb, 5);
+	packet_type = tvb_get_uint8(tvb, 5);
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, PROTO_SHORT_NAME);
-	col_add_str(pinfo->cinfo, COL_INFO, val_to_str(packet_type, njack_type_vals, "Type 0x%02x"));
+	col_add_str(pinfo->cinfo, COL_INFO, val_to_str(pinfo->pool, packet_type, njack_type_vals, "Type 0x%02x"));
 
 	ti = proto_tree_add_item(tree, proto_njack, tvb, offset, -1,
 				 ENC_NA);
 	njack_tree = proto_item_add_subtree(ti, ett_njack);
 
 	proto_tree_add_item(njack_tree, hf_njack_magic, tvb, offset, 5,
-			    ENC_ASCII|ENC_NA);
+			    ENC_ASCII);
 	offset += 5;
 
 	proto_tree_add_item(njack_tree, hf_njack_type, tvb, offset, 1,
@@ -601,12 +598,12 @@ dissect_njack(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U
 		break;
 	case NJACK_TYPE_SETRESULT:
 		/* Type 0x08: M -> S, Magic, type, setresult (8 bit) */
-		setresult = tvb_get_guint8(tvb, offset);
+		setresult = tvb_get_uint8(tvb, offset);
 		proto_tree_add_item(njack_tree, hf_njack_setresult, tvb, offset,
 				    1, ENC_BIG_ENDIAN);
 		offset += 1;
 		col_append_fstr(pinfo->cinfo, COL_INFO, ": %s",
-				val_to_str(setresult, njack_setresult_vals, "[0x%02x]"));
+				val_to_str(pinfo->pool, setresult, njack_setresult_vals, "[0x%02x]"));
 		break;
 	case NJACK_TYPE_GET:
 		/* Type 0x0b: S -> M, Magic, type, 00 00 63 ff */
@@ -635,25 +632,25 @@ dissect_njack(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U
 	return offset;
 }
 
-static gboolean
+static bool
 test_njack(tvbuff_t *tvb)
 {
 	/* We need at least 'NJ200' + 1 Byte packet type */
 	if ( (tvb_captured_length(tvb) < 6) ||
 	     (tvb_strncaseeql(tvb, 0, "NJ200", 5) != 0) ) {
-		return FALSE;
+		return false;
 	}
-	return TRUE;
+	return true;
 }
 
-static gboolean
-dissect_njack_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+static bool
+dissect_njack_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
 	if ( !test_njack(tvb) ) {
-		return FALSE;
+		return false;
 	}
-	dissect_njack(tvb, pinfo, tree, NULL);
-	return TRUE;
+	dissect_njack(tvb, pinfo, tree, data);
+	return true;
 }
 
 static int
@@ -768,7 +765,7 @@ proto_register_njack(void)
 			0x0, NULL, HFILL }},
 
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_njack,
 		&ett_njack_tlv_header,
 	};
@@ -776,25 +773,23 @@ proto_register_njack(void)
 	proto_njack = proto_register_protocol(PROTO_LONG_NAME, PROTO_SHORT_NAME, "njack");
 	proto_register_field_array(proto_njack, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
+
+	njack_handle = register_dissector("njack", dissect_njack_static, proto_njack);
 }
 
 void
 proto_reg_handoff_njack(void)
 {
-	dissector_handle_t njack_handle;
-
-	njack_handle = create_dissector_handle(dissect_njack_static, proto_njack);
-	dissector_add_uint("udp.port", PORT_NJACK_PC, njack_handle);
-	/* dissector_add_uint("tcp.port", PORT_NJACK_PC, njack_handle); */
-	dissector_add_uint("udp.port", PORT_NJACK_SWITCH, njack_handle);
-	/* dissector_add_uint("tcp.port", PORT_NJACK_SWITCH, njack_handle); */
+	dissector_add_uint_range_with_preference("udp.port", NJACK_PORT_RANGE, njack_handle);
+	/* dissector_add_uint_with_preference("tcp.port", PORT_NJACK_PC, njack_handle); */
+	/* dissector_add_uint_with_preference("tcp.port", PORT_NJACK_SWITCH, njack_handle); */
 
 	heur_dissector_add("udp", dissect_njack_heur, "NJACK over UDP", "njack_udp", proto_njack, HEURISTIC_ENABLE);
 	heur_dissector_add("tcp", dissect_njack_heur, "NJACK over TCP", "njack_tcp", proto_njack, HEURISTIC_DISABLE);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

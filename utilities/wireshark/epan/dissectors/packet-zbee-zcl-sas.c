@@ -6,19 +6,9 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * https://zigbeealliance.org/wp-content/uploads/2021/10/07-5123-08-Zigbee-Cluster-Library.pdf
  */
 
 /*  Include Files */
@@ -39,7 +29,7 @@
 /*************************/
 /* Defines               */
 /*************************/
-#define ZBEE_ZCL_IAS_ACE_NUM_ETT                               4
+#define ZBEE_ZCL_IAS_ACE_NUM_ETT                               7
 
 /* Attributes - none */
 
@@ -51,11 +41,20 @@
 #define ZBEE_ZCL_CMD_ID_IAS_ACE_PANIC                   0x04  /* Panic */
 #define ZBEE_ZCL_CMD_ID_IAS_ACE_GET_ZONE_ID_MAP         0x05  /* Get Zone ID Map */
 #define ZBEE_ZCL_CMD_ID_IAS_ACE_GET_ZONE_INFO           0x06  /* Get Zone Information */
+#define ZBEE_ZCL_CMD_ID_IAS_ACE_GET_PANEL_STATUS        0x07  /* Get Panel Status */
+#define ZBEE_ZCL_CMD_ID_IAS_ACE_GET_BYPASSED_ZONE_LIST  0x08  /* Get Bypassed Zone List */
+#define ZBEE_ZCL_CMD_ID_IAS_ACE_GET_ZONE_STATUS         0x09  /* Get Zone Status */
 
 /* Server Commands Generated */
 #define ZBEE_ZCL_CMD_ID_IAS_ACE_ARM_RES                 0x00  /* Arm Response */
 #define ZBEE_ZCL_CMD_ID_IAS_ACE_GET_ZONE_ID_MAP_RES     0x01  /* Get Zone ID Map Response */
 #define ZBEE_ZCL_CMD_ID_IAS_ACE_GET_ZONE_INFO_RES       0x02  /* Get Zone Information Response */
+#define ZBEE_ZCL_CMD_ID_IAS_ACE_ZONE_STATUS_CHANGED     0x03  /* Zone Status Changed */
+#define ZBEE_ZCL_CMD_ID_IAS_ACE_PANEL_STATUS_CHANGED    0x04  /* Panel Status Changed */
+#define ZBEE_ZCL_CMD_ID_IAS_ACE_GET_PANEL_STATUS_RES    0x05  /* Get Panel Status Response */
+#define ZBEE_ZCL_CMD_ID_IAS_ACE_SET_BYPASSED_ZONE_LIST  0x06  /* Set Bypassed Zone List */
+#define ZBEE_ZCL_CMD_ID_IAS_ACE_BYPASS_RES              0x07  /* Bypass Response */
+#define ZBEE_ZCL_CMD_ID_IAS_ACE_GET_ZONE_STATUS_RES     0x08  /* Get Zone Status Response */
 
 
 /*************************/
@@ -66,12 +65,19 @@ void proto_register_zbee_zcl_ias_ace(void);
 void proto_reg_handoff_zbee_zcl_ias_ace(void);
 
 /* Command Dissector Helpers */
-static void dissect_zcl_ias_ace_arm                     (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_ias_ace_bypass                  (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_ias_ace_get_zone_info           (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_ias_ace_arm_res                 (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_ias_ace_get_zone_id_map_res     (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_ias_ace_get_zone_info_res       (tvbuff_t *tvb, proto_tree *tree, guint *offset);
+static void dissect_zcl_ias_ace_arm                     (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_ias_ace_bypass                  (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_ias_ace_get_zone_info           (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_ias_ace_get_zone_status         (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_ias_ace_arm_res                 (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_ias_ace_get_zone_id_map_res     (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_ias_ace_get_zone_info_res       (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_ias_ace_zone_status_changed     (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_ias_ace_panel_status_changed    (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_ias_ace_get_panel_status_res    (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_ias_ace_set_bypassed_zone_list  (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_ias_ace_bypassed_res            (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_ias_ace_get_zone_status_res     (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
 
 /* Private functions prototype */
 
@@ -79,42 +85,66 @@ static void dissect_zcl_ias_ace_get_zone_info_res       (tvbuff_t *tvb, proto_tr
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_ias_ace = -1;
+static int proto_zbee_zcl_ias_ace;
 
-static int hf_zbee_zcl_ias_ace_arm_mode = -1;
-static int hf_zbee_zcl_ias_ace_no_of_zones = -1;
-static int hf_zbee_zcl_ias_ace_zone_id = -1;
-static int hf_zbee_zcl_ias_ace_zone_id_list = -1;
-static int hf_zbee_zcl_ias_ace_arm_notif = -1;
-static int hf_zbee_zcl_ias_ace_zone_id_map_section = -1;
-static int hf_zbee_zcl_ias_ace_zone_type = -1;
-static int hf_zbee_zcl_ias_ace_ieee_add = -1;
-static int hf_zbee_zcl_ias_ace_srv_rx_cmd_id = -1;
-static int hf_zbee_zcl_ias_ace_srv_tx_cmd_id = -1;
+static int hf_zbee_zcl_ias_ace_arm_mode;
+static int hf_zbee_zcl_ias_ace_no_of_zones;
+static int hf_zbee_zcl_ias_ace_zone_id;
+static int hf_zbee_zcl_ias_ace_zone_id_list;
+static int hf_zbee_zcl_ias_ace_arm_notif;
+static int hf_zbee_zcl_ias_ace_zone_id_map_section;
+static int hf_zbee_zcl_ias_ace_zone_type;
+static int hf_zbee_zcl_ias_ace_ieee_add;
+static int hf_zbee_zcl_ias_ace_srv_rx_cmd_id;
+static int hf_zbee_zcl_ias_ace_srv_tx_cmd_id;
+static int hf_zbee_zcl_ias_ace_starting_zone_id;
+static int hf_zbee_zcl_ias_ace_max_number_of_zone_ids;
+static int hf_zbee_zcl_ias_ace_zone_status_mask_flag;
+static int hf_zbee_zcl_ias_ace_zone_status_mask;
+static int hf_zbee_zcl_ias_ace_zone_status;
+static int hf_zbee_zcl_ias_ace_zone_audible_notif;
+static int hf_zbee_zcl_ias_ace_zone_label;
+static int hf_zbee_zcl_ias_ace_panel_status;
+static int hf_zbee_zcl_ias_ace_seconds_remaining;
+static int hf_zbee_zcl_ias_ace_alarm_status;
+static int hf_zbee_zcl_ias_ace_number_of_zones;
+static int hf_zbee_zcl_ias_ace_zone_status_complete;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_ias_ace = -1;
-static gint ett_zbee_zcl_ias_ace_zone_id = -1;
-static gint ett_zbee_zcl_ias_ace_zone_id_map_sec = -1;
-static gint ett_zbee_zcl_ias_ace_zone_id_map_sec_elem = -1;
+static int ett_zbee_zcl_ias_ace;
+static int ett_zbee_zcl_ias_ace_zone_id;
+static int ett_zbee_zcl_ias_ace_zone_id_map_sec;
+static int ett_zbee_zcl_ias_ace_zone_id_map_sec_elem;
+static int ett_zbee_zcl_ias_ace_bypassed_zone_list;
+static int ett_zbee_zcl_ias_ace_bypassed_resp_list;
+static int ett_zbee_zcl_ias_ace_get_zone_status_resp_list;
 
 /* Server Commands Received */
 static const value_string zbee_zcl_ias_ace_srv_rx_cmd_names[] = {
-    { ZBEE_ZCL_CMD_ID_IAS_ACE_ARM,                  "Arm" },
-    { ZBEE_ZCL_CMD_ID_IAS_ACE_BYPASS,               "Bypass" },
-    { ZBEE_ZCL_CMD_ID_IAS_ACE_EMERGENCY,            "Emergency" },
-    { ZBEE_ZCL_CMD_ID_IAS_ACE_FIRE,                 "Fire" },
-    { ZBEE_ZCL_CMD_ID_IAS_ACE_PANIC,                "Panic" },
-    { ZBEE_ZCL_CMD_ID_IAS_ACE_GET_ZONE_ID_MAP,      "Get Zone ID Map" },
-    { ZBEE_ZCL_CMD_ID_IAS_ACE_GET_ZONE_INFO,        "Get Zone Information" },
+    { ZBEE_ZCL_CMD_ID_IAS_ACE_ARM,                    "Arm" },
+    { ZBEE_ZCL_CMD_ID_IAS_ACE_BYPASS,                 "Bypass" },
+    { ZBEE_ZCL_CMD_ID_IAS_ACE_EMERGENCY,              "Emergency" },
+    { ZBEE_ZCL_CMD_ID_IAS_ACE_FIRE,                   "Fire" },
+    { ZBEE_ZCL_CMD_ID_IAS_ACE_PANIC,                  "Panic" },
+    { ZBEE_ZCL_CMD_ID_IAS_ACE_GET_ZONE_ID_MAP,        "Get Zone ID Map" },
+    { ZBEE_ZCL_CMD_ID_IAS_ACE_GET_ZONE_INFO,          "Get Zone Information" },
+    { ZBEE_ZCL_CMD_ID_IAS_ACE_GET_PANEL_STATUS,       "Get Panel Status" },
+    { ZBEE_ZCL_CMD_ID_IAS_ACE_GET_BYPASSED_ZONE_LIST, "Get Bypassed Zone List" },
+    { ZBEE_ZCL_CMD_ID_IAS_ACE_GET_ZONE_STATUS,        "Get Zone Status" },
     { 0, NULL }
 };
 
 /* Server Commands Generated */
 static const value_string zbee_zcl_ias_ace_srv_tx_cmd_names[] = {
-    { ZBEE_ZCL_CMD_ID_IAS_ACE_ARM_RES,              "Arm Response" },
-    { ZBEE_ZCL_CMD_ID_IAS_ACE_GET_ZONE_ID_MAP_RES,  "Get Zone ID Map Response" },
-    { ZBEE_ZCL_CMD_ID_IAS_ACE_GET_ZONE_INFO_RES,    "Get Zone Information Response" },
+    { ZBEE_ZCL_CMD_ID_IAS_ACE_ARM_RES,                "Arm Response" },
+    { ZBEE_ZCL_CMD_ID_IAS_ACE_GET_ZONE_ID_MAP_RES,    "Get Zone ID Map Response" },
+    { ZBEE_ZCL_CMD_ID_IAS_ACE_GET_ZONE_INFO_RES,      "Get Zone Information Response" },
+    { ZBEE_ZCL_CMD_ID_IAS_ACE_ZONE_STATUS_CHANGED,    "Zone Status Changed" },
+    { ZBEE_ZCL_CMD_ID_IAS_ACE_PANEL_STATUS_CHANGED,   "Panel Status Changed" },
+    { ZBEE_ZCL_CMD_ID_IAS_ACE_GET_PANEL_STATUS_RES,   "Get Panel Status Response" },
+    { ZBEE_ZCL_CMD_ID_IAS_ACE_SET_BYPASSED_ZONE_LIST, "Set Bypassed Zone List" },
+    { ZBEE_ZCL_CMD_ID_IAS_ACE_BYPASS_RES,             "Bypass Response" },
+    { ZBEE_ZCL_CMD_ID_IAS_ACE_GET_ZONE_STATUS_RES,    "Get Zone Status Response" },
     { 0, NULL }
 };
 
@@ -136,6 +166,41 @@ static const value_string arm_notif_values[] = {
   { 0, NULL }
 };
 
+/* Audible Notification Values */
+static const value_string audible_notif_values[] = {
+  { 0x00, "Mute" },
+  { 0x01, "Default sound" },
+  { 0, NULL }
+};
+
+/* Panel Status Values */
+static const value_string panel_status_values[] = {
+  { 0x00, "Panel disarmed" },
+  { 0x01, "Armed stay" },
+  { 0x02, "Armed night" },
+  { 0x03, "Armed away" },
+  { 0x04, "Exit delay" },
+  { 0x05, "Entry delay" },
+  { 0x06, "Not ready to arm" },
+  { 0x07, "In alarm" },
+  { 0x08, "Arming Stay" },
+  { 0x09, "Arming Night" },
+  { 0x0a, "Arming Away" },
+  { 0, NULL }
+};
+
+/* Panel Status Values */
+static const value_string alarm_status_values[] = {
+  { 0x00, "No alarm" },
+  { 0x01, "Burglar" },
+  { 0x02, "Fire" },
+  { 0x03, "Emergency" },
+  { 0x04, "Police Panic" },
+  { 0x05, "Fire Panic" },
+  { 0x06, "Emergency Panic" },
+  { 0, NULL }
+};
+
 /*************************/
 /* Function Bodies       */
 /*************************/
@@ -152,9 +217,9 @@ dissect_zbee_zcl_ias_ace(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
 {
     proto_tree        *payload_tree;
     zbee_zcl_packet   *zcl;
-    guint             offset = 0;
-    guint8            cmd_id;
-    gint              rem_len;
+    unsigned          offset = 0;
+    uint8_t           cmd_id;
+    int               rem_len;
 
     /* Reject the packet if data is NULL */
     if (data == NULL)
@@ -170,7 +235,7 @@ dissect_zbee_zcl_ias_ace(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
             zcl->tran_seqno);
 
         /* Add the command ID. */
-        proto_tree_add_item(tree, hf_zbee_zcl_ias_ace_srv_rx_cmd_id, tvb, offset, 1, cmd_id);
+        proto_tree_add_item(tree, hf_zbee_zcl_ias_ace_srv_rx_cmd_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 
         /* Check if this command has a payload, then add the payload tree */
         rem_len = tvb_reported_length_remaining(tvb, ++offset);
@@ -188,10 +253,15 @@ dissect_zbee_zcl_ias_ace(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
                 case ZBEE_ZCL_CMD_ID_IAS_ACE_GET_ZONE_INFO:
                     dissect_zcl_ias_ace_get_zone_info(tvb, payload_tree, &offset);
                     break;
+                case ZBEE_ZCL_CMD_ID_IAS_ACE_GET_ZONE_STATUS:
+                    dissect_zcl_ias_ace_get_zone_status(tvb, payload_tree, &offset);
+                    break;
                 case ZBEE_ZCL_CMD_ID_IAS_ACE_EMERGENCY:
                 case ZBEE_ZCL_CMD_ID_IAS_ACE_FIRE:
                 case ZBEE_ZCL_CMD_ID_IAS_ACE_PANIC:
                 case ZBEE_ZCL_CMD_ID_IAS_ACE_GET_ZONE_ID_MAP:
+                case ZBEE_ZCL_CMD_ID_IAS_ACE_GET_BYPASSED_ZONE_LIST:
+                case ZBEE_ZCL_CMD_ID_IAS_ACE_GET_PANEL_STATUS:
                     /* No Payload */
                 default:
                     break;
@@ -205,7 +275,7 @@ dissect_zbee_zcl_ias_ace(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
             zcl->tran_seqno);
 
         /* Add the command ID. */
-        proto_tree_add_item(tree, hf_zbee_zcl_ias_ace_srv_tx_cmd_id, tvb, offset, 1, cmd_id);
+        proto_tree_add_item(tree, hf_zbee_zcl_ias_ace_srv_tx_cmd_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 
         /* Check if this command has a payload, then add the payload tree */
         rem_len = tvb_reported_length_remaining(tvb, ++offset);
@@ -226,6 +296,30 @@ dissect_zbee_zcl_ias_ace(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
                     dissect_zcl_ias_ace_get_zone_info_res(tvb, payload_tree, &offset);
                     break;
 
+                case ZBEE_ZCL_CMD_ID_IAS_ACE_ZONE_STATUS_CHANGED:
+                    dissect_zcl_ias_ace_zone_status_changed(tvb, payload_tree, &offset);
+                    break;
+
+                case ZBEE_ZCL_CMD_ID_IAS_ACE_PANEL_STATUS_CHANGED:
+                    dissect_zcl_ias_ace_panel_status_changed(tvb, payload_tree, &offset);
+                    break;
+
+                case ZBEE_ZCL_CMD_ID_IAS_ACE_GET_PANEL_STATUS_RES:
+                    dissect_zcl_ias_ace_get_panel_status_res(tvb, payload_tree, &offset);
+                    break;
+
+                case ZBEE_ZCL_CMD_ID_IAS_ACE_SET_BYPASSED_ZONE_LIST:
+                    dissect_zcl_ias_ace_set_bypassed_zone_list(tvb, payload_tree, &offset);
+                    break;
+
+                case ZBEE_ZCL_CMD_ID_IAS_ACE_BYPASS_RES:
+                    dissect_zcl_ias_ace_bypassed_res(tvb, payload_tree, &offset);
+                    break;
+
+                case ZBEE_ZCL_CMD_ID_IAS_ACE_GET_ZONE_STATUS_RES:
+                    dissect_zcl_ias_ace_get_zone_status_res(tvb, payload_tree, &offset);
+                    break;
+
                 default:
                     break;
             }
@@ -244,7 +338,7 @@ dissect_zbee_zcl_ias_ace(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
  *@param  offset offset of data in tvb
 */
 static void
-dissect_zcl_ias_ace_arm(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_ias_ace_arm(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     /* Retrieve "Arm Mode" field */
     proto_tree_add_item(tree, hf_zbee_zcl_ias_ace_arm_mode, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
@@ -261,14 +355,14 @@ dissect_zcl_ias_ace_arm(tvbuff_t *tvb, proto_tree *tree, guint *offset)
  *@param  offset offset of data in tvb
 */
 static void
-dissect_zcl_ias_ace_bypass(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_ias_ace_bypass(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     proto_item *zone_id_list = NULL;
     proto_tree *sub_tree = NULL;
-    guint8 num, i;
+    uint8_t num, i;
 
     /* Retrieve "Number of Zones" field */
-    num = tvb_get_guint8(tvb, *offset);
+    num = tvb_get_uint8(tvb, *offset);
     proto_tree_add_item(tree, hf_zbee_zcl_ias_ace_no_of_zones, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
     *offset += 1;
 
@@ -291,7 +385,7 @@ dissect_zcl_ias_ace_bypass(tvbuff_t *tvb, proto_tree *tree, guint *offset)
  *@param  offset offset of data in tvb
 */
 static void
-dissect_zcl_ias_ace_get_zone_info(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_ias_ace_get_zone_info(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
    /* Retrieve "Zone ID" field */
    proto_tree_add_item(tree, hf_zbee_zcl_ias_ace_zone_id, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
@@ -301,6 +395,217 @@ dissect_zcl_ias_ace_get_zone_info(tvbuff_t *tvb, proto_tree *tree, guint *offset
 
 
 /**
+ *This function decodes the Get Zone Status payload.
+ *
+ *@param  tvb the tv buffer of the current data_type
+ *@param  tree the tree to append this item to
+ *@param  offset offset of data in tvb
+*/
+static void
+dissect_zcl_ias_ace_get_zone_status(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
+{
+    /* Retrieve "Starting Zone ID" field */
+    proto_tree_add_item(tree, hf_zbee_zcl_ias_ace_starting_zone_id, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+
+    /* Retrieve "Max Number of Zone IDs" field */
+    proto_tree_add_item(tree, hf_zbee_zcl_ias_ace_max_number_of_zone_ids, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+
+    /* Retrieve "Zone Status Mask Flag" field */
+    proto_tree_add_item(tree, hf_zbee_zcl_ias_ace_zone_status_mask_flag, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+
+    /* Retrieve "Zone Status Mask" field */
+    proto_tree_add_item(tree, hf_zbee_zcl_ias_ace_zone_status_mask, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+
+} /*dissect_zcl_ias_ace_get_zone_status*/
+
+
+/**
+ *This function decodes the Zone Status Changed payload.
+ *
+ *@param  tvb the tv buffer of the current data_type
+ *@param  tree the tree to append this item to
+ *@param  offset offset of data in tvb
+*/
+static void
+dissect_zcl_ias_ace_zone_status_changed(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
+{
+    int length;
+
+    /* Retrieve "Zone ID" field */
+    proto_tree_add_item(tree, hf_zbee_zcl_ias_ace_zone_id, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+
+    /* Retrieve "Zone Status" field */
+    proto_tree_add_item(tree, hf_zbee_zcl_ias_ace_zone_status, tvb, *offset, 2, ENC_LITTLE_ENDIAN);
+    *offset += 2;
+
+    /* Retrieve "Audible Notification" field */
+    proto_tree_add_item(tree, hf_zbee_zcl_ias_ace_zone_audible_notif, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+
+    /* Rate Label */
+    proto_tree_add_item_ret_length(tree, hf_zbee_zcl_ias_ace_zone_label, tvb, *offset, 1, ENC_NA | ENC_ZIGBEE, &length);
+    *offset += length;
+
+} /*dissect_zcl_ias_ace_zone_status_changed*/
+
+
+/**
+ *This function decodes the Panel Status Changed payload.
+ *
+ *@param  tvb the tv buffer of the current data_type
+ *@param  tree the tree to append this item to
+ *@param  offset offset of data in tvb
+*/
+static void
+dissect_zcl_ias_ace_panel_status_changed(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
+{
+    /* Retrieve "Panel Status" field */
+    proto_tree_add_item(tree, hf_zbee_zcl_ias_ace_panel_status, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+
+    /* Retrieve "Seconds Remaining" field */
+    proto_tree_add_item(tree, hf_zbee_zcl_ias_ace_seconds_remaining, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+
+    /* Retrieve "Audible Notification" field */
+    proto_tree_add_item(tree, hf_zbee_zcl_ias_ace_zone_audible_notif, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+
+    /* Retrieve "Alarm Status" field */
+    proto_tree_add_item(tree, hf_zbee_zcl_ias_ace_alarm_status, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+
+} /*dissect_zcl_ias_ace_panel_status_changed*/
+
+
+/**
+ *This function decodes the Get Panel Status Response payload.
+ *
+ *@param  tvb the tv buffer of the current data_type
+ *@param  tree the tree to append this item to
+ *@param  offset offset of data in tvb
+*/
+static void
+dissect_zcl_ias_ace_get_panel_status_res(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
+{
+    /* Retrieve "Panel Status" field */
+    proto_tree_add_item(tree, hf_zbee_zcl_ias_ace_panel_status, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+
+    /* Retrieve "Seconds Remaining" field */
+    proto_tree_add_item(tree, hf_zbee_zcl_ias_ace_seconds_remaining, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+
+    /* Retrieve "Audible Notification" field */
+    proto_tree_add_item(tree, hf_zbee_zcl_ias_ace_zone_audible_notif, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+
+    /* Retrieve "Alarm Status" field */
+    proto_tree_add_item(tree, hf_zbee_zcl_ias_ace_alarm_status, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+
+} /*dissect_zcl_ias_ace_get_panel_status_res*/
+
+
+/**
+ *This function decodes the Set Bypassed Zone List payload.
+ *
+ *@param  tvb the tv buffer of the current data_type
+ *@param  tree the tree to append this item to
+ *@param  offset offset of data in tvb
+*/
+static void
+dissect_zcl_ias_ace_set_bypassed_zone_list(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
+{
+    size_t length = tvb_get_uint8(tvb, *offset);
+
+    /* Retrieve "Number of Zones" field */
+    proto_tree_add_item(tree, hf_zbee_zcl_ias_ace_number_of_zones, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+
+    if (length > 0) {
+        proto_tree *subtree;
+        subtree = proto_item_add_subtree(tree, ett_zbee_zcl_ias_ace_bypassed_zone_list);
+
+        for (size_t i = 0; i < length; i++) {
+            /* Retrieve "Zone ID n" field */
+            proto_tree_add_item(subtree, hf_zbee_zcl_ias_ace_zone_id, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+            *offset += 1;
+        }
+    }
+} /*dissect_zcl_ias_ace_set_bypassed_zone_list*/
+
+
+/**
+ *This function decodes the Set Bypassed Zone List payload.
+ *
+ *@param  tvb the tv buffer of the current data_type
+ *@param  tree the tree to append this item to
+ *@param  offset offset of data in tvb
+*/
+static void
+dissect_zcl_ias_ace_bypassed_res(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
+{
+    size_t length = tvb_get_uint8(tvb, *offset);
+
+    /* Retrieve "Number of Zones" field */
+    proto_tree_add_item(tree, hf_zbee_zcl_ias_ace_number_of_zones, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+
+    if (length > 0) {
+        proto_tree *subtree;
+        subtree = proto_item_add_subtree(tree, ett_zbee_zcl_ias_ace_bypassed_resp_list);
+
+        for (size_t i = 0; i < length; i++) {
+            /* Retrieve "Bypass Result for Zone ID n" field */
+            proto_tree_add_item(subtree, hf_zbee_zcl_ias_ace_zone_id, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+            *offset += 1;
+        }
+    }
+} /*dissect_zcl_ias_ace_bypassed_res */
+
+
+
+/**
+ *This function decodes the Set Bypassed Zone List payload.
+ *
+ *@param  tvb the tv buffer of the current data_type
+ *@param  tree the tree to append this item to
+ *@param  offset offset of data in tvb
+*/
+static void
+dissect_zcl_ias_ace_get_zone_status_res(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
+{
+    size_t length = 0;
+
+    /* Retrieve "Zone Status Complete" field */
+    proto_tree_add_item(tree, hf_zbee_zcl_ias_ace_zone_status_complete, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+
+    length = tvb_get_uint8(tvb, *offset);
+
+    /* Retrieve "Number of Zones" field */
+    proto_tree_add_item(tree, hf_zbee_zcl_ias_ace_number_of_zones, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+    *offset += 1;
+
+    if (length > 0) {
+        proto_tree *subtree;
+        subtree = proto_item_add_subtree(tree, ett_zbee_zcl_ias_ace_get_zone_status_resp_list);
+
+        for (size_t i = 0; i < length; i++) {
+            /* Retrieve "Bypass Result for Zone ID n" field */
+            proto_tree_add_item(subtree, hf_zbee_zcl_ias_ace_zone_id, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
+            *offset += 1;
+        }
+    }
+} /*dissect_zcl_ias_ace_get_zone_status_res */
+
+/**
  *This function decodes the Arm Response payload.
  *
  *@param  tvb the tv buffer of the current data_type
@@ -308,7 +613,7 @@ dissect_zcl_ias_ace_get_zone_info(tvbuff_t *tvb, proto_tree *tree, guint *offset
  *@param  offset offset of data in tvb
 */
 static void
-dissect_zcl_ias_ace_arm_res(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_ias_ace_arm_res(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
    /* Retrieve "Arm Notification" field */
    proto_tree_add_item(tree, hf_zbee_zcl_ias_ace_arm_notif, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
@@ -325,9 +630,9 @@ dissect_zcl_ias_ace_arm_res(tvbuff_t *tvb, proto_tree *tree, guint *offset)
  *@param  offset offset of data in tvb
 */
 static void
-dissect_zcl_ias_ace_get_zone_id_map_res(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_ias_ace_get_zone_id_map_res(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
-   guint8 i;
+   uint8_t i;
 
    /* Retrieve "Zone ID" fields */
    for(i = 0; i < 16; i++){
@@ -345,7 +650,7 @@ dissect_zcl_ias_ace_get_zone_id_map_res(tvbuff_t *tvb, proto_tree *tree, guint *
  *@param  offset offset of data in tvb
 */
 static void
-dissect_zcl_ias_ace_get_zone_info_res(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_ias_ace_get_zone_info_res(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
    /* Retrieve "Zone ID" field */
    proto_tree_add_item(tree, hf_zbee_zcl_ias_ace_zone_id, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
@@ -374,52 +679,102 @@ proto_register_zbee_zcl_ias_ace(void)
 
         { &hf_zbee_zcl_ias_ace_arm_mode,
             { "Arm Mode", "zbee_zcl_sas.ias_ace.arm_mode", FT_UINT8, BASE_DEC, VALS(arm_mode_values),
-            0x00, NULL, HFILL } },
+            0x0, NULL, HFILL } },
 
         { &hf_zbee_zcl_ias_ace_no_of_zones,
             { "Number of Zones", "zbee_zcl_sas.ias_ace.no_of_zones", FT_UINT8, BASE_DEC, NULL,
-            0x00, NULL, HFILL } },
+            0x0, NULL, HFILL } },
 
         { &hf_zbee_zcl_ias_ace_zone_id,
             { "Zone ID", "zbee_zcl_sas.ias_ace.zone_id", FT_UINT8, BASE_HEX, NULL,
-            0x00, NULL, HFILL } },
+            0x0, NULL, HFILL } },
 
         { &hf_zbee_zcl_ias_ace_zone_id_list,
             { "Zone ID List", "zbee_zcl_sas.ias_ace.zone_id_list", FT_NONE, BASE_NONE, NULL,
-            0x00, NULL, HFILL } },
+            0x0, NULL, HFILL } },
 
         { &hf_zbee_zcl_ias_ace_arm_notif,
             { "Arm Notifications", "zbee_zcl_sas.ias_ace.arm_notif", FT_UINT8, BASE_DEC, VALS(arm_notif_values),
-            0x00, NULL, HFILL } },
+            0x0, NULL, HFILL } },
 
         { &hf_zbee_zcl_ias_ace_zone_id_map_section,
             { "Zone ID Map Section", "zbee_zcl_sas.ias_ace.zone_id_map_section", FT_UINT16, BASE_HEX, NULL,
-            0x00, NULL, HFILL } },
+            0x0, NULL, HFILL } },
 
         { &hf_zbee_zcl_ias_ace_zone_type,
             { "Zone Type", "zbee_zcl_sas.ias_ace.zone_type", FT_UINT16, BASE_HEX, NULL,
-            0x00, NULL, HFILL } },
+            0x0, NULL, HFILL } },
 
         { &hf_zbee_zcl_ias_ace_ieee_add,
             { "IEEE Address", "zbee_zcl_sas.ias_ace.ieee_add", FT_BYTES, BASE_NONE, NULL,
-            0x00, NULL, HFILL } },
+            0x0, NULL, HFILL } },
 
         { &hf_zbee_zcl_ias_ace_srv_rx_cmd_id,
           { "Command", "zbee_zcl_sas.ias_ace.cmd.srv_rx.id", FT_UINT8, BASE_HEX, VALS(zbee_zcl_ias_ace_srv_rx_cmd_names),
-            0x00, NULL, HFILL } },
+            0x0, NULL, HFILL } },
 
         { &hf_zbee_zcl_ias_ace_srv_tx_cmd_id,
           { "Command", "zbee_zcl_sas.ias_ace.cmd.srv_tx.id", FT_UINT8, BASE_HEX, VALS(zbee_zcl_ias_ace_srv_tx_cmd_names),
-            0x00, NULL, HFILL } }
+            0x0, NULL, HFILL } },
 
+        { &hf_zbee_zcl_ias_ace_starting_zone_id,
+          { "Starting Zone ID", "zbee_zcl_sas.ias_ace.cmd.starting_zone_id", FT_UINT8, BASE_HEX, NULL,
+            0x0, NULL, HFILL } },
+
+        { &hf_zbee_zcl_ias_ace_max_number_of_zone_ids,
+          { "Max Number Of Zone IDs", "zbee_zcl_sas.ias_ace.cmd.max_number_of_zone_ids", FT_UINT8, BASE_DEC, NULL,
+            0x0, NULL, HFILL } },
+
+        { &hf_zbee_zcl_ias_ace_zone_status_mask_flag,
+          { "Zone Status Mask Flag", "zbee_zcl_sas.ias_ace.cmd.zone_status_mask_flag", FT_BOOLEAN, BASE_NONE, NULL,
+            0x0, NULL, HFILL } },
+
+        { &hf_zbee_zcl_ias_ace_zone_status_mask,
+          { "Zone Status Mask", "zbee_zcl_sas.ias_ace.cmd.zone_status_mask", FT_UINT16, BASE_HEX, NULL,
+            0x0, NULL, HFILL } },
+
+        { &hf_zbee_zcl_ias_ace_zone_status,
+          { "Zone Status", "zbee_zcl_sas.ias_ace.cmd.zone_status", FT_UINT16, BASE_HEX, NULL,
+            0x0, NULL, HFILL } },
+
+        { &hf_zbee_zcl_ias_ace_zone_audible_notif,
+          { "Audible Notification", "zbee_zcl_sas.ias_ace.cmd.zone_audible_notif", FT_UINT16, BASE_HEX, VALS(audible_notif_values),
+            0x0, NULL, HFILL } },
+
+        { &hf_zbee_zcl_ias_ace_zone_label,
+          { "Zone Label", "zbee_zcl_sas.ias_ace.cmd.zone_label", FT_UINT_STRING, BASE_NONE, NULL,
+            0x0, NULL, HFILL } },
+
+        { &hf_zbee_zcl_ias_ace_panel_status,
+          { "Panel Status", "zbee_zcl_sas.ias_ace.cmd.panel_status", FT_UINT8, BASE_HEX, VALS(panel_status_values),
+            0x0, NULL, HFILL } },
+
+        { &hf_zbee_zcl_ias_ace_seconds_remaining,
+          { "Seconds Remaining", "zbee_zcl_sas.ias_ace.cmd.seconds_remaining", FT_UINT8, BASE_DEC, NULL,
+            0x0, NULL, HFILL } },
+
+        { &hf_zbee_zcl_ias_ace_alarm_status,
+          { "Alarm Status", "zbee_zcl_sas.ias_ace.cmd.alarm_status", FT_UINT8, BASE_HEX, VALS(alarm_status_values),
+            0x0, NULL, HFILL } },
+
+        { &hf_zbee_zcl_ias_ace_number_of_zones,
+          { "Number of Zones", "zbee_zcl_sas.ias_ace.cmd.number_of_zones", FT_UINT8, BASE_DEC, NULL,
+            0x0, NULL, HFILL } },
+
+        { &hf_zbee_zcl_ias_ace_zone_status_complete,
+          { "Zone Status Complete", "zbee_zcl_sas.ias_ace.cmd.zone_status_complete", FT_BOOLEAN, BASE_NONE, NULL,
+            0x0, NULL, HFILL } },
     };
 
     /* ZCL IAS ACE subtrees */
-    static gint *ett[ZBEE_ZCL_IAS_ACE_NUM_ETT];
+    static int *ett[ZBEE_ZCL_IAS_ACE_NUM_ETT];
     ett[0] = &ett_zbee_zcl_ias_ace;
     ett[1] = &ett_zbee_zcl_ias_ace_zone_id;
     ett[2] = &ett_zbee_zcl_ias_ace_zone_id_map_sec;
     ett[3] = &ett_zbee_zcl_ias_ace_zone_id_map_sec_elem;
+    ett[4] = &ett_zbee_zcl_ias_ace_bypassed_zone_list;
+    ett[5] = &ett_zbee_zcl_ias_ace_bypassed_resp_list;
+    ett[6] = &ett_zbee_zcl_ias_ace_get_zone_status_resp_list;
 
     /* Register the ZigBee ZCL IAS ACE cluster protocol name and description */
     proto_zbee_zcl_ias_ace = proto_register_protocol("ZigBee ZCL IAS ACE", "ZCL IAS ACE", ZBEE_PROTOABBREV_ZCL_IAS_ACE);
@@ -439,16 +794,12 @@ proto_register_zbee_zcl_ias_ace(void)
 void
 proto_reg_handoff_zbee_zcl_ias_ace(void)
 {
-    dissector_handle_t ias_ace_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    ias_ace_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_IAS_ACE);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_IAS_ACE, ias_ace_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_ias_ace,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_IAS_ACE,
+                            proto_zbee_zcl_ias_ace,
                             ett_zbee_zcl_ias_ace,
                             ZBEE_ZCL_CID_IAS_ACE,
-                            -1,
+                            ZBEE_MFG_CODE_NONE,
+                            -1, -1,
                             hf_zbee_zcl_ias_ace_srv_rx_cmd_id,
                             hf_zbee_zcl_ias_ace_srv_tx_cmd_id,
                             NULL
@@ -485,9 +836,8 @@ void proto_register_zbee_zcl_ias_wd(void);
 void proto_reg_handoff_zbee_zcl_ias_wd(void);
 
 /* Command Dissector Helpers */
-static void dissect_zcl_ias_wd_attr_data                (proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type);
-static void dissect_zcl_ias_wd_start_warning            (tvbuff_t *tvb, proto_tree *tree, guint *offset);
-static void dissect_zcl_ias_wd_squawk                   (tvbuff_t *tvb, proto_tree *tree, guint *offset);
+static void dissect_zcl_ias_wd_start_warning            (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
+static void dissect_zcl_ias_wd_squawk                   (tvbuff_t *tvb, proto_tree *tree, unsigned *offset);
 
 /* Private functions prototype */
 
@@ -495,19 +845,19 @@ static void dissect_zcl_ias_wd_squawk                   (tvbuff_t *tvb, proto_tr
 /* Global Variables      */
 /*************************/
 /* Initialize the protocol and registered fields */
-static int proto_zbee_zcl_ias_wd = -1;
+static int proto_zbee_zcl_ias_wd;
 
-static int hf_zbee_zcl_ias_wd_attr_id = -1;
-static int hf_zbee_zcl_ias_wd_warning_mode = -1;
-static int hf_zbee_zcl_ias_wd_strobe_2bit = -1;
-static int hf_zbee_zcl_ias_wd_squawk_mode = -1;
-static int hf_zbee_zcl_ias_wd_strobe_1bit = -1;
-static int hf_zbee_zcl_ias_wd_warning_duration = -1;
-static int hf_zbee_zcl_ias_wd_squawk_level = -1;
-static int hf_zbee_zcl_ias_wd_srv_rx_cmd_id = -1;
+static int hf_zbee_zcl_ias_wd_attr_id;
+static int hf_zbee_zcl_ias_wd_warning_mode;
+static int hf_zbee_zcl_ias_wd_strobe_2bit;
+static int hf_zbee_zcl_ias_wd_squawk_mode;
+static int hf_zbee_zcl_ias_wd_strobe_1bit;
+static int hf_zbee_zcl_ias_wd_warning_duration;
+static int hf_zbee_zcl_ias_wd_squawk_level;
+static int hf_zbee_zcl_ias_wd_srv_rx_cmd_id;
 
 /* Initialize the subtree pointers */
-static gint ett_zbee_zcl_ias_wd = -1;
+static int ett_zbee_zcl_ias_wd;
 
 /* Attributes */
 static const value_string zbee_zcl_ias_wd_attr_names[] = {
@@ -528,6 +878,9 @@ static const value_string warning_mode_values[] = {
   { 1, "Burglar" },
   { 2, "Fire" },
   { 3, "Emergency" },
+  { 4, "Police Panic" },
+  { 5, "Fire Panic" },
+  { 6, "Emergency Panic" },
   { 0, NULL }
 };
 
@@ -577,9 +930,9 @@ dissect_zbee_zcl_ias_wd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 {
     proto_tree        *payload_tree;
     zbee_zcl_packet   *zcl;
-    guint             offset = 0;
-    guint8            cmd_id;
-    gint              rem_len;
+    unsigned          offset = 0;
+    uint8_t           cmd_id;
+    int               rem_len;
 
     /* Reject the packet if data is NULL */
     if (data == NULL)
@@ -595,7 +948,7 @@ dissect_zbee_zcl_ias_wd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
             zcl->tran_seqno);
 
         /* Add the command ID. */
-        proto_tree_add_item(tree, hf_zbee_zcl_ias_wd_srv_rx_cmd_id, tvb, offset, 1, cmd_id);
+        proto_tree_add_item(tree, hf_zbee_zcl_ias_wd_srv_rx_cmd_id, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 
         /* Check if this command has a payload, then add the payload tree */
         rem_len = tvb_reported_length_remaining(tvb, ++offset);
@@ -631,7 +984,7 @@ dissect_zbee_zcl_ias_wd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
  *@param  offset offset of data in tvb
 */
 static void
-dissect_zcl_ias_wd_start_warning(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_ias_wd_start_warning(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     /* Retrieve "Warning Mode" field */
     proto_tree_add_item(tree, hf_zbee_zcl_ias_wd_warning_mode, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
@@ -655,7 +1008,7 @@ dissect_zcl_ias_wd_start_warning(tvbuff_t *tvb, proto_tree *tree, guint *offset)
  *@param  offset offset of data in tvb
 */
 static void
-dissect_zcl_ias_wd_squawk(tvbuff_t *tvb, proto_tree *tree, guint *offset)
+dissect_zcl_ias_wd_squawk(tvbuff_t *tvb, proto_tree *tree, unsigned *offset)
 {
     /* Retrieve "Squawk Mode" field */
     proto_tree_add_item(tree, hf_zbee_zcl_ias_wd_squawk_mode, tvb, *offset, 1, ENC_LITTLE_ENDIAN);
@@ -678,15 +1031,16 @@ dissect_zcl_ias_wd_squawk(tvbuff_t *tvb, proto_tree *tree, guint *offset)
  *@param offset pointer to buffer offset
  *@param attr_id attribute identifier
  *@param data_type attribute data type
+ *@param client_attr ZCL client
 */
-void
-dissect_zcl_ias_wd_attr_data(proto_tree *tree, tvbuff_t *tvb, guint *offset, guint16 attr_id, guint data_type)
+static void
+dissect_zcl_ias_wd_attr_data(proto_tree *tree, packet_info* pinfo, tvbuff_t *tvb, unsigned *offset, uint16_t attr_id, unsigned data_type, bool client_attr)
 {
     /* Dissect attribute data type and data */
     switch (attr_id) {
         case ZBEE_ZCL_ATTR_ID_IAS_WD_MAX_DURATION:
         default:
-            dissect_zcl_attr_data(tvb, tree, offset, data_type);
+            dissect_zcl_attr_data(tvb, pinfo, tree, offset, data_type, client_attr);
             break;
     }
 
@@ -705,7 +1059,7 @@ proto_register_zbee_zcl_ias_wd(void)
 
         { &hf_zbee_zcl_ias_wd_attr_id,
             { "Attribute", "zbee_zcl_sas.ias_wd.attr_id", FT_UINT16, BASE_HEX, VALS(zbee_zcl_ias_wd_attr_names),
-            0x00, NULL, HFILL } },
+            0x0, NULL, HFILL } },
 
         { &hf_zbee_zcl_ias_wd_warning_mode,
             { "Warning Mode", "zbee_zcl_sas.ias_wd.warning_mode", FT_UINT8, BASE_DEC, VALS(warning_mode_values),
@@ -725,7 +1079,7 @@ proto_register_zbee_zcl_ias_wd(void)
 
         { &hf_zbee_zcl_ias_wd_warning_duration,
             { "Warning Duration", "zbee_zcl_sas.ias_wd.warning_duration", FT_UINT16, BASE_HEX, NULL,
-            0x00, NULL, HFILL } },
+            0x0, NULL, HFILL } },
 
         { &hf_zbee_zcl_ias_wd_squawk_level,
             { "Squawk Level", "zbee_zcl_sas.ias_wd.squawk_level", FT_UINT8, BASE_DEC, VALS(squawk_level_values),
@@ -733,11 +1087,11 @@ proto_register_zbee_zcl_ias_wd(void)
 
         { &hf_zbee_zcl_ias_wd_srv_rx_cmd_id,
           { "Command", "zbee_zcl_sas.ias_wd.cmd.srv_rx.id", FT_UINT8, BASE_HEX, VALS(zbee_zcl_ias_wd_srv_rx_cmd_names),
-            0x00, NULL, HFILL } }
+            0x0, NULL, HFILL } }
     };
 
     /* ZCL IAS WD subtrees */
-    static gint *ett[ZBEE_ZCL_IAS_WD_NUM_ETT];
+    static int *ett[ZBEE_ZCL_IAS_WD_NUM_ETT];
     ett[0] = &ett_zbee_zcl_ias_wd;
 
     /* Register the ZigBee ZCL IAS WD cluster protocol name and description */
@@ -758,24 +1112,21 @@ proto_register_zbee_zcl_ias_wd(void)
 void
 proto_reg_handoff_zbee_zcl_ias_wd(void)
 {
-    dissector_handle_t ias_wd_handle;
-
-    /* Register our dissector with the ZigBee application dissectors. */
-    ias_wd_handle = find_dissector(ZBEE_PROTOABBREV_ZCL_IAS_WD);
-    dissector_add_uint("zbee.zcl.cluster", ZBEE_ZCL_CID_IAS_WD, ias_wd_handle);
-
-    zbee_zcl_init_cluster(  proto_zbee_zcl_ias_wd,
+    zbee_zcl_init_cluster(  ZBEE_PROTOABBREV_ZCL_IAS_WD,
+                            proto_zbee_zcl_ias_wd,
                             ett_zbee_zcl_ias_wd,
                             ZBEE_ZCL_CID_IAS_WD,
+                            ZBEE_MFG_CODE_NONE,
+                            hf_zbee_zcl_ias_wd_attr_id,
                             hf_zbee_zcl_ias_wd_attr_id,
                             hf_zbee_zcl_ias_wd_srv_rx_cmd_id,
                             -1,
-                            (zbee_zcl_fn_attr_data)dissect_zcl_ias_wd_attr_data
+                            dissect_zcl_ias_wd_attr_data
                          );
 } /*proto_reg_handoff_zbee_zcl_ias_wd*/
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

@@ -2,99 +2,23 @@
  *
  * Transport-Neutral Encapsulation Format (TNEF) file reading
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
-
-#include <errno.h>
-
-#include "wtap-int.h"
-#include "file_wrappers.h"
-#include <wsutil/buffer.h>
 #include "tnef.h"
 
-static gboolean tnef_read_file(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
-                               Buffer *buf, int *err, gchar **err_info)
+#include "wtap_module.h"
+#include "file_wrappers.h"
+#include <wsutil/buffer.h>
+
+static int tnef_file_type_subtype = -1;
+
+void register_tnef(void);
+
+wtap_open_return_val tnef_open(wtap *wth, int *err, char **err_info)
 {
-  gint64 file_size;
-  int packet_size;
-
-  if ((file_size = wtap_file_size(wth, err)) == -1)
-    return FALSE;
-
-  if (file_size > WTAP_MAX_PACKET_SIZE) {
-    /*
-     * Probably a corrupt capture file; don't blow up trying
-     * to allocate space for an immensely-large packet.
-     */
-    *err = WTAP_ERR_BAD_FILE;
-    *err_info = g_strdup_printf("tnef: File has %" G_GINT64_MODIFIER "d-byte packet, bigger than maximum of %u",
-                                file_size, WTAP_MAX_PACKET_SIZE);
-    return FALSE;
-  }
-  packet_size = (int)file_size;
-
-  phdr->rec_type = REC_TYPE_PACKET;
-  phdr->presence_flags = 0; /* yes, we have no bananas^Wtime stamp */
-
-  phdr->caplen = packet_size;
-  phdr->len = packet_size;
-
-  phdr->ts.secs = 0;
-  phdr->ts.nsecs = 0;
-
-  return wtap_read_packet_bytes(fh, buf, packet_size, err, err_info);
-}
-
-static gboolean tnef_read(wtap *wth, int *err, gchar **err_info, gint64 *data_offset)
-{
-  gint64 offset;
-
-  *err = 0;
-
-  offset = file_tell(wth->fh);
-
-  /* there is only ever one packet */
-  if (offset)
-    return FALSE;
-
-  *data_offset = offset;
-
-  return tnef_read_file(wth, wth->fh, &wth->phdr, wth->frame_buffer, err, err_info);
-}
-
-static gboolean tnef_seek_read(wtap *wth, gint64 seek_off,
-                               struct wtap_pkthdr *phdr,
-                               Buffer *buf, int *err, gchar **err_info)
-{
-  /* there is only one packet */
-  if(seek_off > 0) {
-    *err = 0;
-    return FALSE;
-  }
-
-  if (file_seek(wth->random_fh, seek_off, SEEK_SET, err) == -1)
-    return FALSE;
-
-  return tnef_read_file(wth, wth->random_fh, phdr, buf, err, err_info);
-}
-
-wtap_open_return_val tnef_open(wtap *wth, int *err, gchar **err_info)
-{
-  guint32 magic;
+  uint32_t magic;
 
   if (!wtap_read_bytes(wth->fh, &magic, sizeof magic, err, err_info))
     return (*err != WTAP_ERR_SHORT_READ) ? WTAP_OPEN_ERROR : WTAP_OPEN_NOT_MINE;
@@ -107,19 +31,46 @@ wtap_open_return_val tnef_open(wtap *wth, int *err, gchar **err_info)
   if (file_seek(wth->fh, 0, SEEK_SET, err) == -1)
     return WTAP_OPEN_ERROR;
 
-  wth->file_type_subtype = WTAP_FILE_TYPE_SUBTYPE_TNEF;
+  wth->file_type_subtype = tnef_file_type_subtype;
   wth->file_encap = WTAP_ENCAP_TNEF;
   wth->snapshot_length = 0;
 
-  wth->subtype_read = tnef_read;
-  wth->subtype_seek_read = tnef_seek_read;
+  wth->subtype_read = wtap_full_file_read;
+  wth->subtype_seek_read = wtap_full_file_seek_read;
   wth->file_tsprec = WTAP_TSPREC_SEC;
 
   return WTAP_OPEN_MINE;
 }
 
+static const struct supported_block_type tnef_blocks_supported[] = {
+  /*
+   * This is a file format that we dissect, so we provide only one
+   * "packet" with the file's contents, and don't support any
+   * options.
+   */
+  { WTAP_BLOCK_PACKET, ONE_BLOCK_SUPPORTED, NO_OPTIONS_SUPPORTED }
+};
+
+static const struct file_type_subtype_info tnef_info = {
+  "Transport-Neutral Encapsulation Format", "tnef", NULL, NULL,
+  false, BLOCKS_SUPPORTED(tnef_blocks_supported),
+  NULL, NULL, NULL
+};
+
+void register_tnef(void)
+{
+  tnef_file_type_subtype = wtap_register_file_type_subtype(&tnef_info);
+
+  /*
+   * Register name for backwards compatibility with the
+   * wtap_filetypes table in Lua.
+   */
+  wtap_register_backwards_compatibility_lua_name("TNEF",
+                                                 tnef_file_type_subtype);
+}
+
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

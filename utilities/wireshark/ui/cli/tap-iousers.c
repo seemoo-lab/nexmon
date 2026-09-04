@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -27,7 +15,10 @@
 
 #include <string.h>
 #include <epan/packet.h>
+#include <epan/prefs.h>
 #include <epan/timestamp.h>
+#include <wsutil/str_util.h>
+#include <wsutil/cmdarg_err.h>
 #include <ui/cli/tshark-tap.h>
 
 typedef struct _io_users_t {
@@ -42,10 +33,10 @@ iousers_draw(void *arg)
 	conv_hash_t *hash = (conv_hash_t*)arg;
 	io_users_t *iu = (io_users_t *)hash->user_data;
 	conv_item_t *iui;
-	guint64 last_frames, max_frames;
+	uint64_t last_frames, max_frames;
 	struct tm * tm_time;
-	guint i;
-	gboolean display_ports = (!strncmp(iu->type, "TCP", 3) || !strncmp(iu->type, "UDP", 3) || !strncmp(iu->type, "SCTP", 4)) ? TRUE : FALSE;
+	unsigned i;
+	bool display_ports = (!strncmp(iu->type, "TCP", 3) || !strncmp(iu->type, "UDP", 3) || !strncmp(iu->type, "SCTP", 4)) ? true : false;
 
 	printf("================================================================================\n");
 	printf("%s Conversations\n", iu->type);
@@ -56,7 +47,7 @@ iousers_draw(void *arg)
 	case TS_UTC:
 		printf("%s                                               |       <-      | |       ->      | |     Total     | Absolute Time  |   Duration   |\n",
 			display_ports ? "            " : "");
-		printf("%s                                               | Frames  Bytes | | Frames  Bytes | | Frames  Bytes |      Start     |              |\n",
+		printf("%s                                               | Frames  Size  | | Frames  Size  | | Frames  Size  |      Start     |              |\n",
 			display_ports ? "            " : "");
 		break;
 	case TS_ABSOLUTE_WITH_YMD:
@@ -65,7 +56,13 @@ iousers_draw(void *arg)
 	case TS_UTC_WITH_YDOY:
 		printf("%s                                               |       <-      | |       ->      | |     Total     | Absolute Date  |   Duration   |\n",
 			display_ports ? "            " : "");
-		printf("%s                                               | Frames  Bytes | | Frames  Bytes | | Frames  Bytes |     Start      |              |\n",
+		printf("%s                                               | Frames  Size  | | Frames  Size  | | Frames  Size  |     Start      |              |\n",
+			display_ports ? "            " : "");
+		break;
+	case TS_EPOCH:
+		printf("%s                                               |       <-      | |       ->      | |     Total     |       Relative       |   Duration   |\n",
+			display_ports ? "            " : "");
+		printf("%s                                               | Frames  Bytes | | Frames  Bytes | | Frames  Bytes |         Start        |              |\n",
 			display_ports ? "            " : "");
 		break;
 	case TS_RELATIVE:
@@ -82,7 +79,7 @@ iousers_draw(void *arg)
 	do {
 		last_frames = 0;
 		for (i=0; (iu->hash.conv_array && i < iu->hash.conv_array->len); i++) {
-			guint64 tot_frames;
+			uint64_t tot_frames;
 
 			iui = &g_array_index(iu->hash.conv_array, conv_item_t, i);
 			tot_frames = iui->rx_frames + iui->tx_frames;
@@ -93,47 +90,64 @@ iousers_draw(void *arg)
 		}
 
 		for (i=0; (iu->hash.conv_array && i < iu->hash.conv_array->len); i++) {
-			guint64 tot_frames;
+			uint64_t tot_frames;
 			char *src_addr, *dst_addr;
 
 			iui = &g_array_index(iu->hash.conv_array, conv_item_t, i);
 			tot_frames = iui->rx_frames + iui->tx_frames;
 
 			if (tot_frames == last_frames) {
+				char *rx_bytes, *tx_bytes, *total_bytes;
+
 				/* XXX - TODO: make name / port resolution configurable (through gbl_resolv_flags?) */
-				src_addr = get_conversation_address(NULL, &iui->src_address, TRUE);
-				dst_addr = get_conversation_address(NULL, &iui->dst_address, TRUE);
+				src_addr = get_conversation_address(NULL, &iui->src_address, true);
+				dst_addr = get_conversation_address(NULL, &iui->dst_address, true);
 				if (display_ports) {
 					char *src, *dst, *src_port, *dst_port;
-					src_port = get_conversation_port(NULL, iui->src_port, iui->ptype, TRUE);
-					dst_port = get_conversation_port(NULL, iui->dst_port, iui->ptype, TRUE);
+					src_port = get_conversation_port(NULL, iui->src_port, iui->ctype, true);
+					dst_port = get_conversation_port(NULL, iui->dst_port, iui->ctype, true);
 					src = wmem_strconcat(NULL, src_addr, ":", src_port, NULL);
 					dst = wmem_strconcat(NULL, dst_addr, ":", dst_port, NULL);
-					printf("%-26s <-> %-26s  %6" G_GINT64_MODIFIER "u %9" G_GINT64_MODIFIER
-					       "u  %6" G_GINT64_MODIFIER "u %9" G_GINT64_MODIFIER "u  %6"
-					       G_GINT64_MODIFIER "u %9" G_GINT64_MODIFIER "u  ",
-						src, dst,
-						iui->rx_frames, iui->rx_bytes,
-						iui->tx_frames, iui->tx_bytes,
-						iui->tx_frames+iui->rx_frames,
-						iui->tx_bytes+iui->rx_bytes
-					);
+					printf("%-26s <-> %-26s",
+							src, dst
+						);
 					wmem_free(NULL, src_port);
 					wmem_free(NULL, dst_port);
 					wmem_free(NULL, src);
 					wmem_free(NULL, dst);
 				} else {
-					printf("%-20s <-> %-20s  %6" G_GINT64_MODIFIER "u %9" G_GINT64_MODIFIER
-					       "u  %6" G_GINT64_MODIFIER "u %9" G_GINT64_MODIFIER "u  %6"
-					       G_GINT64_MODIFIER "u %9" G_GINT64_MODIFIER "u  ",
-						src_addr, dst_addr,
+					printf("%-20s <-> %-20s",
+						src_addr, dst_addr
+					);
+				}
+
+				if (!prefs.conv_machine_readable) {
+					// XXX: format_size can return a string of up to 11 characters:
+					// "X,XXX bytes" We should maybe widen the columns.
+					rx_bytes = format_size(iui->rx_bytes, FORMAT_SIZE_UNIT_BYTES, 0);
+					tx_bytes = format_size(iui->tx_bytes, FORMAT_SIZE_UNIT_BYTES, 0);
+					total_bytes = format_size(iui->tx_bytes + iui->rx_bytes, FORMAT_SIZE_UNIT_BYTES, 0);
+					printf("  %6" PRIu64 " %-9s"
+					       "  %6" PRIu64 " %-9s"
+					       "  %6" PRIu64 " %-9s  ",
+						iui->rx_frames, rx_bytes,
+						iui->tx_frames, tx_bytes,
+						iui->tx_frames+iui->rx_frames,
+						total_bytes
+					);
+					wmem_free(NULL, rx_bytes);
+					wmem_free(NULL, tx_bytes);
+					wmem_free(NULL, total_bytes);
+				} else {
+					printf("  %6" PRIu64 " %9"  PRIu64
+					       "  %6" PRIu64 " %9" PRIu64
+					       "  %6" PRIu64 " %9" PRIu64 "  ",
 						iui->rx_frames, iui->rx_bytes,
 						iui->tx_frames, iui->tx_bytes,
 						iui->tx_frames+iui->rx_frames,
 						iui->tx_bytes+iui->rx_bytes
 					);
 				}
-
 				wmem_free(NULL, src_addr);
 				wmem_free(NULL, dst_addr);
 
@@ -208,6 +222,9 @@ iousers_draw(void *arg)
 					} else
 						printf("XXXX/XXX XX:XX:XX");
 					break;
+				case TS_EPOCH:
+					printf("%20.9f", nstime_to_sec(&iui->start_abs_time));
+					break;
 				case TS_RELATIVE:
 				case TS_NOT_SET:
 				default:
@@ -224,6 +241,16 @@ iousers_draw(void *arg)
 	printf("================================================================================\n");
 }
 
+static void iousers_finish(void *arg)
+{
+	if (!arg)
+		return;
+	conv_hash_t *hash = (conv_hash_t*)arg;
+	io_users_t *iu = (io_users_t *)hash->user_data;
+	if (iu)
+		g_free(iu);
+}
+
 void init_iousers(struct register_ct *ct, const char *filter)
 {
 	io_users_t *iu;
@@ -234,10 +261,10 @@ void init_iousers(struct register_ct *ct, const char *filter)
 	iu->filter = g_strdup(filter);
 	iu->hash.user_data = iu;
 
-	error_string = register_tap_listener(proto_get_protocol_filter_name(get_conversation_proto_id(ct)), &iu->hash, filter, 0, NULL, get_conversation_packet_func(ct), iousers_draw);
+	error_string = register_tap_listener(proto_get_protocol_filter_name(get_conversation_proto_id(ct)), &iu->hash, filter, 0, NULL, get_conversation_packet_func(ct), iousers_draw, iousers_finish);
 	if (error_string) {
 		g_free(iu);
-		fprintf(stderr, "tshark: Couldn't register conversations tap: %s\n",
+		cmdarg_err("Couldn't register conversations tap: %s",
 		    error_string->str);
 		g_string_free(error_string, TRUE);
 		exit(1);
@@ -246,7 +273,7 @@ void init_iousers(struct register_ct *ct, const char *filter)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

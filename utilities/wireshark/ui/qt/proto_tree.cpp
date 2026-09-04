@@ -4,330 +4,429 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include <stdio.h>
 
-#include "proto_tree.h"
+#include <ui/qt/proto_tree.h>
+#include <ui/qt/models/proto_tree_model.h>
 
 #include <epan/ftypes/ftypes.h>
 #include <epan/prefs.h>
+#include <epan/print.h>
+#include <epan/epan.h>
+#include <epan/epan_dissect.h>
+#include <cfile.h>
 
-#include "color_utils.h"
+#include <ui/qt/utils/color_utils.h>
+#include <ui/qt/utils/variant_pointer.h>
+#include <ui/qt/utils/wireshark_mime_data.h>
+#include <ui/qt/widgets/drag_label.h>
+#include <ui/qt/widgets/wireshark_file_dialog.h>
+#include <ui/qt/show_packet_bytes_dialog.h>
+#include <ui/qt/filter_action.h>
+#include <ui/qt/follow_stream_action.h>
+#include <ui/qt/main_window.h>
+#include <ui/qt/io_graph_action.h>
+#include <ui/qt/plot_action.h>
+#include <ui/qt/protocol_preferences_menu.h>
+#include <ui/all_files_wildcard.h>
+#include <ui/alert_box.h>
+#include <ui/urls.h>
+#include "main_application.h"
 
 #include <QApplication>
 #include <QContextMenuEvent>
 #include <QDesktopServices>
 #include <QHeaderView>
+#include <QItemSelectionModel>
 #include <QScrollBar>
-#include <QTreeWidgetItemIterator>
+#include <QStack>
 #include <QUrl>
+#include <QClipboard>
+#include <QWindow>
+#include <QMessageBox>
+#include <QJsonDocument>
+#include <QJsonObject>
 
 // To do:
 // - Fix "apply as filter" behavior.
 
-/* Fill a single protocol tree item with its string value and set its color. */
-static void
-proto_tree_draw_node(proto_node *node, gpointer data)
-{
-    field_info   *fi = PNODE_FINFO(node);
-    QString       label;
-    gboolean      is_branch;
-
-    /* dissection with an invisible proto tree? */
-    g_assert(fi);
-
-    if (PROTO_ITEM_IS_HIDDEN(node) && !prefs.display_hidden_proto_items)
-        return;
-
-    // Fill in our label
-    /* was a free format label produced? */
-    if (fi->rep) {
-        label = fi->rep->representation;
-    }
-    else { /* no, make a generic label */
-        gchar label_str[ITEM_LABEL_LENGTH];
-        proto_item_fill_label(fi, label_str);
-        label = label_str;
-    }
-
-    if (node->first_child != NULL) {
-        is_branch = TRUE;
-        g_assert(fi->tree_type >= 0 && fi->tree_type < num_tree_types);
-    }
-    else {
-        is_branch = FALSE;
-    }
-
-    if (PROTO_ITEM_IS_GENERATED(node)) {
-        if (PROTO_ITEM_IS_HIDDEN(node)) {
-            label = QString("<[%1]>").arg(label);
-        } else {
-            label = QString("[%1]").arg(label);
-        }
-    } else if (PROTO_ITEM_IS_HIDDEN(node)) {
-        label = QString("<%1>").arg(label);
-    }
-
-    QTreeWidgetItem *parentItem = (QTreeWidgetItem *)data;
-    QTreeWidgetItem *item;
-    ProtoTree *proto_tree = qobject_cast<ProtoTree *>(parentItem->treeWidget());
-
-    item = new QTreeWidgetItem(parentItem, 0);
-
-    // Set our colors.
-    QPalette pal = QApplication::palette();
-    if (fi->hfinfo) {
-        if(fi->hfinfo->type == FT_PROTOCOL) {
-            item->setData(0, Qt::BackgroundRole, pal.window());
-            item->setData(0, Qt::ForegroundRole, pal.windowText());
-        }
-
-        if((fi->hfinfo->type == FT_FRAMENUM) ||
-                (FI_GET_FLAG(fi, FI_URL) && IS_FT_STRING(fi->hfinfo->type))) {
-            QFont font = item->font(0);
-
-            item->setData(0, Qt::ForegroundRole, pal.link());
-            font.setUnderline(true);
-            item->setData(0, Qt::FontRole, font);
-
-            if (fi->hfinfo->type == FT_FRAMENUM) {
-                ft_framenum_type_t framenum_type = (ft_framenum_type_t)GPOINTER_TO_INT(fi->hfinfo->strings);
-                proto_tree->emitRelatedFrame(fi->value.value.uinteger, framenum_type);
-            }
-        }
-    }
-
-    // XXX - Add routines to get our severity colors.
-    if(FI_GET_FLAG(fi, PI_SEVERITY_MASK)) {
-        switch(FI_GET_FLAG(fi, PI_SEVERITY_MASK)) {
-        case(PI_COMMENT):
-            item->setData(0, Qt::BackgroundRole, ColorUtils::expert_color_comment);
-            break;
-        case(PI_CHAT):
-            item->setData(0, Qt::BackgroundRole, ColorUtils::expert_color_chat);
-            break;
-        case(PI_NOTE):
-            item->setData(0, Qt::BackgroundRole, ColorUtils::expert_color_note);
-            break;
-        case(PI_WARN):
-            item->setData(0, Qt::BackgroundRole, ColorUtils::expert_color_warn);
-            break;
-        case(PI_ERROR):
-            item->setData(0, Qt::BackgroundRole, ColorUtils::expert_color_error);
-            break;
-        default:
-            g_assert_not_reached();
-        }
-        item->setData(0, Qt::ForegroundRole, ColorUtils::expert_color_foreground);
-    }
-
-    item->setText(0, label);
-    item->setData(0, Qt::UserRole, qVariantFromValue(fi));
-
-    if (is_branch) {
-        if (tree_expanded(fi->tree_type)) {
-            item->setExpanded(true);
-        } else {
-            item->setExpanded(false);
-        }
-
-        proto_tree_children_foreach(node, proto_tree_draw_node, item);
-    }
-}
-
-ProtoTree::ProtoTree(QWidget *parent) :
-    QTreeWidget(parent),
-    decode_as_(NULL),
-    column_resize_timer_(0)
+ProtoTree::ProtoTree(QWidget *parent, epan_dissect_t *edt_fixed) :
+    QTreeView(parent),
+    proto_tree_model_(new ProtoTreeModel(this)),
+    column_resize_timer_(0),
+    cap_file_(NULL),
+    edt_(edt_fixed)
 {
     setAccessibleName(tr("Packet details"));
-    // Leave the uniformRowHeights property as-is (false) since items might
-    // have multiple lines (e.g. packet comments). If this slows things down
-    // too much we should add a custom delegate which handles SizeHintRole
-    // similar to PacketListModel::data.
+    // Leave the uniformRowHeights property as-is (false) since items might have
+    // have multiple lines (e.g. packet or event comments). If this slows things
+    // down too much we should add a custom delegate which handles SizeHintRole.
     setHeaderHidden(true);
 
-    if (window()->findChild<QAction *>("actionViewExpandSubtrees")) {
-        // Assume we're a child of the main window.
-        // XXX We might want to reimplement setParent() and fill in the context
-        // menu there.
-        QMenu *main_menu_item, *submenu;
-        QAction *action;
+#if !defined(Q_OS_WIN)
+    setStyleSheet(QStringLiteral(
+        "QTreeView:item:hover {"
+        "  background-color: %1;"
+        "  color: palette(text);"
+        "}").arg(ColorUtils::hoverBackground().name(QColor::HexArgb)));
+#endif
 
-        ctx_menu_.addAction(window()->findChild<QAction *>("actionViewExpandSubtrees"));
-        ctx_menu_.addAction(window()->findChild<QAction *>("actionViewExpandAll"));
-        ctx_menu_.addAction(window()->findChild<QAction *>("actionViewCollapseAll"));
-        ctx_menu_.addSeparator();
+    // Shrink down to a small but nonzero size in the main splitter.
+    int one_em = fontMetrics().height();
+    setMinimumSize(one_em, one_em);
 
-        action = window()->findChild<QAction *>("actionAnalyzeCreateAColumn");
-        ctx_menu_.addAction(action);
-        ctx_menu_.addSeparator();
+    setModel(proto_tree_model_);
 
-        main_menu_item = window()->findChild<QMenu *>("menuApplyAsFilter");
-        submenu = new QMenu(main_menu_item->title());
-        ctx_menu_.addMenu(submenu);
-        submenu->addAction(window()->findChild<QAction *>("actionAnalyzeAAFSelected"));
-        submenu->addAction(window()->findChild<QAction *>("actionAnalyzeAAFNotSelected"));
-        submenu->addAction(window()->findChild<QAction *>("actionAnalyzeAAFAndSelected"));
-        submenu->addAction(window()->findChild<QAction *>("actionAnalyzeAAFOrSelected"));
-        submenu->addAction(window()->findChild<QAction *>("actionAnalyzeAAFAndNotSelected"));
-        submenu->addAction(window()->findChild<QAction *>("actionAnalyzeAAFOrNotSelected"));
-
-        main_menu_item = window()->findChild<QMenu *>("menuPrepareAFilter");
-        submenu = new QMenu(main_menu_item->title());
-        ctx_menu_.addMenu(submenu);
-        submenu->addAction(window()->findChild<QAction *>("actionAnalyzePAFSelected"));
-        submenu->addAction(window()->findChild<QAction *>("actionAnalyzePAFNotSelected"));
-        submenu->addAction(window()->findChild<QAction *>("actionAnalyzePAFAndSelected"));
-        submenu->addAction(window()->findChild<QAction *>("actionAnalyzePAFOrSelected"));
-        submenu->addAction(window()->findChild<QAction *>("actionAnalyzePAFAndNotSelected"));
-        submenu->addAction(window()->findChild<QAction *>("actionAnalyzePAFOrNotSelected"));
-
-        QMenu *main_conv_menu = window()->findChild<QMenu *>("menuConversationFilter");
-        conv_menu_.setTitle(main_conv_menu->title());
-        ctx_menu_.addMenu(&conv_menu_);
-
-        colorize_menu_.setTitle(tr("Colorize with Filter"));
-        ctx_menu_.addMenu(&colorize_menu_);
-
-        main_menu_item = window()->findChild<QMenu *>("menuFollow");
-        submenu = new QMenu(main_menu_item->title());
-        ctx_menu_.addMenu(submenu);
-        submenu->addAction(window()->findChild<QAction *>("actionAnalyzeFollowTCPStream"));
-        submenu->addAction(window()->findChild<QAction *>("actionAnalyzeFollowUDPStream"));
-        submenu->addAction(window()->findChild<QAction *>("actionAnalyzeFollowSSLStream"));
-        submenu->addAction(window()->findChild<QAction *>("actionAnalyzeFollowHTTPStream"));
-        ctx_menu_.addSeparator();
-
-        main_menu_item = window()->findChild<QMenu *>("menuEditCopy");
-        submenu = new QMenu(main_menu_item->title());
-        ctx_menu_.addMenu(submenu);
-        submenu->addAction(window()->findChild<QAction *>("actionCopyAllVisibleItems"));
-        submenu->addAction(window()->findChild<QAction *>("actionCopyAllVisibleSelectedTreeItems"));
-        submenu->addAction(window()->findChild<QAction *>("actionEditCopyDescription"));
-        submenu->addAction(window()->findChild<QAction *>("actionEditCopyFieldName"));
-        submenu->addAction(window()->findChild<QAction *>("actionEditCopyValue"));
-        submenu->addSeparator();
-
-        submenu->addAction(window()->findChild<QAction *>("actionEditCopyAsFilter"));
-        submenu->addSeparator();
-
-        action = window()->findChild<QAction *>("actionContextCopyBytesHexTextDump");
-        submenu->addAction(action);
-        copy_actions_ << action;
-        action = window()->findChild<QAction *>("actionContextCopyBytesHexDump");
-        submenu->addAction(action);
-        copy_actions_ << action;
-        action = window()->findChild<QAction *>("actionContextCopyBytesPrintableText");
-        submenu->addAction(action);
-        copy_actions_ << action;
-        action = window()->findChild<QAction *>("actionContextCopyBytesHexStream");
-        submenu->addAction(action);
-        copy_actions_ << action;
-        action = window()->findChild<QAction *>("actionContextCopyBytesBinary");
-        submenu->addAction(action);
-        copy_actions_ << action;
-
-        action = window()->findChild<QAction *>("actionContextShowPacketBytes");
-        ctx_menu_.addAction(action);
-        action = window()->findChild<QAction *>("actionFileExportPacketBytes");
-        ctx_menu_.addAction(action);
-
-        ctx_menu_.addSeparator();
-
-        action = window()->findChild<QAction *>("actionContextWikiProtocolPage");
-        ctx_menu_.addAction(action);
-        action = window()->findChild<QAction *>("actionContextFilterFieldReference");
-        ctx_menu_.addAction(action);
-//    "     <menuitem name='ProtocolHelp' action='/ProtocolHelp'/>\n"
-        ctx_menu_.addMenu(&proto_prefs_menu_);
-        ctx_menu_.addSeparator();
-        decode_as_ = window()->findChild<QAction *>("actionAnalyzeDecodeAs");
-        ctx_menu_.addAction(decode_as_);
-//    "     <menuitem name='ResolveName' action='/ResolveName'/>\n"
-        ctx_menu_.addAction(window()->findChild<QAction *>("actionGoGoToLinkedPacket"));
-        ctx_menu_.addAction(window()->findChild<QAction *>("actionContextShowLinkedPacketInNewWindow"));
-    } else {
-        ctx_menu_.clear();
-    }
-
-    connect(this, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
-            this, SLOT(updateSelectionStatus(QTreeWidgetItem*)));
-    connect(this, SIGNAL(expanded(QModelIndex)), this, SLOT(expand(QModelIndex)));
-    connect(this, SIGNAL(collapsed(QModelIndex)), this, SLOT(collapse(QModelIndex)));
-    connect(this, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)),
-            this, SLOT(itemDoubleClick(QTreeWidgetItem*, int)));
-
-    connect(&proto_prefs_menu_, SIGNAL(showProtocolPreferences(QString)),
-            this, SIGNAL(showProtocolPreferences(QString)));
-    connect(&proto_prefs_menu_, SIGNAL(editProtocolPreference(preference*,pref_module*)),
-            this, SIGNAL(editProtocolPreference(preference*,pref_module*)));
+    connect(this, &ProtoTree::expanded, this, &ProtoTree::syncExpanded);
+    connect(this, &ProtoTree::collapsed, this, &ProtoTree::syncCollapsed);
+    connect(this, &ProtoTree::clicked, this, &ProtoTree::itemClicked);
+    connect(this, &ProtoTree::doubleClicked, this, &ProtoTree::itemDoubleClicked);
 
     // resizeColumnToContents checks 1000 items by default. The user might
     // have scrolled to an area with a different width at this point.
-    connect(verticalScrollBar(), SIGNAL(sliderReleased()),
-            this, SLOT(updateContentWidth()));
-}
+    connect(verticalScrollBar(), &QScrollBar::sliderReleased, this, &ProtoTree::updateContentWidth);
 
-void ProtoTree::closeContextMenu()
-{
-    ctx_menu_.close();
+    connect(mainApp, &MainApplication::appInitialized, this, &ProtoTree::connectToMainWindow);
+
+    viewport()->installEventFilter(this);
 }
 
 void ProtoTree::clear() {
-    updateSelectionStatus(NULL);
-    QTreeWidget::clear();
+    proto_tree_model_->setRootNode(NULL);
     updateContentWidth();
+}
+
+void ProtoTree::connectToMainWindow()
+{
+    if (mainApp->mainWindow())
+    {
+        connect(mainApp->mainWindow(), &MainWindow::fieldSelected,
+                this, &ProtoTree::selectedFieldChanged);
+        connect(mainApp->mainWindow(), &MainWindow::framesSelected,
+                this, &ProtoTree::selectedFrameChanged);
+    }
+}
+
+void ProtoTree::ctxCopyVisibleItems()
+{
+    bool selected_tree = false;
+
+    QAction * send = qobject_cast<QAction *>(sender());
+    if (send && send->property("selected_tree").isValid())
+        selected_tree = true;
+
+    QString clip;
+    if (selected_tree && selectionModel()->hasSelection())
+        clip = toString(selectionModel()->selectedIndexes().first());
+    else
+        clip = toString();
+
+    if (clip.length() > 0)
+        mainApp->clipboard()->setText(clip);
+}
+
+void ProtoTree::ctxCopyAsFilter()
+{
+    QModelIndex idx = selectionModel()->selectedIndexes().first();
+    FieldInformation finfo(proto_tree_model_->protoNodeFromIndex(idx));
+    if (finfo.isValid())
+    {
+        epan_dissect_t *edt = cap_file_ ? cap_file_->edt : edt_;
+        char *field_filter = proto_construct_match_selected_string(finfo.fieldInfo(), edt);
+        QString filter(field_filter);
+        wmem_free(Q_NULLPTR, field_filter);
+
+        if (filter.length() > 0)
+            mainApp->clipboard()->setText(filter);
+    }
+}
+
+void ProtoTree::ctxCopySelectedInfo()
+{
+    int val = -1;
+    QString clip;
+    QAction * send = qobject_cast<QAction *>(sender());
+    if (send && send->property("field_type").isValid())
+        val = send->property("field_type").toInt();
+
+    QModelIndex idx = selectionModel()->selectedIndexes().first();
+    FieldInformation finfo(proto_tree_model_->protoNodeFromIndex(idx));
+    if (! finfo.isValid())
+        return;
+
+    switch (val)
+    {
+    case ProtoTree::Name:
+        clip.append(finfo.headerInfo().abbreviation);
+        break;
+
+    case ProtoTree::Description:
+        clip = idx.data(Qt::DisplayRole).toString();
+        break;
+
+    case ProtoTree::Value:
+        {
+            epan_dissect_t *edt = cap_file_ ? cap_file_->edt : edt_;
+            char* field_str = get_node_field_value(finfo.fieldInfo(), edt);
+            clip.append(field_str[0] ? field_str : "(null)");
+            g_free(field_str);
+        }
+        break;
+    default:
+        break;
+    }
+
+    if (clip.length() > 0)
+        mainApp->clipboard()->setText(clip);
+}
+
+void ProtoTree::ctxOpenUrlWiki()
+{
+    QString url;
+    bool is_field_reference = false;
+    QAction * send = qobject_cast<QAction *>(sender());
+    if (send && send->property("field_reference").isValid())
+        is_field_reference = send->property("field_reference").toBool();
+    QModelIndex idx = selectionModel()->selectedIndexes().first();
+    FieldInformation finfo(proto_tree_model_->protoNodeFromIndex(idx));
+
+    int field_id = finfo.headerInfo().id;
+    bool protocol_field_selected = false;
+    if (!proto_registrar_is_protocol(field_id) && (field_id != hf_text_only)) {
+        protocol_field_selected = true;
+        field_id = proto_registrar_get_parent(field_id);
+    }
+    const QString proto_abbrev = proto_registrar_get_abbrev(field_id);
+
+    if (! is_field_reference)
+    {
+        int ret = QMessageBox::question(this, mainApp->windowTitleString(tr("Wiki Page for %1").arg(proto_abbrev)),
+                                        tr("<p>The Wireshark Wiki is maintained by the community.</p>"
+                                        "<p>The page you are about to load might be wonderful, "
+                                        "incomplete, wrong, or nonexistent.</p>"
+                                        "<p>Proceed to the wiki?</p>"),
+                                        QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+
+        if (ret != QMessageBox::Yes) return;
+
+        url = QString(WS_WIKI_URL("Protocols/%1")).arg(proto_abbrev);
+    }
+    else
+    {
+        if (field_id != hf_text_only) {
+            url = QString(WS_DOCS_URL "dfref/%1/%2.html")
+                .arg(proto_abbrev[0])
+                .arg(proto_abbrev);
+
+            if (protocol_field_selected)
+            {
+                const QString proto_field_abbrev = proto_registrar_get_abbrev(finfo.headerInfo().id);
+                url.append(QStringLiteral("#%1").arg(proto_field_abbrev));
+            }
+        } else {
+            QMessageBox::information(this, tr("Not a field or protocol"),
+                tr("No field reference available for text labels."),
+                QMessageBox::Ok);
+        }
+    }
+
+    QDesktopServices::openUrl(url);
 }
 
 void ProtoTree::contextMenuEvent(QContextMenuEvent *event)
 {
-    if (ctx_menu_.isEmpty()) return; // We're in a PacketDialog
+    QModelIndex index = indexAt(event->pos());
+    if (! index.isValid())
+        return;
 
-    QMenu *main_conv_menu = window()->findChild<QMenu *>("menuConversationFilter");
-    conv_menu_.clear();
-    foreach (QAction *action, main_conv_menu->actions()) {
-        conv_menu_.addAction(action);
-    }
+    // We're in a PacketDialog
+    bool buildForDialog = false;
+    if (! window()->findChild<QAction *>("actionViewExpandSubtrees"))
+        buildForDialog = true;
 
-    field_info *fi = NULL;
-    const char *module_name = NULL;
-    if (selectedItems().count() > 0) {
-        fi = selectedItems()[0]->data(0, Qt::UserRole).value<field_info *>();
-        if (fi && fi->hfinfo) {
-            if (fi->hfinfo->parent == -1) {
-                module_name = fi->hfinfo->abbrev;
-            } else {
-                module_name = proto_registrar_get_abbrev(fi->hfinfo->parent);
-            }
+    QMenu * ctx_menu = new QMenu(this);
+    ctx_menu->setAttribute(Qt::WA_DeleteOnClose);
+    ctx_menu->setProperty("toolTipsVisible", QVariant::fromValue(true));
+
+    QMenu *main_menu_item, *submenu;
+    QAction *action;
+
+    bool have_subtree = false;
+    FieldInformation *finfo = new FieldInformation(proto_tree_model_->protoNodeFromIndex(index), ctx_menu);
+    field_info * fi = finfo->fieldInfo();
+    bool is_selected = false;
+    epan_dissect_t *edt = cap_file_ ? cap_file_->edt : edt_;
+
+    if (cap_file_ && cap_file_->finfo_selected == fi)
+        is_selected = true;
+    else if (! window()->findChild<QAction *>("actionViewExpandSubtrees"))
+        is_selected = true;
+
+    if (is_selected)
+    {
+        if (fi && fi->tree_type != -1) {
+            have_subtree = true;
         }
     }
-    proto_prefs_menu_.setModule(module_name);
 
-    foreach (QAction *action, copy_actions_) {
-        action->setData(QVariant::fromValue<field_info *>(fi));
+    action = ctx_menu->addAction(tr("Expand Subtrees"), this, &ProtoTree::expandSubtrees);
+    action->setEnabled(have_subtree);
+    action = ctx_menu->addAction(tr("Collapse Subtrees"), this, &ProtoTree::collapseSubtrees);
+    action->setEnabled(have_subtree);
+    ctx_menu->addAction(tr("Expand All"), this, &ProtoTree::expandAll);
+    ctx_menu->addAction(tr("Collapse All"), this, &ProtoTree::collapseAll);
+    ctx_menu->addSeparator();
+
+    if (! buildForDialog)
+    {
+        if (finfo->headerInfo().type == FT_IPv4 || finfo->headerInfo().type == FT_IPv6) {
+            action = window()->findChild<QAction *>("actionViewEditResolvedName");
+            ctx_menu->addAction(action);
+            ctx_menu->addSeparator();
+        }
+        action = window()->findChild<QAction *>("actionAnalyzeApplyAsColumn");
+        ctx_menu->addAction(action);
+        ctx_menu->addSeparator();
     }
 
-    decode_as_->setData(qVariantFromValue(true));
+    char * selectedfilter = proto_construct_match_selected_string(finfo->fieldInfo(), edt);
+    bool can_match_selected = proto_can_match_selected(finfo->fieldInfo(), edt);
+    ctx_menu->addMenu(FilterAction::createFilterMenu(FilterAction::ActionApply, selectedfilter, can_match_selected, ctx_menu));
+    ctx_menu->addMenu(FilterAction::createFilterMenu(FilterAction::ActionPrepare, selectedfilter, can_match_selected, ctx_menu));
+    if (selectedfilter)
+        wmem_free(Q_NULLPTR, selectedfilter);
 
-    // Set menu sensitivity and action data.
-    emit protoItemSelected(fi);
-    ctx_menu_.exec(event->globalPos());
-    decode_as_->setData(QVariant());
+    if (! buildForDialog)
+    {
+        QMenu *main_conv_menu = window()->findChild<QMenu *>("menuConversationFilter");
+        conv_menu_.setTitle(main_conv_menu->title());
+        conv_menu_.clear();
+        foreach (QAction *action, main_conv_menu->actions()) {
+            conv_menu_.addAction(action);
+        }
+
+        ctx_menu->addMenu(&conv_menu_);
+
+        colorize_menu_.setTitle(tr("Colorize with Filter"));
+        ctx_menu->addMenu(&colorize_menu_);
+
+        /* XXX: Should we just get a Follow action (if it exists) for the currently
+         * selected field info, similar to preferences and filters?
+         */
+        main_menu_item = window()->findChild<QMenu *>("menuFollow");
+        if (main_menu_item) {
+            submenu = new QMenu(main_menu_item->title(), ctx_menu);
+            ctx_menu->addMenu(submenu);
+            foreach (FollowStreamAction *follow_action, main_menu_item->findChildren<FollowStreamAction *>()) {
+                if (follow_action->isEnabled()) {
+                    submenu->addAction(follow_action);
+                }
+            }
+        }
+
+        ctx_menu->addSeparator();
+    }
+
+    ctx_menu->addMenu(IOGraphAction::createMenu(finfo->headerInfo(), ctx_menu));
+
+    ctx_menu->addMenu(PlotAction::createMenu(finfo->headerInfo(), ctx_menu));
+
+    submenu = ctx_menu->addMenu(tr("Copy"));
+    submenu->setToolTipsVisible(true);
+    submenu->addAction(tr("All Visible Items"), this, &ProtoTree::ctxCopyVisibleItems);
+    action = submenu->addAction(tr("All Visible Selected Tree Items"), this, &ProtoTree::ctxCopyVisibleItems);
+    action->setProperty("selected_tree", QVariant::fromValue(true));
+    action = submenu->addAction(tr("Description"), this, &ProtoTree::ctxCopySelectedInfo);
+    action->setProperty("field_type", ProtoTree::Description);
+    action = submenu->addAction(tr("Field Name"), this, &ProtoTree::ctxCopySelectedInfo);
+    action->setProperty("field_type", ProtoTree::Name);
+    action = submenu->addAction(tr("Value"), this, &ProtoTree::ctxCopySelectedInfo);
+    action->setProperty("field_type", ProtoTree::Value);
+    submenu->addSeparator();
+    submenu->addAction(tr("As Filter"), this, &ProtoTree::ctxCopyAsFilter);
+    submenu->addSeparator();
+    QActionGroup * copyEntries = DataPrinter::copyActions(this, finfo);
+    submenu->addActions(copyEntries->actions());
+    ctx_menu->addSeparator();
+
+    if (! buildForDialog)
+    {
+        action = window()->findChild<QAction *>("actionAnalyzeShowPacketBytes");
+        ctx_menu->addAction(action);
+        action = window()->findChild<QAction *>("actionFileExportPacketBytes");
+        if (action) {
+            ctx_menu->addAction(action);
+        }
+
+        ctx_menu->addSeparator();
+    }
+
+    int field_id = finfo->headerInfo().id;
+    bool protocol_field_selected = false;
+    if (!proto_registrar_is_protocol(field_id) && (field_id != hf_text_only)) {
+        protocol_field_selected = true;
+        field_id = proto_registrar_get_parent(field_id);
+    }
+    action = ctx_menu->addAction(tr("Wiki Protocol Page"), this, &ProtoTree::ctxOpenUrlWiki);
+    action->setProperty("toolTip", QString(WS_WIKI_URL("Protocols/%1")).arg(proto_registrar_get_abbrev(field_id)));
+
+    action = ctx_menu->addAction(tr("Filter Field Reference"), this, &ProtoTree::ctxOpenUrlWiki);
+    action->setProperty("field_reference", QVariant::fromValue(true));
+    if (field_id != hf_text_only) {
+        action->setEnabled(true);
+        const QString proto_abbrev = proto_registrar_get_abbrev(field_id);
+        QString url = QString(WS_DOCS_URL "dfref/%1/%2.html")
+                    .arg(proto_abbrev[0])
+                    .arg(proto_abbrev);
+
+        if (protocol_field_selected)
+        {
+            const QString proto_field_abbrev = proto_registrar_get_abbrev(finfo->headerInfo().id);
+            url.append(QStringLiteral("#%1").arg(proto_field_abbrev));
+        }
+        action->setProperty("toolTip", url);
+    }
+    else {
+        action->setEnabled(false);
+        action->setProperty("toolTip", tr("No field reference available for text labels."));
+    }
+
+    // The "text only" header field will not give preferences for the selected protocol.
+    // Use parent in this case.
+    ProtoNode *node = proto_tree_model_->protoNodeFromIndex(index);
+    while (node && node->isValid() && node->protoNode()->finfo && node->protoNode()->finfo->hfinfo && node->protoNode()->finfo->hfinfo->id == hf_text_only) {
+        node = node->parentNode();
+    }
+
+    FieldInformation pref_finfo(node);
+
+    ProtocolPreferencesMenu *proto_prefs_menu = new ProtocolPreferencesMenu(ctx_menu);
+    proto_prefs_menu->setModule(pref_finfo.moduleName());
+
+    connect(proto_prefs_menu, &ProtocolPreferencesMenu::showProtocolPreferences,
+            this, &ProtoTree::showProtocolPreferences);
+    connect(proto_prefs_menu, SIGNAL(editProtocolPreference(pref_t*,module_t*)),
+            this, SIGNAL(editProtocolPreference(pref_t*,module_t*)));
+
+    ctx_menu->addMenu(proto_prefs_menu);
+    ctx_menu->addSeparator();
+
+    if (! buildForDialog)
+    {
+        QAction *decode_as = window()->findChild<QAction *>("actionAnalyzeDecodeAs");
+        if (decode_as) {
+            ctx_menu->addAction(decode_as);
+            decode_as->setProperty("create_new", QVariant::fromValue(true));
+
+            ctx_menu->addAction(window()->findChild<QAction *>("actionGoGoToLinkedPacket"));
+            ctx_menu->addAction(window()->findChild<QAction *>("actionContextShowLinkedPacketInNewWindow"));
+        }
+    }
+
+    ctx_menu->popup(event->globalPos());
 }
 
 void ProtoTree::timerEvent(QTimerEvent *event)
@@ -337,7 +436,7 @@ void ProtoTree::timerEvent(QTimerEvent *event)
         column_resize_timer_ = 0;
         resizeColumnToContents(0);
     } else {
-        QTreeWidget::timerEvent(event);
+        QTreeView::timerEvent(event);
     }
 }
 
@@ -370,16 +469,60 @@ void ProtoTree::updateContentWidth()
 
 void ProtoTree::setMonospaceFont(const QFont &mono_font)
 {
-    mono_font_ = mono_font;
-    setFont(mono_font_);
+    setFont(mono_font);
     update();
 }
 
-void ProtoTree::fillProtocolTree(proto_tree *protocol_tree) {
-    clear();
-    setFont(mono_font_);
+void ProtoTree::foreachTreeNode(proto_node *node, void *proto_tree_ptr)
+{
+    ProtoTree *tree_view = static_cast<ProtoTree *>(proto_tree_ptr);
+    ProtoTreeModel *model = qobject_cast<ProtoTreeModel *>(tree_view->model());
+    if (!tree_view || !model) {
+        return;
+    }
 
-    proto_tree_children_foreach(protocol_tree, proto_tree_draw_node, invisibleRootItem());
+    // Related frames - there might be hidden FT_FRAMENUM nodes, so do this
+    // for each proto_node and not just the ProtoNodes in the model
+    if (node->finfo->hfinfo->type == FT_FRAMENUM) {
+        ft_framenum_type_t framenum_type = (ft_framenum_type_t)GPOINTER_TO_INT(node->finfo->hfinfo->strings);
+        tree_view->emitRelatedFrame(fvalue_get_uinteger(node->finfo->value), framenum_type);
+    }
+
+    proto_tree_children_foreach(node, foreachTreeNode, proto_tree_ptr);
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+void ProtoTree::foreachExpand(const QModelIndex &index = QModelIndex()) {
+
+    // Restore expanded state. (Note QModelIndex() refers to the root node)
+    int children = proto_tree_model_->rowCount(index);
+    QModelIndex childIndex;
+    for (int child = 0; child < children; child++) {
+        childIndex = proto_tree_model_->index(child, 0, index);
+        if (childIndex.isValid()) {
+            ProtoNode *node = proto_tree_model_->protoNodeFromIndex(childIndex);
+            if (node && node->isValid() && tree_expanded(node->protoNode()->finfo->tree_type)) {
+                expand(childIndex);
+            }
+            // We recurse here, but we're limited by tree depth checks in epan
+            foreachExpand(childIndex);
+        }
+    }
+}
+
+// setRootNode sets the new contents for the protocol tree and subsequently
+// restores the previously expanded state.
+void ProtoTree::setRootNode(proto_node *root_node) {
+    // We track item expansion using proto.c:tree_is_expanded.
+    // Replace any existing (possibly invalidated) proto tree by the new tree.
+    // The expanded state will be reset as well and will be re-expanded below.
+    proto_tree_model_->setRootNode(root_node);
+
+    disconnect(this, &ProtoTree::expanded, this, &ProtoTree::syncExpanded);
+    proto_tree_children_foreach(root_node, foreachTreeNode, this);
+    foreachExpand();
+    connect(this, &ProtoTree::expanded, this, &ProtoTree::syncExpanded);
+
     updateContentWidth();
 }
 
@@ -388,267 +531,396 @@ void ProtoTree::emitRelatedFrame(int related_frame, ft_framenum_type_t framenum_
     emit relatedFrame(related_frame, framenum_type);
 }
 
+void ProtoTree::autoScrollTo(const QModelIndex &index)
+{
+    selectionModel()->setCurrentIndex(index, QItemSelectionModel::ClearAndSelect);
+    if (!index.isValid()) {
+        return;
+    }
+
+    // ensure item is visible (expanding its parents as needed).
+    scrollTo(index);
+}
+
 // XXX We select the first match, which might not be the desired item.
-void ProtoTree::goToField(int hf_id)
+void ProtoTree::goToHfid(int hfid)
 {
-    if (hf_id < 0) return;
+    QModelIndex index = proto_tree_model_->findFirstHfid(hfid);
+    autoScrollTo(index);
+}
 
-    QTreeWidgetItemIterator iter(this);
-    while (*iter) {
-        field_info *fi = (*iter)->data(0, Qt::UserRole).value<field_info *>();
+void ProtoTree::selectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
+{
+    QTreeView::selectionChanged(selected, deselected);
+    if (selected.isEmpty()) {
+        emit fieldSelected(0);
+        return;
+    }
 
-        if (fi && fi->hfinfo) {
-            if (fi->hfinfo->id == hf_id) {
-                setCurrentItem(*iter);
-                break;
-            }
+    QModelIndex index = selected.indexes().first();
+    saveSelectedField(index);
+
+    // Find and highlight the protocol bytes. select above won't call
+    // selectionChanged if the current and selected indexes are the same
+    // so we do this here.
+    FieldInformation finfo(proto_tree_model_->protoNodeFromIndex(index), this);
+    if (finfo.isValid()) {
+        QModelIndex parent = index;
+        while (parent.isValid() && parent.parent().isValid()) {
+            parent = parent.parent();
         }
-        ++iter;
+        if (parent.isValid()) {
+            FieldInformation parent_finfo(proto_tree_model_->protoNodeFromIndex(parent));
+            finfo.setParentField(parent_finfo.fieldInfo());
+        }
+        emit fieldSelected(&finfo);
     }
 }
 
-void ProtoTree::updateSelectionStatus(QTreeWidgetItem* item)
-{
-    if (item) {
-        field_info *fi;
-        QString item_info;
-
-        fi = item->data(0, Qt::UserRole).value<field_info *>();
-        if (!fi || !fi->hfinfo) return;
-
-        if (fi->hfinfo->blurb != NULL && fi->hfinfo->blurb[0] != '\0') {
-            item_info.append(QString().fromUtf8(fi->hfinfo->blurb));
-        } else {
-            item_info.append(QString().fromUtf8(fi->hfinfo->name));
-        }
-
-        if (!item_info.isEmpty()) {
-            int finfo_length;
-            item_info.append(" (" + QString().fromUtf8(fi->hfinfo->abbrev) + ")");
-
-            finfo_length = fi->length + fi->appendix_length;
-            if (finfo_length == 1) {
-                item_info.append(tr(", 1 byte"));
-            } else if (finfo_length > 1) {
-                item_info.append(QString(tr(", %1 bytes")).arg(finfo_length));
-            }
-
-            saveSelectedField(item);
-
-            emit protoItemSelected("");
-            emit protoItemSelected(NULL);
-            emit protoItemSelected(item_info);
-            emit protoItemSelected(fi);
-        } // else the GTK+ version pushes an empty string as described below.
-        /*
-         * Don't show anything if the field name is zero-length;
-         * the pseudo-field for text-only items is such
-         * a field, and we don't want "Text (text)" showing up
-         * on the status line if you've selected such a field.
-         *
-         * XXX - there are zero-length fields for which we *do*
-         * want to show the field name.
-         *
-         * XXX - perhaps the name and abbrev field should be null
-         * pointers rather than null strings for that pseudo-field,
-         * but we'd have to add checks for null pointers in some
-         * places if we did that.
-         *
-         * Or perhaps text-only items should have -1 as the field
-         * index, with no pseudo-field being used, but that might
-         * also require special checks for -1 to be added.
-         */
-
-    } else {
-        emit protoItemSelected("");
-        emit protoItemSelected(NULL);
-    }
-}
-
-void ProtoTree::expand(const QModelIndex & index) {
-    field_info *fi;
-
-    fi = index.data(Qt::UserRole).value<field_info *>();
-    if (!fi) return;
-
-    if(prefs.gui_auto_scroll_on_expand) {
-        ScrollHint scroll_hint = PositionAtTop;
-        if (prefs.gui_auto_scroll_percentage > 66) {
-            scroll_hint = PositionAtBottom;
-        } else if (prefs.gui_auto_scroll_percentage >= 33) {
-            scroll_hint = PositionAtCenter;
-        }
-        scrollTo(index, scroll_hint);
-    }
+void ProtoTree::syncExpanded(const QModelIndex &index) {
+    FieldInformation finfo(proto_tree_model_->protoNodeFromIndex(index));
+    if (!finfo.isValid()) return;
 
     /*
      * Nodes with "finfo->tree_type" of -1 have no ett_ value, and
      * are thus presumably leaf nodes and cannot be expanded.
      */
-    if (fi->tree_type != -1) {
-        g_assert(fi->tree_type >= 0 &&
-                 fi->tree_type < num_tree_types);
-        tree_expanded_set(fi->tree_type, TRUE);
+    if (finfo.treeType() != -1) {
+        tree_expanded_set(finfo.treeType(), true);
     }
-
-    updateContentWidth();
 }
 
-void ProtoTree::collapse(const QModelIndex & index) {
-    field_info *fi;
-
-    fi = index.data(Qt::UserRole).value<field_info *>();
-    if (!fi) return;
+void ProtoTree::syncCollapsed(const QModelIndex &index) {
+    FieldInformation finfo(proto_tree_model_->protoNodeFromIndex(index));
+    if (!finfo.isValid()) return;
 
     /*
      * Nodes with "finfo->tree_type" of -1 have no ett_ value, and
      * are thus presumably leaf nodes and cannot be collapsed.
      */
-    if (fi->tree_type != -1) {
-        g_assert(fi->tree_type >= 0 &&
-                 fi->tree_type < num_tree_types);
-        tree_expanded_set(fi->tree_type, FALSE);
+    if (finfo.treeType() != -1) {
+        tree_expanded_set(finfo.treeType(), false);
     }
-    updateContentWidth();
 }
 
 void ProtoTree::expandSubtrees()
 {
-    QTreeWidgetItem *top_sel;
+    if (!selectionModel()->hasSelection()) return;
 
-    if (selectedItems().length() < 1) {
-        return;
-    }
+    QStack<QModelIndex> index_stack;
+    index_stack.push(selectionModel()->selectedIndexes().first());
 
-    top_sel = selectedItems()[0];
-
-    if (!top_sel) {
-        return;
-    }
-
-    while (top_sel->parent()) {
-        top_sel = top_sel->parent();
-    }
-
-    QTreeWidgetItemIterator iter(top_sel);
-    while (*iter) {
-        if ((*iter) != top_sel && (*iter)->parent() == NULL) {
-            // We found the next top-level item
-            break;
+    while (!index_stack.isEmpty()) {
+        QModelIndex index = index_stack.pop();
+        expand(index);
+        int row_count = proto_tree_model_->rowCount(index);
+        for (int row = row_count - 1; row >= 0; row--) {
+            QModelIndex child = proto_tree_model_->index(row, 0, index);
+            if (proto_tree_model_->hasChildren(child)) {
+                index_stack.push(child);
+            }
         }
-        (*iter)->setExpanded(true);
-        ++iter;
     }
+
+    updateContentWidth();
+}
+
+void ProtoTree::collapseSubtrees()
+{
+    if (!selectionModel()->hasSelection()) return;
+
+    QStack<QModelIndex> index_stack;
+    index_stack.push(selectionModel()->selectedIndexes().first());
+
+    while (!index_stack.isEmpty()) {
+        QModelIndex index = index_stack.pop();
+        collapse(index);
+        int row_count = proto_tree_model_->rowCount(index);
+        for (int row = row_count - 1; row >= 0; row--) {
+            QModelIndex child = proto_tree_model_->index(row, 0, index);
+            if (proto_tree_model_->hasChildren(child)) {
+                index_stack.push(child);
+            }
+        }
+    }
+
     updateContentWidth();
 }
 
 void ProtoTree::expandAll()
 {
-    int i;
-    for(i=0; i < num_tree_types; i++) {
-        tree_expanded_set(i, TRUE);
+    for (int i = 0; i < num_tree_types; i++) {
+        tree_expanded_set(i, true);
     }
-    QTreeWidget::expandAll();
+    QTreeView::expandAll();
     updateContentWidth();
 }
 
 void ProtoTree::collapseAll()
 {
-    int i;
-    for(i=0; i < num_tree_types; i++) {
-        tree_expanded_set(i, FALSE);
+    for (int i = 0; i < num_tree_types; i++) {
+        tree_expanded_set(i, false);
     }
-    QTreeWidget::collapseAll();
+    QTreeView::collapseAll();
     updateContentWidth();
 }
 
-void ProtoTree::itemDoubleClick(QTreeWidgetItem *item, int) {
-    field_info *fi;
+void ProtoTree::itemClicked(const QModelIndex &index)
+{
+    // selectionChanged() is not issued when some action would select
+    // the same item as currently selected - but we want to make sure
+    // HexDataSourceView is highlighting that field. The BVT highlighted bytes
+    // might be different, due to hover highlighting or Find Packet "bytes".
+    //
+    // Unfortunately, clicked() is singled after selectionChanged(), so
+    // we emit fieldSelected() twice after clicking on a new frame, once
+    // in selectionChanged(), and once here.
+    //
+    // We can't get rid of the fieldSelected() handling because there are
+    // non-mouse event ways to select a field, such as keyboard navigation.
+    //
+    // All this would be easier if Qt had a signal similar to
+    // selectionChanged() that was triggered even if the new selection
+    // was the same as the old one.
+    if (selectionModel()->selectedIndexes().isEmpty()) {
+        emit fieldSelected(0);
+    } else if (index == selectionModel()->selectedIndexes().first()) {
+        FieldInformation finfo(proto_tree_model_->protoNodeFromIndex(index), this);
 
-    fi = item->data(0, Qt::UserRole).value<field_info *>();
-    if (!fi || !fi->hfinfo) return;
-
-    if (fi->hfinfo->type == FT_FRAMENUM) {
-#if QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)
-        if (QApplication::queryKeyboardModifiers() & Qt::ShiftModifier) {
-#else
-        if (QApplication::keyboardModifiers() & Qt::ShiftModifier) {
-#endif
-            emit openPacketInNewWindow(true);
-        } else {
-            emit goToPacket(fi->value.value.uinteger);
-        }
-    } else if (FI_GET_FLAG(fi, FI_URL) && IS_FT_STRING(fi->hfinfo->type)) {
-        gchar *url;
-        url = fvalue_to_string_repr(NULL, &fi->value, FTREPR_DISPLAY, fi->hfinfo->display);
-        if(url){
-//            browser_open_url(url);
-            QDesktopServices::openUrl(QUrl(url));
-            wmem_free(NULL, url);
+        if (finfo.isValid()) {
+            // Find and highlight the protocol bytes.
+            QModelIndex parent = index;
+            while (parent.isValid() && parent.parent().isValid()) {
+                parent = parent.parent();
+            }
+            if (parent.isValid()) {
+                FieldInformation parent_finfo(proto_tree_model_->protoNodeFromIndex(parent));
+                finfo.setParentField(parent_finfo.fieldInfo());
+            }
+            emit fieldSelected(&finfo);
         }
     }
 }
 
-void ProtoTree::selectField(field_info *fi)
+void ProtoTree::itemDoubleClicked(const QModelIndex &index)
 {
-    QTreeWidgetItemIterator iter(this);
-    while (*iter) {
-        if (fi == (*iter)->data(0, Qt::UserRole).value<field_info *>()) {
-            setCurrentItem(*iter);
-            scrollToItem(*iter);
-            break;
+    FieldInformation finfo(proto_tree_model_->protoNodeFromIndex(index));
+    if (!finfo.isValid()) return;
+
+    if (finfo.headerInfo().type == FT_FRAMENUM) {
+        if (QApplication::queryKeyboardModifiers() & Qt::ShiftModifier) {
+            emit openPacketInNewWindow(true);
+        } else {
+            mainApp->gotoFrame(fvalue_get_uinteger(finfo.fieldInfo()->value));
         }
-        ++iter;
+    } else {
+        QString url = finfo.url();
+        if (!url.isEmpty()) {
+            QApplication::clipboard()->setText(url);
+            QString push_msg = tr("Copied %1").arg(url);
+            mainApp->pushStatus(MainApplication::TemporaryStatus, push_msg);
+        }
     }
+}
+
+void ProtoTree::selectedFrameChanged(QList<int> frames)
+{
+    if (frames.count() == 1 && cap_file_ && cap_file_->edt && cap_file_->edt->tree) {
+        setRootNode(cap_file_->edt->tree);
+    } else {
+        // Clear the proto tree contents as they have become invalid.
+        proto_tree_model_->setRootNode(NULL);
+    }
+}
+
+// Select a field and bring it into view. Intended to be called by external
+// components (such as the byte view).
+void ProtoTree::selectedFieldChanged(FieldInformation *finfo)
+{
+    if (finfo && finfo->parent() == this) {
+        // We only want inbound signals.
+        return;
+    }
+
+    QModelIndex index = proto_tree_model_->findFieldInformation(finfo);
+    setUpdatesEnabled(false);
+    // The new finfo might match the current index. Clear our selection
+    // so that we force a fresh item selection, so that fieldSelected
+    // will in turn be emitted.
+    selectionModel()->clearSelection();
+    autoScrollTo(index);
+    setUpdatesEnabled(true);
 }
 
 // Remember the currently focussed field based on:
 // - current hf_id (obviously)
 // - parent items (to avoid selecting a text item in a different tree)
-// - position within a tree if there are multiple items (wishlist)
-static QList<int> serializeAsPath(QTreeWidgetItem *item)
+// - the row of each item
+void ProtoTree::saveSelectedField(QModelIndex &index)
 {
-    QList<int> path;
-    do {
-        field_info *fi = item->data(0, Qt::UserRole).value<field_info *>();
-        path.prepend(fi->hfinfo->id);
-    } while ((item = item->parent()));
-    return path;
-}
-void ProtoTree::saveSelectedField(QTreeWidgetItem *item)
-{
-    selected_field_path_ = serializeAsPath(item);
+    selected_hfid_path_.clear();
+    QModelIndex save_index = index;
+    while (save_index.isValid()) {
+        FieldInformation finfo(proto_tree_model_->protoNodeFromIndex(save_index));
+        if (!finfo.isValid()) break;
+        selected_hfid_path_.prepend(QPair<int,int>(save_index.row(), finfo.headerInfo().id));
+        save_index = save_index.parent();
+    }
 }
 
 // Try to focus a tree item which was previously also visible
 void ProtoTree::restoreSelectedField()
 {
-    if (selected_field_path_.isEmpty()) {
-        return;
-    }
-    int last_hf_id = selected_field_path_.last();
-    QTreeWidgetItemIterator iter(this);
-    while (*iter) {
-        field_info *fi = (*iter)->data(0, Qt::UserRole).value<field_info *>();
-        if (last_hf_id == fi->hfinfo->id &&
-            serializeAsPath(*iter) == selected_field_path_) {
-            setCurrentItem(*iter);
-            scrollToItem(*iter);
+    if (selected_hfid_path_.isEmpty()) return;
+
+    QModelIndex cur_index = QModelIndex();
+    QPair<int,int> path_entry;
+    foreach (path_entry, selected_hfid_path_) {
+        int row = path_entry.first;
+        int hf_id = path_entry.second;
+        cur_index = proto_tree_model_->index(row, 0, cur_index);
+        FieldInformation finfo(proto_tree_model_->protoNodeFromIndex(cur_index));
+        if (!finfo.isValid() || finfo.headerInfo().id != hf_id) {
+            // Did not find the selected hfid path in the selected packet
+            cur_index = QModelIndex();
+            emit fieldSelected(0);
             break;
         }
-        ++iter;
     }
+
+    autoScrollTo(cur_index);
 }
 
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */
+// NOLINTNEXTLINE(misc-no-recursion)
+QString ProtoTree::traverseTree(const QModelIndex & travTree, int identLevel) const
+{
+    QString result = "";
+
+    if (travTree.isValid())
+    {
+        result.append(QStringLiteral("    ").repeated(identLevel));
+        result.append(travTree.data().toString());
+        result.append("\n");
+
+        /* if the element is expanded, we traverse one level down */
+        if (isExpanded(travTree))
+        {
+            int children = proto_tree_model_->rowCount(travTree);
+            identLevel++;
+            for (int child = 0; child < children; child++)
+                // We recurse here, but we're limited by tree depth checks in epan
+                result += traverseTree(proto_tree_model_->index(child, 0, travTree), identLevel);
+        }
+    }
+
+    return result;
+}
+
+QString ProtoTree::toString(const QModelIndex &start_idx) const
+{
+    QString tree_string = "";
+    if (start_idx.isValid())
+        tree_string = traverseTree(start_idx, 0);
+    else
+    {
+        int children = proto_tree_model_->rowCount();
+        for (int child = 0; child < children; child++)
+            tree_string += traverseTree(proto_tree_model_->index(child, 0, QModelIndex()), 0);
+    }
+
+    return tree_string;
+}
+
+void ProtoTree::setCaptureFile(capture_file *cf)
+{
+    // For use by the main view, set the capture file which will later have a
+    // dissection (EDT) ready.
+    // The packet dialog sets a fixed EDT context and MUST NOT use this.
+    Q_ASSERT(edt_ == NULL);
+    cap_file_ = cf;
+}
+
+bool ProtoTree::eventFilter(QObject * obj, QEvent * event)
+{
+    if (event->type() != QEvent::MouseButtonPress && event->type() != QEvent::MouseMove)
+        return QTreeView::eventFilter(obj, event);
+
+    /* Mouse was over scrollbar, ignoring */
+    if (qobject_cast<QScrollBar *>(obj))
+        return QTreeView::eventFilter(obj, event);
+
+    if (event->type() == QEvent::MouseButtonPress)
+    {
+        QMouseEvent * ev = (QMouseEvent *)event;
+
+        if (ev->buttons() & Qt::LeftButton)
+            drag_start_position_ = ev->pos();
+    }
+    else if (event->type() == QEvent::MouseMove)
+    {
+        QMouseEvent * ev = (QMouseEvent *)event;
+
+        if ((ev->buttons() & Qt::LeftButton) && (ev->pos() - drag_start_position_).manhattanLength()
+                 > QApplication::startDragDistance())
+        {
+            QModelIndex idx = indexAt(drag_start_position_);
+            FieldInformation finfo(proto_tree_model_->protoNodeFromIndex(idx));
+            if (finfo.isValid())
+            {
+                /* Hack to prevent QItemSelection taking the item which has been dragged over at start
+                 * of drag-drop operation. selectionModel()->blockSignals could have done the trick, but
+                 * it does not take in a QTreeWidget (maybe View) */
+                emit fieldSelected(&finfo);
+                selectionModel()->select(idx, QItemSelectionModel::ClearAndSelect);
+
+                epan_dissect_t *edt = cap_file_ ? cap_file_->edt : edt_;
+                char *field_filter = proto_construct_match_selected_string(finfo.fieldInfo(), edt);
+                QString filter(field_filter);
+                wmem_free(NULL, field_filter);
+
+                if (filter.length() > 0)
+                {
+                    QJsonObject filterData;
+                    filterData["filter"] = filter;
+                    filterData["name"] = finfo.headerInfo().abbreviation;
+                    filterData["description"] = finfo.headerInfo().name;
+                    QMimeData * mimeData = new QMimeData();
+
+                    mimeData->setData(WiresharkMimeData::DisplayFilterMimeType, QJsonDocument(filterData).toJson());
+                    mimeData->setText(toString(idx));
+
+                    QDrag * drag = new QDrag(this);
+                    drag->setMimeData(mimeData);
+
+                    QString lblTxt = QStringLiteral("%1\n%2").arg(finfo.headerInfo().name, filter);
+
+                    DragLabel * content = new DragLabel(lblTxt, this);
+
+                    qreal dpr = window()->windowHandle()->devicePixelRatio();
+                    QPixmap pixmap(content->size() * dpr);
+                    pixmap.setDevicePixelRatio(dpr);
+                    content->render(&pixmap);
+                    drag->setPixmap(pixmap);
+
+                    drag->exec(Qt::CopyAction);
+
+                    return true;
+                }
+            }
+        }
+    }
+
+    return QTreeView::eventFilter(obj, event);
+}
+
+QModelIndex ProtoTree::moveCursor(QAbstractItemView::CursorAction cursorAction, Qt::KeyboardModifiers modifiers)
+{
+    if (cursorAction == MoveLeft && selectionModel()->hasSelection()) {
+        QModelIndex cur_idx = selectionModel()->selectedIndexes().first();
+        QModelIndex parent = cur_idx.parent();
+        if (!isExpanded(cur_idx) && parent.isValid() && parent != rootIndex()) {
+            return parent;
+        }
+    }
+    return QTreeView::moveCursor(cursorAction, modifiers);
+}

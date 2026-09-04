@@ -1,52 +1,41 @@
-/* file_util.h
+/** @file
  * File utility definitions
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __FILE_UTIL_H__
 #define __FILE_UTIL_H__
 
+#include <stdbool.h>
+
 #include "ws_symbol_export.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
-#include <glib.h>
 
 #ifdef _WIN32
 #include <io.h>		/* for _read(), _write(), etc. */
 #include <gmodule.h>
 #endif
 
-#ifdef HAVE_FCNTL_H
 #include <fcntl.h>	/* for open() */
-#endif
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>	/* for read(), write(), close(), etc. */
 #endif
 
-#ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>	/* for stat() and struct stat */
-#endif
+
+#include <stdio.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+/* We set a larger IO Buffer size for the capture files */
+#define IO_BUF_SIZE (64 * 1024)
 
 /*
  * Visual C++ on Win32 systems doesn't define these.  (Old UNIX systems don't
@@ -66,8 +55,6 @@ extern "C" {
 #ifndef S_ISDIR
 #define S_ISDIR(mode)   (((mode) & S_IFMT) == S_IFDIR)
 #endif
-
-#include <stdio.h>
 
 #ifdef _WIN32
 
@@ -91,15 +78,15 @@ extern "C" {
  *  removing the target if necessary.
  */
 
-WS_DLL_PUBLIC int ws_stdio_open (const gchar *filename, int flags, int mode);
-WS_DLL_PUBLIC int ws_stdio_rename (const gchar *oldfilename, const gchar *newfilename);
-WS_DLL_PUBLIC int ws_stdio_mkdir (const gchar *filename, int mode);
-WS_DLL_PUBLIC int ws_stdio_stat64 (const gchar *filename, ws_statb64 *buf);
-WS_DLL_PUBLIC int ws_stdio_unlink (const gchar *filename);
-WS_DLL_PUBLIC int ws_stdio_remove (const gchar *filename);
+WS_DLL_PUBLIC int ws_stdio_open (const char *filename, int flags, int mode);
+WS_DLL_PUBLIC int ws_stdio_rename (const char *oldfilename, const char *newfilename);
+WS_DLL_PUBLIC int ws_stdio_mkdir (const char *filename, int mode);
+WS_DLL_PUBLIC int ws_stdio_stat64 (const char *filename, ws_statb64 *buf);
+WS_DLL_PUBLIC int ws_stdio_unlink (const char *filename);
+WS_DLL_PUBLIC int ws_stdio_remove (const char *filename);
 
-WS_DLL_PUBLIC FILE * ws_stdio_fopen (const gchar *filename, const gchar *mode);
-WS_DLL_PUBLIC FILE * ws_stdio_freopen (const gchar *filename, const gchar *mode, FILE *stream);
+WS_DLL_PUBLIC FILE * ws_stdio_fopen (const char *filename, const char *mode);
+WS_DLL_PUBLIC FILE * ws_stdio_freopen (const char *filename, const char *mode, FILE *stream);
 
 #define ws_open		ws_stdio_open
 #define ws_rename	ws_stdio_rename
@@ -114,11 +101,17 @@ WS_DLL_PUBLIC FILE * ws_stdio_freopen (const gchar *filename, const gchar *mode,
  * These routines don't take pathnames, so they don't require
  * pathname-converting wrappers on Windows.
  */
+
+typedef unsigned int ws_file_size_t;
+typedef signed int ws_file_ssize_t;
+
 #define ws_read    _read
 #define ws_write   _write
 #define ws_close   _close
 #define ws_dup     _dup
+#define ws_fseek64 _fseeki64	/* use _fseeki64 for 64-bit offset support */
 #define ws_fstat64 _fstati64	/* use _fstati64 for 64-bit size support */
+#define ws_ftell64 _ftelli64	/* use _ftelli64 for 64-bit offset support */
 #define ws_lseek64 _lseeki64	/* use _lseeki64 for 64-bit offset support */
 #define ws_fdopen  _fdopen
 #define ws_fileno  _fileno
@@ -137,10 +130,10 @@ WS_DLL_PUBLIC FILE * ws_stdio_freopen (const gchar *filename, const gchar *mode,
 /** Try to remove the current directory from the DLL search path.
  * SetDllDirectory is tried, then SetCurrentDirectory(program_dir)
  *
- * @return TRUE if we were able to call SetDllDirectory, FALSE otherwise.
+ * @return true if we were able to call SetDllDirectory, false otherwise.
  */
 WS_DLL_PUBLIC
-gboolean ws_init_dll_search_path();
+bool ws_init_dll_search_path(void);
 
 /** Load a DLL using LoadLibrary.
  * Only the system and program directories are searched.
@@ -150,23 +143,29 @@ gboolean ws_init_dll_search_path();
  */
 
 WS_DLL_PUBLIC
-void *ws_load_library(const gchar *library_name);
+void *ws_load_library(const char *library_name);
 
-/** Load a DLL using g_module_open.
+/** Load wpcap.dll using g_module_open.
  * Only the system and program directories are searched.
  *
- * @param module_name The name of the DLL.
- * @param flags Flags to be passed to g_module_open.
  * @return A handle to the DLL if found, NULL on failure.
  */
 WS_DLL_PUBLIC
-GModule *ws_module_open(gchar *module_name, GModuleFlags flags);
+GModule *load_wpcap_module(void);
 
 /** Create or open a "Wireshark is running" mutex.
  * Create or open a mutex which signals that Wireshark or its associated
  * executables is running. Used by the installer to test for a running application.
  */
-WS_DLL_PUBLIC void create_app_running_mutex();
+WS_DLL_PUBLIC void create_app_running_mutex(void);
+
+/** Close our "Wireshark is running" mutex.
+ */
+WS_DLL_PUBLIC void close_app_running_mutex(void);
+
+/** Close a file descriptor if it is not open
+ */
+WS_DLL_PUBLIC int ws_close_if_possible(int fd);
 
 #else	/* _WIN32 */
 
@@ -185,6 +184,9 @@ WS_DLL_PUBLIC void create_app_running_mutex();
 #define ws_fopen		fopen
 #define ws_freopen		freopen
 
+typedef size_t ws_file_size_t;
+typedef ssize_t ws_file_ssize_t;
+
 #define ws_read    read
 #define ws_write   write
 #ifdef __cplusplus
@@ -195,7 +197,17 @@ WS_DLL_PUBLIC void create_app_running_mutex();
 #else
 #define ws_close   close
 #endif
+
+#define ws_close_if_possible ws_close
+
 #define ws_dup     dup
+#ifdef HAVE_FSEEKO
+#define ws_fseek64 fseeko	/* AC_SYS_LARGEFILE should make off_t 64-bit */
+#define ws_ftell64 ftello	/* AC_SYS_LARGEFILE should make off_t 64-bit */
+#else
+#define ws_fseek64(fh,offset,whence)	fseek(fh,(long)(offset),whence)
+#define ws_ftell64 ftell
+#endif
 #define ws_fstat64 fstat	/* AC_SYS_LARGEFILE should make off_t 64-bit */
 #define ws_lseek64 lseek	/* AC_SYS_LARGEFILE should make off_t 64-bit */
 #define ws_fdopen  fdopen

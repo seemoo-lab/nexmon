@@ -4,19 +4,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -29,6 +17,7 @@
 #include <epan/srt_table.h>
 #include <epan/timestamp.h>
 #include <epan/stat_tap_ui.h>
+#include <wsutil/cmdarg_err.h>
 #include <ui/cli/tshark-tap.h>
 
 #define NANOSECS_PER_SEC 1000000000
@@ -40,14 +29,21 @@ typedef struct _srt_t {
 } srt_t;
 
 static void
-draw_srt_table_data(srt_stat_table *rst, gboolean draw_footer)
+draw_srt_table_data(srt_stat_table *rst, bool draw_footer, const char *subfilter)
 {
 	int i;
-	guint64 td;
-	guint64 sum;
+	uint64_t td;
+	uint64_t sum;
 
 	if (rst->num_procs > 0) {
-		printf("Filter: %s\n", rst->filter_string ? rst->filter_string : "");
+		if (rst->filter_string != NULL && subfilter != NULL) {
+			printf("Filter: %s and (%s)\n", rst->filter_string, subfilter);
+		} else if (subfilter != NULL) {
+			/* Print (subfilter) to disambiguate from just rst->filter_string. */
+			printf("Filter: (%s)\n", subfilter);
+		} else {
+			printf("Filter: %s\n", rst->filter_string ? rst->filter_string : "");
+		}
 		printf("Index  %-22s Calls    Min SRT    Max SRT    Avg SRT    Sum SRT\n", (rst->proc_column_name != NULL) ? rst->proc_column_name : "Procedure");
 	}
 	for(i=0;i<rst->num_procs;i++){
@@ -60,7 +56,7 @@ draw_srt_table_data(srt_stat_table *rst, gboolean draw_footer)
 		   depending uon the platform.  After casting tot.secs to 64 bits, it
 		   would take a capture with a duration of over 136 *years* to
 		   overflow the secs portion of td. */
-		td = ((guint64)(rst->procedures[i].stats.tot.secs))*NANOSECS_PER_SEC + rst->procedures[i].stats.tot.nsecs;
+		td = ((uint64_t)(rst->procedures[i].stats.tot.secs))*NANOSECS_PER_SEC + rst->procedures[i].stats.tot.nsecs;
 		sum = (td + 500) / 1000;
 		td = ((td / rst->procedures[i].stats.num) + 500) / 1000;
 
@@ -81,20 +77,20 @@ draw_srt_table_data(srt_stat_table *rst, gboolean draw_footer)
 static void
 srt_draw(void *arg)
 {
-	guint i = 0;
+	unsigned i = 0;
 	srt_data_t* data = (srt_data_t*)arg;
 	srt_t *ui = (srt_t *)data->user_data;
 	srt_stat_table *srt_table;
-	gboolean need_newline = FALSE;
+	bool need_newline = false;
 
 	printf("\n");
 	printf("===================================================================\n");
 	printf("%s SRT Statistics:\n", ui->type);
 
 	srt_table = g_array_index(data->srt_array, srt_stat_table*, i);
-	draw_srt_table_data(srt_table, data->srt_array->len == 1);
+	draw_srt_table_data(srt_table, data->srt_array->len == 1, ui->filter);
 	if (srt_table->num_procs > 0) {
-		need_newline = TRUE;
+		need_newline = true;
 	}
 
 	for (i = 1; i < data->srt_array->len; i++)
@@ -102,19 +98,19 @@ srt_draw(void *arg)
 		if (need_newline)
 		{
 			printf("\n");
-			need_newline = FALSE;
+			need_newline = false;
 		}
 		srt_table = g_array_index(data->srt_array, srt_stat_table*, i);
-		draw_srt_table_data(srt_table, i == data->srt_array->len-1);
+		draw_srt_table_data(srt_table, i == data->srt_array->len-1, ui->filter);
 		if (srt_table->num_procs > 0) {
-			need_newline = TRUE;
+			need_newline = true;
 		}
 	}
 }
 
 static GArray* global_srt_array;
 
-static void
+static bool
 init_srt_tables(register_srt_t* srt, const char *filter)
 {
 	srt_t *ui;
@@ -126,17 +122,19 @@ init_srt_tables(register_srt_t* srt, const char *filter)
 	ui->data.srt_array = global_srt_array;
 	ui->data.user_data = ui;
 
-	error_string = register_tap_listener(get_srt_tap_listener_name(srt), &ui->data, filter, 0, NULL, get_srt_packet_func(srt), srt_draw);
+	error_string = register_tap_listener(get_srt_tap_listener_name(srt), &ui->data, filter, 0, NULL, get_srt_packet_func(srt), srt_draw, NULL);
 	if (error_string) {
-		free_srt_table(srt, global_srt_array, NULL, NULL);
+		free_srt_table(srt, global_srt_array);
 		g_free(ui);
-		fprintf(stderr, "tshark: Couldn't register srt tap: %s\n", error_string->str);
+		cmdarg_err("Couldn't register srt tap: %s", error_string->str);
 		g_string_free(error_string, TRUE);
-		exit(1);
+		return false;
 	}
+
+	return true;
 }
 
-static void
+static bool
 dissector_srt_init(const char *opt_arg, void* userdata)
 {
 	register_srt_t *srt = (register_srt_t*)userdata;
@@ -146,44 +144,48 @@ dissector_srt_init(const char *opt_arg, void* userdata)
 	srt_table_get_filter(srt, opt_arg, &filter, &err);
 	if (err != NULL)
 	{
-		gchar* cmd_str = srt_table_get_tap_string(srt);
-		fprintf(stderr, "tshark: invalid \"-z %s,%s\" argument\n", cmd_str, err);
+		char* cmd_str = srt_table_get_tap_string(srt);
+		cmdarg_err("invalid \"-z %s,%s\" argument", cmd_str, err);
 		g_free(cmd_str);
 		g_free(err);
-		exit(1);
+		return false;
 	}
 
-    /* Need to create the SRT array now */
-    global_srt_array = g_array_new(FALSE, TRUE, sizeof(srt_stat_table*));
+	/* Need to create the SRT array now */
+	global_srt_array = g_array_new(false, true, sizeof(srt_stat_table*));
 
-	srt_table_dissector_init(srt, global_srt_array, NULL, NULL);
-	init_srt_tables(srt, filter);
+	srt_table_dissector_init(srt, global_srt_array);
+	return init_srt_tables(srt, filter);
 }
 
 /* Set GUI fields for register_srt list */
-void
-register_srt_tables(gpointer data, gpointer user_data _U_)
+bool
+register_srt_tables(const void *key _U_, void *value, void *userdata _U_)
 {
-	register_srt_t *srt = (register_srt_t*)data;
+	register_srt_t *srt = (register_srt_t*)value;
 	const char* short_name = proto_get_protocol_short_name(find_protocol_by_id(get_srt_proto_id(srt)));
 	stat_tap_ui ui_info;
+	char *cli_string;
 
 	/* XXX - CAMEL dissector hasn't been converted over due seemingly different tap packet
 	   handling functions.  So let the existing TShark CAMEL tap keep its registration */
 	if (strcmp(short_name, "CAMEL") == 0)
-		return;
+		return false;
 
+	cli_string = srt_table_get_tap_string(srt);
 	ui_info.group = REGISTER_STAT_GROUP_RESPONSE_TIME;
 	ui_info.title = NULL;   /* construct this from the protocol info? */
-	ui_info.cli_string = srt_table_get_tap_string(srt);
+	ui_info.cli_string = cli_string;
 	ui_info.tap_init_cb = dissector_srt_init;
 	ui_info.nparams = 0;
 	ui_info.params = NULL;
 	register_stat_tap_ui(&ui_info, srt);
+	g_free(cli_string);
+	return false;
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

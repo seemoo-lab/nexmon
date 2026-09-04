@@ -9,19 +9,7 @@
  *
  * Copied from packet-slowprotocols.c
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -29,9 +17,14 @@
 #include <epan/packet.h>
 #include <epan/expert.h>
 #include <epan/to_str.h>
+#include <epan/cisco_pid.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 
 void proto_register_pagp(void);
 void proto_reg_handoff_pagp(void);
+
+static dissector_handle_t pagp_handle;
 
 /* Offsets of fields within a PagP PDU */
 
@@ -79,45 +72,45 @@ void proto_reg_handoff_pagp(void);
 
 /* Initialise the protocol and registered fields */
 
-static int proto_pagp = -1;
+static int proto_pagp;
 
-static int hf_pagp_version_number = -1;
+static int hf_pagp_version_number;
 
-static int hf_pagp_flags = -1;
-static int hf_pagp_flags_slow_hello = -1;
-static int hf_pagp_flags_auto_mode = -1;
-static int hf_pagp_flags_consistent_state = -1;
-static int hf_pagp_local_device_id = -1;
-static int hf_pagp_local_learn_cap = -1;
-static int hf_pagp_local_port_priority = -1;
-static int hf_pagp_local_sent_port_ifindex = -1;
-static int hf_pagp_local_group_capability = -1;
-static int hf_pagp_local_group_ifindex = -1;
-static int hf_pagp_partner_device_id = -1;
-static int hf_pagp_partner_learn_cap = -1;
-static int hf_pagp_partner_port_priority = -1;
-static int hf_pagp_partner_sent_port_ifindex = -1;
-static int hf_pagp_partner_group_capability = -1;
-static int hf_pagp_partner_group_ifindex = -1;
-static int hf_pagp_partner_count = -1;
-static int hf_pagp_num_tlvs = -1;
-static int hf_pagp_tlv = -1;
-static int hf_pagp_tlv_length = -1;
-static int hf_pagp_tlv_device_name = -1;
-static int hf_pagp_tlv_port_name = -1;
-static int hf_pagp_tlv_agport_mac = -1;
+static int hf_pagp_flags;
+static int hf_pagp_flags_slow_hello;
+static int hf_pagp_flags_auto_mode;
+static int hf_pagp_flags_consistent_state;
+static int hf_pagp_local_device_id;
+static int hf_pagp_local_learn_cap;
+static int hf_pagp_local_port_priority;
+static int hf_pagp_local_sent_port_ifindex;
+static int hf_pagp_local_group_capability;
+static int hf_pagp_local_group_ifindex;
+static int hf_pagp_partner_device_id;
+static int hf_pagp_partner_learn_cap;
+static int hf_pagp_partner_port_priority;
+static int hf_pagp_partner_sent_port_ifindex;
+static int hf_pagp_partner_group_capability;
+static int hf_pagp_partner_group_ifindex;
+static int hf_pagp_partner_count;
+static int hf_pagp_num_tlvs;
+static int hf_pagp_tlv;
+static int hf_pagp_tlv_length;
+static int hf_pagp_tlv_device_name;
+static int hf_pagp_tlv_port_name;
+static int hf_pagp_tlv_agport_mac;
 
-static int hf_pagp_flush_local_device_id = -1;
-static int hf_pagp_flush_partner_device_id = -1;
-static int hf_pagp_flush_transaction_id = -1;
+static int hf_pagp_flush_local_device_id;
+static int hf_pagp_flush_partner_device_id;
+static int hf_pagp_flush_transaction_id;
 
 /* Initialise the subtree pointers */
 
-static gint ett_pagp = -1;
-static gint ett_pagp_flags = -1;
-static gint ett_pagp_tlvs = -1;
+static int ett_pagp;
+static int ett_pagp_flags;
+static int ett_pagp_tlvs;
 
-static expert_field ei_pagp_tlv_length = EI_INIT;
+static expert_field ei_pagp_tlv_length;
 
 /* General declarations and macros */
 
@@ -150,20 +143,20 @@ static const true_false_string automode = {
 static int
 dissect_pagp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-    guint32 raw_word;
-    guint16 num_tlvs;
-    guint16 tlv;
-    guint16 len;
-    guint16 ii;
-    guint16 offset = PAGP_FIRST_TLV;
-    guint8  raw_octet;
+    uint32_t raw_word;
+    uint16_t num_tlvs;
+    uint16_t tlv;
+    uint16_t len;
+    uint16_t ii;
+    uint16_t offset = PAGP_FIRST_TLV;
+    uint8_t raw_octet;
 
-    guint8  flags;
+    uint8_t flags;
 
     proto_tree *pagp_tree = NULL;
     proto_item *pagp_item, *len_item;
     proto_tree *tlv_tree;
-    static const int * pagp_flags[] = {
+    static int * const pagp_flags[] = {
         &hf_pagp_flags_slow_hello,
         &hf_pagp_flags_auto_mode,
         &hf_pagp_flags_consistent_state,
@@ -175,7 +168,7 @@ dissect_pagp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 
     col_clear(pinfo->cinfo, COL_INFO);
 
-    raw_octet = tvb_get_guint8(tvb, PAGP_VERSION_NUMBER);
+    raw_octet = tvb_get_uint8(tvb, PAGP_VERSION_NUMBER);
     if (tree) {
         pagp_item = proto_tree_add_protocol_format(tree, proto_pagp, tvb,
                                                    0, -1, "Port Aggregation Protocol");
@@ -189,13 +182,13 @@ dissect_pagp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     if (raw_octet == PAGP_FLUSH_PDU) {
 
         col_append_fstr(pinfo->cinfo, COL_INFO, "; Local DevID: %s",
-                        tvb_ether_to_str(tvb, PAGP_FLUSH_LOCAL_DEVICE_ID));
+                        tvb_ether_to_str(pinfo->pool, tvb, PAGP_FLUSH_LOCAL_DEVICE_ID));
 
         proto_tree_add_item(pagp_tree, hf_pagp_flush_local_device_id, tvb,
                             PAGP_FLUSH_LOCAL_DEVICE_ID, 6, ENC_NA);
 
         col_append_fstr(pinfo->cinfo, COL_INFO, ", Partner DevID: %s",
-                        tvb_ether_to_str(tvb, PAGP_FLUSH_PARTNER_DEVICE_ID));
+                        tvb_ether_to_str(pinfo->pool, tvb, PAGP_FLUSH_PARTNER_DEVICE_ID));
 
         proto_tree_add_item(pagp_tree, hf_pagp_flush_partner_device_id, tvb,
                             PAGP_FLUSH_PARTNER_DEVICE_ID, 6, ENC_NA);
@@ -210,13 +203,13 @@ dissect_pagp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 
     /* Info PDU */
 
-    flags = tvb_get_guint8(tvb, PAGP_FLAGS);
+    flags = tvb_get_uint8(tvb, PAGP_FLAGS);
     col_append_fstr(pinfo->cinfo, COL_INFO, "; Flags 0x%x", flags);
 
     proto_tree_add_bitmask(pagp_tree, tvb, PAGP_FLAGS, hf_pagp_flags, ett_pagp_flags, pagp_flags, ENC_NA);
 
     col_append_fstr(pinfo->cinfo, COL_INFO, "; Local DevID: %s",
-                    tvb_ether_to_str(tvb, PAGP_LOCAL_DEVICE_ID));
+                    tvb_ether_to_str(pinfo->pool, tvb, PAGP_LOCAL_DEVICE_ID));
 
     proto_tree_add_item(pagp_tree, hf_pagp_local_device_id, tvb,
                         PAGP_LOCAL_DEVICE_ID, 6, ENC_NA);
@@ -239,7 +232,7 @@ dissect_pagp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     }
 
     col_append_fstr(pinfo->cinfo, COL_INFO, ", Partner DevID: %s",
-                    tvb_ether_to_str(tvb, PAGP_PARTNER_DEVICE_ID));
+                    tvb_ether_to_str(pinfo->pool, tvb, PAGP_PARTNER_DEVICE_ID));
 
     proto_tree_add_item(pagp_tree, hf_pagp_partner_device_id, tvb,
                         PAGP_PARTNER_DEVICE_ID, 6, ENC_NA);
@@ -292,11 +285,11 @@ dissect_pagp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
         switch (tlv) {
             case PAGP_TLV_DEVICE_NAME:
                 proto_tree_add_item(tlv_tree, hf_pagp_tlv_device_name,
-                                      tvb, offset+4, len-4, ENC_NA|ENC_ASCII);
+                                    tvb, offset+4, len-4, ENC_ASCII);
                 break;
             case PAGP_TLV_PORT_NAME:
                 proto_tree_add_item(tlv_tree, hf_pagp_tlv_port_name,
-                                      tvb, offset+4, len-4, ENC_NA|ENC_ASCII);
+                                    tvb, offset+4, len-4, ENC_ASCII);
                 break;
             case PAGP_TLV_AGPORT_MAC:
                 proto_tree_add_item(tlv_tree, hf_pagp_tlv_agport_mac,
@@ -461,7 +454,7 @@ proto_register_pagp(void)
 
     /* Setup protocol subtree array */
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_pagp,
         &ett_pagp_flags,
         &ett_pagp_tlvs,
@@ -482,20 +475,18 @@ proto_register_pagp(void)
     proto_register_subtree_array(ett, array_length(ett));
     expert_pagp = expert_register_protocol(proto_pagp);
     expert_register_field_array(expert_pagp, ei, array_length(ei));
+    pagp_handle = register_dissector("pagp", dissect_pagp, proto_pagp);
 }
 
 
 void
 proto_reg_handoff_pagp(void)
 {
-    dissector_handle_t pagp_handle;
-
-    pagp_handle = create_dissector_handle(dissect_pagp, proto_pagp);
-    dissector_add_uint("llc.cisco_pid", 0x0104, pagp_handle);
+    dissector_add_uint("llc.cisco_pid", CISCO_PID_PAGP, pagp_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

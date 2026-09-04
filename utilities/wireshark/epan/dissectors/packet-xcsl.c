@@ -8,28 +8,15 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
-
-#define NEW_PROTO_TREE_API
-
 #include "config.h"
 
 #include <stdlib.h>
 
 #include <epan/packet.h>
+
+#include <wsutil/strtoi.h>
 
 /* string array size */
 #define MAXLEN 4096
@@ -37,49 +24,17 @@
 void proto_register_xcsl(void);
 void proto_reg_handoff_xcsl(void);
 
-/* Initialize the protocol and registered fields */
-static header_field_info *hfi_xcsl = NULL;
+static int proto_xcsl;
 
-#define XCSL_HFI_INIT HFI_INIT(proto_xcsl)
-
-static header_field_info hfi_xcsl_protocol_version XCSL_HFI_INIT =
-          { "Protocol Version", "xcsl.protocol_version",
-            FT_STRING, BASE_NONE,NULL,0x0,
-            NULL, HFILL
-          };
-
-static header_field_info hfi_xcsl_transaction_id XCSL_HFI_INIT =
-          { "Transaction ID", "xcsl.transacion_id",
-            FT_STRING, BASE_NONE,NULL,0x0,
-            NULL, HFILL
-          };
-
-static header_field_info hfi_xcsl_command XCSL_HFI_INIT =
-          { "Command", "xcsl.command",
-            FT_STRING, BASE_NONE,NULL,0x0,
-            NULL, HFILL
-          };
-
-static header_field_info hfi_xcsl_result XCSL_HFI_INIT =
-          { "Result", "xcsl.result",
-            FT_STRING, BASE_NONE,NULL, 0x0,
-            NULL, HFILL
-          };
-
-static header_field_info hfi_xcsl_information XCSL_HFI_INIT =
-          { "Information", "xcsl.information",
-            FT_STRING, BASE_NONE,NULL,0x0,
-            NULL, HFILL
-          };
-
-static header_field_info hfi_xcsl_parameter XCSL_HFI_INIT =
-          { "Parameter", "xcsl.parameter",
-            FT_STRING, BASE_NONE,NULL,0x0,
-            NULL, HFILL
-          };
+static int hf_xcsl_command;
+static int hf_xcsl_information;
+static int hf_xcsl_parameter;
+static int hf_xcsl_protocol_version;
+static int hf_xcsl_result;
+static int hf_xcsl_transaction_id;
 
 /* Initialize the subtree pointers */
-static gint ett_xcsl = -1;
+static int ett_xcsl;
 
 /* Xcsl result codes */
 #define XCSL_SUCCESS      0
@@ -107,50 +62,22 @@ static const value_string xcsl_action_vals[] = {
     { 0, NULL }
 };
 
-/* This routine gets the next item from the ';' separated list */
-static gboolean get_next_item(tvbuff_t *tvb, gint offset, gint maxlen, guint8 *str, gint *next_offset, guint *len)
-{
-    guint  idx = 0;
-    guint8 ch;
-
-    /* Obtain items */
-    while (maxlen > 1) {
-        ch = tvb_get_guint8(tvb, offset+idx);
-        if (ch == ';' || ch == '\r' || ch == '\n')
-            break;
-        /* Array protect */
-        if (idx==MAXLEN) {
-            *next_offset = offset + idx;
-            *len = idx;
-            return FALSE;
-        }
-        /* Copy data into string array */
-        str[idx++] = ch;
-        maxlen--;
-    }
-    /* Null terminate the item */
-    str[idx] = '\0';
-
-    /* Update admin for next item */
-    *next_offset = offset + idx;
-    *len = idx;
-
-    return TRUE;
-}
+/* patterns used for tvb_ws_mempbrk_pattern_uint8 */
+static ws_mempbrk_pattern pbrk_param_end;
 
 /* Dissector for xcsl */
 static void dissect_xcsl_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree) {
 
-    guint        offset = 0;
-    gint         length_remaining;
-    guint8       idx;
-    gboolean     request;
-    guint8       par;
-    guint8       str[MAXLEN];
-    guint8       result;
-    const gchar *code;
-    guint        len;
-    gint         next_offset;
+    unsigned     offset = 0;
+    int          length_remaining;
+    uint8_t      idx;
+    bool         request;
+    uint8_t      par;
+    uint8_t     *str;
+    uint8_t      result;
+    const char *code;
+    unsigned     len;
+    int          next_offset;
     proto_tree  *xcsl_tree = NULL;
 
     /* color support */
@@ -160,7 +87,7 @@ static void dissect_xcsl_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
     /* Create display tree for the xcsl protocol */
     if (tree) {
         proto_item  *xcsl_item;
-        xcsl_item = proto_tree_add_item(tree, hfi_xcsl, tvb, offset, -1, ENC_NA);
+        xcsl_item = proto_tree_add_item(tree, proto_xcsl, tvb, offset, -1, ENC_NA);
         xcsl_tree = proto_item_add_subtree(xcsl_item, ett_xcsl);
     }
 
@@ -171,21 +98,26 @@ static void dissect_xcsl_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
     par = 0;
 
     /* switch whether it concerns a command or an answer */
-    request = FALSE;
+    request = false;
 
     while ((length_remaining = tvb_reported_length_remaining(tvb, offset)) > 0) {
 
         /* get next item */
-        if (!(get_next_item(tvb, offset, length_remaining, str, &next_offset, &len))) {
-            /* do not continue when get_next_item returns false */
-            return;
+        next_offset = tvb_ws_mempbrk_pattern_uint8(tvb, offset, length_remaining, &pbrk_param_end, NULL);
+        if (next_offset == -1) {
+            len = length_remaining;
+            next_offset = offset + len;
+        } else {
+            len = next_offset - offset;
         }
 
         /* do not add to the tree when the string is of zero length */
-        if ( strlen(str) == 0 ) {
+        if ( len == 0 ) {
             offset = next_offset + 1;
             continue;
         }
+
+        str = tvb_get_string_enc(pinfo->pool, tvb, offset, len, ENC_ASCII);
 
         /* Xcsl (Call Specification Language) protocol in brief :
          *
@@ -219,15 +151,15 @@ static void dissect_xcsl_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 
             /* This is the protocol item */
             case 0:
-                proto_tree_add_item(xcsl_tree, &hfi_xcsl_protocol_version, tvb, offset, len, ENC_ASCII|ENC_NA);
+                proto_tree_add_item(xcsl_tree, hf_xcsl_protocol_version, tvb, offset, len, ENC_ASCII);
                 break;
 
                 /* This should be the transaction ID, if non-digit, it is treated as info */
             case 1:
                 if ( g_ascii_isdigit(str[0]) ) {
-                    proto_tree_add_item(xcsl_tree, &hfi_xcsl_transaction_id, tvb, offset, len, ENC_ASCII|ENC_NA);
+                    proto_tree_add_item(xcsl_tree, hf_xcsl_transaction_id, tvb, offset, len, ENC_ASCII);
                 } else {
-                    proto_tree_add_item(xcsl_tree, &hfi_xcsl_information, tvb, offset, len, ENC_ASCII|ENC_NA);
+                    proto_tree_add_item(xcsl_tree, hf_xcsl_information, tvb, offset, len, ENC_ASCII);
                 }
                 col_append_fstr(pinfo->cinfo, COL_INFO, "%s ",str);
                 break;
@@ -237,15 +169,16 @@ static void dissect_xcsl_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
                 if ( g_ascii_isdigit(str[0]) ) {
                     proto_item *xcsl_item;
 
-                    request = FALSE;
-                    result = atoi(str);
+                    request = false;
+                    result = XCSL_UNDEFINED;
+                    ws_strtou8(str, NULL, &result);
                     if ( result >= XCSL_NONE ) {
                         result = XCSL_UNDEFINED;
                     }
-                    code = val_to_str(result, xcsl_action_vals, "Unknown: %d");
+                    code = val_to_str(pinfo->pool, result, xcsl_action_vals, "Unknown: %d");
 
                     /* Print result code and description */
-                    xcsl_item = proto_tree_add_item(xcsl_tree, &hfi_xcsl_result, tvb, offset, len, ENC_ASCII|ENC_NA);
+                    xcsl_item = proto_tree_add_item(xcsl_tree, hf_xcsl_result, tvb, offset, len, ENC_ASCII);
                     proto_item_append_text(xcsl_item, " (%s)", code);
 
                     if (result != 0)
@@ -253,8 +186,8 @@ static void dissect_xcsl_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 
                 } else {
 
-                    request = TRUE;
-                    proto_tree_add_item(xcsl_tree, &hfi_xcsl_command, tvb, offset, len, ENC_ASCII|ENC_NA);
+                    request = true;
+                    proto_tree_add_item(xcsl_tree, hf_xcsl_command, tvb, offset, len, ENC_ASCII);
 
                     col_append_fstr(pinfo->cinfo, COL_INFO, "%s ", str);
 
@@ -263,9 +196,9 @@ static void dissect_xcsl_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 
                 /* This is a command parameter */
             default:
-                proto_tree_add_item(xcsl_tree, &hfi_xcsl_parameter, tvb, offset, len, ENC_ASCII|ENC_NA);
+                proto_tree_add_item(xcsl_tree, hf_xcsl_parameter, tvb, offset, len, ENC_ASCII);
 
-                if ( request == TRUE ) {
+                if ( request == true ) {
                     col_append_fstr(pinfo->cinfo, COL_INFO, ": %s ",str);
                 } else {
                     if (par == 0) {
@@ -292,62 +225,82 @@ static void dissect_xcsl_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 
 
 /* This function determines whether the first 4 octets equals to xcsl and the fifth is an ; or - */
-static gboolean dissect_xcsl_tcp_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_) {
+static bool dissect_xcsl_tcp_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_) {
 
-    guint8 *protocol;
+    uint8_t *protocol;
 
     if (tvb_captured_length (tvb) >= 5) {
-        protocol = tvb_get_string_enc(wmem_packet_scope(), tvb, 0, 5, ENC_ASCII);
+        protocol = tvb_get_string_enc(pinfo->pool, tvb, 0, 5, ENC_ASCII);
 
         if (strncmp(protocol,"xcsl",4) == 0 && (protocol[4] == ';' || protocol[4] == '-')) {
 
             /* Disssect it as being an xcsl message */
             dissect_xcsl_tcp(tvb, pinfo, tree);
 
-            return TRUE;
+            return true;
         }
     }
 
-    return FALSE;
+    return false;
 }
 
 
 /* register the various xcsl protocol filters */
 void proto_register_xcsl(void) {
-#ifndef HAVE_HFI_SECTION_INIT
-    static header_field_info *hfi[] = {
-        &hfi_xcsl_protocol_version,
-        &hfi_xcsl_transaction_id,
-        &hfi_xcsl_command,
-        &hfi_xcsl_result,
-        &hfi_xcsl_parameter,
-        &hfi_xcsl_information,
+    static hf_register_info hf[] = {
+        { &hf_xcsl_protocol_version,
+            { "Protocol Version", "xcsl.protocol_version",
+              FT_STRING, BASE_NONE, NULL, 0x0,
+              NULL, HFILL }
+        },
+        { &hf_xcsl_transaction_id,
+            { "Transaction ID", "xcsl.transaction_id",
+              FT_STRING, BASE_NONE, NULL, 0x0,
+              NULL, HFILL }
+        },
+        { &hf_xcsl_command,
+            { "Command", "xcsl.command",
+              FT_STRING, BASE_NONE, NULL, 0x0,
+              NULL, HFILL }
+        },
+        { &hf_xcsl_result,
+            { "Result", "xcsl.result",
+              FT_STRING, BASE_NONE, NULL, 0x0,
+              NULL, HFILL }
+        },
+        { &hf_xcsl_information,
+            { "Information", "xcsl.information",
+              FT_STRING, BASE_NONE, NULL, 0x0,
+              NULL, HFILL }
+        },
+        { &hf_xcsl_parameter,
+            { "Parameter", "xcsl.parameter",
+              FT_STRING, BASE_NONE, NULL, 0x0,
+              NULL, HFILL }
+        },
     };
-#endif
 
     /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_xcsl
     };
 
-    int proto_xcsl;
-
     /* Register the protocol name and description */
     proto_xcsl = proto_register_protocol("Call Specification Language (Xcsl)", "XCSL", "xcsl");
-    hfi_xcsl   = proto_registrar_get_nth(proto_xcsl);
-
-    /* Required function calls to register the header fields and subtrees used */
-    proto_register_fields(proto_xcsl, hfi, array_length(hfi));
+    proto_register_field_array(proto_xcsl, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+
+    /* compile patterns */
+    ws_mempbrk_compile(&pbrk_param_end, ";\r\n");
 }
 
 /* In case it concerns TCP, try to match on the xcsl header */
 void proto_reg_handoff_xcsl(void) {
-    heur_dissector_add("tcp", dissect_xcsl_tcp_heur, "XCSL over TCP", "xcsl_tcp", hfi_xcsl->id, HEURISTIC_ENABLE);
+    heur_dissector_add("tcp", dissect_xcsl_tcp_heur, "XCSL over TCP", "xcsl_tcp", proto_xcsl, HEURISTIC_ENABLE);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

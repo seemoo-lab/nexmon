@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -28,6 +16,8 @@
 #include <epan/prefs.h>
 #include <epan/oids.h>
 #include <epan/asn1.h>
+#include <epan/proto_data.h>
+#include <wsutil/array.h>
 
 #include "packet-ber.h"
 #include "packet-acse.h"
@@ -54,26 +44,21 @@
 void proto_register_disp(void);
 void proto_reg_handoff_disp(void);
 
-static guint global_disp_tcp_port = 102;
-static dissector_handle_t tpkt_handle;
-static void prefs_register_disp(void); /* forward declaration for use in preferences registration */
-
-
 /* Initialize the protocol and registered fields */
-static int proto_disp = -1;
+static int proto_disp;
 
 #include "packet-disp-hf.c"
 
 /* Initialize the subtree pointers */
-static gint ett_disp = -1;
+static int ett_disp;
 #include "packet-disp-ett.c"
 
-static expert_field ei_disp_unsupported_opcode = EI_INIT;
-static expert_field ei_disp_unsupported_errcode = EI_INIT;
-static expert_field ei_disp_unsupported_pdu = EI_INIT;
-static expert_field ei_disp_zero_pdu = EI_INIT;
+static expert_field ei_disp_unsupported_opcode;
+static expert_field ei_disp_unsupported_errcode;
+static expert_field ei_disp_unsupported_pdu;
+static expert_field ei_disp_zero_pdu;
 
-static dissector_handle_t disp_handle = NULL;
+static dissector_handle_t disp_handle;
 
 #include "packet-disp-fn.c"
 
@@ -88,7 +73,7 @@ dissect_disp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
 	proto_item *item;
 	proto_tree *tree;
 	struct SESSION_DATA_STRUCTURE* session;
-	int (*disp_dissector)(gboolean implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_) = NULL;
+	int (*disp_dissector)(bool implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_) = NULL;
 	const char *disp_op_name;
 	asn1_ctx_t asn1_ctx;
 
@@ -97,7 +82,7 @@ dissect_disp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
 		return 0;
 	session  = (struct SESSION_DATA_STRUCTURE*)data;
 
-	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
+	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
 
 	asn1_ctx.private_data = session;
 
@@ -182,7 +167,7 @@ dissect_disp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
 
 	  while (tvb_reported_length_remaining(tvb, offset) > 0){
 	    old_offset=offset;
-	    offset=(*disp_dissector)(FALSE, tvb, offset, &asn1_ctx, tree, -1);
+	    offset=(*disp_dissector)(false, tvb, offset, &asn1_ctx, tree, -1);
 	    if(offset == old_offset){
 	      proto_tree_add_expert(tree, pinfo, &ei_disp_zero_pdu, tvb, offset, -1);
 	      break;
@@ -204,7 +189,7 @@ void proto_register_disp(void) {
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_disp,
 #include "packet-disp-ettarr.c"
   };
@@ -231,12 +216,13 @@ void proto_register_disp(void) {
 
   /* Register our configuration options for DISP, particularly our port */
 
-  disp_module = prefs_register_protocol_subtree("OSI/X.500", proto_disp, prefs_register_disp);
+  disp_module = prefs_register_protocol_subtree("OSI/X.500", proto_disp, NULL);
 
-  prefs_register_uint_preference(disp_module, "tcp.port", "DISP TCP Port",
-				 "Set the port for DISP operations (if other"
-				 " than the default of 102)",
-				 10, &global_disp_tcp_port);
+  prefs_register_obsolete_preference(disp_module, "tcp.port");
+
+  prefs_register_static_text_preference(disp_module, "tcp_port_info",
+            "The TCP ports used by the DISP protocol should be added to the TPKT preference \"TPKT TCP ports\", or by selecting \"TPKT\" as the \"Transport\" protocol in the \"Decode As\" dialog.",
+            "DISP TCP Port preference moved information");
 
 }
 
@@ -253,35 +239,14 @@ void proto_reg_handoff_disp(void) {
   oid_add_from_string("id-ac-reliable-shadow-supplier-initiated","2.5.3.7");
 
   /* ABSTRACT SYNTAXES */
-  register_ros_oid_dissector_handle("2.5.9.3", disp_handle, 0, "id-as-directory-shadow", FALSE);
-  register_rtse_oid_dissector_handle("2.5.9.5", disp_handle, 0, "id-as-directory-reliable-shadow", FALSE);
-  register_rtse_oid_dissector_handle("2.5.9.6", disp_handle, 0, "id-as-directory-reliable-binding", FALSE);
+  register_ros_oid_dissector_handle("2.5.9.3", disp_handle, 0, "id-as-directory-shadow", false);
+  register_rtse_oid_dissector_handle("2.5.9.5", disp_handle, 0, "id-as-directory-reliable-shadow", false);
+  register_rtse_oid_dissector_handle("2.5.9.6", disp_handle, 0, "id-as-directory-reliable-binding", false);
 
   /* OPERATIONAL BINDING */
   oid_add_from_string("id-op-binding-shadow","2.5.1.0.5.1");
 
-  tpkt_handle = find_dissector("tpkt");
-
   /* DNs */
   x509if_register_fmt(hf_disp_contextPrefix, "cp=");
-
-}
-
-
-static void
-prefs_register_disp(void)
-{
-  static guint tcp_port = 0;
-
-  /* de-register the old port */
-  /* port 102 is registered by TPKT - don't undo this! */
-  if((tcp_port > 0) && (tcp_port != 102) && tpkt_handle)
-    dissector_delete_uint("tcp.port", tcp_port, tpkt_handle);
-
-  /* Set our port number for future use */
-  tcp_port = global_disp_tcp_port;
-
-  if((tcp_port > 0) && (tcp_port != 102) && tpkt_handle)
-    dissector_add_uint("tcp.port", global_disp_tcp_port, tpkt_handle);
 
 }

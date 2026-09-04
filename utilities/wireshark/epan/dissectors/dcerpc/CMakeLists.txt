@@ -4,47 +4,13 @@
 # By Gerald Combs <gerald@wireshark.org>
 # Copyright 1998 Gerald Combs
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# SPDX-License-Identifier: GPL-2.0-or-later
 #
 
 set(PIDL_DISSECTOR_NAMES
 	budb
 	butc
-	drsuapi
 )
-
-set(IDL2WRS_FILES
-	idl2wrs.c
-)
-
-set(CLEAN_FILES
-	${IDL2WRS_FILES}
-)
-
-if (WERROR_COMMON_FLAGS)
-	set_source_files_properties(
-		${CLEAN_FILES}
-		PROPERTIES
-		COMPILE_FLAGS ${WERROR_COMMON_FLAGS}
-	)
-endif()
-
-add_executable(idl2wrs ${IDL2WRS_FILES})
-set_target_properties(idl2wrs PROPERTIES FOLDER "Executables")
-
-target_link_libraries(idl2wrs ${GLIB2_LIBRARIES})
 
 foreach(PROTOCOL_NAME IN LISTS PIDL_DISSECTOR_NAMES)
 	# Use a stamp file instead of OUTPUT to packet-dcerpc-X.c to
@@ -82,12 +48,7 @@ foreach(PROTOCOL_NAME IN LISTS PIDL_DISSECTOR_NAMES)
 	list(APPEND PIDL_DISSECTOR_TARGETS
 		generate_dissector-dcerpc-${PROTOCOL_NAME}
 	)
-	list(APPEND PIDL_DISSECTOR_SRC
-		packet-dcerpc-${PROTOCOL_NAME}.c
-	)
 endforeach()
-
-set(PIDL_DISSECTOR_AUTOGEN_SRC ${PIDL_DISSECTOR_SRC} PARENT_SCOPE)
 
 # TODO should probably just merge this into pidl-dissectors
 add_custom_target(idl2wrs-dissectors ALL DEPENDS ${PIDL_DISSECTOR_TARGETS})

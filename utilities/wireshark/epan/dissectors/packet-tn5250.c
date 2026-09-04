@@ -6,6 +6,7 @@
  *  Release 3.0 Document Number SC30-3533-04
  *  Chapters 12, 15, 16
  *  http://publibfp.dhe.ibm.com/cgi-bin/bookmgr/BOOKS/co2e2001/CCONTENTS
+ *  [Found in 2020 in https://archive.org/details/5494RemoteControlUnitFunctionsReferenceSC30353304]
  *
  * Copyright 2009, Robert Hogan <robert@roberthogan.net>
  *
@@ -13,19 +14,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 
@@ -34,17 +23,16 @@
 #include <epan/packet.h>
 #include <epan/expert.h>
 #include <epan/conversation.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 #include "packet-tn5250.h"
 
 void proto_register_tn5250(void);
 
 typedef struct tn5250_conv_info_t {
   struct tn5250_conv_info_t *next;
-  address outbound_addr;
-  guint32 outbound_port;
-  address inbound_addr;
-  guint32 inbound_port;
-  gint extended;
+  uint32_t outbound_port;
+  int extended;
 } tn5250_conv_info_t;
 
 /* 13.4 SNA LU 4 and LU 7 Negative Responses */
@@ -615,11 +603,11 @@ static const struct true_false_string tn5250_field_wdsf_cw_bp_flag1_1 = {
 #define WTF_BITS         0xC0
 
 static const value_string vals_tn5250_wdsf_cw_tf_flag_orientation[] = {
-  { 0x00,  "Window Title or Footer is Centered"},
-  { 0x40,  "Window Title or Footer is Right Justified"},
-  { 0x80,  "Window Title or Footer is Left Justified"},
-  { 0xC0,  "Reserved (Window Title or Footer is Centered)"},
-  { 0x00, NULL }
+  { 0,   "Window Title or Footer is Centered"},
+  { 1,   "Window Title or Footer is Right Justified"},
+  { 2,   "Window Title or Footer is Left Justified"},
+  { 3,   "Reserved (Window Title or Footer is Centered)"},
+  { 0, NULL }
 };
 
 static const struct true_false_string tn5250_field_wdsf_cw_tf_flag_1 = {
@@ -665,11 +653,11 @@ static const value_string vals_tn5250_wdsf_ds_flag1_mouse_characteristics[] = {
 #define DS_AUTO_ENTER_BITS         0x30
 
 static const value_string vals_tn5250_wdsf_ds_flag1_auto_enter[] = {
-  { 0x00,  "Selection field is not auto-enter"},
-  { 0x20,  "Selection field is auto-enter on selection except if double-digit numeric selection is used."},
-  { 0x10,  "Selection field is auto-enter on selection or deselection except if double-digit numeric selection is used. "},
-  { 0x30,  "Selection field is auto-enter on selection except if single-digit or double-digit numeric selection is used."},
-  { 0x00, NULL }
+  { 0,   "Selection field is not auto-enter"},
+  { 2,   "Selection field is auto-enter on selection except if double-digit numeric selection is used."},
+  { 1,   "Selection field is auto-enter on selection or deselection except if double-digit numeric selection is used. "},
+  { 3,   "Selection field is auto-enter on selection except if single-digit or double-digit numeric selection is used."},
+  { 0, NULL }
 };
 
 static const struct true_false_string tn5250_field_wdsf_ds_flag1_1 = {
@@ -766,9 +754,9 @@ static const value_string vals_tn5250_wdsf_ds_gdc_indicators[] = {
   { 0x00, NULL }
 };
 
-#define DS_SELECTION_TECHNIQUES1             0x20
-#define DS_SELECTION_TECHNIQUES2             0x40
-#define DS_SELECTION_TECHNIQUES3             0xE0
+#define DS_SELECTION_TECHNIQUES1             0x1
+#define DS_SELECTION_TECHNIQUES2             0x2
+#define DS_SELECTION_TECHNIQUES3             0x7
 #define DS_SELECTION_TECHNIQUES_BITS         0xE0
 
 static const value_string vals_tn5250_wdsf_ds_gdc_selection_techniques[] = {
@@ -798,11 +786,11 @@ static const value_string vals_tn5250_wdsf_ds_nws_indicators[] = {
   { 0x00, NULL }
 };
 
-#define DS_NWS_SELECTION_TECHNIQUES1             0x20
-#define DS_NWS_SELECTION_TECHNIQUES2             0x40
-#define DS_NWS_SELECTION_TECHNIQUES3             0x80
-#define DS_NWS_SELECTION_TECHNIQUES4             0xA0
-#define DS_NWS_SELECTION_TECHNIQUES5             0xE0
+#define DS_NWS_SELECTION_TECHNIQUES1             0x1
+#define DS_NWS_SELECTION_TECHNIQUES2             0x2
+#define DS_NWS_SELECTION_TECHNIQUES3             0x4
+#define DS_NWS_SELECTION_TECHNIQUES4             0x5
+#define DS_NWS_SELECTION_TECHNIQUES5             0x7
 #define DS_NWS_SELECTION_TECHNIQUES_BITS         0xE0
 
 static const value_string vals_tn5250_wdsf_ds_nws_selection_techniques[] = {
@@ -849,9 +837,9 @@ static const struct true_false_string tn5250_field_wdsf_ds_ct_flag1_5 = {
   "No Action"
 };
 
-#define DS_NUMERIC_SELECTION_NOT_INCLUDED             0x00
-#define DS_NUMERIC_SELECTION_SINGLE_DIGIT             0x40
-#define DS_NUMERIC_SELECTION_DOUBLE_DIGIT             0x80
+#define DS_NUMERIC_SELECTION_NOT_INCLUDED             0x0
+#define DS_NUMERIC_SELECTION_SINGLE_DIGIT             0x1
+#define DS_NUMERIC_SELECTION_DOUBLE_DIGIT             0x2
 #define DS_NUMERIC_SELECTION_BITS                     0xC0
 
 static const value_string vals_tn5250_wdsf_ds_ct_flag1_numeric_selection[] = {
@@ -1133,50 +1121,50 @@ static const struct true_false_string tn5250_field_wssf_flag2_0 = {
 };
 
 static const struct true_false_string tn5250_field_wssf_flag2_1 = {
-  "Enhanced field exit required mode.",
-  "Enhanced field exit required mode not set"
+  "Set enhanced field exit required mode",
+  "Do not set enhanced field exit required mode"
 };
 
 static const struct true_false_string tn5250_field_wssf_flag2_2 = {
   "Resets enhanced field exit required mode",
-  "Does not reset enhanced field exit required mode"
+  "Do not reset enhanced field exit required mode"
 };
 
 static const struct true_false_string tn5250_field_wssf_flag2_3 = {
-  "Sets System/36* mode of operation",
-  "Does not set System/36* mode of operation"
+  "Set System/36* mode of operation",
+  "Do not set System/36* mode of operation"
 };
 
 static const struct true_false_string tn5250_field_wssf_flag2_4 = {
-  "Resets System/36* mode of operation",
-  "Does not reset System/36* mode of operation"
+  "Reset System/36* mode of operation",
+  "Do not reset System/36* mode of operation"
 };
 
 static const struct true_false_string tn5250_field_wssf_flag2_5 = {
-  "Set SBA code to X'04' in data returned for READ commands if set to logic 1.",
-  "Does not set SBA code to X'04' in data returned for READ commands."
+  "Set SBA code to X'04' in data returned for READ commands",
+  "Do not set SBA code to X'04' in data returned for READ commands"
 };
 
 static const struct true_false_string tn5250_field_wssf_flag2_6 = {
-  "Set SBA code to X'11' in data returned for READ commands if set to logic 1.",
-  "Does not set SBA code to X'11' in data returned for READ commands."
+  "Set SBA code to X'11' in data returned for READ commands",
+  "Do not set SBA code to X'11' in data returned for READ commands"
 };
 
 static const struct true_false_string tn5250_field_wssf_flag2_7 = {
-  "Customization applies to entire 5494 if set to logic 1",
-  "Customization does not apply to entire 5494 if set to logic 1"
+  "Customization applies to entire 5494",
+  "Customization does not apply to entire 5494"
 };
 
 /* 15.26.1 WRITE SINGLE STRUCTURED FIELD Command - 5250 WSC CUSTOMIZATION Command
    - Keystroke Buffering Control Minor Structure*/
 static const struct true_false_string tn5250_field_wssf_kbc_flag1_5 = {
-  "Change type-ahead state if set to logic 1",
-  "Change type-ahead state not set"
+  "Change type-ahead state",
+  "Do not change type-ahead state"
 };
 
 static const struct true_false_string tn5250_field_wssf_kbc_flag1_6 = {
-  "Indicates type-ahead is on if set to logic 1 (and bit 5 set to 1). If bit 6 is set to 0 and bit 5 is set to 1, type-ahead is turned off. If bit 5 is set to 0, bit 6 is ignored.",
-  "Indicates type-ahead is on if set to logic 1 (and bit 5 set to 1). If bit 6 is set to 0 and bit 5 is set to 1, type-ahead is turned off. If bit 5 is set to 0, bit 6 is ignored."
+  "Turn on type-ahead if bit is set to 1; ignored if bit 5 is set to 0",
+  "Turn off type-ahead if bit 5 is set to 1; ignored if bit 5 is set to 0"
 };
 
 static const struct true_false_string tn5250_field_wssf_kbc_flag1_7 = {
@@ -1242,8 +1230,8 @@ static const struct true_false_string tn5250_field_wssf_ifc_flag2_1 = {
 };
 
 static const struct true_false_string tn5250_field_wssf_ifc_flag2_7 = {
-  "Reserved for IBM image/fax-capable displays. It is used to download compression algorithms. Non-IBM displays should ignore this bit.",
-  "Reserved for IBM image/fax-capable displays. It is used to download compression algorithms. Non-IBM displays should ignore this bit."
+  "True. Reserved for IBM image/fax-capable displays. It is used to download compression algorithms. Non-IBM displays should ignore this bit.",
+  "False. Reserved for IBM image/fax-capable displays. It is used to download compression algorithms. Non-IBM displays should ignore this bit."
 };
 
 static const value_string vals_tn5250_image_format[] = {
@@ -1292,7 +1280,8 @@ static const range_string vals_tn5250_vac_data[] = {
   { 0x14000000, 0x14000000, "Turn Audio On"},
   { 0x14000001, 0x14000001, "Turn Audio Off"},
   { 0x0C000000, 0x0C000064, "Set PC/TV Volume"},
-  { 0x00000000, 0xFFFFFFFF, "Set PIP Location and Size"},
+  /* N.B. Set PIP Location and Size was moved to last, to stop it
+   * from hiding everything that follows it */
   { 0x1F000001, 0x1F000001, "Set PIP See Through On"},
   { 0x1F000000, 0x1F000000, "Set PIP SeeThrough Off"},
   { 0x20000001, 0x20000001, "Freeze PIP"},
@@ -1308,6 +1297,7 @@ static const range_string vals_tn5250_vac_data[] = {
   { 0x0F000000, 0x0F000064, "Set PC/TV Color"},
   { 0x0E000000, 0x0E000064, "Set PC/TV Contrast"},
   { 0x10000000, 0x10006464, "Set PC/TV Tint"},
+  { 0x01010101, 0x1b841b84, "Set PIP Location and Size"}, /* Bytes are RRCCrrcc */
   { 0,  0,      NULL}
 };
 
@@ -1434,7 +1424,7 @@ static const struct true_false_string tn5250_field_dpo_flag1_6 = {
 };
 
 static const struct true_false_string tn5250_field_dpo_flag1_7 = {
-  "Insert mode is toggled by the Insert key",
+  "Insert mode is reset by Error Reset key",
   "Insert mode is toggled by the Insert key"
 };
 
@@ -1507,12 +1497,12 @@ static const struct true_false_string tn5250_field_dtsf_flag2_3 = {
 };
 
 static const range_string vals_tn5250_dtsf_flag2_vals[] = {
-  { 0x00, 0x70, "Reserved"},
-  { 0x80, 0x80, "System Version 2 Release 2.0"},
-  { 0x90, 0x90, "System Version 2 Release 3.0"},
-  { 0xA0, 0xA0, "System Version 3 Release 0.5"},
-  { 0xB0, 0xB0, "System Version 3 Release 1.0"},
-  { 0xC0, 0xF0, "Reserved"},
+  { 0x0, 0x7, "Reserved"},
+  { 0x8, 0x8, "System Version 2 Release 2.0"},
+  { 0x9, 0x9, "System Version 2 Release 3.0"},
+  { 0xA, 0xA, "System Version 3 Release 0.5"},
+  { 0xB, 0xB, "System Version 3 Release 1.0"},
+  { 0xC, 0xF, "Reserved"},
   { 0,  0,      NULL}
 };
 
@@ -1752,7 +1742,7 @@ static const range_string vals_tn5250_dpt_id[] = {
 #define CORE_AREA_COMMAND_KEYS  0x80
 
 static const range_string vals_tn5250_dfdpck_data_field[] = {
-  { 0x00,  0x40, "Invalid Data Field Type"},
+  { 0x00,  0x3f, "Invalid Data Field Type"},
   { 0x40,  0x40, "Top Row Command Key Functions"},
   { 0x41,  0x79, "Invalid Data Field Type"},
   { 0x80,  0x80, "Core Area Key Command Functions"},
@@ -2011,7 +2001,7 @@ static const range_string vals_tn5250_attention_identification_bytes[] = {
   { AID_INBOUND_WRITE_STRUCTURED_FIELD   ,  AID_INBOUND_WRITE_STRUCTURED_FIELD   , "AID Inbound Write Structured Field"},
   { AID_IMAGE_FAX_REQUEST                ,  AID_IMAGE_FAX_REQUEST                , "Image/Fax Request Aid"},
   { AID_UNKNOWN_IMAGE_FAX_FORMAT         ,  AID_UNKNOWN_IMAGE_FAX_FORMAT         , "Unknown Image/Fax Format Aid"},
-  { AID_IMAGE_FAX_ERROR                  ,  AID_IMAGE_FAX_ERROR                  , " Image/Fax Error Reporting Aid"},
+  { AID_IMAGE_FAX_ERROR                  ,  AID_IMAGE_FAX_ERROR                  , "Image/Fax Error Reporting Aid"},
   { 0x00,  0x00,      NULL}
 };
 
@@ -2083,9 +2073,9 @@ static const struct true_false_string tn5250_field_qr_flag1_7 = {
 };
 
 static const value_string vals_tn5250_qr_flag2_0to3[] = {
-  { 0x10,  "24 x 80 Screen Size"},
-  { 0x30,  "Capable of 24 x 80 and 27 x 132"},
-  { 0x00, NULL }
+  { 0x1,  "24 x 80 Screen Size"},
+  { 0x3,  "Capable of 24 x 80 and 27 x 132"},
+  { 0, NULL }
 };
 
 static const struct true_false_string tn5250_field_qr_flag2_4 = {
@@ -2299,621 +2289,619 @@ static const range_string vals_tn5250_reserved[] = {
 };
 
 
-static int proto_tn5250 = -1;
-static int hf_tn5250_aid = -1;
-static int hf_tn5250_attn_key = -1;
-static int hf_tn5250_attribute_type = -1;
-static int hf_tn5250_buffer_x = -1;
-static int hf_tn5250_buffer_y = -1;
-static int hf_tn5250_command_code = -1;
-static int hf_tn5250_ctp_lsid = -1;
-static int hf_tn5250_ctp_mlpp = -1;
-static int hf_tn5250_cua_parm = -1;
-static int hf_tn5250_dawt_char = -1;
-static int hf_tn5250_dawt_id = -1;
-static int hf_tn5250_dawt_length = -1;
-static int hf_tn5250_dawt_message = -1;
-static int hf_tn5250_dckf_function_code = -1;
-static int hf_tn5250_dckf_id = -1;
-static int hf_tn5250_dckf_key_code = -1;
-static int hf_tn5250_dckf_length = -1;
-static int hf_tn5250_dckf_prompt_text = -1;
-static int hf_tn5250_dfdpck_coreflag = -1;
-static int hf_tn5250_dfdpck_coreflag_0 = -1;
-static int hf_tn5250_dfdpck_coreflag_1 = -1;
-static int hf_tn5250_dfdpck_coreflag_2 = -1;
-static int hf_tn5250_dfdpck_coreflag_3 = -1;
-static int hf_tn5250_dfdpck_coreflag_4 = -1;
-static int hf_tn5250_dfdpck_coreflag_5 = -1;
-static int hf_tn5250_dfdpck_coreflag_6 = -1;
-static int hf_tn5250_dfdpck_coreflag_7 = -1;
-static int hf_tn5250_dfdpck_data_field = -1;
-static int hf_tn5250_dfdpck_partition = -1;
-static int hf_tn5250_dfdpck_toprowflag1 = -1;
-static int hf_tn5250_dfdpck_toprowflag1_0 = -1;
-static int hf_tn5250_dfdpck_toprowflag1_1 = -1;
-static int hf_tn5250_dfdpck_toprowflag1_2 = -1;
-static int hf_tn5250_dfdpck_toprowflag1_3 = -1;
-static int hf_tn5250_dfdpck_toprowflag1_4 = -1;
-static int hf_tn5250_dfdpck_toprowflag1_5 = -1;
-static int hf_tn5250_dfdpck_toprowflag1_6 = -1;
-static int hf_tn5250_dfdpck_toprowflag1_7 = -1;
-static int hf_tn5250_dfdpck_toprowflag2 = -1;
-static int hf_tn5250_dfdpck_toprowflag2_0 = -1;
-static int hf_tn5250_dfdpck_toprowflag2_1 = -1;
-static int hf_tn5250_dfdpck_toprowflag2_2 = -1;
-static int hf_tn5250_dfdpck_toprowflag2_3 = -1;
-static int hf_tn5250_dfdpck_toprowflag2_4 = -1;
-static int hf_tn5250_dfdpck_toprowflag2_5 = -1;
-static int hf_tn5250_dfdpck_toprowflag2_6 = -1;
-static int hf_tn5250_dfdpck_toprowflag2_7 = -1;
-static int hf_tn5250_dfdpck_toprowflag3 = -1;
-static int hf_tn5250_dfdpck_toprowflag3_0 = -1;
-static int hf_tn5250_dfdpck_toprowflag3_1 = -1;
-static int hf_tn5250_dfdpck_toprowflag3_2 = -1;
-static int hf_tn5250_dfdpck_toprowflag3_3 = -1;
-static int hf_tn5250_dfdpck_toprowflag3_4 = -1;
-static int hf_tn5250_dfdpck_toprowflag3_5 = -1;
-static int hf_tn5250_dfdpck_toprowflag3_6 = -1;
-static int hf_tn5250_dfdpck_toprowflag3_7 = -1;
-static int hf_tn5250_dorm_ec = -1;
-static int hf_tn5250_dorm_id = -1;
-static int hf_tn5250_dorm_length = -1;
-static int hf_tn5250_dorm_mt = -1;
-static int hf_tn5250_dpo_displace_characters = -1;
-static int hf_tn5250_dpo_flag1 = -1;
-static int hf_tn5250_dpo_flag1_0 = -1;
-static int hf_tn5250_dpo_flag1_1 = -1;
-static int hf_tn5250_dpo_flag1_2 = -1;
-static int hf_tn5250_dpo_flag1_3 = -1;
-static int hf_tn5250_dpo_flag1_4 = -1;
-static int hf_tn5250_dpo_flag1_5 = -1;
-static int hf_tn5250_dpo_flag1_6 = -1;
-static int hf_tn5250_dpo_flag1_7 = -1;
-static int hf_tn5250_dpo_flag2 = -1;
-static int hf_tn5250_dpo_flag2_0 = -1;
-static int hf_tn5250_dpo_flag2_reserved = -1;
-static int hf_tn5250_dpo_partition = -1;
-static int hf_tn5250_dpo_start_location_col = -1;
-static int hf_tn5250_dpo_start_location_row = -1;
-static int hf_tn5250_dpt_ec = -1;
-static int hf_tn5250_dpt_id = -1;
-static int hf_tn5250_ds_output_error = -1;
-static int hf_tn5250_dsc_ev = -1;
-static int hf_tn5250_dsc_partition = -1;
-static int hf_tn5250_dsc_sk = -1;
-static int hf_tn5250_dsl_flag1 = -1;
-static int hf_tn5250_dsl_flag1_0 = -1;
-static int hf_tn5250_dsl_flag1_1 = -1;
-static int hf_tn5250_dsl_flag1_2 = -1;
-static int hf_tn5250_dsl_flag1_reserved = -1;
-static int hf_tn5250_dsl_function = -1;
-static int hf_tn5250_dsl_id = -1;
-static int hf_tn5250_dsl_location = -1;
-static int hf_tn5250_dsl_offset = -1;
-static int hf_tn5250_dsl_partition = -1;
-static int hf_tn5250_dsl_rtl_offset = -1;
-static int hf_tn5250_dtsf_first_line = -1;
-static int hf_tn5250_dtsf_flag1 = -1;
-static int hf_tn5250_dtsf_flag1_0 = -1;
-static int hf_tn5250_dtsf_flag1_1 = -1;
-static int hf_tn5250_dtsf_flag1_2 = -1;
-static int hf_tn5250_dtsf_flag1_3 = -1;
-static int hf_tn5250_dtsf_flag1_4 = -1;
-static int hf_tn5250_dtsf_flag1_5 = -1;
-static int hf_tn5250_dtsf_flag1_6 = -1;
-static int hf_tn5250_dtsf_flag1_7 = -1;
-static int hf_tn5250_dtsf_flag2 = -1;
-static int hf_tn5250_dtsf_flag2_0 = -1;
-static int hf_tn5250_dtsf_flag2_1 = -1;
-static int hf_tn5250_dtsf_flag2_2 = -1;
-static int hf_tn5250_dtsf_flag2_3 = -1;
-static int hf_tn5250_dtsf_flag2_4to7 = -1;
-static int hf_tn5250_dtsf_line_cmd_field_size = -1;
-static int hf_tn5250_dtsf_location_of_pitch = -1;
-static int hf_tn5250_dtsf_partition = -1;
-static int hf_tn5250_dtsf_text_body_height = -1;
-static int hf_tn5250_dtsf_text_body_width = -1;
-static int hf_tn5250_soh_err = -1;
-static int hf_tn5250_error_code = -1;
-static int hf_tn5250_error_state = -1;
-static int hf_tn5250_escape_code = -1;
-static int hf_tn5250_fa_color = -1;
-static int hf_tn5250_fcw = -1;
-static int hf_tn5250_ffw = -1;
-static int hf_tn5250_ffw_adjust = -1;
-static int hf_tn5250_ffw_auto = -1;
-static int hf_tn5250_ffw_bypass = -1;
-static int hf_tn5250_ffw_dup = -1;
-static int hf_tn5250_ffw_fer = -1;
-static int hf_tn5250_ffw_id = -1;
-static int hf_tn5250_ffw_mdt = -1;
-static int hf_tn5250_ffw_me = -1;
-static int hf_tn5250_ffw_monocase = -1;
-static int hf_tn5250_ffw_res = -1;
-static int hf_tn5250_ffw_shift = -1;
-static int hf_tn5250_field_data = -1;
-static int hf_tn5250_foreground_color_attr = -1;
-static int hf_tn5250_header_flags = -1;
-static int hf_tn5250_ideographic_attr = -1;
-static int hf_tn5250_length = -1;
-static int hf_tn5250_length_twobyte = -1;
-static int hf_tn5250_logical_record_length = -1;
-static int hf_tn5250_operation_code = -1;
-static int hf_tn5250_order_code = -1;
-static int hf_tn5250_repeated_character = -1;
-static int hf_tn5250_reserved = -1;
-static int hf_tn5250_roll_bottom_line = -1;
-static int hf_tn5250_roll_flag1 = -1;
-static int hf_tn5250_roll_flag1_0 = -1;
-static int hf_tn5250_roll_flag1_lines = -1;
-static int hf_tn5250_roll_flag1_reserved = -1;
-static int hf_tn5250_roll_top_line = -1;
-static int hf_tn5250_rts_flag1 = -1;
-static int hf_tn5250_rts_flag1_0 = -1;
-static int hf_tn5250_rts_flag1_reserved = -1;
-static int hf_tn5250_rts_partition = -1;
-static int hf_tn5250_sf_attr_flag = -1;
-static int hf_tn5250_sf_class = -1;
-static int hf_tn5250_fa = -1;
-static int hf_tn5250_sf_length = -1;
-static int hf_tn5250_sf_type = -1;
-static int hf_tn5250_sna_record_type = -1;
-static int hf_tn5250_soh_cursor_direction = -1;
-static int hf_tn5250_soh_flags = -1;
-static int hf_tn5250_soh_input_capable_only = -1;
-static int hf_tn5250_soh_pf1 = -1;
-static int hf_tn5250_soh_pf10 = -1;
-static int hf_tn5250_soh_pf11 = -1;
-static int hf_tn5250_soh_pf12 = -1;
-static int hf_tn5250_soh_pf13 = -1;
-static int hf_tn5250_soh_pf14 = -1;
-static int hf_tn5250_soh_pf15 = -1;
-static int hf_tn5250_soh_pf16 = -1;
-static int hf_tn5250_soh_pf16to9 = -1;
-static int hf_tn5250_soh_pf17 = -1;
-static int hf_tn5250_soh_pf18 = -1;
-static int hf_tn5250_soh_pf19 = -1;
-static int hf_tn5250_soh_pf2 = -1;
-static int hf_tn5250_soh_pf20 = -1;
-static int hf_tn5250_soh_pf21 = -1;
-static int hf_tn5250_soh_pf22 = -1;
-static int hf_tn5250_soh_pf23 = -1;
-static int hf_tn5250_soh_pf24 = -1;
-static int hf_tn5250_soh_pf24to17 = -1;
-static int hf_tn5250_soh_pf3 = -1;
-static int hf_tn5250_soh_pf4 = -1;
-static int hf_tn5250_soh_pf5 = -1;
-static int hf_tn5250_soh_pf6 = -1;
-static int hf_tn5250_soh_pf7 = -1;
-static int hf_tn5250_soh_pf8 = -1;
-static int hf_tn5250_soh_pf8to1 = -1;
-static int hf_tn5250_soh_pf9 = -1;
-static int hf_tn5250_soh_resq = -1;
-static int hf_tn5250_soh_screen_reverse = -1;
-static int hf_tn5250_sps_flag1 = -1;
-static int hf_tn5250_sps_flag1_0 = -1;
-static int hf_tn5250_sps_flag1_reserved = -1;
-static int hf_tn5250_sps_left_column = -1;
-static int hf_tn5250_sps_top_row = -1;
-static int hf_tn5250_sps_window_depth = -1;
-static int hf_tn5250_sps_window_width = -1;
-static int hf_tn5250_sys_request_key = -1;
-static int hf_tn5250_test_request_key = -1;
-static int hf_tn5250_unknown_data = -1;
-static int hf_tn5250_variable_record_length = -1;
-static int hf_tn5250_wdsf_cw_bp_flag1_reserved = -1;
-static int hf_tn5250_wdsf_cw_tf_flag_reserved = -1;
-static int hf_tn5250_wdsf_deg_flag2_reserved = -1;
-static int hf_tn5250_wdsf_deg_ms_flag1_reserved = -1;
-static int hf_tn5250_wdsf_ds_ci_flag1_reserved = -1;
-static int hf_tn5250_wdsf_ds_cpda_flag1_reserved = -1;
-static int hf_tn5250_wdsf_ds_ct_flag3_reserved = -1;
-static int hf_tn5250_wdsf_ds_gdc_reserved = -1;
-static int hf_tn5250_wdsf_ds_nws_reserved = -1;
-static int hf_tn5250_wdsf_ds_sbi_flag1_reserved = -1;
-static int hf_tn5250_wdsf_dsb_flag1_reserved = -1;
-static int hf_tn5250_wdsf_pmb_flag1_reserved = -1;
-static int hf_tn5250_wdsf_wdf_flag1_reserved = -1;
-static int hf_tn5250_wdsf_cgl_partition = -1;
-static int hf_tn5250_wdsf_cgl_rectangle_height = -1;
-static int hf_tn5250_wdsf_cgl_rectangle_width = -1;
-static int hf_tn5250_wdsf_cgl_start_column = -1;
-static int hf_tn5250_wdsf_cgl_start_row = -1;
-static int hf_tn5250_wdsf_cw_bp_bbc = -1;
-static int hf_tn5250_wdsf_cw_bp_cba = -1;
-static int hf_tn5250_wdsf_cw_bp_flag1 = -1;
-static int hf_tn5250_wdsf_cw_bp_flag1_1 = -1;
-static int hf_tn5250_wdsf_cw_bp_lbc = -1;
-static int hf_tn5250_wdsf_cw_bp_llbc = -1;
-static int hf_tn5250_wdsf_cw_bp_lrbc = -1;
-static int hf_tn5250_wdsf_cw_bp_mba = -1;
-static int hf_tn5250_wdsf_cw_bp_rbc = -1;
-static int hf_tn5250_wdsf_cw_bp_tbc = -1;
-static int hf_tn5250_wdsf_cw_bp_ulbc = -1;
-static int hf_tn5250_wdsf_cw_bp_urbc = -1;
-static int hf_tn5250_wdsf_cw_flag1 = -1;
-static int hf_tn5250_wdsf_cw_flag1_1 = -1;
-static int hf_tn5250_wdsf_cw_flag1_2 = -1;
-static int hf_tn5250_wdsf_cw_flag1_reserved = -1;
-static int hf_tn5250_wdsf_cw_minor_type = -1;
-static int hf_tn5250_wdsf_cw_tf_cba = -1;
-static int hf_tn5250_wdsf_cw_tf_flag = -1;
-static int hf_tn5250_wdsf_cw_tf_flag_1 = -1;
-static int hf_tn5250_wdsf_cw_tf_flag_orientation = -1;
-static int hf_tn5250_wdsf_cw_tf_mba = -1;
-static int hf_tn5250_wdsf_cw_tf_text = -1;
-static int hf_tn5250_wdsf_cw_wd = -1;
-static int hf_tn5250_wdsf_cw_ww = -1;
-static int hf_tn5250_wdsf_deg_default_color = -1;
-static int hf_tn5250_wdsf_deg_default_line = -1;
-static int hf_tn5250_wdsf_deg_flag1 = -1;
-static int hf_tn5250_wdsf_deg_flag1_0 = -1;
-static int hf_tn5250_wdsf_deg_flag1_reserved = -1;
-static int hf_tn5250_wdsf_deg_flag2 = -1;
-static int hf_tn5250_wdsf_deg_flag2_0 = -1;
-static int hf_tn5250_wdsf_deg_minor_type = -1;
-static int hf_tn5250_wdsf_deg_ms_default_color = -1;
-static int hf_tn5250_wdsf_deg_ms_flag1 = -1;
-static int hf_tn5250_wdsf_deg_ms_flag1_0 = -1;
-static int hf_tn5250_wdsf_deg_ms_horizontal_dimension = -1;
-static int hf_tn5250_wdsf_deg_ms_line_interval = -1;
-static int hf_tn5250_wdsf_deg_ms_line_repeat = -1;
-static int hf_tn5250_wdsf_deg_ms_start_column = -1;
-static int hf_tn5250_wdsf_deg_ms_start_row = -1;
-static int hf_tn5250_wdsf_deg_ms_vertical_dimension = -1;
-static int hf_tn5250_wdsf_deg_partition = -1;
-static int hf_tn5250_wdsf_ds_cancel_aid = -1;
-static int hf_tn5250_wdsf_ds_ci_first_choice = -1;
-static int hf_tn5250_wdsf_ds_ci_flag1 = -1;
-static int hf_tn5250_wdsf_ds_ci_flag1_0 = -1;
-static int hf_tn5250_wdsf_ds_ci_left_push = -1;
-static int hf_tn5250_wdsf_ds_ci_right_push = -1;
-static int hf_tn5250_wdsf_ds_columns = -1;
-static int hf_tn5250_wdsf_ds_country_sel = -1;
-static int hf_tn5250_wdsf_ds_cpda_color_avail = -1;
-static int hf_tn5250_wdsf_ds_cpda_color_indicator = -1;
-static int hf_tn5250_wdsf_ds_cpda_color_sel_avail = -1;
-static int hf_tn5250_wdsf_ds_cpda_color_sel_selected = -1;
-static int hf_tn5250_wdsf_ds_cpda_color_sel_unavail = -1;
-static int hf_tn5250_wdsf_ds_cpda_color_selected = -1;
-static int hf_tn5250_wdsf_ds_cpda_color_unavail = -1;
-static int hf_tn5250_wdsf_ds_cpda_color_unavail_indicator = -1;
-static int hf_tn5250_wdsf_ds_cpda_flag1 = -1;
-static int hf_tn5250_wdsf_ds_cpda_flag1_0 = -1;
-static int hf_tn5250_wdsf_ds_cpda_flag1_1 = -1;
-static int hf_tn5250_wdsf_ds_cpda_flag1_2 = -1;
-static int hf_tn5250_wdsf_ds_cpda_monochrome_avail = -1;
-static int hf_tn5250_wdsf_ds_cpda_monochrome_indicator = -1;
-static int hf_tn5250_wdsf_ds_cpda_monochrome_sel_avail = -1;
-static int hf_tn5250_wdsf_ds_cpda_monochrome_sel_selected = -1;
-static int hf_tn5250_wdsf_ds_cpda_monochrome_sel_unavail = -1;
-static int hf_tn5250_wdsf_ds_cpda_monochrome_selected = -1;
-static int hf_tn5250_wdsf_ds_cpda_monochrome_unavail = -1;
-static int hf_tn5250_wdsf_ds_cpda_monochrome_unavail_indicator = -1;
-static int hf_tn5250_wdsf_ds_ct_aid = -1;
-static int hf_tn5250_wdsf_ds_ct_flag1 = -1;
-static int hf_tn5250_wdsf_ds_ct_flag1_2 = -1;
-static int hf_tn5250_wdsf_ds_ct_flag1_3 = -1;
-static int hf_tn5250_wdsf_ds_ct_flag1_4 = -1;
-static int hf_tn5250_wdsf_ds_ct_flag1_5 = -1;
-static int hf_tn5250_wdsf_ds_ct_flag1_choice_state = -1;
-static int hf_tn5250_wdsf_ds_ct_flag1_numeric_selection = -1;
-static int hf_tn5250_wdsf_ds_ct_flag2 = -1;
-static int hf_tn5250_wdsf_ds_ct_flag2_0 = -1;
-static int hf_tn5250_wdsf_ds_ct_flag2_1 = -1;
-static int hf_tn5250_wdsf_ds_ct_flag2_2 = -1;
-static int hf_tn5250_wdsf_ds_ct_flag2_3 = -1;
-static int hf_tn5250_wdsf_ds_ct_flag2_4 = -1;
-static int hf_tn5250_wdsf_ds_ct_flag2_5 = -1;
-static int hf_tn5250_wdsf_ds_ct_flag2_6 = -1;
-static int hf_tn5250_wdsf_ds_ct_flag2_7 = -1;
-static int hf_tn5250_wdsf_ds_ct_flag3 = -1;
-static int hf_tn5250_wdsf_ds_ct_flag3_0 = -1;
-static int hf_tn5250_wdsf_ds_ct_flag3_1 = -1;
-static int hf_tn5250_wdsf_ds_ct_flag3_2 = -1;
-static int hf_tn5250_wdsf_ds_ct_mnemonic_offset = -1;
-static int hf_tn5250_wdsf_ds_ct_numeric_onebyte = -1;
-static int hf_tn5250_wdsf_ds_ct_numeric_twobyte = -1;
-static int hf_tn5250_wdsf_ds_ct_text = -1;
-static int hf_tn5250_wdsf_ds_flag1 = -1;
-static int hf_tn5250_wdsf_ds_flag1_1 = -1;
-static int hf_tn5250_wdsf_ds_flag1_2 = -1;
-static int hf_tn5250_wdsf_ds_flag1_auto_enter = -1;
-static int hf_tn5250_wdsf_ds_flag1_mouse_characteristics = -1;
-static int hf_tn5250_wdsf_ds_flag1_reserved = -1;
-static int hf_tn5250_wdsf_ds_flag2 = -1;
-static int hf_tn5250_wdsf_ds_flag2_1 = -1;
-static int hf_tn5250_wdsf_ds_flag2_2 = -1;
-static int hf_tn5250_wdsf_ds_flag2_3 = -1;
-static int hf_tn5250_wdsf_ds_flag2_4 = -1;
-static int hf_tn5250_wdsf_ds_flag2_5 = -1;
-static int hf_tn5250_wdsf_ds_flag2_6 = -1;
-static int hf_tn5250_wdsf_ds_flag2_reserved = -1;
-static int hf_tn5250_wdsf_ds_flag3 = -1;
-static int hf_tn5250_wdsf_ds_flag3_1 = -1;
-static int hf_tn5250_wdsf_ds_flag3_reserved = -1;
-static int hf_tn5250_wdsf_ds_gdc = -1;
-static int hf_tn5250_wdsf_ds_gdc_indicators = -1;
-static int hf_tn5250_wdsf_ds_gdc_selection_techniques = -1;
-static int hf_tn5250_wdsf_ds_mbs_color_sep = -1;
-static int hf_tn5250_wdsf_ds_mbs_end_column = -1;
-static int hf_tn5250_wdsf_ds_mbs_flag = -1;
-static int hf_tn5250_wdsf_ds_mbs_flag_0 = -1;
-static int hf_tn5250_wdsf_ds_mbs_flag_1 = -1;
-static int hf_tn5250_wdsf_ds_mbs_flag_reserved = -1;
-static int hf_tn5250_wdsf_ds_mbs_monochrome_sep = -1;
-static int hf_tn5250_wdsf_ds_mbs_sep_char = -1;
-static int hf_tn5250_wdsf_ds_mbs_start_column = -1;
-static int hf_tn5250_wdsf_ds_minor_type = -1;
-static int hf_tn5250_wdsf_ds_numeric_sep = -1;
-static int hf_tn5250_wdsf_ds_nws = -1;
-static int hf_tn5250_wdsf_ds_nws_indicators = -1;
-static int hf_tn5250_wdsf_ds_nws_selection_techniques = -1;
-static int hf_tn5250_wdsf_ds_nws_wout = -1;
-static int hf_tn5250_wdsf_ds_padding = -1;
-static int hf_tn5250_wdsf_ds_rows = -1;
-static int hf_tn5250_wdsf_ds_sbi_bottom_character = -1;
-static int hf_tn5250_wdsf_ds_sbi_color_top_highlight = -1;
-static int hf_tn5250_wdsf_ds_sbi_color_top_highlight_shaft = -1;
-static int hf_tn5250_wdsf_ds_sbi_empty_character = -1;
-static int hf_tn5250_wdsf_ds_sbi_flag1 = -1;
-static int hf_tn5250_wdsf_ds_sbi_flag1_0 = -1;
-static int hf_tn5250_wdsf_ds_sbi_monochrome_top_highlight = -1;
-static int hf_tn5250_wdsf_ds_sbi_monochrome_top_highlight_shaft = -1;
-static int hf_tn5250_wdsf_ds_sbi_slider_character = -1;
-static int hf_tn5250_wdsf_ds_sbi_top_character = -1;
-static int hf_tn5250_wdsf_ds_sliderpos = -1;
-static int hf_tn5250_wdsf_ds_textsize = -1;
-static int hf_tn5250_wdsf_ds_totalrows = -1;
-static int hf_tn5250_wdsf_ds_type = -1;
-static int hf_tn5250_wdsf_dsb_flag1 = -1;
-static int hf_tn5250_wdsf_dsb_flag1_0 = -1;
-static int hf_tn5250_wdsf_dsb_flag1_1 = -1;
-static int hf_tn5250_wdsf_dsb_flag1_7 = -1;
-static int hf_tn5250_wdsf_pmb_first_mouse_event = -1;
-static int hf_tn5250_wdsf_pmb_flag1 = -1;
-static int hf_tn5250_wdsf_pmb_flag1_0 = -1;
-static int hf_tn5250_wdsf_pmb_flag1_1 = -1;
-static int hf_tn5250_wdsf_pmb_flag1_2 = -1;
-static int hf_tn5250_wdsf_pmb_flag1_3 = -1;
-static int hf_tn5250_wdsf_pmb_second_mouse_event = -1;
-static int hf_tn5250_wdsf_ragc_flag1 = -1;
-static int hf_tn5250_wdsf_ragc_flag1_0 = -1;
-static int hf_tn5250_wdsf_ragc_reserved = -1;
-static int hf_tn5250_wdsf_rgw_flag1 = -1;
-static int hf_tn5250_wdsf_rgw_flag1_0 = -1;
-static int hf_tn5250_wdsf_rgw_flag1_1 = -1;
-static int hf_tn5250_wdsf_rgw_reserved = -1;
-static int hf_tn5250_wdsf_sbi_rowscols = -1;
-static int hf_tn5250_wdsf_sbi_sliderpos = -1;
-static int hf_tn5250_wdsf_sbi_total_scroll = -1;
-static int hf_tn5250_wdsf_wdf_flag1 = -1;
-static int hf_tn5250_wdsf_wdf_flag1_0 = -1;
-static int hf_tn5250_wea_prim_attr = -1;
-static int hf_tn5250_wea_prim_attr_blink = -1;
-static int hf_tn5250_wea_prim_attr_col = -1;
-static int hf_tn5250_wea_prim_attr_flag = -1;
-static int hf_tn5250_wea_prim_attr_int = -1;
-static int hf_tn5250_wea_prim_attr_rev = -1;
-static int hf_tn5250_wea_prim_attr_und = -1;
-static int hf_tn5250_wectw_end_column = -1;
-static int hf_tn5250_wectw_start_column = -1;
-static int hf_tn5250_wsf_qss_flag1 = -1;
-static int hf_tn5250_wsf_qss_flag1_0 = -1;
-static int hf_tn5250_wsf_qss_flag1_reserved = -1;
-static int hf_tn5250_wsf_qss_flag2 = -1;
-static int hf_tn5250_wsf_qss_flag2_7 = -1;
-static int hf_tn5250_wsf_qss_flag2_reserved = -1;
-static int hf_tn5250_wssf_cc_flag1 = -1;
-static int hf_tn5250_wssf_cc_flag1_7 = -1;
-static int hf_tn5250_wssf_cc_flag1_reserved = -1;
-static int hf_tn5250_wssf_flag1 = -1;
-static int hf_tn5250_wssf_flag2 = -1;
-static int hf_tn5250_wssf_flag2_0 = -1;
-static int hf_tn5250_wssf_flag2_1 = -1;
-static int hf_tn5250_wssf_flag2_2 = -1;
-static int hf_tn5250_wssf_flag2_3 = -1;
-static int hf_tn5250_wssf_flag2_4 = -1;
-static int hf_tn5250_wssf_flag2_5 = -1;
-static int hf_tn5250_wssf_flag2_6 = -1;
-static int hf_tn5250_wssf_flag2_7 = -1;
-static int hf_tn5250_wssf_ifc_background_color = -1;
-static int hf_tn5250_wssf_ifc_flag1 = -1;
-static int hf_tn5250_wssf_ifc_flag1_0 = -1;
-static int hf_tn5250_wssf_ifc_flag1_1to3 = -1;
-static int hf_tn5250_wssf_ifc_flag1_4 = -1;
-static int hf_tn5250_wssf_ifc_flag1_5 = -1;
-static int hf_tn5250_wssf_ifc_flag1_6 = -1;
-static int hf_tn5250_wssf_ifc_flag1_7 = -1;
-static int hf_tn5250_wssf_ifc_flag2 = -1;
-static int hf_tn5250_wssf_ifc_flag2_0 = -1;
-static int hf_tn5250_wssf_ifc_flag2_1 = -1;
-static int hf_tn5250_wssf_ifc_flag2_7 = -1;
-static int hf_tn5250_wssf_ifc_flag2_reserved = -1;
-static int hf_tn5250_wssf_ifc_foreground_color = -1;
-static int hf_tn5250_wssf_ifc_image_format = -1;
-static int hf_tn5250_wssf_ifc_imagefax_name = -1;
-static int hf_tn5250_wssf_ifc_rotation = -1;
-static int hf_tn5250_wssf_ifc_scaling = -1;
-static int hf_tn5250_wssf_ifc_viewimage_location_col = -1;
-static int hf_tn5250_wssf_ifc_viewimage_location_row = -1;
-static int hf_tn5250_wssf_ifc_viewport_location_col = -1;
-static int hf_tn5250_wssf_ifc_viewport_location_row = -1;
-static int hf_tn5250_wssf_ifc_viewport_size_col = -1;
-static int hf_tn5250_wssf_ifc_viewport_size_row = -1;
-static int hf_tn5250_wssf_ifd_flag1 = -1;
-static int hf_tn5250_wssf_ifd_flag1_0 = -1;
-static int hf_tn5250_wssf_ifd_flag1_reserved = -1;
-static int hf_tn5250_wssf_ifd_imagefax_data = -1;
-static int hf_tn5250_wssf_ifd_imagefax_name = -1;
-static int hf_tn5250_wssf_kbc_flag1 = -1;
-static int hf_tn5250_wssf_kbc_flag1_5 = -1;
-static int hf_tn5250_wssf_kbc_flag1_6 = -1;
-static int hf_tn5250_wssf_kbc_flag1_7 = -1;
-static int hf_tn5250_wssf_kbc_flag1_reserved = -1;
-static int hf_tn5250_wssf_wsc_minor_type = -1;
-static int hf_tn5250_wtd_ccc1 = -1;
-static int hf_tn5250_wtd_ccc2 = -1;
-static int hf_tn5250_wtd_ccc2_alarm = -1;
-static int hf_tn5250_wtd_ccc2_cursor = -1;
-static int hf_tn5250_wtd_ccc2_off = -1;
-static int hf_tn5250_wtd_ccc2_on = -1;
-static int hf_tn5250_wtd_ccc2_res = -1;
-static int hf_tn5250_wtd_ccc2_reset = -1;
-static int hf_tn5250_wtd_ccc2_set = -1;
-static int hf_tn5250_wtd_ccc2_unlock = -1;
-static int hf_tn5250_wts_cld_flag1 = -1;
-static int hf_tn5250_wts_cld_flag1_0 = -1;
-static int hf_tn5250_wts_cld_flag1_1 = -1;
-static int hf_tn5250_wts_cld_flag1_2 = -1;
-static int hf_tn5250_wts_cld_flag1_3 = -1;
-static int hf_tn5250_wts_cld_flag1_4 = -1;
-static int hf_tn5250_wts_cld_flag1_5 = -1;
-static int hf_tn5250_wts_cld_flag1_6 = -1;
-static int hf_tn5250_wts_cld_flag1_7 = -1;
-static int hf_tn5250_wts_cld_flag2 = -1;
-static int hf_tn5250_wts_cld_flag2_0 = -1;
-static int hf_tn5250_wts_cld_flag2_1 = -1;
-static int hf_tn5250_wts_cld_flag2_2 = -1;
-static int hf_tn5250_wts_cld_flag2_3 = -1;
-static int hf_tn5250_wts_cld_flag2_4 = -1;
-static int hf_tn5250_wts_cld_flag2_line_spacing = -1;
-static int hf_tn5250_wts_cld_flag3 = -1;
-static int hf_tn5250_wts_cld_flag3_0 = -1;
-static int hf_tn5250_wts_cld_flag3_1 = -1;
-static int hf_tn5250_wts_cld_flag3_2 = -1;
-static int hf_tn5250_wts_cld_flag3_3 = -1;
-static int hf_tn5250_wts_cld_flag3_4 = -1;
-static int hf_tn5250_wts_cld_flag3_5 = -1;
-static int hf_tn5250_wts_cld_flag3_6 = -1;
-static int hf_tn5250_wts_cld_flag3_7 = -1;
-static int hf_tn5250_wts_cld_io = -1;
-static int hf_tn5250_wts_cld_li = -1;
-static int hf_tn5250_wts_cld_lmo = -1;
-static int hf_tn5250_wts_cld_page_num = -1;
-static int hf_tn5250_wts_cld_row = -1;
-static int hf_tn5250_wts_cld_sli = -1;
-static int hf_tn5250_wts_flag1 = -1;
-static int hf_tn5250_wts_flag1_0 = -1;
-static int hf_tn5250_wts_flag1_1 = -1;
-static int hf_tn5250_wts_flag1_2 = -1;
-static int hf_tn5250_wts_flag1_3 = -1;
-static int hf_tn5250_wts_flag1_reserved = -1;
-static int hf_tn5250_wts_flag2 = -1;
-static int hf_tn5250_wts_flag2_6 = -1;
-static int hf_tn5250_wts_flag2_reserved = -1;
-static int hf_tn5250_wts_flag2_reserved2 = -1;
-static int hf_tn5250_wts_flag3 = -1;
-static int hf_tn5250_wts_flag3_0 = -1;
-static int hf_tn5250_wts_flag3_1 = -1;
-static int hf_tn5250_wts_flag3_2 = -1;
-static int hf_tn5250_wts_flag3_3 = -1;
-static int hf_tn5250_wts_flag3_4 = -1;
-static int hf_tn5250_wts_flag3_5 = -1;
-static int hf_tn5250_wts_flag3_6 = -1;
-static int hf_tn5250_wts_flag3_7 = -1;
-static int hf_tn5250_wts_home_position_col = -1;
-static int hf_tn5250_wts_home_position_row = -1;
-static int hf_tn5250_wts_partition = -1;
-static int hf_tn5250_soh_length = -1;
-static int hf_tn5250_negative_response = -1;
-static int hf_tn5250_qr_ccl = -1;
-static int hf_tn5250_qr_chc= -1;
-static int hf_tn5250_qr_dm= -1;
-static int hf_tn5250_qr_dsn= -1;
-static int hf_tn5250_qr_dt= -1;
-static int hf_tn5250_qr_dtc= -1;
-static int hf_tn5250_qr_eki= -1;
-static int hf_tn5250_qr_flag= -1;
-static int hf_tn5250_qr_flag1= -1;
-static int hf_tn5250_qr_flag2= -1;
-static int hf_tn5250_qr_flag3= -1;
-static int hf_tn5250_qr_flag4= -1;
-static int hf_tn5250_qr_ki= -1;
-static int hf_tn5250_qr_flag1_0= -1;
-static int hf_tn5250_qr_flag1_1= -1;
-static int hf_tn5250_qr_flag1_2= -1;
-static int hf_tn5250_qr_flag1_3= -1;
-static int hf_tn5250_qr_flag1_4= -1;
-static int hf_tn5250_qr_flag1_5= -1;
-static int hf_tn5250_qr_flag1_6= -1;
-static int hf_tn5250_qr_flag1_7= -1;
-static int hf_tn5250_qr_flag2_0to3= -1;
-static int hf_tn5250_qr_flag2_4= -1;
-static int hf_tn5250_qr_flag2_5= -1;
-static int hf_tn5250_qr_flag2_6to7= -1;
-static int hf_tn5250_qr_flag_0= -1;
-static int hf_tn5250_qr_flag_reserved= -1;
-static int hf_tn5250_qr_mni= -1;
-static int hf_tn5250_image_fax_error = -1;
-static int hf_tn5250_vac_data = -1;
-static int hf_tn5250_vac_prefix = -1;
-static int hf_tn5250_wssf_ttw_flag = -1;
-static int hf_tn5250_wssf_ttw_data = -1;
+static int proto_tn5250;
+static int hf_tn5250_aid;
+static int hf_tn5250_attn_key;
+static int hf_tn5250_attribute_type;
+static int hf_tn5250_buffer_x;
+static int hf_tn5250_buffer_y;
+static int hf_tn5250_command_code;
+static int hf_tn5250_ctp_lsid;
+static int hf_tn5250_ctp_mlpp;
+static int hf_tn5250_cua_parm;
+static int hf_tn5250_dawt_char;
+static int hf_tn5250_dawt_id;
+static int hf_tn5250_dawt_length;
+static int hf_tn5250_dawt_message;
+static int hf_tn5250_dckf_function_code;
+static int hf_tn5250_dckf_id;
+static int hf_tn5250_dckf_key_code;
+static int hf_tn5250_dckf_length;
+static int hf_tn5250_dckf_prompt_text;
+static int hf_tn5250_dfdpck_coreflag;
+static int hf_tn5250_dfdpck_coreflag_0;
+static int hf_tn5250_dfdpck_coreflag_1;
+static int hf_tn5250_dfdpck_coreflag_2;
+static int hf_tn5250_dfdpck_coreflag_3;
+static int hf_tn5250_dfdpck_coreflag_4;
+static int hf_tn5250_dfdpck_coreflag_5;
+static int hf_tn5250_dfdpck_coreflag_6;
+static int hf_tn5250_dfdpck_coreflag_7;
+static int hf_tn5250_dfdpck_data_field;
+static int hf_tn5250_dfdpck_partition;
+static int hf_tn5250_dfdpck_toprowflag1;
+static int hf_tn5250_dfdpck_toprowflag1_0;
+static int hf_tn5250_dfdpck_toprowflag1_1;
+static int hf_tn5250_dfdpck_toprowflag1_2;
+static int hf_tn5250_dfdpck_toprowflag1_3;
+static int hf_tn5250_dfdpck_toprowflag1_4;
+static int hf_tn5250_dfdpck_toprowflag1_5;
+static int hf_tn5250_dfdpck_toprowflag1_6;
+static int hf_tn5250_dfdpck_toprowflag1_7;
+static int hf_tn5250_dfdpck_toprowflag2;
+static int hf_tn5250_dfdpck_toprowflag2_0;
+static int hf_tn5250_dfdpck_toprowflag2_1;
+static int hf_tn5250_dfdpck_toprowflag2_2;
+static int hf_tn5250_dfdpck_toprowflag2_3;
+static int hf_tn5250_dfdpck_toprowflag2_4;
+static int hf_tn5250_dfdpck_toprowflag2_5;
+static int hf_tn5250_dfdpck_toprowflag2_6;
+static int hf_tn5250_dfdpck_toprowflag2_7;
+static int hf_tn5250_dfdpck_toprowflag3;
+static int hf_tn5250_dfdpck_toprowflag3_0;
+static int hf_tn5250_dfdpck_toprowflag3_1;
+static int hf_tn5250_dfdpck_toprowflag3_2;
+static int hf_tn5250_dfdpck_toprowflag3_3;
+static int hf_tn5250_dfdpck_toprowflag3_4;
+static int hf_tn5250_dfdpck_toprowflag3_5;
+static int hf_tn5250_dfdpck_toprowflag3_6;
+static int hf_tn5250_dfdpck_toprowflag3_7;
+static int hf_tn5250_dorm_ec;
+static int hf_tn5250_dorm_id;
+static int hf_tn5250_dorm_length;
+static int hf_tn5250_dorm_mt;
+static int hf_tn5250_dpo_displace_characters;
+static int hf_tn5250_dpo_flag1;
+static int hf_tn5250_dpo_flag1_0;
+static int hf_tn5250_dpo_flag1_1;
+static int hf_tn5250_dpo_flag1_2;
+static int hf_tn5250_dpo_flag1_3;
+static int hf_tn5250_dpo_flag1_4;
+static int hf_tn5250_dpo_flag1_5;
+static int hf_tn5250_dpo_flag1_6;
+static int hf_tn5250_dpo_flag1_7;
+static int hf_tn5250_dpo_flag2;
+static int hf_tn5250_dpo_flag2_0;
+static int hf_tn5250_dpo_flag2_reserved;
+static int hf_tn5250_dpo_partition;
+static int hf_tn5250_dpo_start_location_col;
+static int hf_tn5250_dpo_start_location_row;
+static int hf_tn5250_dpt_ec;
+static int hf_tn5250_dpt_id;
+static int hf_tn5250_ds_output_error;
+static int hf_tn5250_dsc_ev;
+static int hf_tn5250_dsc_partition;
+static int hf_tn5250_dsc_sk;
+static int hf_tn5250_dsl_flag1;
+static int hf_tn5250_dsl_flag1_0;
+static int hf_tn5250_dsl_flag1_1;
+static int hf_tn5250_dsl_flag1_2;
+static int hf_tn5250_dsl_flag1_reserved;
+static int hf_tn5250_dsl_function;
+static int hf_tn5250_dsl_id;
+static int hf_tn5250_dsl_location;
+static int hf_tn5250_dsl_offset;
+static int hf_tn5250_dsl_partition;
+static int hf_tn5250_dsl_rtl_offset;
+static int hf_tn5250_dtsf_first_line;
+static int hf_tn5250_dtsf_flag1;
+static int hf_tn5250_dtsf_flag1_0;
+static int hf_tn5250_dtsf_flag1_1;
+static int hf_tn5250_dtsf_flag1_2;
+static int hf_tn5250_dtsf_flag1_3;
+static int hf_tn5250_dtsf_flag1_4;
+static int hf_tn5250_dtsf_flag1_5;
+static int hf_tn5250_dtsf_flag1_6;
+static int hf_tn5250_dtsf_flag1_7;
+static int hf_tn5250_dtsf_flag2;
+static int hf_tn5250_dtsf_flag2_0;
+static int hf_tn5250_dtsf_flag2_1;
+static int hf_tn5250_dtsf_flag2_2;
+static int hf_tn5250_dtsf_flag2_3;
+static int hf_tn5250_dtsf_flag2_4to7;
+static int hf_tn5250_dtsf_line_cmd_field_size;
+static int hf_tn5250_dtsf_location_of_pitch;
+static int hf_tn5250_dtsf_partition;
+static int hf_tn5250_dtsf_text_body_height;
+static int hf_tn5250_dtsf_text_body_width;
+static int hf_tn5250_soh_err;
+static int hf_tn5250_error_code;
+static int hf_tn5250_error_state;
+static int hf_tn5250_escape_code;
+static int hf_tn5250_fa_color;
+static int hf_tn5250_fcw;
+static int hf_tn5250_ffw;
+static int hf_tn5250_ffw_adjust;
+static int hf_tn5250_ffw_auto;
+static int hf_tn5250_ffw_bypass;
+static int hf_tn5250_ffw_dup;
+static int hf_tn5250_ffw_fer;
+static int hf_tn5250_ffw_id;
+static int hf_tn5250_ffw_mdt;
+static int hf_tn5250_ffw_me;
+static int hf_tn5250_ffw_monocase;
+static int hf_tn5250_ffw_res;
+static int hf_tn5250_ffw_shift;
+static int hf_tn5250_field_data;
+static int hf_tn5250_foreground_color_attr;
+static int hf_tn5250_header_flags;
+static int hf_tn5250_ideographic_attr;
+static int hf_tn5250_length;
+static int hf_tn5250_length_twobyte;
+static int hf_tn5250_logical_record_length;
+static int hf_tn5250_operation_code;
+static int hf_tn5250_order_code;
+static int hf_tn5250_repeated_character;
+static int hf_tn5250_reserved;
+static int hf_tn5250_roll_bottom_line;
+static int hf_tn5250_roll_flag1;
+static int hf_tn5250_roll_flag1_0;
+static int hf_tn5250_roll_flag1_lines;
+static int hf_tn5250_roll_flag1_reserved;
+static int hf_tn5250_roll_top_line;
+static int hf_tn5250_rts_flag1;
+static int hf_tn5250_rts_flag1_0;
+static int hf_tn5250_rts_flag1_reserved;
+static int hf_tn5250_rts_partition;
+static int hf_tn5250_sf_attr_flag;
+static int hf_tn5250_sf_class;
+static int hf_tn5250_fa;
+static int hf_tn5250_sf_length;
+static int hf_tn5250_sf_type;
+static int hf_tn5250_sna_record_type;
+static int hf_tn5250_soh_cursor_direction;
+static int hf_tn5250_soh_flags;
+static int hf_tn5250_soh_input_capable_only;
+static int hf_tn5250_soh_pf1;
+static int hf_tn5250_soh_pf10;
+static int hf_tn5250_soh_pf11;
+static int hf_tn5250_soh_pf12;
+static int hf_tn5250_soh_pf13;
+static int hf_tn5250_soh_pf14;
+static int hf_tn5250_soh_pf15;
+static int hf_tn5250_soh_pf16;
+static int hf_tn5250_soh_pf16to9;
+static int hf_tn5250_soh_pf17;
+static int hf_tn5250_soh_pf18;
+static int hf_tn5250_soh_pf19;
+static int hf_tn5250_soh_pf2;
+static int hf_tn5250_soh_pf20;
+static int hf_tn5250_soh_pf21;
+static int hf_tn5250_soh_pf22;
+static int hf_tn5250_soh_pf23;
+static int hf_tn5250_soh_pf24;
+static int hf_tn5250_soh_pf24to17;
+static int hf_tn5250_soh_pf3;
+static int hf_tn5250_soh_pf4;
+static int hf_tn5250_soh_pf5;
+static int hf_tn5250_soh_pf6;
+static int hf_tn5250_soh_pf7;
+static int hf_tn5250_soh_pf8;
+static int hf_tn5250_soh_pf8to1;
+static int hf_tn5250_soh_pf9;
+static int hf_tn5250_soh_resq;
+static int hf_tn5250_soh_screen_reverse;
+static int hf_tn5250_sps_flag1;
+static int hf_tn5250_sps_flag1_0;
+static int hf_tn5250_sps_flag1_reserved;
+static int hf_tn5250_sps_left_column;
+static int hf_tn5250_sps_top_row;
+static int hf_tn5250_sps_window_depth;
+static int hf_tn5250_sps_window_width;
+static int hf_tn5250_sys_request_key;
+static int hf_tn5250_test_request_key;
+static int hf_tn5250_unknown_data;
+static int hf_tn5250_variable_record_length;
+static int hf_tn5250_wdsf_cw_bp_flag1_reserved;
+static int hf_tn5250_wdsf_cw_tf_flag_reserved;
+static int hf_tn5250_wdsf_deg_flag2_reserved;
+static int hf_tn5250_wdsf_deg_ms_flag1_reserved;
+static int hf_tn5250_wdsf_ds_ci_flag1_reserved;
+static int hf_tn5250_wdsf_ds_cpda_flag1_reserved;
+static int hf_tn5250_wdsf_ds_ct_flag3_reserved;
+static int hf_tn5250_wdsf_ds_gdc_reserved;
+static int hf_tn5250_wdsf_ds_nws_reserved;
+static int hf_tn5250_wdsf_ds_sbi_flag1_reserved;
+static int hf_tn5250_wdsf_dsb_flag1_reserved;
+static int hf_tn5250_wdsf_pmb_flag1_reserved;
+static int hf_tn5250_wdsf_wdf_flag1_reserved;
+static int hf_tn5250_wdsf_cgl_partition;
+static int hf_tn5250_wdsf_cgl_rectangle_height;
+static int hf_tn5250_wdsf_cgl_rectangle_width;
+static int hf_tn5250_wdsf_cgl_start_column;
+static int hf_tn5250_wdsf_cgl_start_row;
+static int hf_tn5250_wdsf_cw_bp_bbc;
+static int hf_tn5250_wdsf_cw_bp_cba;
+static int hf_tn5250_wdsf_cw_bp_flag1;
+static int hf_tn5250_wdsf_cw_bp_flag1_1;
+static int hf_tn5250_wdsf_cw_bp_lbc;
+static int hf_tn5250_wdsf_cw_bp_llbc;
+static int hf_tn5250_wdsf_cw_bp_lrbc;
+static int hf_tn5250_wdsf_cw_bp_mba;
+static int hf_tn5250_wdsf_cw_bp_rbc;
+static int hf_tn5250_wdsf_cw_bp_tbc;
+static int hf_tn5250_wdsf_cw_bp_ulbc;
+static int hf_tn5250_wdsf_cw_bp_urbc;
+static int hf_tn5250_wdsf_cw_flag1;
+static int hf_tn5250_wdsf_cw_flag1_1;
+static int hf_tn5250_wdsf_cw_flag1_2;
+static int hf_tn5250_wdsf_cw_flag1_reserved;
+static int hf_tn5250_wdsf_cw_minor_type;
+static int hf_tn5250_wdsf_cw_tf_cba;
+static int hf_tn5250_wdsf_cw_tf_flag;
+static int hf_tn5250_wdsf_cw_tf_flag_1;
+static int hf_tn5250_wdsf_cw_tf_flag_orientation;
+static int hf_tn5250_wdsf_cw_tf_mba;
+static int hf_tn5250_wdsf_cw_tf_text;
+static int hf_tn5250_wdsf_cw_wd;
+static int hf_tn5250_wdsf_cw_ww;
+static int hf_tn5250_wdsf_deg_default_color;
+static int hf_tn5250_wdsf_deg_default_line;
+static int hf_tn5250_wdsf_deg_flag1;
+static int hf_tn5250_wdsf_deg_flag1_0;
+static int hf_tn5250_wdsf_deg_flag1_reserved;
+static int hf_tn5250_wdsf_deg_flag2;
+static int hf_tn5250_wdsf_deg_flag2_0;
+static int hf_tn5250_wdsf_deg_minor_type;
+static int hf_tn5250_wdsf_deg_ms_default_color;
+static int hf_tn5250_wdsf_deg_ms_flag1;
+static int hf_tn5250_wdsf_deg_ms_flag1_0;
+static int hf_tn5250_wdsf_deg_ms_horizontal_dimension;
+static int hf_tn5250_wdsf_deg_ms_line_interval;
+static int hf_tn5250_wdsf_deg_ms_line_repeat;
+static int hf_tn5250_wdsf_deg_ms_start_column;
+static int hf_tn5250_wdsf_deg_ms_start_row;
+static int hf_tn5250_wdsf_deg_ms_vertical_dimension;
+static int hf_tn5250_wdsf_deg_partition;
+static int hf_tn5250_wdsf_ds_cancel_aid;
+static int hf_tn5250_wdsf_ds_ci_first_choice;
+static int hf_tn5250_wdsf_ds_ci_flag1;
+static int hf_tn5250_wdsf_ds_ci_flag1_0;
+static int hf_tn5250_wdsf_ds_ci_left_push;
+static int hf_tn5250_wdsf_ds_ci_right_push;
+static int hf_tn5250_wdsf_ds_columns;
+static int hf_tn5250_wdsf_ds_country_sel;
+static int hf_tn5250_wdsf_ds_cpda_color_avail;
+static int hf_tn5250_wdsf_ds_cpda_color_indicator;
+static int hf_tn5250_wdsf_ds_cpda_color_sel_avail;
+static int hf_tn5250_wdsf_ds_cpda_color_sel_selected;
+static int hf_tn5250_wdsf_ds_cpda_color_sel_unavail;
+static int hf_tn5250_wdsf_ds_cpda_color_selected;
+static int hf_tn5250_wdsf_ds_cpda_color_unavail;
+static int hf_tn5250_wdsf_ds_cpda_color_unavail_indicator;
+static int hf_tn5250_wdsf_ds_cpda_flag1;
+static int hf_tn5250_wdsf_ds_cpda_flag1_0;
+static int hf_tn5250_wdsf_ds_cpda_flag1_1;
+static int hf_tn5250_wdsf_ds_cpda_flag1_2;
+static int hf_tn5250_wdsf_ds_cpda_monochrome_avail;
+static int hf_tn5250_wdsf_ds_cpda_monochrome_indicator;
+static int hf_tn5250_wdsf_ds_cpda_monochrome_sel_avail;
+static int hf_tn5250_wdsf_ds_cpda_monochrome_sel_selected;
+static int hf_tn5250_wdsf_ds_cpda_monochrome_sel_unavail;
+static int hf_tn5250_wdsf_ds_cpda_monochrome_selected;
+static int hf_tn5250_wdsf_ds_cpda_monochrome_unavail;
+static int hf_tn5250_wdsf_ds_cpda_monochrome_unavail_indicator;
+static int hf_tn5250_wdsf_ds_ct_aid;
+static int hf_tn5250_wdsf_ds_ct_flag1;
+static int hf_tn5250_wdsf_ds_ct_flag1_2;
+static int hf_tn5250_wdsf_ds_ct_flag1_3;
+static int hf_tn5250_wdsf_ds_ct_flag1_4;
+static int hf_tn5250_wdsf_ds_ct_flag1_5;
+static int hf_tn5250_wdsf_ds_ct_flag1_choice_state;
+static int hf_tn5250_wdsf_ds_ct_flag1_numeric_selection;
+static int hf_tn5250_wdsf_ds_ct_flag2;
+static int hf_tn5250_wdsf_ds_ct_flag2_0;
+static int hf_tn5250_wdsf_ds_ct_flag2_1;
+static int hf_tn5250_wdsf_ds_ct_flag2_2;
+static int hf_tn5250_wdsf_ds_ct_flag2_3;
+static int hf_tn5250_wdsf_ds_ct_flag2_4;
+static int hf_tn5250_wdsf_ds_ct_flag2_5;
+static int hf_tn5250_wdsf_ds_ct_flag2_6;
+static int hf_tn5250_wdsf_ds_ct_flag2_7;
+static int hf_tn5250_wdsf_ds_ct_flag3;
+static int hf_tn5250_wdsf_ds_ct_flag3_0;
+static int hf_tn5250_wdsf_ds_ct_flag3_1;
+static int hf_tn5250_wdsf_ds_ct_flag3_2;
+static int hf_tn5250_wdsf_ds_ct_mnemonic_offset;
+static int hf_tn5250_wdsf_ds_ct_numeric_onebyte;
+static int hf_tn5250_wdsf_ds_ct_numeric_twobyte;
+static int hf_tn5250_wdsf_ds_ct_text;
+static int hf_tn5250_wdsf_ds_flag1;
+static int hf_tn5250_wdsf_ds_flag1_1;
+static int hf_tn5250_wdsf_ds_flag1_2;
+static int hf_tn5250_wdsf_ds_flag1_auto_enter;
+static int hf_tn5250_wdsf_ds_flag1_mouse_characteristics;
+static int hf_tn5250_wdsf_ds_flag1_reserved;
+static int hf_tn5250_wdsf_ds_flag2;
+static int hf_tn5250_wdsf_ds_flag2_1;
+static int hf_tn5250_wdsf_ds_flag2_2;
+static int hf_tn5250_wdsf_ds_flag2_3;
+static int hf_tn5250_wdsf_ds_flag2_4;
+static int hf_tn5250_wdsf_ds_flag2_5;
+static int hf_tn5250_wdsf_ds_flag2_6;
+static int hf_tn5250_wdsf_ds_flag2_reserved;
+static int hf_tn5250_wdsf_ds_flag3;
+static int hf_tn5250_wdsf_ds_flag3_1;
+static int hf_tn5250_wdsf_ds_flag3_reserved;
+static int hf_tn5250_wdsf_ds_gdc;
+static int hf_tn5250_wdsf_ds_gdc_indicators;
+static int hf_tn5250_wdsf_ds_gdc_selection_techniques;
+static int hf_tn5250_wdsf_ds_mbs_color_sep;
+static int hf_tn5250_wdsf_ds_mbs_end_column;
+static int hf_tn5250_wdsf_ds_mbs_flag;
+static int hf_tn5250_wdsf_ds_mbs_flag_0;
+static int hf_tn5250_wdsf_ds_mbs_flag_1;
+static int hf_tn5250_wdsf_ds_mbs_flag_reserved;
+static int hf_tn5250_wdsf_ds_mbs_monochrome_sep;
+static int hf_tn5250_wdsf_ds_mbs_sep_char;
+static int hf_tn5250_wdsf_ds_mbs_start_column;
+static int hf_tn5250_wdsf_ds_minor_type;
+static int hf_tn5250_wdsf_ds_numeric_sep;
+static int hf_tn5250_wdsf_ds_nws;
+static int hf_tn5250_wdsf_ds_nws_indicators;
+static int hf_tn5250_wdsf_ds_nws_selection_techniques;
+static int hf_tn5250_wdsf_ds_nws_wout;
+static int hf_tn5250_wdsf_ds_padding;
+static int hf_tn5250_wdsf_ds_rows;
+static int hf_tn5250_wdsf_ds_sbi_bottom_character;
+static int hf_tn5250_wdsf_ds_sbi_color_top_highlight;
+static int hf_tn5250_wdsf_ds_sbi_color_top_highlight_shaft;
+static int hf_tn5250_wdsf_ds_sbi_empty_character;
+static int hf_tn5250_wdsf_ds_sbi_flag1;
+static int hf_tn5250_wdsf_ds_sbi_flag1_0;
+static int hf_tn5250_wdsf_ds_sbi_monochrome_top_highlight;
+static int hf_tn5250_wdsf_ds_sbi_monochrome_top_highlight_shaft;
+static int hf_tn5250_wdsf_ds_sbi_slider_character;
+static int hf_tn5250_wdsf_ds_sbi_top_character;
+static int hf_tn5250_wdsf_ds_sliderpos;
+static int hf_tn5250_wdsf_ds_textsize;
+static int hf_tn5250_wdsf_ds_totalrows;
+static int hf_tn5250_wdsf_ds_type;
+static int hf_tn5250_wdsf_dsb_flag1;
+static int hf_tn5250_wdsf_dsb_flag1_0;
+static int hf_tn5250_wdsf_dsb_flag1_1;
+static int hf_tn5250_wdsf_dsb_flag1_7;
+static int hf_tn5250_wdsf_pmb_first_mouse_event;
+static int hf_tn5250_wdsf_pmb_flag1;
+static int hf_tn5250_wdsf_pmb_flag1_0;
+static int hf_tn5250_wdsf_pmb_flag1_1;
+static int hf_tn5250_wdsf_pmb_flag1_2;
+static int hf_tn5250_wdsf_pmb_flag1_3;
+static int hf_tn5250_wdsf_pmb_second_mouse_event;
+static int hf_tn5250_wdsf_ragc_flag1;
+static int hf_tn5250_wdsf_ragc_flag1_0;
+static int hf_tn5250_wdsf_ragc_reserved;
+static int hf_tn5250_wdsf_rgw_flag1;
+static int hf_tn5250_wdsf_rgw_flag1_0;
+static int hf_tn5250_wdsf_rgw_flag1_1;
+static int hf_tn5250_wdsf_rgw_reserved;
+static int hf_tn5250_wdsf_sbi_rowscols;
+static int hf_tn5250_wdsf_sbi_sliderpos;
+static int hf_tn5250_wdsf_sbi_total_scroll;
+static int hf_tn5250_wdsf_wdf_flag1;
+static int hf_tn5250_wdsf_wdf_flag1_0;
+static int hf_tn5250_wea_prim_attr;
+static int hf_tn5250_wea_prim_attr_blink;
+static int hf_tn5250_wea_prim_attr_col;
+static int hf_tn5250_wea_prim_attr_flag;
+static int hf_tn5250_wea_prim_attr_int;
+static int hf_tn5250_wea_prim_attr_rev;
+static int hf_tn5250_wea_prim_attr_und;
+static int hf_tn5250_wectw_end_column;
+static int hf_tn5250_wectw_start_column;
+static int hf_tn5250_wsf_qss_flag1;
+static int hf_tn5250_wsf_qss_flag1_0;
+static int hf_tn5250_wsf_qss_flag1_reserved;
+static int hf_tn5250_wsf_qss_flag2;
+static int hf_tn5250_wsf_qss_flag2_7;
+static int hf_tn5250_wsf_qss_flag2_reserved;
+static int hf_tn5250_wssf_cc_flag1;
+static int hf_tn5250_wssf_cc_flag1_7;
+static int hf_tn5250_wssf_cc_flag1_reserved;
+static int hf_tn5250_wssf_flag1;
+static int hf_tn5250_wssf_flag2;
+static int hf_tn5250_wssf_flag2_0;
+static int hf_tn5250_wssf_flag2_1;
+static int hf_tn5250_wssf_flag2_2;
+static int hf_tn5250_wssf_flag2_3;
+static int hf_tn5250_wssf_flag2_4;
+static int hf_tn5250_wssf_flag2_5;
+static int hf_tn5250_wssf_flag2_6;
+static int hf_tn5250_wssf_flag2_7;
+static int hf_tn5250_wssf_ifc_background_color;
+static int hf_tn5250_wssf_ifc_flag1;
+static int hf_tn5250_wssf_ifc_flag1_0;
+static int hf_tn5250_wssf_ifc_flag1_1to3;
+static int hf_tn5250_wssf_ifc_flag1_4;
+static int hf_tn5250_wssf_ifc_flag1_5;
+static int hf_tn5250_wssf_ifc_flag1_6;
+static int hf_tn5250_wssf_ifc_flag1_7;
+static int hf_tn5250_wssf_ifc_flag2;
+static int hf_tn5250_wssf_ifc_flag2_0;
+static int hf_tn5250_wssf_ifc_flag2_1;
+static int hf_tn5250_wssf_ifc_flag2_7;
+static int hf_tn5250_wssf_ifc_flag2_reserved;
+static int hf_tn5250_wssf_ifc_foreground_color;
+static int hf_tn5250_wssf_ifc_image_format;
+static int hf_tn5250_wssf_ifc_imagefax_name;
+static int hf_tn5250_wssf_ifc_rotation;
+static int hf_tn5250_wssf_ifc_scaling;
+static int hf_tn5250_wssf_ifc_viewimage_location_col;
+static int hf_tn5250_wssf_ifc_viewimage_location_row;
+static int hf_tn5250_wssf_ifc_viewport_location_col;
+static int hf_tn5250_wssf_ifc_viewport_location_row;
+static int hf_tn5250_wssf_ifc_viewport_size_col;
+static int hf_tn5250_wssf_ifc_viewport_size_row;
+static int hf_tn5250_wssf_ifd_flag1;
+static int hf_tn5250_wssf_ifd_flag1_0;
+static int hf_tn5250_wssf_ifd_flag1_reserved;
+static int hf_tn5250_wssf_ifd_imagefax_data;
+static int hf_tn5250_wssf_ifd_imagefax_name;
+static int hf_tn5250_wssf_kbc_flag1;
+static int hf_tn5250_wssf_kbc_flag1_5;
+static int hf_tn5250_wssf_kbc_flag1_6;
+static int hf_tn5250_wssf_kbc_flag1_7;
+static int hf_tn5250_wssf_kbc_flag1_reserved;
+static int hf_tn5250_wssf_wsc_minor_type;
+static int hf_tn5250_wtd_ccc1;
+static int hf_tn5250_wtd_ccc2;
+static int hf_tn5250_wtd_ccc2_alarm;
+static int hf_tn5250_wtd_ccc2_cursor;
+static int hf_tn5250_wtd_ccc2_off;
+static int hf_tn5250_wtd_ccc2_on;
+static int hf_tn5250_wtd_ccc2_res;
+static int hf_tn5250_wtd_ccc2_reset;
+static int hf_tn5250_wtd_ccc2_set;
+static int hf_tn5250_wtd_ccc2_unlock;
+static int hf_tn5250_wts_cld_flag1;
+static int hf_tn5250_wts_cld_flag1_0;
+static int hf_tn5250_wts_cld_flag1_1;
+static int hf_tn5250_wts_cld_flag1_2;
+static int hf_tn5250_wts_cld_flag1_3;
+static int hf_tn5250_wts_cld_flag1_4;
+static int hf_tn5250_wts_cld_flag1_5;
+static int hf_tn5250_wts_cld_flag1_6;
+static int hf_tn5250_wts_cld_flag1_7;
+static int hf_tn5250_wts_cld_flag2;
+static int hf_tn5250_wts_cld_flag2_0;
+static int hf_tn5250_wts_cld_flag2_1;
+static int hf_tn5250_wts_cld_flag2_2;
+static int hf_tn5250_wts_cld_flag2_3;
+static int hf_tn5250_wts_cld_flag2_4;
+static int hf_tn5250_wts_cld_flag2_line_spacing;
+static int hf_tn5250_wts_cld_flag3;
+static int hf_tn5250_wts_cld_flag3_0;
+static int hf_tn5250_wts_cld_flag3_1;
+static int hf_tn5250_wts_cld_flag3_2;
+static int hf_tn5250_wts_cld_flag3_3;
+static int hf_tn5250_wts_cld_flag3_4;
+static int hf_tn5250_wts_cld_flag3_5;
+static int hf_tn5250_wts_cld_flag3_6;
+static int hf_tn5250_wts_cld_flag3_7;
+static int hf_tn5250_wts_cld_io;
+static int hf_tn5250_wts_cld_li;
+static int hf_tn5250_wts_cld_lmo;
+static int hf_tn5250_wts_cld_page_num;
+static int hf_tn5250_wts_cld_row;
+static int hf_tn5250_wts_cld_sli;
+static int hf_tn5250_wts_flag1;
+static int hf_tn5250_wts_flag1_0;
+static int hf_tn5250_wts_flag1_1;
+static int hf_tn5250_wts_flag1_2;
+static int hf_tn5250_wts_flag1_3;
+static int hf_tn5250_wts_flag1_reserved;
+static int hf_tn5250_wts_flag2;
+static int hf_tn5250_wts_flag2_6;
+static int hf_tn5250_wts_flag2_reserved;
+static int hf_tn5250_wts_flag2_reserved2;
+static int hf_tn5250_wts_flag3;
+static int hf_tn5250_wts_flag3_0;
+static int hf_tn5250_wts_flag3_1;
+static int hf_tn5250_wts_flag3_2;
+static int hf_tn5250_wts_flag3_3;
+static int hf_tn5250_wts_flag3_4;
+static int hf_tn5250_wts_flag3_5;
+static int hf_tn5250_wts_flag3_6;
+static int hf_tn5250_wts_flag3_7;
+static int hf_tn5250_wts_home_position_col;
+static int hf_tn5250_wts_home_position_row;
+static int hf_tn5250_wts_partition;
+static int hf_tn5250_soh_length;
+static int hf_tn5250_negative_response;
+static int hf_tn5250_qr_ccl;
+static int hf_tn5250_qr_chc;
+static int hf_tn5250_qr_dm;
+static int hf_tn5250_qr_dsn;
+static int hf_tn5250_qr_dt;
+static int hf_tn5250_qr_dtc;
+static int hf_tn5250_qr_eki;
+static int hf_tn5250_qr_flag;
+static int hf_tn5250_qr_flag1;
+static int hf_tn5250_qr_flag2;
+static int hf_tn5250_qr_flag3;
+static int hf_tn5250_qr_flag4;
+static int hf_tn5250_qr_ki;
+static int hf_tn5250_qr_flag1_0;
+static int hf_tn5250_qr_flag1_1;
+static int hf_tn5250_qr_flag1_2;
+static int hf_tn5250_qr_flag1_3;
+static int hf_tn5250_qr_flag1_4;
+static int hf_tn5250_qr_flag1_5;
+static int hf_tn5250_qr_flag1_6;
+static int hf_tn5250_qr_flag1_7;
+static int hf_tn5250_qr_flag2_0to3;
+static int hf_tn5250_qr_flag2_4;
+static int hf_tn5250_qr_flag2_5;
+static int hf_tn5250_qr_flag2_6to7;
+static int hf_tn5250_qr_flag_0;
+static int hf_tn5250_qr_flag_reserved;
+static int hf_tn5250_qr_mni;
+static int hf_tn5250_image_fax_error;
+static int hf_tn5250_vac_data;
+static int hf_tn5250_vac_prefix;
+static int hf_tn5250_wssf_ttw_flag;
+static int hf_tn5250_wssf_ttw_data;
 
-static gint ett_tn5250 = -1;
-static gint ett_tn5250_wcc = -1;
-static gint ett_sf = -1;
-static gint ett_tn5250_field_attribute = -1;
-static gint ett_tn5250_dfdpck_mask = -1;
-static gint ett_tn5250_field_validation = -1;
-static gint ett_tn5250_header_flags = -1;
-static gint ett_tn5250_roll_mask = -1;
-static gint ett_tn5250_soh_mask = -1;
-static gint ett_tn5250_soh_pf16to9_mask = -1;
-static gint ett_tn5250_soh_pf24to17_mask = -1;
-static gint ett_tn5250_soh_pf8to1_mask = -1;
-static gint ett_tn5250_sps_mask = -1;
-static gint ett_tn5250_wdsf_cw_bp_mask = -1;
-static gint ett_tn5250_wdsf_cw_mask = -1;
-static gint ett_tn5250_wdsf_cw_tf_mask = -1;
-static gint ett_tn5250_wdsf_deg_mask = -1;
-static gint ett_tn5250_wdsf_deg_ms_mask = -1;
-static gint ett_tn5250_wdsf_ds_ci_mask = -1;
-static gint ett_tn5250_wdsf_ds_cpda_mask = -1;
-static gint ett_tn5250_wdsf_ds_ct_mask = -1;
-static gint ett_tn5250_wdsf_ds_mask = -1;
-static gint ett_tn5250_wdsf_ds_mbs_mask = -1;
-static gint ett_tn5250_wdsf_ds_sbi_mask = -1;
-static gint ett_tn5250_wdsf_dsb_mask = -1;
-static gint ett_tn5250_wdsf_pmb_mask = -1;
-static gint ett_tn5250_wdsf_ragc_mask = -1;
-static gint ett_tn5250_wdsf_rgw_mask = -1;
-static gint ett_tn5250_wdsf_wdf_mask = -1;
-static gint ett_tn5250_wsf_dpo_mask = -1;
-static gint ett_tn5250_wsf_dsl_mask = -1;
-static gint ett_tn5250_wsf_dtsf_mask = -1;
-static gint ett_tn5250_wsf_qss_mask = -1;
-static gint ett_tn5250_wsf_rts_mask = -1;
-static gint ett_tn5250_wssf_cc_mask = -1;
-static gint ett_tn5250_wssf_ifc_mask = -1;
-static gint ett_tn5250_wssf_ifd_mask = -1;
-static gint ett_tn5250_wssf_kbc_mask = -1;
-static gint ett_tn5250_wssf_mask = -1;
-static gint ett_tn5250_wts_mask = -1;
-static gint ett_tn5250_qr_mask = -1;
-static gint ett_tn5250_wea_prim_attr = -1;
-static gint ett_cc = -1;
+static int ett_tn5250;
+static int ett_tn5250_wcc;
+static int ett_sf;
+static int ett_tn5250_field_attribute;
+static int ett_tn5250_dfdpck_mask;
+static int ett_tn5250_field_validation;
+static int ett_tn5250_header_flags;
+static int ett_tn5250_roll_mask;
+static int ett_tn5250_soh_mask;
+static int ett_tn5250_soh_pf16to9_mask;
+static int ett_tn5250_soh_pf24to17_mask;
+static int ett_tn5250_soh_pf8to1_mask;
+static int ett_tn5250_sps_mask;
+static int ett_tn5250_wdsf_cw_bp_mask;
+static int ett_tn5250_wdsf_cw_mask;
+static int ett_tn5250_wdsf_cw_tf_mask;
+static int ett_tn5250_wdsf_deg_mask;
+static int ett_tn5250_wdsf_deg_ms_mask;
+static int ett_tn5250_wdsf_ds_ci_mask;
+static int ett_tn5250_wdsf_ds_cpda_mask;
+static int ett_tn5250_wdsf_ds_ct_mask;
+static int ett_tn5250_wdsf_ds_mask;
+static int ett_tn5250_wdsf_ds_mbs_mask;
+static int ett_tn5250_wdsf_ds_sbi_mask;
+static int ett_tn5250_wdsf_dsb_mask;
+static int ett_tn5250_wdsf_pmb_mask;
+static int ett_tn5250_wdsf_ragc_mask;
+static int ett_tn5250_wdsf_rgw_mask;
+static int ett_tn5250_wdsf_wdf_mask;
+static int ett_tn5250_wsf_dpo_mask;
+static int ett_tn5250_wsf_dsl_mask;
+static int ett_tn5250_wsf_dtsf_mask;
+static int ett_tn5250_wsf_qss_mask;
+static int ett_tn5250_wsf_rts_mask;
+static int ett_tn5250_wssf_cc_mask;
+static int ett_tn5250_wssf_ifc_mask;
+static int ett_tn5250_wssf_ifd_mask;
+static int ett_tn5250_wssf_kbc_mask;
+static int ett_tn5250_wssf_mask;
+static int ett_tn5250_wts_mask;
+static int ett_tn5250_qr_mask;
+static int ett_tn5250_wea_prim_attr;
+static int ett_cc;
 
-static expert_field ei_tn5250_command_code = EI_INIT;
+static expert_field ei_tn5250_command_code;
 
-static tn5250_conv_info_t *tn5250_info_items;
-
-static guint32 dissect_tn5250_orders_and_data(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset);
+static uint32_t dissect_tn5250_orders_and_data(proto_tree *tn5250_tree, tvbuff_t *tvb, int offset);
 
 typedef struct hf_items {
   int *phf;
-  gint bitmask_ett;
+  int bitmask_ett;
   int length;
-  const int **bitmask;
-  gint encoding;
+  int * const *bitmask;
+  int encoding;
 } hf_items;
 
 /* Utility Functions */
 
-static gint
-tn5250_is_valid_aid(gint aid)
+static int
+tn5250_is_valid_aid(int aid)
 {
   switch (aid) {
     case AID_CLEAR:
@@ -2963,8 +2951,8 @@ tn5250_is_valid_aid(gint aid)
   return 0;
 }
 
-static guint32
-tn5250_add_hf_items(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset,
+static uint32_t
+tn5250_add_hf_items(proto_tree *tn5250_tree, tvbuff_t *tvb, int offset,
                     const hf_items *fields)
 {
   int start=offset, byte;
@@ -2973,7 +2961,7 @@ tn5250_add_hf_items(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset,
   for (i = 0; fields[i].phf; ++i) {
     if (fields[i].bitmask == 0) {
       /* Skip an 0xFF byte acting as an escape byte */
-      byte = tvb_get_guint8(tvb,offset);
+      byte = tvb_get_uint8(tvb,offset);
       if (byte == 0xFF) {
         offset++;
       }
@@ -2989,9 +2977,9 @@ tn5250_add_hf_items(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset,
   return (offset - start);
 }
 
-static guint32
-dissect_unknown_data(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset,
-                     gint start, gint sf_length)
+static uint32_t
+dissect_unknown_data(proto_tree *tn5250_tree, tvbuff_t *tvb, int offset,
+                     int start, int sf_length)
 {
   int len_left;
 
@@ -3005,11 +2993,11 @@ dissect_unknown_data(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset,
   return 0;
 }
 
-static guint32
-dissect_wcc(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
+static uint32_t
+dissect_wcc(proto_tree *tn5250_tree, tvbuff_t *tvb, int offset)
 {
 
-  static const int *wcc_byte[] = {
+  static int * const wcc_byte[] = {
     &hf_tn5250_wtd_ccc2_res,
     &hf_tn5250_wtd_ccc2_cursor,
     &hf_tn5250_wtd_ccc2_reset,
@@ -3033,8 +3021,8 @@ dissect_wcc(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
 
 }
 
-static guint32
-dissect_row_column(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
+static uint32_t
+dissect_row_column(proto_tree *tn5250_tree, tvbuff_t *tvb, int offset)
 {
   int start = offset;
   proto_tree_add_item(tn5250_tree, hf_tn5250_buffer_x, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -3051,15 +3039,15 @@ dissect_row_column(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
 /* Start: Handle WCC, Orders and Data */
 
 /* 15.6.8 Erase to Address Order */
-static guint32
-dissect_erase_to_address(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
+static uint32_t
+dissect_erase_to_address(proto_tree *tn5250_tree, tvbuff_t *tvb, int offset)
 {
   int start = offset;
   int i, length = 0;
 
   dissect_row_column(tn5250_tree, tvb, offset);
 
-  length = tvb_get_guint8(tvb, offset);
+  length = tvb_get_uint8(tvb, offset);
   proto_tree_add_item(tn5250_tree, hf_tn5250_length, tvb, offset, 1, ENC_BIG_ENDIAN);
   offset++;
 
@@ -3073,34 +3061,34 @@ dissect_erase_to_address(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
 }
 
 /* 15.6.9 Start of Header Order */
-static guint32
-dissect_start_of_header(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
+static uint32_t
+dissect_start_of_header(proto_tree *tn5250_tree, tvbuff_t *tvb, int offset)
 {
   int start = offset;
 
   /*TODO: Warn on invalid length. <= 7 */
-  static const int *byte[] = {
+  static int * const byte[] = {
     &hf_tn5250_soh_cursor_direction,
     &hf_tn5250_soh_screen_reverse,
     &hf_tn5250_soh_input_capable_only,
     NULL
   };
 
-  static const int *byte1[] = {
+  static int * const byte1[] = {
     &hf_tn5250_soh_pf24, &hf_tn5250_soh_pf23, &hf_tn5250_soh_pf22,
     &hf_tn5250_soh_pf21, &hf_tn5250_soh_pf20, &hf_tn5250_soh_pf19,
     &hf_tn5250_soh_pf18, &hf_tn5250_soh_pf17,
     NULL
   };
 
-  static const int *byte2[] = {
+  static int * const byte2[] = {
     &hf_tn5250_soh_pf16, &hf_tn5250_soh_pf15, &hf_tn5250_soh_pf14,
     &hf_tn5250_soh_pf13, &hf_tn5250_soh_pf12, &hf_tn5250_soh_pf11,
     &hf_tn5250_soh_pf10, &hf_tn5250_soh_pf9,
     NULL
   };
 
-  static const int *byte3[] = {
+  static int * const byte3[] = {
     &hf_tn5250_soh_pf8, &hf_tn5250_soh_pf7, &hf_tn5250_soh_pf6,
     &hf_tn5250_soh_pf5, &hf_tn5250_soh_pf4, &hf_tn5250_soh_pf3,
     &hf_tn5250_soh_pf2, &hf_tn5250_soh_pf1,
@@ -3127,8 +3115,8 @@ dissect_start_of_header(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
 }
 
 /* 15.6.10 Transparent Data */
-static guint32
-dissect_twobyte_length_and_data(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
+static uint32_t
+dissect_twobyte_length_and_data(proto_tree *tn5250_tree, tvbuff_t *tvb, int offset)
 {
   int start = offset;
   int length = 0;
@@ -3140,7 +3128,7 @@ dissect_twobyte_length_and_data(proto_tree *tn5250_tree, tvbuff_t *tvb, gint off
 
   if (tvb_reported_length_remaining(tvb, offset) >= length) {
     proto_tree_add_item(tn5250_tree, hf_tn5250_field_data, tvb, offset,
-                        length, ENC_EBCDIC|ENC_NA);
+                        length, ENC_EBCDIC);
     offset+=length;
   } else {
     offset += dissect_unknown_data(tn5250_tree, tvb, offset, start, length);
@@ -3150,20 +3138,20 @@ dissect_twobyte_length_and_data(proto_tree *tn5250_tree, tvbuff_t *tvb, gint off
 }
 
 /* 15.6.11 Write Extended Attribute Order */
-static guint32
-dissect_field_attribute_pair(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
+static uint32_t
+dissect_field_attribute_pair(proto_tree *tn5250_tree, tvbuff_t *tvb, int offset)
 {
   int start = offset;
   int attribute_type;
 
-  static const int *byte[] = {
+  static int * const byte[] = {
      &hf_tn5250_wea_prim_attr_flag, &hf_tn5250_wea_prim_attr_col,
      &hf_tn5250_wea_prim_attr_blink, &hf_tn5250_wea_prim_attr_und,
      &hf_tn5250_wea_prim_attr_int, &hf_tn5250_wea_prim_attr_rev,
      NULL
   };
 
-  attribute_type = tvb_get_guint8(tvb, offset);
+  attribute_type = tvb_get_uint8(tvb, offset);
   proto_tree_add_item(tn5250_tree, hf_tn5250_attribute_type, tvb, offset, 1,
                       ENC_BIG_ENDIAN);
   offset++;
@@ -3192,14 +3180,14 @@ dissect_field_attribute_pair(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset
 }
 
 /* 15.6.12 Start of Field Order */
-static guint32
-dissect_start_of_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
+static uint32_t
+dissect_start_of_field(proto_tree *tn5250_tree, tvbuff_t *tvb, int offset)
 {
   int start = offset;
   int done = 0;
   int ffw = 0, fcw = 0, fa = 0;
 
-  static const int *byte[] = {
+  static int * const byte[] = {
     &hf_tn5250_ffw_id,
     &hf_tn5250_ffw_bypass,
     &hf_tn5250_ffw_dup,
@@ -3208,7 +3196,7 @@ dissect_start_of_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
     NULL
   };
 
-  static const int *byte1[] = {
+  static int * const byte1[] = {
     &hf_tn5250_ffw_auto,
     &hf_tn5250_ffw_fer,
     &hf_tn5250_ffw_monocase,
@@ -3218,7 +3206,7 @@ dissect_start_of_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
     NULL
   };
 
-  static const int *fabyte[] = {
+  static int * const fabyte[] = {
     &hf_tn5250_sf_attr_flag, &hf_tn5250_wea_prim_attr_col,
     &hf_tn5250_wea_prim_attr_blink, &hf_tn5250_wea_prim_attr_und,
     &hf_tn5250_wea_prim_attr_int, &hf_tn5250_wea_prim_attr_rev,
@@ -3231,13 +3219,13 @@ dissect_start_of_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
     { NULL, 0, 0, 0, 0 }
   };
 
-  ffw = tvb_get_guint8(tvb, offset);
+  ffw = tvb_get_uint8(tvb, offset);
 
   if (ffw & FFW_ID) {
     offset += tn5250_add_hf_items(tn5250_tree, tvb, offset,
                                   outbound_text_header_fields);
     while (tvb_reported_length_remaining(tvb, offset) > 0 && !done) {
-      fcw = tvb_get_guint8(tvb, offset);
+      fcw = tvb_get_uint8(tvb, offset);
       switch (fcw) {
         case SELECTOR:
         case IDEOGRAPHIC:
@@ -3260,7 +3248,7 @@ dissect_start_of_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
     }
   }
 
-  fa = tvb_get_guint8(tvb, offset);
+  fa = tvb_get_uint8(tvb, offset);
 
   if (fa & FA_ID) {
     proto_tree_add_bitmask(tn5250_tree, tvb, offset, hf_tn5250_fa,
@@ -3279,14 +3267,14 @@ dissect_start_of_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
 }
 
 /* 15.6.13 Write To Display Structured Field Order */
-static guint32
-dissect_create_window(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
+static uint32_t
+dissect_create_window(proto_tree *tn5250_tree, tvbuff_t *tvb, int offset)
 {
   int start = offset;
   int length = 0;
   int done = 0, minor_structure = 0;
 
-  static const int *byte[] = {
+  static int * const byte[] = {
     &hf_tn5250_wdsf_cw_flag1_1,
     &hf_tn5250_wdsf_cw_flag1_2,
     &hf_tn5250_wdsf_cw_flag1_reserved,
@@ -3302,7 +3290,7 @@ dissect_create_window(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
     { NULL, 0, 0, 0, 0 }
   };
 
-  static const int *cw_bp_flag1[] = {
+  static int * const cw_bp_flag1[] = {
     &hf_tn5250_wdsf_cw_bp_flag1_1,
     &hf_tn5250_wdsf_cw_bp_flag1_reserved,
     NULL
@@ -3326,7 +3314,7 @@ dissect_create_window(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
     { NULL, 0, 0, 0, 0 }
   };
 
-  static const int *cw_tf_flag1[] = {
+  static int * const cw_tf_flag1[] = {
     &hf_tn5250_wdsf_cw_tf_flag_orientation,
     &hf_tn5250_wdsf_cw_tf_flag_1,
     &hf_tn5250_wdsf_cw_tf_flag_reserved,
@@ -3347,21 +3335,21 @@ dissect_create_window(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
   offset += tn5250_add_hf_items(tn5250_tree, tvb, offset, cw_fields);
 
   while (tvb_reported_length_remaining(tvb, offset) > 0 && !done) {
-    minor_structure = tvb_get_guint8(tvb, offset+1);
+    minor_structure = tvb_get_uint8(tvb, offset+1);
     switch (minor_structure) {
       case CW_BORDER_PRESENTATION:
         offset += tn5250_add_hf_items(tn5250_tree, tvb, offset, cwbp_fields);
         break;
       case CW_TITLE_FOOTER:
-        length = tvb_get_guint8(tvb,offset);
+        length = tvb_get_uint8(tvb,offset);
         offset += tn5250_add_hf_items(tn5250_tree, tvb, offset, cw_tf_fields);
         if (length < 6) {
           /* XXX - expert info on the length field */
           break;
         }
         proto_tree_add_item(tn5250_tree, hf_tn5250_wdsf_cw_tf_text, tvb, offset,
-                            (length - 6), ENC_EBCDIC|ENC_NA);
-        offset += (guint32)((length - 6));
+                            (length - 6), ENC_EBCDIC);
+        offset += (uint32_t)((length - 6));
         break;
       default:
         done = 1;
@@ -3372,21 +3360,21 @@ dissect_create_window(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
   return (offset - start);
 }
 
-static guint32
-dissect_define_selection(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
+static uint32_t
+dissect_define_selection(proto_tree *tn5250_tree, tvbuff_t *tvb, int offset)
 {
   int start = offset;
   int length = 0;
   int done = 0, minor_structure = 0, digit_selection = 0;
   int minor_structure_start;
 
-  static const int *ds_flag1[] = {
+  static int * const ds_flag1[] = {
     &hf_tn5250_wdsf_ds_flag1_mouse_characteristics, &hf_tn5250_wdsf_ds_flag1_reserved,
     &hf_tn5250_wdsf_ds_flag1_auto_enter, &hf_tn5250_wdsf_ds_flag1_1,
     &hf_tn5250_wdsf_ds_flag1_2, NULL
   };
 
-  static const int *ds_flag2[] = {
+  static int * const ds_flag2[] = {
     &hf_tn5250_wdsf_ds_flag2_1, &hf_tn5250_wdsf_ds_flag2_2,
     &hf_tn5250_wdsf_ds_flag2_3, &hf_tn5250_wdsf_ds_flag2_4,
     &hf_tn5250_wdsf_ds_flag2_5, &hf_tn5250_wdsf_ds_flag2_6,
@@ -3394,18 +3382,18 @@ dissect_define_selection(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
     NULL
   };
 
-  static const int *ds_flag3[] = {
+  static int * const ds_flag3[] = {
     &hf_tn5250_wdsf_ds_flag3_1, &hf_tn5250_wdsf_ds_flag3_reserved,
     NULL
   };
 
-  static const int *ds_gdc[] = {
+  static int * const ds_gdc[] = {
     &hf_tn5250_wdsf_ds_gdc_indicators, &hf_tn5250_wdsf_ds_gdc_reserved,
     &hf_tn5250_wdsf_ds_gdc_selection_techniques,
     NULL
   };
 
-  static const int *ds_nws[] = {
+  static int * const ds_nws[] = {
     &hf_tn5250_wdsf_ds_nws_indicators, &hf_tn5250_wdsf_ds_nws_reserved,
     &hf_tn5250_wdsf_ds_nws_selection_techniques,
     NULL
@@ -3433,14 +3421,14 @@ dissect_define_selection(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
     { NULL, 0, 0, 0, 0 }
   };
 
-  static const int *ds_ct_flag1[] = {
+  static int * const ds_ct_flag1[] = {
     &hf_tn5250_wdsf_ds_ct_flag1_choice_state, &hf_tn5250_wdsf_ds_ct_flag1_2,
     &hf_tn5250_wdsf_ds_ct_flag1_3, &hf_tn5250_wdsf_ds_ct_flag1_4,
     &hf_tn5250_wdsf_ds_ct_flag1_5, &hf_tn5250_wdsf_ds_ct_flag1_numeric_selection,
     NULL
   };
 
-  static const int *ds_ct_flag2[] = {
+  static int * const ds_ct_flag2[] = {
     &hf_tn5250_wdsf_ds_ct_flag2_0, &hf_tn5250_wdsf_ds_ct_flag2_1,
     &hf_tn5250_wdsf_ds_ct_flag2_2, &hf_tn5250_wdsf_ds_ct_flag2_3,
     &hf_tn5250_wdsf_ds_ct_flag2_4, &hf_tn5250_wdsf_ds_ct_flag2_5,
@@ -3448,7 +3436,7 @@ dissect_define_selection(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
     NULL
   };
 
-  static const int *ds_ct_flag3[] = {
+  static int * const ds_ct_flag3[] = {
     &hf_tn5250_wdsf_ds_ct_flag3_0, &hf_tn5250_wdsf_ds_ct_flag3_1,
     &hf_tn5250_wdsf_ds_ct_flag3_2, &hf_tn5250_wdsf_ds_ct_flag3_reserved,
     NULL
@@ -3467,7 +3455,7 @@ dissect_define_selection(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
     { NULL, 0, 0, 0, 0 }
   };
 
-  static const int *ds_mbs_flag[] = {
+  static int * const ds_mbs_flag[] = {
     &hf_tn5250_wdsf_ds_mbs_flag_0, &hf_tn5250_wdsf_ds_mbs_flag_1,
     &hf_tn5250_wdsf_ds_mbs_flag_reserved,
     NULL
@@ -3486,7 +3474,7 @@ dissect_define_selection(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
     { NULL, 0, 0, 0, 0 }
   };
 
-  static const int *ds_cpda_flag[] = {
+  static int * const ds_cpda_flag[] = {
     &hf_tn5250_wdsf_ds_cpda_flag1_0, &hf_tn5250_wdsf_ds_cpda_flag1_1,
     &hf_tn5250_wdsf_ds_cpda_flag1_2, &hf_tn5250_wdsf_ds_cpda_flag1_reserved,
     NULL
@@ -3515,7 +3503,7 @@ dissect_define_selection(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
     { NULL, 0, 0, 0, 0 }
   };
 
-  static const int *ds_ci_flag[] = {
+  static int * const ds_ci_flag[] = {
     &hf_tn5250_wdsf_ds_ci_flag1_0, &hf_tn5250_wdsf_ds_ci_flag1_reserved,
     NULL
   };
@@ -3530,7 +3518,7 @@ dissect_define_selection(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
     { NULL, 0, 0, 0, 0 }
   };
 
-  static const int *ds_sbi_flag[] = {
+  static int * const ds_sbi_flag[] = {
     &hf_tn5250_wdsf_ds_sbi_flag1_0, &hf_tn5250_wdsf_ds_sbi_flag1_reserved,
     NULL
   };
@@ -3553,11 +3541,11 @@ dissect_define_selection(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
   offset += tn5250_add_hf_items(tn5250_tree, tvb, offset, ds_fields);
 
   while (tvb_reported_length_remaining(tvb, offset) > 0 && !done) {
-    minor_structure = tvb_get_guint8(tvb, offset+1);
+    minor_structure = tvb_get_uint8(tvb, offset+1);
     switch (minor_structure) {
       case DS_CHOICE_TEXT:
-        length = tvb_get_guint8(tvb, offset);
-        digit_selection = tvb_get_guint8(tvb, offset+2);
+        length = tvb_get_uint8(tvb, offset);
+        digit_selection = tvb_get_uint8(tvb, offset+2);
         /*
          * XXX - the document says the AID field is present only if
          * the "AID if selected" flag bit is set.
@@ -3579,8 +3567,8 @@ dissect_define_selection(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
         }
         proto_tree_add_item(tn5250_tree, hf_tn5250_wdsf_ds_ct_text, tvb, offset,
                             (length - (offset - minor_structure_start)),
-                            ENC_EBCDIC|ENC_NA);
-        offset += (guint32)((length - (offset - minor_structure_start)));
+                            ENC_EBCDIC);
+        offset += (uint32_t)((length - (offset - minor_structure_start)));
         break;
       case DS_MENU_BAR_SEPARATOR:
         offset += tn5250_add_hf_items(tn5250_tree, tvb, offset, ds_mbs_fields);
@@ -3602,13 +3590,13 @@ dissect_define_selection(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
   return (offset - start);
 }
 
-static guint32
-dissect_define_scrollbar(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
+static uint32_t
+dissect_define_scrollbar(proto_tree *tn5250_tree, tvbuff_t *tvb, int offset)
 {
   int start = offset;
   int done = 0, minor_structure = 0;
 
-  static const int *dsb_byte[] = {
+  static int * const dsb_byte[] = {
     &hf_tn5250_wdsf_dsb_flag1_0, &hf_tn5250_wdsf_dsb_flag1_1,
     &hf_tn5250_wdsf_dsb_flag1_reserved, &hf_tn5250_wdsf_dsb_flag1_7,
     NULL
@@ -3623,7 +3611,7 @@ dissect_define_scrollbar(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
     { NULL, 0, 0, 0, 0 }
   };
 
-  static const int *ds_sbi_flag[] = {
+  static int * const ds_sbi_flag[] = {
     &hf_tn5250_wdsf_ds_sbi_flag1_0, &hf_tn5250_wdsf_ds_sbi_flag1_reserved,
     NULL
   };
@@ -3647,7 +3635,7 @@ dissect_define_scrollbar(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
   offset += tn5250_add_hf_items(tn5250_tree, tvb, offset, dsb_fields);
 
   while (tvb_reported_length_remaining(tvb, offset) > 0 && !done) {
-    minor_structure = tvb_get_guint8(tvb, offset+1);
+    minor_structure = tvb_get_uint8(tvb, offset+1);
     switch (minor_structure) {
       case DS_SCROLLBAR_INDICATORS:
         offset += tn5250_add_hf_items(tn5250_tree, tvb, offset, ds_sbi_fields);
@@ -3660,18 +3648,18 @@ dissect_define_scrollbar(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
   return (offset - start);
 }
 
-static guint32
-dissect_draw_erase_gridlines(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
+static uint32_t
+dissect_draw_erase_gridlines(proto_tree *tn5250_tree, tvbuff_t *tvb, int offset)
 {
   int start = offset;
   int done = 0, minor_structure=0;
 
-  static const int *deg_byte[] = {
+  static int * const deg_byte[] = {
     &hf_tn5250_wdsf_deg_flag1_0, &hf_tn5250_wdsf_deg_flag1_reserved,
     NULL
   };
 
-  static const int *deg_byte2[] = {
+  static int * const deg_byte2[] = {
     &hf_tn5250_wdsf_deg_flag2_0, &hf_tn5250_wdsf_deg_flag2_reserved,
     NULL
   };
@@ -3688,7 +3676,7 @@ dissect_draw_erase_gridlines(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset
   };
 
 
-  static const int *deg_ms_byte[] = {
+  static int * const deg_ms_byte[] = {
     &hf_tn5250_wdsf_deg_ms_flag1_0, &hf_tn5250_wdsf_deg_ms_flag1_reserved,
     NULL
   };
@@ -3710,7 +3698,7 @@ dissect_draw_erase_gridlines(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset
   offset += tn5250_add_hf_items(tn5250_tree, tvb, offset, deg_fields);
 
   while (tvb_reported_length_remaining(tvb, offset) > 0 && !done) {
-    minor_structure = tvb_get_guint8(tvb, offset+1);
+    minor_structure = tvb_get_uint8(tvb, offset+1);
     switch (minor_structure) {
       case UPPER_HORIZONTAL_LINE:
       case LOWER_HORIZONTAL_LINE:
@@ -3730,8 +3718,8 @@ dissect_draw_erase_gridlines(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset
   return (offset - start);
 }
 
-static guint32
-dissect_wdsf_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
+static uint32_t
+dissect_wdsf_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, int offset)
 {
   int start = offset;
   int minor_structure_start;
@@ -3745,7 +3733,7 @@ dissect_wdsf_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offse
     { NULL, 0, 0, 0, 0 }
   };
 
-  static const int *rgw_byte[] = {
+  static int * const rgw_byte[] = {
     &hf_tn5250_wdsf_rgw_flag1_0,
     &hf_tn5250_wdsf_rgw_flag1_1,
     &hf_tn5250_wdsf_rgw_reserved,
@@ -3759,7 +3747,7 @@ dissect_wdsf_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offse
     { NULL, 0, 0, 0, 0 }
   };
 
-  static const int *ragc_byte[] = {
+  static int * const ragc_byte[] = {
     &hf_tn5250_wdsf_ragc_flag1_0,
     &hf_tn5250_wdsf_ragc_reserved,
     NULL
@@ -3772,7 +3760,7 @@ dissect_wdsf_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offse
     { NULL, 0, 0, 0, 0 }
   };
 
-  static const int *wdf_byte[] = {
+  static int * const wdf_byte[] = {
     &hf_tn5250_wdsf_wdf_flag1_0,
     &hf_tn5250_wdsf_wdf_flag1_reserved,
     NULL
@@ -3784,7 +3772,7 @@ dissect_wdsf_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offse
     { NULL, 0, 0, 0, 0 }
   };
 
-  static const int *pmb_byte[] = {
+  static int * const pmb_byte[] = {
     &hf_tn5250_wdsf_pmb_flag1_0, &hf_tn5250_wdsf_pmb_flag1_1,
     &hf_tn5250_wdsf_pmb_flag1_2, &hf_tn5250_wdsf_pmb_flag1_3,
     &hf_tn5250_wdsf_pmb_flag1_reserved,
@@ -3809,7 +3797,7 @@ dissect_wdsf_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offse
   };
 
   length = tvb_get_ntohs(tvb,offset);
-  type = tvb_get_guint8(tvb, offset+3);
+  type = tvb_get_uint8(tvb, offset+3);
 
   offset += tn5250_add_hf_items(tn5250_tree, tvb, offset, standard_fields);
 
@@ -3846,8 +3834,8 @@ dissect_wdsf_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offse
           break;
         }
         proto_tree_add_item(tn5250_tree, hf_tn5250_field_data, tvb, offset,
-                            (length - 6), ENC_EBCDIC|ENC_NA);
-        offset += (guint32)((length - 6));
+                            (length - 6), ENC_EBCDIC);
+        offset += (uint32_t)((length - 6));
         break;
       case PROGRAMMABLE_MOUSE_BUTTONS:
         minor_structure_start = start;
@@ -3884,14 +3872,14 @@ dissect_wdsf_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offse
 
 
 /* 15.6 WRITE TO DISPLAY Command - Orders and Data */
-static guint32
-dissect_tn5250_ra_data(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
+static uint32_t
+dissect_tn5250_ra_data(proto_tree *tn5250_tree, tvbuff_t *tvb, int offset)
 {
-  gint order_code, done = 0;
-  gint start = offset;
+  int order_code, done = 0;
+  int start = offset;
 
   while (tvb_reported_length_remaining(tvb, offset) > 0 && !done) {
-    order_code = tvb_get_guint8(tvb, offset);
+    order_code = tvb_get_uint8(tvb, offset);
     switch (order_code) {
       case TN5250_IC:
       case TN5250_MC:
@@ -3914,24 +3902,24 @@ dissect_tn5250_ra_data(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
 
   if (offset > start) {
     proto_tree_add_item(tn5250_tree, hf_tn5250_repeated_character,
-                        tvb, start, (offset - start), ENC_EBCDIC|ENC_NA);
+                        tvb, start, (offset - start), ENC_EBCDIC);
   }
   return (offset - start);
 
 }
 
-static guint32
-dissect_tn5250_orders_and_data(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
+static uint32_t
+dissect_tn5250_orders_and_data(proto_tree *tn5250_tree, tvbuff_t *tvb, int offset)
 {
-  gint start = offset, done = 0;
-  gint order_code;
+  int start = offset, done = 0;
+  int order_code;
   proto_tree   *cc_tree;
   proto_item   *ti;
 
   /* Order Code */
 
   while (tvb_reported_length_remaining(tvb, offset) > 0 && !done) {
-    order_code = tvb_get_guint8(tvb, offset);
+    order_code = tvb_get_uint8(tvb, offset);
     switch (order_code) {
       case TN5250_IC:
       case TN5250_MC:
@@ -4003,13 +3991,13 @@ dissect_tn5250_orders_and_data(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
 }
 
 /* 15.22 SAVE PARTIAL SCREEN Command */
-static guint32
-dissect_save_partial_screen(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
+static uint32_t
+dissect_save_partial_screen(proto_tree *tn5250_tree, tvbuff_t *tvb, int offset)
 {
   int start = offset;
   int length = 0;
 
-  static const int *byte[] = {
+  static int * const byte[] = {
     &hf_tn5250_sps_flag1_0,
     &hf_tn5250_sps_flag1_reserved,
     NULL
@@ -4025,7 +4013,7 @@ dissect_save_partial_screen(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
     { NULL, 0, 0, 0, 0 }
   };
 
-  length = tvb_get_guint8(tvb, offset);
+  length = tvb_get_uint8(tvb, offset);
 
   offset += tn5250_add_hf_items(tn5250_tree, tvb, offset,
                                 save_partial_screen_fields);
@@ -4036,12 +4024,12 @@ dissect_save_partial_screen(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
 }
 
 /* 15.25 ROLL Command */
-static guint32
-dissect_roll(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
+static uint32_t
+dissect_roll(proto_tree *tn5250_tree, tvbuff_t *tvb, int offset)
 {
   int start = offset;
 
-  static const int *byte[] = {
+  static int * const byte[] = {
     &hf_tn5250_roll_flag1_0,
     &hf_tn5250_roll_flag1_reserved,
     &hf_tn5250_roll_flag1_lines,
@@ -4062,15 +4050,15 @@ dissect_roll(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
 }
 
 /* 15.26 WRITE SINGLE STRUCTURED FIELD Command */
-static guint32
+static uint32_t
 dissect_write_single_structured_field_minor_fields(proto_tree *tn5250_tree,
-                                                   tvbuff_t *tvb, gint offset)
+                                                   tvbuff_t *tvb, int offset)
 {
 
   int start = offset;
   int done = 0, type = 0;
 
-  static const int *byte_wssf_kbc_flag1[] = {
+  static int * const byte_wssf_kbc_flag1[] = {
     &hf_tn5250_wssf_kbc_flag1_reserved,
     &hf_tn5250_wssf_kbc_flag1_5,
     &hf_tn5250_wssf_kbc_flag1_6,
@@ -4078,7 +4066,7 @@ dissect_write_single_structured_field_minor_fields(proto_tree *tn5250_tree,
     NULL
   };
 
-  static const int *byte_wssf_cc_flag1[] = {
+  static int * const byte_wssf_cc_flag1[] = {
     &hf_tn5250_wssf_cc_flag1_reserved,
     &hf_tn5250_wssf_cc_flag1_7,
     NULL
@@ -4099,7 +4087,7 @@ dissect_write_single_structured_field_minor_fields(proto_tree *tn5250_tree,
   };
 
   while (tvb_reported_length_remaining(tvb, offset) > 0 && !done) {
-    type = tvb_get_guint8(tvb, offset+1);
+    type = tvb_get_uint8(tvb, offset+1);
     switch (type) {
       case KEYSTROKE_BUFFERING_CONTROL:
         offset += tn5250_add_hf_items(tn5250_tree, tvb, offset,
@@ -4119,15 +4107,15 @@ dissect_write_single_structured_field_minor_fields(proto_tree *tn5250_tree,
 
 }
 
-static guint32
+static uint32_t
 dissect_write_single_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb,
-                                      gint offset)
+                                      int offset)
 {
   int start = offset;
   int length, type, done = 0;
-  guint32 namelength;
+  uint32_t namelength;
 
-  static const int *byte[] = {
+  static int * const byte[] = {
     &hf_tn5250_wssf_flag2_0,
     &hf_tn5250_wssf_flag2_1,
     &hf_tn5250_wssf_flag2_2,
@@ -4139,7 +4127,7 @@ dissect_write_single_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb,
     NULL
   };
 
-  static const int *ifc_byte[] = {
+  static int * const ifc_byte[] = {
     &hf_tn5250_wssf_ifc_flag1_0,
     &hf_tn5250_wssf_ifc_flag1_1to3,
     &hf_tn5250_wssf_ifc_flag1_4,
@@ -4149,7 +4137,7 @@ dissect_write_single_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb,
     NULL
   };
 
-  static const int *ifc_byte2[] = {
+  static int * const ifc_byte2[] = {
     &hf_tn5250_wssf_ifc_flag2_0,
     &hf_tn5250_wssf_ifc_flag2_1,
     &hf_tn5250_wssf_ifc_flag2_reserved,
@@ -4157,7 +4145,7 @@ dissect_write_single_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb,
     NULL
   };
 
-  static const int *ifd_byte[] = {
+  static int * const ifd_byte[] = {
     &hf_tn5250_wssf_ifd_flag1_0,
     &hf_tn5250_wssf_ifd_flag1_reserved,
     NULL
@@ -4206,7 +4194,7 @@ dissect_write_single_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb,
   };
 
   length = tvb_get_ntohs(tvb,offset);
-  type = tvb_get_guint8(tvb, offset+3);
+  type = tvb_get_uint8(tvb, offset+3);
 
   offset += tn5250_add_hf_items(tn5250_tree, tvb, offset, standard_fields);
 
@@ -4226,21 +4214,21 @@ dissect_write_single_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb,
         offset += tn5250_add_hf_items(tn5250_tree, tvb, offset,
                                       wsc_image_control_fields);
         proto_tree_add_item(tn5250_tree, hf_tn5250_wssf_ifc_imagefax_name, tvb, offset,
-                            (length - (start + offset)), ENC_EBCDIC|ENC_NA);
+                            (length - (start + offset)), ENC_EBCDIC);
         if (length > (start + offset))
-          offset += (guint32)(length - (start + offset));
+          offset += (uint32_t)(length - (start + offset));
         break;
       case IMAGE_FAX_DOWNLOAD:
         namelength = tvb_get_ntohs(tvb,offset+6);
         offset += tn5250_add_hf_items(tn5250_tree, tvb, offset,
                                       wsc_image_download_fields);
         proto_tree_add_item(tn5250_tree, hf_tn5250_wssf_ifd_imagefax_name, tvb, offset,
-                            namelength, ENC_EBCDIC|ENC_NA);
+                            namelength, ENC_EBCDIC);
         offset += namelength;
         proto_tree_add_item(tn5250_tree, hf_tn5250_wssf_ifd_imagefax_data, tvb, offset,
                             (length - (start + offset)), ENC_NA);
         if (length > (start + offset))
-          offset += (guint32)(length - (start + offset));
+          offset += (uint32_t)(length - (start + offset));
         break;
       case VIDEO_AUDIO_CONTROLS:
         proto_tree_add_item(tn5250_tree, hf_tn5250_vac_prefix, tvb, offset,
@@ -4257,7 +4245,7 @@ dissect_write_single_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb,
         proto_tree_add_item(tn5250_tree, hf_tn5250_wssf_ttw_data, tvb, offset,
                             (length - (start + offset)), ENC_NA);
         if (length > (start + offset))
-          offset += (guint32)(length - (start + offset));
+          offset += (uint32_t)(length - (start + offset));
         break;
       default:
         done = 1;
@@ -4270,11 +4258,11 @@ dissect_write_single_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb,
 }
 
 /* 15.27 WRITE STRUCTURED FIELD Command */
-static guint32
-dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
+static uint32_t
+dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, int offset)
 {
   int start = offset;
-  guint16 sf_length = 0;
+  uint16_t sf_length = 0;
   int length, type, done = 0, used = 0;
 
   hf_items standard_fields[] = {
@@ -4284,13 +4272,13 @@ dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
     { NULL, 0, 0, 0, 0 }
   };
 
-  static const int *qss_byte1[] = {
+  static int * const qss_byte1[] = {
     &hf_tn5250_wsf_qss_flag1_0,
     &hf_tn5250_wsf_qss_flag1_reserved,
     NULL
   };
 
-  static const int *qss_byte2[] = {
+  static int * const qss_byte2[] = {
     &hf_tn5250_wsf_qss_flag2_reserved,
     &hf_tn5250_wsf_qss_flag2_7,
     NULL
@@ -4315,7 +4303,7 @@ dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
     { NULL, 0, 0, 0, 0 }
   };
 
-  static const int *rts_byte1[] = {
+  static int * const rts_byte1[] = {
     &hf_tn5250_rts_flag1_0,
     &hf_tn5250_rts_flag1_reserved,
     NULL
@@ -4329,7 +4317,7 @@ dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
     { NULL, 0, 0, 0, 0 }
   };
 
-  static const int *dpo_byte1[] = {
+  static int * const dpo_byte1[] = {
     &hf_tn5250_dpo_flag1_0,
     &hf_tn5250_dpo_flag1_1,
     &hf_tn5250_dpo_flag1_2,
@@ -4341,7 +4329,7 @@ dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
     NULL
   };
 
-  static const int *dpo_byte2[] = {
+  static int * const dpo_byte2[] = {
     &hf_tn5250_dpo_flag2_0,
     &hf_tn5250_dpo_flag2_reserved,
     NULL
@@ -4357,7 +4345,7 @@ dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
     { NULL, 0, 0, 0, 0 }
   };
 
-  static const int *dtsf_byte1[] = {
+  static int * const dtsf_byte1[] = {
     &hf_tn5250_dtsf_flag1_0,
     &hf_tn5250_dtsf_flag1_1,
     &hf_tn5250_dtsf_flag1_2,
@@ -4369,7 +4357,7 @@ dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
     NULL
   };
 
-  static const int *dtsf_byte2[] = {
+  static int * const dtsf_byte2[] = {
     &hf_tn5250_dtsf_flag2_0,
     &hf_tn5250_dtsf_flag2_1,
     &hf_tn5250_dtsf_flag2_2,
@@ -4390,7 +4378,7 @@ dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
     { NULL, 0, 0, 0, 0 }
   };
 
-  static const int *dsl_byte1[] = {
+  static int * const dsl_byte1[] = {
     &hf_tn5250_dsl_flag1_0,
     &hf_tn5250_dsl_flag1_1,
     &hf_tn5250_dsl_flag1_2,
@@ -4415,7 +4403,7 @@ dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
     { NULL, 0, 0, 0, 0 }
   };
 
-  static const int *wts_byte1[] = {
+  static int * const wts_byte1[] = {
     &hf_tn5250_wts_flag1_0,
     &hf_tn5250_wts_flag1_1,
     &hf_tn5250_wts_flag1_2,
@@ -4424,14 +4412,14 @@ dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
     NULL
   };
 
-  static const int *wts_byte2[] = {
+  static int * const wts_byte2[] = {
     &hf_tn5250_wts_flag2_reserved,
     &hf_tn5250_wts_flag2_6,
     &hf_tn5250_wts_flag2_reserved2,
     NULL
   };
 
-  static const int *wts_byte3[] = {
+  static int * const wts_byte3[] = {
     &hf_tn5250_wts_flag3_0,
     &hf_tn5250_wts_flag3_1,
     &hf_tn5250_wts_flag3_2,
@@ -4453,7 +4441,7 @@ dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
     { NULL, 0, 0, 0, 0 }
   };
 
-  static const int *wts_cld_byte1[] = {
+  static int * const wts_cld_byte1[] = {
     &hf_tn5250_wts_cld_flag1_0,
     &hf_tn5250_wts_cld_flag1_1,
     &hf_tn5250_wts_cld_flag1_2,
@@ -4465,7 +4453,7 @@ dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
     NULL
   };
 
-  static const int *wts_cld_byte2[] = {
+  static int * const wts_cld_byte2[] = {
     &hf_tn5250_wts_cld_flag2_0,
     &hf_tn5250_wts_cld_flag2_1,
     &hf_tn5250_wts_cld_flag2_2,
@@ -4475,7 +4463,7 @@ dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
     NULL
   };
 
-  static const int *wts_cld_byte3[] = {
+  static int * const wts_cld_byte3[] = {
     &hf_tn5250_wts_cld_flag3_0,
     &hf_tn5250_wts_cld_flag3_1,
     &hf_tn5250_wts_cld_flag3_2,
@@ -4517,7 +4505,7 @@ dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
   };
 
 
-  static const int *dfdpck_coreflag[] = {
+  static int * const dfdpck_coreflag[] = {
     &hf_tn5250_dfdpck_coreflag_0,
     &hf_tn5250_dfdpck_coreflag_1,
     &hf_tn5250_dfdpck_coreflag_2,
@@ -4529,7 +4517,7 @@ dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
     NULL
   };
 
-  static const int *dfdpck_toprowflag1[] = {
+  static int * const dfdpck_toprowflag1[] = {
     &hf_tn5250_dfdpck_toprowflag1_0,
     &hf_tn5250_dfdpck_toprowflag1_1,
     &hf_tn5250_dfdpck_toprowflag1_2,
@@ -4541,7 +4529,7 @@ dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
     NULL
   };
 
-  static const int *dfdpck_toprowflag2[] = {
+  static int * const dfdpck_toprowflag2[] = {
     &hf_tn5250_dfdpck_toprowflag2_0,
     &hf_tn5250_dfdpck_toprowflag2_1,
     &hf_tn5250_dfdpck_toprowflag2_2,
@@ -4553,7 +4541,7 @@ dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
     NULL
   };
 
-  static const int *dfdpck_toprowflag3[] = {
+  static int * const dfdpck_toprowflag3[] = {
     &hf_tn5250_dfdpck_toprowflag3_0,
     &hf_tn5250_dfdpck_toprowflag3_1,
     &hf_tn5250_dfdpck_toprowflag3_2,
@@ -4592,15 +4580,15 @@ dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
 
   while (tvb_reported_length_remaining(tvb, offset) > 0 && !done) {
     sf_length = tvb_get_ntohs(tvb,offset);
-    type = tvb_get_guint8(tvb, offset+3);
+    type = tvb_get_uint8(tvb, offset+3);
 
     offset += tn5250_add_hf_items(tn5250_tree, tvb, offset, standard_fields);
 
     switch (type) {
       case PASS_THROUGH:
         proto_tree_add_item(tn5250_tree, hf_tn5250_field_data, tvb, offset,
-                            (sf_length - (start + offset)), ENC_EBCDIC|ENC_NA);
-        offset += (guint32)(sf_length - (start + offset));
+                            (sf_length - (start + offset)), ENC_EBCDIC);
+        offset += (uint32_t)(sf_length - (start + offset));
         break;
       case TN5250_QUERY:
         proto_tree_add_item(tn5250_tree, hf_tn5250_reserved, tvb, offset,
@@ -4615,14 +4603,14 @@ dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
                             1, ENC_BIG_ENDIAN);
         offset += 1;
         while ((offset - start) < sf_length) {
-          length = tvb_get_guint8(tvb,offset);
+          length = tvb_get_uint8(tvb,offset);
           offset += tn5250_add_hf_items(tn5250_tree, tvb, offset, dawt_fields);
           if (length < 2) {
             /* XXX - expert info on the length field */
             break;
           }
           proto_tree_add_item(tn5250_tree, hf_tn5250_dawt_message, tvb, offset,
-                              (length - 2), ENC_EBCDIC|ENC_NA);
+                              (length - 2), ENC_EBCDIC);
           offset += length;
         }
         break;
@@ -4631,7 +4619,7 @@ dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
                             1, ENC_BIG_ENDIAN);
         offset++;
         while ((offset - start) < sf_length) {
-          length = tvb_get_guint8(tvb,offset);
+          length = tvb_get_uint8(tvb,offset);
           offset += tn5250_add_hf_items(tn5250_tree, tvb, offset,
                                         dckf_fields);
           if (length < 2) {
@@ -4639,7 +4627,7 @@ dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
             break;
           }
           proto_tree_add_item(tn5250_tree, hf_tn5250_dckf_prompt_text, tvb,
-                              offset, (length - 2), ENC_EBCDIC|ENC_NA);
+                              offset, (length - 2), ENC_EBCDIC);
           offset += length;
         }
         break;
@@ -4656,14 +4644,14 @@ dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
         offset += tn5250_add_hf_items(tn5250_tree, tvb, offset, dsl_fields);
         while ((offset - start) < sf_length) {
           /* XXX length unused
-          length = tvb_get_guint8(tvb,offset); */
+          length = tvb_get_uint8(tvb,offset); */
           offset += tn5250_add_hf_items(tn5250_tree, tvb, offset, dsl_fields2);
         }
         break;
       case WRITE_TEXT_SCREEN:
         offset += tn5250_add_hf_items(tn5250_tree, tvb, offset,
                                       wts_fields);
-        length = tvb_get_guint8(tvb,offset);
+        length = tvb_get_uint8(tvb,offset);
         used = tn5250_add_hf_items(tn5250_tree, tvb, offset,
                                    wts_line_data_fields);
         offset += used;
@@ -4672,7 +4660,7 @@ dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
           break;
         }
         proto_tree_add_item(tn5250_tree, hf_tn5250_wts_cld_li, tvb, offset,
-                            (length - used), ENC_EBCDIC|ENC_NA);
+                            (length - used), ENC_EBCDIC);
         break;
       case DEFINE_SPECIAL_CHARACTERS:
         offset += tn5250_add_hf_items(tn5250_tree, tvb, offset,
@@ -4683,7 +4671,7 @@ dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
                             1, ENC_BIG_ENDIAN);
         offset++;
         while ((offset - start) < sf_length) {
-          length = tvb_get_guint8(tvb,offset);
+          length = tvb_get_uint8(tvb,offset);
           offset += tn5250_add_hf_items(tn5250_tree, tvb, offset,
                                         dorm_fields);
           if (length < 2) {
@@ -4691,7 +4679,7 @@ dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
             break;
           }
           proto_tree_add_item(tn5250_tree, hf_tn5250_dorm_mt, tvb, offset,
-                              (length - 2), ENC_EBCDIC|ENC_NA);
+                              (length - 2), ENC_EBCDIC);
           offset += length;
         }
         break;
@@ -4710,7 +4698,7 @@ dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
            * each of these entries is 5 bytes long?
            */
           proto_tree_add_item(tn5250_tree, hf_tn5250_dpt_ec, tvb, offset,
-                              4, ENC_EBCDIC|ENC_NA);
+                              4, ENC_EBCDIC);
           offset += 4;
         }
         break;
@@ -4718,8 +4706,8 @@ dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
         offset += tn5250_add_hf_items(tn5250_tree, tvb, offset,
                                       dfdpck_fields);
         while ((offset - start) < sf_length) {
-          length = tvb_get_guint8(tvb,offset);
-          type = tvb_get_guint8(tvb,offset+1);
+          length = tvb_get_uint8(tvb,offset);
+          type = tvb_get_uint8(tvb,offset+1);
           if (type == CORE_AREA_COMMAND_KEYS) {
             offset += tn5250_add_hf_items(tn5250_tree, tvb, offset,
                                           dfdpck_core_area_fields);
@@ -4727,7 +4715,7 @@ dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
             offset += tn5250_add_hf_items(tn5250_tree, tvb, offset,
                                           dfdpck_top_row_fields);
           } else {
-            guint32 step;
+            uint32_t step;
 
             step = dissect_unknown_data(tn5250_tree, tvb, offset, start, length);
             if (step==0)
@@ -4749,18 +4737,18 @@ dissect_write_structured_field(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offs
 
 /* 15.27.2 5250 Query Command - Response */
 /*TN5250 - RFC1205 - Query Reply Fields */
-static guint32
-dissect_query_reply(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
+static uint32_t
+dissect_query_reply(proto_tree *tn5250_tree, tvbuff_t *tvb, int offset)
 {
   int start = offset;
 
-  static const int *byte[] = {
+  static int * const byte[] = {
     &hf_tn5250_qr_flag_0,
     &hf_tn5250_qr_flag_reserved,
     NULL
   };
 
-  static const int *byte1[] = {
+  static int * const byte1[] = {
     &hf_tn5250_qr_flag1_0,
     &hf_tn5250_qr_flag1_1,
     &hf_tn5250_qr_flag1_2,
@@ -4772,7 +4760,7 @@ dissect_query_reply(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
     NULL
   };
 
-  static const int *byte2[] = {
+  static int * const byte2[] = {
     &hf_tn5250_qr_flag2_0to3,
     &hf_tn5250_qr_flag2_4,
     &hf_tn5250_qr_flag2_5,
@@ -4838,14 +4826,14 @@ dissect_query_reply(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
 /* End: Handle WCC, Orders and Data */
 
 
-static guint32
-dissect_tn5250_header(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
+static uint32_t
+dissect_tn5250_header(proto_tree *tn5250_tree, tvbuff_t *tvb, int offset)
 {
 
   int start=offset;
   int error_flag;
 
-  static const int *byte[] = {
+  static int * const byte[] = {
     &hf_tn5250_ds_output_error,
     &hf_tn5250_attn_key,
     &hf_tn5250_sys_request_key,
@@ -4865,7 +4853,7 @@ dissect_tn5250_header(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
     { NULL, 0, 0, 0, 0 }
   };
 
-  error_flag = tvb_get_guint8(tvb, offset+8);
+  error_flag = tvb_get_uint8(tvb, offset+8);
 
   offset += tn5250_add_hf_items(tn5250_tree, tvb, offset, fields);
 
@@ -4879,14 +4867,14 @@ dissect_tn5250_header(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
 #if 0
 /* XXX - unused */
 /* Detect and Handle Direction of Stream */
-static gint
-dissect_tn5250_data_until_next_command(proto_tree *tn5250_tree, tvbuff_t *tvb, gint offset)
+static int
+dissect_tn5250_data_until_next_command(proto_tree *tn5250_tree, tvbuff_t *tvb, int offset)
 {
-  gint order_code, done = 0;
-  gint start = offset;
+  int order_code, done = 0;
+  int start = offset;
 
   while (tvb_reported_length_remaining(tvb, offset) > 0 && !done) {
-    order_code = tvb_get_guint8(tvb, offset);
+    order_code = tvb_get_uint8(tvb, offset);
     switch (order_code) {
       case CLEAR_UNIT:
       case CLEAR_FORMAT_TABLE:
@@ -4923,18 +4911,19 @@ dissect_tn5250_data_until_next_command(proto_tree *tn5250_tree, tvbuff_t *tvb, g
 
   if (offset > start) {
     proto_tree_add_item(tn5250_tree, hf_tn5250_field_data,
-                        tvb, start, (offset - start), ENC_EBCDIC|ENC_NA);
+                        tvb, start, (offset - start), ENC_EBCDIC);
   }
 
   return (offset - start);
 }
 #endif
 
-static guint32
-dissect_outbound_stream(proto_tree *tn5250_tree, packet_info *pinfo, tvbuff_t *tvb, gint offset)
+static uint32_t
+// NOLINTNEXTLINE(misc-no-recursion)
+dissect_outbound_stream(proto_tree *tn5250_tree, packet_info *pinfo, tvbuff_t *tvb, int offset)
 {
-  gint command_code;
-  gint start = offset, length = 0;
+  int command_code;
+  int start = offset, length = 0;
   proto_tree   *cc_tree;
   proto_item   *ti, *item;
 
@@ -4945,7 +4934,7 @@ dissect_outbound_stream(proto_tree *tn5250_tree, packet_info *pinfo, tvbuff_t *t
   cc_tree = proto_item_add_subtree(ti, ett_cc);
 
   /* Command Code*/
-  command_code = tvb_get_guint8(tvb, offset);
+  command_code = tvb_get_uint8(tvb, offset);
   item = proto_tree_add_item(cc_tree, hf_tn5250_command_code, tvb, offset, 1,
                           ENC_BIG_ENDIAN);
   offset++;
@@ -4971,14 +4960,16 @@ dissect_outbound_stream(proto_tree *tn5250_tree, packet_info *pinfo, tvbuff_t *t
       offset++;
       proto_tree_add_item(cc_tree, hf_tn5250_field_data, tvb, offset,
                           tvb_reported_length_remaining(tvb, offset) - 1,
-                          ENC_EBCDIC|ENC_NA);
-      offset += (guint32)(tvb_reported_length_remaining(tvb, offset) - 1);
+                          ENC_EBCDIC);
+      offset += (uint32_t)(tvb_reported_length_remaining(tvb, offset) - 1);
       proto_tree_add_item(cc_tree, hf_tn5250_fa, tvb, offset, 1, ENC_BIG_ENDIAN);
       offset++;
       break;
     case RESTORE_SCREEN:
       while (tvb_reported_length_remaining(tvb, offset) > 0) {
+        increment_dissection_depth(pinfo);
         offset += dissect_outbound_stream(cc_tree, pinfo, tvb, offset);
+        decrement_dissection_depth(pinfo);
       }
       break;
     case WRITE_ERROR_CODE_TO_WINDOW:
@@ -5014,7 +5005,7 @@ dissect_outbound_stream(proto_tree *tn5250_tree, packet_info *pinfo, tvbuff_t *t
       offset++;
       offset += dissect_tn5250_orders_and_data(cc_tree, tvb, offset);
       proto_tree_add_item(cc_tree, hf_tn5250_field_data, tvb, offset,
-                          (length - 2), ENC_EBCDIC|ENC_NA);
+                          (length - 2), ENC_EBCDIC);
       offset++;
       break;
     case ROLL:
@@ -5041,11 +5032,11 @@ dissect_outbound_stream(proto_tree *tn5250_tree, packet_info *pinfo, tvbuff_t *t
   return (offset - start);
 }
 
-static guint32
-dissect_inbound_stream(proto_tree *tn5250_tree, packet_info *pinfo, tvbuff_t *tvb, gint offset, gint sna_flag)
+static uint32_t
+dissect_inbound_stream(proto_tree *tn5250_tree, packet_info *pinfo, tvbuff_t *tvb, int offset, int sna_flag)
 {
-  gint start = offset, aid;
-  guint32 commands;
+  int start = offset, aid;
+  uint32_t commands;
 
 
   if (sna_flag & 0x01) { /* Stream contains error code */
@@ -5060,7 +5051,7 @@ dissect_inbound_stream(proto_tree *tn5250_tree, packet_info *pinfo, tvbuff_t *tv
     return (offset - start);
   }
 
-  aid = tvb_get_guint8(tvb,offset+2);
+  aid = tvb_get_uint8(tvb,offset+2);
   if (tn5250_is_valid_aid(aid)) {
     switch(aid) {
       case AID_IMAGE_FAX_REQUEST:
@@ -5088,7 +5079,7 @@ dissect_inbound_stream(proto_tree *tn5250_tree, packet_info *pinfo, tvbuff_t *tv
   } else {
     /* FIXME: need to know when escape/commands are expected. */
     /* Check the response data for commands */
-    if (tvb_get_guint8(tvb,offset) == TN5250_ESCAPE) {
+    if (tvb_get_uint8(tvb,offset) == TN5250_ESCAPE) {
       commands = dissect_outbound_stream(tn5250_tree, pinfo, tvb, offset);
       /* It if contained commands then we're done. Anything else is unexpected data */
       if (commands) {
@@ -5107,7 +5098,7 @@ dissect_inbound_stream(proto_tree *tn5250_tree, packet_info *pinfo, tvbuff_t *tv
   if (tvb_reported_length_remaining(tvb, offset)) {
     proto_tree_add_item(tn5250_tree, hf_tn5250_field_data, tvb, offset,
                         tvb_reported_length_remaining(tvb, offset),
-                        ENC_EBCDIC|ENC_NA);
+                        ENC_EBCDIC);
     offset += tvb_reported_length_remaining(tvb, offset);
   }
 
@@ -5119,15 +5110,13 @@ dissect_tn5250(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 {
   proto_tree   *tn5250_tree;
   proto_item   *ti;
-  gint         offset = 0;
+  int          offset = 0;
   conversation_t *conversation;
   tn5250_conv_info_t *tn5250_info = NULL;
   int sna_flag;
 
   /* Do we have a conversation for this connection? */
-  conversation = find_conversation(pinfo->num, &pinfo->src, &pinfo->dst,
-                                   pinfo->ptype, pinfo->srcport,
-                                   pinfo->destport, 0);
+  conversation = find_conversation_pinfo(pinfo, 0);
   if (conversation != NULL) {
     /* Do we already have a type and mechanism? */
     tn5250_info = (tn5250_conv_info_t *)conversation_get_proto_data(conversation, proto_tn5250);
@@ -5136,7 +5125,7 @@ dissect_tn5250(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
   if (!tn5250_info)
     return 0;
 
-  pinfo->fd->flags.encoding = PACKET_CHAR_ENC_CHAR_EBCDIC;
+  pinfo->fd->encoding = PACKET_CHAR_ENC_CHAR_EBCDIC;
 
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "TN5250");
 
@@ -5181,13 +5170,8 @@ add_tn5250_conversation(packet_info *pinfo, int tn5250e)
      * it to the list of information structures.
      */
     tn5250_info = wmem_new(wmem_file_scope(), tn5250_conv_info_t);
-    copy_address_wmem(wmem_file_scope(), &(tn5250_info->outbound_addr),&(pinfo->dst));
     tn5250_info->outbound_port = pinfo->destport;
-    copy_address_wmem(wmem_file_scope(), &(tn5250_info->inbound_addr),&(pinfo->src));
-    tn5250_info->inbound_port = pinfo->srcport;
     conversation_add_proto_data(conversation, proto_tn5250, tn5250_info);
-    tn5250_info->next = tn5250_info_items;
-    tn5250_info_items = tn5250_info;
   }
 
   tn5250_info->extended = tn5250e;
@@ -5203,9 +5187,7 @@ find_tn5250_conversation(packet_info *pinfo)
   /*
    * Do we have a conversation for this connection?
    */
-  conversation = find_conversation(pinfo->num, &pinfo->src, &pinfo->dst,
-                                   pinfo->ptype, pinfo->srcport,
-                                   pinfo->destport, 0);
+  conversation = find_conversation_pinfo(pinfo, 0);
 
   if (conversation != NULL) {
     tn5250_info = (tn5250_conv_info_t *)conversation_get_proto_data(conversation, proto_tn5250);
@@ -5319,7 +5301,7 @@ proto_register_tn5250(void)
                                  FT_UINT8, BASE_HEX, NULL, 0, NULL, HFILL }},
     { &hf_tn5250_soh_pf24, { "PF24", "tn5250.soh_pf24",
                              FT_BOOLEAN, 8, NULL, 0x80, NULL, HFILL }},
-    { &hf_tn5250_soh_pf23, { "PF22", "tn5250.soh_pf23",
+    { &hf_tn5250_soh_pf23, { "PF23", "tn5250.soh_pf23",
                              FT_BOOLEAN, 8, NULL, 0x40, NULL, HFILL }},
     { &hf_tn5250_soh_pf22, { "PF22", "tn5250.soh_pf22",
                              FT_BOOLEAN, 8, NULL, 0x20, NULL, HFILL }},
@@ -6238,11 +6220,11 @@ proto_register_tn5250(void)
         FT_UINT8, BASE_DEC, NULL, 0,
         NULL, HFILL }},
     { &hf_tn5250_wdsf_deg_ms_horizontal_dimension,
-      { "Horizontal Dimenstion", "tn5250.wdsf_deg_ms_horizontal_dimension",
+      { "Horizontal Dimension", "tn5250.wdsf_deg_ms_horizontal_dimension",
         FT_UINT8, BASE_DEC, NULL, 0,
         NULL, HFILL }},
     { &hf_tn5250_wdsf_deg_ms_vertical_dimension,
-      { "Vertical Dimenstion", "tn5250.wdsf_deg_ms_vertical_dimension",
+      { "Vertical Dimension", "tn5250.wdsf_deg_ms_vertical_dimension",
         FT_UINT8, BASE_DEC, NULL, 0,
         NULL, HFILL }},
     { &hf_tn5250_wdsf_deg_ms_default_color,
@@ -7441,7 +7423,7 @@ proto_register_tn5250(void)
     { &hf_tn5250_field_data,
       {  "Field Data", "tn5250.field_data", FT_STRING, BASE_NONE, NULL, 0x0,
          NULL, HFILL }},
-    { &hf_tn5250_reserved, {  "Flags (Reserved):", "tn5250.reserved",
+    { &hf_tn5250_reserved, {  "Flags (Reserved)", "tn5250.reserved",
                               FT_UINT8, BASE_HEX|BASE_RANGE_STRING, RVALS(vals_tn5250_reserved), 0,
                               NULL, HFILL }},
     { &hf_tn5250_unknown_data,
@@ -7493,7 +7475,7 @@ proto_register_tn5250(void)
 
   };
 
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_tn5250,
     &ett_sf,
     &ett_tn5250_wcc,
@@ -7555,7 +7537,7 @@ proto_register_tn5250(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

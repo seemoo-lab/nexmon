@@ -5657,7 +5657,7 @@
    <value enum='AK' description='PRIOR_REFERENCE_PRICE' />
    <value enum='AL' description='STOPPED_SOLD_LAST' />
    <value enum='AM' description='STOPPED_OUT_OF_SEQUENCE' />
-   <value enum='AN' description='OFFICAL_CLOSING_PRICE' />
+   <value enum='AN' description='OFFICIAL_CLOSING_PRICE' />
    <value enum='AO' description='CROSSED_AO' />
    <value enum='AP' description='FAST_MARKET' />
    <value enum='AQ' description='AUTOMATIC_EXECUTION' />
@@ -6027,7 +6027,7 @@
   <field number='393' name='TotNoRelatedSym' type='INT' />
   <field number='394' name='BidType' type='INT'>
    <value enum='1' description='NON_DISCLOSED_STYLE' />
-   <value enum='2' description='DISCLOSED_SYTLE' />
+   <value enum='2' description='DISCLOSED_STYLE' />
    <value enum='3' description='NO_BIDDING_PROCESS' />
   </field>
   <field number='395' name='NumTickets' type='INT' />
@@ -6208,7 +6208,7 @@
    <value enum='12' description='EXECUTING_TRADER' />
    <value enum='13' description='ORDER_ORIGINATION_FIRM' />
    <value enum='14' description='GIVEUP_CLEARING_FIRM' />
-   <value enum='15' description='CORRESPONDANT_CLEARING_FIRM' />
+   <value enum='15' description='CORRESPONDENT_CLEARING_FIRM' />
    <value enum='16' description='EXECUTING_SYSTEM' />
    <value enum='17' description='CONTRA_FIRM' />
    <value enum='18' description='CONTRA_CLEARING_FIRM' />
@@ -6581,7 +6581,7 @@
   <field number='532' name='MassCancelRejectReason' type='INT'>
    <value enum='0' description='MASS_CANCEL_NOT_SUPPORTED' />
    <value enum='1' description='INVALID_OR_UNKNOWN_SECURITY' />
-   <value enum='2' description='INVALID_OR_UNKOWN_UNDERLYING_SECURITY' />
+   <value enum='2' description='INVALID_OR_UNKNOWN_UNDERLYING_SECURITY' />
    <value enum='3' description='INVALID_OR_UNKNOWN_PRODUCT' />
    <value enum='4' description='INVALID_OR_UNKNOWN_CFICODE' />
    <value enum='5' description='INVALID_OR_UNKNOWN_SECURITYTYPE' />
@@ -7519,7 +7519,7 @@
   <field number='847' name='TargetStrategy' type='INT'>
    <value enum='1' description='VWAP' />
    <value enum='2' description='PARTICIPATE' />
-   <value enum='3' description='MININIZE_MARKET_IMPACT' />
+   <value enum='3' description='MINIMIZE_MARKET_IMPACT' />
   </field>
   <field number='848' name='TargetStrategyParameters' type='STRING' />
   <field number='849' name='ParticipationRate' type='PERCENTAGE' />

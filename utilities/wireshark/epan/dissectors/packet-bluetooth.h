@@ -4,32 +4,19 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __PACKET_BLUETOOTH_H__
 #define __PACKET_BLUETOOTH_H__
 
+#include <epan/packet.h>
+#include "packet-usb.h"
+#include "packet-ubertooth.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-
-#include <epan/wmem/wmem.h>
-
-#include "packet-usb.h"
-#include "packet-ubertooth.h"
 
 #define PROTO_DATA_BLUETOOTH_SERVICE_UUID  0
 
@@ -40,6 +27,7 @@ extern "C" {
 #define HCI_H4_TYPE_ACL   0x02
 #define HCI_H4_TYPE_SCO   0x03
 #define HCI_H4_TYPE_EVT   0x04
+#define HCI_H4_TYPE_ISO   0x05
 
 #define HCI_OGF_LINK_CONTROL           0x01
 #define HCI_OGF_LINK_POLICY            0x02
@@ -92,24 +80,27 @@ typedef enum {
     BT_PD_NONE,           /* no protocol data */
     BT_PD_BTHCI,          /* struct bthci_phdr * */
     BT_PD_BTMON,          /* struct btmon_phdr * */
-    BT_PD_USB_CONV_INFO,  /* usb_conv_info_t * */
+    BT_PD_URB_INFO,       /* urb_info_t * */
     BT_PD_UBERTOOTH_DATA  /* ubertooth_data_t * */
 } bt_protocol_data_type;
 
 /* chandle_sessions:         interface_id + adapter_id + connection_handle + frame_number -> connect_in_frame, disconnect_in_frame */
 /* chandle_to_bdaddr:        interface_id + adapter_id + connection_handle + frame_number -> bd_addr[6] */
 /* chandle_to_mode:          interface_id + adapter_id + connection_handle + frame_number -> mode */
+/* shandle_to_chandle:       interface_id + adapter_id + stream_handle + frame_number -> connection_handle */
 /* bdaddr_to_name:           bd_addr[6] + frame_number -> name */
 /* bdaddr_to_role:           bd_addr[6] + frame_number -> role */
 /* localhost_bdaddr:         interface_id + adapter_id + frame_number -> bd_addr[6] */
 /* localhost_name:           interface_id + adapter_id + frame_number -> name */
 typedef struct _bluetooth_data_t {
-    guint32      interface_id;
-    guint32      adapter_id;
-    guint32     *adapter_disconnect_in_frame;
+    uint32_t     interface_id;
+    uint32_t     adapter_id;
+    uint32_t    *adapter_disconnect_in_frame;
     wmem_tree_t *chandle_sessions;
     wmem_tree_t *chandle_to_bdaddr;
     wmem_tree_t *chandle_to_mode;
+    wmem_tree_t *cs_configurations;
+    wmem_tree_t *shandle_to_chandle;
     wmem_tree_t *bdaddr_to_name;
     wmem_tree_t *bdaddr_to_role;
     wmem_tree_t *localhost_bdaddr;
@@ -121,73 +112,90 @@ typedef struct _bluetooth_data_t {
         void              *none;
         struct bthci_phdr *bthci;
         struct btmon_phdr *btmon;
-        usb_conv_info_t   *usb_conv_info;
+        urb_info_t        *urb;
         ubertooth_data_t  *ubertooth_data;
     } previous_protocol_data;
 
 } bluetooth_data_t;
 
+#define BT_LINK_TYPE_UNKNOWN 0
+#define BT_LINK_TYPE_ACL     1
+#define BT_LINK_TYPE_SCO     2
+#define BT_LINK_TYPE_LL      3
+#define BT_LINK_TYPE_ISO     4
+
 typedef struct _chandle_session_t {
-    guint32  connect_in_frame;
-    guint32  disconnect_in_frame;
+    uint32_t connect_in_frame;
+    uint32_t disconnect_in_frame;
+    uint32_t link_type;
 } chandle_session_t;
 
 typedef struct _remote_bdaddr_t {
-    guint32  interface_id;
-    guint32  adapter_id;
-    guint16  chandle;
-    guint8   bd_addr[6];
+    uint32_t interface_id;
+    uint32_t adapter_id;
+    uint16_t chandle;
+    uint8_t  bd_addr[6];
 } remote_bdaddr_t;
 
 typedef struct _device_name_t {
-    guint32  bd_addr_oui;
-    guint32  bd_addr_id;
-    gchar    *name;
+    uint32_t bd_addr_oui;
+    uint32_t bd_addr_id;
+    char     *name;
 } device_name_t;
 
 typedef struct _device_role_t {
-    guint32  role;
-    guint32  change_in_frame;
+    uint32_t role;
+    uint32_t change_in_frame;
 } device_role_t;
 
 typedef struct _connection_mode_t {
-    gint32   mode;
-    guint32  change_in_frame;
+    int32_t  mode;
+    uint32_t change_in_frame;
 } connection_mode_t;
 
-#define ROLE_UNKNOWN  0
-#define ROLE_MASTER   1
-#define ROLE_SLAVE    2
+typedef struct _stream_connection_handle_pair_t {
+    int32_t  chandle;
+    uint32_t change_in_frame;
+} stream_connection_handle_pair_t;
+
+typedef struct _cs_configuration_t {
+    uint8_t cs_role;
+    uint8_t rtt_type;
+} cs_configuration_t;
+
+#define ROLE_UNKNOWN    0
+#define ROLE_CENTRAL    1
+#define ROLE_PERIPHERAL 2
 
 typedef struct _localhost_bdaddr_entry_t {
-    guint32  interface_id;
-    guint32  adapter_id;
-    guint8   bd_addr[6];
+    uint32_t interface_id;
+    uint32_t adapter_id;
+    uint8_t  bd_addr[6];
 } localhost_bdaddr_entry_t;
 
 typedef struct _localhost_name_entry_t {
-    guint32  interface_id;
-    guint32  adapter_id;
-    gchar    *name;
+    uint32_t interface_id;
+    uint32_t adapter_id;
+    char     *name;
 } localhost_name_entry_t;
 
 typedef struct _bluetooth_tap_data_t {
-    guint32  interface_id;
-    guint32  adapter_id;
+    uint32_t interface_id;
+    uint32_t adapter_id;
 } bluetooth_tap_data_t;
 
 typedef struct _hci_vendor_data_t {
-    guint16                     manufacturer;
-    guint16                     hci_revision;
-    guint16                     lmp_subversion;
-    guint32                     change_in_frame;
+    uint16_t                    manufacturer;
+    uint16_t                    hci_revision;
+    uint16_t                    lmp_subversion;
+    uint32_t                    change_in_frame;
     struct _hci_vendor_data_t  *previous;
 } hci_vendor_data_t;
 
 typedef struct _uuid_t {
-    guint16  bt_uuid;
-    guint8   size;
-    guint8   data[16];
+    uint16_t bt_uuid;
+    uint8_t  size;
+    uint8_t  data[16];
 } bluetooth_uuid_t;
 
 enum bluetooth_device_type {
@@ -210,44 +218,46 @@ enum bluetooth_device_type {
 };
 
 typedef struct _bluetooth_device_tap_t {
-    guint32                     interface_id;
-    guint32                     adapter_id;
+    uint32_t                    interface_id;
+    uint32_t                    adapter_id;
 
-    gboolean                    is_local;
-    gboolean                    has_bd_addr;
-    guint8                      bd_addr[6];
+    bool                        is_local;
+    bool                        has_bd_addr;
+    uint8_t                     bd_addr[6];
     enum bluetooth_device_type  type;
     union {
         char  *name;
         struct {
-            guint8   hci_version;
-            guint16  hci_revision;
-            guint8   lmp_version;
-            guint16  lmp_subversion;
-            guint16  manufacturer;
+            uint8_t  hci_version;
+            uint16_t hci_revision;
+            uint8_t  lmp_version;
+            uint16_t lmp_subversion;
+            uint16_t manufacturer;
         } local_version;
         struct {
-            guint8   lmp_version;
-            guint16  lmp_subversion;
-            guint16  manufacturer;
+            uint8_t  lmp_version;
+            uint16_t lmp_subversion;
+            uint16_t manufacturer;
         } remote_version;
-        guint8   scan;
-        guint16  page_timeout;
-        guint8   authentication;
-        guint8   encryption;
-        guint32  class_of_device;
-        guint16  voice_setting;
-        guint8   simple_pairing_mode;
-        guint8   inquiry_mode;
+        uint8_t  scan;
+        uint16_t page_timeout;
+        uint8_t  authentication;
+        uint8_t  encryption;
+        uint32_t class_of_device;
+        uint16_t voice_setting;
+        uint8_t  simple_pairing_mode;
+        uint8_t  inquiry_mode;
         struct {
-            guint16  acl_mtu;
-            guint8   sco_mtu;
-            guint16  acl_packets;
-            guint16  sco_packets;
+            uint16_t acl_mtu;
+            uint8_t  sco_mtu;
+            uint16_t acl_packets;
+            uint16_t sco_packets;
         } mtus;
         struct {
-            guint16  acl_mtu;
-            guint16  acl_packets;
+            uint16_t acl_mtu;
+            uint16_t iso_mtu;
+            uint16_t acl_packets;
+            uint16_t iso_packets;
         } le_mtus;
     } data;
 } bluetooth_device_tap_t;
@@ -256,6 +266,7 @@ enum bluetooth_hci_summary_type {
     BLUETOOTH_HCI_SUMMARY_OPCODE,
     BLUETOOTH_HCI_SUMMARY_EVENT_OPCODE,
     BLUETOOTH_HCI_SUMMARY_EVENT,
+    BLUETOOTH_HCI_SUMMARY_SUBEVENT,
     BLUETOOTH_HCI_SUMMARY_VENDOR_OPCODE,
     BLUETOOTH_HCI_SUMMARY_VENDOR_EVENT_OPCODE,
     BLUETOOTH_HCI_SUMMARY_VENDOR_EVENT,
@@ -266,25 +277,26 @@ enum bluetooth_hci_summary_type {
 };
 
 typedef struct _bluetooth_hci_summary_tap_t {
-    guint32                          interface_id;
-    guint32                          adapter_id;
+    uint32_t                         interface_id;
+    uint32_t                         adapter_id;
 
-    guint16                          ocf;
-    guint8                           ogf;
-    guint8                           event;
-    guint8                           status;
-    guint8                           reason;
-    guint8                           hardware_error;
+    uint16_t                         ocf;
+    uint8_t                          ogf;
+    uint8_t                          event;
+    uint8_t                          subevent;
+    uint8_t                          status;
+    uint8_t                          reason;
+    uint8_t                          hardware_error;
 
-    const gchar                     *name;
+    const char                      *name;
     enum bluetooth_hci_summary_type  type;
 } bluetooth_hci_summary_tap_t;
 
 typedef struct _bluetooth_eir_ad_data_t {
-    guint32           interface_id;
-    guint32           adapter_id;
+    uint32_t          interface_id;
+    uint32_t          adapter_id;
 
-    guint8           *bd_addr;
+    uint8_t          *bd_addr;
 } bluetooth_eir_ad_data_t;
 
 
@@ -297,20 +309,46 @@ extern dissector_table_t  bluetooth_uuid_table;
 
 WS_DLL_PUBLIC wmem_tree_t *bluetooth_uuids;
 
+WS_DLL_PUBLIC void bluetooth_add_custom_uuid(const char *uuid, const char *label, bool long_attr);
+WS_DLL_PUBLIC bool bluetooth_get_custom_uuid_long_attr(wmem_allocator_t* scope, const bluetooth_uuid_t *uuid);
+WS_DLL_PUBLIC const char* bluetooth_get_custom_uuid_description(wmem_allocator_t* scope, const bluetooth_uuid_t *uuid);
+
 WS_DLL_PUBLIC value_string_ext  bluetooth_uuid_vals_ext;
 WS_DLL_PUBLIC value_string_ext  bluetooth_company_id_vals_ext;
-extern guint32           max_disconnect_in_frame;
 
-extern gint dissect_bd_addr(gint hf_bd_addr, packet_info *pinfo, proto_tree *tree,
-        tvbuff_t *tvb, gint offset, gboolean is_local_bd_addr,
-        guint32 interface_id, guint32 adapter_id, guint8 *bdaddr);
+typedef struct _btatt_handle_strings_t {
+    uint32_t    value;
+    const char *name;
+    const char *short_name;
+    const char *abbrev;
+} btatt_handle_strings_t;
 
-extern bluetooth_uuid_t  get_uuid(tvbuff_t *tvb, gint offset, gint size);
-WS_DLL_PUBLIC const gchar  *print_uuid(bluetooth_uuid_t *uuid);
-WS_DLL_PUBLIC const gchar  *print_numeric_uuid(bluetooth_uuid_t *uuid);
+WS_DLL_PUBLIC const btatt_handle_strings_t btatt_handle_strings[];
 
-extern void save_local_device_name_from_eir_ad(tvbuff_t *tvb, gint offset,
-        packet_info *pinfo, guint8 size, bluetooth_data_t *bluetooth_data);
+extern uint32_t          bluetooth_max_disconnect_in_frame;
+
+extern int dissect_bd_addr(int hf_bd_addr, packet_info *pinfo, proto_tree *tree,
+        tvbuff_t *tvb, int offset, bool is_local_bd_addr,
+        uint32_t interface_id, uint32_t adapter_id, uint8_t *bdaddr);
+
+extern void bluetooth_unit_0p625_ms(char *buf, uint32_t value);
+extern void bluetooth_unit_1p25_ms(char *buf, uint32_t value);
+extern void bluetooth_unit_0p01_sec(char *buf, uint32_t value);
+extern void bluetooth_unit_0p125_ms(char *buf, uint32_t value);
+
+extern bluetooth_uuid_t  get_bluetooth_uuid(tvbuff_t *tvb, int offset, int size);
+WS_DLL_PUBLIC const char   *print_bluetooth_uuid(wmem_allocator_t *pool, const bluetooth_uuid_t *uuid);
+WS_DLL_PUBLIC const char   *print_numeric_bluetooth_uuid(wmem_allocator_t *pool, const bluetooth_uuid_t *uuid);
+
+WS_DLL_PUBLIC const value_string bluetooth_procedure_count_special[];
+WS_DLL_PUBLIC const value_string bluetooth_not_supported_0x00_special[];
+WS_DLL_PUBLIC const value_string bluetooth_not_used_0xff_special[];
+
+extern void save_local_device_name_from_eir_ad(tvbuff_t *tvb, int offset,
+        packet_info *pinfo, uint8_t size, bluetooth_data_t *bluetooth_data);
+
+WS_DLL_PUBLIC bluetooth_data_t *
+dissect_bluetooth_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree);
 
 #ifdef __cplusplus
 }
@@ -319,7 +357,7 @@ extern void save_local_device_name_from_eir_ad(tvbuff_t *tvb, gint offset,
 #endif
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

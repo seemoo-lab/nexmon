@@ -4,19 +4,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __PACKET_FCCT_H_
@@ -74,29 +62,29 @@
 extern const value_string fc_ct_gstype_vals [];
 extern const value_string fc_ct_gsserver_vals [];
 extern const value_string fc_ct_rjt_code_vals [];
-extern guint8 get_gs_server (guint8 type, guint8 subtype);
+extern uint8_t get_gs_server (uint8_t type, uint8_t subtype);
 
 typedef struct _fc_ct_preamble {
-    guint32 in_id:24,
+    uint32_t in_id:24,
             revision:8;
-    guint8  gstype;
-    guint8  gssubtype;
-    guint8  options;
-    guint8  rsvd1;
-    guint16 opcode;
-    guint16 maxres_size;
-    guint8  rsvd2;
-    guint8  rjt_code;
-    guint8  rjt_code_det;
-    guint8  rjt_code_vendor;
+    uint8_t gstype;
+    uint8_t gssubtype;
+    uint8_t options;
+    uint8_t rsvd1;
+    uint16_t opcode;
+    uint16_t maxres_size;
+    uint8_t rsvd2;
+    uint8_t rjt_code;
+    uint8_t rjt_code_det;
+    uint8_t rjt_code_vendor;
 } fc_ct_preamble;
 
 typedef struct _fc_ct_ext_hdr {
-    guint32 auth_said;
-    guint32 tid;
-    guint32 req_pname[2];
-    guint32 timestamp[2];
-    guint32 auth_hashblk[15];
+    uint32_t auth_said;
+    uint32_t tid;
+    uint32_t req_pname[2];
+    uint32_t timestamp[2];
+    uint32_t auth_hashblk[15];
 } fc_ct_ext_hdr;
 
 #endif

@@ -8,19 +8,7 @@
  *
  * Copied from packet-pop.c
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -28,85 +16,85 @@
 
 #include <epan/packet.h>
 #include <epan/to_str.h>
-
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 #include "packet-smb-browse.h"
 #include "packet-dcerpc.h"
 
 void proto_register_smb_browse(void);
-void proto_reg_handoff_smb_browse(void);
 
-static int proto_smb_browse = -1;
-static int hf_command = -1;
-static int hf_update_count = -1;
-static int hf_periodicity = -1;
-static int hf_server_name = -1;
-static int hf_mb_server_name = -1;
-static int hf_mb_reset_command = -1;
-static int hf_mb_reset_demote = -1;
-static int hf_mb_reset_flush = -1;
-static int hf_mb_reset_stop = -1;
-static int hf_os_major = -1;
-static int hf_os_minor = -1;
-static int hf_server_type = -1;
-static int hf_server_type_workstation = -1;
-static int hf_server_type_server = -1;
-static int hf_server_type_sql = -1;
-static int hf_server_type_domain = -1;
-static int hf_server_type_backup = -1;
-static int hf_server_type_time = -1;
-static int hf_server_type_apple = -1;
-static int hf_server_type_novell = -1;
-static int hf_server_type_member = -1;
-static int hf_server_type_print = -1;
-static int hf_server_type_dialin = -1;
-static int hf_server_type_xenix = -1;
-static int hf_server_type_ntw = -1;
-static int hf_server_type_wfw = -1;
-static int hf_server_type_nts = -1;
-static int hf_server_type_potentialb = -1;
-static int hf_server_type_backupb = -1;
-static int hf_server_type_masterb = -1;
-static int hf_server_type_domainmasterb = -1;
-static int hf_server_type_osf = -1;
-static int hf_server_type_vms = -1;
-static int hf_server_type_w95 = -1;
-static int hf_server_type_dfs = -1;
-static int hf_server_type_local = -1;
-static int hf_server_type_domainenum = -1;
-static int hf_election_version = -1;
-static int hf_proto_major = -1;
-static int hf_proto_minor = -1;
-static int hf_sig_const = -1;
-static int hf_server_comment = -1;
-static int hf_unused_flags = -1;
-static int hf_response_computer_name = -1;
-static int hf_election_criteria = -1;
-static int hf_election_desire = -1;
-static int hf_election_desire_flags_backup = -1;
-static int hf_election_desire_flags_standby = -1;
-static int hf_election_desire_flags_master = -1;
-static int hf_election_desire_flags_domain_master = -1;
-static int hf_election_desire_flags_wins = -1;
-static int hf_election_desire_flags_nt = -1;
-/* static int hf_election_revision = -1; */
-static int hf_election_os = -1;
-static int hf_election_os_wfw = -1;
-static int hf_election_os_ntw = -1;
-static int hf_election_os_nts = -1;
-static int hf_server_uptime = -1;
-static int hf_backup_count = -1;
-static int hf_backup_token = -1;
-static int hf_backup_server = -1;
-static int hf_browser_to_promote = -1;
-static int hf_windows_version = -1;
-static int hf_mysterious_field = -1;
+static int proto_smb_browse;
+static int hf_command;
+static int hf_update_count;
+static int hf_periodicity;
+static int hf_server_name;
+static int hf_mb_server_name;
+static int hf_mb_reset_command;
+static int hf_mb_reset_demote;
+static int hf_mb_reset_flush;
+static int hf_mb_reset_stop;
+static int hf_os_major;
+static int hf_os_minor;
+static int hf_server_type;
+static int hf_server_type_workstation;
+static int hf_server_type_server;
+static int hf_server_type_sql;
+static int hf_server_type_domain;
+static int hf_server_type_backup;
+static int hf_server_type_time;
+static int hf_server_type_apple;
+static int hf_server_type_novell;
+static int hf_server_type_member;
+static int hf_server_type_print;
+static int hf_server_type_dialin;
+static int hf_server_type_xenix;
+static int hf_server_type_ntw;
+static int hf_server_type_wfw;
+static int hf_server_type_nts;
+static int hf_server_type_potentialb;
+static int hf_server_type_backupb;
+static int hf_server_type_masterb;
+static int hf_server_type_domainmasterb;
+static int hf_server_type_osf;
+static int hf_server_type_vms;
+static int hf_server_type_w95;
+static int hf_server_type_dfs;
+static int hf_server_type_local;
+static int hf_server_type_domainenum;
+static int hf_election_version;
+static int hf_proto_major;
+static int hf_proto_minor;
+static int hf_sig_const;
+static int hf_server_comment;
+static int hf_unused_flags;
+static int hf_response_computer_name;
+static int hf_election_criteria;
+static int hf_election_desire;
+static int hf_election_desire_flags_backup;
+static int hf_election_desire_flags_standby;
+static int hf_election_desire_flags_master;
+static int hf_election_desire_flags_domain_master;
+static int hf_election_desire_flags_wins;
+static int hf_election_desire_flags_nt;
+/* static int hf_election_revision; */
+static int hf_election_os;
+static int hf_election_os_wfw;
+static int hf_election_os_ntw;
+static int hf_election_os_nts;
+static int hf_server_uptime;
+static int hf_backup_count;
+static int hf_backup_token;
+static int hf_backup_server;
+static int hf_browser_to_promote;
+static int hf_windows_version;
+static int hf_mysterious_field;
 
-static gint ett_browse = -1;
-static gint ett_browse_flags = -1;
-static gint ett_browse_election_criteria = -1;
-static gint ett_browse_election_os = -1;
-static gint ett_browse_election_desire = -1;
-static gint ett_browse_reset_cmd_flags = -1;
+static int ett_browse;
+static int ett_browse_flags;
+static int ett_browse_election_criteria;
+static int ett_browse_election_os;
+static int ett_browse_election_desire;
+static int ett_browse_reset_cmd_flags;
 
 #define SERVER_WORKSTATION		 0
 #define SERVER_SERVER			 1
@@ -382,7 +370,7 @@ static const true_false_string tfs_os_nts = {
 static void
 dissect_election_criterion_os(tvbuff_t *tvb, proto_tree *parent_tree, int offset)
 {
-	static const int * flags[] = {
+	static int * const flags[] = {
 		&hf_election_os_wfw,
 		&hf_election_os_ntw,
 		&hf_election_os_nts,
@@ -395,7 +383,7 @@ dissect_election_criterion_os(tvbuff_t *tvb, proto_tree *parent_tree, int offset
 static void
 dissect_election_criterion_desire(tvbuff_t *tvb, proto_tree *parent_tree, int offset)
 {
-	static const int * flags[] = {
+	static int * const flags[] = {
 		&hf_election_desire_flags_backup,
 		&hf_election_desire_flags_standby,
 		&hf_election_desire_flags_master,
@@ -413,7 +401,7 @@ dissect_election_criterion(tvbuff_t *tvb, proto_tree *parent_tree, int offset)
 {
 	proto_tree *tree = NULL;
 	proto_item *item = NULL;
-	guint32 criterion;
+	uint32_t criterion;
 
 	criterion = tvb_get_letohl(tvb, offset);
 
@@ -444,13 +432,13 @@ dissect_election_criterion(tvbuff_t *tvb, proto_tree *parent_tree, int offset)
  */
 int
 dissect_smb_server_type_flags(tvbuff_t *tvb, int offset, packet_info *pinfo,
-			      proto_tree *parent_tree, guint8 *drep,
-			      gboolean infoflag)
+			      proto_tree *parent_tree, uint8_t *drep,
+			      bool infoflag)
 {
-	guint32 flags;
+	uint32_t flags;
 	int i;
 
-	static const int * type_flags[] = {
+	static int * const type_flags[] = {
 		&hf_server_type_workstation,
 		&hf_server_type_server,
 		&hf_server_type_sql,
@@ -507,7 +495,7 @@ dissect_smb_server_type_flags(tvbuff_t *tvb, int offset, packet_info *pinfo,
 		for (i = 0; i < 32; i++) {
 			if (flags & (1U<<i)) {
 				col_append_fstr(pinfo->cinfo, COL_INFO, ", %s",
-					val_to_str(i, server_types,
+					val_to_str(pinfo->pool, i, server_types,
 					"Unknown server type:%d"));
 			}
 		}
@@ -525,25 +513,25 @@ static int
 dissect_mailslot_browse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* data _U_)
 {
 	int offset = 0;
-	guint8 cmd;
+	uint8_t cmd;
 	proto_tree *tree = NULL;
 	proto_item *item = NULL;
-	guint32 periodicity;
-	guint8 *host_name;
-	gint namelen;
-	guint8 server_count;
-	guint8 os_major_ver, os_minor_ver;
-	const gchar *windows_version;
+	uint32_t periodicity;
+	uint8_t *host_name;
+	int namelen;
+	uint8_t server_count;
+	uint8_t os_major_ver, os_minor_ver;
+	const char *windows_version;
 	int i;
-	guint32 uptime;
+	uint32_t uptime;
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "BROWSER");
 	col_clear(pinfo->cinfo, COL_INFO);
 
-	cmd = tvb_get_guint8(tvb, offset);
+	cmd = tvb_get_uint8(tvb, offset);
 
 	/* Put in something, and replace it later */
-	col_add_str(pinfo->cinfo, COL_INFO, val_to_str(cmd, commands, "Unknown command:0x%02x"));
+	col_add_str(pinfo->cinfo, COL_INFO, val_to_str(pinfo->pool, cmd, commands, "Unknown command:0x%02x"));
 
 
 	item = proto_tree_add_item(parent_tree, proto_smb_browse, tvb, offset, -1, ENC_NA);
@@ -566,11 +554,11 @@ dissect_mailslot_browse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tr
 		proto_tree_add_uint_format_value(tree, hf_periodicity, tvb, offset, 4,
 		    periodicity,
 		    "%s",
-		    signed_time_msecs_to_str(wmem_packet_scope(), periodicity));
+		    signed_time_msecs_to_str(pinfo->pool, periodicity));
 		offset += 4;
 
 		/* server name */
-		host_name = tvb_get_stringzpad(wmem_packet_scope(), tvb, offset, HOST_NAME_LEN, ENC_CP437|ENC_NA);
+		host_name = tvb_get_stringzpad(pinfo->pool, tvb, offset, HOST_NAME_LEN, ENC_CP437|ENC_NA);
 		col_append_fstr(pinfo->cinfo, COL_INFO, " %s", host_name);
 		proto_tree_add_string_format(tree, hf_server_name,
 			tvb, offset, HOST_NAME_LEN,
@@ -582,8 +570,8 @@ dissect_mailslot_browse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tr
 		offset += HOST_NAME_LEN;
 
 		/* Windows version (See "OSVERSIONINFO Structure" on MSDN) */
-		os_major_ver = tvb_get_guint8(tvb, offset);
-		os_minor_ver = tvb_get_guint8(tvb, offset+1);
+		os_major_ver = tvb_get_uint8(tvb, offset);
+		os_minor_ver = tvb_get_uint8(tvb, offset+1);
 
 		SET_WINDOWS_VERSION_STRING(os_major_ver, os_minor_ver, windows_version);
 		proto_tree_add_string(tree, hf_windows_version, tvb, offset, 2, windows_version);
@@ -598,7 +586,7 @@ dissect_mailslot_browse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tr
 
 		/* server type flags */
 		offset = dissect_smb_server_type_flags(
-			tvb, offset, pinfo, tree, NULL, TRUE);
+			tvb, offset, pinfo, tree, NULL, true);
 
 		if (cmd == BROWSE_DOMAIN_ANNOUNCEMENT && tvb_get_letohs (tvb, offset + 2) != 0xAA55) {
 			/*
@@ -634,7 +622,7 @@ dissect_mailslot_browse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tr
 		break;
 	}
 	case BROWSE_REQUEST_ANNOUNCE: {
-		guint8 *computer_name;
+		uint8_t *computer_name;
 
 		/* unused/unknown flags */
 		proto_tree_add_item(tree, hf_unused_flags,
@@ -642,7 +630,7 @@ dissect_mailslot_browse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tr
 		offset += 1;
 
 		/* name of computer to which to send reply */
-		computer_name = tvb_get_stringz_enc(wmem_packet_scope(), tvb, offset, &namelen, ENC_ASCII);
+		computer_name = tvb_get_stringz_enc(pinfo->pool, tvb, offset, &namelen, ENC_ASCII);
 		proto_tree_add_string(tree, hf_response_computer_name,
 			tvb, offset, namelen, computer_name);
 		col_append_fstr(pinfo->cinfo, COL_INFO, " %s", computer_name);
@@ -663,7 +651,7 @@ dissect_mailslot_browse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tr
 		proto_tree_add_uint_format_value(tree, hf_server_uptime,
 		    tvb, offset, 4, uptime,
 		    "%s",
-		    signed_time_msecs_to_str(wmem_packet_scope(), uptime));
+		    signed_time_msecs_to_str(pinfo->pool, uptime));
 		offset += 4;
 
 		/* next 4 bytes must be zero */
@@ -672,7 +660,7 @@ dissect_mailslot_browse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tr
 		/* server name */
 		namelen = tvb_strsize(tvb, offset);
 		proto_tree_add_item(tree, hf_server_name,
-			tvb, offset, namelen, ENC_ASCII|ENC_NA);
+			tvb, offset, namelen, ENC_ASCII);
 		break;
 
 	case BROWSE_BACKUP_LIST_REQUEST:
@@ -686,7 +674,7 @@ dissect_mailslot_browse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tr
 
 	case BROWSE_BACKUP_LIST_RESPONSE:
 		/* backup list requested count */
-		server_count = tvb_get_guint8(tvb, offset);
+		server_count = tvb_get_uint8(tvb, offset);
 		proto_tree_add_uint(tree, hf_backup_count, tvb, offset, 1,
 		    server_count);
 		offset += 1;
@@ -699,7 +687,7 @@ dissect_mailslot_browse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tr
 		for (i = 0; i < server_count; i++) {
 			namelen = tvb_strsize(tvb, offset);
 			proto_tree_add_item(tree, hf_backup_server,
-				tvb, offset, namelen, ENC_ASCII|ENC_NA);
+				tvb, offset, namelen, ENC_ASCII);
 			offset += namelen;
 		}
 		break;
@@ -708,11 +696,11 @@ dissect_mailslot_browse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tr
 		/* master browser server name */
 		namelen = tvb_strsize(tvb, offset);
 		proto_tree_add_item(tree, hf_mb_server_name,
-			tvb, offset, namelen, ENC_ASCII|ENC_NA);
+			tvb, offset, namelen, ENC_ASCII);
 		break;
 
 	case BROWSE_RESETBROWSERSTATE_ANNOUNCEMENT: {
-		static const int * flags[] = {
+		static int * const flags[] = {
 			&hf_mb_reset_demote,
 			&hf_mb_reset_flush,
 			&hf_mb_reset_stop,
@@ -727,7 +715,7 @@ dissect_mailslot_browse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tr
 		/* name of browser to promote */
 		namelen = tvb_strsize(tvb, offset);
 		proto_tree_add_item(tree, hf_browser_to_promote,
-			tvb, offset, namelen, ENC_ASCII|ENC_NA);
+			tvb, offset, namelen, ENC_ASCII);
 		break;
 	}
 	return tvb_captured_length(tvb);
@@ -754,22 +742,22 @@ static int
 dissect_mailslot_lanman(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* data _U_)
 {
 	int offset = 0;
-	guint8 cmd;
+	uint8_t cmd;
 	proto_tree *tree;
 	proto_item *item;
-	guint32 periodicity;
-	const guint8 *host_name;
-	guint8 os_major_ver, os_minor_ver;
-	const gchar *windows_version;
-	guint namelen;
+	uint32_t periodicity;
+	const uint8_t *host_name;
+	uint8_t os_major_ver, os_minor_ver;
+	const char *windows_version;
+	unsigned namelen;
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "BROWSER");
 	col_clear(pinfo->cinfo, COL_INFO);
 
-	cmd = tvb_get_guint8(tvb, offset);
+	cmd = tvb_get_uint8(tvb, offset);
 
 	/* Put in something, and replace it later */
-	col_add_str(pinfo->cinfo, COL_INFO, val_to_str(cmd, commands, "Unknown command:0x%02x"));
+	col_add_str(pinfo->cinfo, COL_INFO, val_to_str(pinfo->pool, cmd, commands, "Unknown command:0x%02x"));
 
 	item = proto_tree_add_item(parent_tree, proto_smb_browse, tvb, offset, -1, ENC_NA);
 	tree = proto_item_add_subtree(item, ett_browse);
@@ -788,11 +776,11 @@ dissect_mailslot_lanman(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tr
 
 		/* server type flags */
 		offset = dissect_smb_server_type_flags(
-			tvb, offset, pinfo, tree, NULL, TRUE);
+			tvb, offset, pinfo, tree, NULL, true);
 
 		/* OS version string (See "OSVERSIONINFO Structure" on MSDN) */
-		os_major_ver = tvb_get_guint8(tvb, offset);
-		os_minor_ver = tvb_get_guint8(tvb, offset+1);
+		os_major_ver = tvb_get_uint8(tvb, offset);
+		os_minor_ver = tvb_get_uint8(tvb, offset+1);
 
 		SET_WINDOWS_VERSION_STRING(os_major_ver, os_minor_ver, windows_version);
 		proto_tree_add_string(tree, hf_windows_version, tvb, offset, 2, windows_version);
@@ -810,15 +798,15 @@ dissect_mailslot_lanman(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tr
 		proto_tree_add_uint_format_value(tree, hf_periodicity, tvb, offset, 2,
 		    periodicity,
 		    "%s",
-		    signed_time_msecs_to_str(wmem_packet_scope(), periodicity));
+		    signed_time_msecs_to_str(pinfo->pool, periodicity));
 		offset += 2;
 
 		/* server name */
-		host_name = tvb_get_stringz_enc(wmem_packet_scope(), tvb, offset, &namelen, ENC_CP437|ENC_NA);
+		host_name = tvb_get_stringz_enc(pinfo->pool, tvb, offset, &namelen, ENC_CP437|ENC_NA);
 		col_append_fstr(pinfo->cinfo, COL_INFO, " %s", host_name);
 
 		proto_tree_add_item(tree, hf_server_name,
-			tvb, offset, namelen, ENC_ASCII|ENC_NA);
+			tvb, offset, namelen, ENC_ASCII);
 		offset += namelen;
 
 		/* master browser server name or server comment */
@@ -1092,7 +1080,7 @@ proto_register_smb_browse(void)
 			NULL, 0, NULL, HFILL }},
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_browse,
 		&ett_browse_flags,
 		&ett_browse_election_criteria,
@@ -1114,7 +1102,7 @@ proto_register_smb_browse(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

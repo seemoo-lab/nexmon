@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1999 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* Include files */
@@ -28,16 +16,17 @@
 
 #include <epan/packet.h>
 #include <epan/prefs.h>
-#include "dwarf.h"
 #include "packet-tcp.h"
 
 void proto_register_netsync(void);
 void proto_reg_handoff_netsync(void);
 
+static dissector_handle_t netsync_handle;
+
 /*
  * See
  *
- *	http://www.venge.net/monotone/
+ *	http://www.monotone.ca
  */
 
 /* Define TCP ports for Monotone netsync */
@@ -90,61 +79,61 @@ static const value_string netsync_cmd_vals[] = {
 #define NETSNYC_MERKLE_HASH_LENGTH 20
 
 /* Define the monotone netsync proto */
-static int proto_netsync = -1;
+static int proto_netsync;
 
-static int hf_netsync_version = -1;
-static int hf_netsync_command = -1;
-static int hf_netsync_size = -1;
-static int hf_netsync_data = -1;
-static int hf_netsync_checksum = -1;
+static int hf_netsync_version;
+static int hf_netsync_command;
+static int hf_netsync_size;
+static int hf_netsync_data;
+static int hf_netsync_checksum;
 
-static int hf_netsync_cmd_done_level = -1;
-static int hf_netsync_cmd_done_type = -1;
+static int hf_netsync_cmd_done_level;
+static int hf_netsync_cmd_done_type;
 
-static int hf_netsync_cmd_hello_keyname = -1;
-static int hf_netsync_cmd_hello_key = -1;
-static int hf_netsync_cmd_nonce = -1;
+static int hf_netsync_cmd_hello_keyname;
+static int hf_netsync_cmd_hello_key;
+static int hf_netsync_cmd_nonce;
 
-static int hf_netsync_cmd_anonymous_role = -1;
-static int hf_netsync_cmd_anonymous_collection = -1;
+static int hf_netsync_cmd_anonymous_role;
+static int hf_netsync_cmd_anonymous_collection;
 
-static int hf_netsync_cmd_send_data_type = -1;
-static int hf_netsync_cmd_send_data_id = -1;
+static int hf_netsync_cmd_send_data_type;
+static int hf_netsync_cmd_send_data_id;
 
-static int hf_netsync_cmd_error_msg = -1;
+static int hf_netsync_cmd_error_msg;
 
 
-static int hf_netsync_cmd_confirm_sig = -1;
+static int hf_netsync_cmd_confirm_sig;
 
-static int hf_netsync_cmd_auth_role = -1;
-static int hf_netsync_cmd_auth_collection = -1;
-static int hf_netsync_cmd_auth_id = -1;
-static int hf_netsync_cmd_auth_nonce1 = -1;
-static int hf_netsync_cmd_auth_nonce2 = -1;
-static int hf_netsync_cmd_auth_sig = -1;
+static int hf_netsync_cmd_auth_role;
+static int hf_netsync_cmd_auth_collection;
+static int hf_netsync_cmd_auth_id;
+static int hf_netsync_cmd_auth_nonce1;
+static int hf_netsync_cmd_auth_nonce2;
+static int hf_netsync_cmd_auth_sig;
 
-static int hf_netsync_cmd_data_type = -1;
-static int hf_netsync_cmd_data_id = -1;
-static int hf_netsync_cmd_data_compressed = -1;
-static int hf_netsync_cmd_data_payload = -1;
+static int hf_netsync_cmd_data_type;
+static int hf_netsync_cmd_data_id;
+static int hf_netsync_cmd_data_compressed;
+static int hf_netsync_cmd_data_payload;
 
-static int hf_netsync_cmd_delta_type = -1;
-static int hf_netsync_cmd_delta_base_id = -1;
-static int hf_netsync_cmd_delta_ident_id = -1;
-static int hf_netsync_cmd_delta_compressed = -1;
-static int hf_netsync_cmd_delta_payload = -1;
+static int hf_netsync_cmd_delta_type;
+static int hf_netsync_cmd_delta_base_id;
+static int hf_netsync_cmd_delta_ident_id;
+static int hf_netsync_cmd_delta_compressed;
+static int hf_netsync_cmd_delta_payload;
 
-static int hf_netsync_cmd_refine_tree_node = -1;
+static int hf_netsync_cmd_refine_tree_node;
 
-static int hf_netsync_cmd_send_delta_type = -1;
-static int hf_netsync_cmd_send_delta_base_id = -1;
-static int hf_netsync_cmd_send_delta_ident_id = -1;
+static int hf_netsync_cmd_send_delta_type;
+static int hf_netsync_cmd_send_delta_base_id;
+static int hf_netsync_cmd_send_delta_ident_id;
 
-static int hf_netsync_cmd_nonexistent_type = -1;
-static int hf_netsync_cmd_nonexistent_id = -1;
+static int hf_netsync_cmd_nonexistent_type;
+static int hf_netsync_cmd_nonexistent_id;
 
 /* Define the tree for netsync */
-static int ett_netsync = -1;
+static int ett_netsync;
 
 
 /*
@@ -152,44 +141,41 @@ static int ett_netsync = -1;
  * for monotone netsync
  */
 
-static guint global_tcp_port_netsync = TCP_PORT_NETSYNC;
-static gboolean netsync_desegment = TRUE;
+static bool netsync_desegment = true;
 
-static gint dissect_netsync_cmd_error( tvbuff_t *tvb,  gint offset, proto_tree *tree, guint size _U_)
+static int dissect_netsync_cmd_error( tvbuff_t *tvb,  int offset, proto_tree *tree, unsigned size _U_)
 {
-	guint64 len = 0;
+	uint64_t len = 0;
 
-	offset += dissect_uleb128( tvb, offset, &len );
+	offset += tvb_get_varint( tvb, offset, FT_VARINT_MAX_LEN, &len, ENC_VARINT_PROTOBUF );
 
 	proto_tree_add_item(tree, hf_netsync_cmd_error_msg, tvb,
-				offset, (gint)len, ENC_ASCII|ENC_NA );
-	offset += (gint)len;
+				offset, (int)len, ENC_ASCII );
+	offset += (int)len;
 
 	return offset;
 }
 
-static gint dissect_netsync_cmd_bye(tvbuff_t *tvb _U_,  gint offset, proto_tree *tree _U_, guint size _U_)
+static int dissect_netsync_cmd_bye(tvbuff_t *tvb _U_,  int offset, proto_tree *tree _U_, unsigned size _U_)
 {
 	return offset;
 }
 
 
-static gint dissect_netsync_cmd_hello(tvbuff_t *tvb,  gint offset, proto_tree *tree, guint size _U_)
+static int dissect_netsync_cmd_hello(tvbuff_t *tvb,  int offset, proto_tree *tree, unsigned size _U_)
 {
-	guint64 len = 0;
+	uint64_t len = 0;
 
-	offset += dissect_uleb128( tvb, offset, &len );
-
+	offset += tvb_get_varint( tvb, offset, FT_VARINT_MAX_LEN, &len, ENC_VARINT_PROTOBUF );
 	proto_tree_add_item(tree, hf_netsync_cmd_hello_keyname, tvb,
-				offset, (gint)len, ENC_ASCII|ENC_NA );
-	offset += (gint)len;
+				offset, (int)len, ENC_ASCII );
+	offset += (int)len;
 
 
-	offset += dissect_uleb128( tvb, offset, &len );
-
+	offset += tvb_get_varint( tvb, offset, FT_VARINT_MAX_LEN, &len, ENC_VARINT_PROTOBUF );
 	proto_tree_add_item(tree, hf_netsync_cmd_hello_key, tvb,
-				offset, (gint)len, ENC_NA );
-	offset += (gint)len;
+				offset, (int)len, ENC_NA );
+	offset += (int)len;
 
 	proto_tree_add_item(tree, hf_netsync_cmd_nonce, tvb,
 				offset, NETSNYC_MERKLE_HASH_LENGTH, ENC_NA );
@@ -199,19 +185,18 @@ static gint dissect_netsync_cmd_hello(tvbuff_t *tvb,  gint offset, proto_tree *t
 }
 
 
-static gint dissect_netsync_cmd_anonymous(tvbuff_t *tvb,  gint offset, proto_tree *tree, guint size _U_)
+static int dissect_netsync_cmd_anonymous(tvbuff_t *tvb,  int offset, proto_tree *tree, unsigned size _U_)
 {
-	guint64 len = 0;
+	uint64_t len = 0;
 
 	proto_tree_add_item(tree, hf_netsync_cmd_anonymous_role, tvb,
 				offset, 1, ENC_BIG_ENDIAN );
 	offset += 1;
 
-	offset += dissect_uleb128( tvb, offset, &len );
-
+	offset += tvb_get_varint( tvb, offset, FT_VARINT_MAX_LEN, &len, ENC_VARINT_PROTOBUF );
 	proto_tree_add_item(tree, hf_netsync_cmd_anonymous_collection, tvb,
-				offset, (gint)len, ENC_ASCII|ENC_NA );
-	offset += (gint)len;
+				offset, (int)len, ENC_ASCII );
+	offset += (int)len;
 
 	proto_tree_add_item(tree, hf_netsync_cmd_nonce, tvb,
 				offset, NETSNYC_MERKLE_HASH_LENGTH, ENC_NA );
@@ -221,63 +206,60 @@ static gint dissect_netsync_cmd_anonymous(tvbuff_t *tvb,  gint offset, proto_tre
 }
 
 
-static gint dissect_netsync_cmd_auth(tvbuff_t *tvb,  gint offset, proto_tree *tree, guint size _U_)
+static int dissect_netsync_cmd_auth(tvbuff_t *tvb,  int offset, proto_tree *tree, unsigned size _U_)
 {
-	guint64 len = 0;
+	uint64_t len = 0;
 
 	proto_tree_add_item(tree, hf_netsync_cmd_auth_role, tvb,
 				offset, 1, ENC_BIG_ENDIAN );
 	offset += 1;
 
 
-	offset += dissect_uleb128( tvb, offset, &len );
-
+	offset += tvb_get_varint( tvb, offset, FT_VARINT_MAX_LEN, &len, ENC_VARINT_PROTOBUF );
 	proto_tree_add_item(tree, hf_netsync_cmd_auth_collection, tvb,
-				offset, (gint)len, ENC_ASCII|ENC_NA );
-	offset += (gint)len;
+				offset, (int)len, ENC_ASCII );
+	offset += (int)len;
 
 	proto_tree_add_item(tree, hf_netsync_cmd_auth_id, tvb,
 				offset, NETSNYC_MERKLE_HASH_LENGTH, ENC_NA );
 	offset += NETSNYC_MERKLE_HASH_LENGTH;
 
-	offset += (gint)len;
+	offset += (int)len;
 
 	proto_tree_add_item(tree, hf_netsync_cmd_auth_nonce1, tvb,
 				offset, NETSNYC_MERKLE_HASH_LENGTH, ENC_NA );
 	offset += NETSNYC_MERKLE_HASH_LENGTH;
 
-	offset += (gint)len;
+	offset += (int)len;
 
 	proto_tree_add_item(tree, hf_netsync_cmd_auth_nonce2, tvb,
 				offset, NETSNYC_MERKLE_HASH_LENGTH, ENC_NA );
 	offset += NETSNYC_MERKLE_HASH_LENGTH;
 
-	offset += dissect_uleb128( tvb, offset, &len );
-
+	offset += tvb_get_varint( tvb, offset, FT_VARINT_MAX_LEN, &len, ENC_VARINT_PROTOBUF );
 	proto_tree_add_item(tree, hf_netsync_cmd_auth_sig, tvb,
-				offset, (gint)len, ENC_NA );
-	offset += (gint)len;
+				offset, (int)len, ENC_NA );
+	offset += (int)len;
 
 	return offset;
 }
 
 
-static gint dissect_netsync_cmd_confirm(tvbuff_t *tvb,  gint offset, proto_tree *tree, guint size _U_)
+static int dissect_netsync_cmd_confirm(tvbuff_t *tvb,  int offset, proto_tree *tree, unsigned size _U_)
 {
-	guint64 len = 0;
+	uint64_t len = 0;
 
-	offset += dissect_uleb128( tvb, offset, &len );
-
+	offset += tvb_get_varint( tvb, offset, FT_VARINT_MAX_LEN, &len, ENC_VARINT_PROTOBUF );
 	proto_tree_add_item(tree, hf_netsync_cmd_confirm_sig, tvb,
-				offset, (gint)len, ENC_NA );
-	offset += (gint)len;
+				offset, (int)len, ENC_NA );
+	offset += (int)len;
 
 
 	return offset;
 }
 
 
-static gint dissect_netsync_cmd_refine(tvbuff_t *tvb,  gint offset, proto_tree *tree, guint size)
+static int dissect_netsync_cmd_refine(tvbuff_t *tvb,  int offset, proto_tree *tree, unsigned size)
 {
 	proto_tree_add_item(tree, hf_netsync_cmd_refine_tree_node, tvb,
 				offset, size, ENC_NA );
@@ -287,15 +269,12 @@ static gint dissect_netsync_cmd_refine(tvbuff_t *tvb,  gint offset, proto_tree *
 }
 
 
-static gint dissect_netsync_cmd_done(tvbuff_t *tvb,  gint offset, proto_tree *tree, guint size _U_)
+static int dissect_netsync_cmd_done(tvbuff_t *tvb,  int offset, proto_tree *tree, unsigned size _U_)
 {
-	guint64 len = 0;
-	guint bytes = 0;
+	int bytes = 0;
 
-	bytes = dissect_uleb128( tvb, offset, &len );
-
-	proto_tree_add_uint(tree, hf_netsync_cmd_done_level, tvb,
-					offset, bytes, (guint32)len );
+	proto_tree_add_item_ret_length(tree, hf_netsync_cmd_done_level, tvb,
+					offset, -1, ENC_LITTLE_ENDIAN|ENC_VARINT_PROTOBUF, &bytes);
 	offset += bytes;
 
 	proto_tree_add_item(tree, hf_netsync_cmd_done_type, tvb,
@@ -306,7 +285,7 @@ static gint dissect_netsync_cmd_done(tvbuff_t *tvb,  gint offset, proto_tree *tr
 }
 
 
-static gint dissect_netsync_cmd_send_data(tvbuff_t *tvb,  gint offset, proto_tree *tree, guint size _U_)
+static int dissect_netsync_cmd_send_data(tvbuff_t *tvb,  int offset, proto_tree *tree, unsigned size _U_)
 {
 	proto_tree_add_item(tree, hf_netsync_cmd_send_data_type, tvb,
 					offset, 1, ENC_BIG_ENDIAN );
@@ -320,7 +299,7 @@ static gint dissect_netsync_cmd_send_data(tvbuff_t *tvb,  gint offset, proto_tre
 }
 
 
-static gint dissect_netsync_cmd_send_delta(tvbuff_t *tvb,  gint offset, proto_tree *tree, guint size _U_)
+static int dissect_netsync_cmd_send_delta(tvbuff_t *tvb,  int offset, proto_tree *tree, unsigned size _U_)
 {
 	proto_tree_add_item(tree, hf_netsync_cmd_send_delta_type, tvb,
 					offset, 1, ENC_BIG_ENDIAN );
@@ -339,9 +318,9 @@ static gint dissect_netsync_cmd_send_delta(tvbuff_t *tvb,  gint offset, proto_tr
 }
 
 
-static gint dissect_netsync_cmd_data(tvbuff_t *tvb,  gint offset, proto_tree *tree, guint size _U_)
+static int dissect_netsync_cmd_data(tvbuff_t *tvb,  int offset, proto_tree *tree, unsigned size _U_)
 {
-	guint64 len = 0;
+	uint64_t len = 0;
 
 	proto_tree_add_item(tree, hf_netsync_cmd_data_type, tvb,
 				offset, 1, ENC_BIG_ENDIAN );
@@ -355,19 +334,18 @@ static gint dissect_netsync_cmd_data(tvbuff_t *tvb,  gint offset, proto_tree *tr
 				offset, 1, ENC_BIG_ENDIAN );
 	offset += 1;
 
-	offset += dissect_uleb128( tvb, offset, &len );
-
+	offset += tvb_get_varint( tvb, offset, FT_VARINT_MAX_LEN, &len, ENC_VARINT_PROTOBUF );
 	proto_tree_add_item(tree, hf_netsync_cmd_data_payload, tvb,
-				offset, (gint)len, ENC_NA );
-	offset += (gint)len;
+				offset, (int)len, ENC_NA );
+	offset += (int)len;
 
 	return offset;
 }
 
 
-static gint dissect_netsync_cmd_delta(tvbuff_t *tvb,  gint offset, proto_tree *tree, guint size _U_)
+static int dissect_netsync_cmd_delta(tvbuff_t *tvb,  int offset, proto_tree *tree, unsigned size _U_)
 {
-	guint64 len = 0;
+	uint64_t len = 0;
 
 	proto_tree_add_item(tree, hf_netsync_cmd_delta_type, tvb,
 				offset, 1, ENC_BIG_ENDIAN );
@@ -385,17 +363,16 @@ static gint dissect_netsync_cmd_delta(tvbuff_t *tvb,  gint offset, proto_tree *t
 				offset, 1, ENC_BIG_ENDIAN );
 	offset += 1;
 
-	offset += dissect_uleb128( tvb, offset, &len );
-
+	offset += tvb_get_varint( tvb, offset, FT_VARINT_MAX_LEN, &len, ENC_VARINT_PROTOBUF );
 	proto_tree_add_item(tree, hf_netsync_cmd_delta_payload, tvb,
-				offset, (gint)len, ENC_NA );
-	offset += (gint)len;
+				offset, (int)len, ENC_NA );
+	offset += (int)len;
 
 	return offset;
 }
 
 
-static gint dissect_netsync_cmd_nonexistent(tvbuff_t *tvb,  gint offset, proto_tree *tree, guint size _U_)
+static int dissect_netsync_cmd_nonexistent(tvbuff_t *tvb,  int offset, proto_tree *tree, unsigned size _U_)
 {
 	proto_tree_add_item(tree, hf_netsync_cmd_nonexistent_type, tvb,
 				offset, 1, ENC_BIG_ENDIAN );
@@ -408,32 +385,32 @@ static gint dissect_netsync_cmd_nonexistent(tvbuff_t *tvb,  gint offset, proto_t
 	return offset;
 }
 
-static guint
+static unsigned
 get_netsync_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data _U_)
 {
-	guint64 size = 0;
-	guint   size_bytes;
+	uint64_t size = 0;
+	unsigned   size_bytes;
 
 	/* skip version and command */
 	offset += 2;
 
-	size_bytes = dissect_uleb128( tvb, offset, &size );
+	size_bytes = tvb_get_varint( tvb, offset, FT_VARINT_MAX_LEN, &size, ENC_VARINT_PROTOBUF );
 
 	/* the calculated size if for the data only, this doesn't
 	 * include the version (1 byte), command (1 byte),
 	 * length (size_bytes bytes) and checksum (4 bytes)
 	 */
 
-	return 1 + 1 + size_bytes + (guint)size + 4;
+	return 1 + 1 + size_bytes + (unsigned)size + 4;
 }
 
 static int
 dissect_netsync_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	gint offset = 0;
-	guint8 tmp;
-	guint8 cmd, version;
-	guint32 size, size_bytes, shift;
+	int offset = 0;
+	uint8_t tmp;
+	uint8_t cmd, version;
+	uint32_t size, size_bytes, shift;
 	proto_tree *ti,*netsync_tree=NULL;
 
 	/* Set the protocol column */
@@ -446,12 +423,12 @@ dissect_netsync_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
 		ti = proto_tree_add_item(tree, proto_netsync, tvb, offset, -1, ENC_NA);
 		netsync_tree = proto_item_add_subtree(ti, ett_netsync);
 
-		version = tvb_get_guint8(tvb, offset);
+		version = tvb_get_uint8(tvb, offset);
 		proto_tree_add_item(netsync_tree, hf_netsync_version, tvb,
 					offset, 1, ENC_BIG_ENDIAN );
 		offset += 1;
 
-		cmd = tvb_get_guint8(tvb, offset);
+		cmd = tvb_get_uint8(tvb, offset);
 		proto_tree_add_item(netsync_tree, hf_netsync_command, tvb,
 					offset, 1, ENC_BIG_ENDIAN );
 		offset += 1;
@@ -462,12 +439,12 @@ dissect_netsync_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
 		size_bytes = 0;
 		shift = 0;
 		do {
-			tmp = tvb_get_guint8(tvb, offset + size_bytes);
+			tmp = tvb_get_uint8(tvb, offset + size_bytes);
 			size_bytes += 1;
 
 			size |= (tmp & 0x7F) << shift;
 			shift += 7;
-		} while (tmp & 0x80);
+		} while ((tmp & 0x80) && (shift < 32));
 
 
 		proto_tree_add_uint(netsync_tree, hf_netsync_size, tvb,
@@ -541,7 +518,7 @@ dissect_netsync_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
 
 
 		proto_item_append_text(netsync_tree, " V%d, Cmd: %s (%d), Size: %d",
-					version, val_to_str(cmd, netsync_cmd_vals, "(0x%x)"), cmd, size );
+					version, val_to_str(pinfo->pool, cmd, netsync_cmd_vals, "(0x%x)"), cmd, size );
 
 		proto_item_set_len(netsync_tree, 1+1+size_bytes+size+4);
 	}
@@ -715,7 +692,7 @@ proto_register_netsync(void)
 
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_netsync,
 	};
 
@@ -725,14 +702,7 @@ proto_register_netsync(void)
 	proto_register_field_array(proto_netsync, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
 
-	netsync_module = prefs_register_protocol(proto_netsync,
-						proto_reg_handoff_netsync);
-
-	prefs_register_uint_preference(netsync_module, "tcp_port",
-					"Monotone Netsync TCP Port",
-					"The TCP port on which Monotone Netsync packets will be sent",
-					10, &global_tcp_port_netsync);
-
+	netsync_module = prefs_register_protocol(proto_netsync, NULL);
 
 	prefs_register_bool_preference(netsync_module, "desegment_netsync_messages",
 		"Reassemble Netsync messages spanning multiple TCP segments",
@@ -740,28 +710,17 @@ proto_register_netsync(void)
 		" To use this option, you must also enable \"Allow subdissectors to reassemble TCP streams\" in the TCP protocol settings.",
 		&netsync_desegment);
 
+	netsync_handle = register_dissector("netsync", dissect_netsync, proto_netsync);
 }
 
 void
 proto_reg_handoff_netsync(void)
 {
-	static dissector_handle_t netsync_handle;
-	static guint tcp_port_netsync;
-	static gboolean initialized = FALSE;
-
-	if (!initialized) {
-		netsync_handle = create_dissector_handle(dissect_netsync, proto_netsync);
-		initialized = TRUE;
-	} else {
-		dissector_delete_uint("tcp.port", tcp_port_netsync, netsync_handle);
-	}
-
-	tcp_port_netsync = global_tcp_port_netsync;
-	dissector_add_uint("tcp.port", global_tcp_port_netsync, netsync_handle);
+	dissector_add_uint_with_preference("tcp.port", TCP_PORT_NETSYNC, netsync_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

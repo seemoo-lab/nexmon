@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef PACKET_RLC_LTE_H
@@ -51,67 +39,53 @@
 #define AM_SN_LENGTH_10_BITS 10
 #define AM_SN_LENGTH_16_BITS 16
 
+
+typedef enum rlc_lte_nb_mode {
+    rlc_no_nb_mode = 0,
+    rlc_nb_mode = 1
+} rlc_lte_nb_mode;
+
+
 /* Info attached to each LTE RLC frame */
 typedef struct rlc_lte_info
 {
-    guint8          rlcMode;
-    guint8          direction;
-    guint8          priority;
-    guint8          sequenceNumberLength;
-    guint16         ueid;
-    guint16         channelType;
-    guint16         channelId;
-    guint16         pduLength;
-    gboolean        extendedLiField;
+    uint8_t         rlcMode;
+    uint8_t         direction;
+    uint8_t         priority;
+    uint8_t         sequenceNumberLength;
+    uint16_t        ueid;
+    uint16_t        channelType;
+    uint16_t        channelId; /* for SRB: 1=SRB1, 2=SRB2, 3=SRB1bis; for DRB: DRB ID */
+    uint16_t        pduLength;
+    bool            extendedLiField;
+    rlc_lte_nb_mode nbMode;
 } rlc_lte_info;
 
 
-typedef struct rlc_lte_tap_info {
-    /* Info from context */
-    guint8          rlcMode;
-    guint8          direction;
-    guint8          priority;
-    guint16         ueid;
-    guint16         channelType;
-    guint16         channelId;
-    guint16         pduLength;
-    guint8          sequenceNumberLength;
-
-    nstime_t        rlc_lte_time;
-    guint8          loggedInMACFrame;
-    guint16         sequenceNumber;
-    guint8          isResegmented;
-    guint8          isControlPDU;
-    guint16         ACKNo;
-    #define MAX_NACKs 128
-    guint16         noOfNACKs;
-    guint16         NACKs[MAX_NACKs];
-
-    guint16         missingSNs;
-} rlc_lte_tap_info;
-
-
 /* Configure number of PDCP SN bits to use for DRB channels. */
-void set_rlc_lte_drb_pdcp_seqnum_length(packet_info *pinfo, guint16 ueid, guint8 drbid, guint8 userplane_seqnum_length);
+void set_rlc_lte_drb_pdcp_seqnum_length(packet_info *pinfo, uint16_t ueid, uint8_t drbid, uint8_t userplane_seqnum_length);
 
 /* Configure LI field for AM DRB channels. */
-void set_rlc_lte_drb_li_field(packet_info *pinfo, guint16 ueid, guint8 drbid, gboolean ul_ext_li_field, gboolean dl_ext_li_field);
+void set_rlc_lte_drb_li_field(packet_info *pinfo, uint16_t ueid, uint8_t drbid, bool ul_ext_li_field, bool dl_ext_li_field);
 
-/*****************************************************************/
-/* UDP framing format                                            */
-/* -----------------------                                       */
-/* Several people have asked about dissecting RLC by framing     */
-/* PDUs over IP.  A suggested format over UDP has been defined   */
-/* and implemented by this dissector, using the definitions      */
-/* below. A link to an example program showing you how to encode */
-/* these headers and send LTE RLC PDUs on a UDP socket is        */
-/* provided at https://wiki.wireshark.org/RLC-LTE                 */
-/*                                                               */
-/* A heuristic dissecter (enabled by a preference) will          */
-/* recognise a signature at the beginning of these frames.       */
-/* Until someone is using this format, suggestions for changes   */
-/* are welcome.                                                  */
-/*****************************************************************/
+/* Reset UE's bearers */
+void rlc_lte_reset_ue_bearers(packet_info *pinfo, uint16_t ueid);
+
+/**********************************************************************/
+/* UDP framing format                                                 */
+/* -----------------------                                            */
+/* Several people have asked about dissecting RLC by framing          */
+/* PDUs over IP.  A suggested format over UDP has been defined        */
+/* and implemented by this dissector, using the definitions           */
+/* below. A link to an example program showing you how to encode      */
+/* these headers and send LTE RLC PDUs on a UDP socket is             */
+/* provided at https://gitlab.com/wireshark/wireshark/-/wikis/RLC-LTE */
+/*                                                                    */
+/* A heuristic dissector (enabled by a preference) will               */
+/* recognise a signature at the beginning of these frames.            */
+/* Until someone is using this format, suggestions for changes        */
+/* are welcome.                                                       */
+/**********************************************************************/
 
 
 /* Signature.  Rather than try to define a port for this, or make the
@@ -155,9 +129,24 @@ void set_rlc_lte_drb_li_field(packet_info *pinfo, guint16 ueid, guint8 drbid, gb
 #define RLC_LTE_EXT_LI_FIELD_TAG    0x08
 /* 0 byte, tag presence indicates that AM DRB PDU is using an extended LI field of 15 bits */
 
+#define RLC_LTE_NB_MODE_TAG         0x09
+/* 1 byte containing rlc_lte_nb_mode enum value */
+
 /* RLC PDU. Following this tag comes the actual RLC PDU (there is no length, the PDU
    continues until the end of the frame) */
 #define RLC_LTE_PAYLOAD_TAG         0x01
 
 #endif
 
+/*
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
+ *
+ * Local variables:
+ * c-basic-offset: 4
+ * tab-width: 8
+ * indent-tabs-mode: nil
+ * End:
+ *
+ * vi: set shiftwidth=4 tabstop=8 expandtab:
+ * :indentSize=4:tabSize=8:noTabs=true:
+ */

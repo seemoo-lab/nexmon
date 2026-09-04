@@ -79,7 +79,7 @@ CPR-PPDU/normal-mode-parameters/provider-reason cPR_PPDU__provider-reason
 
   oid = find_oid_by_pres_ctx_id(actx->pinfo, presentation_context_identifier);
 
-  if(oid && (name = oid_resolved_from_string(wmem_packet_scope(), oid))) {
+  if(oid && (name = oid_resolved_from_string(actx->pinfo->pool, oid))) {
 	proto_item_append_text(actx->created_item, " (%%s)", name);
   }
 
@@ -87,11 +87,11 @@ CPR-PPDU/normal-mode-parameters/provider-reason cPR_PPDU__provider-reason
   VAL_PTR = &reason
 
 #.FN_BODY Abort-reason
-  guint32 reason;
+  uint32_t reason;
 
   %(DEFAULT_BODY)s
 
-  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " (%%s)", val_to_str(reason, pres_Abort_reason_vals, "unknown: %%d"));
+  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " (%%s)", val_to_str(actx->pinfo->pool, reason, pres_Abort_reason_vals, "unknown: %%d"));
 
 #.FN_HDR Context-list/_item
 	abstract_syntax_name_oid=NULL;

@@ -1,20 +1,7 @@
 /* packet-stanag4607.c
  * Routines for STANAG 4607 dissection
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
- * USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 #include "config.h"
 
@@ -27,133 +14,188 @@
 void proto_register_stanag4607(void);
 void proto_reg_handoff_stanag4607(void);
 
-static int proto_stanag4607 = -1;
+static int proto_stanag4607;
 
-static int hf_4607_version = -1;
-static int hf_4607_packet_size = -1;
-static int hf_4607_nationality = -1;
-static int hf_4607_sec_class = -1;
-static int hf_4607_sec_system = -1;
-static int hf_4607_sec_code = -1;
-static int hf_4607_exercise_indicator = -1;
-static int hf_4607_platform_id = -1;
-static int hf_4607_mission_id = -1;
-static int hf_4607_job_id = -1;
+static int hf_4607_version;
+static int hf_4607_version_edition;
+static int hf_4607_version_version;
+static int hf_4607_packet_size;
+static int hf_4607_nationality;
+static int hf_4607_sec_class;
+static int hf_4607_sec_system;
+static int hf_4607_sec_code;
+static int hf_4607_exercise_indicator;
+static int hf_4607_platform_id;
+static int hf_4607_mission_id;
+static int hf_4607_job_id;
 
-static int hf_4607_segment_type = -1;
-static int hf_4607_segment_size = -1;
+static int hf_4607_segment_type;
+static int hf_4607_segment_size;
 
 /* Mission Segment */
-static int hf_4607_mission_plan = -1;
-static int hf_4607_mission_flight_plan = -1;
-static int hf_4607_mission_platform = -1;
-static int hf_4607_mission_platform_config = -1;
-static int hf_4607_mission_time_year = -1;
-static int hf_4607_mission_time_month = -1;
-static int hf_4607_mission_time_day = -1;
+static int hf_4607_mission_plan;
+static int hf_4607_mission_flight_plan;
+static int hf_4607_mission_platform;
+static int hf_4607_mission_platform_config;
+static int hf_4607_mission_time_year;
+static int hf_4607_mission_time_month;
+static int hf_4607_mission_time_day;
 
 /* Dwell Segment */
-static int hf_4607_dwell_mask = -1;
-static int hf_4607_dwell_revisit_index = -1;
-static int hf_4607_dwell_dwell_index = -1;
-static int hf_4607_dwell_last_dwell = -1;
-static int hf_4607_dwell_count = -1;
-static int hf_4607_dwell_time = -1;
-static int hf_4607_dwell_sensor_lat = -1;
-static int hf_4607_dwell_sensor_lon = -1;
-static int hf_4607_dwell_sensor_alt = -1;
-static int hf_4607_dwell_scale_lat = -1;
-static int hf_4607_dwell_scale_lon = -1;
-static int hf_4607_dwell_unc_along = -1;
-static int hf_4607_dwell_unc_cross = -1;
-static int hf_4607_dwell_unc_alt = -1;
-static int hf_4607_dwell_track = -1;
-static int hf_4607_dwell_speed = -1;
-static int hf_4607_dwell_vert_velocity = -1;
-static int hf_4607_dwell_track_unc = -1;
-static int hf_4607_dwell_speed_unc = -1;
-static int hf_4607_dwell_vv_unc = -1;
+static int hf_4607_dwell_mask;
+static int hf_4607_dwell_mask_7_7;
+static int hf_4607_dwell_mask_7_6;
+static int hf_4607_dwell_mask_7_5;
+static int hf_4607_dwell_mask_7_4;
+static int hf_4607_dwell_mask_7_3;
+static int hf_4607_dwell_mask_7_2;
+static int hf_4607_dwell_mask_7_1;
+static int hf_4607_dwell_mask_7_0;
+static int hf_4607_dwell_mask_6_7;
+static int hf_4607_dwell_mask_6_6;
+static int hf_4607_dwell_mask_6_5;
+static int hf_4607_dwell_mask_6_4;
+static int hf_4607_dwell_mask_6_3;
+static int hf_4607_dwell_mask_6_2;
+static int hf_4607_dwell_mask_6_1;
+static int hf_4607_dwell_mask_6_0;
+static int hf_4607_dwell_mask_5_7;
+static int hf_4607_dwell_mask_5_6;
+static int hf_4607_dwell_mask_5_5;
+static int hf_4607_dwell_mask_5_4;
+static int hf_4607_dwell_mask_5_3;
+static int hf_4607_dwell_mask_5_2;
+static int hf_4607_dwell_mask_5_1;
+static int hf_4607_dwell_mask_5_0;
+static int hf_4607_dwell_mask_4_7;
+static int hf_4607_dwell_mask_4_6;
+static int hf_4607_dwell_mask_4_5;
+static int hf_4607_dwell_mask_4_4;
+static int hf_4607_dwell_mask_4_3;
+static int hf_4607_dwell_mask_4_2;
+static int hf_4607_dwell_mask_4_1;
+static int hf_4607_dwell_mask_4_0;
+static int hf_4607_dwell_mask_3_7;
+static int hf_4607_dwell_mask_3_6;
+static int hf_4607_dwell_mask_3_5;
+static int hf_4607_dwell_mask_3_4;
+static int hf_4607_dwell_mask_3_3;
+static int hf_4607_dwell_mask_3_2;
+static int hf_4607_dwell_mask_3_1;
+static int hf_4607_dwell_mask_3_0;
+static int hf_4607_dwell_mask_2_7;
+static int hf_4607_dwell_mask_2_6;
+static int hf_4607_dwell_mask_2_5;
+static int hf_4607_dwell_mask_2_4;
+static int hf_4607_dwell_mask_2_3;
+static int hf_4607_dwell_mask_2_2;
+static int hf_4607_dwell_mask_2_1;
+static int hf_4607_dwell_mask_2_0;
+static int hf_4607_dwell_mask_spare;
 
-static int hf_4607_dwell_plat_heading = -1;
-static int hf_4607_dwell_plat_pitch = -1;
-static int hf_4607_dwell_plat_roll = -1;
-static int hf_4607_dwell_da_lat = -1;
-static int hf_4607_dwell_da_lon = -1;
-static int hf_4607_dwell_da_range = -1;
-static int hf_4607_dwell_da_angle = -1;
-static int hf_4607_dwell_sensor_heading = -1;
-static int hf_4607_dwell_sensor_pitch = -1;
-static int hf_4607_dwell_sensor_roll = -1;
-static int hf_4607_dwell_mdv = -1;
+static int hf_4607_dwell_revisit_index;
+static int hf_4607_dwell_dwell_index;
+static int hf_4607_dwell_last_dwell;
+static int hf_4607_dwell_count;
+static int hf_4607_dwell_time;
+static int hf_4607_dwell_sensor_lat;
+static int hf_4607_dwell_sensor_lon;
+static int hf_4607_dwell_sensor_alt;
+static int hf_4607_dwell_scale_lat;
+static int hf_4607_dwell_scale_lon;
+static int hf_4607_dwell_unc_along;
+static int hf_4607_dwell_unc_cross;
+static int hf_4607_dwell_unc_alt;
+static int hf_4607_dwell_track;
+static int hf_4607_dwell_speed;
+static int hf_4607_dwell_vert_velocity;
+static int hf_4607_dwell_track_unc;
+static int hf_4607_dwell_speed_unc;
+static int hf_4607_dwell_vv_unc;
+
+static int hf_4607_dwell_plat_heading;
+static int hf_4607_dwell_plat_pitch;
+static int hf_4607_dwell_plat_roll;
+static int hf_4607_dwell_da_lat;
+static int hf_4607_dwell_da_lon;
+static int hf_4607_dwell_da_range;
+static int hf_4607_dwell_da_angle;
+static int hf_4607_dwell_sensor_heading;
+static int hf_4607_dwell_sensor_pitch;
+static int hf_4607_dwell_sensor_roll;
+static int hf_4607_dwell_mdv;
 
 /* Target Report */
-static int hf_4607_dwell_report_index = -1;
-static int hf_4607_dwell_report_lat = -1;
-static int hf_4607_dwell_report_lon = -1;
-static int hf_4607_dwell_report_delta_lat = -1;
-static int hf_4607_dwell_report_delta_lon = -1;
-static int hf_4607_dwell_report_height = -1;
-static int hf_4607_dwell_report_radial = -1;
-static int hf_4607_dwell_report_wrap = -1;
-static int hf_4607_dwell_report_snr = -1;
-static int hf_4607_dwell_report_class = -1;
-static int hf_4607_dwell_report_prob = -1;
-static int hf_4607_dwell_report_unc_slant = -1;
-static int hf_4607_dwell_report_unc_cross = -1;
-static int hf_4607_dwell_report_unc_height = -1;
-static int hf_4607_dwell_report_unc_radial = -1;
-static int hf_4607_dwell_report_tag_app = -1;
-static int hf_4607_dwell_report_tag_entity = -1;
-static int hf_4607_dwell_report_section = -1;
+static int hf_4607_dwell_report_index;
+static int hf_4607_dwell_report_lat;
+static int hf_4607_dwell_report_lon;
+static int hf_4607_dwell_report_delta_lat;
+static int hf_4607_dwell_report_delta_lon;
+static int hf_4607_dwell_report_height;
+static int hf_4607_dwell_report_radial;
+static int hf_4607_dwell_report_wrap;
+static int hf_4607_dwell_report_snr;
+static int hf_4607_dwell_report_class;
+static int hf_4607_dwell_report_prob;
+static int hf_4607_dwell_report_unc_slant;
+static int hf_4607_dwell_report_unc_cross;
+static int hf_4607_dwell_report_unc_height;
+static int hf_4607_dwell_report_unc_radial;
+static int hf_4607_dwell_report_tag_app;
+static int hf_4607_dwell_report_tag_entity;
+static int hf_4607_dwell_report_section;
 
 /* Job Definition Segment */
-static int hf_4607_jobdef_job_id = -1;
-static int hf_4607_jobdef_sensor_type = -1;
-static int hf_4607_jobdef_sensor_model = -1;
-static int hf_4607_jobdef_filter = -1;
-static int hf_4607_jobdef_priority = -1;
-static int hf_4607_jobdef_ba_lat_a = -1;
-static int hf_4607_jobdef_ba_lon_a = -1;
-static int hf_4607_jobdef_ba_lat_b = -1;
-static int hf_4607_jobdef_ba_lon_b = -1;
-static int hf_4607_jobdef_ba_lat_c = -1;
-static int hf_4607_jobdef_ba_lon_c = -1;
-static int hf_4607_jobdef_ba_lat_d = -1;
-static int hf_4607_jobdef_ba_lon_d = -1;
-static int hf_4607_jobdef_radar_mode = -1;
-static int hf_4607_jobdef_revisit_interval = -1;
-static int hf_4607_jobdef_unc_along = -1;
-static int hf_4607_jobdef_unc_cross = -1;
-static int hf_4607_jobdef_unc_alt = -1;
-static int hf_4607_jobdef_unc_heading = -1;
-static int hf_4607_jobdef_unc_speed = -1;
-static int hf_4607_jobdef_sense_slant = -1;
-static int hf_4607_jobdef_sense_cross = -1;
-static int hf_4607_jobdef_sense_vlos = -1;
-static int hf_4607_jobdef_sense_mdv = -1;
-static int hf_4607_jobdef_sense_prob = -1;
-static int hf_4607_jobdef_sense_alarm = -1;
-static int hf_4607_jobdef_terrain_model = -1;
-static int hf_4607_jobdef_geoid_model = -1;
+static int hf_4607_jobdef_job_id;
+static int hf_4607_jobdef_sensor_type;
+static int hf_4607_jobdef_sensor_model;
+static int hf_4607_jobdef_filter;
+static int hf_4607_jobdef_priority;
+static int hf_4607_jobdef_ba_lat_a;
+static int hf_4607_jobdef_ba_lon_a;
+static int hf_4607_jobdef_ba_lat_b;
+static int hf_4607_jobdef_ba_lon_b;
+static int hf_4607_jobdef_ba_lat_c;
+static int hf_4607_jobdef_ba_lon_c;
+static int hf_4607_jobdef_ba_lat_d;
+static int hf_4607_jobdef_ba_lon_d;
+static int hf_4607_jobdef_radar_mode;
+static int hf_4607_jobdef_revisit_interval;
+static int hf_4607_jobdef_unc_along;
+static int hf_4607_jobdef_unc_cross;
+static int hf_4607_jobdef_unc_alt;
+static int hf_4607_jobdef_unc_heading;
+static int hf_4607_jobdef_unc_speed;
+static int hf_4607_jobdef_sense_slant;
+static int hf_4607_jobdef_sense_cross;
+static int hf_4607_jobdef_sense_vlos;
+static int hf_4607_jobdef_sense_mdv;
+static int hf_4607_jobdef_sense_prob;
+static int hf_4607_jobdef_sense_alarm;
+static int hf_4607_jobdef_terrain_model;
+static int hf_4607_jobdef_geoid_model;
 
 /* Platform Location Segment */
-static int hf_4607_platloc_time = -1;
-static int hf_4607_platloc_latitude = -1;
-static int hf_4607_platloc_longitude = -1;
-static int hf_4607_platloc_altitude = -1;
-static int hf_4607_platloc_track = -1;
-static int hf_4607_platloc_speed = -1;
-static int hf_4607_platloc_vertical_velocity = -1;
+static int hf_4607_platloc_time;
+static int hf_4607_platloc_latitude;
+static int hf_4607_platloc_longitude;
+static int hf_4607_platloc_altitude;
+static int hf_4607_platloc_track;
+static int hf_4607_platloc_speed;
+static int hf_4607_platloc_vertical_velocity;
 
 /* Subtree pointers */
-static gint ett_4607_hdr = -1;
-static gint ett_4607_seg = -1;
-static gint ett_4607_rpt = -1;
+static int ett_4607_hdr;
+static int ett_4607_seg;
+static int ett_4607_rpt;
+static int ett_4607_mask;
+static int ett_4607_ver;
 
 /* Error pointers */
-static expert_field ei_bad_length      = EI_INIT;
-static expert_field ei_too_short       = EI_INIT;
-static expert_field ei_bad_packet_size = EI_INIT;
+static expert_field ei_bad_length;
+static expert_field ei_too_short;
+static expert_field ei_bad_packet_size;
+static expert_field ei_job_id_zero;
 
 static dissector_handle_t stanag4607_handle;
 
@@ -164,6 +206,27 @@ static const value_string stanag4607_class_vals[] = {
 	{   3, "CONFIDENTIAL" },
 	{   4, "RESTRICTED" },
 	{   5, "UNCLASSIFIED" },
+	{ 0, NULL }
+};
+
+static const value_string stanag4607_security_codes_vals[] = {
+	{ 0x0000, "NONE (NO-STATEMENT VALUE)" },
+	{ 0x0001, "EU (Releasable To European Commission)" },
+	{ 0x0002, "EUFOR (Releasable To European Union Force)" },
+	{ 0x0004, "ISAF (Releasable To International Security Assistance Force)" },
+	{ 0x0008, "KFOR (Releasable To Kosovo Force)" },
+	{ 0x0010, "NATO RESPONSE FORCE (Releaseable to NRF)" },
+	{ 0x0020, "NMI (Releasable To NATO Mission Iraq)" },
+	{ 0x0040, "PFP (Releasable To Partnership for Peace)" },
+	{ 0x0080, "RESOLUTE SUPPORT (Releasable To RS)" },
+	{ 0x0100, "THE PUBLIC (Releasable To The Public)" },
+	{ 0x0200, "UNDEFINED. FOR FUTURE USE" },
+	{ 0x0400, "UNDEFINED. FOR FUTURE USE" },
+	{ 0x0800, "UNDEFINED. FOR FUTURE USE" },
+	{ 0x1000, "UNDEFINED. FOR FUTURE USE" },
+	{ 0x2000, "UNDEFINED. FOR FUTURE USE" },
+	{ 0x4000, "UNDEFINED. FOR FUTURE USE" },
+	{ 0x8000, "UNDEFINED. FOR FUTURE USE" },
 	{ 0, NULL }
 };
 
@@ -246,12 +309,12 @@ static const value_string stanag4607_radar_mode_vals[] = {
 
 static const value_string stanag4607_terrain_vals[] = {
 	{   0, "None Specified" },
-	{   1, "DTED0 (Digital Terrain Eelevation Data, Level 0)" },
-	{   2, "DTED1 (Digital Terrain Eelevation Data, Level 1)" },
-	{   3, "DTED2 (Digital Terrain Eelevation Data, Level 2)" },
-	{   4, "DTED3 (Digital Terrain Eelevation Data, Level 3)" },
-	{   5, "DTED4 (Digital Terrain Eelevation Data, Level 4)" },
-	{   6, "DTED5 (Digital Terrain Eelevation Data, Level 5)" },
+	{   1, "DTED0 (Digital Terrain Elevation Data, Level 0)" },
+	{   2, "DTED1 (Digital Terrain Elevation Data, Level 1)" },
+	{   3, "DTED2 (Digital Terrain Elevation Data, Level 2)" },
+	{   4, "DTED3 (Digital Terrain Elevation Data, Level 3)" },
+	{   5, "DTED4 (Digital Terrain Elevation Data, Level 4)" },
+	{   6, "DTED5 (Digital Terrain Elevation Data, Level 5)" },
 	{   7, "SRTM1 (Shuttle Radar Topography Mission, Level 1)" },
 	{   8, "SRTM2 (Shuttle Radar Topography Mission, Level 2)" },
 	{   9, "DGM50 M745 (Digitales Gelandemodell 1:50 000)" },
@@ -264,8 +327,8 @@ static const value_string stanag4607_terrain_vals[] = {
 
 static const value_string stanag4607_geoid_vals[] = {
 	{   0, "None Specified" },
-	{   1, "EGM96 (Earth Gravitional Model, Version 1996)" },
-	{   2, "GEO96 (Geoid Gravitional Model, Version 1996)" },
+	{   1, "EGM96 (Earth Gravitational Model, Version 1996)" },
+	{   2, "GEO96 (Geoid Gravitational Model, Version 1996)" },
 	{   3, "Flat Earth" },
 	{ 0, NULL }
 };
@@ -277,7 +340,7 @@ static const value_string stanag4607_target_vals[] = {
 	{   3, "Rotary Wing Aircraft, Live Target" },
 	{   4, "Fixed Wing Aircraft, Live Target" },
 	{   5, "Stationary Rotator, Live Target" },
-	{   6, "Maritme, Live Target" },
+	{   6, "Maritime, Live Target" },
 	{   7, "Beacon, Live Target" },
 	{   8, "Amphibious, Live Target" },
 	{   9, "Person, Live Target" },
@@ -294,7 +357,7 @@ static const value_string stanag4607_target_vals[] = {
 	{   131, "Rotary Wing Aircraft, Simulated Target" },
 	{   132, "Fixed Wing Aircraft, Simulated Target" },
 	{   133, "Stationary Rotator, Simulated Target" },
-	{   134, "Maritme, Simulated Target" },
+	{   134, "Maritime, Simulated Target" },
 	{   135, "Beacon, Simulated Target" },
 	{   136, "Amphibious, Simulated Target" },
 	{   137, "Person, Simulated Target" },
@@ -318,7 +381,7 @@ static const value_string stanag4607_platform_vals[] = {
 	{   4, "Rotary Wing Radar" },
 	{   5, "Global Hawk-Navy" },
 	{   6, "HORIZON" },
-	{   7, "E-8 (Joint STARS)" },
+	{   7, "E-8C (Joint STARS)" },
 	{   8, "P-3C" },
 	{   9, "Predator" },
 	{  10, "RADARSAT2" },
@@ -347,30 +410,47 @@ static const value_string stanag4607_platform_vals[] = {
 	{  33, "Stryker" },
 	{  34, "AGS (HALE UAV)" },
 	{  35, "SIDM" },
-	{  36, "Reaper" },
+	{  36, "MQ-9 Reaper" },
 	{  37, "Warrior A" },
 	{  38, "Warrior" },
 	{  39, "Twin Otter" },
+	{  40, "LEMV" },
+	{  41, "P8A Poseidon" },
+	{  42, "A160" },
+	{  43, "MQ-1C Gray Eagle" },
+	{  44, "RQ-7C Shadow" },
+	{  45, "PGSS" },
+	{  46, "PTDS" },
+	{  47, "LRAS 3" },
+	{  48, "RAID Tower" },
+	{  49, "Heron" },
+	{  50, "Scan Eagle" },
+	{  51, "Fire Scout" },
+	{  52, "F35 Joint Strike Fighter" },
+	{  53, "F-61 Sea King (SKASac)" },
+	{  54, "Lynx Wildcat" },
+	{  55, "Merlin" },
+	{  56, "SDT (Système de Drone Tactique)" },
 	{  255, "Other" },
-	{ 0, NULL }
+	{  0, NULL }
 };
 
 static void
-prt_sa32(gchar *buff, guint32 val)
+prt_sa32(char *buff, uint32_t val)
 {
 	double deg, min, sec;
-	double x = (double) ((gint32) val);
+	double x = (double) ((int32_t) val);
 	x /= (double) (1UL<<30);
 	x *= 45.0;
 	deg = floor(x);
 	min = floor(60.0 * (x - deg));
 	sec = 60.0 * (60.0 * (x - deg) - min);
 	/* checkAPI.pl doesn't like the unicode degree symbol, I don't know what to do... */
-	g_snprintf(buff, ITEM_LABEL_LENGTH, "%.8f degrees (%.0f %.0f\' %.2f\")", x, deg, min, sec);
+	snprintf(buff, ITEM_LABEL_LENGTH, "%.8f degrees (%.0f %.0f\' %.2f\")", x, deg, min, sec);
 }
 
 static void
-prt_ba32(gchar *buff, guint32 val)
+prt_ba32(char *buff, uint32_t val)
 {
 	double deg, min, sec;
 	double x = (double) val;
@@ -380,132 +460,132 @@ prt_ba32(gchar *buff, guint32 val)
 	min = floor(60.0 * (x - deg));
 	sec = 60.0 * (60.0 * (x - deg) - min);
 	/* checkAPI.pl doesn't like the unicode degree symbol, I don't know what to do... */
-	g_snprintf(buff, ITEM_LABEL_LENGTH, "%.8f degrees (%.0f %.0f\' %.2f\")", x, deg, min, sec);
+	snprintf(buff, ITEM_LABEL_LENGTH, "%.8f degrees (%.0f %.0f\' %.2f\")", x, deg, min, sec);
 }
 
 static void
-prt_sa16(gchar *buff, guint32 val)
+prt_sa16(char *buff, uint32_t val)
 {
-	double x = (double) ((gint32) val);
+	double x = (double) ((int32_t) val);
 	x /= (double) (1<<14);
 	x *= 90.0;
-	g_snprintf(buff, ITEM_LABEL_LENGTH, "%.3f degrees", x);
+	snprintf(buff, ITEM_LABEL_LENGTH, "%.3f degrees", x);
 }
 
 static void
-prt_ba16(gchar *buff, guint32 val)
+prt_ba16(char *buff, uint32_t val)
 {
 	double x = (double) val;
 	x /= (double) (1<<14);
 	x *= 90.0;
-	g_snprintf(buff, ITEM_LABEL_LENGTH, "%.3f degrees", x);
+	snprintf(buff, ITEM_LABEL_LENGTH, "%.3f degrees", x);
 }
 
 static void
-prt_ba16_none(gchar *buff, guint32 val)
+prt_ba16_none(char *buff, uint32_t val)
 {
 	double x = (double) val;
 	x /= (double) (1<<14);
 	x *= 90.0;
 	if (val <= 65536)
-		g_snprintf(buff, ITEM_LABEL_LENGTH, "No Statement");
+		snprintf(buff, ITEM_LABEL_LENGTH, "No Statement");
 	else
-		g_snprintf(buff, ITEM_LABEL_LENGTH, "%.3f degrees", x);
+		snprintf(buff, ITEM_LABEL_LENGTH, "%.3f degrees", x);
 }
 
 static void
-prt_kilo(gchar *buff, guint32 val)
+prt_kilo(char *buff, uint32_t val)
 {
-	double x = (double) ((gint32) val);
+	double x = (double) ((int32_t) val);
 	x /= 128.0;
-	g_snprintf(buff, ITEM_LABEL_LENGTH, "%.2f kilometers", x);
+	snprintf(buff, ITEM_LABEL_LENGTH, "%.2f kilometers", x);
 }
 
 static void
-prt_meters(gchar *buff, guint32 val)
+prt_meters(char *buff, uint32_t val)
 {
-	double x = (double) ((gint32) val);
-	g_snprintf(buff, ITEM_LABEL_LENGTH, "%.0f meters", x);
+	double x = (double) ((int32_t) val);
+	snprintf(buff, ITEM_LABEL_LENGTH, "%.0f meters", x);
 }
 
 static void
-prt_decimeters(gchar *buff, guint32 val)
+prt_decimeters(char *buff, uint32_t val)
 {
-	double x = (double) ((gint32) val);
+	double x = (double) ((int32_t) val);
 	x /= 10.0;
-	g_snprintf(buff, ITEM_LABEL_LENGTH, "%.1f meters", x);
+	snprintf(buff, ITEM_LABEL_LENGTH, "%.1f meters", x);
 }
 
 static void
-prt_centimeters(gchar *buff, guint32 val)
+prt_centimeters(char *buff, uint32_t val)
 {
-	double x = (double) ((gint32) val);
+	double x = (double) ((int32_t) val);
 	x /= 100.0;
-	g_snprintf(buff, ITEM_LABEL_LENGTH, "%.2f meters", x);
+	snprintf(buff, ITEM_LABEL_LENGTH, "%.2f meters", x);
 }
 
 static void
-prt_speed(gchar *buff, guint32 val)
+prt_speed(char *buff, uint32_t val)
 {
 	double x = (double) val;
 	x /= 1000.0;
-	g_snprintf(buff, ITEM_LABEL_LENGTH, "%.3f meters/second", x);
+	snprintf(buff, ITEM_LABEL_LENGTH, "%.3f meters/second", x);
 }
 
 static void
-prt_speed_centi(gchar *buff, guint32 val)
+prt_speed_centi(char *buff, uint32_t val)
 {
-	double x = (double) ((gint32) val);
+	double x = (double) ((int32_t) val);
 	x /= 100.0;
-	g_snprintf(buff, ITEM_LABEL_LENGTH, "%.2f meters/second", x);
+	snprintf(buff, ITEM_LABEL_LENGTH, "%.2f meters/second", x);
 }
 
 static void
-prt_speed_deci(gchar *buff, guint32 val)
+prt_speed_deci(char *buff, uint32_t val)
 {
 	/* Usually 8-bit, signed */
-	double x = (double) ((gint32) val);
+	double x = (double) ((int32_t) val);
 	x /= 10.0;
-	g_snprintf(buff, ITEM_LABEL_LENGTH, "%.1f meters/second", x);
+	snprintf(buff, ITEM_LABEL_LENGTH, "%.1f meters/second", x);
 }
 
 static void
-prt_millisec(gchar *buff, guint32 val)
+prt_millisec(char *buff, uint32_t val)
 {
 	double x = (double) val;
 	x /= 1000.0;
-	g_snprintf(buff, ITEM_LABEL_LENGTH, "%.3f seconds", x);
+	snprintf(buff, ITEM_LABEL_LENGTH, "%.3f seconds", x);
 }
 
 static void
-prt_none8(gchar *buff, guint32 val)
+prt_none8(char *buff, uint32_t val)
 {
 	if (0xff == val)
-		g_snprintf(buff, ITEM_LABEL_LENGTH, "No Statement");
+		snprintf(buff, ITEM_LABEL_LENGTH, "No Statement");
 	else
-		g_snprintf(buff, ITEM_LABEL_LENGTH, "%d", val);
+		snprintf(buff, ITEM_LABEL_LENGTH, "%d", val);
 }
 
 static void
-prt_none16(gchar *buff, guint32 val)
+prt_none16(char *buff, uint32_t val)
 {
 	if (0xffff == val)
-		g_snprintf(buff, ITEM_LABEL_LENGTH, "No Statement");
+		snprintf(buff, ITEM_LABEL_LENGTH, "No Statement");
 	else
-		g_snprintf(buff, ITEM_LABEL_LENGTH, "%d", val);
+		snprintf(buff, ITEM_LABEL_LENGTH, "%d", val);
 }
 
 
-static gint
-dissect_mission(tvbuff_t *tvb, proto_tree *seg_tree, gint offset)
+static int
+dissect_mission(tvbuff_t *tvb, proto_tree *seg_tree, int offset)
 {
-	proto_tree_add_item(seg_tree, hf_4607_mission_plan, tvb, offset, 12, ENC_ASCII|ENC_NA);
+	proto_tree_add_item(seg_tree, hf_4607_mission_plan, tvb, offset, 12, ENC_ASCII);
 	offset += 12;
-	proto_tree_add_item(seg_tree, hf_4607_mission_flight_plan, tvb, offset, 12, ENC_ASCII|ENC_NA);
+	proto_tree_add_item(seg_tree, hf_4607_mission_flight_plan, tvb, offset, 12, ENC_ASCII);
 	offset += 12;
 	proto_tree_add_item(seg_tree, hf_4607_mission_platform, tvb, offset, 1, ENC_BIG_ENDIAN);
 	offset += 1;
-	proto_tree_add_item(seg_tree, hf_4607_mission_platform_config, tvb, offset, 10, ENC_ASCII|ENC_NA);
+	proto_tree_add_item(seg_tree, hf_4607_mission_platform_config, tvb, offset, 10, ENC_ASCII);
 	offset += 10;
 	proto_tree_add_item(seg_tree, hf_4607_mission_time_year, tvb, offset, 2, ENC_BIG_ENDIAN);
 	offset += 2;
@@ -524,29 +604,59 @@ dissect_mission(tvbuff_t *tvb, proto_tree *seg_tree, gint offset)
  * close to this).  The m and n values of the m*8+n offset below are
  * given in Figure 2-1 titled "Dwell Segment Existence Mask Mapping."
  */
-#define SET(MASK,OFF) (((MASK)>>(OFF)) & G_GINT64_CONSTANT(1))
+#define SET(MASK,OFF) (((MASK)>>(OFF)) & INT64_C(1))
+#define D2      7*8+7
+#define D3      7*8+6
+#define D4      7*8+5
+#define D5      7*8+4
+#define D6      7*8+3
+#define D7      7*8+2
+#define D8      7*8+1
+#define D9      7*8+0
 #define D10     6*8+7
+#define D11     6*8+6
 #define D12     6*8+5
+#define D13     6*8+4
+#define D14     6*8+3
 #define D15     6*8+2
+#define D16     6*8+1
+#define D17     6*8+0
 #define D18     5*8+7
+#define D19     5*8+6
+#define D20     5*8+5
 #define D21     5*8+4
+#define D22     5*8+3
+#define D23     5*8+2
 #define D24     5*8+1
+#define D25     5*8+0
+#define D26     4*8+7
+#define D27     4*8+6
 #define D28     4*8+5
+#define D29     4*8+4
+#define D30     4*8+3
 #define D31     4*8+2
 #define D32_1   4*8+1
 #define D32_2   4*8+0
+#define D32_3   3*8+7
+#define D32_4   3*8+6
+#define D32_5   3*8+5
 #define D32_6   3*8+4
 #define D32_7   3*8+3
+#define D32_8   3*8+2
 #define D32_9   3*8+1
 #define D32_10  3*8+0
 #define D32_11  2*8+7
 #define D32_12  2*8+6
+#define D32_13  2*8+5
+#define D32_14  2*8+4
+#define D32_15  2*8+3
 #define D32_16  2*8+2
+#define D32_17  2*8+1
 #define D32_18  2*8+0
 
 /* Target Report */
-static gint
-dissect_target(tvbuff_t *tvb, proto_tree *seg_tree, gint offset, guint64 mask)
+static int
+dissect_target(tvbuff_t *tvb, proto_tree *seg_tree, int offset, uint64_t mask)
 {
 	proto_item *rpt_item = NULL;
 	proto_tree *rpt_tree = seg_tree;
@@ -560,11 +670,16 @@ dissect_target(tvbuff_t *tvb, proto_tree *seg_tree, gint offset, guint64 mask)
 	if (SET(mask, D32_2)) {
 		rpt_item = proto_tree_add_item(rpt_tree, hf_4607_dwell_report_lat, tvb, offset, 4, ENC_BIG_ENDIAN);
 		offset += 4;
+	}
+	if (SET(mask, D32_3)) {
 		proto_tree_add_item(rpt_tree, hf_4607_dwell_report_lon, tvb, offset, 4, ENC_BIG_ENDIAN);
 		offset += 4;
-	} else {
+	}
+	if (SET(mask, D32_4)) {
 		rpt_item = proto_tree_add_item(rpt_tree, hf_4607_dwell_report_delta_lat, tvb, offset, 2, ENC_BIG_ENDIAN);
 		offset += 2;
+	}
+	if (SET(mask, D32_5)) {
 		proto_tree_add_item(rpt_tree, hf_4607_dwell_report_delta_lon, tvb, offset, 2, ENC_BIG_ENDIAN);
 		offset += 2;
 	}
@@ -580,6 +695,8 @@ dissect_target(tvbuff_t *tvb, proto_tree *seg_tree, gint offset, guint64 mask)
 	if (SET(mask, D32_7)) {
 		proto_tree_add_item(rpt_tree, hf_4607_dwell_report_radial, tvb, offset, 2, ENC_BIG_ENDIAN);
 		offset += 2;
+	}
+	if (SET(mask, D32_8)) {
 		proto_tree_add_item(rpt_tree, hf_4607_dwell_report_wrap, tvb, offset, 2, ENC_BIG_ENDIAN);
 		offset += 2;
 	}
@@ -598,16 +715,24 @@ dissect_target(tvbuff_t *tvb, proto_tree *seg_tree, gint offset, guint64 mask)
 	if (SET(mask, D32_12)) {
 		proto_tree_add_item(rpt_tree, hf_4607_dwell_report_unc_slant, tvb, offset, 2, ENC_BIG_ENDIAN);
 		offset += 2;
+	}
+	if (SET(mask, D32_13)) {
 		proto_tree_add_item(rpt_tree, hf_4607_dwell_report_unc_cross, tvb, offset, 2, ENC_BIG_ENDIAN);
 		offset += 2;
+	}
+	if (SET(mask, D32_14)) {
 		proto_tree_add_item(rpt_tree, hf_4607_dwell_report_unc_height, tvb, offset, 1, ENC_BIG_ENDIAN);
 		offset += 1;
+	}
+	if (SET(mask, D32_15)) {
 		proto_tree_add_item(rpt_tree, hf_4607_dwell_report_unc_radial, tvb, offset, 2, ENC_BIG_ENDIAN);
 		offset += 2;
 	}
 	if (SET(mask, D32_16)) {
 		proto_tree_add_item(rpt_tree, hf_4607_dwell_report_tag_app, tvb, offset, 1, ENC_BIG_ENDIAN);
 		offset += 1;
+	}
+	if (SET(mask, D32_17)) {
 		proto_tree_add_item(rpt_tree, hf_4607_dwell_report_tag_entity, tvb, offset, 4, ENC_BIG_ENDIAN);
 		offset += 4;
 	}
@@ -620,20 +745,76 @@ dissect_target(tvbuff_t *tvb, proto_tree *seg_tree, gint offset, guint64 mask)
 }
 
 /* Dwell Segment */
-static gint
-dissect_dwell(tvbuff_t *tvb, proto_tree *seg_tree, gint offset)
+static int
+dissect_dwell(tvbuff_t *tvb, proto_tree *seg_tree, int offset)
 {
-	guint64 mask;
-	guint32 count;
+	uint64_t mask;
+	uint32_t count;
 
 	mask = tvb_get_ntoh64(tvb, offset);
 
-	proto_tree_add_item(seg_tree, hf_4607_dwell_mask, tvb, offset, 8, ENC_BIG_ENDIAN);
+	static int* const mask_bits[] = {
+            &hf_4607_dwell_mask_7_7,
+			&hf_4607_dwell_mask_7_6,
+			&hf_4607_dwell_mask_7_5,
+			&hf_4607_dwell_mask_7_4,
+			&hf_4607_dwell_mask_7_3,
+			&hf_4607_dwell_mask_7_2,
+			&hf_4607_dwell_mask_7_1,
+			&hf_4607_dwell_mask_7_0,
+			&hf_4607_dwell_mask_6_7,
+			&hf_4607_dwell_mask_6_6,
+			&hf_4607_dwell_mask_6_5,
+			&hf_4607_dwell_mask_6_4,
+			&hf_4607_dwell_mask_6_3,
+			&hf_4607_dwell_mask_6_2,
+			&hf_4607_dwell_mask_6_1,
+			&hf_4607_dwell_mask_6_0,
+			&hf_4607_dwell_mask_5_7,
+			&hf_4607_dwell_mask_5_6,
+			&hf_4607_dwell_mask_5_5,
+			&hf_4607_dwell_mask_5_4,
+			&hf_4607_dwell_mask_5_3,
+			&hf_4607_dwell_mask_5_2,
+			&hf_4607_dwell_mask_5_1,
+			&hf_4607_dwell_mask_5_0,
+			&hf_4607_dwell_mask_4_7,
+			&hf_4607_dwell_mask_4_6,
+			&hf_4607_dwell_mask_4_5,
+			&hf_4607_dwell_mask_4_4,
+			&hf_4607_dwell_mask_4_3,
+			&hf_4607_dwell_mask_4_2,
+			&hf_4607_dwell_mask_4_1,
+			&hf_4607_dwell_mask_4_0,
+			&hf_4607_dwell_mask_3_7,
+			&hf_4607_dwell_mask_3_6,
+			&hf_4607_dwell_mask_3_5,
+			&hf_4607_dwell_mask_3_4,
+			&hf_4607_dwell_mask_3_3,
+			&hf_4607_dwell_mask_3_2,
+			&hf_4607_dwell_mask_3_1,
+			&hf_4607_dwell_mask_3_0,
+			&hf_4607_dwell_mask_2_7,
+			&hf_4607_dwell_mask_2_6,
+			&hf_4607_dwell_mask_2_5,
+			&hf_4607_dwell_mask_2_4,
+			&hf_4607_dwell_mask_2_3,
+			&hf_4607_dwell_mask_2_2,
+			&hf_4607_dwell_mask_2_1,
+			&hf_4607_dwell_mask_2_0,
+			&hf_4607_dwell_mask_spare,
+            NULL
+        };
+	proto_tree_add_bitmask(seg_tree, tvb, offset, hf_4607_dwell_mask, ett_4607_mask, mask_bits, ENC_BIG_ENDIAN);
 	offset += 8;
+
+	/* Mandatory fields, existence mask irrelevant */
 	proto_tree_add_item(seg_tree, hf_4607_dwell_revisit_index, tvb, offset, 2, ENC_BIG_ENDIAN);
 	offset += 2;
+
 	proto_tree_add_item(seg_tree, hf_4607_dwell_dwell_index, tvb, offset, 2, ENC_BIG_ENDIAN);
 	offset += 2;
+
 	proto_tree_add_item(seg_tree, hf_4607_dwell_last_dwell, tvb, offset, 1, ENC_BIG_ENDIAN);
 	offset += 1;
 
@@ -641,69 +822,101 @@ dissect_dwell(tvbuff_t *tvb, proto_tree *seg_tree, gint offset)
 	count = tvb_get_ntohs(tvb, offset);
 	proto_tree_add_item(seg_tree, hf_4607_dwell_count, tvb, offset, 2, ENC_BIG_ENDIAN);
 	offset += 2;
+
 	proto_tree_add_item(seg_tree, hf_4607_dwell_time, tvb, offset, 4, ENC_BIG_ENDIAN);
 	offset += 4;
+
 	proto_tree_add_item(seg_tree, hf_4607_dwell_sensor_lat, tvb, offset, 4, ENC_BIG_ENDIAN);
 	offset += 4;
+
 	proto_tree_add_item(seg_tree, hf_4607_dwell_sensor_lon, tvb, offset, 4, ENC_BIG_ENDIAN);
 	offset += 4;
+
 	proto_tree_add_item(seg_tree, hf_4607_dwell_sensor_alt, tvb, offset, 4, ENC_BIG_ENDIAN);
 	offset += 4;
 
+	/* Optional or conditional fields, in accordance to presence mask */
 	if (SET(mask, D10)) {
 		proto_tree_add_item(seg_tree, hf_4607_dwell_scale_lat, tvb, offset, 4, ENC_BIG_ENDIAN);
 		offset += 4;
+	}
+	if (SET(mask, D11)) {
 		proto_tree_add_item(seg_tree, hf_4607_dwell_scale_lon, tvb, offset, 4, ENC_BIG_ENDIAN);
 		offset += 4;
 	}
 	if (SET(mask, D12)) {
 		proto_tree_add_item(seg_tree, hf_4607_dwell_unc_along, tvb, offset, 4, ENC_BIG_ENDIAN);
 		offset += 4;
+	}
+	if (SET(mask, D13)) {
 		proto_tree_add_item(seg_tree, hf_4607_dwell_unc_cross, tvb, offset, 4, ENC_BIG_ENDIAN);
 		offset += 4;
+	}
+	if (SET(mask, D14)) {
 		proto_tree_add_item(seg_tree, hf_4607_dwell_unc_alt, tvb, offset, 2, ENC_BIG_ENDIAN);
 		offset += 2;
 	}
 	if (SET(mask, D15)) {
 		proto_tree_add_item(seg_tree, hf_4607_dwell_track, tvb, offset, 2, ENC_BIG_ENDIAN);
 		offset += 2;
+	}
+	if (SET(mask, D16)) {
 		proto_tree_add_item(seg_tree, hf_4607_dwell_speed, tvb, offset, 4, ENC_BIG_ENDIAN);
 		offset += 4;
+	}
+	if (SET(mask, D17)) {
 		proto_tree_add_item(seg_tree, hf_4607_dwell_vert_velocity, tvb, offset, 1, ENC_BIG_ENDIAN);
 		offset += 1;
 	}
 	if (SET(mask, D18)) {
 		proto_tree_add_item(seg_tree, hf_4607_dwell_track_unc, tvb, offset, 1, ENC_BIG_ENDIAN);
 		offset += 1;
+	}
+	if (SET(mask, D19)) {
 		proto_tree_add_item(seg_tree, hf_4607_dwell_speed_unc, tvb, offset, 2, ENC_BIG_ENDIAN);
 		offset += 2;
+	}
+	if (SET(mask, D20)) {
 		proto_tree_add_item(seg_tree, hf_4607_dwell_vv_unc, tvb, offset, 2, ENC_BIG_ENDIAN);
 		offset += 2;
 	}
 	if (SET(mask, D21)) {
 		proto_tree_add_item(seg_tree, hf_4607_dwell_plat_heading, tvb, offset, 2, ENC_BIG_ENDIAN);
 		offset += 2;
+	}
+	if (SET(mask, D22)) {
 		proto_tree_add_item(seg_tree, hf_4607_dwell_plat_pitch, tvb, offset, 2, ENC_BIG_ENDIAN);
 		offset += 2;
+	}
+	if (SET(mask, D23)) {
 		proto_tree_add_item(seg_tree, hf_4607_dwell_plat_roll, tvb, offset, 2, ENC_BIG_ENDIAN);
 		offset += 2;
 	}
 
-	/* Mandatory Dwell Area */
+	/* Dwell Area */
+	/* Mandatory fields, existence mask irrelevant */
 	proto_tree_add_item(seg_tree, hf_4607_dwell_da_lat, tvb, offset, 4, ENC_BIG_ENDIAN);
 	offset += 4;
+
 	proto_tree_add_item(seg_tree, hf_4607_dwell_da_lon, tvb, offset, 4, ENC_BIG_ENDIAN);
 	offset += 4;
+
 	proto_tree_add_item(seg_tree, hf_4607_dwell_da_range, tvb, offset, 2, ENC_BIG_ENDIAN);
 	offset += 2;
+
 	proto_tree_add_item(seg_tree, hf_4607_dwell_da_angle, tvb, offset, 2, ENC_BIG_ENDIAN);
 	offset += 2;
 
+	/* Optional or conditional fields, in accordance to presence mask */
 	if (SET(mask, D28)) {
 		proto_tree_add_item(seg_tree, hf_4607_dwell_sensor_heading, tvb, offset, 2, ENC_BIG_ENDIAN);
 		offset += 2;
+	}
+	if (SET(mask, D29)) {
 		proto_tree_add_item(seg_tree, hf_4607_dwell_sensor_pitch, tvb, offset, 2, ENC_BIG_ENDIAN);
 		offset += 2;
+	}
+	if (SET(mask, D30)) {
 		proto_tree_add_item(seg_tree, hf_4607_dwell_sensor_roll, tvb, offset, 2, ENC_BIG_ENDIAN);
 		offset += 2;
 	}
@@ -720,14 +933,14 @@ dissect_dwell(tvbuff_t *tvb, proto_tree *seg_tree, gint offset)
 }
 
 /* Job Definition */
-static gint
-dissect_jobdef(tvbuff_t *tvb, proto_tree *seg_tree, gint offset)
+static int
+dissect_jobdef(tvbuff_t *tvb, proto_tree *seg_tree, int offset)
 {
 	proto_tree_add_item(seg_tree, hf_4607_jobdef_job_id, tvb, offset, 4, ENC_BIG_ENDIAN);
 	offset += 4;
 	proto_tree_add_item(seg_tree, hf_4607_jobdef_sensor_type, tvb, offset, 1, ENC_BIG_ENDIAN);
 	offset += 1;
-	proto_tree_add_item(seg_tree, hf_4607_jobdef_sensor_model, tvb, offset, 6, ENC_ASCII|ENC_NA);
+	proto_tree_add_item(seg_tree, hf_4607_jobdef_sensor_model, tvb, offset, 6, ENC_ASCII);
 	offset += 6;
 	proto_tree_add_item(seg_tree, hf_4607_jobdef_filter, tvb, offset, 1, ENC_BIG_ENDIAN);
 	offset += 1;
@@ -783,8 +996,8 @@ dissect_jobdef(tvbuff_t *tvb, proto_tree *seg_tree, gint offset)
 	return offset;
 }
 
-static gint
-dissect_platform_location(tvbuff_t *tvb, proto_tree *seg_tree, gint offset)
+static int
+dissect_platform_location(tvbuff_t *tvb, proto_tree *seg_tree, int offset)
 {
 	proto_tree_add_item(seg_tree, hf_4607_platloc_time, tvb, offset, 4, ENC_BIG_ENDIAN);
 	offset += 4;
@@ -823,15 +1036,13 @@ dissect_platform_location(tvbuff_t *tvb, proto_tree *seg_tree, gint offset)
 static int
 dissect_stanag4607(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	guint32 offset = 0;
-	gint8 first_segment;
+	uint32_t offset = 0;
+	int8_t first_segment;
 
-	guint32 pkt_size = 0;
-	proto_item *ti = NULL;
-	proto_tree *hdr_tree = NULL;
-	proto_item *seg_type = NULL;
-	proto_tree *seg_tree = NULL;
-	guint8 seg_id = 0;
+	uint32_t pkt_size = 0, job_id;
+	proto_item *ti, *seg_type, *pver, *pedition;
+	proto_tree *hdr_tree, *seg_tree, *ver_tree;
+	uint8_t seg_id = 0;
 
 	/* Basic length check */
 	if (tvb_captured_length(tvb) < STANAG4607_MIN_LENGTH)
@@ -842,13 +1053,13 @@ dissect_stanag4607(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
 	col_clear(pinfo->cinfo, COL_INFO);
 
 	/* Put type of first segment in the info column */
-	first_segment = tvb_get_guint8(tvb, 32);
+	first_segment = tvb_get_uint8(tvb, 32);
 	col_add_str(pinfo->cinfo, COL_INFO,
-			val_to_str(first_segment, stanag4607_segment_vals, "Unknown (0x%02x)"));
+			val_to_str(pinfo->pool, first_segment, stanag4607_segment_vals, "Unknown (0x%02x)"));
 
 	/* Put the timestamp, if available in the time column */
 	if (PLATFORM_LOCATION_SEGMENT == first_segment) {
-		guint32 millisecs;
+		uint32_t millisecs;
 		nstime_t ts;
 		millisecs = tvb_get_ntohl(tvb, 37);
 		ts.secs = millisecs / 1000;
@@ -857,20 +1068,40 @@ dissect_stanag4607(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
 	}
 
 	/* The generic packet header */
-	if (tree) {
-		ti = proto_tree_add_item(tree, proto_stanag4607, tvb, 0, -1, ENC_NA);
-		hdr_tree = proto_item_add_subtree(ti, ett_4607_hdr);
-		proto_tree_add_item(hdr_tree, hf_4607_version, tvb, 0, 2, ENC_ASCII|ENC_NA);
-		ti = proto_tree_add_item(hdr_tree, hf_4607_packet_size, tvb, 2, 4, ENC_BIG_ENDIAN);
-		proto_tree_add_item(hdr_tree, hf_4607_nationality, tvb, 6, 2, ENC_ASCII|ENC_NA);
-		proto_tree_add_item(hdr_tree, hf_4607_sec_class, tvb, 8, 1, ENC_BIG_ENDIAN);
-		proto_tree_add_item(hdr_tree, hf_4607_sec_system, tvb, 9, 2, ENC_ASCII|ENC_NA);
-		proto_tree_add_item(hdr_tree, hf_4607_sec_code, tvb, 11, 2, ENC_BIG_ENDIAN);
-		proto_tree_add_item(hdr_tree, hf_4607_exercise_indicator, tvb, 13, 1, ENC_BIG_ENDIAN);
-		proto_tree_add_item(hdr_tree, hf_4607_platform_id, tvb, 14, 10, ENC_ASCII|ENC_NA);
-		proto_tree_add_item(hdr_tree, hf_4607_mission_id, tvb, 24, 4, ENC_BIG_ENDIAN);
-		proto_tree_add_item(hdr_tree, hf_4607_job_id, tvb, 28, 4, ENC_BIG_ENDIAN);
+	ti = proto_tree_add_item(tree, proto_stanag4607, tvb, 0, -1, ENC_NA);
+	hdr_tree = proto_item_add_subtree(ti, ett_4607_hdr);
+
+	/* Version is in format mn (ASCII) where m reflects edition and n version
+
+	   m="4" equates to A, m="5" equates to B, and so on
+	   n is the direct alphanumeric representation
+
+	   Note: STANAG 4607 has numbers up to 3 (Edition 3 Rev. 0 => "30").
+	   This changed with the transition to AEDP-4607.
+	*/
+	pver = proto_tree_add_item(hdr_tree, hf_4607_version, tvb, 0, 2, ENC_ASCII);
+	ver_tree = proto_item_add_subtree(pver, ett_4607_ver);
+	pedition = proto_tree_add_item(ver_tree, hf_4607_version_edition, tvb, 0, 1, ENC_ASCII);
+	uint8_t edition = tvb_get_uint8(tvb, 0);
+	if(edition >= 48 && edition <= 51) {
+		/* ASCII char 48-51 (0-3) */
+		proto_item_append_text(pedition, " (STANAG 4607 Edition %c)", edition);
+	} else if(edition >= 52 && edition <= 57) {
+		/* ASCII char 52-57 (0-9) -> ASCII table offset 13 -> 52 (4) + 13 = 65 (A) */
+		proto_item_append_text(pedition, " (AEDP-4607 Edition %c)", edition + 13);
 	}
+	proto_tree_add_item(ver_tree, hf_4607_version_version, tvb, 1, 1, ENC_ASCII);
+
+	ti = proto_tree_add_item(hdr_tree, hf_4607_packet_size, tvb, 2, 4, ENC_BIG_ENDIAN);
+	proto_tree_add_item(hdr_tree, hf_4607_nationality, tvb, 6, 2, ENC_ASCII);
+	proto_tree_add_item(hdr_tree, hf_4607_sec_class, tvb, 8, 1, ENC_BIG_ENDIAN);
+	proto_tree_add_item(hdr_tree, hf_4607_sec_system, tvb, 9, 2, ENC_ASCII);
+	proto_tree_add_item(hdr_tree, hf_4607_sec_code, tvb, 11, 2, ENC_BIG_ENDIAN);
+	proto_tree_add_item(hdr_tree, hf_4607_exercise_indicator, tvb, 13, 1, ENC_BIG_ENDIAN);
+	proto_tree_add_item(hdr_tree, hf_4607_platform_id, tvb, 14, 10, ENC_ASCII);
+	proto_tree_add_item(hdr_tree, hf_4607_mission_id, tvb, 24, 4, ENC_BIG_ENDIAN);
+	proto_tree_add_item(hdr_tree, hf_4607_job_id, tvb, 28, 4, ENC_BIG_ENDIAN);
+	job_id = tvb_get_uint32(tvb, 28, ENC_BIG_ENDIAN);
 	offset = 32;
 
 	pkt_size = tvb_get_ntohl(tvb, 2);
@@ -883,13 +1114,13 @@ dissect_stanag4607(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
 
 	/* Loop over all segments in the packet */
 	while (offset < pkt_size) {
-		guint32 seg_size = 0;
-		guint32 saved_offset = offset;
+		uint32_t seg_size = 0;
+		uint32_t saved_offset = offset;
 
 		proto_item * pi;
 		/* Segment header */
 		seg_type = proto_tree_add_item(hdr_tree, hf_4607_segment_type, tvb, offset, 1, ENC_BIG_ENDIAN);
-		seg_id = tvb_get_guint8(tvb, offset);
+		seg_id = tvb_get_uint8(tvb, offset);
 		offset += 1;
 
 		seg_tree = proto_item_add_subtree(seg_type, ett_4607_seg);
@@ -908,6 +1139,8 @@ dissect_stanag4607(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
 				offset = dissect_mission(tvb, seg_tree, offset);
 				break;
 			case DWELL_SEGMENT:
+				if(job_id == 0)
+					proto_tree_add_expert(seg_tree, pinfo, &ei_job_id_zero, tvb, 0, 0);
 				offset = dissect_dwell(tvb, seg_tree, offset);
 				break;
 			case JOB_DEFINITION_SEGMENT:
@@ -943,6 +1176,18 @@ proto_register_stanag4607(void)
 			NULL, 0x0,
 			NULL, HFILL }
 		},
+		{ &hf_4607_version_edition,
+			{ "Edition", "s4607.version.edition",
+			FT_STRING, BASE_NONE,
+			NULL, 0x0,
+			NULL, HFILL }
+		},
+		{ &hf_4607_version_version,
+			{ "Version", "s4607.version.version",
+			FT_STRING, BASE_NONE,
+			NULL, 0x0,
+			NULL, HFILL }
+		},
 		{ &hf_4607_packet_size,
 			{ "Packet Size", "s4607.size",
 			FT_UINT32, BASE_DEC,
@@ -970,7 +1215,7 @@ proto_register_stanag4607(void)
 		{ &hf_4607_sec_code,
 			{ "Security Codes", "s4607.sec.codes",
 			FT_UINT16, BASE_HEX,
-			NULL, 0x0,
+			VALS(stanag4607_security_codes_vals), 0x0,
 			NULL, HFILL }
 		},
 		{ &hf_4607_exercise_indicator,
@@ -1019,6 +1264,300 @@ proto_register_stanag4607(void)
 			{ "Existence Mask", "s4607.dwell.mask",
 			FT_UINT64, BASE_HEX,
 			NULL, 0x0,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_7_7,
+			{ "Revisit Index (D2)", "s4607.dwell.mask.d2",
+			FT_BOOLEAN, 64,
+			NULL, 0x8000000000000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_7_6,
+			{ "Dwell Index (D3)", "s4607.dwell.mask.d3",
+			FT_BOOLEAN, 64,
+			NULL, 0x4000000000000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_7_5,
+			{ "Last Dwell of Revisit (D4)", "s4607.dwell.mask.d4",
+			FT_BOOLEAN, 64,
+			NULL, 0x2000000000000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_7_4,
+			{ "Target Report Count (D5)", "s4607.dwell.mask.d5",
+			FT_BOOLEAN, 64,
+			NULL, 0x1000000000000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_7_3,
+			{ "Dwell Time (D6)", "s4607.dwell.mask.d6",
+			FT_BOOLEAN, 64,
+			NULL, 0x0800000000000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_7_2,
+			{ "Sensor Position (Latitude) (D7)", "s4607.dwell.mask.d7",
+			FT_BOOLEAN, 64,
+			NULL, 0x0400000000000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_7_1,
+			{ "Sensor Position (Longitude) (D8)", "s4607.dwell.mask.d8",
+			FT_BOOLEAN, 64,
+			NULL, 0x0200000000000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_7_0,
+			{ "Sensor Position (Altitude) (D9)", "s4607.dwell.mask.d9",
+			FT_BOOLEAN, 64,
+			NULL, 0x0100000000000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_6_7,
+			{ "Scale Factor (Latitude Scale) (D10)", "s4607.dwell.mask.d10",
+			FT_BOOLEAN, 64,
+			NULL, 0x0080000000000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_6_6,
+			{ "Scale Factor (Longitude Scale) (D11)", "s4607.dwell.mask.d11",
+			FT_BOOLEAN, 64,
+			NULL, 0x0040000000000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_6_5,
+			{ "Sensor Position Uncertainty (Along Track) (D12)", "s4607.dwell.mask.d12",
+			FT_BOOLEAN, 64,
+			NULL, 0x0020000000000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_6_4,
+			{ "Sensor Position Uncertainty (Cross-Track) (D13)", "s4607.dwell.mask.d13",
+			FT_BOOLEAN, 64,
+			NULL, 0x0010000000000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_6_3,
+			{ "Sensor Position Uncertainty (Altitude) (D14)", "s4607.dwell.mask.d14",
+			FT_BOOLEAN, 64,
+			NULL, 0x0008000000000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_6_2,
+			{ "Sensor Track (D15)", "s4607.dwell.mask.d15",
+			FT_BOOLEAN, 64,
+			NULL, 0x0004000000000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_6_1,
+			{ "Sensor Speed (D16)", "s4607.dwell.mask.d16",
+			FT_BOOLEAN, 64,
+			NULL, 0x0002000000000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_6_0,
+			{ "Sensor Vertical Velocity (D17)", "s4607.dwell.mask.d17",
+			FT_BOOLEAN, 64,
+			NULL, 0x0001000000000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_5_7,
+			{ "Sensor Track Uncertainty (D18)", "s4607.dwell.mask.d18",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000800000000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_5_6,
+			{ "Sensor Speed Uncertainty (D19)", "s4607.dwell.mask.d19",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000400000000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_5_5,
+			{ "Sensor Vertical Velocity Uncertainty (D20)", "s4607.dwell.mask.d20",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000200000000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_5_4,
+			{ "Platform Orientation (Heading) (D21)", "s4607.dwell.mask.d21",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000100000000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_5_3,
+			{ "Platform Orientation (Pitch) (D22)", "s4607.dwell.mask.d22",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000080000000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_5_2,
+			{ "Platform Orientation (Roll) (D23)", "s4607.dwell.mask.d23",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000040000000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_5_1,
+			{ "Dwell Area (Center Latitude) (D24)", "s4607.dwell.mask.d24",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000020000000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_5_0,
+			{ "Dwell Area (Center Longitude) (D25)", "s4607.dwell.mask.d25",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000010000000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_4_7,
+			{ "Dwell Area (Range Half Extent) (D26)", "s4607.dwell.mask.d26",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000008000000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_4_6,
+			{ "Dwell Area (Dwell Angle Half Extent) (D27)", "s4607.dwell.mask.d27",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000004000000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_4_5,
+			{ "Sensor Orientation (Heading) (D28)", "s4607.dwell.mask.d28",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000002000000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_4_4,
+			{ "Sensor Orientation (Pitch) (D29)", "s4607.dwell.mask.d29",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000001000000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_4_3,
+			{ "Sensor Orientation (Roll) (D30)", "s4607.dwell.mask.d30",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000000800000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_4_2,
+			{ "Minimum Detectable Velocity, MDV (D31)", "s4607.dwell.mask.d31",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000000400000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_4_1,
+			{ "MTI Report Index (D32.1)", "s4607.dwell.mask.d32_1",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000000200000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_4_0,
+			{ "Target Location (Hi-Res Latitude) (D32.2)", "s4607.dwell.mask.d32_2",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000000100000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_3_7,
+			{ "Target Location (Hi-Res Longitude) (D32.3)", "s4607.dwell.mask.d32_3",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000000080000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_3_6,
+			{ "Target Location (Delta Latitude) (D32.4)", "s4607.dwell.mask.d32_4",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000000040000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_3_5,
+			{ "Target Location (Delta Longitude) (D32.5)", "s4607.dwell.mask.d32_5",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000000020000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_3_4,
+			{ "Target Location (Geodetic Height) (D32.6)", "s4607.dwell.mask.d32_6",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000000010000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_3_3,
+			{ "Target Velocity Line-of-Sight Component (D32.7)", "s4607.dwell.mask.d32_7",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000000008000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_3_2,
+			{ "Target Wrap Velocity (D32.8)", "s4607.dwell.mask.d32_8",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000000004000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_3_1,
+			{ "Target SNR (D32.9)", "s4607.dwell.mask.d32_9",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000000002000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_3_0,
+			{ "Target Classification (D32.10)", "s4607.dwell.mask.d32_10",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000000001000000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_2_7,
+			{ "Target Class. Probability (D32.11)", "s4607.dwell.mask.d32_11",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000000000800000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_2_6,
+			{ "Target Measurement Uncertainty (Slant Range) (D32.12)", "s4607.dwell.mask.d32_12",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000000000400000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_2_5,
+			{ "Target Measurement Uncertainty (Cross Range) (D32.13)", "s4607.dwell.mask.d32_13",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000000000200000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_2_4,
+			{ "Target Measurement Uncertainty (Height) (D32.14)", "s4607.dwell.mask.d32_14",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000000000100000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_2_3,
+			{ "Target Measurement Uncertainty (Target Radial Velocity) (D32.15)", "s4607.dwell.mask.d32_15",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000000000080000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_2_2,
+			{ "Truth Tag (Application) (D32.16)", "s4607.dwell.mask.d32_16",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000000000040000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_2_1,
+			{ "Truth Tag (Entity) (D32.17)", "s4607.dwell.mask.d32_17",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000000000020000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_2_0,
+			{ "Target Radar Cross Section (D32.18)", "s4607.dwell.mask.d32_18",
+			FT_BOOLEAN, 64,
+			NULL, 0x0000000000010000,
+			NULL, HFILL }
+		},
+		{ &hf_4607_dwell_mask_spare,
+			{ "Spare", "s4607.dwell.mask.spare",
+			FT_UINT64, BASE_HEX,
+			NULL, 0x000000000000FFFF,
 			NULL, HFILL }
 		},
 		{ &hf_4607_dwell_revisit_index,
@@ -1605,10 +2144,12 @@ proto_register_stanag4607(void)
 	};
 
 	/* Setup protocol subtree array */
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_4607_hdr,
 		&ett_4607_seg,
 		&ett_4607_rpt,
+		&ett_4607_mask,
+		&ett_4607_ver,
 	};
 
 	static ei_register_info ei[] = {
@@ -1620,7 +2161,10 @@ proto_register_stanag4607(void)
 			  "Bad segment size", EXPFILL }},
 		{ &ei_bad_packet_size,
 			{ "s4607.bad_packet_size", PI_MALFORMED, PI_ERROR,
-			  "Bad packet size field", EXPFILL }}
+			  "Bad packet size field", EXPFILL }},
+		{ &ei_job_id_zero,
+			{ "s4607.job_id_zero", PI_MALFORMED, PI_WARN,
+			  "Segment present without valid Job ID", EXPFILL }}
 	};
 
 	expert_module_t* expert_4607;
@@ -1636,18 +2180,20 @@ proto_register_stanag4607(void)
 	expert_4607 = expert_register_protocol(proto_stanag4607);
 	expert_register_field_array(expert_4607, ei, array_length(ei));
 
-	stanag4607_handle = register_dissector("STANAG 4607", dissect_stanag4607, proto_stanag4607);
+	stanag4607_handle = register_dissector("stanag4607", dissect_stanag4607, proto_stanag4607);
 	/* prefs_register_protocol(proto_stanag4607, proto_reg_handoff_stanag4607); */
 }
 
 void
 proto_reg_handoff_stanag4607(void)
 {
+	dissector_add_for_decode_as("tcp.port", stanag4607_handle);
+	dissector_add_for_decode_as("udp.port", stanag4607_handle);
 	dissector_add_uint("wtap_encap", WTAP_ENCAP_STANAG_4607, stanag4607_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

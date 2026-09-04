@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -113,8 +101,6 @@
 #include <epan/packet.h>
 #include <epan/capture_dissectors.h>
 #include <epan/prefs.h>
-#include <wiretap/wtap.h>
-#include "packet-ax25.h"
 
 #define STRLEN	80
 
@@ -136,30 +122,32 @@
 #define KISS_PORT_MASK          0xf0
 
 /* Global preferences */
-static gboolean gPREF_CKSUM_MODE = FALSE;
+static bool gPREF_CKSUM_MODE;
 
 void proto_register_ax25_kiss(void);
 void proto_reg_handoff_ax25_kiss(void);
 
 /* Initialize the protocol and registered fields */
-static int proto_ax25_kiss           = -1;
+static int proto_ax25_kiss;
 
-static int hf_ax25_kiss_cmd		= -1;
-static int hf_ax25_kiss_port		= -1;
-static int hf_ax25_kiss_txdelay		= -1;
-static int hf_ax25_kiss_persistence	= -1;
-static int hf_ax25_kiss_slottime	= -1;
-static int hf_ax25_kiss_txtail		= -1;
-static int hf_ax25_kiss_fullduplex	= -1;
-static int hf_ax25_kiss_sethardware	= -1;
-static int hf_ax25_kiss_data_ack	= -1;
-static int hf_ax25_kiss_cksum		= -1;
+static int hf_ax25_kiss_cmd;
+static int hf_ax25_kiss_port;
+static int hf_ax25_kiss_txdelay;
+static int hf_ax25_kiss_persistence;
+static int hf_ax25_kiss_slottime;
+static int hf_ax25_kiss_txtail;
+static int hf_ax25_kiss_fullduplex;
+static int hf_ax25_kiss_sethardware;
+static int hf_ax25_kiss_data_ack;
+static int hf_ax25_kiss_cksum;
 
 
 /* Initialize the subtree pointers */
-static gint ett_ax25_kiss = -1;
+static int ett_ax25_kiss;
 
 static dissector_handle_t kiss_handle;
+
+static capture_dissector_handle_t ax25_cap_handle;
 
 /* Dissector handles - all the possibles are listed */
 static dissector_handle_t ax25_handle;
@@ -178,14 +166,14 @@ static const value_string kiss_frame_types[] = {
 	{ 0, NULL }
 };
 
-static gboolean
-capture_ax25_kiss( const guchar *pd, int offset, int len, capture_packet_info_t *cpinfo, const union wtap_pseudo_header *pseudo_header)
+static bool
+capture_ax25_kiss( const unsigned char *pd, int offset, int len, capture_packet_info_t *cpinfo, const union wtap_pseudo_header *pseudo_header)
 {
 	int    l_offset;
-	guint8 kiss_cmd;
+	uint8_t kiss_cmd;
 
 	if ( ! BYTES_ARE_IN_FRAME( offset, len, KISS_HEADER_SIZE ) )
-		return FALSE;
+		return false;
 
 	l_offset  = offset;
 	kiss_cmd  = pd[ l_offset ];
@@ -193,7 +181,7 @@ capture_ax25_kiss( const guchar *pd, int offset, int len, capture_packet_info_t 
 	switch ( kiss_cmd & KISS_CMD_MASK )
 	{
 		case KISS_DATA_FRAME	:
-			return capture_ax25( pd, l_offset, len, cpinfo, pseudo_header );
+			return call_capture_dissector( ax25_cap_handle, pd, l_offset, len, cpinfo, pseudo_header );
 		case KISS_TXDELAY	: break;
 		case KISS_PERSISTENCE	: break;
 		case KISS_SLOT_TIME	: break;
@@ -202,12 +190,12 @@ capture_ax25_kiss( const guchar *pd, int offset, int len, capture_packet_info_t 
 		case KISS_SETHARDWARE	: break;
 		case KISS_DATA_FRAME_ACK:
 			l_offset += 2;
-			return capture_ax25( pd, l_offset, len, cpinfo, pseudo_header );
+			return call_capture_dissector( ax25_cap_handle, pd, l_offset, len, cpinfo, pseudo_header );
 		case KISS_POLL_MODE	: break;
 		case KISS_RETURN	: break;
 		default			: break;
 	}
-	return FALSE;
+	return false;
 }
 
 /* Code to actually dissect the packets */
@@ -229,7 +217,7 @@ dissect_ax25_kiss( tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, v
 	char       *info_buffer;
 	tvbuff_t   *next_tvb = NULL;
 
-	info_buffer    = (char *)wmem_alloc( wmem_packet_scope(), STRLEN );
+	info_buffer    = (char *)wmem_alloc( pinfo->pool, STRLEN );
 	info_buffer[0] = '\0';
 
 	col_set_str( pinfo->cinfo, COL_PROTOCOL, "AX.25 KISS" );
@@ -238,7 +226,7 @@ dissect_ax25_kiss( tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, v
 	/* protocol offset for the KISS header */
 	offset = 0;
 
-	kiss_cmd   = tvb_get_guint8( tvb, offset ) & 0xff;
+	kiss_cmd   = tvb_get_uint8( tvb, offset ) & 0xff;
 	kiss_type  = kiss_cmd & KISS_CMD_MASK;
 	kiss_port  = (kiss_cmd & KISS_PORT_MASK) >> 4;
 	offset    += KISS_HEADER_SIZE;
@@ -247,11 +235,11 @@ dissect_ax25_kiss( tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, v
 	kiss_param_len  = 0;
 	switch ( kiss_type )
 		{
-		case KISS_TXDELAY	: kiss_param_len = 1; kiss_param = tvb_get_guint8( tvb, offset ) & 0xff; break;
-		case KISS_PERSISTENCE	: kiss_param_len = 1; kiss_param = tvb_get_guint8( tvb, offset ) & 0xff; break;
-		case KISS_SLOT_TIME	: kiss_param_len = 1; kiss_param = tvb_get_guint8( tvb, offset ) & 0xff; break;
-		case KISS_TXTAIL	: kiss_param_len = 1; kiss_param = tvb_get_guint8( tvb, offset ) & 0xff; break;
-		case KISS_FULLDUPLEX	: kiss_param_len = 1; kiss_param = tvb_get_guint8( tvb, offset ) & 0xff; break;
+		case KISS_TXDELAY	: kiss_param_len = 1; kiss_param = tvb_get_uint8( tvb, offset ) & 0xff; break;
+		case KISS_PERSISTENCE	: kiss_param_len = 1; kiss_param = tvb_get_uint8( tvb, offset ) & 0xff; break;
+		case KISS_SLOT_TIME	: kiss_param_len = 1; kiss_param = tvb_get_uint8( tvb, offset ) & 0xff; break;
+		case KISS_TXTAIL	: kiss_param_len = 1; kiss_param = tvb_get_uint8( tvb, offset ) & 0xff; break;
+		case KISS_FULLDUPLEX	: kiss_param_len = 1; kiss_param = tvb_get_uint8( tvb, offset ) & 0xff; break;
 		case KISS_SETHARDWARE	:
 					kiss_param_len = tvb_captured_length_remaining( tvb, offset );
 					if ( kiss_param_len < 0 )
@@ -259,13 +247,13 @@ dissect_ax25_kiss( tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, v
 					if ( (kiss_param_len > 0) && gPREF_CKSUM_MODE )
 						kiss_param_len--;
 					break;
-		case KISS_DATA_FRAME_ACK: kiss_param_len = 2; kiss_param = tvb_get_guint8( tvb, offset ) & 0xff; break;
+		case KISS_DATA_FRAME_ACK: kiss_param_len = 2; kiss_param = tvb_get_uint8( tvb, offset ) & 0xff; break;
 		default			: break;
 		}
-	frame_type_text = val_to_str(kiss_type, kiss_frame_types, "Unknown (%u)");
-	g_snprintf( info_buffer, STRLEN, "%s, Port %u", frame_type_text, kiss_port );
+	frame_type_text = val_to_str(pinfo->pool, kiss_type, kiss_frame_types, "Unknown (%u)");
+	snprintf( info_buffer, STRLEN, "%s, Port %u", frame_type_text, kiss_port );
 	if ( kiss_param_len > 0 )
-		g_snprintf( info_buffer, STRLEN, "%s %u, Port %u", frame_type_text, kiss_param, kiss_port );
+		snprintf( info_buffer, STRLEN, "%s %u, Port %u", frame_type_text, kiss_param, kiss_port );
 
 	offset += kiss_param_len;
 
@@ -341,7 +329,7 @@ dissect_ax25_kiss( tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, v
 			if ( kiss_tvb_length > 0 )
 			{
 				for ( kiss_cksum_index = 0; kiss_cksum_index < kiss_tvb_length; kiss_cksum_index++ )
-					kiss_cksum ^= (tvb_get_guint8( tvb, kiss_cksum_index ) & 0xff);
+					kiss_cksum ^= (tvb_get_uint8( tvb, kiss_cksum_index ) & 0xff);
 
 				proto_tree_add_checksum(kiss_tree, tvb, 0, hf_ax25_kiss_cksum, -1, NULL, pinfo, kiss_cksum, ENC_NA, PROTO_CHECKSUM_GENERATED);
 			}
@@ -419,7 +407,7 @@ proto_register_ax25_kiss(void)
 	};
 
 	/* Setup protocol subtree array */
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_ax25_kiss,
 	};
 
@@ -446,15 +434,20 @@ proto_register_ax25_kiss(void)
 void
 proto_reg_handoff_ax25_kiss(void)
 {
+	capture_dissector_handle_t ax25_kiss_cap_handle;
+
 	dissector_add_uint( "wtap_encap", WTAP_ENCAP_AX25_KISS, kiss_handle );
-	register_capture_dissector("wtap_encap", WTAP_ENCAP_AX25_KISS, capture_ax25_kiss, proto_ax25_kiss);
+	ax25_kiss_cap_handle = create_capture_dissector_handle(capture_ax25_kiss, proto_ax25_kiss);
+	capture_dissector_add_uint("wtap_encap", WTAP_ENCAP_AX25_KISS, ax25_kiss_cap_handle);
 
 	/* only currently implemented for AX.25 */
 	ax25_handle = find_dissector_add_dependency( "ax25", proto_ax25_kiss );
+
+	ax25_cap_handle = find_capture_dissector("ax25");
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

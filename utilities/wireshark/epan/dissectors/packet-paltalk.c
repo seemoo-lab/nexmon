@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -32,23 +20,23 @@
 void proto_register_paltalk(void);
 void proto_reg_handoff_paltalk(void);
 
-#define INET_IPV4_ADDRESS_FROM_BYTES(a,b,c,d) g_htonl((((guint32)a)<<24) | ((b)<<16) | ((c)<<8) | (d)) /* *network* order */
+#define INET_IPV4_ADDRESS_FROM_BYTES(a,b,c,d) g_htonl((((uint32_t)a)<<24) | ((b)<<16) | ((c)<<8) | (d)) /* *network* order */
 
 #define PALTALK_SERVERS_ADDRESS INET_IPV4_ADDRESS_FROM_BYTES(199,106,0,0)      /* 199.106.0.0 in *network* order */
 #define PALTALK_SERVERS_NETMASK INET_IPV4_ADDRESS_FROM_BYTES(0xFF, 0xFE, 0x00, 0x00)  /* /15  in *network* order */
 
 #define PALTALK_HEADER_LENGTH 6
 
-static int proto_paltalk = -1;
+static int proto_paltalk;
 
-static int hf_paltalk_pdu_type = -1;
-static int hf_paltalk_version = -1;
-static int hf_paltalk_length = -1;
-static int hf_paltalk_content = -1;
+static int hf_paltalk_pdu_type;
+static int hf_paltalk_version;
+static int hf_paltalk_length;
+static int hf_paltalk_content;
 
-static gint ett_paltalk = -1;
+static int ett_paltalk;
 
-static guint
+static unsigned
 dissect_paltalk_get_len(packet_info *pinfo _U_, tvbuff_t *tvb,
                         int offset, void *data _U_)
 {
@@ -77,10 +65,10 @@ dissect_paltalk_desegmented(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     return tvb_captured_length(tvb);
 }
 
-static gboolean
+static bool
 dissect_paltalk(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
-    guint32 src32, dst32;
+    uint32_t src32, dst32;
 
     /* Detect if this TCP session is a Paltalk one */
     /* TODO: Optimize detection logic if possible */
@@ -91,20 +79,20 @@ dissect_paltalk(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
         || (pinfo->net_dst.len != 4)
         || !pinfo->net_src.data
         || !pinfo->net_dst.data)
-        return FALSE;
+        return false;
 
-    memcpy((guint8 *)&src32, pinfo->net_src.data, 4); /* *Network* order */
-    memcpy((guint8 *)&dst32, pinfo->net_dst.data, 4); /* *Network* order */
+    memcpy((uint8_t *)&src32, pinfo->net_src.data, 4); /* *Network* order */
+    memcpy((uint8_t *)&dst32, pinfo->net_dst.data, 4); /* *Network* order */
 
     if ( ((src32 & PALTALK_SERVERS_NETMASK) != PALTALK_SERVERS_ADDRESS)
          &&
          ((dst32 & PALTALK_SERVERS_NETMASK) != PALTALK_SERVERS_ADDRESS))
-        return FALSE;
+        return false;
 
     /* Dissect result of desegmented TCP data */
-    tcp_dissect_pdus(tvb, pinfo, tree, TRUE, PALTALK_HEADER_LENGTH,
+    tcp_dissect_pdus(tvb, pinfo, tree, true, PALTALK_HEADER_LENGTH,
             dissect_paltalk_get_len, dissect_paltalk_desegmented, data);
-    return TRUE;
+    return true;
 }
 
 void
@@ -121,7 +109,7 @@ proto_register_paltalk(void)
                       FT_BYTES, BASE_NONE, NULL, 0x00, NULL, HFILL }}
     };
 
-    static gint *ett[] = { &ett_paltalk };
+    static int *ett[] = { &ett_paltalk };
 
     proto_paltalk = proto_register_protocol("Paltalk Messenger Protocol", "Paltalk", "paltalk");
     proto_register_field_array(proto_paltalk, hf, array_length(hf));
@@ -135,7 +123,7 @@ proto_reg_handoff_paltalk(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

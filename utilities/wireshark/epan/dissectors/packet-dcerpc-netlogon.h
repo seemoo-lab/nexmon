@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __PACKET_DCERPC_NETLOGON_H
@@ -71,24 +59,38 @@
 #define NETLOGON_NETRGETFORESTTRUSTINFORMATION		0x2c
 #define NETLOGON_NETRLOGONSAMLOGONWITHFLAGS		0x2d
 #define NETLOGON_NETRSERVERGETTRUSTINFO			0x2e
-
-/* Secure channel types */
-
-#define SEC_CHAN_WKSTA   2
-#define SEC_CHAN_DOMAIN  4
-#define SEC_CHAN_BDC     6
+#define NETLOGON_DSRUPDATEREADONLYSERVERDNSRECORDS	0x30
+#define NETLOGON_NETRCHAINSETCLIENTATTRIBUTES		0x36 /* This is documented as 49 (0x31) but it's 54) */
+#define NETLOGON_NETRSERVERAUTHENTICATEKERBEROS		0x3B
 
 
 /* needed to decrypt PAC_LOGON_INFO in kerberos */
 int
 netlogon_dissect_PAC_LOGON_INFO(tvbuff_t *tvb, int offset,
 			packet_info *pinfo, proto_tree *tree,
-			dcerpc_info *di, guint8 *drep);
+			dcerpc_info *di, uint8_t *drep);
 
 /* needed to decrypt PAC_S4U_DELEGATION_INFO in kerberos */
 int
 netlogon_dissect_PAC_S4U_DELEGATION_INFO(tvbuff_t *tvb, int offset,
 			packet_info *pinfo, proto_tree *tree,
-			dcerpc_info *di, guint8 *drep);
+			dcerpc_info *di, uint8_t *drep);
+
+/* needed to decrypt PAC_DEVICE_INFO in kerberos */
+int
+netlogon_dissect_PAC_DEVICE_INFO(tvbuff_t *tvb, int offset,
+			packet_info *pinfo, proto_tree *tree,
+			dcerpc_info *di, uint8_t *drep);
+
+/* needed to dissect PAC_CLAIMS_INFO in kerberos */
+int
+netlogon_dissect_CLAIMS_SET_METADATA_BLOB(tvbuff_t *tvb,
+                                          int offset,
+                                          int length,
+                                          packet_info *pinfo,
+                                          proto_tree *parent_tree,
+                                          int hf_index,
+                                          int ett_index,
+                                          const char *info_str);
 
 #endif /* packet-dcerpc-netlogon.h */

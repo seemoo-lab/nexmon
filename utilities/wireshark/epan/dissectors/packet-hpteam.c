@@ -6,20 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
- * USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -32,7 +19,7 @@
 void proto_register_hpteam(void);
 void proto_reg_handoff_hpteam(void);
 
-static int proto_hpteam = -1;
+static int proto_hpteam;
 
 /* Known HP NIC teaming PID values */
 static const value_string hpteam_pid_vals[] = {
@@ -40,11 +27,13 @@ static const value_string hpteam_pid_vals[] = {
 	{ 0,		NULL }
 };
 
-static gint hf_hpteam = -1;
-static gint hf_llc_hpteam_pid = -1;
+static int hf_hpteam;
+static int hf_llc_hpteam_pid;
 
 /* These are the ids of the subtrees that we may be creating */
-static gint ett_hpteam = -1;
+static int ett_hpteam;
+
+static dissector_handle_t hpteam_handle;
 
 /*
  * According to the HP document at
@@ -89,7 +78,7 @@ dissect_hpteam(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "HP NIC Team");
 	col_add_fstr(pinfo->cinfo, COL_INFO, "HP NIC Teaming Heartbeat; Port MAC = %s",
-	    address_to_str(wmem_packet_scope(), &pinfo->dl_src));
+	    address_to_str(pinfo->pool, &pinfo->dl_src));
 
 	if (tree) { /* we are being asked for details */
 		proto_item *hpteam_item;
@@ -118,7 +107,7 @@ void proto_register_hpteam(void)
 		}
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_hpteam
 	};
 
@@ -128,20 +117,17 @@ void proto_register_hpteam(void)
 	llc_add_oui(OUI_HP_2, "llc.hpteam_pid", "LLC Hewlett Packard OUI PID", &hf_pid, proto_hpteam);
 	proto_register_field_array(proto_hpteam, hf_data, array_length(hf_data));
 	proto_register_subtree_array(ett, array_length(ett));
-	register_dissector("hpteam", dissect_hpteam, proto_hpteam);
+	hpteam_handle = register_dissector("hpteam", dissect_hpteam, proto_hpteam);
 }
 
 void proto_reg_handoff_hpteam(void)
 {
-	dissector_handle_t hpteam_handle;
-
-	hpteam_handle = find_dissector("hpteam");
 	/* Register dissector to key off of known PID / OUI combination */
 	dissector_add_uint("llc.hpteam_pid", 0x0002, hpteam_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

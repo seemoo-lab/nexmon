@@ -6,28 +6,13 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/prefs.h>
 
-#include "packet-rtp.h"
-#include "packet-rtcp.h"
 #include "packet-uaudp.h"
 
 void proto_register_ua_msg(void);
@@ -40,10 +25,8 @@ void proto_reg_handoff_ua_msg(void);
 static dissector_table_t ua_opcode_dissector_table;
 #endif
 
-static int  proto_ua_msg        = -1;
-static gint ett_ua_msg          = -1;
-
-static gboolean setup_conversations_enabled = TRUE;
+static int  proto_ua_msg;
+static int ett_ua_msg;
 
 static dissector_handle_t noe_handle;
 static dissector_handle_t ua3g_handle;
@@ -52,9 +35,9 @@ static void uadecode(e_ua_direction  direction,
                      proto_tree     *tree,
                      packet_info    *pinfo,
                      tvbuff_t       *tvb,
-                     gint            offset,
-                     gint            opcode,
-                     gint            length)
+                     int             offset,
+                     int             opcode,
+                     int             length)
 {
     switch (opcode & 0x7f) /* suppression of the CP bit */
     {
@@ -146,7 +129,7 @@ static void uadecode(e_ua_direction  direction,
     default:
         {
             /* add text to the frame "INFO" column */
-            col_append_fstr(pinfo->cinfo, COL_INFO, " - UA3G Message ERR: Opcode (0x%02x) Unknown", tvb_get_guint8(tvb, (offset + 2)));
+            col_append_fstr(pinfo->cinfo, COL_INFO, " - UA3G Message ERR: Opcode (0x%02x) Unknown", tvb_get_uint8(tvb, (offset + 2)));
 
             call_data_dissector(tvb_new_subset_length(tvb, offset, length),
                            pinfo,
@@ -166,7 +149,7 @@ static void _dissect_ua_msg(tvbuff_t       *tvb,
                             proto_tree     *tree,
                             e_ua_direction  direction)
 {
-    gint        offset = 0;
+    int         offset = 0;
     proto_item *ua_msg_item;
     proto_tree *ua_msg_tree;
 
@@ -179,57 +162,8 @@ static void _dissect_ua_msg(tvbuff_t       *tvb,
 
     while (tvb_offset_exists(tvb, offset))
     {
-        gint length;
-        gint opcode;
-
-        length = tvb_get_letohs(tvb, offset) + 2;
-        opcode = tvb_get_guint8(tvb, offset+2);
-
-        /* RTP/RTCP conversation setup */
-        if (setup_conversations_enabled && (opcode==0x13) && (tvb_get_guint8(tvb, offset+3)==0x01))
-        {
-            address remote_rtp_addr;
-            guint32 remote_rtp_port;
-            gint    suboffset;
-
-            remote_rtp_addr.data = NULL;
-            remote_rtp_port = 0;
-
-            /* StartRTP */
-            suboffset = offset + 5;
-
-            while (suboffset < offset+length)
-            {
-                switch (tvb_get_guint8(tvb, suboffset))
-                {
-                case 0x00: /* local port */
-                    {
-                    /*local_rtp_port = tvb_get_ntohs(tvb, suboffset+2);*/
-                    break;
-                    }
-                case 0x01: /* remote IP */
-                    {
-                    set_address_tvb(&remote_rtp_addr, AT_IPv4, 4, tvb, suboffset+2);
-                    break;
-                    }
-                case 0x02: /* remote port */
-                    {
-                    remote_rtp_port = tvb_get_ntohs(tvb, suboffset+2);
-                    break;
-                    }
-                }
-
-            suboffset += tvb_get_guint8(tvb, suboffset+1) + 2;
-            }
-
-            if ((remote_rtp_addr.data != NULL) && (remote_rtp_port != 0))
-            {
-                rtp_add_address(pinfo, &remote_rtp_addr, remote_rtp_port, 0,
-                        "UA", pinfo->num, 0, NULL);
-                rtcp_add_address(pinfo, &remote_rtp_addr, remote_rtp_port+1, 0,
-                         "UA", pinfo->num);
-            }
-        }
+        int length = tvb_get_letohs(tvb, offset) + 2;
+        int opcode = tvb_get_uint8(tvb, offset+2);
 
         uadecode(direction, ua_msg_tree, pinfo, tvb, offset, opcode, length);
 
@@ -257,9 +191,7 @@ static int dissect_ua_term_to_sys(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
 
 void proto_register_ua_msg(void)
 {
-    module_t *ua_msg_module;
-
-    static gint *ett[] =
+    static int *ett[] =
     {
         &ett_ua_msg,
     };
@@ -272,14 +204,6 @@ void proto_register_ua_msg(void)
 
     /* Common subtree array registration */
     proto_register_subtree_array(ett, array_length(ett));
-
-    /* Register preferences */
-    ua_msg_module = prefs_register_protocol(proto_ua_msg, NULL);
-
-    prefs_register_bool_preference(ua_msg_module, "setup_conversations",
-        "Setup RTP/RTCP conversations on Start RTP",
-        "Setup RTP/RTCP conversations when parsing Start RTP messages",
-        &setup_conversations_enabled);
 }
 
 void proto_reg_handoff_ua_msg(void)
@@ -310,7 +234,7 @@ void proto_reg_handoff_ua_msg(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

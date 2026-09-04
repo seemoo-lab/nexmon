@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -33,7 +21,7 @@ void proto_reg_handoff_gsm_cbch(void);
 
 #define CBCH_FRAGMENT_SIZE 22
 
-const value_string block_type_lpd_strings[] = {
+static const value_string block_type_lpd_strings[] = {
     { 0x00, "NOT Cell Broadcast"},
     { 0x01, "Cell Broadcast"},
     { 0x02, "NOT Cell Broadcast"},
@@ -41,62 +29,61 @@ const value_string block_type_lpd_strings[] = {
     {    0, NULL}
 };
 
-const value_string block_type_seq_num_values[] = {
+static const value_string block_type_seq_num_values[] = {
     { 0x00, "First Block"},
     { 0x01, "Second Block"},
     { 0x02, "Third Block"},
     { 0x03, "Fourth Block"},
     { 0x08, "First Schedule Block"},
-    { 0xFF, "Null message"},
+    { 0x0F, "Null message"},
     {    0, NULL}
 };
 
-const value_string sched_type_values[] = {
+static const value_string sched_type_values[] = {
     { 0x00, "messages formatted as specified in subclause 3.5 of 3GPP 44.012"},
-    { 0xFF, "Unknown schedule message format"},
     {    0, NULL}
 };
 
 /* Initialize the protocol and registered fields */
-static int proto_cbch = -1;
+static int proto_cbch;
 
-static int hf_gsm_cbch_spare_bit = -1;
-static int hf_gsm_cbch_lpd = -1;
-static int hf_gsm_cbch_lb = -1;
-static int hf_gsm_cbch_seq_num = -1;
-static int hf_gsm_cbch_sched_type = -1;
-static int hf_gsm_cbch_sched_begin_slot = -1;
-static int hf_gsm_cbch_sched_spare = -1;
-static int hf_gsm_cbch_sched_end_slot = -1;
-static int hf_gsm_cbch_slot = -1;
-/* static int hf_gsm_cbch_sched_msg_id = -1; */
-static int hf_gsm_cbch_padding = -1;
-static int hf_gsm_cbch_block = -1;
+static int hf_gsm_cbch_spare_bit;
+static int hf_gsm_cbch_lpd;
+static int hf_gsm_cbch_lb;
+static int hf_gsm_cbch_seq_num;
+static int hf_gsm_cbch_sched_type;
+static int hf_gsm_cbch_sched_begin_slot;
+static int hf_gsm_cbch_sched_spare;
+static int hf_gsm_cbch_sched_end_slot;
+static int hf_gsm_cbch_slot;
+/* static int hf_gsm_cbch_sched_msg_id; */
+static int hf_gsm_cbch_padding;
+static int hf_gsm_cbch_block;
 
 /* These fields are used when reassembling cbch fragments
  */
-static int hf_cbch_fragments = -1;
-static int hf_cbch_fragment = -1;
-static int hf_cbch_fragment_overlap = -1;
-static int hf_cbch_fragment_overlap_conflict = -1;
-static int hf_cbch_fragment_multiple_tails = -1;
-static int hf_cbch_fragment_too_long_fragment = -1;
-static int hf_cbch_fragment_error = -1;
-static int hf_cbch_fragment_count = -1;
-static int hf_cbch_reassembled_in = -1;
-static int hf_cbch_reassembled_length = -1;
+static int hf_cbch_fragments;
+static int hf_cbch_fragment;
+static int hf_cbch_fragment_overlap;
+static int hf_cbch_fragment_overlap_conflict;
+static int hf_cbch_fragment_multiple_tails;
+static int hf_cbch_fragment_too_long_fragment;
+static int hf_cbch_fragment_error;
+static int hf_cbch_fragment_count;
+static int hf_cbch_reassembled_in;
+static int hf_cbch_reassembled_length;
 
 /* Initialize the subtree pointers */
-static gint ett_cbch_msg = -1;
-static gint ett_schedule_msg = -1;
-static gint ett_schedule_new_msg = -1;
-static gint ett_cbch_fragment = -1;
-static gint ett_cbch_fragments = -1;
+static int ett_cbch_msg;
+static int ett_schedule_msg;
+static int ett_schedule_new_msg;
+static int ett_cbch_fragment;
+static int ett_cbch_fragments;
 
-static expert_field ei_gsm_cbch_sched_end_slot = EI_INIT;
-static expert_field ei_gsm_cbch_seq_num_null = EI_INIT;
-static expert_field ei_gsm_cbch_seq_num_reserved = EI_INIT;
-static expert_field ei_gsm_cbch_lpd = EI_INIT;
+static expert_field ei_gsm_cbch_sched_end_slot;
+static expert_field ei_gsm_cbch_seq_num_null;
+static expert_field ei_gsm_cbch_seq_num_reserved;
+static expert_field ei_gsm_cbch_lpd;
 
 static dissector_handle_t cbs_handle;
 
@@ -123,19 +110,6 @@ static const fragment_items cbch_frag_items = {
     "blocks"
 };
 
-static void
-cbch_defragment_init(void)
-{
-    reassembly_table_init(&cbch_block_reassembly_table,
-                          &addresses_reassembly_table_functions);
-}
-
-static void
-cbch_defragment_cleanup(void)
-{
-    reassembly_table_destroy(&cbch_block_reassembly_table);
-}
-
 static const range_string gsm_cbch_sched_begin_slot_rvals[] = {
     { 0,     0,     "Out of range (ignoring message)" },
     { 1,     1,     "(apparently) Scheduled Scheduling Message" },
@@ -148,11 +122,11 @@ static const range_string gsm_cbch_sched_begin_slot_rvals[] = {
 static void
 dissect_schedule_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *top_tree)
 {
-    guint       len, offset  = 0;
-    guint8      octet1, i, k = 0;
-    guint8      sched_begin, sched_end, new_slots[48];
-    gboolean    valid_message   = TRUE;
-    guint16     other_slots[48];
+    unsigned    len, offset  = 0;
+    uint8_t     octet1, i, k = 0;
+    uint8_t     sched_begin, sched_end, new_slots[48];
+    bool        valid_message   = true;
+    uint16_t    other_slots[48];
     proto_item *item            = NULL, *schedule_item = NULL;
     proto_tree *sched_tree      = NULL, *sched_subtree = NULL;
 
@@ -166,7 +140,7 @@ dissect_schedule_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *top_tree
     sched_tree = proto_item_add_subtree(schedule_item, ett_schedule_msg);
 
     proto_tree_add_item(sched_tree, hf_gsm_cbch_sched_type, tvb, offset, 1, ENC_BIG_ENDIAN);
-    octet1 = tvb_get_guint8(tvb, offset);
+    octet1 = tvb_get_uint8(tvb, offset);
     if (0 == (octet1 & 0xC0))
     {
         proto_item* slot_item;
@@ -174,15 +148,15 @@ dissect_schedule_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *top_tree
         proto_tree_add_item(sched_tree, hf_gsm_cbch_sched_begin_slot, tvb, offset++, 1, ENC_BIG_ENDIAN);
         if ((sched_begin < 1) || (sched_begin > 48))
         {
-            valid_message = FALSE;
+            valid_message = false;
         }
         proto_tree_add_item(sched_tree, hf_gsm_cbch_sched_spare, tvb, offset, 1, ENC_BIG_ENDIAN);
-        sched_end = tvb_get_guint8(tvb, offset);
+        sched_end = tvb_get_uint8(tvb, offset);
         slot_item = proto_tree_add_item(sched_tree, hf_gsm_cbch_sched_end_slot, tvb, offset++, 1, ENC_BIG_ENDIAN);
         if (sched_end < sched_begin)
         {
             expert_add_info(pinfo, slot_item, &ei_gsm_cbch_sched_end_slot);
-            valid_message = FALSE;
+            valid_message = false;
         }
 
         if (valid_message)
@@ -194,8 +168,8 @@ dissect_schedule_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *top_tree
             /* iterate over the octets */
             for (i=0; i<6; i++)
             {
-                guint8 j;
-                octet1 = tvb_get_guint8(tvb, offset++);
+                uint8_t j;
+                octet1 = tvb_get_uint8(tvb, offset++);
 
                 /* iterate over the bits */
                 for (j=0; j<8; j++)
@@ -212,14 +186,14 @@ dissect_schedule_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *top_tree
             for (i=0; i<k; i++)
             {
                 DISSECTOR_ASSERT(new_slots[i] <= 48);
-                octet1 = tvb_get_guint8(tvb, offset);
+                octet1 = tvb_get_uint8(tvb, offset);
                 if ((octet1 & 0x80) == 0x80)
                 {
                     /* MDT 1 */
-                    guint8 octet2;
-                    guint16 msg_id;
+                    uint8_t octet2;
+                    uint16_t msg_id;
 
-                    octet2 = tvb_get_guint8(tvb, offset + 1);
+                    octet2 = tvb_get_uint8(tvb, offset + 1);
                     msg_id = ((octet1 &0x7F) << 8) + octet2;
                     proto_tree_add_uint_format_value(sched_subtree, hf_gsm_cbch_slot, tvb, offset, 2, new_slots[i],
                                         "%d, Message ID: %d, First transmission of an SMSCB within the Schedule Period",
@@ -233,7 +207,7 @@ dissect_schedule_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *top_tree
                     if (octet1 == 0)
                     {
                         proto_tree_add_uint_format_value(sched_subtree, hf_gsm_cbch_slot, tvb, offset++, 1, new_slots[i],
-                                            "%d, Repeat of non-existant slot %d",
+                                            "%d, Repeat of non-existent slot %d",
                                             new_slots[i], octet1);
                     }
                     else if (octet1 < new_slots[i])
@@ -282,7 +256,7 @@ dissect_schedule_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *top_tree
                 /* XXX I don't know if a message can validly contain more than
                  * 48 slots, but that's the size of the array we create so cap
                  * it there to avoid uninitialized memory errors (see bug
-                 * https://bugs.wireshark.org/bugzilla/show_bug.cgi?id=9270) */
+                 * https://gitlab.com/wireshark/wireshark/-/issues/9270) */
                 if (sched_end > 48)
                     sched_end = 48;
                 while ((k<sched_end) && (other_slots[k]!=0xFFFF))
@@ -292,16 +266,16 @@ dissect_schedule_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *top_tree
                 if (k >= sched_end)
                     break;
 
-                octet1 = tvb_get_guint8(tvb, offset);
+                octet1 = tvb_get_uint8(tvb, offset);
                 if ((octet1 & 0x80) == 0x80)
                 {
                     if ((offset+1)<len)
                     {
                         /* MDT 1 */
-                        guint8  octet2;
-                        guint16 msg_id;
+                        uint8_t octet2;
+                        uint16_t msg_id;
 
-                        octet2 = tvb_get_guint8(tvb, offset + 1);
+                        octet2 = tvb_get_uint8(tvb, offset + 1);
                         msg_id = ((octet1 &0x7F) << 8) + octet2;
                         other_slots[k] = msg_id;
                         k++;
@@ -316,7 +290,7 @@ dissect_schedule_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *top_tree
                          * case. Perhaps just an expert info is appropriate?
                          * Regardless, we need to increment k to prevent an
                          * infinite loop, see
-                         * https://bugs.wireshark.org/bugzilla/show_bug.cgi?id=8730
+                         * https://gitlab.com/wireshark/wireshark/-/issues/8730
                          */
                         ++k;
                     }
@@ -372,14 +346,14 @@ static int
 dissect_cbch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data  _U_)
 {
     fragment_head *frag_data = NULL;
-    guint8         octet, lb, lpd, seq_num;
-    guint32        offset;
+    uint8_t        octet, lb, lpd, seq_num;
+    uint32_t       offset;
     proto_item    *cbch_item, *lpd_item, *seq_item;
     proto_tree    *cbch_tree;
     tvbuff_t      *reass_tvb = NULL, *msg_tvb = NULL;
 
     offset = 0;
-    octet  = tvb_get_guint8(tvb, offset);
+    octet  = tvb_get_uint8(tvb, offset);
 
     /*
      * create the protocol tree
@@ -407,7 +381,7 @@ dissect_cbch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data  _U
         {
         case 0x00:
         case 0x08:
-            pinfo->fragmented = TRUE;
+            pinfo->fragmented = true;
             /* we should have a unique ID for the reassembled page, but we don't really have anything from the protocol...
                The GSM frame number div 4 might be used for this, but it has not been passed to this layer and does not
                exist at all if the message is being passed over the RSL interface.
@@ -427,7 +401,7 @@ dissect_cbch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data  _U
         case 0x01:
         case 0x02:
         case 0x03:
-            pinfo->fragmented = TRUE;
+            pinfo->fragmented = true;
             offset++; /* step to beginning of payload */
             frag_data = fragment_add_seq_check(&cbch_block_reassembly_table,
                                                tvb, offset, pinfo, 0, NULL,
@@ -454,7 +428,7 @@ dissect_cbch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data  _U
                We use this to determine whether this is a normal message or a scheduling message */
             offset = 0;
 
-            octet = tvb_get_guint8(reass_tvb, offset++);
+            octet = tvb_get_uint8(reass_tvb, offset++);
             msg_tvb = tvb_new_subset_remaining(reass_tvb, offset);
 
             if (octet & 0x08)
@@ -620,7 +594,7 @@ proto_register_gsm_cbch(void)
         };
 
 /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_cbch_msg,
         &ett_schedule_msg,
         &ett_schedule_new_msg,
@@ -645,8 +619,9 @@ proto_register_gsm_cbch(void)
 
     /* subdissector code */
     register_dissector("gsm_cbch", dissect_cbch, proto_cbch);
-    register_init_routine(cbch_defragment_init);
-    register_cleanup_routine(cbch_defragment_cleanup);
+
+    reassembly_table_register(&cbch_block_reassembly_table,
+                          &addresses_reassembly_table_functions);
 
     /* subtree array */
     proto_register_subtree_array(ett, array_length(ett));
@@ -659,7 +634,7 @@ proto_reg_handoff_gsm_cbch(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>PacketFormatGroupBox</class>
- <widget class="QGroupBox" name="PacketFormatGroupBox">
+ <class>PacketFormatTextGroupBox</class>
+ <widget class="QGroupBox" name="PacketFormatTextGroupBox">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>178</height>
+    <height>199</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -24,6 +24,16 @@
      </property>
      <property name="text">
       <string>Summary line</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="includeColumnHeadingsCheckBox">
+     <property name="text">
+      <string>Include column headings</string>
      </property>
      <property name="checked">
       <bool>true</bool>
@@ -101,6 +111,38 @@
      </property>
      <property name="text">
       <string>Bytes</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="includeDataSourcesCheckBox">
+     <property name="text">
+      <string>Include secondary data sources</string>
+     </property>
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Generate hexdumps for secondary data sources like reassembled or decrypted buffers in addition to the frame&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="timestampCheckBox">
+     <property name="text">
+      <string>Include timestamp preamble</string>
+     </property>
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Include each frame timestamp immediately before its hex dump, using the current time display format.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+     <property name="enabled">
+      <bool>false</bool>
      </property>
     </widget>
    </item>

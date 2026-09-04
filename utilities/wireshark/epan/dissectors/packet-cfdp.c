@@ -6,28 +6,21 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * Slightly updated to allow more in-depth decoding when called
+ * with the 'dissect_as_subtree' method and to leverage some
+ * of the bitfield display operations: Keith Scott
+ * <kscott@mitre.org>.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
-
 #include "config.h"
+
 #include <epan/packet.h>
 #include <epan/expert.h>
-
+#include "packet-cfdp.h"
 
 /* The CFDP standard can be found here:
- * http://public.ccsds.org/publications/archive/727x0b4.pdf
+ * https://public.ccsds.org/Pubs/727x0b4s.pdf
  *
  * The Store and Forward Overlay Operations are not included.
  */
@@ -36,95 +29,127 @@ void proto_register_cfdp(void);
 void proto_reg_handoff_cfdp(void);
 
 /* Initialize the protocol and registered fields */
-static int proto_cfdp = -1;
-static int hf_cfdp_version = -1;
-static int hf_cfdp_pdu_type = -1;
-static int hf_cfdp_direction = -1;
-static int hf_cfdp_trans_mode = -1;
-static int hf_cfdp_crc_flag = -1;
-static int hf_cfdp_res1 = -1;
-static int hf_cfdp_data_length = -1;
-static int hf_cfdp_res2 = -1;
-static int hf_cfdp_entid_length = -1;
-static int hf_cfdp_res3 = -1;
-static int hf_cfdp_transeqnum_length = -1;
-static int hf_cfdp_srcid = -1;
-static int hf_cfdp_transeqnum = -1;
-static int hf_cfdp_dstid = -1;
-static int hf_cfdp_file_directive_type = -1;
-static int hf_cfdp_file_data_offset = -1;
-static int hf_cfdp_progress = -1;
-static int hf_cfdp_dir_code_ack = -1;
-static int hf_cfdp_dir_subtype_ack = -1;
-static int hf_cfdp_condition_code = -1;
-static int hf_cfdp_spare_one = -1;
-static int hf_cfdp_spare_one_2 = -1;
-static int hf_cfdp_spare_two = -1;
-static int hf_cfdp_spare_four = -1;
-static int hf_cfdp_spare_five = -1;
-static int hf_cfdp_spare_seven = -1;
-static int hf_cfdp_spare_seven_2 = -1;
-static int hf_cfdp_trans_stat_ack = -1;
-static int hf_cfdp_file_checksum = -1;
-static int hf_cfdp_file_size = -1;
-static int hf_cfdp_end_system_stat = -1;
-static int hf_cfdp_delivery_code = -1;
-static int hf_cfdp_file_stat = -1;
-static int hf_cfdp_segment_control = -1;
-static int hf_cfdp_src_file_name = -1;
-static int hf_cfdp_dst_file_name = -1;
-static int hf_cfdp_first_file_name = -1;
-static int hf_cfdp_second_file_name = -1;
-static int hf_cfdp_nak_st_scope = -1;
-static int hf_cfdp_nak_sp_scope = -1;
-static int hf_cfdp_crc = -1;
-static int hf_cfdp_action_code = -1;
-static int hf_cfdp_status_code_1 = -1;
-static int hf_cfdp_status_code_2 = -1;
-static int hf_cfdp_status_code_3 = -1;
-static int hf_cfdp_status_code_4 = -1;
-static int hf_cfdp_status_code_5 = -1;
-static int hf_cfdp_status_code_6 = -1;
-static int hf_cfdp_status_code_7 = -1;
-static int hf_cfdp_status_code_8 = -1;
-static int hf_cfdp_handler_code = -1;
-static int hf_cfdp_trans_mode_msg = -1;
-static int hf_cfdp_proxy_msg_type = -1;
-static int hf_cfdp_proxy_segment_control = -1;
-static int hf_cfdp_proxy_delivery_code = -1;
-static int hf_cfdp_response_req = -1;
-static int hf_cfdp_directory_name = -1;
-static int hf_cfdp_directory_file_name = -1;
-static int hf_cfdp_listing_resp_code = -1;
-static int hf_cfdp_report_file_name = -1;
-static int hf_cfdp_trans_stat = -1;
-static int hf_cfdp_trans_stat_2 = -1;
-static int hf_cfdp_rep_resp_code = -1;
-static int hf_cfdp_suspension_ind = -1;
-static int hf_cfdp_tlv_len = - 1;
+static int proto_cfdp;
+static int hf_cfdp_flags;
+static int hf_cfdp_byte2;
+static int hf_cfdp_proxy_fault_hdl_overr;
+static int hf_cfdp_proxy_trans_mode;
+static int hf_cfdp_proxy_segment_control_byte;
+static int hf_cfdp_proxy_put_resp;
+static int hf_cfdp_orig_trans_id;
+static int hf_cfdp_remote_stat_rep_req;
+static int hf_cfdp_remote_stat_rep_resp;
+static int hf_cfdp_finish_pdu_flags;
+static int hf_cfdp_remote_suspend_resume_req;
+static int hf_cfdp_remote_suspend_resume_resp;
+static int hf_cfdp_version;
+static int hf_cfdp_pdu_type;
+static int hf_cfdp_direction;
+static int hf_cfdp_trans_mode;
+static int hf_cfdp_trans_mode_2;
+static int hf_cfdp_crc_flag;
+static int hf_cfdp_res1;
+static int hf_cfdp_data_length;
+static int hf_cfdp_file_data_pdu;
+static int hf_cfdp_res2;
+static int hf_cfdp_entid_length;
+static int hf_cfdp_res3;
+static int hf_cfdp_transeqnum_length;
+static int hf_cfdp_srcid;
+static int hf_cfdp_transeqnum;
+static int hf_cfdp_dstid;
+static int hf_cfdp_file_directive_type;
+static int hf_cfdp_file_data_offset;
+static int hf_cfdp_progress;
+static int hf_cfdp_dir_code_ack;
+static int hf_cfdp_dir_subtype_ack;
+static int hf_cfdp_condition_code;
+static int hf_cfdp_spare_one;
+static int hf_cfdp_spare_one_2;
+static int hf_cfdp_spare_two;
+static int hf_cfdp_spare_four;
+static int hf_cfdp_spare_five;
+static int hf_cfdp_spare_five_2;
+static int hf_cfdp_spare_seven;
+static int hf_cfdp_spare_seven_2;
+static int hf_cfdp_trans_stat_ack;
+static int hf_cfdp_file_checksum;
+static int hf_cfdp_file_size;
+static int hf_cfdp_end_system_stat;
+static int hf_cfdp_delivery_code;
+static int hf_cfdp_file_stat;
+static int hf_cfdp_segment_control;
+static int hf_cfdp_src_file_name_len;
+static int hf_cfdp_src_file_name;
+static int hf_cfdp_dst_file_name_len;
+static int hf_cfdp_dst_file_name;
+static int hf_cfdp_first_file_name_len;
+static int hf_cfdp_first_file_name;
+static int hf_cfdp_second_file_name_len;
+static int hf_cfdp_second_file_name;
+static int hf_cfdp_nak_st_scope;
+static int hf_cfdp_nak_sp_scope;
+static int hf_cfdp_crc;
+static int hf_cfdp_action_code;
+static int hf_cfdp_status_code_1;
+static int hf_cfdp_status_code_2;
+static int hf_cfdp_status_code_3;
+static int hf_cfdp_status_code_4;
+static int hf_cfdp_status_code_5;
+static int hf_cfdp_status_code_6;
+static int hf_cfdp_status_code_7;
+static int hf_cfdp_status_code_8;
+static int hf_cfdp_handler_code;
+static int hf_cfdp_proxy_msg_type;
+static int hf_cfdp_proxy_segment_control;
+static int hf_cfdp_proxy_delivery_code;
+static int hf_cfdp_response_req;
+static int hf_cfdp_directory_name;
+static int hf_cfdp_directory_file_name;
+static int hf_cfdp_listing_resp_code;
+static int hf_cfdp_report_file_name;
+static int hf_cfdp_trans_stat;
+static int hf_cfdp_trans_stat_2;
+static int hf_cfdp_rep_resp_code;
+static int hf_cfdp_suspension_ind;
+static int hf_cfdp_tlv_len;
 
 /* Generated from convert_proto_tree_add_text.pl */
-static int hf_cfdp_filestore_message = -1;
-static int hf_cfdp_entity = -1;
-static int hf_cfdp_message_to_user = -1;
-static int hf_cfdp_flow_label = -1;
-static int hf_cfdp_segment_requests = -1;
-static int hf_cfdp_user_data = -1;
+static int hf_cfdp_filestore_message_len;
+static int hf_cfdp_filestore_message;
+static int hf_cfdp_entity;
+static int hf_cfdp_message_to_user;
+static int hf_cfdp_flow_label;
+static int hf_cfdp_segment_requests;
+static int hf_cfdp_user_data;
 
 /* Initialize the subtree pointers */
-static gint ett_cfdp = -1;
-static gint ett_cfdp_header = -1;
-static gint ett_cfdp_file_directive_header = -1;
-static gint ett_cfdp_file_data_header = -1;
-static gint ett_cfdp_fault_location = -1;
-static gint ett_cfdp_crc = -1;
-static gint ett_cfdp_filestore_req = -1;
-static gint ett_cfdp_filestore_resp = -1;
-static gint ett_cfdp_msg_to_user = -1;
-static gint ett_cfdp_fault_hdl_overr = -1;
-static gint ett_cfdp_flow_label = -1;
+static int ett_cfdp;
+static int ett_cfdp_header;
+static int ett_cfdp_flags;
+static int ett_cfdp_byte2;
+static int ett_cfdp_proxy_fault_hdl_overr;
+static int ett_cfdp_proxy_trans_mode;
+static int ett_cfdp_proxy_segment_control_byte;
+static int ett_cfdp_proxy_put_resp;
+static int ett_cfdp_orig_trans_id;
+static int ett_cfdp_remote_stat_rep_req;
+static int ett_cfdp_remote_stat_rep_resp;
+static int ett_cfdp_file_directive_header;
+static int ett_cfdp_file_data_header;
+static int ett_cfdp_finish_pdu_flags;
+static int ett_cfdp_remote_suspend_resume_req;
+static int ett_cfdp_remote_suspend_resume_resp;
+static int ett_cfdp_fault_location;
+static int ett_cfdp_crc;
+static int ett_cfdp_filestore_req;
+static int ett_cfdp_filestore_resp;
+static int ett_cfdp_msg_to_user;
+static int ett_cfdp_fault_hdl_overr;
+static int ett_cfdp_flow_label;
+static int ett_cfdp_proto;
 
-static expert_field ei_cfdp_bad_length = EI_INIT;
+static expert_field ei_cfdp_bad_length;
 
 
 static dissector_handle_t cfdp_handle;
@@ -437,9 +462,112 @@ static const value_string cfdp_directive_codes[] = {
     { 0, NULL }
 };
 
+static int * const cfdp_flags[] = {
+  &hf_cfdp_version,
+  &hf_cfdp_pdu_type,
+  &hf_cfdp_direction,
+  &hf_cfdp_trans_mode,
+  &hf_cfdp_crc_flag,
+  &hf_cfdp_res1,
+  NULL
+};
+
+static int * const cfdp_byte2[] = {
+    &hf_cfdp_res2,
+    &hf_cfdp_entid_length,
+    &hf_cfdp_res3,
+    &hf_cfdp_transeqnum_length,
+    NULL
+};
+
+static int * const cfdp_proxy_fault_hdl_overr[] = {
+    &hf_cfdp_condition_code,
+    &hf_cfdp_handler_code,
+    NULL
+};
+
+static int * const cfdp_proxy_trans_mode [] = {
+    &hf_cfdp_spare_seven_2,
+    &hf_cfdp_trans_mode_2,
+    NULL
+};
+
+static int * const cfdp_proxy_segment_control_byte [] = {
+    &hf_cfdp_spare_seven_2,
+    &hf_cfdp_proxy_segment_control,
+    NULL
+};
+
+static int * const cfdp_proxy_put_resp [] = {
+    &hf_cfdp_condition_code,
+    &hf_cfdp_spare_one,
+    &hf_cfdp_proxy_delivery_code,
+    &hf_cfdp_file_stat,
+    NULL
+};
+
+static int * const cfdp_orig_trans_id[] = {
+    &hf_cfdp_res2,
+    &hf_cfdp_entid_length,
+    &hf_cfdp_res3,
+    &hf_cfdp_transeqnum_length,
+    NULL
+};
+
+static int * const cfdp_remote_stat_rep_req[] = {
+    &hf_cfdp_res2,
+    &hf_cfdp_entid_length,
+    &hf_cfdp_res3,
+    &hf_cfdp_transeqnum_length,
+    NULL
+};
+
+static int * const cfdp_remote_stat_rep_resp[] = {
+    &hf_cfdp_trans_stat,
+    &hf_cfdp_spare_five,
+    &hf_cfdp_rep_resp_code,
+    &hf_cfdp_spare_one_2,
+    &hf_cfdp_entid_length,
+    &hf_cfdp_spare_one,
+    &hf_cfdp_transeqnum_length,
+    NULL
+};
+
+static int * const cfdp_finish_pdu_flags [] = {
+    &hf_cfdp_condition_code,
+    &hf_cfdp_end_system_stat,
+    &hf_cfdp_delivery_code,
+    &hf_cfdp_file_stat,
+    NULL
+};
+
+/* 6.6.3.2 (1 byte) */
+static int * const cfdp_remote_suspend_resume_req [] = {
+    &hf_cfdp_spare_one_2,
+    &hf_cfdp_entid_length,
+    &hf_cfdp_spare_one,
+    &hf_cfdp_transeqnum_length,
+    NULL
+};
+
+
+/* 6.6.4.2 (2 bytes) */
+static int * const cfdp_remote_suspend_resume_resp [] = {
+    &hf_cfdp_suspension_ind,
+    &hf_cfdp_trans_stat_2,
+    &hf_cfdp_spare_five_2,
+    &hf_cfdp_spare_one_2,
+    &hf_cfdp_entid_length,
+    &hf_cfdp_spare_one,
+    &hf_cfdp_transeqnum_length,
+    NULL
+};
+
+
+
 /* Dissect the Source Entity ID field */
 static void
-dissect_cfdp_src_entity_id(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint32 offset, guint8 len_ent_id)
+dissect_cfdp_src_entity_id(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint32_t offset, uint8_t len_ent_id)
 {
     if(len_ent_id > 0 && len_ent_id <= 8){
         proto_tree_add_item(tree, hf_cfdp_srcid, tvb, offset, len_ent_id, ENC_BIG_ENDIAN);
@@ -451,7 +579,7 @@ dissect_cfdp_src_entity_id(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
 
 /* Dissect the Destination Entity ID field */
 static void
-dissect_cfdp_dst_entity_id(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint32 offset, guint8 len_ent_id)
+dissect_cfdp_dst_entity_id(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint32_t offset, uint8_t len_ent_id)
 {
     if(len_ent_id > 0 && len_ent_id <= 8){
         proto_tree_add_item(tree, hf_cfdp_dstid, tvb, offset, len_ent_id, ENC_BIG_ENDIAN);
@@ -463,7 +591,7 @@ dissect_cfdp_dst_entity_id(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
 
 /* Dissect the Transaction Sequence Number field */
 static void
-dissect_cfdp_tseq_num(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint32 offset, guint8 len_tseq_num)
+dissect_cfdp_tseq_num(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint32_t offset, uint8_t len_tseq_num)
 {
     if(len_tseq_num > 0 && len_tseq_num <= 8){
         proto_tree_add_item(tree, hf_cfdp_transeqnum, tvb, offset, len_tseq_num, ENC_BIG_ENDIAN);
@@ -474,18 +602,19 @@ dissect_cfdp_tseq_num(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint
 }
 
 /* Dissect the Filestore Request TLV */
-static guint32 dissect_cfdp_filestore_req_tlv(tvbuff_t *tvb, proto_tree *tree, guint32 ext_offset){
+static uint32_t dissect_cfdp_filestore_req_tlv(tvbuff_t *tvb, proto_tree *tree, uint32_t ext_offset){
 
-    guint8 tlv_len;
+    uint8_t tlv_len;
 
-    guint32 offset = ext_offset;
+    uint32_t offset = ext_offset;
+    uint32_t length;
 
     /* Get field length */
-    tlv_len = tvb_get_guint8(tvb, offset);
+    tlv_len = tvb_get_uint8(tvb, offset);
     offset += 1;
     if(tlv_len > 0){
         proto_tree  *cfdp_filestore_req_tree;
-        guint8 aux_byte;
+        uint8_t aux_byte;
 
         /* Create a TLV subtree */
         cfdp_filestore_req_tree = proto_tree_add_subtree(tree, tvb, offset-2, tlv_len+2,
@@ -493,40 +622,43 @@ static guint32 dissect_cfdp_filestore_req_tlv(tvbuff_t *tvb, proto_tree *tree, g
 
         proto_tree_add_uint(cfdp_filestore_req_tree, hf_cfdp_tlv_len, tvb, offset-1, 1, tlv_len);
 
-        aux_byte = tvb_get_guint8(tvb, offset);
+        aux_byte = tvb_get_uint8(tvb, offset);
         proto_tree_add_uint(cfdp_filestore_req_tree, hf_cfdp_action_code, tvb, offset, 1, aux_byte);
         proto_tree_add_uint(cfdp_filestore_req_tree, hf_cfdp_spare_four, tvb, offset, 1, aux_byte);
         offset += 1;
 
-        aux_byte = tvb_get_guint8(tvb, offset);
+        proto_tree_add_item_ret_uint(cfdp_filestore_req_tree, hf_cfdp_first_file_name_len, tvb, offset, 1, ENC_BIG_ENDIAN, &length);
         offset += 1;
-        proto_tree_add_item(cfdp_filestore_req_tree, hf_cfdp_first_file_name, tvb, offset, aux_byte, ENC_ASCII|ENC_NA);
-        offset += aux_byte;
-
-        aux_byte = tvb_get_guint8(tvb, offset);
-        offset += 1;
-        if(aux_byte > 0){
-            proto_tree_add_item(cfdp_filestore_req_tree, hf_cfdp_second_file_name, tvb, offset, aux_byte, ENC_ASCII|ENC_NA);
-            offset += aux_byte;
+        if(length > 0){
+            proto_tree_add_item(cfdp_filestore_req_tree, hf_cfdp_first_file_name, tvb, offset, length, ENC_ASCII);
         }
+        offset += length;
+
+        proto_tree_add_item_ret_uint(cfdp_filestore_req_tree, hf_cfdp_second_file_name_len, tvb, offset, 1, ENC_BIG_ENDIAN, &length);
+        offset += 1;
+        if(length > 0){
+            proto_tree_add_item(cfdp_filestore_req_tree, hf_cfdp_second_file_name, tvb, offset, length, ENC_ASCII);
+        }
+        offset += length;
     }
 
     return offset;
 }
 
 /* Dissect the Filestore Response TLV */
-static guint32 dissect_cfdp_filestore_resp_tlv(tvbuff_t *tvb, proto_tree *tree, guint32 ext_offset){
+static uint32_t dissect_cfdp_filestore_resp_tlv(tvbuff_t *tvb, proto_tree *tree, uint32_t ext_offset){
 
-    guint8 tlv_len;
+    uint8_t tlv_len;
 
-    guint32 offset = ext_offset;
+    uint32_t offset = ext_offset;
 
     /* Get field length */
-    tlv_len = tvb_get_guint8(tvb, offset);
+    tlv_len = tvb_get_uint8(tvb, offset);
     offset += 1;
     if(tlv_len > 0){
         proto_tree  *cfdp_filestore_resp_tree;
-        guint8 aux_byte;
+        uint8_t aux_byte;
+        uint32_t length;
 
         /* Create a subtree */
         cfdp_filestore_resp_tree = proto_tree_add_subtree(tree, tvb, offset-2, tlv_len+2,
@@ -534,7 +666,7 @@ static guint32 dissect_cfdp_filestore_resp_tlv(tvbuff_t *tvb, proto_tree *tree, 
 
         proto_tree_add_uint(cfdp_filestore_resp_tree, hf_cfdp_tlv_len, tvb, offset-1, 1, tlv_len);
 
-        aux_byte = tvb_get_guint8(tvb, offset);
+        aux_byte = tvb_get_uint8(tvb, offset);
         proto_tree_add_uint(cfdp_filestore_resp_tree, hf_cfdp_action_code, tvb, offset, 1, aux_byte);
         switch((aux_byte & 0xF0) >> 4){
             case 0:
@@ -567,38 +699,41 @@ static guint32 dissect_cfdp_filestore_resp_tlv(tvbuff_t *tvb, proto_tree *tree, 
         }
         offset += 1;
 
-        aux_byte = tvb_get_guint8(tvb, offset);
+        proto_tree_add_item_ret_uint(cfdp_filestore_resp_tree, hf_cfdp_first_file_name_len, tvb, offset, 1, ENC_BIG_ENDIAN, &length);
         offset += 1;
-        proto_tree_add_item(cfdp_filestore_resp_tree, hf_cfdp_first_file_name, tvb, offset, aux_byte, ENC_ASCII|ENC_NA);
-        offset += aux_byte;
+        if(length > 0){
+            proto_tree_add_item(cfdp_filestore_resp_tree, hf_cfdp_first_file_name, tvb, offset, length, ENC_ASCII);
+        }
+        offset += length;
 
-        aux_byte = tvb_get_guint8(tvb, offset);
+        proto_tree_add_item_ret_uint(cfdp_filestore_resp_tree, hf_cfdp_second_file_name_len, tvb, offset, 1, ENC_BIG_ENDIAN, &length);
         offset += 1;
-        if(aux_byte > 0){
-            proto_tree_add_item(cfdp_filestore_resp_tree, hf_cfdp_second_file_name, tvb, offset, aux_byte, ENC_ASCII|ENC_NA);
-            offset += aux_byte;
+        if(length > 0){
+            proto_tree_add_item(cfdp_filestore_resp_tree, hf_cfdp_second_file_name, tvb, offset, length, ENC_ASCII);
         }
+        offset += length;
+
         /* Filestore Message */
-        aux_byte = tvb_get_guint8(tvb, offset);
+        proto_tree_add_item_ret_uint(cfdp_filestore_resp_tree, hf_cfdp_filestore_message_len, tvb, offset, 1, ENC_BIG_ENDIAN, &length);
         offset += 1;
-        if(aux_byte > 0){
-            proto_tree_add_item(cfdp_filestore_resp_tree, hf_cfdp_filestore_message, tvb, offset, tlv_len, ENC_NA);
-            offset += aux_byte;
+        if(length > 0){
+            proto_tree_add_item(cfdp_filestore_resp_tree, hf_cfdp_filestore_message, tvb, offset, length, ENC_NA);
         }
+        offset += length;
     }
 
-    return offset;
+    return offset+1;
 }
 
 /* Dissect the Fault Location TLV */
-static guint32 dissect_cfdp_fault_location_tlv(tvbuff_t *tvb, proto_tree *tree, guint32 ext_offset){
+static uint32_t dissect_cfdp_fault_location_tlv(tvbuff_t *tvb, proto_tree *tree, uint32_t ext_offset){
 
-    guint8 tlv_len;
+    uint8_t tlv_len;
 
-    guint32 offset = ext_offset;
+    uint32_t offset = ext_offset;
 
     /* Get field length */
-    tlv_len = tvb_get_guint8(tvb, offset);
+    tlv_len = tvb_get_uint8(tvb, offset);
     offset += 1;
     if(tlv_len > 0){
         proto_tree  *cfdp_fault_location_tree;
@@ -617,18 +752,22 @@ static guint32 dissect_cfdp_fault_location_tlv(tvbuff_t *tvb, proto_tree *tree, 
 }
 
 /* Dissect the Message to User TLV */
-static guint32 dissect_cfdp_msg_to_user_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint32 ext_offset){
+static uint32_t dissect_cfdp_msg_to_user_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint32_t ext_offset){
 
-    guint8 aux_byte, tlv_type, tlv_len;
+    uint8_t tlv_type;
+    uint8_t tlv_len;
     proto_tree  *cfdp_msg_to_user_tree;
 
-    guint32 offset = ext_offset;
-    guint32 msg_to_user_id;
+    uint32_t offset = ext_offset;
+    uint32_t msg_to_user_id;
+
+    uint64_t retval;
+
     int len_ent_id;
     int len_tseq_num;
 
     /* Get tlv len */
-    tlv_len = tvb_get_guint8(tvb, offset);
+    tlv_len = tvb_get_uint8(tvb, offset);
     offset += 1;
 
     /* Create a subtree */
@@ -641,33 +780,34 @@ static guint32 dissect_cfdp_msg_to_user_tlv(tvbuff_t *tvb, packet_info *pinfo, p
     /* Proxy operations */
     if(msg_to_user_id == CFDP_MSG_TO_USER){
         offset += 4;
-        tlv_type =  tvb_get_guint8(tvb, offset);
+        tlv_type =  tvb_get_uint8(tvb, offset);
         proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_proxy_msg_type, tvb, offset, 1, tlv_type);
         offset += 1;
         switch(tlv_type){
 
             case PROXY_PUT_REQ:
-                tlv_len = tvb_get_guint8(tvb, offset);
+                tlv_len = tvb_get_uint8(tvb, offset);
                 offset += 1;
                 dissect_cfdp_dst_entity_id(tvb, pinfo, cfdp_msg_to_user_tree, offset, tlv_len);
                 offset += tlv_len;
 
-                tlv_len = tvb_get_guint8(tvb, offset);
+                tlv_len = tvb_get_uint8(tvb, offset);
                 offset += 1;
-                proto_tree_add_item(cfdp_msg_to_user_tree, hf_cfdp_src_file_name, tvb, offset, tlv_len, ENC_ASCII|ENC_NA);
+                proto_tree_add_item(cfdp_msg_to_user_tree, hf_cfdp_src_file_name, tvb, offset, tlv_len, ENC_ASCII);
                 offset += tlv_len;
 
-                tlv_len = tvb_get_guint8(tvb, offset);
+                tlv_len = tvb_get_uint8(tvb, offset);
                 offset += 1;
-                proto_tree_add_item(cfdp_msg_to_user_tree, hf_cfdp_dst_file_name, tvb, offset, tlv_len, ENC_ASCII|ENC_NA);
+                proto_tree_add_item(cfdp_msg_to_user_tree, hf_cfdp_dst_file_name, tvb, offset, tlv_len, ENC_ASCII);
                 offset += tlv_len;
 
                 break;
 
             case PROXY_MSG_TO_USER:
-                tlv_len = tvb_get_guint8(tvb, offset);
+                tlv_len = tvb_get_uint8(tvb, offset);
                 offset += 1;
                 proto_tree_add_item(cfdp_msg_to_user_tree, hf_cfdp_message_to_user, tvb, offset, tlv_len, ENC_NA);
+                offset += tlv_len;
                 break;
 
             case PROXY_FILESTORE_REQ:
@@ -675,16 +815,20 @@ static guint32 dissect_cfdp_msg_to_user_tlv(tvbuff_t *tvb, packet_info *pinfo, p
                 break;
 
             case PROXY_FAULT_HDL_OVERR:
-                aux_byte = tvb_get_guint8(tvb, offset);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_condition_code, tvb, offset, 1, aux_byte);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_handler_code, tvb, offset, 1, aux_byte);
+                proto_tree_add_bitmask(cfdp_msg_to_user_tree, tvb, offset,
+                                     hf_cfdp_proxy_fault_hdl_overr,
+                                     ett_cfdp_proxy_fault_hdl_overr,
+                                     cfdp_proxy_fault_hdl_overr,
+                                     ENC_BIG_ENDIAN);
                 offset += 1;
                 break;
 
             case PROXY_TRANS_MODE:
-                aux_byte = tvb_get_guint8(tvb, offset);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_spare_seven_2, tvb, offset, 1, aux_byte);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_trans_mode_msg, tvb, offset, 1, aux_byte);
+                proto_tree_add_bitmask(cfdp_msg_to_user_tree, tvb, offset,
+                                     hf_cfdp_proxy_trans_mode,
+                                     ett_cfdp_proxy_trans_mode,
+                                     cfdp_proxy_trans_mode,
+                                     ENC_BIG_ENDIAN);
                 offset += 1;
                 break;
 
@@ -693,19 +837,20 @@ static guint32 dissect_cfdp_msg_to_user_tlv(tvbuff_t *tvb, packet_info *pinfo, p
                 break;
 
             case PROXY_SEGMENT_CONTROL:
-                aux_byte = tvb_get_guint8(tvb, offset);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_spare_seven_2, tvb, offset, 1, aux_byte);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_proxy_segment_control, tvb, offset, 1, aux_byte);
+                proto_tree_add_bitmask(cfdp_msg_to_user_tree, tvb, offset,
+                                     hf_cfdp_proxy_segment_control_byte,
+                                     ett_cfdp_proxy_segment_control_byte,
+                                     cfdp_proxy_segment_control_byte,
+                                     ENC_BIG_ENDIAN);
                 offset += 1;
                 break;
 
             case PROXY_PUT_RESP:
-                aux_byte = tvb_get_guint8(tvb, offset);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_condition_code, tvb, offset, 1, aux_byte);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_spare_one, tvb, offset, 1, aux_byte);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_condition_code, tvb, offset, 1, aux_byte);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_proxy_delivery_code, tvb, offset, 1, aux_byte);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_file_stat, tvb, offset, 1, aux_byte);
+                proto_tree_add_bitmask(cfdp_msg_to_user_tree, tvb, offset,
+                                     hf_cfdp_proxy_put_resp,
+                                     ett_cfdp_proxy_put_resp,
+                                     cfdp_proxy_put_resp,
+                                     ENC_BIG_ENDIAN);
                 offset += 1;
                 break;
 
@@ -717,18 +862,19 @@ static guint32 dissect_cfdp_msg_to_user_tlv(tvbuff_t *tvb, packet_info *pinfo, p
                 break;
 
             case ORIG_TRANS_ID:
-                aux_byte = tvb_get_guint8(tvb, offset);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_res2, tvb, offset, 1, aux_byte);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_entid_length, tvb, offset, 1, aux_byte);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_res3, tvb, offset, 1, aux_byte);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_transeqnum_length, tvb, offset, 1, aux_byte);
+                proto_tree_add_bitmask_ret_uint64(cfdp_msg_to_user_tree, tvb, offset,
+                                     hf_cfdp_orig_trans_id,
+                                     ett_cfdp_orig_trans_id,
+                                     cfdp_orig_trans_id,
+                                     ENC_BIG_ENDIAN,
+                                     &retval);
                 offset += 1;
 
-                len_ent_id = ((aux_byte & HDR_LEN_ENT_ID) >> 4) + 1;
+                len_ent_id = ((retval & HDR_LEN_ENT_ID) >> 4) + 1;
                 dissect_cfdp_src_entity_id(tvb, pinfo, cfdp_msg_to_user_tree, offset, len_ent_id);
                 offset += len_ent_id;
 
-                len_tseq_num = (aux_byte & HDR_LEN_TSEQ_NUM) +1;
+                len_tseq_num = (retval & HDR_LEN_TSEQ_NUM) +1;
                 dissect_cfdp_tseq_num(tvb, pinfo, cfdp_msg_to_user_tree, offset, len_tseq_num);
                 offset += len_tseq_num;
 
@@ -736,118 +882,109 @@ static guint32 dissect_cfdp_msg_to_user_tlv(tvbuff_t *tvb, packet_info *pinfo, p
 
             case DIRECTORY_LIST_REQ:
                 /* Directory Name */
-                tlv_len =  tvb_get_guint8(tvb, offset);
+                tlv_len =  tvb_get_uint8(tvb, offset);
                 offset += 1;
-                proto_tree_add_item(cfdp_msg_to_user_tree, hf_cfdp_directory_name, tvb, offset, tlv_len, ENC_ASCII|ENC_NA);
+                proto_tree_add_item(cfdp_msg_to_user_tree, hf_cfdp_directory_name, tvb, offset, tlv_len, ENC_ASCII);
                 offset += tlv_len;
                 /* Directory File Name */
-                tlv_len =  tvb_get_guint8(tvb, offset);
+                tlv_len =  tvb_get_uint8(tvb, offset);
                 offset += 1;
-                proto_tree_add_item(cfdp_msg_to_user_tree, hf_cfdp_directory_file_name, tvb, offset, tlv_len, ENC_ASCII|ENC_NA);
+                proto_tree_add_item(cfdp_msg_to_user_tree, hf_cfdp_directory_file_name, tvb, offset, tlv_len, ENC_ASCII);
                 offset += tlv_len;
                 break;
 
             case DIRECTORY_LIST_RESP:
                 /* Listing Response Code */
-                aux_byte = tvb_get_guint8(tvb, offset);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_listing_resp_code, tvb, offset, 1, aux_byte);
+                proto_tree_add_item(cfdp_msg_to_user_tree, hf_cfdp_listing_resp_code, tvb, offset, 1, ENC_NA);
                 offset += 1;
                 /* Directory Name */
-                tlv_len =  tvb_get_guint8(tvb, offset);
+                tlv_len =  tvb_get_uint8(tvb, offset);
                 offset += 1;
-                proto_tree_add_item(cfdp_msg_to_user_tree, hf_cfdp_directory_name, tvb, offset, tlv_len, ENC_ASCII|ENC_NA);
+                proto_tree_add_item(cfdp_msg_to_user_tree, hf_cfdp_directory_name, tvb, offset, tlv_len, ENC_ASCII);
                 offset += tlv_len;
                 /* Directory File Name */
-                tlv_len =  tvb_get_guint8(tvb, offset);
+                tlv_len =  tvb_get_uint8(tvb, offset);
                 offset += 1;
-                proto_tree_add_item(cfdp_msg_to_user_tree, hf_cfdp_directory_file_name, tvb, offset, tlv_len, ENC_ASCII|ENC_NA);
+                proto_tree_add_item(cfdp_msg_to_user_tree, hf_cfdp_directory_file_name, tvb, offset, tlv_len, ENC_ASCII);
                 offset += tlv_len;
                 break;
 
             case REMOTE_STAT_REP_REQ:
-                aux_byte = tvb_get_guint8(tvb, offset);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_res2, tvb, offset, 1, aux_byte);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_entid_length, tvb, offset, 1, aux_byte);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_res3, tvb, offset, 1, aux_byte);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_transeqnum_length, tvb, offset, 1, aux_byte);
+                proto_tree_add_bitmask_ret_uint64(cfdp_msg_to_user_tree, tvb, offset,
+                                     hf_cfdp_remote_stat_rep_req,
+                                     ett_cfdp_remote_stat_rep_req,
+                                     cfdp_remote_stat_rep_req,
+                                     ENC_BIG_ENDIAN,
+                                     &retval);
                 offset += 1;
 
-                len_ent_id = ((aux_byte & HDR_LEN_ENT_ID) >> 4) + 1;
+                len_ent_id = ((retval & HDR_LEN_ENT_ID) >> 4) + 1;
                 dissect_cfdp_src_entity_id(tvb, pinfo, cfdp_msg_to_user_tree, offset, len_ent_id);
                 offset += len_ent_id;
 
-                len_tseq_num = (aux_byte & HDR_LEN_TSEQ_NUM) +1;
+                len_tseq_num = (retval & HDR_LEN_TSEQ_NUM) +1;
                 dissect_cfdp_tseq_num(tvb, pinfo, cfdp_msg_to_user_tree, offset, len_tseq_num);
                 offset += len_tseq_num;
 
                 /* Report File Name */
-                tlv_len =  tvb_get_guint8(tvb, offset);
+                tlv_len =  tvb_get_uint8(tvb, offset);
                 offset += 1;
-                proto_tree_add_item(cfdp_msg_to_user_tree, hf_cfdp_report_file_name, tvb, offset, tlv_len, ENC_ASCII|ENC_NA);
+                proto_tree_add_item(cfdp_msg_to_user_tree, hf_cfdp_report_file_name, tvb, offset, tlv_len, ENC_ASCII);
                 offset += tlv_len;
                 break;
 
             case REMOTE_STAT_REP_RESP:
-                aux_byte = tvb_get_guint8(tvb, offset);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_trans_stat, tvb, offset, 1, aux_byte);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_spare_five, tvb, offset, 1, aux_byte);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_rep_resp_code, tvb, offset, 1, aux_byte);
-                offset += 1;
+                proto_tree_add_bitmask_ret_uint64(cfdp_msg_to_user_tree, tvb, offset,
+                                     hf_cfdp_remote_stat_rep_resp,
+                                     ett_cfdp_remote_stat_rep_resp,
+                                     cfdp_remote_stat_rep_resp,
+                                     ENC_BIG_ENDIAN,
+                                     &retval);
 
-                aux_byte = tvb_get_guint8(tvb, offset);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_spare_one_2, tvb, offset, 1, aux_byte);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_entid_length, tvb, offset, 1, aux_byte);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_spare_one, tvb, offset, 1, aux_byte);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_transeqnum_length, tvb, offset, 1, aux_byte);
-                offset += 1;
-
-                len_ent_id = ((aux_byte & HDR_LEN_ENT_ID) >> 4) + 1;
+                len_ent_id = ((retval & (HDR_LEN_ENT_ID<<8)) >> 12) + 1;
                 dissect_cfdp_src_entity_id(tvb, pinfo, cfdp_msg_to_user_tree, offset, len_ent_id);
                 offset += len_ent_id;
 
-                len_tseq_num = (aux_byte & HDR_LEN_TSEQ_NUM) +1;
+                len_tseq_num = (retval & HDR_LEN_TSEQ_NUM) +1;
                 dissect_cfdp_tseq_num(tvb, pinfo, cfdp_msg_to_user_tree, offset, len_tseq_num);
                 offset += len_tseq_num;
                 break;
 
             case REMOTE_SUSPEND_REQ:
             case REMOTE_RESUME_REQ:
-                aux_byte = tvb_get_guint8(tvb, offset);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_spare_one_2, tvb, offset, 1, aux_byte);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_entid_length, tvb, offset, 1, aux_byte);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_spare_one, tvb, offset, 1, aux_byte);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_transeqnum_length, tvb, offset, 1, aux_byte);
+                proto_tree_add_bitmask_ret_uint64(cfdp_msg_to_user_tree, tvb, offset,
+                                     hf_cfdp_remote_suspend_resume_req,
+                                     ett_cfdp_remote_suspend_resume_req,
+                                     cfdp_remote_suspend_resume_req,
+                                     ENC_BIG_ENDIAN,
+                                     &retval);
+
                 offset += 1;
 
-                len_ent_id = ((aux_byte & HDR_LEN_ENT_ID) >> 4) + 1;
+                len_ent_id = ((retval & HDR_LEN_ENT_ID) >> 4) + 1;
                 dissect_cfdp_src_entity_id(tvb, pinfo, cfdp_msg_to_user_tree, offset, len_ent_id);
                 offset += len_ent_id;
 
-                len_tseq_num = (aux_byte & HDR_LEN_TSEQ_NUM) +1;
+                len_tseq_num = (retval & HDR_LEN_TSEQ_NUM) +1;
                 dissect_cfdp_tseq_num(tvb, pinfo, cfdp_msg_to_user_tree, offset, len_tseq_num);
                 offset += len_tseq_num;
                 break;
 
             case REMOTE_SUSPEND_RESP:
             case REMOTE_RESUME_RESP:
-                aux_byte = tvb_get_guint8(tvb, offset);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_suspension_ind, tvb, offset, 1, aux_byte);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_trans_stat_2, tvb, offset, 1, aux_byte);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_spare_five, tvb, offset, 1, aux_byte);
-                offset += 1;
+                proto_tree_add_bitmask_ret_uint64(cfdp_msg_to_user_tree, tvb, offset,
+                                     hf_cfdp_remote_suspend_resume_resp,
+                                     ett_cfdp_remote_suspend_resume_resp,
+                                     cfdp_remote_suspend_resume_resp,
+                                     ENC_BIG_ENDIAN,
+                                     &retval);
+                offset += 2;
 
-                aux_byte = tvb_get_guint8(tvb, offset);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_spare_one_2, tvb, offset, 1, aux_byte);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_entid_length, tvb, offset, 1, aux_byte);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_spare_one, tvb, offset, 1, aux_byte);
-                proto_tree_add_uint(cfdp_msg_to_user_tree, hf_cfdp_transeqnum_length, tvb, offset, 1, aux_byte);
-                offset += 1;
-
-                len_ent_id = ((aux_byte & HDR_LEN_ENT_ID) >> 4) + 1;
+                len_ent_id = ((retval & HDR_LEN_ENT_ID) >> 4) + 1;
                 dissect_cfdp_src_entity_id(tvb, pinfo, cfdp_msg_to_user_tree, offset, len_ent_id);
                 offset += len_ent_id;
 
-                len_tseq_num = (aux_byte & HDR_LEN_TSEQ_NUM) +1;
+                len_tseq_num = (retval & HDR_LEN_TSEQ_NUM) +1;
                 dissect_cfdp_tseq_num(tvb, pinfo, cfdp_msg_to_user_tree, offset, len_tseq_num);
                 offset += len_tseq_num;
                 break;
@@ -864,15 +1001,15 @@ static guint32 dissect_cfdp_msg_to_user_tlv(tvbuff_t *tvb, packet_info *pinfo, p
 }
 
 /* Dissect the Fault Handler Override TLV */
-static guint32 dissect_cfdp_fault_handler_overr_tlv(tvbuff_t *tvb, proto_tree *tree, guint32 ext_offset){
+static uint32_t dissect_cfdp_fault_handler_overr_tlv(tvbuff_t *tvb, proto_tree *tree, uint32_t ext_offset){
 
-    guint8 aux_byte, tlv_len;
+    uint8_t aux_byte, tlv_len;
     proto_tree  *cfdp_fault_hdl_overr_tree;
 
-    guint32 offset = ext_offset;
+    uint32_t offset = ext_offset;
 
     /* Get tlv len */
-    tlv_len = tvb_get_guint8(tvb, offset);
+    tlv_len = tvb_get_uint8(tvb, offset);
     offset += 1;
 
     /* Create a subtree */
@@ -881,7 +1018,7 @@ static guint32 dissect_cfdp_fault_handler_overr_tlv(tvbuff_t *tvb, proto_tree *t
 
     proto_tree_add_uint(cfdp_fault_hdl_overr_tree, hf_cfdp_tlv_len, tvb, offset-1, 1, tlv_len);
 
-    aux_byte = tvb_get_guint8(tvb, offset);
+    aux_byte = tvb_get_uint8(tvb, offset);
     proto_tree_add_uint(cfdp_fault_hdl_overr_tree, hf_cfdp_condition_code, tvb, offset, 1, aux_byte);
     proto_tree_add_uint(cfdp_fault_hdl_overr_tree, hf_cfdp_handler_code, tvb, offset, 1, aux_byte);
     offset += 1;
@@ -890,15 +1027,15 @@ static guint32 dissect_cfdp_fault_handler_overr_tlv(tvbuff_t *tvb, proto_tree *t
 }
 
 /* Dissect the Flow Label TLV */
-static guint32 dissect_cfdp_flow_label_tlv(tvbuff_t *tvb, proto_tree *tree, guint32 ext_offset){
+static uint32_t dissect_cfdp_flow_label_tlv(tvbuff_t *tvb, proto_tree *tree, uint32_t ext_offset){
 
-    guint8 tlv_len;
+    uint8_t tlv_len;
     proto_tree  *cfdp_flow_label_tree;
 
-    guint32 offset = ext_offset;
+    uint32_t offset = ext_offset;
 
     /* Get tlv len */
-    tlv_len = tvb_get_guint8(tvb, offset);
+    tlv_len = tvb_get_uint8(tvb, offset);
     offset += 1;
 
     /* Create a subtree */
@@ -912,15 +1049,15 @@ static guint32 dissect_cfdp_flow_label_tlv(tvbuff_t *tvb, proto_tree *tree, guin
 }
 
 /* Dissect the End of File PDU */
-static guint32 dissect_cfdp_eof_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint32 ext_offset, guint ext_packet_len){
+static uint32_t dissect_cfdp_eof_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint32_t ext_offset, unsigned ext_packet_len){
 
-    guint8 aux_byte, tlv_type, tlv_len;
+    uint8_t aux_byte, tlv_type, tlv_len;
     proto_tree  *cfdp_fault_location_tree;
 
-    guint32 offset = ext_offset;
-    guint   cfdp_packet_data_length = ext_packet_len;
+    uint32_t offset = ext_offset;
+    unsigned   cfdp_packet_data_length = ext_packet_len;
 
-    aux_byte = tvb_get_guint8(tvb, offset);
+    aux_byte = tvb_get_uint8(tvb, offset);
     proto_tree_add_uint(tree, hf_cfdp_condition_code, tvb, offset, 1, aux_byte);
     proto_tree_add_uint(tree, hf_cfdp_spare_four, tvb, offset, 1, aux_byte);
     offset += 1;
@@ -934,10 +1071,10 @@ static guint32 dissect_cfdp_eof_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tre
     offset += 4;
 
     if(offset < cfdp_packet_data_length){
-        tlv_type = tvb_get_guint8(tvb, offset);
+        tlv_type = tvb_get_uint8(tvb, offset);
         offset += 1;
         if(tlv_type == FAULT_LOCATION){
-            tlv_len = tvb_get_guint8(tvb, offset);
+            tlv_len = tvb_get_uint8(tvb, offset);
             offset += 1;
             cfdp_fault_location_tree = proto_tree_add_subtree(tree, tvb, offset-2, tlv_len+2,
                         ett_cfdp_fault_location, NULL, "Fault location TLV");
@@ -951,28 +1088,32 @@ static guint32 dissect_cfdp_eof_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tre
 }
 
 /* Dissect the Finished PDU */
-static guint32 dissect_cfdp_finished_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint32 ext_offset, guint ext_packet_len){
+static uint32_t dissect_cfdp_finished_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint32_t ext_offset, unsigned ext_packet_len){
 
-    guint32 offset = ext_offset;
-    guint8  aux_byte, tlv_type;
+    uint32_t offset = ext_offset;
+    uint8_t tlv_type;
+    uint64_t aux_byte;
 
+    unsigned cfdp_packet_data_length = offset+ext_packet_len;
 
-    guint cfdp_packet_data_length = ext_packet_len;
-
-    aux_byte = tvb_get_guint8(tvb, offset);
-    proto_tree_add_uint(tree, hf_cfdp_condition_code,  tvb, offset, 1, aux_byte);
-    proto_tree_add_uint(tree, hf_cfdp_end_system_stat, tvb, offset, 1, aux_byte);
-    proto_tree_add_uint(tree, hf_cfdp_delivery_code,   tvb, offset, 1, aux_byte);
-    proto_tree_add_uint(tree, hf_cfdp_file_stat,       tvb, offset, 1, aux_byte);
+    proto_tree_add_bitmask_ret_uint64(tree, tvb, offset,
+                         hf_cfdp_finish_pdu_flags,
+                         ett_cfdp_finish_pdu_flags,
+                         cfdp_finish_pdu_flags,
+                         ENC_BIG_ENDIAN,
+                         &aux_byte);
     offset += 1;
 
     col_add_fstr(pinfo->cinfo, COL_INFO, "Finished PDU (%s)",  val_to_str_const((aux_byte & 0xF0) >> 4, cfdp_condition_codes, "Reserved Code"));
 
     /* Add TLV fields */
-    while(offset < cfdp_packet_data_length){
-        tlv_type = tvb_get_guint8(tvb, offset);
+    while(offset < cfdp_packet_data_length-1){
+        tlv_type = tvb_get_uint8(tvb, offset);
         offset += 1;
         switch(tlv_type){
+            case 0x00:
+                offset += 2;
+                break;
             case FILESTORE_RESP:
                 offset = dissect_cfdp_filestore_resp_tlv(tvb, tree, offset);
                 break;
@@ -990,19 +1131,19 @@ static guint32 dissect_cfdp_finished_pdu(tvbuff_t *tvb, packet_info *pinfo, prot
 }
 
 /* Dissect the ACK PDU */
-static guint32 dissect_cfdp_ack_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint32 ext_offset){
+static uint32_t dissect_cfdp_ack_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint32_t ext_offset){
 
-    guint8 aux_byte;
-    guint32 offset = ext_offset;
+    uint8_t aux_byte;
+    uint32_t offset = ext_offset;
 
-    aux_byte = tvb_get_guint8(tvb, offset);
+    aux_byte = tvb_get_uint8(tvb, offset);
     proto_tree_add_uint(tree, hf_cfdp_dir_code_ack, tvb, offset, 1, aux_byte);
     proto_tree_add_uint(tree, hf_cfdp_dir_subtype_ack, tvb, offset, 1, aux_byte);
     offset += 1;
 
     col_add_fstr(pinfo->cinfo, COL_INFO, "ACK PDU (%s)",  val_to_str_const((aux_byte & 0xF0) >> 4, cfdp_directive_codes, "Unknown PDU"));
 
-    aux_byte = tvb_get_guint8(tvb, offset);
+    aux_byte = tvb_get_uint8(tvb, offset);
     proto_tree_add_uint(tree, hf_cfdp_condition_code, tvb, offset, 1, aux_byte);
     proto_tree_add_uint(tree, hf_cfdp_spare_two, tvb, offset, 1, aux_byte);
     proto_tree_add_uint(tree, hf_cfdp_trans_stat_ack, tvb, offset, 1, aux_byte);
@@ -1012,30 +1153,35 @@ static guint32 dissect_cfdp_ack_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tre
 }
 
 /* Dissect the Metadata PDU */
-static guint32 dissect_cfdp_metadata_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint32 ext_offset, guint ext_packet_len){
+static uint32_t dissect_cfdp_metadata_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint32_t ext_offset, unsigned ext_packet_len){
 
-    guint8 aux_byte, tlv_type;
-    guint  cfdp_packet_data_length = ext_packet_len;
+    uint8_t aux_byte, tlv_type;
+    unsigned  cfdp_packet_data_length = ext_packet_len;
+    uint32_t length;
 
-    guint32 offset = ext_offset;
+    uint32_t offset = ext_offset;
 
-    aux_byte = tvb_get_guint8(tvb, offset);
+    aux_byte = tvb_get_uint8(tvb, offset);
     proto_tree_add_uint(tree, hf_cfdp_segment_control, tvb, offset, 1, aux_byte);
     proto_tree_add_uint(tree, hf_cfdp_spare_seven, tvb, offset, 1, aux_byte);
     offset += 1;
     proto_tree_add_item(tree, hf_cfdp_file_size, tvb, offset, 4, ENC_BIG_ENDIAN);
     offset += 4;
-    aux_byte = tvb_get_guint8(tvb, offset);
-    if(aux_byte >0){
-        proto_tree_add_item(tree, hf_cfdp_src_file_name, tvb, offset+1, aux_byte, ENC_ASCII|ENC_NA);
-        offset += aux_byte+1;
-        aux_byte = tvb_get_guint8(tvb, offset);
-        proto_tree_add_item(tree, hf_cfdp_dst_file_name, tvb, offset+1, aux_byte, ENC_ASCII|ENC_NA);
-        offset += aux_byte+1;
+    proto_tree_add_item_ret_uint(tree, hf_cfdp_src_file_name_len, tvb, offset, 1, ENC_BIG_ENDIAN, &length);
+    offset += 1;
+    if(length >0){
+        proto_tree_add_item(tree, hf_cfdp_src_file_name, tvb, offset, length, ENC_ASCII);
     }
+    offset += length;
+    proto_tree_add_item_ret_uint(tree, hf_cfdp_dst_file_name_len, tvb, offset, 1, ENC_BIG_ENDIAN, &length);
+    offset += 1;
+    if(length >0){
+        proto_tree_add_item(tree, hf_cfdp_dst_file_name, tvb, offset, length, ENC_ASCII);
+    }
+    offset += length;
     /* Add TLV fields */
     while(offset < cfdp_packet_data_length){
-        tlv_type = tvb_get_guint8(tvb, offset);
+        tlv_type = tvb_get_uint8(tvb, offset);
         offset += 1;
         switch(tlv_type){
             case FILESTORE_REQ:
@@ -1063,10 +1209,10 @@ static guint32 dissect_cfdp_metadata_pdu(tvbuff_t *tvb, packet_info *pinfo, prot
 }
 
 /* Dissect the NAK PDU */
-static guint32 dissect_cfdp_nak_pdu(tvbuff_t *tvb, proto_tree *tree, guint32 ext_offset, guint ext_packet_len){
+static uint32_t dissect_cfdp_nak_pdu(tvbuff_t *tvb, proto_tree *tree, uint32_t ext_offset, unsigned ext_packet_len){
 
-    guint32 offset = ext_offset;
-    guint cfdp_packet_data_length = ext_packet_len;
+    uint32_t offset = ext_offset;
+    unsigned cfdp_packet_data_length = ext_packet_len;
 
     proto_tree_add_item(tree, hf_cfdp_nak_st_scope, tvb, offset, 4, ENC_BIG_ENDIAN);
     offset += 4;
@@ -1079,12 +1225,12 @@ static guint32 dissect_cfdp_nak_pdu(tvbuff_t *tvb, proto_tree *tree, guint32 ext
 }
 
 /* Dissect the Prompt PDU */
-static guint32 dissect_cfdp_prompt_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint32 ext_offset){
+static uint32_t dissect_cfdp_prompt_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint32_t ext_offset){
 
-    guint8 aux_byte;
-    guint32 offset = ext_offset;
+    uint8_t aux_byte;
+    uint32_t offset = ext_offset;
 
-    aux_byte = tvb_get_guint8(tvb, offset);
+    aux_byte = tvb_get_uint8(tvb, offset);
     proto_tree_add_uint(tree, hf_cfdp_response_req, tvb, offset, 1, aux_byte);
     proto_tree_add_uint(tree, hf_cfdp_spare_seven, tvb, offset, 1, aux_byte);
     offset += 1;
@@ -1095,9 +1241,9 @@ static guint32 dissect_cfdp_prompt_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_
 }
 
 /* Dissect the Keep Alive PDU */
-static guint32 dissect_cfdp_keep_alive_pdu(tvbuff_t *tvb, proto_tree *tree, guint32 ext_offset){
+static uint32_t dissect_cfdp_keep_alive_pdu(tvbuff_t *tvb, proto_tree *tree, uint32_t ext_offset){
 
-    guint32 offset = ext_offset;
+    uint32_t offset = ext_offset;
 
     proto_tree_add_item(tree, hf_cfdp_progress, tvb, offset, 4, ENC_BIG_ENDIAN);
     offset += 4;
@@ -1114,24 +1260,22 @@ dissect_cfdp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     proto_item  *cfdp_tree;
     proto_item  *cfdp_header;
     proto_tree  *cfdp_header_tree;
-    gint cfdp_packet_length;
-    gint cfdp_packet_reported_length;
-    gint cfdp_packet_header_length;
-    gint cfdp_packet_data_length;
-    gint length;
-    guint8 first_byte;
-    guint8 second_byte;
-    gint len_ent_id;
-    gint len_tseq_num;
+    int cfdp_packet_length;
+    int cfdp_packet_reported_length;
+    int cfdp_packet_header_length;
+    int cfdp_packet_data_length;
+    int length;
+    uint8_t first_byte;
+    uint64_t retval;
+    int len_ent_id;
+    int len_tseq_num;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "CFDP");
     col_clear(pinfo->cinfo, COL_INFO);
 
     cfdp_packet_reported_length = tvb_reported_length_remaining(tvb, 0);
-    cfdp_packet_header_length = (tvb_get_guint8(tvb, 3) & HDR_LEN_TSEQ_NUM) + 1 + 2*(((tvb_get_guint8(tvb, 3) & HDR_LEN_ENT_ID) >>4) +1) + CFDP_HEADER_FIXED_FIELDS_LEN;
+    cfdp_packet_header_length = (tvb_get_uint8(tvb, 3) & HDR_LEN_TSEQ_NUM) + 1 + 2*(((tvb_get_uint8(tvb, 3) & HDR_LEN_ENT_ID) >>4) +1) + CFDP_HEADER_FIXED_FIELDS_LEN;
     cfdp_packet_length = tvb_get_ntohs(tvb, 1) + cfdp_packet_header_length;
-
-
 
     /* Min length is size of header plus 2 octets, whereas max length is reported length.
      * If the length field in the CFDP header is outside of these bounds,
@@ -1151,35 +1295,34 @@ dissect_cfdp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     cfdp_header_tree = proto_tree_add_subtree(cfdp_tree, tvb, offset, cfdp_packet_header_length,
                                                                 ett_cfdp_header, &cfdp_header, "CFDP Header");
 
-    first_byte = tvb_get_guint8(tvb, offset);
+    first_byte = tvb_get_uint8(tvb, offset);
 
     /* CRC code is not included in the packet data length */
     cfdp_packet_data_length = tvb_get_ntohs(tvb, 1)-2*((first_byte & HDR_CRCF) >>1);
 
-    proto_tree_add_uint(cfdp_header_tree, hf_cfdp_version,    tvb, offset, 1, first_byte);
-    proto_tree_add_uint(cfdp_header_tree, hf_cfdp_pdu_type,   tvb, offset, 1, first_byte);
-    proto_tree_add_uint(cfdp_header_tree, hf_cfdp_direction,  tvb, offset, 1, first_byte);
-    proto_tree_add_uint(cfdp_header_tree, hf_cfdp_trans_mode, tvb, offset, 1, first_byte);
-    proto_tree_add_uint(cfdp_header_tree, hf_cfdp_crc_flag,   tvb, offset, 1, first_byte);
-    proto_tree_add_uint(cfdp_header_tree, hf_cfdp_res1,       tvb, offset, 1, first_byte);
+    proto_tree_add_bitmask(cfdp_header_tree, tvb, offset,
+                         hf_cfdp_flags,
+                         ett_cfdp_flags,
+                         cfdp_flags,
+                         ENC_BIG_ENDIAN);
     offset += 1;
 
     proto_tree_add_item(cfdp_header_tree, hf_cfdp_data_length, tvb, offset, 2, ENC_BIG_ENDIAN);
     offset += 2;
 
-    second_byte = tvb_get_guint8(tvb, offset);
-
-    proto_tree_add_uint(cfdp_header_tree, hf_cfdp_res2, tvb, offset, 1, second_byte);
-    proto_tree_add_uint(cfdp_header_tree, hf_cfdp_entid_length, tvb, offset, 1, second_byte);
-    proto_tree_add_uint(cfdp_header_tree, hf_cfdp_res3, tvb, offset, 1, second_byte);
-    proto_tree_add_uint(cfdp_header_tree, hf_cfdp_transeqnum_length, tvb, offset, 1, second_byte);
+    proto_tree_add_bitmask_ret_uint64(cfdp_header_tree, tvb, offset,
+                         hf_cfdp_byte2,
+                         ett_cfdp_byte2,
+                         cfdp_byte2,
+                         ENC_BIG_ENDIAN,
+                         &retval);
     offset += 1;
 
-    len_ent_id = ((second_byte & HDR_LEN_ENT_ID) >> 4) + 1;
+    len_ent_id = ((retval & HDR_LEN_ENT_ID) >> 4) + 1;
     dissect_cfdp_src_entity_id(tvb, pinfo, cfdp_header_tree, offset, len_ent_id);
     offset += len_ent_id;
 
-    len_tseq_num = (second_byte & HDR_LEN_TSEQ_NUM) +1;
+    len_tseq_num = (retval & HDR_LEN_TSEQ_NUM) +1;
     dissect_cfdp_tseq_num(tvb, pinfo, cfdp_header_tree, offset, len_tseq_num);
     offset += len_tseq_num;
 
@@ -1193,16 +1336,16 @@ dissect_cfdp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     {
         proto_item *cfdp_file_directive_header;
         proto_tree *cfdp_file_directive_header_tree;
-        guint8      directive_code;
+        uint8_t     directive_code;
 
         cfdp_file_directive_header_tree = proto_tree_add_subtree(cfdp_tree, tvb, offset, cfdp_packet_data_length,
                                                         ett_cfdp_file_directive_header, &cfdp_file_directive_header, "CFDP File Directive");
 
-        directive_code = tvb_get_guint8(tvb, offset);
+        directive_code = tvb_get_uint8(tvb, offset);
         proto_tree_add_uint(cfdp_file_directive_header_tree, hf_cfdp_file_directive_type, tvb, offset, 1, directive_code);
         offset += 1;
 
-        col_add_fstr(pinfo->cinfo, COL_INFO, "%s PDU",  val_to_str(directive_code, cfdp_directive_codes, "Reserved (%d)"));
+        col_add_fstr(pinfo->cinfo, COL_INFO, "%s PDU",  val_to_str(pinfo->pool, directive_code, cfdp_directive_codes, "Reserved (%d)"));
 
         switch(directive_code)
         {
@@ -1243,7 +1386,7 @@ dissect_cfdp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     }else{
         proto_tree  *cfdp_file_data_header_tree;
 
-        col_add_fstr(pinfo->cinfo, COL_INFO, "File Data PDU");
+        col_set_str(pinfo->cinfo, COL_INFO, "File Data PDU");
 
         cfdp_file_data_header_tree = proto_tree_add_subtree(cfdp_tree, tvb, offset, cfdp_packet_data_length,
                                                             ett_cfdp_file_data_header, NULL, "CFDP File Data");
@@ -1273,10 +1416,207 @@ dissect_cfdp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 }
 
 void
+dissect_cfdp_as_subtree(tvbuff_t *tvb,  packet_info *pinfo, proto_tree *tree, int offset)
+{
+    proto_tree  *cfdp_header_tree = NULL;
+    proto_tree *cfdp_sub_tree = NULL;
+    proto_item *payload_item = NULL;
+    proto_tree *cfdp_tree = NULL;
+    proto_item  *cfdp_header;
+    int cfdp_data_len;
+    int len_ent_id;
+    int len_tseq_num;
+    uint64_t first_byte;
+    uint64_t retval;
+
+    cfdp_tree = proto_tree_add_subtree(tree, tvb, offset, -1, ett_cfdp_proto,
+                                       &payload_item, "Payload Data: CFDP Protocol");
+
+    cfdp_sub_tree   = proto_item_add_subtree(cfdp_tree, ett_cfdp);
+    cfdp_header_tree = proto_tree_add_subtree(cfdp_sub_tree, tvb, offset, -1,
+                                              ett_cfdp_header, &cfdp_header, "CFDP Header");
+
+    proto_tree_add_bitmask_ret_uint64(cfdp_header_tree, tvb, offset,
+                         hf_cfdp_flags,
+                         ett_cfdp_flags,
+                         cfdp_flags,
+                         ENC_BIG_ENDIAN,
+                         &first_byte);
+    offset += 1;
+
+    unsigned cfdp_data_end;
+    cfdp_data_len = tvb_get_uint16 (tvb, offset, ENC_BIG_ENDIAN);
+    proto_tree_add_item(cfdp_header_tree, hf_cfdp_data_length, tvb, offset, 2, ENC_BIG_ENDIAN);
+    offset += 2;
+
+    proto_tree_add_bitmask_ret_uint64(cfdp_header_tree, tvb, offset,
+                         hf_cfdp_byte2,
+                         ett_cfdp_byte2,
+                         cfdp_byte2,
+                         ENC_BIG_ENDIAN,
+                         &retval);
+    offset += 1;
+
+    len_ent_id = ((retval & HDR_LEN_ENT_ID) >> 4) + 1;
+    dissect_cfdp_src_entity_id(tvb, pinfo, cfdp_header_tree, offset, len_ent_id);
+    offset += len_ent_id;
+
+    len_tseq_num = (retval & HDR_LEN_TSEQ_NUM) +1;
+    dissect_cfdp_tseq_num(tvb, pinfo, cfdp_header_tree, offset, len_tseq_num);
+    offset += len_tseq_num;
+
+    dissect_cfdp_dst_entity_id(tvb, pinfo, cfdp_header_tree, offset, len_ent_id);
+    offset += len_ent_id;
+
+    cfdp_data_end = offset+cfdp_data_len;
+
+    /* Build the File Directive or the File Data tree */
+    if(!(first_byte & HDR_TYPE_CFDP))
+    {
+        proto_item *cfdp_file_directive_header;
+        proto_tree *cfdp_file_directive_header_tree;
+        uint8_t     directive_code;
+
+        cfdp_file_directive_header_tree = proto_tree_add_subtree(cfdp_tree, tvb, offset, cfdp_data_len,
+                                                        ett_cfdp_file_directive_header, &cfdp_file_directive_header,
+                                                        "CFDP File Directive");
+
+        directive_code = tvb_get_uint8(tvb, offset);
+        proto_tree_add_uint(cfdp_file_directive_header_tree, hf_cfdp_file_directive_type, tvb, offset, 1, directive_code);
+        offset += 1;
+
+        col_add_fstr(pinfo->cinfo, COL_INFO, "%s PDU",  val_to_str(pinfo->pool, directive_code, cfdp_directive_codes, "Reserved (%d)"));
+
+        switch(directive_code)
+        {
+            case EOF_PDU:
+                offset = dissect_cfdp_eof_pdu(tvb, pinfo, cfdp_file_directive_header_tree, offset, cfdp_data_len);
+                break;
+
+            case FINISHED_PDU:
+                offset = dissect_cfdp_finished_pdu(tvb, pinfo, cfdp_file_directive_header_tree, offset, cfdp_data_len);
+                break;
+
+            case ACK_PDU:
+                offset = dissect_cfdp_ack_pdu(tvb, pinfo, cfdp_file_directive_header_tree, offset);
+                break;
+
+            case METADATA_PDU:
+                offset = dissect_cfdp_metadata_pdu(tvb, pinfo, cfdp_file_directive_header_tree, offset, cfdp_data_len);
+                break;
+
+            case PROMPT_PDU:
+                offset = dissect_cfdp_prompt_pdu(tvb, pinfo, cfdp_file_directive_header_tree, offset);
+                break;
+
+            case KEEP_ALIVE_PDU:
+                offset = dissect_cfdp_keep_alive_pdu(tvb, cfdp_file_directive_header_tree, offset);
+                break;
+
+            default:
+                break;
+        }
+
+    }else{
+        proto_tree  *cfdp_file_data_header_tree;
+
+        col_set_str(pinfo->cinfo, COL_INFO, "File Data PDU");
+
+        cfdp_file_data_header_tree = proto_tree_add_subtree(cfdp_tree, tvb, offset, cfdp_data_len,
+                                                            ett_cfdp_file_data_header, NULL, "CFDP File Data");
+
+        proto_tree_add_item(cfdp_file_data_header_tree, hf_cfdp_file_data_offset, tvb, offset, 4, ENC_BIG_ENDIAN);
+
+        offset += 4;
+
+        proto_tree_add_item(cfdp_file_data_header_tree, hf_cfdp_user_data, tvb, offset, cfdp_data_len-4, ENC_NA);
+        offset += cfdp_data_len-4;
+
+    }
+    if(first_byte & HDR_CRCF){
+        proto_item  *cfdp_crc;
+        proto_tree  *cfdp_crc_tree;
+
+        cfdp_crc_tree = proto_tree_add_subtree(cfdp_tree, tvb, offset, 2, ett_cfdp_crc, &cfdp_crc, "CRC");
+
+        proto_tree_add_item(cfdp_crc_tree, hf_cfdp_crc, tvb, offset, 2, ENC_BIG_ENDIAN);
+        offset += 2;
+
+        proto_item_set_end(cfdp_crc, tvb, offset);
+    }
+
+    if ( cfdp_data_end>(unsigned)offset ) {
+        proto_tree_add_string(cfdp_header_tree, hf_cfdp_file_data_pdu, tvb, offset, cfdp_data_len,
+                              wmem_strdup_printf(pinfo->pool, "<%d bytes>", cfdp_data_len));
+    }
+    return;
+}
+
+void
 proto_register_cfdp(void)
 {
     static hf_register_info hf[] = {
 
+        { &hf_cfdp_flags,
+        { "Flags", "cfdp.flags",
+            FT_UINT8, BASE_HEX, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_cfdp_byte2,
+        { "Byte2", "cfdp.byte2",
+            FT_UINT8, BASE_HEX, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_cfdp_proxy_fault_hdl_overr,
+        { "Proxy Fault HDL Overr", "cfdp.proxy_fault_hdl_overr",
+            FT_UINT8, BASE_HEX, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_cfdp_proxy_trans_mode,
+        { "Proxy Transmission Mode", "cfdp.proxy_trans_mode",
+            FT_UINT8, BASE_HEX, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_cfdp_proxy_segment_control_byte,
+        { "Proxy Segment Control", "cfdp.proxy_segment_control",
+            FT_UINT8, BASE_HEX, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_cfdp_proxy_put_resp,
+        { "Proxy Put Response", "cfdp.proxy_put_response",
+            FT_UINT8, BASE_HEX, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_cfdp_orig_trans_id,
+        { "Originating Transaction ID", "cfdp.orig_trans_id",
+            FT_UINT8, BASE_HEX, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_cfdp_remote_stat_rep_req,
+        { "Remote Status Report Request", "cfdp.remote_status_rep_req",
+            FT_UINT8, BASE_HEX, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_cfdp_remote_stat_rep_resp,
+        { "Remote Status Report Response", "cfdp.remote_status_rep_resp",
+            FT_UINT16, BASE_HEX, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_cfdp_finish_pdu_flags,
+        { "Finish PDU flags", "cfdp.finish_pdu_flags",
+            FT_UINT8, BASE_HEX, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_cfdp_remote_suspend_resume_req,
+        { "Remote Suspend/Resume Request", "cfdp.remote_suspend_resume_req",
+            FT_UINT8, BASE_HEX, NULL, 0x0,
+            NULL, HFILL }
+        },
+        { &hf_cfdp_remote_suspend_resume_resp,
+        { "Remote Suspend/Resume Response", "cfdp.remote_suspend_resume_resp",
+            FT_UINT16, BASE_HEX, NULL, 0x0,
+            NULL, HFILL }
+        },
         { &hf_cfdp_version,
         { "Version", "cfdp.version",
             FT_UINT8, BASE_DEC, NULL, HDR_VERSION_CFDP,
@@ -1297,6 +1637,11 @@ proto_register_cfdp(void)
             FT_UINT8, BASE_DEC, VALS(cfdp_trans_mode), HDR_TMODE,
             NULL, HFILL }
         },
+        { &hf_cfdp_trans_mode_2,
+            { "Trans. Mode", "cfdp.trans_mode",
+            FT_UINT8, BASE_DEC, VALS(cfdp_trans_mode), 0x01,
+            NULL, HFILL }
+        },
         { &hf_cfdp_crc_flag,
             { "CRC Flag", "cfdp.crc_flag",
             FT_UINT8, BASE_DEC, VALS(cfdp_crc_flag), HDR_CRCF,
@@ -1311,6 +1656,10 @@ proto_register_cfdp(void)
             { "PDU Data length", "cfdp.data_length",
             FT_UINT16, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
+        },
+        {&hf_cfdp_file_data_pdu,
+         {"CFDP File PDU Data", "cfdp.file_data_pdu",
+          FT_STRINGZPAD, BASE_NONE, NULL, 0x0, NULL, HFILL}
         },
         { &hf_cfdp_res2,
             { "Bit reserved 2", "cfdp.res2",
@@ -1384,7 +1733,7 @@ proto_register_cfdp(void)
         },
         { &hf_cfdp_spare_one_2,
             { "Spare", "cfdp.spare_one_2",
-            FT_UINT8, BASE_DEC, NULL, 0x80,
+            FT_UINT16, BASE_DEC, NULL, 0x0080,
             NULL, HFILL }
         },
         { &hf_cfdp_spare_two,
@@ -1398,8 +1747,13 @@ proto_register_cfdp(void)
             NULL, HFILL }
         },
         { &hf_cfdp_spare_five,
-            { "Spare", "cfdp.spare_five",
-            FT_UINT8, BASE_DEC, NULL, 0x3E,
+            { "Spare", "cfdp.spare_five_b",
+            FT_UINT16, BASE_DEC, NULL, 0x3E00,
+            NULL, HFILL }
+        },
+        { &hf_cfdp_spare_five_2,
+            { "Spare", "cfdp.spare_five_b",
+            FT_UINT16, BASE_DEC, NULL, 0x1F00,
             NULL, HFILL }
         },
         { &hf_cfdp_spare_seven,
@@ -1418,13 +1772,13 @@ proto_register_cfdp(void)
             NULL, HFILL }
         },
         { &hf_cfdp_trans_stat,
-            { "Transaction status", "cfdp.trans_stat",
-            FT_UINT8, BASE_DEC, VALS(cfdp_trans_stat_ack), 0xC0,
+            { "Transaction status B", "cfdp.trans_stat_b",
+            FT_UINT16, BASE_DEC, VALS(cfdp_trans_stat_ack), 0xC000,
             NULL, HFILL }
         },
         { &hf_cfdp_trans_stat_2,
-            { "Transaction status", "cfdp.trans_stat_2",
-            FT_UINT8, BASE_DEC, VALS(cfdp_trans_stat_ack), 0x60,
+            { "Transaction status", "cfdp.trans_stat_2_b",
+            FT_UINT16, BASE_DEC, VALS(cfdp_trans_stat_ack), 0x6000,
             NULL, HFILL }
         },
         { &hf_cfdp_file_checksum,
@@ -1462,16 +1816,32 @@ proto_register_cfdp(void)
             FT_UINT8, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
+        { &hf_cfdp_src_file_name_len,
+            {"Length of source file name", "cfdp.src_file_name_len", FT_UINT32, BASE_DEC, NULL, 0x0,
+            NULL, HFILL}
+        },
         { &hf_cfdp_src_file_name,
             {"Source file name", "cfdp.src_file_name", FT_STRING, BASE_NONE, NULL, 0x0,
+            NULL, HFILL}
+        },
+        { &hf_cfdp_dst_file_name_len,
+            {"Length of destination file name", "cfdp.dst_file_name_len", FT_UINT32, BASE_DEC, NULL, 0x0,
             NULL, HFILL}
         },
         { &hf_cfdp_dst_file_name,
             {"Destination file name", "cfdp.dst_file_name", FT_STRING, BASE_NONE, NULL, 0x0,
             NULL, HFILL}
         },
+        { &hf_cfdp_first_file_name_len,
+            {"Length of first file name", "cfdp.first_file_name_len", FT_UINT32, BASE_DEC, NULL, 0x0,
+            NULL, HFILL}
+        },
         { &hf_cfdp_first_file_name,
             {"First file name", "cfdp.first_file_name", FT_STRING, BASE_NONE, NULL, 0x0,
+            NULL, HFILL}
+        },
+        { &hf_cfdp_second_file_name_len,
+            {"Length of second file name", "cfdp.second_file_name_len", FT_UINT32, BASE_DEC, NULL, 0x0,
             NULL, HFILL}
         },
         { &hf_cfdp_second_file_name,
@@ -1531,11 +1901,6 @@ proto_register_cfdp(void)
             FT_UINT8, BASE_DEC, VALS(cfdp_handler_codes), 0x0F,
             NULL, HFILL }
         },
-        { &hf_cfdp_trans_mode_msg,
-            { "Trans. Mode", "cfdp.trans_mode_msg",
-            FT_UINT8, BASE_DEC, VALS(cfdp_trans_mode), 0x01,
-            NULL, HFILL }
-        },
         { &hf_cfdp_proxy_msg_type,
             { "Proxy Message Type", "cfdp.proxy_msg_type",
             FT_UINT8, BASE_DEC | BASE_EXT_STRING, &cfdp_proxy_msg_type_ext, 0x0,
@@ -1574,13 +1939,17 @@ proto_register_cfdp(void)
             NULL, HFILL}
         },
         { &hf_cfdp_rep_resp_code,
-            {"Report Response Code", "cfdp.rep_resp_code",
-            FT_UINT8, BASE_DEC, VALS(cfdp_rep_resp_code), 0x01,
+            {"Report Response Code", "cfdp.rep_resp_code_b",
+            FT_UINT16, BASE_DEC, VALS(cfdp_rep_resp_code), 0x0100,
             NULL, HFILL}
         },
         { &hf_cfdp_suspension_ind,
-            {"Suspension indicator", "cfdp.suspension_ind",
-            FT_UINT8, BASE_DEC, VALS(cfdp_suspension_ind), 0x80,
+            {"Suspension indicator", "cfdp.suspension_ind_b",
+            FT_UINT16, BASE_DEC, VALS(cfdp_suspension_ind), 0x8000,
+            NULL, HFILL}
+        },
+        { &hf_cfdp_filestore_message_len,
+            {"Length of filestore message", "cfdp.filestore_message_len", FT_UINT32, BASE_DEC, NULL, 0x0,
             NULL, HFILL}
         },
 
@@ -1595,8 +1964,20 @@ proto_register_cfdp(void)
     };
 
     /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_cfdp,
+        &ett_cfdp_flags,
+        &ett_cfdp_byte2,
+        &ett_cfdp_proxy_fault_hdl_overr,
+        &ett_cfdp_proxy_trans_mode,
+        &ett_cfdp_proxy_segment_control_byte,
+        &ett_cfdp_proxy_put_resp,
+        &ett_cfdp_orig_trans_id,
+        &ett_cfdp_remote_suspend_resume_req,
+        &ett_cfdp_remote_suspend_resume_resp,
+        &ett_cfdp_remote_stat_rep_req,
+        &ett_cfdp_remote_stat_rep_resp,
+        &ett_cfdp_finish_pdu_flags,
         &ett_cfdp_header,
         &ett_cfdp_file_directive_header,
         &ett_cfdp_file_data_header,
@@ -1606,7 +1987,8 @@ proto_register_cfdp(void)
         &ett_cfdp_filestore_resp,
         &ett_cfdp_msg_to_user,
         &ett_cfdp_fault_hdl_overr,
-        &ett_cfdp_flow_label
+        &ett_cfdp_flow_label,
+        &ett_cfdp_proto
     };
 
     static ei_register_info ei[] = {
@@ -1631,11 +2013,11 @@ void
 proto_reg_handoff_cfdp(void)
 {
     dissector_add_uint("ccsds.apid", CFDP_APID, cfdp_handle);
-    dissector_add_for_decode_as("udp.port", cfdp_handle);
+    dissector_add_for_decode_as_with_preference("udp.port", cfdp_handle);
 }
 
 /*
- * Editor modelines - http://www.wireshark.org/tools/modelines.html
+ * Editor modelines - https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

@@ -6,175 +6,164 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
-
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 #include "packet-ipmi.h"
 
 void proto_register_ipmi_storage(void);
 
-static gint ett_ipmi_stor_10_flags = -1;
-static gint ett_ipmi_stor_20_ops = -1;
-static gint ett_ipmi_stor_25_byte6 = -1;
-static gint ett_ipmi_stor_27_status = -1;
-static gint ett_ipmi_stor_2c_rq_byte1 = -1;
-static gint ett_ipmi_stor_2c_rs_byte1 = -1;
-static gint ett_ipmi_stor_40_ops = -1;
-static gint ett_ipmi_stor_45_byte6 = -1;
-static gint ett_ipmi_stor_47_status = -1;
-static gint ett_ipmi_stor_5a_byte1 = -1;
-static gint ett_ipmi_stor_5b_byte1 = -1;
+static int ett_ipmi_stor_10_flags;
+static int ett_ipmi_stor_20_ops;
+static int ett_ipmi_stor_25_byte6;
+static int ett_ipmi_stor_27_status;
+static int ett_ipmi_stor_2c_rq_byte1;
+static int ett_ipmi_stor_2c_rs_byte1;
+static int ett_ipmi_stor_40_ops;
+static int ett_ipmi_stor_45_byte6;
+static int ett_ipmi_stor_47_status;
+static int ett_ipmi_stor_5a_byte1;
+static int ett_ipmi_stor_5b_byte1;
 
-static gint hf_ipmi_stor_10_fruid = -1;
-static gint hf_ipmi_stor_10_size = -1;
-static gint hf_ipmi_stor_10_access = -1;
+static int hf_ipmi_stor_10_fruid;
+static int hf_ipmi_stor_10_size;
+static int hf_ipmi_stor_10_access;
 
-static gint hf_ipmi_stor_11_fruid = -1;
-static gint hf_ipmi_stor_11_offset = -1;
-static gint hf_ipmi_stor_11_count = -1;
-static gint hf_ipmi_stor_11_ret_count = -1;
-static gint hf_ipmi_stor_11_data = -1;
+static int hf_ipmi_stor_11_fruid;
+static int hf_ipmi_stor_11_offset;
+static int hf_ipmi_stor_11_count;
+static int hf_ipmi_stor_11_ret_count;
+static int hf_ipmi_stor_11_data;
 
-static gint hf_ipmi_stor_12_fruid = -1;
-static gint hf_ipmi_stor_12_offset = -1;
-static gint hf_ipmi_stor_12_data = -1;
-static gint hf_ipmi_stor_12_ret_count = -1;
+static int hf_ipmi_stor_12_fruid;
+static int hf_ipmi_stor_12_offset;
+static int hf_ipmi_stor_12_data;
+static int hf_ipmi_stor_12_ret_count;
 
-static gint hf_ipmi_stor_20_sdr_version = -1;
-static gint hf_ipmi_stor_20_rec_count = -1;
-static gint hf_ipmi_stor_20_free_space = -1;
-static gint hf_ipmi_stor_20_ts_add = -1;
-static gint hf_ipmi_stor_20_ts_erase = -1;
-static gint hf_ipmi_stor_20_op_overflow = -1;
-static gint hf_ipmi_stor_20_op_update = -1;
-static gint hf_ipmi_stor_20_op_delete = -1;
-static gint hf_ipmi_stor_20_op_partial_add = -1;
-static gint hf_ipmi_stor_20_op_reserve = -1;
-static gint hf_ipmi_stor_20_op_allocinfo = -1;
+static int hf_ipmi_stor_20_sdr_version;
+static int hf_ipmi_stor_20_rec_count;
+static int hf_ipmi_stor_20_free_space;
+static int hf_ipmi_stor_20_ts_add;
+static int hf_ipmi_stor_20_ts_erase;
+static int hf_ipmi_stor_20_op_overflow;
+static int hf_ipmi_stor_20_op_update;
+static int hf_ipmi_stor_20_op_delete;
+static int hf_ipmi_stor_20_op_partial_add;
+static int hf_ipmi_stor_20_op_reserve;
+static int hf_ipmi_stor_20_op_allocinfo;
 
-static gint hf_ipmi_stor_21_units = -1;
-static gint hf_ipmi_stor_21_size = -1;
-static gint hf_ipmi_stor_21_free = -1;
-static gint hf_ipmi_stor_21_largest = -1;
-static gint hf_ipmi_stor_21_maxrec = -1;
+static int hf_ipmi_stor_21_units;
+static int hf_ipmi_stor_21_size;
+static int hf_ipmi_stor_21_free;
+static int hf_ipmi_stor_21_largest;
+static int hf_ipmi_stor_21_maxrec;
 
-static gint hf_ipmi_stor_22_rsrv_id = -1;
+static int hf_ipmi_stor_22_rsrv_id;
 
-static gint hf_ipmi_stor_23_rsrv_id = -1;
-static gint hf_ipmi_stor_23_rec_id = -1;
-static gint hf_ipmi_stor_23_offset = -1;
-static gint hf_ipmi_stor_23_count = -1;
-static gint hf_ipmi_stor_23_next = -1;
-static gint hf_ipmi_stor_23_data = -1;
+static int hf_ipmi_stor_23_rsrv_id;
+static int hf_ipmi_stor_23_rec_id;
+static int hf_ipmi_stor_23_offset;
+static int hf_ipmi_stor_23_count;
+static int hf_ipmi_stor_23_next;
+static int hf_ipmi_stor_23_data;
 
-static gint hf_ipmi_stor_24_data = -1;
-static gint hf_ipmi_stor_24_added_rec_id = -1;
+static int hf_ipmi_stor_24_data;
+static int hf_ipmi_stor_24_added_rec_id;
 
-static gint hf_ipmi_stor_25_rsrv_id = -1;
-static gint hf_ipmi_stor_25_rec_id = -1;
-static gint hf_ipmi_stor_25_offset = -1;
-static gint hf_ipmi_stor_25_inprogress = -1;
-static gint hf_ipmi_stor_25_data = -1;
-static gint hf_ipmi_stor_25_added_rec_id = -1;
-
-#if 0
-static gint hf_ipmi_stor_26_rsrv_id = -1;
-static gint hf_ipmi_stor_26_rec_id = -1;
-#endif
-static gint hf_ipmi_stor_26_del_rec_id = -1;
-
-static gint hf_ipmi_stor_27_rsrv_id = -1;
-static gint hf_ipmi_stor_27_clr = -1;
-static gint hf_ipmi_stor_27_action = -1;
-static gint hf_ipmi_stor_27_status = -1;
-
-static gint hf_ipmi_stor_28_time = -1;
-
-static gint hf_ipmi_stor_29_time = -1;
-
-static gint hf_ipmi_stor_2c_init_agent = -1;
-static gint hf_ipmi_stor_2c_init_state = -1;
-
-static gint hf_ipmi_stor_40_sel_version = -1;
-static gint hf_ipmi_stor_40_entries = -1;
-static gint hf_ipmi_stor_40_free_space = -1;
-static gint hf_ipmi_stor_40_ts_add = -1;
-static gint hf_ipmi_stor_40_ts_erase = -1;
-static gint hf_ipmi_stor_40_op_overflow = -1;
-static gint hf_ipmi_stor_40_op_delete = -1;
-static gint hf_ipmi_stor_40_op_partial_add = -1;
-static gint hf_ipmi_stor_40_op_reserve = -1;
-static gint hf_ipmi_stor_40_op_allocinfo = -1;
-
-static gint hf_ipmi_stor_41_units = -1;
-static gint hf_ipmi_stor_41_size = -1;
-static gint hf_ipmi_stor_41_free = -1;
-static gint hf_ipmi_stor_41_largest = -1;
-static gint hf_ipmi_stor_41_maxrec = -1;
-
-static gint hf_ipmi_stor_42_rsrv_id = -1;
-
-static gint hf_ipmi_stor_43_rsrv_id = -1;
-static gint hf_ipmi_stor_43_rec_id = -1;
-static gint hf_ipmi_stor_43_offset = -1;
-static gint hf_ipmi_stor_43_count = -1;
-static gint hf_ipmi_stor_43_next = -1;
-static gint hf_ipmi_stor_43_data = -1;
-
-static gint hf_ipmi_stor_44_data = -1;
-static gint hf_ipmi_stor_44_added_rec_id = -1;
-
-static gint hf_ipmi_stor_45_rsrv_id = -1;
-static gint hf_ipmi_stor_45_rec_id = -1;
-static gint hf_ipmi_stor_45_offset = -1;
-static gint hf_ipmi_stor_45_inprogress = -1;
-static gint hf_ipmi_stor_45_data = -1;
-static gint hf_ipmi_stor_45_added_rec_id = -1;
+static int hf_ipmi_stor_25_rsrv_id;
+static int hf_ipmi_stor_25_rec_id;
+static int hf_ipmi_stor_25_offset;
+static int hf_ipmi_stor_25_inprogress;
+static int hf_ipmi_stor_25_data;
+static int hf_ipmi_stor_25_added_rec_id;
 
 #if 0
-static gint hf_ipmi_stor_46_rsrv_id = -1;
-static gint hf_ipmi_stor_46_rec_id = -1;
+static int hf_ipmi_stor_26_rsrv_id;
+static int hf_ipmi_stor_26_rec_id;
 #endif
-static gint hf_ipmi_stor_46_del_rec_id = -1;
+static int hf_ipmi_stor_26_del_rec_id;
 
-static gint hf_ipmi_stor_47_rsrv_id = -1;
-static gint hf_ipmi_stor_47_clr = -1;
-static gint hf_ipmi_stor_47_action = -1;
-static gint hf_ipmi_stor_47_status = -1;
+static int hf_ipmi_stor_27_rsrv_id;
+static int hf_ipmi_stor_27_clr;
+static int hf_ipmi_stor_27_action;
+static int hf_ipmi_stor_27_status;
 
-static gint hf_ipmi_stor_48_time = -1;
+static int hf_ipmi_stor_28_time;
 
-static gint hf_ipmi_stor_49_time = -1;
+static int hf_ipmi_stor_29_time;
 
-static gint hf_ipmi_stor_5a_log_type = -1;
-static gint hf_ipmi_stor_5a_ts_add = -1;
-static gint hf_ipmi_stor_5a_num_entries = -1;
-static gint hf_ipmi_stor_5a_iana = -1;
-static gint hf_ipmi_stor_5a_bytes = -1;
-static gint hf_ipmi_stor_5a_unknown = -1;
+static int hf_ipmi_stor_2c_init_agent;
+static int hf_ipmi_stor_2c_init_state;
 
-static gint hf_ipmi_stor_5b_log_type = -1;
-static gint hf_ipmi_stor_5b_ts_add = -1;
-static gint hf_ipmi_stor_5b_num_entries = -1;
-static gint hf_ipmi_stor_5b_iana = -1;
-static gint hf_ipmi_stor_5b_bytes = -1;
-static gint hf_ipmi_stor_5b_unknown = -1;
+static int hf_ipmi_stor_40_sel_version;
+static int hf_ipmi_stor_40_entries;
+static int hf_ipmi_stor_40_free_space;
+static int hf_ipmi_stor_40_ts_add;
+static int hf_ipmi_stor_40_ts_erase;
+static int hf_ipmi_stor_40_op_overflow;
+static int hf_ipmi_stor_40_op_delete;
+static int hf_ipmi_stor_40_op_partial_add;
+static int hf_ipmi_stor_40_op_reserve;
+static int hf_ipmi_stor_40_op_allocinfo;
+
+static int hf_ipmi_stor_41_units;
+static int hf_ipmi_stor_41_size;
+static int hf_ipmi_stor_41_free;
+static int hf_ipmi_stor_41_largest;
+static int hf_ipmi_stor_41_maxrec;
+
+static int hf_ipmi_stor_42_rsrv_id;
+
+static int hf_ipmi_stor_43_rsrv_id;
+static int hf_ipmi_stor_43_rec_id;
+static int hf_ipmi_stor_43_offset;
+static int hf_ipmi_stor_43_count;
+static int hf_ipmi_stor_43_next;
+static int hf_ipmi_stor_43_data;
+
+static int hf_ipmi_stor_44_data;
+static int hf_ipmi_stor_44_added_rec_id;
+
+static int hf_ipmi_stor_45_rsrv_id;
+static int hf_ipmi_stor_45_rec_id;
+static int hf_ipmi_stor_45_offset;
+static int hf_ipmi_stor_45_inprogress;
+static int hf_ipmi_stor_45_data;
+static int hf_ipmi_stor_45_added_rec_id;
+
+#if 0
+static int hf_ipmi_stor_46_rsrv_id;
+static int hf_ipmi_stor_46_rec_id;
+#endif
+static int hf_ipmi_stor_46_del_rec_id;
+
+static int hf_ipmi_stor_47_rsrv_id;
+static int hf_ipmi_stor_47_clr;
+static int hf_ipmi_stor_47_action;
+static int hf_ipmi_stor_47_status;
+
+static int hf_ipmi_stor_48_time;
+
+static int hf_ipmi_stor_49_time;
+
+static int hf_ipmi_stor_5a_log_type;
+static int hf_ipmi_stor_5a_ts_add;
+static int hf_ipmi_stor_5a_num_entries;
+static int hf_ipmi_stor_5a_iana;
+static int hf_ipmi_stor_5a_bytes;
+static int hf_ipmi_stor_5a_unknown;
+
+static int hf_ipmi_stor_5b_log_type;
+static int hf_ipmi_stor_5b_ts_add;
+static int hf_ipmi_stor_5b_num_entries;
+static int hf_ipmi_stor_5b_iana;
+static int hf_ipmi_stor_5b_bytes;
+static int hf_ipmi_stor_5b_unknown;
 
 static const struct true_false_string tfs_10_access = {
 	"by words", "by bytes"
@@ -250,7 +239,7 @@ rq10(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 static void
 rs10(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-	static const int *flags[] = { &hf_ipmi_stor_10_access, NULL };
+	static int * const flags[] = { &hf_ipmi_stor_10_access, NULL };
 
 	proto_tree_add_item(tree, hf_ipmi_stor_10_size, tvb, 0, 2, ENC_LITTLE_ENDIAN);
 	proto_tree_add_bitmask_text(tree, tvb, 2, 1, NULL, NULL, ett_ipmi_stor_10_flags, flags, ENC_LITTLE_ENDIAN, 0);
@@ -303,17 +292,17 @@ static const value_string cc12[] = {
 /* Get SDR Repository Info
  */
 static void
-rs20(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
+rs20(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
-	static const int *ops[] = { &hf_ipmi_stor_20_op_overflow, &hf_ipmi_stor_20_op_update,
+	static int * const ops[] = { &hf_ipmi_stor_20_op_overflow, &hf_ipmi_stor_20_op_update,
 		&hf_ipmi_stor_20_op_delete, &hf_ipmi_stor_20_op_partial_add, &hf_ipmi_stor_20_op_reserve,
 		&hf_ipmi_stor_20_op_allocinfo, NULL };
 
 	proto_tree_add_item(tree, hf_ipmi_stor_20_sdr_version, tvb, 0, 1, ENC_LITTLE_ENDIAN);
 	proto_tree_add_item(tree, hf_ipmi_stor_20_rec_count, tvb, 1, 2, ENC_LITTLE_ENDIAN);
 	proto_tree_add_item(tree, hf_ipmi_stor_20_free_space, tvb, 3, 2, ENC_LITTLE_ENDIAN);
-	ipmi_add_timestamp(tree, hf_ipmi_stor_20_ts_add, tvb, 5);
-	ipmi_add_timestamp(tree, hf_ipmi_stor_20_ts_erase, tvb, 9);
+	ipmi_add_timestamp(pinfo, tree, hf_ipmi_stor_20_ts_add, tvb, 5);
+	ipmi_add_timestamp(pinfo, tree, hf_ipmi_stor_20_ts_erase, tvb, 9);
 	proto_tree_add_bitmask_text(tree, tvb, 13, 1, "Operation Support: ", NULL,
 			ett_ipmi_stor_20_ops, ops, ENC_LITTLE_ENDIAN, 0);
 }
@@ -343,7 +332,7 @@ rs22(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 static void
 rq23(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-	guint8 v = tvb_get_guint8(tvb, 5);
+	uint8_t v = tvb_get_uint8(tvb, 5);
 
 	proto_tree_add_item(tree, hf_ipmi_stor_23_rsrv_id, tvb, 0, 2, ENC_LITTLE_ENDIAN);
 	proto_tree_add_item(tree, hf_ipmi_stor_23_rec_id, tvb, 2, 2, ENC_LITTLE_ENDIAN);
@@ -378,7 +367,7 @@ rs24(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 static void
 rq25(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-	static const int *byte6[] = { &hf_ipmi_stor_25_inprogress, NULL };
+	static int * const byte6[] = { &hf_ipmi_stor_25_inprogress, NULL };
 
 	proto_tree_add_item(tree, hf_ipmi_stor_25_rsrv_id, tvb, 0, 2, ENC_LITTLE_ENDIAN);
 	proto_tree_add_item(tree, hf_ipmi_stor_25_rec_id, tvb, 2, 2, ENC_LITTLE_ENDIAN);
@@ -420,14 +409,14 @@ static void
 rq27(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
 	proto_tree_add_item(tree, hf_ipmi_stor_27_rsrv_id, tvb, 0, 2, ENC_LITTLE_ENDIAN);
-	proto_tree_add_item(tree, hf_ipmi_stor_27_clr, tvb, 2, 3, ENC_ASCII|ENC_NA);
+	proto_tree_add_item(tree, hf_ipmi_stor_27_clr, tvb, 2, 3, ENC_ASCII);
 	proto_tree_add_item(tree, hf_ipmi_stor_27_action, tvb, 5, 1, ENC_LITTLE_ENDIAN);
 }
 
 static void
 rs27(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-	static const int *status[] = { &hf_ipmi_stor_27_status, NULL };
+	static int * const status[] = { &hf_ipmi_stor_27_status, NULL };
 
 	proto_tree_add_bitmask_text(tree, tvb, 0, 1, NULL, NULL,
 			ett_ipmi_stor_27_status, status, ENC_LITTLE_ENDIAN, 0);
@@ -436,17 +425,17 @@ rs27(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 /* Get SDR Repository Time
  */
 static void
-rs28(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
+rs28(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
-	ipmi_add_timestamp(tree, hf_ipmi_stor_28_time, tvb, 0);
+	ipmi_add_timestamp(pinfo, tree, hf_ipmi_stor_28_time, tvb, 0);
 }
 
 /* Set SDR Repository Time
  */
 static void
-rq29(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
+rq29(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
-	ipmi_add_timestamp(tree, hf_ipmi_stor_29_time, tvb, 0);
+	ipmi_add_timestamp(pinfo, tree, hf_ipmi_stor_29_time, tvb, 0);
 }
 
 /* Run Initialization Agent
@@ -454,7 +443,7 @@ rq29(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 static void
 rq2c(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-	static const int *byte1[] = { &hf_ipmi_stor_2c_init_agent, NULL };
+	static int * const byte1[] = { &hf_ipmi_stor_2c_init_agent, NULL };
 
 	proto_tree_add_bitmask_text(tree, tvb, 0, 1, NULL, NULL,
 			ett_ipmi_stor_2c_rq_byte1, byte1, ENC_LITTLE_ENDIAN, 0);
@@ -463,7 +452,7 @@ rq2c(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 static void
 rs2c(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-	static const int *byte1[] = { &hf_ipmi_stor_2c_init_state, NULL };
+	static int * const byte1[] = { &hf_ipmi_stor_2c_init_state, NULL };
 
 	proto_tree_add_bitmask_text(tree, tvb, 0, 1, NULL, NULL,
 			ett_ipmi_stor_2c_rs_byte1, byte1, ENC_LITTLE_ENDIAN, 0);
@@ -472,16 +461,16 @@ rs2c(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 /* Get SEL Info
  */
 static void
-rs40(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
+rs40(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
-	static const int *ops[] = { &hf_ipmi_stor_40_op_overflow, &hf_ipmi_stor_40_op_delete,
+	static int * const ops[] = { &hf_ipmi_stor_40_op_overflow, &hf_ipmi_stor_40_op_delete,
 		&hf_ipmi_stor_40_op_partial_add, &hf_ipmi_stor_40_op_reserve, &hf_ipmi_stor_40_op_allocinfo, NULL };
 
 	proto_tree_add_item(tree, hf_ipmi_stor_40_sel_version, tvb, 0, 1, ENC_LITTLE_ENDIAN);
 	proto_tree_add_item(tree, hf_ipmi_stor_40_entries, tvb, 1, 2, ENC_LITTLE_ENDIAN);
 	proto_tree_add_item(tree, hf_ipmi_stor_40_free_space, tvb, 3, 2, ENC_LITTLE_ENDIAN);
-	ipmi_add_timestamp(tree, hf_ipmi_stor_40_ts_add, tvb, 5);
-	ipmi_add_timestamp(tree, hf_ipmi_stor_40_ts_erase, tvb, 9);
+	ipmi_add_timestamp(pinfo, tree, hf_ipmi_stor_40_ts_add, tvb, 5);
+	ipmi_add_timestamp(pinfo, tree, hf_ipmi_stor_40_ts_erase, tvb, 9);
 	proto_tree_add_bitmask_text(tree, tvb, 13, 1, "Operation Support: ", NULL,
 			ett_ipmi_stor_40_ops, ops, ENC_LITTLE_ENDIAN, 0);
 }
@@ -521,7 +510,7 @@ static const value_string cc42[] = {
 static void
 rq43(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-	guint8 v = tvb_get_guint8(tvb, 5);
+	uint8_t v = tvb_get_uint8(tvb, 5);
 
 	proto_tree_add_item(tree, hf_ipmi_stor_43_rsrv_id, tvb, 0, 2, ENC_LITTLE_ENDIAN);
 	proto_tree_add_item(tree, hf_ipmi_stor_43_rec_id, tvb, 2, 2, ENC_LITTLE_ENDIAN);
@@ -568,7 +557,7 @@ static const value_string cc44[] = {
 static void
 rq45(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-	static const int *byte6[] = { &hf_ipmi_stor_45_inprogress, NULL };
+	static int * const byte6[] = { &hf_ipmi_stor_45_inprogress, NULL };
 
 	proto_tree_add_item(tree, hf_ipmi_stor_45_rsrv_id, tvb, 0, 2, ENC_LITTLE_ENDIAN);
 	proto_tree_add_item(tree, hf_ipmi_stor_45_rec_id, tvb, 2, 2, ENC_LITTLE_ENDIAN);
@@ -617,14 +606,14 @@ static void
 rq47(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
 	proto_tree_add_item(tree, hf_ipmi_stor_47_rsrv_id, tvb, 0, 2, ENC_LITTLE_ENDIAN);
-	proto_tree_add_item(tree, hf_ipmi_stor_47_clr, tvb, 2, 3, ENC_ASCII|ENC_NA);
+	proto_tree_add_item(tree, hf_ipmi_stor_47_clr, tvb, 2, 3, ENC_ASCII);
 	proto_tree_add_item(tree, hf_ipmi_stor_47_action, tvb, 5, 1, ENC_LITTLE_ENDIAN);
 }
 
 static void
 rs47(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-	static const int *status[] = { &hf_ipmi_stor_47_status, NULL };
+	static int * const status[] = { &hf_ipmi_stor_47_status, NULL };
 
 	proto_tree_add_bitmask_text(tree, tvb, 0, 1, NULL, NULL,
 			ett_ipmi_stor_47_status, status, ENC_LITTLE_ENDIAN, 0);
@@ -633,17 +622,17 @@ rs47(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 /* Get SEL Time
  */
 static void
-rs48(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
+rs48(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
-	ipmi_add_timestamp(tree, hf_ipmi_stor_48_time, tvb, 0);
+	ipmi_add_timestamp(pinfo, tree, hf_ipmi_stor_48_time, tvb, 0);
 }
 
 /* Set SEL Time
  */
 static void
-rq49(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
+rq49(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
-	ipmi_add_timestamp(tree, hf_ipmi_stor_49_time, tvb, 0);
+	ipmi_add_timestamp(pinfo, tree, hf_ipmi_stor_49_time, tvb, 0);
 }
 
 /* Get Auxiliary Log Status
@@ -651,9 +640,9 @@ rq49(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 static void
 rq5a(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-	static const int *byte1[] = { &hf_ipmi_stor_5a_log_type, NULL };
+	static int * const byte1[] = { &hf_ipmi_stor_5a_log_type, NULL };
 
-	ipmi_set_data(pinfo, 0, tvb_get_guint8(tvb, 0) & 0x0f);
+	ipmi_set_data(pinfo, 0, tvb_get_uint8(tvb, 0) & 0x0f);
 	if (!tree) {
 		return;
 	}
@@ -663,16 +652,16 @@ rq5a(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 }
 
 static void
-rs5a(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
+rs5a(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
-	guint32 v;
+	uint32_t v;
 
 	if (!ipmi_get_data(pinfo, 0, &v) || v > 2) {
 		proto_tree_add_item(tree, hf_ipmi_stor_5a_unknown, tvb, 0, -1, ENC_NA);
 		return;
 	}
 
-	ipmi_add_timestamp(tree, hf_ipmi_stor_5a_ts_add, tvb, 0);
+	ipmi_add_timestamp(pinfo, tree, hf_ipmi_stor_5a_ts_add, tvb, 0);
 	if (v  == 0) {
 		proto_tree_add_item(tree, hf_ipmi_stor_5a_num_entries, tvb, 4, 4, ENC_LITTLE_ENDIAN);
 	} else if (v == 1 || v == 2) {
@@ -684,10 +673,10 @@ rs5a(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 /* Set Auxiliary Log Status
  */
 static void
-rq5b(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
+rq5b(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
-	static const int *byte1[] = { &hf_ipmi_stor_5b_log_type, NULL };
-	guint8 v = tvb_get_guint8(tvb, 0);
+	static int * const byte1[] = { &hf_ipmi_stor_5b_log_type, NULL };
+	uint8_t v = tvb_get_uint8(tvb, 0);
 
 	proto_tree_add_bitmask_text(tree, tvb, 0, 1, NULL, NULL,
 			ett_ipmi_stor_5b_byte1, byte1, ENC_LITTLE_ENDIAN, 0);
@@ -697,7 +686,7 @@ rq5b(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 		return;
 	}
 
-	ipmi_add_timestamp(tree, hf_ipmi_stor_5b_ts_add, tvb, 1);
+	ipmi_add_timestamp(pinfo, tree, hf_ipmi_stor_5b_ts_add, tvb, 1);
 	if (v  == 0) {
 		proto_tree_add_item(tree, hf_ipmi_stor_5b_num_entries, tvb, 5, 4, ENC_LITTLE_ENDIAN);
 	} else if (v == 1 || v == 2) {
@@ -706,7 +695,7 @@ rq5b(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 	}
 }
 
-static ipmi_cmd_t cmd_storage[] = {
+static const ipmi_cmd_t cmd_storage[] = {
 	/* FRU Device Commands */
 	{ 0x10, rq10, rs10, NULL, NULL, "Get FRU Inventory Area Info", 0 },
 	{ 0x11, rq11, rs11, cc11, NULL, "Read FRU Data", 0 },
@@ -1096,7 +1085,7 @@ proto_register_ipmi_storage(void)
 				"ipmi.st5b.unknown", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_ipmi_stor_10_flags,
 		&ett_ipmi_stor_20_ops,
 		&ett_ipmi_stor_25_byte6,
@@ -1117,7 +1106,7 @@ proto_register_ipmi_storage(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

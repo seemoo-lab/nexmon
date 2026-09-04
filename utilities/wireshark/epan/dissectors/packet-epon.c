@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* 2014-04      Philip Rosenberg-Watt <p.rosenberg-watt[at]cablelabs.com>
@@ -31,6 +19,7 @@
 
 #include <epan/packet.h>
 #include <epan/expert.h>
+#include <epan/tfs.h>
 
 #include <epan/addr_resolv.h>
 #include <epan/crc8-tvb.h>
@@ -38,27 +27,30 @@
 void proto_register_epon(void);
 void proto_reg_handoff_epon(void);
 
-static int proto_epon = -1;
-static int hf_epon_dpoe_security = -1;
-static int hf_epon_dpoe_encrypted = -1;
-static int hf_epon_dpoe_reserved = -1;
-static int hf_epon_dpoe_encrypted_data = -1;
-static int hf_epon_dpoe_keyid = -1;
-static int hf_epon_mode = -1;
-static int hf_epon_llid = -1;
-static int hf_epon_checksum = -1;
+static dissector_handle_t epon_handle;
 
-static expert_field ei_epon_sld_bad = EI_INIT;
-static expert_field ei_epon_dpoe_reserved_bad = EI_INIT;
-static expert_field ei_epon_dpoe_bad = EI_INIT;
-static expert_field ei_epon_dpoe_encrypted_data = EI_INIT;
-static expert_field ei_epon_checksum_bad = EI_INIT;
+static int proto_epon;
+static int hf_epon_dpoe_security;
+static int hf_epon_dpoe_encrypted;
+static int hf_epon_dpoe_reserved;
+static int hf_epon_dpoe_encrypted_data;
+static int hf_epon_dpoe_keyid;
+static int hf_epon_mode;
+static int hf_epon_llid;
+static int hf_epon_checksum;
+static int hf_epon_checksum_status;
+
+static expert_field ei_epon_sld_bad;
+static expert_field ei_epon_dpoe_reserved_bad;
+static expert_field ei_epon_dpoe_bad;
+static expert_field ei_epon_dpoe_encrypted_data;
+static expert_field ei_epon_checksum_bad;
 
 static dissector_handle_t eth_maybefcs_handle;
 
-static gint ett_epon = -1;
-static gint ett_epon_sec = -1;
-static gint ett_epon_checksum = -1;
+static int ett_epon;
+static int ett_epon_sec;
+static int ett_epon_checksum;
 
 static const true_false_string epon_mode_tfs = {
   "Broadcast/Multicast",
@@ -74,18 +66,20 @@ dissect_epon(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
   proto_item  *item;
   proto_tree  *sec_tree;
   tvbuff_t    *next_tvb;
-  guint       checksum;
-  guint       sent_checksum;
-  guint       offset = 0;
-  guint       dpoe_sec_byte;
-  gboolean    dpoe_encrypted = FALSE;
+  unsigned    checksum;
+  unsigned    sent_checksum;
+  unsigned    offset = 0;
+  unsigned    dpoe_sec_byte;
+  bool        dpoe_encrypted = false;
 
-  /* Start_of_Packet delimiter (/S/) can either happen in byte 1 or byte 2,
-   * making the captured preamble either 7 or 6 bytes in length. If the
+  /* Start_of_Packet delimiter (/S/) can happen in byte 1, 2 or 3,
+   * making the captured preamble 8, 7 or 6 bytes in length. If the
    * preamble starts with 0x55, then /S/ happened in byte 1, making the
    * captured preamble 7 bytes in length.
    */
-  if (tvb_get_ntoh24(tvb, 0) == 0x55D555) {
+  if (tvb_get_ntohl(tvb, 0) == 0x5555D555) {
+    offset += 2;
+  } else if (tvb_get_ntoh24(tvb, 0) == 0x55D555) {
     offset += 1;
   } else if (tvb_get_ntohs(tvb, 0) == 0xD555) {
     offset += 0;
@@ -107,10 +101,10 @@ dissect_epon(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
    * If security is disabled, the DPoE byte will remain 0x55 and no decoding
    * is necessary.
    */
-  dpoe_sec_byte = tvb_get_guint8(tvb, 2+offset);
+  dpoe_sec_byte = tvb_get_uint8(tvb, 2+offset);
   if (dpoe_sec_byte != 0x55) {
-    guint       dpoe_keyid;
-    guint       dpoe_reserved;
+    unsigned    dpoe_keyid;
+    unsigned    dpoe_reserved;
 
     item = proto_tree_add_item(epon_tree, hf_epon_dpoe_security,
                                tvb, 2+offset, 1, ENC_BIG_ENDIAN);
@@ -169,10 +163,10 @@ dissect_epon(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
   /* Verify the CRC-8 checksum
    */
-  sent_checksum = tvb_get_guint8(tvb, 5+offset);
+  sent_checksum = tvb_get_uint8(tvb, 5+offset);
   checksum = get_crc8_ieee8023_epon(tvb, 5, 0+offset);
 
-  proto_tree_add_checksum(epon_tree, tvb, 5+offset, hf_epon_checksum, -1, &ei_epon_checksum_bad, pinfo, checksum, ENC_NA, PROTO_CHECKSUM_VERIFY);
+  proto_tree_add_checksum(epon_tree, tvb, 5+offset, hf_epon_checksum, hf_epon_checksum_status, &ei_epon_checksum_bad, pinfo, checksum, ENC_NA, PROTO_CHECKSUM_VERIFY);
   if (sent_checksum != checksum) {
     col_append_str(pinfo->cinfo, COL_INFO, " [EPON PREAMBLE CHECKSUM INCORRECT]");
   }
@@ -236,9 +230,13 @@ proto_register_epon(void)
       { "Frame check sequence", "epon.checksum", FT_UINT8, BASE_HEX, NULL,
         0x0, "EPON preamble checksum", HFILL }
     },
+    { &hf_epon_checksum_status,
+      { "Frame check sequence Status", "epon.checksum.status", FT_UINT8, BASE_NONE, VALS(proto_checksum_vals),
+        0x0, NULL, HFILL }
+    },
   };
 
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_epon,
     &ett_epon_sec,
     &ett_epon_checksum
@@ -277,21 +275,19 @@ proto_register_epon(void)
   expert_epon = expert_register_protocol(proto_epon);
   expert_register_field_array(expert_epon, ei, array_length(ei));
 
+  epon_handle = register_dissector("epon", dissect_epon, proto_epon);
 }
 
 void
 proto_reg_handoff_epon(void)
 {
-  dissector_handle_t epon_handle;
-
-  epon_handle = create_dissector_handle(dissect_epon, proto_epon);
   dissector_add_uint("wtap_encap", WTAP_ENCAP_EPON, epon_handle);
 
   eth_maybefcs_handle = find_dissector_add_dependency("eth_maybefcs", proto_epon);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

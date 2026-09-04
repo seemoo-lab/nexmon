@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -39,7 +27,7 @@ void proto_register_cbs(void);
 
 #define GSM_CBS_PAGE_SIZE 88
 
-const value_string message_id_values[] = {
+static const value_string message_id_values[] = {
    { 0, "Index"},
    { 10, "Flashes"},
    { 20, "Hospitals"},
@@ -94,7 +82,7 @@ const value_string message_id_values[] = {
    {    0, NULL }
 };
 
-const value_string geographic_scope_values[] = {
+static const value_string geographic_scope_values[] = {
    { 0x00, "Cell-wide (immediate display)" },
    { 0x01, "PLMN-wide" },
    { 0x02, "Location Area-wide (GSM) or Service Area-wide (UMTS)" },
@@ -103,40 +91,40 @@ const value_string geographic_scope_values[] = {
 };
 
 /* Initialize the protocol and registered fields */
-static int proto_cell_broadcast = -1;
+static int proto_cell_broadcast;
 
-static int hf_gsm_cbs_serial_number              = -1;
-static int hf_gsm_cbs_geographic_scope           = -1;
-static int hf_gsm_cbs_message_code               = -1;
-static int hf_gsm_cbs_update_number              = -1;
-static int hf_gsm_cbs_message_identifier         = -1;
-static int hf_gsm_cbs_total_pages                = -1;
-static int hf_gsm_cbs_current_page               = -1;
+static int hf_gsm_cbs_serial_number;
+static int hf_gsm_cbs_geographic_scope;
+static int hf_gsm_cbs_message_code;
+static int hf_gsm_cbs_update_number;
+static int hf_gsm_cbs_message_identifier;
+static int hf_gsm_cbs_total_pages;
+static int hf_gsm_cbs_current_page;
 
 /* These fields are used when reassembling multi-page gsm cbs messages */
-static int hf_gsm_cbs_pages                      = -1;
-static int hf_gsm_cbs_page_num                   = -1;
-static int hf_gsm_cbs_page_overlap               = -1;
-static int hf_gsm_cbs_page_overlap_conflict      = -1;
-static int hf_gsm_cbs_page_multiple_tails        = -1;
-static int hf_gsm_cbs_page_too_long_fragment     = -1;
-static int hf_gsm_cbs_page_error                 = -1;
-static int hf_gsm_cbs_page_count                 = -1;
-static int hf_gsm_cbs_message_reassembled_in    = -1;
-static int hf_gsm_cbs_message_reassembled_length = -1;
-static int hf_gsm_cbs_page_content               = -1;
-static int hf_gsm_cbs_page_content_padding       = -1;
-static int hf_gsm_cbs_message_content            = -1;
+static int hf_gsm_cbs_pages;
+static int hf_gsm_cbs_page_num;
+static int hf_gsm_cbs_page_overlap;
+static int hf_gsm_cbs_page_overlap_conflict;
+static int hf_gsm_cbs_page_multiple_tails;
+static int hf_gsm_cbs_page_too_long_fragment;
+static int hf_gsm_cbs_page_error;
+static int hf_gsm_cbs_page_count;
+static int hf_gsm_cbs_message_reassembled_in;
+static int hf_gsm_cbs_message_reassembled_length;
+static int hf_gsm_cbs_page_content;
+static int hf_gsm_cbs_page_content_padding;
+static int hf_gsm_cbs_message_content;
 
 /* Initialize the subtree pointers */
-static gint ett_cbs_msg                          = -1;
-static gint ett_cbs_serial_no                    = -1;
-static gint ett_cbs_coding                       = -1;
-static gint ett_gsm_cbs_page                     = -1;
-static gint ett_gsm_cbs_page_content             = -1;
-static gint ett_gsm_cbs_pages                    = -1;
+static int ett_cbs_msg;
+static int ett_cbs_serial_no;
+static int ett_cbs_coding;
+static int ett_gsm_cbs_page;
+static int ett_gsm_cbs_page_content;
+static int ett_gsm_cbs_pages;
 
-static expert_field ei_gsm_cbs_unhandled_encoding = EI_INIT;
+static expert_field ei_gsm_cbs_unhandled_encoding;
 
 /* reassembly of GSM multi-page messages */
 static reassembly_table gsm_cbs_reassembly_table;
@@ -160,21 +148,9 @@ static const fragment_items gsm_page_items = {
    "pages"
 };
 
-
-static void gsm_cbs_message_reassembly_init(void)
+unsigned dissect_cbs_serial_number(tvbuff_t *tvb, proto_tree *tree, unsigned offset)
 {
-  reassembly_table_init(&gsm_cbs_reassembly_table,
-                        &addresses_reassembly_table_functions);
-}
-
-static void gsm_cbs_message_reassembly_cleanup(void)
-{
-  reassembly_table_destroy(&gsm_cbs_reassembly_table);
-}
-
-guint dissect_cbs_serial_number(tvbuff_t *tvb, proto_tree *tree, guint offset)
-{
-   guint16 serial_number = tvb_get_ntohs(tvb, offset) ;
+   uint16_t serial_number = tvb_get_ntohs(tvb, offset) ;
    proto_item *item;
    proto_tree *subtree;
 
@@ -188,9 +164,9 @@ guint dissect_cbs_serial_number(tvbuff_t *tvb, proto_tree *tree, guint offset)
    return offset;
 }
 
-guint dissect_cbs_message_identifier(tvbuff_t *tvb, proto_tree *tree, guint offset)
+unsigned dissect_cbs_message_identifier(tvbuff_t *tvb, proto_tree *tree, unsigned offset)
 {
-   guint16 msg_id;
+   uint16_t msg_id;
    const char *msg_id_string = NULL;
 
    msg_id = tvb_get_ntohs(tvb, offset);
@@ -255,17 +231,17 @@ guint dissect_cbs_message_identifier(tvbuff_t *tvb, proto_tree *tree, guint offs
    return offset;
 }
 
-tvbuff_t * dissect_cbs_data(guint8 sms_encoding, tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint offset )
+tvbuff_t * dissect_cbs_data(uint8_t sms_encoding, tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, unsigned offset )
 {
    tvbuff_t * tvb_out = NULL;
    int length = tvb_reported_length(tvb) - offset;
-   gchar *text;
+   char *text;
 
    switch(sms_encoding){
    case SMS_ENCODING_7BIT:
    case SMS_ENCODING_7BIT_LANG:
-      text = tvb_get_ts_23_038_7bits_string(pinfo->pool, tvb, offset<<3, (length*8)/7);
-      tvb_out = tvb_new_child_real_data(tvb, text, (guint)strlen(text), (guint)strlen(text));
+      text = tvb_get_ts_23_038_7bits_string_packed(pinfo->pool, tvb, offset<<3, (length*8)/7);
+      tvb_out = tvb_new_child_real_data(tvb, text, (unsigned)strlen(text), (unsigned)strlen(text));
       add_new_data_source(pinfo, tvb_out, "unpacked 7 bit data");
       break;
 
@@ -274,14 +250,14 @@ tvbuff_t * dissect_cbs_data(guint8 sms_encoding, tvbuff_t *tvb, proto_tree *tree
        * XXX - encoding is "user-defined".  Have a preference?
        */
       text = tvb_get_string_enc(pinfo->pool, tvb, offset, length, ENC_ASCII|ENC_NA);
-      tvb_out = tvb_new_child_real_data(tvb, text, (guint)strlen(text), (guint)strlen(text));
+      tvb_out = tvb_new_child_real_data(tvb, text, (unsigned)strlen(text), (unsigned)strlen(text));
       add_new_data_source(pinfo, tvb_out, "8 bit data");
       break;
 
    case SMS_ENCODING_UCS2:
    case SMS_ENCODING_UCS2_LANG:
       text = tvb_get_string_enc(pinfo->pool, tvb, offset, length, ENC_UCS_2|ENC_BIG_ENDIAN);
-      tvb_out = tvb_new_child_real_data(tvb, text, (guint)strlen(text), (guint)strlen(text));
+      tvb_out = tvb_new_child_real_data(tvb, text, (unsigned)strlen(text), (unsigned)strlen(text));
       add_new_data_source(pinfo, tvb_out, "UCS-2 data");
       break;
 
@@ -296,13 +272,13 @@ tvbuff_t * dissect_cbs_data(guint8 sms_encoding, tvbuff_t *tvb, proto_tree *tree
 static int
 dissect_gsm_cell_broadcast(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-   guint8 sms_encoding, total_pages, current_page;
-   guint32       offset = 0;
-   guint         len, text_len;
-   guint32       msg_key;
+   uint8_t sms_encoding, total_pages, current_page;
+   uint32_t      offset = 0;
+   unsigned      len, text_len;
+   uint32_t      msg_key;
    proto_item    *cbs_page_item = NULL;
    proto_tree    *cbs_page_tree = NULL;
-   guint16       serial_number, message_id;
+   uint16_t      serial_number, message_id;
    tvbuff_t      *cbs_page_tvb = NULL;
    tvbuff_t      *cbs_msg_tvb = NULL;
    fragment_head * frag_data = NULL;
@@ -320,7 +296,7 @@ dissect_gsm_cell_broadcast(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
    message_id = tvb_get_ntohs(tvb, offset);
    offset = dissect_cbs_message_identifier(tvb, cbs_page_tree, offset);
    sms_encoding = dissect_cbs_data_coding_scheme(tvb, pinfo, cbs_page_tree, offset++);
-   total_pages = tvb_get_guint8(tvb, offset);
+   total_pages = tvb_get_uint8(tvb, offset);
    current_page = (total_pages & 0xF0) >> 4;
    total_pages &= 0x0F;
    proto_tree_add_item(cbs_page_tree, hf_gsm_cbs_current_page, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -330,7 +306,7 @@ dissect_gsm_cell_broadcast(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
    if (cbs_page_tvb != NULL)
    {
       text_len = tvb_reported_length(cbs_page_tvb);
-      while (text_len && (tvb_get_guint8(cbs_page_tvb, text_len-1) == '\r')) {
+      while (text_len && (tvb_get_uint8(cbs_page_tvb, text_len-1) == '\r')) {
          text_len--;
       }
       if (tree != NULL)
@@ -338,11 +314,11 @@ dissect_gsm_cell_broadcast(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
          proto_tree *cbs_page_subtree = proto_tree_add_subtree(cbs_page_tree, tvb, offset, -1,
                                         ett_gsm_cbs_page_content, NULL, "Cell Broadcast Page Contents");
          len = tvb_reported_length(cbs_page_tvb);
-         proto_tree_add_item(cbs_page_subtree, hf_gsm_cbs_page_content, cbs_page_tvb, 0, text_len, ENC_ASCII|ENC_NA);
+         proto_tree_add_item(cbs_page_subtree, hf_gsm_cbs_page_content, cbs_page_tvb, 0, text_len, ENC_UTF_8);
          len -= text_len;
          if (len)
          {
-            proto_tree_add_item(cbs_page_subtree, hf_gsm_cbs_page_content_padding, cbs_page_tvb, text_len, len, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(cbs_page_subtree, hf_gsm_cbs_page_content_padding, cbs_page_tvb, text_len, len, ENC_UTF_8);
          }
       }
       if (text_len)
@@ -378,7 +354,7 @@ dissect_gsm_cell_broadcast(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
       cbs_msg_item = proto_tree_add_protocol_format(proto_tree_get_root(tree), proto_cell_broadcast, cbs_msg_tvb, 0, len, "GSM Cell Broadcast Message");
       cbs_msg_tree = proto_item_add_subtree(cbs_msg_item, ett_cbs_msg);
 
-      proto_tree_add_item(cbs_msg_tree, hf_gsm_cbs_message_content, cbs_msg_tvb, 0, len, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(cbs_msg_tree, hf_gsm_cbs_message_content, cbs_msg_tvb, 0, len, ENC_UTF_8);
    }
 
    return tvb_captured_length(tvb);
@@ -386,13 +362,13 @@ dissect_gsm_cell_broadcast(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
 
 int dissect_umts_cell_broadcast_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-   guint8 sms_encoding;
-   guint32       offset = 0;
-   guint32       len;
+   uint8_t sms_encoding;
+   uint32_t      offset = 0;
+   uint32_t      len;
    proto_item    *cbs_item;
    proto_tree    *cbs_tree, *cbs_subtree;
-   guint         msg_len;
-   guint8        *msg;
+   unsigned      msg_len;
+   uint8_t       *msg;
    tvbuff_t * cbs_msg_tvb = NULL;
 
    len = tvb_reported_length(tvb);
@@ -410,7 +386,7 @@ int dissect_umts_cell_broadcast_message(tvbuff_t *tvb, packet_info *pinfo, proto
    msg_len = tvb_reported_length(cbs_msg_tvb);
    cbs_subtree = proto_tree_add_subtree_format(cbs_tree, tvb, offset, -1,
                     ett_cbs_msg, NULL, "Cell Broadcast Message Contents (length: %d)", msg_len);
-   msg = tvb_get_string_enc(wmem_packet_scope(), cbs_msg_tvb, 0, msg_len, ENC_ASCII);
+   msg = tvb_get_string_enc(pinfo->pool, cbs_msg_tvb, 0, msg_len, ENC_UTF_8|ENC_NA);
    proto_tree_add_string_format(cbs_subtree, hf_gsm_cbs_message_content, cbs_msg_tvb, 0, -1, msg, "%s", msg);
    return tvb_captured_length(tvb);
 }
@@ -553,7 +529,7 @@ proto_register_cbs(void)
       };
 
    /* Setup protocol subtree array */
-   static gint *ett[] = {
+   static int *ett[] = {
       &ett_cbs_msg,
       &ett_cbs_serial_no,
       &ett_cbs_coding,
@@ -571,8 +547,9 @@ proto_register_cbs(void)
    proto_cell_broadcast = proto_register_protocol("GSM Cell Broadcast Service", "GSM Cell Broadcast Service", "gsm_cbs");
 
    proto_register_field_array(proto_cell_broadcast, hf_cbs, array_length(hf_cbs));
-   register_init_routine(gsm_cbs_message_reassembly_init);
-   register_cleanup_routine(gsm_cbs_message_reassembly_cleanup);
+
+   reassembly_table_register(&gsm_cbs_reassembly_table,
+                        &addresses_reassembly_table_functions);
 
    /* subdissector code */
    register_dissector("gsm_cbs", dissect_gsm_cell_broadcast, proto_cell_broadcast);
@@ -585,7 +562,7 @@ proto_register_cbs(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 3

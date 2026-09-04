@@ -28,6 +28,8 @@ SubordinateChanges/changes	subordinate-changes
 ModificationParameter/secondaryShadows	modifiedSecondaryShadows
 CoordinateShadowUpdateArgumentData/updateStrategy/standard	standardUpdate
 Information/signedInformation/information	information-data
+#.FIELD_ATTR
+ModificationParameter/secondaryShadows	ABBREV=modifiedSecondaryShadows
 
 #.REGISTER
 ShadowingAgreementInfo	S dop.oid	"agreement.2.5.19.1"
@@ -40,68 +42,68 @@ ModificationParameter	S dop.oid	"modify.roleb.2.5.19.1"
 
 
 #.FN_BODY RequestShadowUpdateArgumentData/requestedStrategy/standard  VAL_PTR=&update
-  guint32 update;
+  uint32_t update;
 
   %(DEFAULT_BODY)s
 
-  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(update, disp_T_standard_vals, "standard(%%d"));
+  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(actx->pinfo->pool, update, disp_T_standard_vals, "standard(%%d"));
 
 #.FN_PARS RefreshInformation
 	VAL_PTR = &update
 
 #.FN_BODY RefreshInformation
-  guint32 update;
+  uint32_t update;
 
   %(DEFAULT_BODY)s
 
-  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(update, disp_RefreshInformation_vals, "unknown(%%d)"));
+  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(actx->pinfo->pool, update, disp_RefreshInformation_vals, "unknown(%%d)"));
 
 #.END
 
 
 #.FN_BODY CoordinateShadowUpdateArgumentData/updateStrategy/standard  VAL_PTR = &update
-  guint32 update;
+  uint32_t update;
 
   %(DEFAULT_BODY)s
 
-  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(update, disp_StandardUpdate_vals, "unknown(%%d)"));
+  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(actx->pinfo->pool, update, disp_StandardUpdate_vals, "unknown(%%d)"));
 
 #.FN_PARS CoordinateShadowUpdateResult
 	VAL_PTR = &update
 
 #.FN_BODY CoordinateShadowUpdateResult
-  guint32 update;
+  uint32_t update;
 
   %(DEFAULT_BODY)s
 
-  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(update, disp_CoordinateShadowUpdateResult_vals, "unknown(%%d)"));
+  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(actx->pinfo->pool, update, disp_CoordinateShadowUpdateResult_vals, "unknown(%%d)"));
 
 #.FN_PARS RequestShadowUpdateResult
 	VAL_PTR = &update
 
 #.FN_BODY RequestShadowUpdateResult
-  guint32 update;
+  uint32_t update;
 
   %(DEFAULT_BODY)s
 
-  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(update, disp_RequestShadowUpdateResult_vals, "unknown(%%d)"));
+  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(actx->pinfo->pool, update, disp_RequestShadowUpdateResult_vals, "unknown(%%d)"));
 
 #.FN_PARS UpdateShadowResult
 	VAL_PTR = &update
 
 #.FN_BODY UpdateShadowResult
-  guint32 update;
+  uint32_t update;
 
   %(DEFAULT_BODY)s
 
-  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(update, disp_UpdateShadowResult_vals, "unknown(%%d)"));
+  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(actx->pinfo->pool, update, disp_UpdateShadowResult_vals, "unknown(%%d)"));
 
 #.FN_PARS ShadowProblem
 	VAL_PTR = &problem
 
 #.FN_BODY ShadowProblem
-  guint32 problem;
+  uint32_t problem;
 
   %(DEFAULT_BODY)s
 
-  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(problem, disp_ShadowProblem_vals, "ShadowProblem(%%d)"));
+  col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", val_to_str(actx->pinfo->pool, problem, disp_ShadowProblem_vals, "ShadowProblem(%%d)"));

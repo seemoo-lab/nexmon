@@ -9,18 +9,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -29,9 +18,11 @@
 #include <epan/exceptions.h>
 #include <epan/tap.h>
 #include <epan/asn1.h>
+#include <epan/proto_data.h>
 #include <epan/prefs.h>
 #include <epan/exported_pdu.h>
 #include <epan/address_types.h>
+#include <wsutil/array.h>
 #include "packet-alcap.h"
 #include "packet-ber.h"
 #include "packet-tpkt.h"
@@ -39,69 +30,69 @@
 #include "packet-h248.h"
 
 #define PNAME  "H.248 MEGACO"
-#define PSNAME "H248"
+#define PSNAME "H.248"
 #define PFNAME "h248"
 
 void proto_register_h248(void);
 
 /* Initialize the protocol and registered fields */
-static int proto_h248                   = -1;
-static int hf_248_magic_num             = -1;
-static int hf_h248_mtpaddress_ni        = -1;
-static int hf_h248_mtpaddress_pc        = -1;
-static int hf_h248_pkg_name             = -1;
-static int hf_248_pkg_param             = -1;
-static int hf_h248_event_name           = -1;
-static int hf_h248_signal_name          = -1;
-static int hf_h248_signal_code          = -1;
-static int hf_h248_event_code           = -1;
-static int hf_h248_pkg_bcp_BNCChar_PDU  = -1;
+static int proto_h248;
+static int hf_248_magic_num;
+static int hf_h248_mtpaddress_ni;
+static int hf_h248_mtpaddress_pc;
+static int hf_h248_pkg_name;
+static int hf_248_pkg_param;
+static int hf_h248_event_name;
+static int hf_h248_signal_name;
+static int hf_h248_signal_code;
+static int hf_h248_event_code;
+static int hf_h248_pkg_bcp_BNCChar_PDU;
 
 
 
-static int hf_h248_context_id = -1;
-static int hf_h248_term_wild_type = -1;
-static int hf_h248_term_wild_level = -1;
-static int hf_h248_term_wild_position = -1;
+static int hf_h248_context_id;
+static int hf_h248_term_wild_type;
+static int hf_h248_term_wild_level;
+static int hf_h248_term_wild_position;
 
-static int hf_h248_no_pkg = -1;
-static int hf_h248_no_sig = -1;
-static int hf_h248_no_evt = -1;
-static int hf_h248_param = -1;
+static int hf_h248_no_pkg;
+static int hf_h248_no_sig;
+static int hf_h248_no_evt;
+static int hf_h248_param;
 
-static int hf_h248_serviceChangeReasonStr = -1;
-static int hf_h248_transactionId64 = -1;
-static int hf_h248_context_id64 = -1;
+static int hf_h248_serviceChangeReasonStr;
+static int hf_h248_transactionId64;
+static int hf_h248_context_id64;
 
 /* h248v1 support */
-static int hf_h248_auditValueReplyV1 = -1;
+static int hf_h248_auditValueReplyV1;
 
 #include "packet-h248-hf.c"
 
 /* Initialize the subtree pointers */
-static gint ett_h248 = -1;
-static gint ett_mtpaddress = -1;
-static gint ett_packagename = -1;
-static gint ett_codec = -1;
-static gint ett_wildcard = -1;
+static int ett_h248;
+static int ett_mtpaddress;
+static int ett_packagename;
+static int ett_codec;
+static int ett_wildcard;
 
-static gint ett_h248_no_pkg = -1;
-static gint ett_h248_no_sig = -1;
-static gint ett_h248_no_evt = -1;
+static int ett_h248_no_pkg;
+static int ett_h248_no_sig;
+static int ett_h248_no_evt;
 
-static int h248_tap = -1;
+static int h248_tap;
 
-static gcp_hf_ett_t h248_arrel = {{-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1}};
+static gcp_hf_ett_t h248_arrel;
 
-static gint exported_pdu_tap = -1;
+static int exported_pdu_tap = -1;
 
 
 #include "packet-h248-ett.c"
 
-static expert_field ei_h248_errored_command = EI_INIT;
-static expert_field ei_h248_transactionId64 = EI_INIT;
-static expert_field ei_h248_context_id64 = EI_INIT;
-static expert_field ei_h248_octet_string_expected = EI_INIT;
+static expert_field ei_h248_errored_command;
+static expert_field ei_h248_transactionId64;
+static expert_field ei_h248_context_id64;
+static expert_field ei_h248_octet_string_expected;
 
 static dissector_table_t subdissector_table;
 
@@ -142,15 +133,15 @@ const value_string gcp_term_types[] = {
     { 0, NULL }
 };
 
-static wmem_tree_t* gcp_msgs = NULL;
-static wmem_tree_t* gcp_trxs = NULL;
-static wmem_tree_t* gcp_ctxs_by_trx = NULL;
-static wmem_tree_t* gcp_ctxs = NULL;
+static wmem_tree_t* gcp_msgs;
+static wmem_tree_t* gcp_trxs;
+static wmem_tree_t* gcp_ctxs_by_trx;
+static wmem_tree_t* gcp_ctxs;
 
-gcp_msg_t* gcp_msg(packet_info* pinfo, int o, gboolean keep_persistent_data) {
+gcp_msg_t* gcp_msg(packet_info* pinfo, int o, bool keep_persistent_data) {
     gcp_msg_t* m;
-    guint32 framenum = (guint32)pinfo->num;
-    guint32 offset = (guint32)o;
+    uint32_t framenum = (uint32_t)pinfo->num;
+    uint32_t offset = (uint32_t)o;
     address* src = &(pinfo->src);
     address* dst = &(pinfo->dst);
     address* lo_addr;
@@ -167,22 +158,22 @@ gcp_msg_t* gcp_msg(packet_info* pinfo, int o, gboolean keep_persistent_data) {
         key[2].key =NULL;
 
         if (( m = (gcp_msg_t *)wmem_tree_lookup32_array(gcp_msgs,key) )) {
-            m->committed = TRUE;
+            m->committed = true;
             return m;
         } else {
             m = wmem_new(wmem_file_scope(), gcp_msg_t);
             m->framenum = framenum;
             m->frametime = pinfo->abs_ts;
             m->trxs = NULL;
-            m->committed = FALSE;
+            m->committed = false;
 
             wmem_tree_insert32_array(gcp_msgs,key,m);
         }
     } else {
-        m = wmem_new0(wmem_packet_scope(), gcp_msg_t);
+        m = wmem_new0(pinfo->pool, gcp_msg_t);
         m->framenum = framenum;
         m->trxs = NULL;
-        m->committed = FALSE;
+        m->committed = false;
     }
 
     if (cmp_address(src, dst) < 0)  {
@@ -199,8 +190,8 @@ gcp_msg_t* gcp_msg(packet_info* pinfo, int o, gboolean keep_persistent_data) {
             m->hi_addr = 0;
             break;
         case AT_IPv4:
-            memcpy((guint8*)&(m->hi_addr),hi_addr->data,4);
-            memcpy((guint8*)&(m->lo_addr),lo_addr->data,4);
+            memcpy((uint8_t*)&(m->hi_addr),hi_addr->data,4);
+            memcpy((uint8_t*)&(m->lo_addr),lo_addr->data,4);
             break;
         default:
             if (lo_addr->type == ss7pc_address_type) {
@@ -209,8 +200,8 @@ gcp_msg_t* gcp_msg(packet_info* pinfo, int o, gboolean keep_persistent_data) {
             }
             else {
                 /* XXX: heuristic and error prone */
-                m->hi_addr = g_str_hash(address_to_str(wmem_packet_scope(), hi_addr));
-                m->lo_addr = g_str_hash(address_to_str(wmem_packet_scope(), lo_addr));
+                m->hi_addr = g_str_hash(address_to_str(pinfo->pool, hi_addr));
+                m->lo_addr = g_str_hash(address_to_str(pinfo->pool, lo_addr));
             }
         break;
     }
@@ -218,7 +209,7 @@ gcp_msg_t* gcp_msg(packet_info* pinfo, int o, gboolean keep_persistent_data) {
     return m;
 }
 
-gcp_trx_t* gcp_trx(gcp_msg_t* m ,guint32 t_id , gcp_trx_type_t type, gboolean keep_persistent_data) {
+gcp_trx_t* gcp_trx(gcp_msg_t* m ,uint32_t t_id , gcp_trx_type_t type, packet_info *pinfo, bool keep_persistent_data) {
     gcp_trx_t* t = NULL;
     gcp_trx_msg_t* trxmsg;
 
@@ -271,8 +262,8 @@ gcp_trx_t* gcp_trx(gcp_msg_t* m ,guint32 t_id , gcp_trx_type_t type, gboolean ke
 
         }
     } else {
-        t = wmem_new(wmem_packet_scope(), gcp_trx_t);
-        trxmsg = wmem_new(wmem_packet_scope(), gcp_trx_msg_t);
+        t = wmem_new(pinfo->pool, gcp_trx_t);
+        trxmsg = wmem_new(pinfo->pool, gcp_trx_msg_t);
         t->initial = NULL;
         t->id = t_id;
         t->type = type;
@@ -297,7 +288,7 @@ gcp_trx_t* gcp_trx(gcp_msg_t* m ,guint32 t_id , gcp_trx_type_t type, gboolean ke
 }
 
 
-gcp_ctx_t* gcp_ctx(gcp_msg_t* m, gcp_trx_t* t, guint32 c_id, gboolean persistent) {
+gcp_ctx_t* gcp_ctx(gcp_msg_t* m, gcp_trx_t* t, uint32_t c_id, packet_info *pinfo, bool persistent) {
     gcp_ctx_t* context = NULL;
     gcp_ctx_t** context_p = NULL;
 
@@ -395,7 +386,7 @@ gcp_ctx_t* gcp_ctx(gcp_msg_t* m, gcp_trx_t* t, guint32 c_id, gboolean persistent
             }
         }
     } else {
-        context = wmem_new(wmem_packet_scope(), gcp_ctx_t);
+        context = wmem_new(pinfo->pool, gcp_ctx_t);
         context->initial = m;
         context->cmds = NULL;
         context->id = c_id;
@@ -407,7 +398,7 @@ gcp_ctx_t* gcp_ctx(gcp_msg_t* m, gcp_trx_t* t, guint32 c_id, gboolean persistent
     return context;
 }
 
-gcp_cmd_t* gcp_cmd(gcp_msg_t* m, gcp_trx_t* t, gcp_ctx_t* c, gcp_cmd_type_t type, guint offset, gboolean persistent) {
+gcp_cmd_t* gcp_cmd(gcp_msg_t* m, gcp_trx_t* t, gcp_ctx_t* c, gcp_cmd_type_t type, unsigned offset, packet_info *pinfo, bool persistent) {
     gcp_cmd_t* cmd;
     gcp_cmd_msg_t* cmdtrx;
     gcp_cmd_msg_t* cmdctx;
@@ -434,9 +425,9 @@ gcp_cmd_t* gcp_cmd(gcp_msg_t* m, gcp_trx_t* t, gcp_ctx_t* c, gcp_cmd_type_t type
             cmdctx = wmem_new(wmem_file_scope(), gcp_cmd_msg_t);
         }
     } else {
-        cmd = wmem_new(wmem_packet_scope(), gcp_cmd_t);
-        cmdtrx = wmem_new(wmem_packet_scope(), gcp_cmd_msg_t);
-        cmdctx = wmem_new(wmem_packet_scope(), gcp_cmd_msg_t);
+        cmd = wmem_new(pinfo->pool, gcp_cmd_t);
+        cmdtrx = wmem_new(pinfo->pool, gcp_cmd_msg_t);
+        cmdctx = wmem_new(pinfo->pool, gcp_cmd_msg_t);
     }
 
     cmd->type = type;
@@ -476,11 +467,11 @@ gcp_cmd_t* gcp_cmd(gcp_msg_t* m, gcp_trx_t* t, gcp_ctx_t* c, gcp_cmd_type_t type
     return cmd;
 }
 
-gcp_term_t* gcp_cmd_add_term(gcp_msg_t* m, gcp_trx_t* tr, gcp_cmd_t* c, gcp_term_t* t, gcp_wildcard_t wildcard, gboolean persistent) {
+gcp_term_t* gcp_cmd_add_term(gcp_msg_t* m, gcp_trx_t* tr, gcp_cmd_t* c, gcp_term_t* t, gcp_wildcard_t wildcard, packet_info *pinfo, bool persistent) {
     gcp_terms_t* ct;
     gcp_terms_t* ct2;
 
-    static gcp_term_t all_terms = {"$",(const guint8*)"",1,GCP_TERM_TYPE_UNKNOWN,NULL,NULL,NULL};
+    static gcp_term_t all_terms = {"$",(const uint8_t*)"",1,GCP_TERM_TYPE_UNKNOWN,NULL,NULL,NULL};
 
     if ( !c ) return NULL;
 
@@ -492,7 +483,7 @@ gcp_term_t* gcp_cmd_add_term(gcp_msg_t* m, gcp_trx_t* tr, gcp_cmd_t* c, gcp_term
         if ( c->msg->committed ) {
             if (wildcard == GCP_WILDCARD_ALL) {
                 for (ct = c->ctx->terms.next; ct; ct = ct->next) {
-                    /* XXX not handling more wilcards in one msg */
+                    /* XXX not handling more wildcards in one msg */
                     if ( ct->term->start == m ) {
                         return ct->term;
                     }
@@ -537,10 +528,10 @@ gcp_term_t* gcp_cmd_add_term(gcp_msg_t* m, gcp_trx_t* tr, gcp_cmd_t* c, gcp_term
                     return ct->term;
                 } else {
                     for (ct = c->ctx->terms.next; ct; ct = ct->next) {
-                        /* XXX not handling more wilcards in one msg */
+                        /* XXX not handling more wildcards in one msg */
                         if ( ct->term->buffer == NULL && tr->cmds->cmd->msg == ct->term->start ) {
                             ct->term->str = wmem_strdup(wmem_file_scope(), t->str);
-                            ct->term->buffer = (const guint8 *)wmem_memdup(wmem_file_scope(), t->buffer,t->len);
+                            ct->term->buffer = (const uint8_t *)wmem_memdup(wmem_file_scope(), t->buffer,t->len);
                             ct->term->len = t->len;
 
                             ct2 = wmem_new0(wmem_file_scope(), gcp_terms_t);
@@ -567,7 +558,7 @@ gcp_term_t* gcp_cmd_add_term(gcp_msg_t* m, gcp_trx_t* tr, gcp_cmd_t* c, gcp_term
 
                     ct->term->start = m;
                     ct->term->str = wmem_strdup(wmem_file_scope(), t->str);
-                    ct->term->buffer = (const guint8 *)wmem_memdup(wmem_file_scope(), t->buffer,t->len);
+                    ct->term->buffer = (const uint8_t *)wmem_memdup(wmem_file_scope(), t->buffer,t->len);
                     ct->term->len = t->len;
 
                     ct2 = wmem_new0(wmem_file_scope(), gcp_terms_t);
@@ -593,7 +584,7 @@ gcp_term_t* gcp_cmd_add_term(gcp_msg_t* m, gcp_trx_t* tr, gcp_cmd_t* c, gcp_term
             DISSECTOR_ASSERT_NOT_REACHED();
         }
     } else {
-        ct = wmem_new(wmem_packet_scope(), gcp_terms_t);
+        ct = wmem_new(pinfo->pool, gcp_terms_t);
         ct->term = t;
         ct->next = NULL;
         c->terms.last = c->terms.last->next = ct;
@@ -603,8 +594,8 @@ gcp_term_t* gcp_cmd_add_term(gcp_msg_t* m, gcp_trx_t* tr, gcp_cmd_t* c, gcp_term
 
 }
 
-static const gchar* gcp_cmd_to_str(gcp_cmd_t* c, gboolean persistent) {
-    const gchar* s;
+static const char* gcp_cmd_to_str(gcp_cmd_t* c, wmem_allocator_t *scope, bool persistent) {
+    const char* s;
     gcp_terms_t* term;
 
     if ( !c ) return "-";
@@ -612,7 +603,6 @@ static const gchar* gcp_cmd_to_str(gcp_cmd_t* c, gboolean persistent) {
     switch (c->type) {
         case GCP_CMD_NONE:
             return "-";
-            break;
         case GCP_CMD_ADD_REQ:
             s = "AddReq {";
             break;
@@ -682,16 +672,17 @@ static const gchar* gcp_cmd_to_str(gcp_cmd_t* c, gboolean persistent) {
     }
 
     for (term = c->terms.next; term; term = term->next) {
-        s = wmem_strdup_printf(wmem_packet_scope(), "%s %s",s,term->term->str);
+        s = wmem_strdup_printf(scope, "%s %s", s, term->term->str);
     }
 
     if (c->error) {
-        s = wmem_strdup_printf(wmem_packet_scope(), "%s Error=%i",s,c->error);
+        s = wmem_strdup_printf(scope, "%s Error=%i", s, c->error);
     }
 
-    s = wmem_strdup_printf(wmem_packet_scope(), "%s }", s);
+    s = wmem_strdup_printf(scope, "%s }", s);
 
     if (persistent) {
+        /* FIXME: this method has a side-effect but is buried deep within an apparently side-effect free string helper */
         if (! c->str) c->str = wmem_strdup(wmem_file_scope(), s);
     } else {
         c->str = s;
@@ -700,46 +691,52 @@ static const gchar* gcp_cmd_to_str(gcp_cmd_t* c, gboolean persistent) {
     return s;
 }
 
-static const gchar* gcp_trx_to_str(gcp_msg_t* m, gcp_trx_t* t, gboolean persistent) {
-    gchar* s;
+static const char * gcp_trx_to_str(gcp_msg_t* m, gcp_trx_t* t, wmem_allocator_t *scope, bool persistent) {
+    wmem_strbuf_t *s;
     gcp_cmd_msg_t* c;
 
     if ( !m || !t ) return "-";
 
-    s = wmem_strdup_printf(wmem_packet_scope(), "T %x { ",t->id);
+    s = wmem_strbuf_new(scope, NULL);
+    wmem_strbuf_append_printf(s, "T %x { ", t->id);
 
     if (t->cmds) {
         if (t->cmds->cmd->ctx) {
-            s = wmem_strdup_printf(wmem_packet_scope(), "%s C %x {",s,t->cmds->cmd->ctx->id);
+            wmem_strbuf_append_printf(s, " C %x {", t->cmds->cmd->ctx->id);
 
             for (c = t->cmds; c; c = c->next) {
                 if (c->cmd->msg == m) {
-                    s = wmem_strdup_printf(wmem_packet_scope(), "%s %s",s,gcp_cmd_to_str(c->cmd,persistent));
+                    wmem_strbuf_append_c(s, ' ');
+                    wmem_strbuf_append(s, gcp_cmd_to_str(c->cmd, scope, persistent));
                 }
             }
 
-            s = wmem_strdup_printf(wmem_packet_scope(), "%s %s",s,"}");
+            wmem_strbuf_append(s, " }");
         }
     }
 
     if (t->error) {
-        s = wmem_strdup_printf(wmem_packet_scope(), "%s Error=%i",s,t->error);
+        wmem_strbuf_append_printf(s, " Error=%i", t->error);
     }
 
-    return wmem_strdup_printf(wmem_packet_scope(), "%s %s",s,"}");
+    wmem_strbuf_append(s, " }");
+
+    return wmem_strbuf_finalize(s);
 }
 
-const gchar* gcp_msg_to_str(gcp_msg_t* m, gboolean persistent) {
+const char* gcp_msg_to_str(gcp_msg_t* m, wmem_allocator_t *scope, bool persistent) {
     gcp_trx_msg_t* t;
-    const gchar* s = "";
+    wmem_strbuf_t *s;
 
     if ( !m ) return "-";
 
+    s = wmem_strbuf_new(scope, NULL);
     for (t = m->trxs; t; t = t->next) {
-        s = wmem_strdup_printf(wmem_packet_scope(), "%s %s",s,gcp_trx_to_str(m,t->trx, persistent));
+        wmem_strbuf_append_c(s, ' ');
+        wmem_strbuf_append(s, gcp_trx_to_str(m, t->trx, scope, persistent));
     }
 
-    return s;
+    return wmem_strbuf_finalize(s);
 }
 
 typedef struct _gcp_ctxs_t {
@@ -747,7 +744,7 @@ typedef struct _gcp_ctxs_t {
     struct _gcp_ctxs_t* next;
 } gcp_ctxs_t;
 
-/*static const gchar* trx_types[] = {"None","Req","Reply","Pending","Ack"};*/
+/*static const char* trx_types[] = {"None","Req","Reply","Pending","Ack"};*/
 
 void gcp_analyze_msg(proto_tree* gcp_tree, packet_info* pinfo, tvbuff_t* gcp_tvb, gcp_msg_t* m, gcp_hf_ett_t* ids, expert_field* command_err) {
     gcp_trx_msg_t* t;
@@ -767,7 +764,7 @@ void gcp_analyze_msg(proto_tree* gcp_tree, packet_info* pinfo, tvbuff_t* gcp_tvb
             }
 
             if (! ctx_node) {
-                ctx_node = wmem_new(wmem_packet_scope(), gcp_ctxs_t);
+                ctx_node = wmem_new(pinfo->pool, gcp_ctxs_t);
                 ctx_node->ctx = ctx;
                 ctx_node->next = contexts.next;
                 contexts.next = ctx_node;
@@ -781,7 +778,7 @@ void gcp_analyze_msg(proto_tree* gcp_tree, packet_info* pinfo, tvbuff_t* gcp_tvb
         proto_tree* ctx_tree = proto_item_add_subtree(ctx_item,ids->ett.ctx);
         gcp_terms_t *ctx_term;
 
-        PROTO_ITEM_SET_GENERATED(ctx_item);
+        proto_item_set_generated(ctx_item);
 
         if (ctx->cmds) {
             proto_tree* history_tree = proto_tree_add_subtree(ctx_tree,gcp_tvb,0,0,ids->ett.ctx_cmds,NULL,"[ Command History ]");
@@ -789,7 +786,7 @@ void gcp_analyze_msg(proto_tree* gcp_tree, packet_info* pinfo, tvbuff_t* gcp_tvb
             for (c = ctx->cmds; c; c = c->next) {
                 proto_item* cmd_item = proto_tree_add_uint(history_tree,ids->hf.ctx_cmd,gcp_tvb,0,0,c->cmd->msg->framenum);
                 if (c->cmd->str) proto_item_append_text(cmd_item,"  %s ",c->cmd->str);
-                PROTO_ITEM_SET_GENERATED(cmd_item);
+                proto_item_set_generated(cmd_item);
                 if (c->cmd->error) {
                     expert_add_info(pinfo, cmd_item, command_err);
                 }
@@ -804,26 +801,26 @@ void gcp_analyze_msg(proto_tree* gcp_tree, packet_info* pinfo, tvbuff_t* gcp_tvb
                     proto_item* pi = proto_tree_add_string(terms_tree,ids->hf.ctx_term,gcp_tvb,0,0,ctx_term->term->str);
                     proto_tree* term_tree = proto_item_add_subtree(pi,ids->ett.ctx_term);
 
-                    PROTO_ITEM_SET_GENERATED(pi);
+                    proto_item_set_generated(pi);
 
                     if (ctx_term->term->type) {
                         pi = proto_tree_add_uint(term_tree,ids->hf.ctx_term_type,gcp_tvb,0,0,ctx_term->term->type);
-                        PROTO_ITEM_SET_GENERATED(pi);
+                        proto_item_set_generated(pi);
                     }
 
                     if (ctx_term->term->bir) {
                         pi = proto_tree_add_string(term_tree,ids->hf.ctx_term_bir,gcp_tvb,0,0,ctx_term->term->bir);
-                        PROTO_ITEM_SET_GENERATED(pi);
+                        proto_item_set_generated(pi);
                     }
 
                     if (ctx_term->term->nsap) {
                         pi = proto_tree_add_string(term_tree,ids->hf.ctx_term_nsap,gcp_tvb,0,0,ctx_term->term->nsap);
-                        PROTO_ITEM_SET_GENERATED(pi);
+                        proto_item_set_generated(pi);
                     }
 
                     if (ctx_term->term->bir && ctx_term->term->nsap) {
-                        gchar* tmp_key = wmem_strdup_printf(wmem_packet_scope(), "%s:%s",ctx_term->term->nsap,ctx_term->term->bir);
-                        gchar* key = g_ascii_strdown(tmp_key, -1);
+                        char* tmp_key = wmem_strdup_printf(pinfo->pool, "%s:%s",ctx_term->term->nsap,ctx_term->term->bir);
+                        char* key = g_ascii_strdown(tmp_key, -1);
                         alcap_tree_from_bearer_key(term_tree, gcp_tvb, pinfo, key);
                         g_free(key);
                     }
@@ -835,10 +832,9 @@ void gcp_analyze_msg(proto_tree* gcp_tree, packet_info* pinfo, tvbuff_t* gcp_tvb
 
 /* END Gateway Control Protocol -- Context Tracking */
 
-static gboolean keep_persistent_data = FALSE;
-static guint    global_udp_port = 2945;
-static guint    global_tcp_port = 2945;
-static gboolean h248_desegment = TRUE;
+#define H248_PORT 2945
+static bool keep_persistent_data;
+static bool h248_desegment = true;
 
 
 
@@ -849,14 +845,14 @@ static dissector_handle_t h248_term_handle;
 static dissector_handle_t h248_tpkt_handle;
 
 /* Forward declarations */
-static int dissect_h248_ServiceChangeReasonStr(gboolean implicit_tag, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index);
+static int dissect_h248_ServiceChangeReasonStr(bool implicit_tag, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index);
 
 /* h248v1 support */
-static int dissect_h248_AuditReplyV1(gboolean implicit_tag, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index);
+static int dissect_h248_AuditReplyV1(bool implicit_tag, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index);
 
-static int dissect_h248_EventParameterV1(gboolean implicit_tag, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index);
-static int dissect_h248_SigParameterV1(gboolean implicit_tag, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index);
-static int dissect_h248_SigParamValueV1(gboolean implicit_tag, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index);
+static int dissect_h248_EventParameterV1(bool implicit_tag, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index);
+static int dissect_h248_SigParameterV1(bool implicit_tag, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index);
+static int dissect_h248_SigParamValueV1(bool implicit_tag, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index);
 
 #if 0
 static const value_string context_id_type[] = {
@@ -867,7 +863,7 @@ static const value_string context_id_type[] = {
 };
 #endif
 
-/* the following value_strings are used to build defalut packages.
+/* the following value_strings are used to build default packages.
    To add additional detail to a package, build a register a h248_package_t structure
  */
 
@@ -914,7 +910,7 @@ static const value_string base_package_name_vals[] = {
     {   0x0027, "Intrusion Tones Q.1950 Annex A" },
     {   0x0028, "Business Tones Q.1950 Annex A" },
     {   0x0029, "Media Gateway Resource Congestion Handling H.248.10" },      /* H.248.10 */
-    {   0x002a, "H245 package H248.12" },                                     /* H.248.12 */
+    {   0x002a, "H245 package H.248.12" },                                    /* H.248.12 */
     {   0x002b, "H323 bearer control package H.248.12" },                     /* H.248.12 */
     {   0x002c, "H324 package H.248.12" },                                    /* H.248.12 */
     {   0x002d, "H245 command package H.248.12" },                            /* H.248.12 */
@@ -1343,7 +1339,7 @@ static const value_string h248_reasons[] = {
     { 518, "Event buffer full"},
     { 519, "Out of space to store digit map"},
     { 520, "Digit Map undefined in the MG"},
-    { 521, "Termination is ServiceChangeing"},
+    { 521, "Termination is ServiceChanging"},
     { 522, "Functionality Requested in Topology Triple Not Supported"},
     { 526, "Insufficient bandwidth"},
     { 529, "Internal hardware failure in MG"},
@@ -1425,42 +1421,43 @@ static const value_string wildcard_levels[] = {
     { 0, NULL }
 };
 
-static h248_curr_info_t curr_info = {NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
-static guint32 error_code;
-static guint32 h248_version = 0; /* h248v1 support */
+static h248_curr_info_t curr_info;
+static uint32_t error_code;
+static uint32_t h248_version; /* h248v1 support */
 static gcp_wildcard_t wild_term;
-static guint8 wild_card = 0xFF; /* place to store wildcardField */
+static uint8_t wild_card = 0xFF; /* place to store wildcardField */
 
                                 /* Call the export PDU tap with relevant data */
 static void
 export_h248_pdu(packet_info *pinfo, tvbuff_t *tvb)
 {
-    exp_pdu_data_t *exp_pdu_data = export_pdu_create_common_tags(pinfo, "h248", EXP_PDU_TAG_PROTO_NAME);
+    if (have_tap_listener(exported_pdu_tap)) {
+        exp_pdu_data_t *exp_pdu_data = export_pdu_create_common_tags(pinfo, "h248", EXP_PDU_TAG_DISSECTOR_NAME);
 
-    exp_pdu_data->tvb_captured_length = tvb_captured_length(tvb);
-    exp_pdu_data->tvb_reported_length = tvb_reported_length(tvb);
-    exp_pdu_data->pdu_tvb = tvb;
+        exp_pdu_data->tvb_captured_length = tvb_captured_length(tvb);
+        exp_pdu_data->tvb_reported_length = tvb_reported_length(tvb);
+        exp_pdu_data->pdu_tvb = tvb;
 
-    tap_queue_packet(exported_pdu_tap, pinfo, exp_pdu_data);
-
+        tap_queue_packet(exported_pdu_tap, pinfo, exp_pdu_data);
+    }
 }
 
 extern void h248_param_ber_integer(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, int hfid, h248_curr_info_t* u _U_, void* implicit) {
     asn1_ctx_t asn1_ctx;
-    asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
-    dissect_ber_integer(implicit ? *((gboolean*)implicit) : FALSE, &asn1_ctx, tree, tvb, 0, hfid, NULL);
+    asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
+    dissect_ber_integer(implicit ? *((bool*)implicit) : false, &asn1_ctx, tree, tvb, 0, hfid, NULL);
 }
 
 extern void h248_param_ber_octetstring(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, int hfid, h248_curr_info_t* u _U_, void* implicit) {
     asn1_ctx_t asn1_ctx;
-    asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
-    dissect_ber_octet_string(implicit ? *((gboolean*)implicit) : FALSE, &asn1_ctx, tree, tvb, 0, hfid, NULL);
+    asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
+    dissect_ber_octet_string(implicit ? *((bool*)implicit) : false, &asn1_ctx, tree, tvb, 0, hfid, NULL);
 }
 
 extern void h248_param_ber_boolean(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, int hfid, h248_curr_info_t* u _U_, void* implicit) {
     asn1_ctx_t asn1_ctx;
-    asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
-    dissect_ber_boolean(implicit ? *((gboolean*)implicit) : FALSE, &asn1_ctx, tree, tvb, 0, hfid, NULL);
+    asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
+    dissect_ber_boolean(implicit ? *((bool*)implicit) : false, &asn1_ctx, tree, tvb, 0, hfid, NULL);
 }
 
 extern void h248_param_bytes_item(proto_tree* tree,
@@ -1493,19 +1490,19 @@ static const h248_pkg_sig_t no_signal = { 0, &hf_h248_no_sig, &ett_h248_no_sig, 
 static const h248_pkg_param_t no_param = { 0, &hf_h248_param, h248_param_uint_item,  NULL };
 static const h248_pkg_evt_t no_event = { 0, &hf_h248_no_evt, &ett_h248_no_evt, NULL, NULL };
 
-const h248_package_t *find_package_id(guint16 pkgid);
-static GTree* packages = NULL;
+static const h248_package_t *find_package_id(uint16_t pkgid);
+static wmem_tree_t* packages;
 
 extern void h248_param_PkgdName(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo , int hfid _U_, h248_curr_info_t* u1 _U_, void* u2 _U_) {
     tvbuff_t *new_tvb = NULL;
     proto_tree *package_tree=NULL;
-    guint16 name_major, name_minor;
+    uint16_t name_major, name_minor;
     const h248_package_t* pkg = NULL;
     int offset = 0;
     asn1_ctx_t asn1_ctx;
-    asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
+    asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
 
-    offset = dissect_ber_octet_string(FALSE, &asn1_ctx, tree, tvb, offset, hfid , &new_tvb);
+    offset = dissect_ber_octet_string(false, &asn1_ctx, tree, tvb, offset, hfid , &new_tvb);
 
     if (new_tvb) {
         /* this field is always 4 bytes  so just read it into two integers */
@@ -1514,23 +1511,23 @@ extern void h248_param_PkgdName(proto_tree* tree, tvbuff_t* tvb, packet_info* pi
         pkg = find_package_id(name_major);
         /* do the prettification */
         proto_item_append_text(asn1_ctx.created_item, "  %s (%04x)",
-                               val_to_str(0, pkg->param_names, "Unknown Package"),
+                               val_to_str_const(0, pkg->param_names, "Unknown Package"),
                                name_major);
 
         if(tree){
             proto_item* pi;
-            const gchar* strval;
+            const char* strval;
 
             package_tree = proto_item_add_subtree(asn1_ctx.created_item, ett_packagename);
             proto_tree_add_uint_format(package_tree, hf_h248_pkg_name, tvb, offset-4, 2, name_major,
-                "%s (0x%04x)", val_to_str(0, pkg->param_names, "Unknown Package"), name_major);
+                "%s (0x%04x)", val_to_str_const(0, pkg->param_names, "Unknown Package"), name_major);
 
             pi = proto_tree_add_uint(package_tree, hf_248_pkg_param, tvb, offset-2, 2, name_minor);
 
             if (pkg->signal_names && ( strval = try_val_to_str(name_minor, pkg->signal_names) )) {
-                strval = wmem_strdup_printf(wmem_packet_scope(), "%s (%d)",strval,name_minor);
+                strval = wmem_strdup_printf(pinfo->pool, "%s (%d)",strval,name_minor);
             } else {
-                strval = wmem_strdup_printf(wmem_packet_scope(), "Unknown (%d)",name_minor);
+                strval = wmem_strdup_printf(pinfo->pool, "Unknown (%d)",name_minor);
             }
 
             proto_item_set_text(pi,"Signal ID: %s", strval);
@@ -1540,13 +1537,13 @@ extern void h248_param_PkgdName(proto_tree* tree, tvbuff_t* tvb, packet_info* pi
 }
 
 
-static int dissect_h248_trx_id(gboolean implicit_tag, packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, int offset, guint32* trx_id_p) {
-    guint64 trx_id = 0;
-    gint8 ber_class;
-    gboolean pc;
-    gint32 tag;
-    guint32 len;
-    guint32 i;
+static int dissect_h248_trx_id(bool implicit_tag, packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, int offset, uint32_t* trx_id_p) {
+    uint64_t trx_id = 0;
+    int8_t ber_class;
+    bool pc;
+    int32_t tag;
+    uint32_t len;
+    uint32_t i;
 
     if(!implicit_tag){
         offset=dissect_ber_identifier(pinfo, tree, tvb, offset, &ber_class, &pc, &tag);
@@ -1560,7 +1557,7 @@ static int dissect_h248_trx_id(gboolean implicit_tag, packet_info *pinfo, proto_
         THROW(BoundsError);
     } else {
         for(i=1;i<=len;i++){
-            trx_id=(trx_id<<8)|tvb_get_guint8(tvb, offset);
+            trx_id=(trx_id<<8)|tvb_get_uint8(tvb, offset);
             offset++;
         }
         if (trx_id > 0xffffffff) {
@@ -1570,21 +1567,21 @@ static int dissect_h248_trx_id(gboolean implicit_tag, packet_info *pinfo, proto_
             *trx_id_p = 0;
 
         } else {
-            proto_tree_add_uint(tree, hf_h248_transactionId, tvb, offset-len, len, (guint32)trx_id);
-            *trx_id_p = (guint32)trx_id;
+            proto_tree_add_uint(tree, hf_h248_transactionId, tvb, offset-len, len, (uint32_t)trx_id);
+            *trx_id_p = (uint32_t)trx_id;
         }
     }
 
     return offset;
 }
 
-static int dissect_h248_ctx_id(gboolean implicit_tag, packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, int offset, guint32* ctx_id_p) {
-    gint8 ber_class;
-    gboolean pc;
-    gint32 tag;
-    guint32 len;
-    guint64 ctx_id = 0;
-    guint32 i;
+static int dissect_h248_ctx_id(bool implicit_tag, packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, int offset, uint32_t* ctx_id_p) {
+    int8_t ber_class;
+    bool pc;
+    int32_t tag;
+    uint32_t len;
+    uint64_t ctx_id = 0;
+    uint32_t i;
 
     if(!implicit_tag){
         offset=dissect_ber_identifier(pinfo, tree, tvb, offset, &ber_class, &pc, &tag);
@@ -1598,7 +1595,7 @@ static int dissect_h248_ctx_id(gboolean implicit_tag, packet_info *pinfo, proto_
         THROW(BoundsError);
     } else {
         for(i=1;i<=len;i++){
-            ctx_id=(ctx_id<<8)|tvb_get_guint8(tvb, offset);
+            ctx_id=(ctx_id<<8)|tvb_get_uint8(tvb, offset);
             offset++;
         }
 
@@ -1609,7 +1606,7 @@ static int dissect_h248_ctx_id(gboolean implicit_tag, packet_info *pinfo, proto_
             *ctx_id_p = 0xfffffffd;
 
         } else {
-            proto_item* pi = proto_tree_add_uint(tree, hf_h248_context_id, tvb, offset-len, len, (guint32)ctx_id);
+            proto_item* pi = proto_tree_add_uint(tree, hf_h248_context_id, tvb, offset-len, len, (uint32_t)ctx_id);
 
             if ( ctx_id ==  NULL_CONTEXT ) {
                 proto_item_set_text(pi,"contextId: Null Context(0)");
@@ -1619,34 +1616,30 @@ static int dissect_h248_ctx_id(gboolean implicit_tag, packet_info *pinfo, proto_
                 proto_item_set_text(pi,"contextId: * (All Contexts = 0xffffffff)");
             }
 
-            *ctx_id_p = (guint32) ctx_id;
+            *ctx_id_p = (uint32_t) ctx_id;
         }
     }
 
     return offset;
 }
 
-static s_h248_package_t *s_find_package_id(guint16 pkgid) {
+static s_h248_package_t *s_find_package_id(uint16_t pkgid) {
     s_h248_package_t *s_pkg = NULL;
-    s_pkg = (s_h248_package_t *)g_tree_lookup(packages, GUINT_TO_POINTER((guint32)(pkgid)));
+    s_pkg = (s_h248_package_t *)wmem_tree_lookup32(packages, (uint32_t)(pkgid));
     return s_pkg;
 }
 
-const h248_package_t *find_package_id(guint16 pkgid) {
+static const h248_package_t *find_package_id(uint16_t pkgid) {
     s_h248_package_t *s_pkg = NULL;
-    s_pkg = s_find_package_id(pkgid); /*(packages, GUINT_TO_POINTER((guint32)(pkgid))); */
+    s_pkg = s_find_package_id(pkgid); /*(packages, GUINT_TO_POINTER((uint32_t)(pkgid))); */
     if (! s_pkg ) return &no_package;
     return s_pkg->pkg;
 }
 
-static gint32 comparePkgID(gconstpointer a, gconstpointer b) {
-    return GPOINTER_TO_UINT(b) - GPOINTER_TO_UINT(a);
-}
-
-static gboolean is_pkg_default(guint16 pkgid) {
+static bool is_pkg_default(uint16_t pkgid) {
     s_h248_package_t *s_pkg = NULL;
-    s_pkg = (s_h248_package_t *)g_tree_lookup(packages, GUINT_TO_POINTER((guint32)(pkgid)));
-    if(! s_pkg ) return TRUE;
+    s_pkg = (s_h248_package_t *)wmem_tree_lookup32(packages, (uint32_t)(pkgid));
+    if(! s_pkg ) return true;
     return s_pkg->is_default;
 }
 
@@ -1654,12 +1647,12 @@ void h248_register_package(h248_package_t* pkg, pkg_reg_action reg_action) {
     h248_package_t *pkg_found = NULL, *pkg_high = NULL, *pkg_low = NULL;
     s_h248_package_t *s_pkg = NULL;
     value_string *vst;
-    gboolean pkg_default = FALSE;
-    gint j = 0, idx = 0, i = 0, k = 0;
+    bool pkg_default = false;
+    int j = 0, idx = 0, i = 0, k = 0;
     if (! packages) {
         /* no packaegs are yet registerd so create tree and add default packages to tree
          */
-        packages = g_tree_new(comparePkgID); /* init tree if no entries */
+        packages = wmem_tree_new(wmem_epan_scope()); /* init tree if no entries */
         while (base_package_name_vals[i].strptr != NULL) {
             pkg_found = wmem_new0(wmem_epan_scope(), h248_package_t); /* create a h248 package structure */
             pkg_found->id = base_package_name_vals[i].value;
@@ -1702,9 +1695,9 @@ void h248_register_package(h248_package_t* pkg, pkg_reg_action reg_action) {
                 }
             };
             s_pkg = wmem_new0(wmem_epan_scope(), s_h248_package_t);
-            s_pkg->is_default = TRUE;
+            s_pkg->is_default = true;
             s_pkg->pkg = pkg_found;
-            g_tree_insert(packages, GINT_TO_POINTER(pkg_found->id), (gpointer)s_pkg);
+            wmem_tree_insert32(packages, pkg_found->id, s_pkg);
             i++;
         };
         pkg_found = NULL; /* reset pointer */
@@ -1713,18 +1706,18 @@ void h248_register_package(h248_package_t* pkg, pkg_reg_action reg_action) {
     if (((reg_action==REPLACE_PKG) || (reg_action==ADD_PKG)) && pkg_default) {
         /* add/replace in tree */
         s_pkg = wmem_new0(wmem_epan_scope(), s_h248_package_t);
-        s_pkg->is_default = FALSE;
+        s_pkg->is_default = false;
         s_pkg->pkg = (h248_package_t *)pkg;
-        g_tree_replace(packages, GINT_TO_POINTER(pkg->id), (gpointer)s_pkg);
+        wmem_tree_insert32(packages, pkg->id, s_pkg);
         return;
     };
-    if(pkg_default) reg_action = MERGE_PKG_HIGH; /* always make new package overide default */
+    if(pkg_default) reg_action = MERGE_PKG_HIGH; /* always make new package override default */
     s_pkg = s_find_package_id(pkg->id);
     if (s_pkg == NULL) { /* no need to merge - package not in tree */
         s_pkg = wmem_new0(wmem_epan_scope(), s_h248_package_t);
-        s_pkg->is_default = FALSE;
+        s_pkg->is_default = false;
         s_pkg->pkg = (h248_package_t *)pkg;
-        g_tree_insert(packages, GINT_TO_POINTER(pkg->id), (gpointer)s_pkg);
+        wmem_tree_insert32(packages, pkg->id, s_pkg);
         return;
     }
     pkg_found = s_pkg->pkg;
@@ -1749,17 +1742,17 @@ void h248_register_package(h248_package_t* pkg, pkg_reg_action reg_action) {
         (pkg_high->events ? (pkg_found->events=pkg_high->events ):( pkg_found->events=pkg_low->events));
         (pkg_high->statistics ? (pkg_found->statistics=pkg_high->statistics ):( pkg_found->statistics=pkg_low->statistics));
         s_pkg->pkg = pkg_found;
-        s_pkg->is_default = FALSE;
+        s_pkg->is_default = false;
     }
 }
 
 
-static guint32 packageandid;
+static uint32_t packageandid;
 
-static int dissect_h248_PkgdName(gboolean implicit_tag, tvbuff_t *tvb, int offset, asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index) {
+static int dissect_h248_PkgdName(bool implicit_tag, tvbuff_t *tvb, int offset, asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index) {
     tvbuff_t *new_tvb = NULL;
     proto_tree *package_tree=NULL;
-    guint16 name_major, name_minor;
+    uint16_t name_major, name_minor;
     const h248_package_t* pkg = NULL;
 
     offset = dissect_ber_octet_string(implicit_tag, actx, tree, tvb, offset, hf_index, &new_tvb);
@@ -1773,23 +1766,23 @@ static int dissect_h248_PkgdName(gboolean implicit_tag, tvbuff_t *tvb, int offse
         pkg = find_package_id(name_major);
         /* do the prettification */
         proto_item_append_text(actx->created_item, "  %s (%04x)",
-                               val_to_str(0, pkg->param_names, "Unknown Package"),
+                               val_to_str_const(0, pkg->param_names, "Unknown Package"),
                                name_major);
 
         if(tree){
             package_tree = proto_item_add_subtree(actx->created_item, ett_packagename);
             proto_tree_add_uint_format(package_tree, hf_h248_pkg_name, tvb, offset-4, 2, name_major,
-                "PkgName: %s (0x%04x)", val_to_str(0, pkg->param_names, "Unknown Package"), name_major);
+                "PkgName: %s (0x%04x)", val_to_str_const(0, pkg->param_names, "Unknown Package"), name_major);
         }
 
         {
             proto_item* pi = proto_tree_add_uint(package_tree, hf_248_pkg_param, tvb, offset-2, 2, name_minor);
-            const gchar* strval;
+            const char* strval;
 
             if (pkg->param_names && ( strval = try_val_to_str(name_minor, pkg->param_names) )) {
-                strval = wmem_strdup_printf(wmem_packet_scope(), "%s (%d)",strval,name_minor);
+                strval = wmem_strdup_printf(actx->pinfo->pool, "%s (%d)",strval,name_minor);
             } else {
-                strval = wmem_strdup_printf(wmem_packet_scope(), "Unknown (%d)",name_minor);
+                strval = wmem_strdup_printf(actx->pinfo->pool, "Unknown (%d)",name_minor);
             }
 
             proto_item_set_text(pi,"Parameter: %s", strval);
@@ -1803,10 +1796,10 @@ static int dissect_h248_PkgdName(gboolean implicit_tag, tvbuff_t *tvb, int offse
     return offset;
 }
 
-static int dissect_h248_EventName(gboolean implicit_tag, tvbuff_t *tvb, int offset, asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index) {
+static int dissect_h248_EventName(bool implicit_tag, tvbuff_t *tvb, int offset, asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index) {
     tvbuff_t *new_tvb;
     proto_tree *package_tree=NULL;
-    guint16 name_major, name_minor;
+    uint16_t name_major, name_minor;
     const h248_package_t* pkg = NULL;
     const h248_pkg_evt_t* evt = NULL;
 
@@ -1821,13 +1814,13 @@ static int dissect_h248_EventName(gboolean implicit_tag, tvbuff_t *tvb, int offs
         pkg = find_package_id(name_major);
         /* do the prettification */
         proto_item_append_text(actx->created_item, "  %s (%04x)",
-                               val_to_str(0, pkg->param_names, "Unknown Package"),
+                               val_to_str_const(0, pkg->param_names, "Unknown Package"),
                                name_major);
         if(tree){
             package_tree = proto_item_add_subtree(actx->created_item, ett_packagename);
         }
         proto_tree_add_uint_format(package_tree, hf_h248_pkg_name, tvb, offset-4, 2, name_major,
-            "%s (0x%04x)", val_to_str(0, pkg->param_names, "Unknown Package"), name_major);
+            "%s (0x%04x)", val_to_str_const(0, pkg->param_names, "Unknown Package"), name_major);
 
         curr_info.pkg = pkg;
 
@@ -1847,12 +1840,12 @@ static int dissect_h248_EventName(gboolean implicit_tag, tvbuff_t *tvb, int offs
 
         {
             proto_item* pi = proto_tree_add_uint(package_tree, hf_h248_event_code, tvb, offset-2, 2, name_minor);
-            const gchar* strval;
+            const char* strval;
 
             if (pkg->event_names && ( strval = try_val_to_str(name_minor, pkg->event_names) )) {
-                strval = wmem_strdup_printf(wmem_packet_scope(), "%s (%d)",strval,name_minor);
+                strval = wmem_strdup_printf(actx->pinfo->pool, "%s (%d)",strval,name_minor);
             } else {
-                strval = wmem_strdup_printf(wmem_packet_scope(), "Unknown (%d)",name_minor);
+                strval = wmem_strdup_printf(actx->pinfo->pool, "Unknown (%d)",name_minor);
             }
 
             proto_item_set_text(pi,"Event ID: %s", strval);
@@ -1868,10 +1861,10 @@ static int dissect_h248_EventName(gboolean implicit_tag, tvbuff_t *tvb, int offs
 
 
 
-static int dissect_h248_SignalName(gboolean implicit_tag , tvbuff_t *tvb, int offset,  asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index) {
+static int dissect_h248_SignalName(bool implicit_tag , tvbuff_t *tvb, int offset,  asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index) {
     tvbuff_t *new_tvb;
     proto_tree *package_tree=NULL;
-    guint16 name_major, name_minor;
+    uint16_t name_major, name_minor;
     const h248_package_t* pkg = NULL;
     const h248_pkg_sig_t* sig;
 
@@ -1886,13 +1879,13 @@ static int dissect_h248_SignalName(gboolean implicit_tag , tvbuff_t *tvb, int of
         pkg = find_package_id(name_major);
         /* do the prettification */
         proto_item_append_text(actx->created_item, "  %s (%04x)",
-                               val_to_str(0, pkg->param_names, "Unknown Package"),
+                               val_to_str_const(0, pkg->param_names, "Unknown Package"),
                                name_major);
         if(tree){
             package_tree = proto_item_add_subtree(actx->created_item, ett_packagename);
         }
         proto_tree_add_uint_format(package_tree, hf_h248_pkg_name, tvb, offset-4, 2, name_major,
-            "%s (0x%04x)", val_to_str(0, pkg->param_names, "Unknown Package"), name_major);
+            "%s (0x%04x)", val_to_str_const(0, pkg->param_names, "Unknown Package"), name_major);
 
         if (pkg->signals) {
             for (sig = pkg->signals; sig->hfid; sig++) {
@@ -1912,12 +1905,12 @@ static int dissect_h248_SignalName(gboolean implicit_tag , tvbuff_t *tvb, int of
 
         {
             proto_item* pi = proto_tree_add_uint(package_tree, hf_h248_signal_code, tvb, offset-2, 2, name_minor);
-            const gchar* strval;
+            const char* strval;
 
             if (pkg->signal_names && ( strval = try_val_to_str(name_minor, pkg->signal_names) )) {
-                strval = wmem_strdup_printf(wmem_packet_scope(), "%s (%d)",strval,name_minor);
+                strval = wmem_strdup_printf(actx->pinfo->pool, "%s (%d)",strval,name_minor);
             } else {
-                strval = wmem_strdup_printf(wmem_packet_scope(), "Unknown (%d)",name_minor);
+                strval = wmem_strdup_printf(actx->pinfo->pool, "Unknown (%d)",name_minor);
             }
 
             proto_item_set_text(pi,"Signal ID: %s", strval);
@@ -1931,13 +1924,13 @@ static int dissect_h248_SignalName(gboolean implicit_tag , tvbuff_t *tvb, int of
     return offset;
 }
 
-static int dissect_h248_PropertyID(gboolean implicit_tag _U_, tvbuff_t *tvb, int offset,  asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index _U_) {
+static int dissect_h248_PropertyID(bool implicit_tag _U_, tvbuff_t *tvb, int offset,  asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index _U_) {
 
-    gint8 ber_class;
-    gboolean pc, ind;
-    gint32 tag;
-    guint32 len;
-    guint16 name_minor;
+    int8_t ber_class;
+    bool pc, ind;
+    int32_t tag;
+    uint32_t len;
+    uint16_t name_minor;
     int end_offset;
     const h248_package_t* pkg;
     const h248_pkg_param_t* prop;
@@ -1978,11 +1971,11 @@ static int dissect_h248_PropertyID(gboolean implicit_tag _U_, tvbuff_t *tvb, int
 
 
 
-static int dissect_h248_SigParameterName(gboolean implicit_tag _U_, tvbuff_t *tvb, int offset,  asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index _U_) {
+static int dissect_h248_SigParameterName(bool implicit_tag _U_, tvbuff_t *tvb, int offset,  asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index _U_) {
     tvbuff_t *next_tvb;
-    guint32 param_id = 0xffffffff;
+    uint32_t param_id = 0xffffffff;
     const h248_pkg_param_t* sigpar;
-    const gchar* strval;
+    const char* strval;
     proto_item* pi;
 
     offset = dissect_ber_octet_string(implicit_tag, actx, tree, tvb, offset,  hf_index, &next_tvb);
@@ -1992,7 +1985,7 @@ static int dissect_h248_SigParameterName(gboolean implicit_tag _U_, tvbuff_t *tv
         case 4: param_id = tvb_get_ntohl(next_tvb,0); break;
         case 3: param_id = tvb_get_ntoh24(next_tvb,0); break;
         case 2: param_id = tvb_get_ntohs(next_tvb,0); break;
-        case 1: param_id = tvb_get_guint8(next_tvb,0); break;
+        case 1: param_id = tvb_get_uint8(next_tvb,0); break;
         default: break;
     }
 
@@ -2008,9 +2001,9 @@ static int dissect_h248_SigParameterName(gboolean implicit_tag _U_, tvbuff_t *tv
     }
 
     if (curr_info.sig && curr_info.sig->param_names && ( strval = try_val_to_str(param_id, curr_info.sig->param_names) )) {
-        strval = wmem_strdup_printf(wmem_packet_scope(), "%s (%d)",strval,param_id);
+        strval = wmem_strdup_printf(actx->pinfo->pool, "%s (%d)",strval,param_id);
     } else {
-        strval = wmem_strdup_printf(wmem_packet_scope(), "Unknown (%d)",param_id);
+        strval = wmem_strdup_printf(actx->pinfo->pool, "Unknown (%d)",param_id);
     }
 
     proto_item_set_text(pi,"Parameter: %s", strval);
@@ -2018,12 +2011,12 @@ static int dissect_h248_SigParameterName(gboolean implicit_tag _U_, tvbuff_t *tv
     return offset;
 }
 
-static int dissect_h248_SigParamValue(gboolean implicit_tag _U_, tvbuff_t *tvb, int offset,  asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index _U_) {
+static int dissect_h248_SigParamValue(bool implicit_tag _U_, tvbuff_t *tvb, int offset,  asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index _U_) {
     int end_offset;
-    gint8 ber_class;
-    gboolean pc, ind;
-    gint32 tag;
-    guint32 len;
+    int8_t ber_class;
+    bool pc, ind;
+    int32_t tag;
+    uint32_t len;
     tvbuff_t *next_tvb = NULL;
 
     offset=dissect_ber_identifier(actx->pinfo, tree, tvb, offset, &ber_class, &pc, &tag);
@@ -2046,16 +2039,16 @@ static int dissect_h248_SigParamValue(gboolean implicit_tag _U_, tvbuff_t *tvb, 
     return end_offset;
 }
 
-static int dissect_h248_SigParamValueV1(gboolean implicit_tag _U_, tvbuff_t *tvb, int offset _U_,  asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index _U_) {
+static int dissect_h248_SigParamValueV1(bool implicit_tag _U_, tvbuff_t *tvb, int offset _U_,  asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index _U_) {
     return dissect_ber_octet_string(implicit_tag, actx, tree, tvb, offset, hf_index, NULL);
 }
 
 
-static int dissect_h248_EventParameterName(gboolean implicit_tag _U_, tvbuff_t *tvb, int offset,  asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index _U_) {
+static int dissect_h248_EventParameterName(bool implicit_tag _U_, tvbuff_t *tvb, int offset,  asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index _U_) {
     tvbuff_t *next_tvb;
-    guint32 param_id = 0xffffffff;
+    uint32_t param_id = 0xffffffff;
     const h248_pkg_param_t* evtpar;
-    const gchar* strval;
+    const char* strval;
     proto_item* pi;
 
     offset = dissect_ber_octet_string(implicit_tag, actx, tree, tvb, offset, hf_index, &next_tvb);
@@ -2066,7 +2059,7 @@ static int dissect_h248_EventParameterName(gboolean implicit_tag _U_, tvbuff_t *
             case 4: param_id = tvb_get_ntohl(next_tvb,0); break;
             case 3: param_id = tvb_get_ntoh24(next_tvb,0); break;
             case 2: param_id = tvb_get_ntohs(next_tvb,0); break;
-            case 1: param_id = tvb_get_guint8(next_tvb,0); break;
+            case 1: param_id = tvb_get_uint8(next_tvb,0); break;
             default: break;
         }
     }
@@ -2086,9 +2079,9 @@ static int dissect_h248_EventParameterName(gboolean implicit_tag _U_, tvbuff_t *
     }
 
     if (curr_info.evt && curr_info.evt->param_names && ( strval = try_val_to_str(param_id, curr_info.evt->param_names) )) {
-        strval = wmem_strdup_printf(wmem_packet_scope(), "%s (%d)",strval,param_id);
+        strval = wmem_strdup_printf(actx->pinfo->pool, "%s (%d)",strval,param_id);
     } else {
-        strval = wmem_strdup_printf(wmem_packet_scope(), "Unknown (%d)",param_id);
+        strval = wmem_strdup_printf(actx->pinfo->pool, "Unknown (%d)",param_id);
     }
 
     proto_item_set_text(pi,"Parameter: %s", strval);
@@ -2097,13 +2090,13 @@ static int dissect_h248_EventParameterName(gboolean implicit_tag _U_, tvbuff_t *
     return offset;
 }
 
-static int dissect_h248_EventParamValue(gboolean implicit_tag _U_, tvbuff_t *tvb, int offset,  asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index _U_) {
+static int dissect_h248_EventParamValue(bool implicit_tag _U_, tvbuff_t *tvb, int offset,  asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index _U_) {
     tvbuff_t *next_tvb;
     int end_offset;
-    gint8 ber_class;
-    gboolean pc, ind;
-    gint32 tag;
-    guint32 len;
+    int8_t ber_class;
+    bool pc, ind;
+    int32_t tag;
+    uint32_t len;
 
     offset=dissect_ber_identifier(actx->pinfo, tree, tvb, offset, &ber_class, &pc, &tag);
     offset=dissect_ber_length(actx->pinfo, tree, tvb, offset, &len, &ind);
@@ -2125,15 +2118,15 @@ static int dissect_h248_EventParamValue(gboolean implicit_tag _U_, tvbuff_t *tvb
     return end_offset;
 }
 
-static int dissect_h248_EventParamValueV1(gboolean implicit_tag _U_, tvbuff_t *tvb, int offset _U_,  asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index _U_) {
+static int dissect_h248_EventParamValueV1(bool implicit_tag _U_, tvbuff_t *tvb, int offset _U_,  asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index _U_) {
     return dissect_ber_octet_string(implicit_tag, actx, tree, tvb, offset, hf_index, &tvb);
 }
 
 
-static int dissect_h248_MtpAddress(gboolean implicit_tag, tvbuff_t *tvb, int offset,  asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index) {
+static int dissect_h248_MtpAddress(bool implicit_tag, tvbuff_t *tvb, int offset,  asn1_ctx_t *actx _U_, proto_tree *tree, int hf_index) {
     tvbuff_t *new_tvb;
     proto_tree *mtp_tree=NULL;
-    guint32 val;
+    uint32_t val;
     int i, len, old_offset;
 
     old_offset=offset;
@@ -2144,7 +2137,7 @@ static int dissect_h248_MtpAddress(gboolean implicit_tag, tvbuff_t *tvb, int off
         val=0;
         len=tvb_reported_length(new_tvb);
         for(i=0;i<len;i++){
-            val= (val<<8)|tvb_get_guint8(new_tvb, i);
+            val= (val<<8)|tvb_get_uint8(new_tvb, i);
         }
 
         /* do the prettification */
@@ -2175,7 +2168,7 @@ dissect_h248(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     asn1_ctx_t asn1_ctx;
     h248_tree = NULL;
 
-    asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
+    asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
 
     curr_info.msg = NULL;
     curr_info.trx = NULL;
@@ -2205,10 +2198,10 @@ dissect_h248(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
         }
         {
             proto_item *hidden_item = NULL;
-            guint32 magic_num = 0, offset = 0;
+            uint32_t magic_num = 0, offset = 0;
             magic_num = tvb_get_ntohl(tvb, offset);
             hidden_item = proto_tree_add_uint(tree, hf_248_magic_num, tvb, offset, 4, magic_num);
-            PROTO_ITEM_SET_HIDDEN(hidden_item);
+            proto_item_set_hidden(hidden_item);
             if( dissector_try_uint(subdissector_table, magic_num, tvb, pinfo, tree) ) {
                 return tvb_captured_length(tvb);
             }
@@ -2225,7 +2218,7 @@ dissect_h248(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
         h248_tree = proto_item_add_subtree(h248_item, ett_h248);
     }
 
-    dissect_h248_MegacoMessage(FALSE, tvb, 0, &asn1_ctx, h248_tree, -1);
+    dissect_h248_MegacoMessage(false, tvb, 0, &asn1_ctx, h248_tree, -1);
 
     return tvb_captured_length(tvb);
 }
@@ -2336,7 +2329,7 @@ void proto_register_h248(void) {
     };
 
     /* List of subtrees */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_h248,
         &ett_mtpaddress,
         &ett_packagename,
@@ -2371,23 +2364,13 @@ void proto_register_h248(void) {
     expert_h248 = expert_register_protocol(proto_h248);
     expert_register_field_array(expert_h248, ei, array_length(ei));
 
-    subdissector_table = register_dissector_table("h248.magic_num", "H248 Magic Num", proto_h248, FT_UINT32, BASE_HEX);
+    subdissector_table = register_dissector_table("h248.magic_num", "H.248 Magic Num", proto_h248, FT_UINT32, BASE_HEX);
 
-    h248_module = prefs_register_protocol(proto_h248, proto_reg_handoff_h248);
+    h248_module = prefs_register_protocol(proto_h248, NULL);
     prefs_register_bool_preference(h248_module, "ctx_info",
                                    "Track Context",
                                    "Maintain relationships between transactions and contexts and display an extra tree showing context data",
                                    &keep_persistent_data);
-    prefs_register_uint_preference(h248_module, "udp_port",
-                                   "UDP port",
-                                   "Port to be decoded as h248",
-                                   10,
-                                   &global_udp_port);
-    prefs_register_uint_preference(h248_module, "tcp_port",
-                                   "TCP port",
-                                   "Port to be decoded as h248",
-                                   10,
-                                   &global_tcp_port);
     prefs_register_bool_preference(h248_module, "desegment",
                                    "Desegment H.248 over TCP",
                                    "Desegment H.248 messages that span more TCP segments",
@@ -2404,32 +2387,10 @@ void proto_register_h248(void) {
 /*--- proto_reg_handoff_h248 -------------------------------------------*/
 void proto_reg_handoff_h248(void) {
 
-    static gboolean initialized = FALSE;
-    static guint32 udp_port;
-    static guint32 tcp_port;
-
-    if (!initialized) {
-        dissector_add_uint("mtp3.service_indicator", MTP_SI_GCP, h248_handle);
-        h248_term_handle = find_dissector_add_dependency("h248term", proto_h248);
-        initialized = TRUE;
-    } else {
-        if (udp_port != 0)
-            dissector_delete_uint("udp.port", udp_port, h248_handle);
-
-        if (tcp_port != 0)
-            dissector_delete_uint("tcp.port", tcp_port, h248_tpkt_handle);
-    }
-
-    udp_port = global_udp_port;
-    tcp_port = global_tcp_port;
-
-    if (udp_port != 0) {
-        dissector_add_uint("udp.port", udp_port, h248_handle);
-    }
-
-    if (tcp_port != 0) {
-        dissector_add_uint("tcp.port", tcp_port, h248_tpkt_handle);
-    }
+    dissector_add_uint("mtp3.service_indicator", MTP_SI_GCP, h248_handle);
+    h248_term_handle = find_dissector_add_dependency("h248term", proto_h248);
+    dissector_add_uint_with_preference("tcp.port", H248_PORT, h248_tpkt_handle);
+    dissector_add_uint_with_preference("udp.port", H248_PORT, h248_handle);
 
     ss7pc_address_type = address_type_get_by_name("AT_SS7PC");
     exported_pdu_tap = find_tap_id(EXPORT_PDU_TAP_NAME_LAYER_7);

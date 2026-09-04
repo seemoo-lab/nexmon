@@ -10,19 +10,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  */
 
@@ -36,14 +24,14 @@ void proto_register_h248_dot2(void);
 #define PSNAME "H248_2"
 #define PFNAME "h248.2"
 
-static int proto_h248_2 = -1;
+static int proto_h248_2;
 
-/* static int hf_h248_2_dtone_evt = -1; */
-static int hf_h248_2_dtone_dtt_obs_evt = -1;
-static int hf_h248_2_dtone_dtt_obs_evt_val = -1;
+/* static int hf_h248_2_dtone_evt; */
+static int hf_h248_2_dtone_dtt_obs_evt;
+static int hf_h248_2_dtone_dtt_obs_evt_val;
 
-static gint ett_h248_2 = -1;
-static gint ett_h248_2_dtone_dtt_obs_evt = -1;
+static int ett_h248_2;
+static int ett_h248_2_dtone_dtt_obs_evt;
 
 
 static const value_string hf_h248_2_dtone_dtt_obs_evt_val_values[] = {
@@ -141,7 +129,7 @@ void proto_register_h248_dot2(void) {
 
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_h248_2,
         &ett_h248_2_dtone_dtt_obs_evt,
     };
@@ -156,7 +144,7 @@ void proto_register_h248_dot2(void) {
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -31,68 +19,70 @@
 void proto_register_eiss(void);
 void proto_reg_handoff_eiss(void);
 
-static int proto_eiss = -1;
+static dissector_handle_t eiss_handle;
 
-static int hf_eiss_reserved2 = -1;
-static int hf_eiss_section_number = -1;
-static int hf_eiss_last_section_number = -1;
-static int hf_eiss_protocol_version_major = -1;
-static int hf_eiss_protocol_version_minor = -1;
-static int hf_eiss_application_type = -1;
+static int proto_eiss;
+
+static int hf_eiss_reserved2;
+static int hf_eiss_section_number;
+static int hf_eiss_last_section_number;
+static int hf_eiss_protocol_version_major;
+static int hf_eiss_protocol_version_minor;
+static int hf_eiss_application_type;
 
 /* application_identifier() */
-static int hf_eiss_organisation_id = -1;
-static int hf_eiss_application_id = -1;
+static int hf_eiss_organisation_id;
+static int hf_eiss_application_id;
 
-static int hf_eiss_platform_id_length = -1;
+static int hf_eiss_platform_id_length;
 
 /* platform id information */
-static int hf_pdtHWManufacturer = -1;
-static int hf_pdtHWModel = -1;
-static int hf_pdtHWVersionMajor = -1;
-static int hf_pdtHWVersionMinor = -1;
-static int hf_pdtSWManufacturer = -1;
-static int hf_pdtSWModel = -1;
-static int hf_pdtSWVersionMajor = -1;
-static int hf_pdtSWVersionMinor = -1;
-static int hf_pdtProfile = -1;
+static int hf_pdtHWManufacturer;
+static int hf_pdtHWModel;
+static int hf_pdtHWVersionMajor;
+static int hf_pdtHWVersionMinor;
+static int hf_pdtSWManufacturer;
+static int hf_pdtSWModel;
+static int hf_pdtSWVersionMajor;
+static int hf_pdtSWVersionMinor;
+static int hf_pdtProfile;
 
 /* common to all eiss descriptors */
-static int hf_eiss_descriptor_tag = -1;
-static int hf_eiss_descriptor_length = -1;
+static int hf_eiss_descriptor_tag;
+static int hf_eiss_descriptor_length;
 
 /* application info descriptor */
-static int hf_eiss_aid_app_control_code = -1;
-static int hf_eiss_aid_app_version_major = -1;
-static int hf_eiss_aid_app_version_minor = -1;
-static int hf_eiss_aid_max_proto_version_major = -1;
-static int hf_eiss_aid_max_proto_version_minor = -1;
-static int hf_eiss_aid_test_flag = -1;
-static int hf_eiss_aid_reserved = -1;
-static int hf_eiss_aid_priority = -1;
-static int hf_eiss_irl_type = -1;
-static int hf_eiss_irl_length = -1;
-static int hf_eiss_irl_string = -1;
+static int hf_eiss_aid_app_control_code;
+static int hf_eiss_aid_app_version_major;
+static int hf_eiss_aid_app_version_minor;
+static int hf_eiss_aid_max_proto_version_major;
+static int hf_eiss_aid_max_proto_version_minor;
+static int hf_eiss_aid_test_flag;
+static int hf_eiss_aid_reserved;
+static int hf_eiss_aid_priority;
+static int hf_eiss_irl_type;
+static int hf_eiss_irl_length;
+static int hf_eiss_irl_string;
 
 /* media time descriptor */
-static int hf_eiss_mtd_time_value = -1;
+static int hf_eiss_mtd_time_value;
 
 /* stream event descriptor */
-static int hf_eiss_sed_time_value = -1;
-static int hf_eiss_sed_reserved = -1;
-static int hf_eiss_sed_descriptor_length = -1;
+static int hf_eiss_sed_time_value;
+static int hf_eiss_sed_reserved;
+static int hf_eiss_sed_descriptor_length;
 
-static gint ett_eiss = -1;
-static gint ett_eiss_platform_id = -1;
-static gint ett_eiss_desc = -1;
+static int ett_eiss;
+static int ett_eiss_platform_id;
+static int ett_eiss_desc;
 
-static expert_field ei_eiss_platform_id_length = EI_INIT;
-static expert_field ei_eiss_invalid_section_length = EI_INIT;
-static expert_field ei_eiss_invalid_section_syntax_indicator = EI_INIT;
-static expert_field ei_eiss_unknown_descriptor = EI_INIT;
-static expert_field ei_eiss_section_number = EI_INIT;
-static expert_field ei_eiss_application_type = EI_INIT;
-static expert_field ei_eiss_invalid_reserved_bits = EI_INIT;
+static expert_field ei_eiss_platform_id_length;
+static expert_field ei_eiss_invalid_section_length;
+static expert_field ei_eiss_invalid_section_syntax_indicator;
+static expert_field ei_eiss_unknown_descriptor;
+static expert_field ei_eiss_section_number;
+static expert_field ei_eiss_application_type;
+static expert_field ei_eiss_invalid_reserved_bits;
 
 #define MPEG_SECT_SYNTAX_INDICATOR_MASK	0x8000
 #define MPEG_SECT_RESERVED_MASK		0x7000
@@ -105,9 +95,10 @@ static const value_string eiss_descriptor_values[] = {
 	{    0, NULL }
 };
 
+/* ETSI TS 101 812 - DVB-MHP Specification section 10.5 */
 static const range_string application_id_values[] = {
 	{ 0x0000, 0x3fff, "Unsigned Application" },
-	{ 0x4000, 0x3fff, "Signed Application" },
+	{ 0x4000, 0x7fff, "Signed Application" },
 	{ 0x8000, 0xfffd, "Reserved by DVB" },
 	{ 0xfffe, 0xfffe, "Wildcard for signed applications of an organisation" },
 	{ 0xffff, 0xffff, "Wildcard for all applications of an organisation" },
@@ -123,8 +114,8 @@ static const range_string aid_control_code_values[] = {
 	{    0,    0, NULL }
 };
 
-static guint
-dissect_etv_bif_platform_ids(tvbuff_t *tvb, proto_tree *tree, guint offset)
+static unsigned
+dissect_etv_bif_platform_ids(tvbuff_t *tvb, proto_tree *tree, unsigned offset)
 {
 	proto_tree *platform_tree;
 
@@ -151,18 +142,18 @@ dissect_etv_bif_platform_ids(tvbuff_t *tvb, proto_tree *tree, guint offset)
 	return 15;
 }
 
-static guint
-dissect_eiss_descriptors(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset)
+static unsigned
+dissect_eiss_descriptors(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset)
 {
 	proto_tree *sub_tree;
-	guint       tag;
+	unsigned    tag;
 
-	tag = tvb_get_guint8(tvb, offset);
+	tag = tvb_get_uint8(tvb, offset);
 
 	if (0xe0 == tag) {
-		guint total_length;
+		unsigned total_length;
 
-		total_length = tvb_get_guint8(tvb, offset+1);
+		total_length = tvb_get_uint8(tvb, offset+1);
 		sub_tree = proto_tree_add_subtree(tree, tvb, offset, (2+total_length),
 					ett_eiss_desc, NULL, "ETV Application Information Descriptor");
 		proto_tree_add_item(sub_tree, hf_eiss_descriptor_tag,
@@ -216,7 +207,7 @@ dissect_eiss_descriptors(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gu
 					offset, 4, ENC_BIG_ENDIAN);
 		return 6;
 	} else if (0xe2 == tag) {
-		guint     tmp;
+		unsigned  tmp;
 		tvbuff_t *payload;
 
 		tmp = tvb_get_ntohs(tvb, offset+1);
@@ -249,18 +240,18 @@ dissect_eiss_descriptors(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gu
 static int
 dissect_eiss(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	guint       offset = 0, packet_length, sect_len;
+	unsigned    offset = 0, packet_length, sect_len;
 	proto_item *ti;
 	proto_item *pi;
 	proto_tree *eiss_tree;
 	proto_item *items[PACKET_MPEG_SECT_PI__SIZE];
-	gboolean    ssi;
-	guint       reserved;
-	guint8      reserved2;
-	guint8      sect_num, last_sect_num;
+	bool        ssi;
+	unsigned    reserved;
+	uint8_t     reserved2;
+	uint8_t     sect_num, last_sect_num;
 
-	guint16 eiss_application_type;
-	guint8 platform_id_length;
+	uint16_t eiss_application_type;
+	uint8_t platform_id_length;
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "EISS");
 
@@ -272,11 +263,11 @@ dissect_eiss(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 
 	packet_length = sect_len + 3 - 4; /* + for the header, - for the crc */
 
-	if (FALSE != ssi) {
+	if (false != ssi) {
 		proto_item *msg_error;
 		msg_error = items[PACKET_MPEG_SECT_PI__SSI];
 
-		PROTO_ITEM_SET_GENERATED(msg_error);
+		proto_item_set_generated(msg_error);
 		expert_add_info(pinfo, msg_error, &ei_eiss_invalid_section_syntax_indicator);
 	}
 
@@ -284,7 +275,7 @@ dissect_eiss(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 		proto_item *msg_error;
 		msg_error = items[PACKET_MPEG_SECT_PI__RESERVED];
 
-		PROTO_ITEM_SET_GENERATED(msg_error);
+		proto_item_set_generated(msg_error);
 		expert_add_info_format(pinfo, msg_error, &ei_eiss_invalid_reserved_bits, "Invalid reserved1 bits (should all be 0)");
 	}
 
@@ -292,19 +283,19 @@ dissect_eiss(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 		proto_item *msg_error;
 		msg_error = items[PACKET_MPEG_SECT_PI__LENGTH];
 
-		PROTO_ITEM_SET_GENERATED(msg_error);
+		proto_item_set_generated(msg_error);
 		expert_add_info(pinfo, msg_error, &ei_eiss_invalid_section_length);
 	}
 
-	reserved2 = tvb_get_guint8(tvb, offset);
+	reserved2 = tvb_get_uint8(tvb, offset);
 	pi = proto_tree_add_item(eiss_tree, hf_eiss_reserved2, tvb, offset, 1, ENC_BIG_ENDIAN);
 	if (0 != reserved2) {
 		expert_add_info_format(pinfo, pi, &ei_eiss_invalid_reserved_bits, "Invalid reserved2 bits (should all be 0)");
 	}
 	offset++;
 
-	sect_num = tvb_get_guint8(tvb, offset);
-	last_sect_num = tvb_get_guint8(tvb, offset + 1);
+	sect_num = tvb_get_uint8(tvb, offset);
+	last_sect_num = tvb_get_uint8(tvb, offset + 1);
 	pi = proto_tree_add_item(eiss_tree, hf_eiss_section_number, tvb, offset, 1, ENC_BIG_ENDIAN);
 	if (last_sect_num < sect_num) {
 		expert_add_info(pinfo, pi, &ei_eiss_section_number);
@@ -328,7 +319,7 @@ dissect_eiss(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 	proto_tree_add_item(eiss_tree, hf_eiss_application_id,          tvb, offset, 2, ENC_BIG_ENDIAN);
 	offset += 2;
 
-	platform_id_length = tvb_get_guint8(tvb, offset);
+	platform_id_length = tvb_get_uint8(tvb, offset);
 	pi = proto_tree_add_item(eiss_tree, hf_eiss_platform_id_length, tvb, offset, 1, ENC_BIG_ENDIAN);
 	if (0 != platform_id_length % 15) {
 		expert_add_info(pinfo, pi, &ei_eiss_platform_id_length);
@@ -336,7 +327,7 @@ dissect_eiss(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 	offset++;
 
 	while (0 < platform_id_length) {
-		guint tmp;
+		unsigned tmp;
 
 		tmp = dissect_etv_bif_platform_ids(tvb, eiss_tree, offset);
 		offset += tmp;
@@ -544,7 +535,7 @@ proto_register_eiss(void)
 		} }
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_eiss,
 		&ett_eiss_platform_id,
 		&ett_eiss_desc,
@@ -568,20 +559,19 @@ proto_register_eiss(void)
 	proto_register_subtree_array(ett, array_length(ett));
 	expert_eiss = expert_register_protocol(proto_eiss);
 	expert_register_field_array(expert_eiss, ei, array_length(ei));
+
+	eiss_handle = register_dissector("eiss", dissect_eiss, proto_eiss);
 }
 
 
 void
 proto_reg_handoff_eiss(void)
 {
-	dissector_handle_t eiss_handle;
-
-	eiss_handle = create_dissector_handle(dissect_eiss, proto_eiss);
 	dissector_add_uint("mpeg_sect.tid", EISS_SECTION_TID, eiss_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

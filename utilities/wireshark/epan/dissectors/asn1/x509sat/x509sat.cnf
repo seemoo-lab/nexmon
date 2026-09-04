@@ -183,6 +183,8 @@ DirectoryString        B "2.5.4.65"   "id-at-pseudonym"
 ObjectIdentifier       B "2.5.4.66" "id-at-communuicationsService"
 ObjectIdentifier       B "2.5.4.67" "id-at-communuicationsNetwork"
 
+DirectoryString        B "2.5.4.97" "id-at-organizationIdentifier"
+
 SyntaxNumericString	   B "2.5.13.8" "id-mr-numericStringMatch"
 CaseIgnoreListMatch	   B "2.5.13.11" "id-mr-caseIgnoreListMatch"
 BitString			   B "2.5.13.16" "id-mr-bitStringMatch"
@@ -306,7 +308,7 @@ DirectoryString	B "1.2.840.113549.1.9.13"	"pkcs-9-at-signingDescription"
 SyntaxBMPString	B "1.2.840.113549.1.9.20"	"pkcs-9-at-friendlyName"
 OctetString	B "1.2.840.113549.1.9.21"	"pkcs-9-at-localKeyId"
 #PKCS15Token	B "1.2.840.113549.1.9.25.1"	"pkcs-9-at-pkcs15Token" - TBD
-#EncryptedPrivateKeyInfo	B "1.2.840.113549.1.9.25.2"	"pkcs-9-at-encryptedPrivateKeyInfo" - see pkcs12.cnf
+#EncryptedPrivateKeyInfo	B "1.2.840.113549.1.9.25.2"	"pkcs-9-at-encryptedPrivateKeyInfo" - see akp.cnf
 OctetString	B "1.2.840.113549.1.9.25.3"	"pkcs-9-at-randomNonce" # move to PKCS#9 when defined
 Integer		B "1.2.840.113549.1.9.25.4"	"pkcs-9-at-sequenceNumber" # move to PKCS#9 when defined
 #ContentInfo	B "1.2.840.113549.1.9.25.5"	"pkcs-9-at-pkcs7PDU" - TBD - not the same as CMS ContentInfo
@@ -374,24 +376,47 @@ XDayOf/fifth				fifth_dayof
 
 #.END
 
+#.FN_BODY SyntaxUTCTime HF_INDEX = -1 VAL_PTR = &outstr
+  char *outstr, *newstr;
+  int old_offset = offset;
+
+  /* the 2-digit year can only be in the range 1950..2049 https://tools.ietf.org/html/rfc5280#section-4.1.2.5.1 */
+%(DEFAULT_BODY)s
+  if (hf_index > 0 && outstr) {
+    newstr = wmem_strconcat(actx->pinfo->pool, outstr[0] < '5' ? "20": "19", outstr, NULL);
+    proto_tree_add_string(tree, hf_index, tvb, old_offset, offset - old_offset, newstr);
+  }
+
 #.FN_BODY GUID
-  gint8 ber_class;
-  gboolean pc;
-  gint32 tag;
-  guint32 len;
+  int8_t ber_class;
+  bool pc;
+  int32_t tag;
+  uint32_t len;
   e_guid_t uuid;
 
   if(!implicit_tag){
     offset=dissect_ber_identifier(actx->pinfo, tree, tvb, offset, &ber_class, &pc, &tag);
     offset=dissect_ber_length(actx->pinfo, tree, tvb, offset, &len, NULL);
   } else {
-    gint32 remaining=tvb_reported_length_remaining(tvb, offset);
+    int32_t remaining=tvb_reported_length_remaining(tvb, offset);
     len=remaining>0 ? remaining : 0;
   }
 
   tvb_get_ntohguid (tvb, offset, &uuid);
   actx->created_item = proto_tree_add_guid(tree, hf_index, tvb, offset, len, &uuid);
 #.END
+
+#.TYPE_ATTR
+DirectoryString/teletexString DISPLAY = BASE_NONE
+
+#.TYPE_ATTR
+SyntaxTeletexString DISPLAY = BASE_NONE
+
+#.TYPE_ATTR
+SyntaxT61String DISPLAY = BASE_NONE
+
+#.TYPE_ATTR
+SyntaxVideotexString DISPLAY = BASE_NONE
 
 #.END
 

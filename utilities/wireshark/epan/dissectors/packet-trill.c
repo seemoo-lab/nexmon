@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -29,24 +17,28 @@
 
 #include <epan/packet.h>
 #include <epan/etypes.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 
 void proto_register_trill(void);
 void proto_reg_handoff_trill(void);
 
-static int proto_trill = -1 ;
-static gint ett_trill = -1 ;
+static dissector_handle_t trill_handle;
 
-static int hf_trill_version = -1 ;
-static int hf_trill_reserved = -1 ;
-static int hf_trill_multi_dst = -1 ;
-static int hf_trill_op_len = -1 ;
-static int hf_trill_hop_cnt = -1 ;
-static int hf_trill_egress_nick = -1 ;
-static int hf_trill_ingress_nick = -1 ;
+static int proto_trill;
+static int ett_trill;
+
+static int hf_trill_version;
+static int hf_trill_reserved;
+static int hf_trill_multi_dst;
+static int hf_trill_op_len;
+static int hf_trill_hop_cnt;
+static int hf_trill_egress_nick;
+static int hf_trill_ingress_nick;
 /* TODO For now we will just add all the options into a byte field.
    Later this should be parsed out into a sub-tree with all the option
    details. */
-static int hf_trill_options= -1 ;
+static int hf_trill_options;
 
 static dissector_handle_t eth_dissector ;
 
@@ -97,14 +89,14 @@ dissect_trill( tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _
 {
   proto_item *ti ;
   proto_tree *trill_tree ;
-  guint32     op_len ;
+  uint32_t    op_len ;
   tvbuff_t   *next_tvb ;
   int         offset = 0 ;
 
   col_set_str( pinfo->cinfo, COL_PROTOCOL, TRILL_PROTO_COL_NAME ) ;
   col_set_str( pinfo->cinfo, COL_INFO, TRILL_PROTO_COL_INFO ) ;
 
-  op_len = tvb_get_bits( tvb, 5, 5, ENC_BIG_ENDIAN ) * TRILL_OP_LENGTH_BYTE_UNITS ;
+  op_len = tvb_get_bits32( tvb, 5, 5, ENC_BIG_ENDIAN ) * TRILL_OP_LENGTH_BYTE_UNITS ;
   if (tree) {
     ti = proto_tree_add_item( tree, proto_trill, tvb, 0,
       TRILL_MIN_FRAME_LENGTH + op_len, ENC_NA ) ;
@@ -186,21 +178,19 @@ proto_register_trill(void)
         "The TRILL Options field.", HFILL }}
   };
 
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_trill
   };
 
   proto_trill = proto_register_protocol("TRILL", "TRILL", "trill");
   proto_register_field_array(proto_trill, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
+  trill_handle = register_dissector("trill", dissect_trill, proto_trill);
 }
 
 void
 proto_reg_handoff_trill(void)
 {
-  dissector_handle_t trill_handle;
-
-  trill_handle = create_dissector_handle(dissect_trill, proto_trill);
   dissector_add_uint("ethertype", ETHERTYPE_TRILL, trill_handle);
 
   /*
@@ -216,7 +206,7 @@ proto_reg_handoff_trill(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

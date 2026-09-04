@@ -4,19 +4,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include <algorithm>
@@ -27,20 +15,23 @@
 #include <epan/proto.h>
 #include <epan/range.h>
 #include <epan/tfs.h>
-#include <epan/value_string.h>
+#include <wsutil/value_string.h>
 
 #include <wsutil/utf8_entities.h>
 
-#include "qt_ui_utils.h"
-#include "wireshark_application.h"
+#include <ui/qt/utils/qt_ui_utils.h>
+#include "main_application.h"
+
+#include <ui/qt/utils/variant_pointer.h>
 
 #include <QPushButton>
 #include <QDialogButtonBox>
 #include <QListWidgetItem>
 #include <QTreeWidgetItem>
+#include <QRegularExpression>
+#include <QtConcurrent>
 
 // To do:
-// - Speed up initialization.
 // - Speed up search.
 
 enum {
@@ -50,31 +41,105 @@ enum {
 
 enum {
     present_op_ = 1000,
-    eq_op_,
-    ne_op_,
+    any_eq_op_,
+    all_eq_op_,
+    any_ne_op_,
+    all_ne_op_,
     gt_op_,
     lt_op_,
     ge_op_,
     le_op_,
     contains_op_,
-    matches_op_
+    matches_op_,
+    in_op_
 };
 
-Q_DECLARE_METATYPE(header_field_info *)
+static inline bool compareTreeWidgetItems(const QTreeWidgetItem *it1, const QTreeWidgetItem *it2)
+{
+    return *it1 < *it2;
+}
+
+#ifdef DISPLAY_FILTER_EXPRESSION_DIALOG_USE_QPROMISE
+static void generateProtocolTreeItems(QPromise<QTreeWidgetItem *> &promise)
+{
+    QList<QTreeWidgetItem *> proto_list;
+    QList<QTreeWidgetItem *> *ptr_proto_list = &proto_list;
+#else
+static QList<QTreeWidgetItem *> *generateProtocolTreeItems()
+{
+    QList<QTreeWidgetItem *> *ptr_proto_list = new QList<QTreeWidgetItem *>();
+#endif
+
+    void *proto_cookie;
+    for (int proto_id = proto_get_first_protocol(&proto_cookie); proto_id != -1;
+         proto_id = proto_get_next_protocol(&proto_cookie)) {
+        protocol_t *protocol = find_protocol_by_id(proto_id);
+        if (!proto_is_protocol_enabled(protocol)) continue;
+
+        QTreeWidgetItem *proto_ti = new QTreeWidgetItem(proto_type_);
+        QString label = QStringLiteral("%1 %2 %3")
+            .arg(proto_get_protocol_short_name(protocol), UTF8_MIDDLE_DOT, proto_get_protocol_long_name(protocol));
+        proto_ti->setText(0, label);
+        proto_ti->setData(0, Qt::UserRole, QVariant::fromValue(proto_id));
+        ptr_proto_list->append(proto_ti);
+    }
+    std::stable_sort(ptr_proto_list->begin(), ptr_proto_list->end(), compareTreeWidgetItems);
+
+    foreach (QTreeWidgetItem *proto_ti, *ptr_proto_list) {
+#ifdef DISPLAY_FILTER_EXPRESSION_DIALOG_USE_QPROMISE
+        if (promise.isCanceled()) {
+            delete proto_ti;
+            continue;
+        }
+        promise.suspendIfRequested();
+#endif
+        void *field_cookie;
+        int proto_id = proto_ti->data(0, Qt::UserRole).toInt();
+
+        QList <QTreeWidgetItem *> field_list;
+        for (header_field_info *hfinfo = proto_get_first_protocol_field(proto_id, &field_cookie); hfinfo != NULL;
+             hfinfo = proto_get_next_protocol_field(proto_id, &field_cookie)) {
+            if (hfinfo->same_name_prev_id != -1) continue; // Ignore duplicate names.
+
+            QTreeWidgetItem *field_ti = new QTreeWidgetItem(field_type_);
+            QString label = QStringLiteral("%1 %2 %3").arg(hfinfo->abbrev, UTF8_MIDDLE_DOT, hfinfo->name);
+            field_ti->setText(0, label);
+            field_ti->setData(0, Qt::UserRole, VariantPointer<header_field_info>::asQVariant(hfinfo));
+            field_list << field_ti;
+        }
+        std::stable_sort(field_list.begin(), field_list.end(), compareTreeWidgetItems);
+        proto_ti->addChildren(field_list);
+#ifdef DISPLAY_FILTER_EXPRESSION_DIALOG_USE_QPROMISE
+        if (!promise.addResult(proto_ti))
+            delete proto_ti;
+    }
+#else
+    }
+    return ptr_proto_list;
+#endif
+}
 
 DisplayFilterExpressionDialog::DisplayFilterExpressionDialog(QWidget *parent) :
     GeometryStateDialog(parent),
+#ifdef DISPLAY_FILTER_EXPRESSION_DIALOG_USE_QPROMISE
+    watcher(new QFutureWatcher<QTreeWidgetItem *>(nullptr)),
+#else
+    watcher(new QFutureWatcher<QList<QTreeWidgetItem *> *>(nullptr)),
+#endif
     ui(new Ui::DisplayFilterExpressionDialog),
     ftype_(FT_NONE),
     field_(NULL)
 {
     ui->setupUi(this);
     if (parent) loadGeometry(parent->width() * 2 / 3, parent->height());
+    setAttribute(Qt::WA_DeleteOnClose, true);
 
-    setWindowTitle(wsApp->windowTitleString(tr("Display Filter Expression")));
-    setWindowIcon(wsApp->normalIcon());
+    setWindowTitle(mainApp->windowTitleString(tr("Display Filter Expression")));
+    setWindowIcon(mainApp->normalIcon());
 
     proto_initialize_all_prefixes();
+
+    auto future = QtConcurrent::run(generateProtocolTreeItems);
 
     ui->fieldTreeWidget->setToolTip(ui->fieldLabel->toolTip());
     ui->searchLineEdit->setToolTip(ui->searchLabel->toolTip());
@@ -85,83 +150,79 @@ DisplayFilterExpressionDialog::DisplayFilterExpressionDialog(QWidget *parent) :
 
     // Relation list
     new QListWidgetItem("is present", ui->relationListWidget, present_op_);
-    new QListWidgetItem("==", ui->relationListWidget, eq_op_);
-    new QListWidgetItem("!=", ui->relationListWidget, ne_op_);
+    new QListWidgetItem("==", ui->relationListWidget, any_eq_op_);
+    new QListWidgetItem("!=", ui->relationListWidget, all_ne_op_);
+    new QListWidgetItem("===", ui->relationListWidget, all_eq_op_);
+    new QListWidgetItem("!==", ui->relationListWidget, any_ne_op_);
     new QListWidgetItem(">", ui->relationListWidget, gt_op_);
     new QListWidgetItem("<", ui->relationListWidget, lt_op_);
     new QListWidgetItem(">=", ui->relationListWidget, ge_op_);
     new QListWidgetItem("<=", ui->relationListWidget, le_op_);
     new QListWidgetItem("contains", ui->relationListWidget, contains_op_);
     new QListWidgetItem("matches", ui->relationListWidget, matches_op_);
+    new QListWidgetItem("in", ui->relationListWidget, in_op_);
 
     value_label_pfx_ = ui->valueLabel->text();
 
-    connect(ui->valueLineEdit, SIGNAL(textEdited(QString)), this, SLOT(updateWidgets()));
-    connect(ui->rangeLineEdit, SIGNAL(textEdited(QString)), this, SLOT(updateWidgets()));
+    connect(ui->anyRadioButton, &QAbstractButton::toggled, this, &DisplayFilterExpressionDialog::updateWidgets);
+    connect(ui->allRadioButton, &QAbstractButton::toggled, this, &DisplayFilterExpressionDialog::updateWidgets);
+    connect(ui->valueLineEdit, &QLineEdit::textEdited, this, &DisplayFilterExpressionDialog::updateWidgets);
+    connect(ui->rangeLineEdit, &QLineEdit::textEdited, this, &DisplayFilterExpressionDialog::updateWidgets);
 
-    // Trigger updateWidgets
-    ui->fieldTreeWidget->selectionModel()->clear();
+    updateWidgets();
+    ui->searchLineEdit->setReadOnly(true);
 
-    QTimer::singleShot(0, this, SLOT(fillTree()));
+#ifdef DISPLAY_FILTER_EXPRESSION_DIALOG_USE_QPROMISE
+    connect(watcher, &QFutureWatcher<QTreeWidgetItem *>::resultReadyAt, this, &DisplayFilterExpressionDialog::addTreeItem);
+    connect(watcher, &QFutureWatcher<QTreeWidgetItem *>::finished, this, &DisplayFilterExpressionDialog::fillTree);
+#else
+    connect(watcher, &QFutureWatcher<QList<QTreeWidgetItem *> *>::finished, this, &DisplayFilterExpressionDialog::fillTree);
+    // If window is closed before future finishes, DisplayFilterExpressionDialog fillTree slot won't run
+    // Register lambda to free up the list container and tree entries (if not consumed by fillTree())
+    auto captured_watcher = this->watcher;
+    connect(watcher, &QFutureWatcher<QList<QTreeWidgetItem *> *>::finished, [captured_watcher]() {
+        QList<QTreeWidgetItem *> *items = captured_watcher->future().result();
+        qDeleteAll(*items);
+        delete items;
+    });
+#endif
+    watcher->setFuture(future);
 }
 
 DisplayFilterExpressionDialog::~DisplayFilterExpressionDialog()
 {
+    if (watcher)
+    {
+#ifdef DISPLAY_FILTER_EXPRESSION_DIALOG_USE_QPROMISE
+        watcher->future().cancel();
+        qDeleteAll(watcher->future().results());
+#endif
+        watcher->waitForFinished();
+        watcher->deleteLater();
+    }
     delete ui;
 }
 
-// Nearly identical to SupportedProtocolsDialog::fillTree.
+#ifdef DISPLAY_FILTER_EXPRESSION_DIALOG_USE_QPROMISE
+void DisplayFilterExpressionDialog::addTreeItem(int result)
+{
+    QTreeWidgetItem *item = watcher->future().resultAt(result);
+    ui->fieldTreeWidget->invisibleRootItem()->addChild(item);
+}
+#endif
+
 void DisplayFilterExpressionDialog::fillTree()
 {
-    void *proto_cookie;
-    QList <QTreeWidgetItem *> proto_list;
+#ifndef DISPLAY_FILTER_EXPRESSION_DIALOG_USE_QPROMISE
+    QList<QTreeWidgetItem *> *items = watcher->future().result();
+    ui->fieldTreeWidget->invisibleRootItem()->addChildren(*items);
+    // fieldTreeWidget now owns all items
+    items->clear();
+#endif
+    watcher->deleteLater();
+    watcher = nullptr;
 
-    for (int proto_id = proto_get_first_protocol(&proto_cookie); proto_id != -1;
-         proto_id = proto_get_next_protocol(&proto_cookie)) {
-        protocol_t *protocol = find_protocol_by_id(proto_id);
-        if (!proto_is_protocol_enabled(protocol)) continue;
-
-        QTreeWidgetItem *proto_ti = new QTreeWidgetItem(proto_type_);
-        QString label = QString("%1 " UTF8_MIDDLE_DOT " %3")
-                .arg(proto_get_protocol_short_name(protocol))
-                .arg(proto_get_protocol_long_name(protocol));
-        proto_ti->setText(0, label);
-        proto_ti->setData(0, Qt::UserRole, qVariantFromValue(proto_id));
-        proto_list << proto_ti;
-    }
-
-    wsApp->processEvents(QEventLoop::ExcludeUserInputEvents | QEventLoop::ExcludeSocketNotifiers, 1);
-
-    ui->fieldTreeWidget->invisibleRootItem()->addChildren(proto_list);
-    ui->fieldTreeWidget->sortByColumn(0, Qt::AscendingOrder);
-
-    int field_count = 0;
-    foreach (QTreeWidgetItem *proto_ti, proto_list) {
-        void *field_cookie;
-        int proto_id = proto_ti->data(0, Qt::UserRole).toInt();
-
-        QList <QTreeWidgetItem *> field_list;
-        for (header_field_info *hfinfo = proto_get_first_protocol_field(proto_id, &field_cookie); hfinfo != NULL;
-             hfinfo = proto_get_next_protocol_field(proto_id, &field_cookie)) {
-            if (hfinfo->same_name_prev_id != -1) continue; // Ignore duplicate names.
-
-            QTreeWidgetItem *field_ti = new QTreeWidgetItem(field_type_);
-            QString label = QString("%1 " UTF8_MIDDLE_DOT " %3").arg(hfinfo->abbrev).arg(hfinfo->name);
-            field_ti->setText(0, label);
-            field_ti->setData(0, Qt::UserRole, qVariantFromValue(hfinfo));
-            field_list << field_ti;
-
-            field_count++;
-            if (field_count % 10000 == 0) {
-                wsApp->processEvents(QEventLoop::ExcludeUserInputEvents | QEventLoop::ExcludeSocketNotifiers, 1);
-            }
-        }
-        std::sort(field_list.begin(), field_list.end());
-        proto_ti->addChildren(field_list);
-    }
-
-    wsApp->processEvents(QEventLoop::ExcludeUserInputEvents | QEventLoop::ExcludeSocketNotifiers, 1);
-    ui->fieldTreeWidget->sortByColumn(0, Qt::AscendingOrder);
+    ui->searchLineEdit->setReadOnly(false);
 }
 
 void DisplayFilterExpressionDialog::updateWidgets()
@@ -172,36 +233,61 @@ void DisplayFilterExpressionDialog::updateWidgets()
     ui->relationListWidget->setEnabled(rel_enable);
     ui->hintLabel->clear();
 
+    bool quantity_enable = false;
     bool value_enable = false;
     bool enum_enable = false;
+    bool enum_multi_enable = false;
     bool range_enable = false;
 
     QString filter;
-    if (field_ && rel_enable) {
+    if (field_) {
         filter = field_;
         QListWidgetItem *rli = ui->relationListWidget->currentItem();
+        if (rli && rli->type() > all_ne_op_) {
+            quantity_enable = true;
+            if (ui->anyRadioButton->isChecked()) {
+                filter.prepend("any ");
+            }
+            else if (ui->allRadioButton->isChecked()) {
+                filter.prepend("all ");
+            }
+            else {
+                ws_assert_not_reached();
+            }
+        }
         if (rli && rli->type() != present_op_) {
             value_enable = true;
             if (ftype_can_slice(ftype_)) {
                 range_enable = true;
             }
             enum_enable = ui->enumListWidget->count() > 0;
-            filter.append(QString(" %1").arg(rli->text()));
+            filter.append(QStringLiteral(" %1").arg(rli->text()));
         }
         if (value_enable && !ui->valueLineEdit->text().isEmpty()) {
-            if (ftype_ == FT_STRING) {
-                filter.append(QString(" \"%1\"").arg(ui->valueLineEdit->text()));
+            if (rli && rli->type() == in_op_) {
+                filter.append(QStringLiteral(" {%1}").arg(ui->valueLineEdit->text()));
+                enum_multi_enable = enum_enable;
             } else {
-                filter.append(QString(" %1").arg(ui->valueLineEdit->text()));
+                if (ftype_ == FT_STRING) {
+                    filter.append(QStringLiteral(" \"%1\"").arg(ui->valueLineEdit->text()));
+                } else {
+                    filter.append(QStringLiteral(" %1").arg(ui->valueLineEdit->text()));
+                }
             }
         }
     }
+
+    ui->quantityLabel->setEnabled(quantity_enable);
+    ui->allRadioButton->setEnabled(quantity_enable);
+    ui->anyRadioButton->setEnabled(quantity_enable);
 
     ui->valueLabel->setEnabled(value_enable);
     ui->valueLineEdit->setEnabled(value_enable);
 
     ui->enumLabel->setEnabled(enum_enable);
     ui->enumListWidget->setEnabled(enum_enable);
+    ui->enumListWidget->setSelectionMode(enum_multi_enable ?
+        QAbstractItemView::ExtendedSelection : QAbstractItemView::SingleSelection);
 
     ui->rangeLabel->setEnabled(range_enable);
     ui->rangeLineEdit->setEnabled(range_enable);
@@ -229,11 +315,10 @@ void DisplayFilterExpressionDialog::updateWidgets()
 
 void DisplayFilterExpressionDialog::fillEnumBooleanValues(const true_false_string *tfs)
 {
-    if (!tfs) tfs = &tfs_true_false;
-    QListWidgetItem *eli = new QListWidgetItem(tfs->true_string, ui->enumListWidget);
-    eli->setData(Qt::UserRole, QString("1"));
-    eli = new QListWidgetItem(tfs->false_string, ui->enumListWidget);
-    eli->setData(Qt::UserRole, QString("0"));
+    QListWidgetItem *eli = new QListWidgetItem(tfs_get_string(true, tfs), ui->enumListWidget);
+    eli->setData(Qt::UserRole, QStringLiteral("1"));
+    eli = new QListWidgetItem(tfs_get_string(false, tfs), ui->enumListWidget);
+    eli->setData(Qt::UserRole, QStringLiteral("0"));
 }
 
 void DisplayFilterExpressionDialog::fillEnumIntValues(const _value_string *vals, int base)
@@ -265,11 +350,7 @@ void DisplayFilterExpressionDialog::fillEnumRangeValues(const _range_string *rva
 
         // Tell the user which values are valid here. Default to value_min below.
         if (rvals[i].value_min != rvals[i].value_max) {
-            range_t range;
-            range.nranges = 1;
-            range.ranges[0].low = rvals[i].value_min;
-            range.ranges[0].high = rvals[i].value_max;
-            range_text.append(QString(" (%1 valid)").arg(range_to_qstring(&range)));
+            range_text.append(QStringLiteral(" (%1 valid)").arg(range_to_qstring(&rvals[i])));
         }
 
         QListWidgetItem *eli = new QListWidgetItem(range_text, ui->enumListWidget);
@@ -294,7 +375,7 @@ void DisplayFilterExpressionDialog::on_fieldTreeWidget_itemSelectionChanged()
         ftype_ = FT_PROTOCOL;
         field_ = proto_get_protocol_filter_name(cur_fti->data(0, Qt::UserRole).toInt());
     } else if (cur_fti && cur_fti->type() == field_type_) {
-        header_field_info *hfinfo = cur_fti->data(0, Qt::UserRole).value<header_field_info*>();
+        header_field_info *hfinfo = VariantPointer<header_field_info>::asPtr(cur_fti->data(0, Qt::UserRole));
         if (hfinfo) {
             ftype_ = hfinfo->type;
             field_ = hfinfo->abbrev;
@@ -337,7 +418,7 @@ void DisplayFilterExpressionDialog::on_fieldTreeWidget_itemSelectionChanged()
                     } else { // Plain old value_string / VALS
                         const value_string *vals = (const value_string *)hfinfo->strings;
                         if (hfinfo->display & BASE_EXT_STRING)
-                            vals = VALUE_STRING_EXT_VS_P((value_string_ext *)vals);
+                            vals = VALUE_STRING_EXT_VS_P((const value_string_ext *)vals);
                         fillEnumIntValues(vals, base);
                     }
                 }
@@ -356,23 +437,18 @@ void DisplayFilterExpressionDialog::on_fieldTreeWidget_itemSelectionChanged()
     for (int i = 0; i < ui->relationListWidget->count(); i++) {
         QListWidgetItem *li = ui->relationListWidget->item(i);
         switch (li->type()) {
-        case eq_op_:
+        case any_eq_op_:
+        case all_eq_op_:
+        case any_ne_op_:
+        case all_ne_op_:
             li->setHidden(!ftype_can_eq(ftype_) && !(ftype_can_slice(ftype_) && ftype_can_eq(FT_BYTES)));
             break;
-        case ne_op_:
-            li->setHidden(!ftype_can_ne(ftype_) && !(ftype_can_slice(ftype_) && ftype_can_ne(FT_BYTES)));
-            break;
         case gt_op_:
-            li->setHidden(!ftype_can_gt(ftype_) && !(ftype_can_slice(ftype_) && ftype_can_gt(FT_BYTES)));
-            break;
         case lt_op_:
-            li->setHidden(!ftype_can_lt(ftype_) && !(ftype_can_slice(ftype_) && ftype_can_lt(FT_BYTES)));
-            break;
         case ge_op_:
-            li->setHidden(!ftype_can_ge(ftype_) && !(ftype_can_slice(ftype_) && ftype_can_ge(FT_BYTES)));
-            break;
         case le_op_:
-            li->setHidden(!ftype_can_le(ftype_) && !(ftype_can_slice(ftype_) && ftype_can_le(FT_BYTES)));
+        case in_op_:
+            li->setHidden(!ftype_can_cmp(ftype_) && !(ftype_can_slice(ftype_) && ftype_can_cmp(FT_BYTES)));
             break;
         case contains_op_:
             li->setHidden(!ftype_can_contains(ftype_) && !(ftype_can_slice(ftype_) && ftype_can_contains(FT_BYTES)));
@@ -392,7 +468,7 @@ void DisplayFilterExpressionDialog::on_fieldTreeWidget_itemSelectionChanged()
     }
 
     if (ftype_ != FT_NONE) {
-        ui->valueLabel->setText(QString("%1 (%2)")
+        ui->valueLabel->setText(QStringLiteral("%1 (%2)")
                                 .arg(value_label_pfx_)
                                 .arg(ftype_pretty_name(ftype_)));
     } else {
@@ -409,10 +485,17 @@ void DisplayFilterExpressionDialog::on_relationListWidget_itemSelectionChanged()
 
 void DisplayFilterExpressionDialog::on_enumListWidget_itemSelectionChanged()
 {
-    if (ui->enumListWidget->selectedItems().count() > 0) {
-        QListWidgetItem *eli = ui->enumListWidget->selectedItems()[0];
-        ui->valueLineEdit->setText(eli->data(Qt::UserRole).toString());
+    QStringList values;
+    QList<QListWidgetItem *> items = ui->enumListWidget->selectedItems();
+    QList<QListWidgetItem *>::const_iterator it = items.constBegin();
+    while (it != items.constEnd())
+    {
+        values << (*it)->data(Qt::UserRole).toString();
+        ++it;
     }
+
+    ui->valueLineEdit->setText(values.join(" "));
+
     updateWidgets();
 }
 
@@ -420,7 +503,10 @@ void DisplayFilterExpressionDialog::on_searchLineEdit_textChanged(const QString 
 {
     ui->fieldTreeWidget->setUpdatesEnabled(false);
     QTreeWidgetItemIterator it(ui->fieldTreeWidget);
-    QRegExp regex(search_re, Qt::CaseInsensitive);
+    QRegularExpression regex(search_re, QRegularExpression::CaseInsensitiveOption);
+    if (! regex.isValid())
+        return;
+
     while (*it) {
         bool hidden = true;
         if (search_re.isEmpty() || (*it)->text(0).contains(regex)) {
@@ -442,18 +528,5 @@ void DisplayFilterExpressionDialog::on_buttonBox_accepted()
 
 void DisplayFilterExpressionDialog::on_buttonBox_helpRequested()
 {
-    wsApp->helpTopicAction(HELP_FILTER_EXPRESSION_DIALOG);
+    mainApp->helpTopicAction(HELP_FILTER_EXPRESSION_DIALOG);
 }
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

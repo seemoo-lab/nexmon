@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -27,8 +15,9 @@
 #include <stdio.h>
 #include <glib.h>
 
-#include <wsutil/report_err.h>
+#include <wsutil/report_message.h>
 
+#include <epan/prefs.h>
 #include <epan/stats_tree_priv.h>
 #include <epan/stat_tap_ui.h>
 
@@ -44,7 +33,7 @@ struct _tree_pres {
 };
 
 struct _tree_cfg_pres {
-	gchar *init_string;
+	char *init_string;
 };
 
 static void
@@ -53,7 +42,7 @@ draw_stats_tree(void *psp)
 	stats_tree *st = (stats_tree *)psp;
 	GString *s;
 
-	s= stats_tree_format_as_str(st, ST_FORMAT_PLAIN, stats_tree_get_default_sort_col(st),
+	s= stats_tree_format_as_str(st, prefs.st_format, stats_tree_get_default_sort_col(st),
 				    stats_tree_is_default_sort_DESC(st));
 
 	printf("%s", s->str);
@@ -61,33 +50,46 @@ draw_stats_tree(void *psp)
 }
 
 static void
+free_stats_tree(void *psp)
+{
+	stats_tree *st = (stats_tree *)psp;
+	stats_tree_free(st);
+}
+
+static bool
 init_stats_tree(const char *opt_arg, void *userdata _U_)
 {
 	char *abbr = stats_tree_get_abbr(opt_arg);
 	GString	*error_string;
 	stats_tree_cfg *cfg = NULL;
 	stats_tree *st = NULL;
+	const char* filter = NULL;
+	size_t len;
 
 	if (abbr) {
 		cfg = stats_tree_get_cfg_by_abbr(abbr);
 
 		if (cfg != NULL) {
-			if (strncmp (opt_arg, cfg->pr->init_string, strlen(cfg->pr->init_string)) == 0) {
-				st = stats_tree_new(cfg, NULL, opt_arg+strlen(cfg->pr->init_string));
+			len = strlen(cfg->pr->init_string);
+			if (strncmp(opt_arg, cfg->pr->init_string, len) == 0) {
+				if (opt_arg[len] == ',') {
+					filter = opt_arg + len + 1;
+				}
+				st = stats_tree_new(cfg, NULL, filter);
 			} else {
 				report_failure("Wrong stats_tree (%s) found when looking at ->init_string", abbr);
-				return;
+				return false;
 			}
 		} else {
 			report_failure("no such stats_tree (%s) found in stats_tree registry", abbr);
-			return;
+			return false;
 		}
 
 		g_free(abbr);
 
 	} else {
-		report_failure("could not obtain stats_tree abbr (%s) from arg '%s'", abbr, opt_arg);
-		return;
+		report_failure("could not obtain stats_tree from arg '%s'", opt_arg);
+		return false;
 	}
 
 	error_string = register_tap_listener(st->cfg->tapname,
@@ -96,25 +98,28 @@ init_stats_tree(const char *opt_arg, void *userdata _U_)
 					     st->cfg->flags,
 					     stats_tree_reset,
 					     stats_tree_packet,
-					     draw_stats_tree);
+					     draw_stats_tree,
+					     free_stats_tree);
 
 	if (error_string) {
-		report_failure("stats_tree for: %s failed to attach to the tap: %s", cfg->name, error_string->str);
-		return;
+		report_failure("stats_tree for: %s failed to attach to the tap: %s", cfg->path, error_string->str);
+		return false;
 	}
 
-	if (cfg->init) cfg->init(st);
+	if (cfg->init)
+		cfg->init(st);
 
+	return true;
 }
 
 static void
-register_stats_tree_tap (gpointer k _U_, gpointer v, gpointer p _U_)
+register_stats_tree_tap (void *k _U_, void *v, void *p _U_)
 {
 	stats_tree_cfg *cfg = (stats_tree_cfg *)v;
 	stat_tap_ui ui_info;
 
-	cfg->pr = (tree_cfg_pres *)g_malloc(sizeof(tree_cfg_pres));
-	cfg->pr->init_string = g_strdup_printf("%s,tree", cfg->abbr);
+	cfg->pr = wmem_new(wmem_epan_scope(), tree_cfg_pres);
+	cfg->pr->init_string = wmem_strdup_printf(wmem_epan_scope(), "%s,tree", cfg->abbr);
 
 	ui_info.group = REGISTER_STAT_GROUP_GENERIC;
 	ui_info.title = NULL;
@@ -141,7 +146,7 @@ register_tap_listener_stats_tree_stat(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "mtp3_summary_dialog.h"
@@ -28,19 +16,17 @@
 
 #include "config.h"
 
-#include <glib.h>
-
-#include "globals.h"
-#include "summary.h"
-
 #include <epan/tap.h>
 
 #include <epan/dissectors/packet-mtp3.h>
 
+#include "wsutil/utf8_entities.h"
+
 #include "ui/capture_globals.h"
 #include "ui/simple_dialog.h"
+#include "ui/summary.h"
 
-#include "qt_ui_utils.h"
+#include <ui/qt/utils/qt_ui_utils.h>
 
 #include <QTextStream>
 
@@ -122,16 +108,17 @@ QString Mtp3SummaryDialog::summaryToHtml()
         << table_data_tmpl.arg(file_size_to_qstring(summary.file_length))
         << table_row_end;
 
-    QString format_str = wtap_file_type_subtype_string(summary.file_type);
-    if (summary.iscompressed) {
-        format_str.append(tr(" (gzip compressed)"));
+    QString format_str = wtap_file_type_subtype_description(summary.file_type);
+    const char *compression_type_description = wtap_compression_type_description(summary.compression_type);
+    if (compression_type_description != NULL) {
+        format_str += QStringLiteral(" (%1)").arg(compression_type_description);
     }
     out << table_row_begin
         << table_vheader_tmpl.arg(tr("Format"))
         << table_data_tmpl.arg(format_str)
         << table_row_end;
 
-    if (summary.has_snap) {
+    if (summary.snap != 0) {
         out << table_row_begin
             << table_vheader_tmpl.arg(tr("Snapshot length"))
             << table_data_tmpl.arg(summary.snap)
@@ -167,10 +154,10 @@ QString Mtp3SummaryDialog::summaryToHtml()
             unsigned int elapsed_time = (unsigned int)summary.elapsed_time;
             if (elapsed_time/86400)
             {
-                elapsed_str = QString("%1 days ").arg(elapsed_time / 86400);
+                elapsed_str = QStringLiteral("%1 days ").arg(elapsed_time / 86400);
             }
 
-            elapsed_str += QString("%1:%2:%3")
+            elapsed_str += QStringLiteral("%1:%2:%3")
                     .arg(elapsed_time % 86400 / 3600, 2, 10, QChar('0'))
                     .arg(elapsed_time % 3600 / 60, 2, 10, QChar('0'))
                     .arg(elapsed_time % 60, 2, 10, QChar('0'));
@@ -189,8 +176,7 @@ QString Mtp3SummaryDialog::summaryToHtml()
 
     out << table_end;
 
-    // TRANSLATOR Abbreviation for "not applicable"
-    QString n_a = tr("N/A");
+    QString n_a = UTF8_EM_DASH;
     int total_msus = 0;
     int total_bytes = 0;
     double seconds = summary.stop_time - summary.start_time;
@@ -223,16 +209,16 @@ QString Mtp3SummaryDialog::summaryToHtml()
         total_bytes += si_bytes;
 
         if (seconds > 0) {
-            msus_s_str = QString("%1").arg(si_msus / seconds, 1, 'f', 1);
-            bytes_s_str = QString("%1").arg(si_bytes / seconds, 1, 'f', 1);
+            msus_s_str = QStringLiteral("%1").arg(si_msus / seconds, 1, 'f', 1);
+            bytes_s_str = QStringLiteral("%1").arg(si_bytes / seconds, 1, 'f', 1);
         }
 
         if (si_msus > 0) {
-            bytes_msu_str = QString("%1").arg((double) si_bytes / si_msus, 1, 'f', 1);
+            bytes_msu_str = QStringLiteral("%1").arg((double) si_bytes / si_msus, 1, 'f', 1);
         }
 
         out << table_row_begin
-            << table_data_tmpl.arg(mtp3_service_indicator_code_short_vals[ws_si_code].strptr)
+            << table_data_tmpl.arg(val_to_str_const((unsigned)ws_si_code, get_external_value_string("mtp3_service_indicator_code_short_vals"), "Unknown"))
             << table_data_tmpl.arg(si_msus)
             << table_data_tmpl.arg(msus_s_str)
             << table_data_tmpl.arg(si_bytes)
@@ -250,11 +236,11 @@ QString Mtp3SummaryDialog::summaryToHtml()
     QString total_bytes_s_str = n_a;
 
     if (seconds > 0) {
-        total_msus_s_str = QString("%1").arg(total_msus / seconds, 1, 'f', 1);
-        total_bytes_s_str = QString("%1").arg(total_bytes / seconds, 1, 'f', 1);
+        total_msus_s_str = QStringLiteral("%1").arg(total_msus / seconds, 1, 'f', 1);
+        total_bytes_s_str = QStringLiteral("%1").arg(total_bytes / seconds, 1, 'f', 1);
     }
     if (total_msus > 0) {
-        total_bytes_msu_str = QString("%1").arg((double) total_bytes / total_msus, 1, 'f', 1);
+        total_bytes_msu_str = QStringLiteral("%1").arg((double) total_bytes / total_msus, 1, 'f', 1);
     }
 
     out << section_tmpl.arg(tr("Totals"));
@@ -299,6 +285,8 @@ void Mtp3SummaryDialog::updateWidgets()
 
 extern "C" {
 
+void register_tap_listener_qt_mtp3_summary(void);
+
 static void
 mtp3_summary_reset(
     void        *tapdata)
@@ -310,12 +298,13 @@ mtp3_summary_reset(
 }
 
 
-static gboolean
+static tap_packet_status
 mtp3_summary_packet(
     void            *tapdata,
     packet_info     *,
     epan_dissect_t  *,
-    const void      *data)
+    const void      *data,
+    tap_flags_t)
 {
     mtp3_stat_t           (*stat_p)[MTP3_MAX_NUM_OPC_DPC] = (mtp3_stat_t(*)[MTP3_MAX_NUM_OPC_DPC])tapdata;
     const mtp3_tap_rec_t  *data_p = (const mtp3_tap_rec_t *)data;
@@ -326,8 +315,9 @@ mtp3_summary_packet(
         /*
          * we thought this si_code was not used ?
          * is MTP3_NUM_SI_CODE out of date ?
+         * XXX - if this is an error, report it and return TAP_PACKET_FAILED.
          */
-        return(FALSE);
+        return(TAP_PACKET_DONT_REDRAW);
     }
 
     /*
@@ -353,8 +343,9 @@ mtp3_summary_packet(
         {
             /*
              * too many
+             * XXX - report an error and return TAP_PACKET_FAILED?
              */
-            return(FALSE);
+            return(TAP_PACKET_DONT_REDRAW);
         }
 
         mtp3_num_used++;
@@ -365,7 +356,7 @@ mtp3_summary_packet(
     (*stat_p)[i].mtp3_si_code[data_p->mtp3_si_code].num_msus++;
     (*stat_p)[i].mtp3_si_code[data_p->mtp3_si_code].size += data_p->size;
 
-    return(TRUE);
+    return(TAP_PACKET_REDRAW);
 }
 
 void
@@ -379,6 +370,7 @@ register_tap_listener_qt_mtp3_summary(void)
     register_tap_listener("mtp3", &mtp3_stat, NULL, 0,
         mtp3_summary_reset,
         mtp3_summary_packet,
+        NULL,
         NULL);
 
     if (err_p != NULL)
@@ -391,16 +383,3 @@ register_tap_listener_qt_mtp3_summary(void)
 }
 
 } // extern "C"
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

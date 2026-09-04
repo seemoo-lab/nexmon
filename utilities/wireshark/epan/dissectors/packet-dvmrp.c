@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 /*
 
@@ -53,63 +41,69 @@
 
 #include <epan/packet.h>
 #include <epan/prefs.h>
+#include <epan/expert.h>
+#include <epan/tfs.h>
 #include "packet-igmp.h"
 
 void proto_register_dvmrp(void);
 void proto_reg_handoff_dvmrp(void);
 
-static int proto_dvmrp = -1;
-static int hf_version = -1;
-static int hf_type = -1;
-static int hf_code_v1 = -1;
-static int hf_checksum = -1;
-static int hf_checksum_status = -1;
-static int hf_reserved = -1;
-static int hf_commands = -1;
-static int hf_command = -1;
-static int hf_count = -1;
-static int hf_afi = -1;
-static int hf_netmask = -1;
-static int hf_metric = -1;
-static int hf_dest_unr = -1;
-static int hf_split_horiz = -1;
-static int hf_infinity = -1;
-static int hf_daddr = -1;
-static int hf_maddr = -1;
-static int hf_hold = -1;
-static int hf_code_v3 = -1;
-static int hf_capabilities = -1;
-static int hf_cap_leaf = -1;
-static int hf_cap_prune = -1;
-static int hf_cap_genid = -1;
-static int hf_cap_mtrace = -1;
-static int hf_cap_snmp = -1;
-static int hf_cap_netmask = -1;
-static int hf_min_ver = -1;
-static int hf_maj_ver = -1;
-static int hf_genid = -1;
-static int hf_route = -1;
-static int hf_saddr = -1;
-static int hf_life = -1;
-static int hf_local = -1;
-static int hf_threshold = -1;
-static int hf_flags = -1;
-static int hf_flag_tunnel = -1;
-static int hf_flag_srcroute = -1;
-static int hf_flag_down = -1;
-static int hf_flag_disabled = -1;
-static int hf_flag_querier = -1;
-static int hf_flag_leaf = -1;
-static int hf_ncount = -1;
-static int hf_neighbor = -1;
+static dissector_handle_t dvmrp_handle;
 
-static int ett_dvmrp = -1;
-static int ett_commands = -1;
-static int ett_capabilities = -1;
-static int ett_flags = -1;
-static int ett_route = -1;
+static int proto_dvmrp;
+static int hf_version;
+static int hf_type;
+static int hf_code_v1;
+static int hf_checksum;
+static int hf_checksum_status;
+static int hf_reserved;
+static int hf_commands;
+static int hf_command;
+static int hf_count;
+static int hf_afi;
+static int hf_netmask;
+static int hf_metric;
+static int hf_dest_unr;
+static int hf_split_horiz;
+static int hf_infinity;
+static int hf_daddr;
+static int hf_maddr;
+static int hf_hold;
+static int hf_code_v3;
+static int hf_capabilities;
+static int hf_cap_leaf;
+static int hf_cap_prune;
+static int hf_cap_genid;
+static int hf_cap_mtrace;
+static int hf_cap_snmp;
+static int hf_cap_netmask;
+static int hf_min_ver;
+static int hf_maj_ver;
+static int hf_genid;
+static int hf_route;
+static int hf_saddr;
+static int hf_life;
+static int hf_local;
+static int hf_threshold;
+static int hf_flags;
+static int hf_flag_tunnel;
+static int hf_flag_srcroute;
+static int hf_flag_down;
+static int hf_flag_disabled;
+static int hf_flag_querier;
+static int hf_flag_leaf;
+static int hf_ncount;
+static int hf_neighbor;
 
-static int strict_v3 = FALSE;
+static int ett_dvmrp;
+static int ett_commands;
+static int ett_capabilities;
+static int ett_flags;
+static int ett_route;
+
+static expert_field ei_checksum;
+
+static bool strict_v3;
 
 #define DVMRP_TYPE				0x13
 static const value_string dvmrp_type[] = {
@@ -234,10 +228,10 @@ static const true_false_string tfs_cap_netmask = {
 static int
 dissect_v3_report(tvbuff_t *tvb, proto_tree *parent_tree, int offset)
 {
-	guint8 m0,m1,m2,m3;
-	guint8 s0,s1,s2,s3;
-	guint8 metric;
-	guint32 ip;
+	uint8_t m0,m1,m2,m3;
+	uint8_t s0,s1,s2,s3;
+	uint8_t metric;
+	uint32_t ip;
 
 	while (tvb_reported_length_remaining(tvb, offset) > 0) {
 		proto_tree *tree;
@@ -250,9 +244,9 @@ dissect_v3_report(tvbuff_t *tvb, proto_tree *parent_tree, int offset)
 
 		m0 = 0xff;
 		/* read the mask */
-		m1 = tvb_get_guint8(tvb, offset);
-		m2 = tvb_get_guint8(tvb, offset+1);
-		m3 = tvb_get_guint8(tvb, offset+2);
+		m1 = tvb_get_uint8(tvb, offset);
+		m2 = tvb_get_uint8(tvb, offset+1);
+		m3 = tvb_get_uint8(tvb, offset+2);
 
 		ip = m3;
 		ip = (ip<<8)|m2;
@@ -271,18 +265,18 @@ dissect_v3_report(tvbuff_t *tvb, proto_tree *parent_tree, int offset)
 			s2 = 0;
 			s3 = 0;
 
-			s0 = tvb_get_guint8(tvb, offset);
+			s0 = tvb_get_uint8(tvb, offset);
 			offset += 1;
 			if (m1) {
-				s1 = tvb_get_guint8(tvb, offset);
+				s1 = tvb_get_uint8(tvb, offset);
 				offset += 1;
 			}
 			if (m2) {
-				s2 = tvb_get_guint8(tvb, offset);
+				s2 = tvb_get_uint8(tvb, offset);
 				offset += 1;
 			}
 			if (m3) {
-				s3 = tvb_get_guint8(tvb, offset);
+				s3 = tvb_get_uint8(tvb, offset);
 				offset += 1;
 			}
 
@@ -301,7 +295,7 @@ dissect_v3_report(tvbuff_t *tvb, proto_tree *parent_tree, int offset)
 				m0?"Source Network":"Default Route",
 				s0,s1,s2,s3,m0,m1,m2,m3);
 
-			metric = tvb_get_guint8(tvb, offset);
+			metric = tvb_get_uint8(tvb, offset);
 			proto_tree_add_uint(tree, hf_metric, tvb,
 				offset, 1, metric&0x7f);
 			offset += 1;
@@ -318,7 +312,7 @@ dissect_v3_report(tvbuff_t *tvb, proto_tree *parent_tree, int offset)
 static int
 dissect_dvmrp_v3(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int offset)
 {
-	guint8 code;
+	uint8_t code;
 
 	/* version */
 	proto_tree_add_uint(parent_tree, hf_version, tvb, 0, 0, 3);
@@ -328,15 +322,15 @@ dissect_dvmrp_v3(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int
 	offset += 1;
 
 	/* code */
-	code = tvb_get_guint8(tvb, offset);
+	code = tvb_get_uint8(tvb, offset);
 	proto_tree_add_uint(parent_tree, hf_code_v3, tvb, offset, 1, code);
 	offset += 1;
 	col_add_fstr(pinfo->cinfo, COL_INFO,
-			"V%d %s",3 ,val_to_str(code, code_v3,
+			"V%d %s",3 ,val_to_str(pinfo->pool, code, code_v3,
 				"Unknown Type:0x%02x"));
 
 	/* checksum */
-	igmp_checksum(parent_tree, tvb, hf_checksum, hf_checksum_status, pinfo, 0);
+	igmp_checksum(parent_tree, tvb, hf_checksum, hf_checksum_status, &ei_checksum, pinfo, 0);
 	offset += 2;
 
 	/* skip unused byte */
@@ -346,7 +340,7 @@ dissect_dvmrp_v3(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int
 	/* PROBE and NEIGHBORS 2 packets have capabilities flags, unused
 	   for other packets */
 	if (code==DVMRP_V3_PROBE || code==DVMRP_V3_NEIGHBORS_2) {
-		static const int * capabilities[] = {
+		static int * const capabilities[] = {
 			&hf_cap_netmask,
 			&hf_cap_snmp,
 			&hf_cap_mtrace,
@@ -445,7 +439,7 @@ dissect_dvmrp_v3(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int
 		break;
 	case DVMRP_V3_NEIGHBORS_2:
 		while (tvb_reported_length_remaining(tvb, offset)>=12) {
-			guint8 neighbor_count;
+			uint8_t neighbor_count;
 
 			/* local address */
 			proto_tree_add_item(parent_tree, hf_local,
@@ -483,7 +477,7 @@ dissect_dvmrp_v3(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int
 			}
 			offset += 1;
 			/* Neighbor count */
-			neighbor_count = tvb_get_guint8(tvb, offset);
+			neighbor_count = tvb_get_uint8(tvb, offset);
 			proto_tree_add_item(parent_tree, hf_ncount,
 				tvb, offset, 1, ENC_BIG_ENDIAN);
 			offset += 1;
@@ -506,8 +500,8 @@ dissect_dvmrp_v3(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int
 static int
 dissect_dvmrp_v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int offset)
 {
-	guint8 code;
-	guint8 af=2; /* default */
+	uint8_t code;
+	uint8_t af=2; /* default */
 
 	/* version */
 	proto_tree_add_uint(parent_tree, hf_version, tvb, 0, 0, 1);
@@ -517,29 +511,29 @@ dissect_dvmrp_v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int
 	offset += 1;
 
 	/* code */
-	code = tvb_get_guint8(tvb, offset);
+	code = tvb_get_uint8(tvb, offset);
 	proto_tree_add_uint(parent_tree, hf_code_v1, tvb, offset, 1, code);
 	offset += 1;
 	col_add_fstr(pinfo->cinfo, COL_INFO,
-			"V%d %s",1 ,val_to_str(code, code_v1,
+			"V%d %s",1 ,val_to_str(pinfo->pool, code, code_v1,
 				"Unknown Type:0x%02x"));
 
 	/* checksum */
-	igmp_checksum(parent_tree, tvb, hf_checksum, hf_checksum_status, pinfo, 0);
+	igmp_checksum(parent_tree, tvb, hf_checksum, hf_checksum_status, &ei_checksum, pinfo, 0);
 	offset += 2;
 
 	/* decode all the v1 commands */
 	while (tvb_reported_length_remaining(tvb, offset) > 0) {
 		proto_tree *tree;
 		proto_item *item;
-		guint8 cmd,count;
+		uint8_t cmd,count;
 		int old_offset = offset;
 
 		item = proto_tree_add_item(parent_tree, hf_commands,
 				tvb, offset, -1, ENC_NA);
 		tree = proto_item_add_subtree(item, ett_commands);
 
-		cmd = tvb_get_guint8(tvb, offset);
+		cmd = tvb_get_uint8(tvb, offset);
 		proto_tree_add_uint(tree, hf_command, tvb,
 			offset, 1, cmd);
 		offset += 1;
@@ -552,19 +546,19 @@ dissect_dvmrp_v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int
 			}
 			break;
 		case V1_COMMAND_AFI:
-			af = tvb_get_guint8(tvb, offset);
+			af = tvb_get_uint8(tvb, offset);
 			proto_tree_add_uint(tree, hf_afi, tvb,
 				offset, 1, af);
 			offset += 1;
 			if (item) {
 				proto_item_set_text(item, "%s: %s",
-					val_to_str(cmd, command, "Unknown Command:0x%02x"),
-					val_to_str(af, afi, "Unknown Family:0x%02x")
+					val_to_str(pinfo->pool, cmd, command, "Unknown Command:0x%02x"),
+					val_to_str(pinfo->pool, af, afi, "Unknown Family:0x%02x")
 				);
 			}
 			break;
 		case V1_COMMAND_SUBNETMASK:
-			count = tvb_get_guint8(tvb, offset);
+			count = tvb_get_uint8(tvb, offset);
 			proto_tree_add_uint(tree, hf_count, tvb,
 				offset, 1, count);
 			offset += 1;
@@ -573,17 +567,17 @@ dissect_dvmrp_v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int
 					tvb, offset, 4, ENC_BIG_ENDIAN);
 				if (item) {
 					proto_item_set_text(item, "%s: %d.%d.%d.%d",
-						val_to_str(cmd, command, "Unknown Command:0x%02x"),
-						tvb_get_guint8(tvb, offset),
-						tvb_get_guint8(tvb, offset+1),
-						tvb_get_guint8(tvb, offset+2),
-						tvb_get_guint8(tvb, offset+3));
+						val_to_str(pinfo->pool, cmd, command, "Unknown Command:0x%02x"),
+						tvb_get_uint8(tvb, offset),
+						tvb_get_uint8(tvb, offset+1),
+						tvb_get_uint8(tvb, offset+2),
+						tvb_get_uint8(tvb, offset+3));
 				}
 				offset += 4;
 			} else {
 				if (item) {
 					proto_item_set_text(item, "%s: <no mask supplied>",
-						val_to_str(cmd, command, "Unknown Command:0x%02x"));
+						val_to_str(pinfo->pool, cmd, command, "Unknown Command:0x%02x"));
 				}
 			}
 			break;
@@ -592,18 +586,18 @@ dissect_dvmrp_v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int
 				offset, 1, ENC_BIG_ENDIAN);
 			if (item) {
 				proto_item_set_text(item, "%s: %d",
-					val_to_str(cmd, command, "Unknown Command:0x%02x"),
-					tvb_get_guint8(tvb, offset));
+					val_to_str(pinfo->pool, cmd, command, "Unknown Command:0x%02x"),
+					tvb_get_uint8(tvb, offset));
 			}
 			offset += 1;
 			break;
 		case V1_COMMAND_FLAGS0:
-			count = tvb_get_guint8(tvb, offset);
+			count = tvb_get_uint8(tvb, offset);
 			proto_tree_add_boolean(tree, hf_dest_unr, tvb, offset, 1, count);
 			proto_tree_add_boolean(tree, hf_split_horiz, tvb, offset, 1, count);
 			if (item) {
 				proto_item_set_text(item, "%s: 0x%02x",
-					val_to_str(cmd, command, "Unknown Command:0x%02x"), count);
+					val_to_str(pinfo->pool, cmd, command, "Unknown Command:0x%02x"), count);
 			}
 			offset += 1;
 			break;
@@ -612,13 +606,13 @@ dissect_dvmrp_v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int
 				offset, 1, ENC_BIG_ENDIAN);
 			if (item) {
 				proto_item_set_text(item, "%s: %d",
-					val_to_str(cmd, command, "Unknown Command:0x%02x"), tvb_get_guint8(tvb, offset));
+					val_to_str(pinfo->pool, cmd, command, "Unknown Command:0x%02x"), tvb_get_uint8(tvb, offset));
 			}
 			offset += 1;
 			break;
 		case V1_COMMAND_DA:
 		case V1_COMMAND_RDA: /* same as DA */
-			count = tvb_get_guint8(tvb, offset);
+			count = tvb_get_uint8(tvb, offset);
 			proto_tree_add_uint(tree, hf_count, tvb,
 				offset, 1, count);
 			offset += 1;
@@ -629,11 +623,11 @@ dissect_dvmrp_v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int
 			}
 			if (item) {
 				proto_item_set_text(item, "%s",
-					val_to_str(cmd, command, "Unknown Command:0x%02x"));
+					val_to_str(pinfo->pool, cmd, command, "Unknown Command:0x%02x"));
 			}
 			break;
 		case V1_COMMAND_NMR:
-			count = tvb_get_guint8(tvb, offset);
+			count = tvb_get_uint8(tvb, offset);
 			proto_tree_add_uint(tree, hf_count, tvb,
 				offset, 1, count);
 			offset += 1;
@@ -647,11 +641,11 @@ dissect_dvmrp_v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int
 			}
 			if (item) {
 				proto_item_set_text(item, "%s",
-					val_to_str(cmd, command, "Unknown Command:0x%02x"));
+					val_to_str(pinfo->pool, cmd, command, "Unknown Command:0x%02x"));
 			}
 			break;
 		case V1_COMMAND_NMR_CANCEL:
-			count = tvb_get_guint8(tvb, offset);
+			count = tvb_get_uint8(tvb, offset);
 			proto_tree_add_uint(tree, hf_count, tvb,
 				offset, 1, count);
 			offset += 1;
@@ -662,7 +656,7 @@ dissect_dvmrp_v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, int
 			}
 			if (item) {
 				proto_item_set_text(item, "%s",
-					val_to_str(cmd, command, "Unknown Command:0x%02x"));
+					val_to_str(pinfo->pool, cmd, command, "Unknown Command:0x%02x"));
 			}
 			break;
 		}
@@ -688,8 +682,8 @@ dissect_dvmrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* 
 	tree = proto_item_add_subtree(item, ett_dvmrp);
 
 	if ((tvb_captured_length_remaining(tvb, offset)>=8)
-	 && (((tvb_get_guint8(tvb, 6)==0xff)
-	 && (tvb_get_guint8(tvb, 7)==0x03))
+	 && (((tvb_get_uint8(tvb, 6)==0xff)
+	 && (tvb_get_uint8(tvb, 7)==0x03))
 	     || !strict_v3)) {
 		offset = dissect_dvmrp_v3(tvb, pinfo, tree, offset);
 	} else {
@@ -876,38 +870,46 @@ proto_register_dvmrp(void)
 			{ "Neighbor Addr", "dvmrp.neighbor", FT_IPv4, BASE_NONE,
 			  NULL, 0, "DVMRP Neighbor Address", HFILL }}
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_dvmrp,
 		&ett_commands,
 		&ett_capabilities,
 		&ett_flags,
 		&ett_route
 	};
+
+	static ei_register_info ei[] = {
+		{ &ei_checksum, { "dvmrp.bad_checksum", PI_CHECKSUM, PI_ERROR, "Bad checksum", EXPFILL }},
+	};
+
+	expert_module_t* expert_dvmrp;
+
 	module_t *module_dvmrp;
 
 	proto_dvmrp = proto_register_protocol("Distance Vector Multicast Routing Protocol", "DVMRP", "dvmrp");
 	proto_register_field_array(proto_dvmrp, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
+	expert_dvmrp = expert_register_protocol(proto_dvmrp);
+	expert_register_field_array(expert_dvmrp, ei, array_length(ei));
 
 	module_dvmrp = prefs_register_protocol(proto_dvmrp, NULL);
 
 	prefs_register_bool_preference(module_dvmrp, "strict_v3", "Allow strict DVMRP V3 only",
 		"Allow only packets with Major=0x03//Minor=0xFF as DVMRP V3 packets",
 		&strict_v3);
+
+	dvmrp_handle = register_dissector("dvmrp", dissect_dvmrp, proto_dvmrp);
 }
 
 void
 proto_reg_handoff_dvmrp(void)
 {
-	dissector_handle_t dvmrp_handle;
-
-	dvmrp_handle = create_dissector_handle(dissect_dvmrp, proto_dvmrp);
 	dissector_add_uint("igmp.type", IGMP_DVMRP, dvmrp_handle);
 }
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

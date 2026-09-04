@@ -19,7 +19,7 @@
   <property name="frameShadow">
    <enum>QFrame::Plain</enum>
   </property>
-  <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,1,0,0,0,0,0,0,0,0,0,2,0">
+  <layout class="QHBoxLayout" name="horizontalLayout">
    <property name="topMargin">
     <number>0</number>
    </property>
@@ -43,7 +43,7 @@
      </property>
      <property name="sizeHint" stdset="0">
       <size>
-       <width>20</width>
+       <width>10</width>
        <height>5</height>
       </size>
      </property>
@@ -66,8 +66,8 @@
      </property>
      <property name="sizeHint" stdset="0">
       <size>
-       <width>20</width>
-       <height>20</height>
+       <width>10</width>
+       <height>5</height>
       </size>
      </property>
     </spacer>
@@ -80,7 +80,7 @@
     </widget>
    </item>
    <item>
-    <widget class="SyntaxLineEdit" name="fieldsNameLineEdit"/>
+    <widget class="DisplayFilterEdit" name="fieldsNameLineEdit"/>
    </item>
    <item>
     <spacer name="horizontalSpacer_4">
@@ -89,7 +89,7 @@
      </property>
      <property name="sizeHint" stdset="0">
       <size>
-       <width>20</width>
+       <width>10</width>
        <height>5</height>
       </size>
      </property>
@@ -106,13 +106,27 @@
     <widget class="SyntaxLineEdit" name="occurrenceLineEdit"/>
    </item>
    <item>
+    <widget class="QLabel" name="displayLabel">
+     <property name="text">
+      <string>Display as:</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QComboBox" name="displayComboBox">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;p&gt;Values will show the raw values for fields.&lt;p&gt;Strings will show human-readable strings instead of raw values for fields. Only applicable to custom columns with fields that have value strings and custom columns which can be resolved to strings.&lt;p&gt;Details will show the values using the same format as in Packet Details. Only applicable to custom columns.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <spacer name="horizontalSpacer">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
      <property name="sizeHint" stdset="0">
       <size>
-       <width>59</width>
+       <width>10</width>
        <height>5</height>
       </size>
      </property>
@@ -141,9 +155,14 @@
    <container>1</container>
   </customwidget>
   <customwidget>
+   <class>DisplayFilterEdit</class>
+   <extends>QLineEdit</extends>
+   <header>widgets/display_filter_edit.h</header>
+  </customwidget>
+  <customwidget>
    <class>SyntaxLineEdit</class>
    <extends>QLineEdit</extends>
-   <header>syntax_line_edit.h</header>
+   <header>widgets/syntax_line_edit.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

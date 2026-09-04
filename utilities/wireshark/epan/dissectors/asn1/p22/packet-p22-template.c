@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -26,6 +14,8 @@
 #include <epan/packet.h>
 #include <epan/oids.h>
 #include <epan/asn1.h>
+#include <epan/proto_data.h>
+#include <wsutil/array.h>
 
 #include "packet-ber.h"
 #include "packet-acse.h"
@@ -44,7 +34,7 @@
 #define PFNAME "p22"
 
 /* Initialize the protocol and registered fields */
-static int proto_p22 = -1;
+static int proto_p22;
 
 static const value_string charsetreg_vals [] = {
   { 1, "C0: (ISO/IEC 6429)"},
@@ -80,7 +70,7 @@ static const value_string charsetreg_vals [] = {
 #include "packet-p22-hf.c"
 
 /* Initialize the subtree pointers */
-static gint ett_p22 = -1;
+static int ett_p22;
 #include "packet-p22-ett.c"
 
 #include "packet-p22-fn.c"
@@ -95,7 +85,7 @@ dissect_p22(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* da
 	proto_item *item=NULL;
 	proto_tree *tree=NULL;
 	asn1_ctx_t asn1_ctx;
-	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
+	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
 
 	if (parent_tree) {
 		item = proto_tree_add_item(parent_tree, proto_p22, tvb, 0, -1, ENC_NA);
@@ -105,7 +95,7 @@ dissect_p22(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* da
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "P22");
 	col_set_str(pinfo->cinfo, COL_INFO, "InterPersonal");
 
-	dissect_p22_InformationObject(TRUE, tvb, offset, &asn1_ctx , tree, -1);
+	dissect_p22_InformationObject(true, tvb, offset, &asn1_ctx , tree, -1);
 	return tvb_captured_length(tvb);
 }
 
@@ -120,7 +110,7 @@ void proto_register_p22(void) {
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_p22,
 #include "packet-p22-ettarr.c"
   };

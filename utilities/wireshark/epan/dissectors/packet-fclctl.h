@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __PACKET_FCLCTL_H_
@@ -89,6 +77,6 @@ extern const value_string fc_lctl_proto_val[];
 #define FC_LCTL_RJT_VEND_ERR               0xFF
 
 /* Function definitions */
-const gchar *fclctl_get_typestr (guint8 linkctl_type, guint8 type);
-const gchar *fclctl_get_paramstr (guint32 linkctl_type, guint32 param);
+const char *fclctl_get_typestr (wmem_allocator_t *pool, uint8_t linkctl_type, uint8_t type);
+const char *fclctl_get_paramstr (wmem_allocator_t *pool, uint32_t linkctl_type, uint32_t param);
 #endif

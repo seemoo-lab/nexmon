@@ -10,19 +10,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -70,149 +58,152 @@
 
 void proto_register_s5066dts(void);
 
-static gint proto_s5066dts = -1;
+static int proto_s5066dts;
+
+static dissector_handle_t s5066dts_handle;
+static dissector_handle_t s5066dts_over_tcp_handle;
 
 /* Configuration parameters */
-static gboolean config_proto_desegment = TRUE;
+static bool config_proto_desegment = true;
 
 /* Initialize expert fields */
-static expert_field ei_s5066dts_eow_hdr_drc_request_invalid = EI_INIT;
-static expert_field ei_s5066dts_eow_hftrp_invalid = EI_INIT;
+static expert_field ei_s5066dts_eow_hdr_drc_request_invalid;
+static expert_field ei_s5066dts_eow_hftrp_invalid;
 
 /* TCP port that will be listened by the application that peer
  * dts layers will be connected through
  */
-static guint config_s5066dts_port = 0;
+static range_t *config_s5066dts_ports;
 
-static gint hf_s5066dts_sync_word = -1;
-static gint hf_s5066dts_dpdu_type = -1;
-static gint hf_s5066dts_eow_type = -1;
-static gint hf_s5066dts_eow_data = -1;
-static gint hf_s5066dts_eot = -1;
-static gint hf_s5066dts_address_size = -1;
-static gint hf_s5066dts_header_size = -1;
-static gint hf_s5066dts_header_crc = -1;
-static gint hf_s5066dts_cpdu_crc = -1;
-static gint hf_s5066dts_segmented_cpdu = -1;
-static gint hf_s5066dts_dest_addr = -1;
-static gint hf_s5066dts_src_addr = -1;
+static int hf_s5066dts_sync_word;
+static int hf_s5066dts_dpdu_type;
+static int hf_s5066dts_eow_type;
+static int hf_s5066dts_eow_data;
+static int hf_s5066dts_eot;
+static int hf_s5066dts_address_size;
+static int hf_s5066dts_header_size;
+static int hf_s5066dts_header_crc;
+static int hf_s5066dts_cpdu_crc;
+static int hf_s5066dts_segmented_cpdu;
+static int hf_s5066dts_dest_addr;
+static int hf_s5066dts_src_addr;
 
 /* EOW TYPES */
 /* { 1, "DRC_REQUEST"}, */
-static gint hf_s5066dts_eow_drc_request_data_rate = -1;
-static gint hf_s5066dts_eow_drc_request_interleaving = -1;
-static gint hf_s5066dts_eow_drc_request_others = -1;
+static int hf_s5066dts_eow_drc_request_data_rate;
+static int hf_s5066dts_eow_drc_request_interleaving;
+static int hf_s5066dts_eow_drc_request_others;
 /* { 2, "DRC_RESPONSE"}, */
-static gint hf_s5066dts_eow_drc_response_response = -1;
-static gint hf_s5066dts_eow_drc_response_reason = -1;
+static int hf_s5066dts_eow_drc_response_response;
+static int hf_s5066dts_eow_drc_response_reason;
 /* { 3, "UNRECOGNIZED_TYPE"}, */
-static gint hf_s5066dts_eow_unrec_type_response = -1;
-static gint hf_s5066dts_eow_unrec_type_reason = -1;
+static int hf_s5066dts_eow_unrec_type_response;
+static int hf_s5066dts_eow_unrec_type_reason;
 /* { 4, "CAPABILITY"}, */
-static gint hf_s5066dts_eow_capability_adaptive = -1;
-static gint hf_s5066dts_eow_capability_stanag_4529 = -1;
-static gint hf_s5066dts_eow_capability_mil_std_188_110a = -1;
-static gint hf_s5066dts_eow_capability_extended = -1;
-static gint hf_s5066dts_eow_capability_full_duplex = -1;
-static gint hf_s5066dts_eow_capability_split_frequency = -1;
-static gint hf_s5066dts_eow_capability_non_arcs_ale = -1;
-static gint hf_s5066dts_eow_capability_arcs = -1;
+static int hf_s5066dts_eow_capability_adaptive;
+static int hf_s5066dts_eow_capability_stanag_4529;
+static int hf_s5066dts_eow_capability_mil_std_188_110a;
+static int hf_s5066dts_eow_capability_extended;
+static int hf_s5066dts_eow_capability_full_duplex;
+static int hf_s5066dts_eow_capability_split_frequency;
+static int hf_s5066dts_eow_capability_non_arcs_ale;
+static int hf_s5066dts_eow_capability_arcs;
 /* { 5, "ALM_REQUEST"}, */
-static gint hf_s5066dts_eow_alm_request_data_rate = -1;
-static gint hf_s5066dts_eow_alm_request_interleaving = -1;
-static gint hf_s5066dts_eow_alm_request_others = -1;
+static int hf_s5066dts_eow_alm_request_data_rate;
+static int hf_s5066dts_eow_alm_request_interleaving;
+static int hf_s5066dts_eow_alm_request_others;
 /* { 6, "ALM_RESPONSE"}, */
-static gint hf_s5066dts_eow_alm_response_response = -1;
-static gint hf_s5066dts_eow_alm_response_reason = -1;
+static int hf_s5066dts_eow_alm_response_response;
+static int hf_s5066dts_eow_alm_response_reason;
 /* { 7, "HDR_DRC_REQUEST"}, */
-static gint hf_s5066dts_eow_hdr_drc_request_waveform = -1;
-static gint hf_s5066dts_eow_hdr_drc_request_num_channels = -1;
-static gint hf_s5066dts_eow_hdr_drc_request_data_rate = -1;
-static gint hf_s5066dts_eow_hdr_drc_request_interleaver_length = -1;
+static int hf_s5066dts_eow_hdr_drc_request_waveform;
+static int hf_s5066dts_eow_hdr_drc_request_num_channels;
+static int hf_s5066dts_eow_hdr_drc_request_data_rate;
+static int hf_s5066dts_eow_hdr_drc_request_interleaver_length;
 /* {15, "HFTRP FRAME CONTROL"}, */
-static gint hf_s5066dts_eow_hftrp_hftrp_token = -1;
+static int hf_s5066dts_eow_hftrp_hftrp_token;
 
 /* DPDU TYPES */
 /* { 0, "DATA_ONLY"}, */
-static gint hf_s5066dts_data_only_cpdu_start = -1;
-static gint hf_s5066dts_data_only_cpdu_end = -1;
-static gint hf_s5066dts_data_only_deliver_in_order = -1;
-static gint hf_s5066dts_data_only_drop_cpdu = -1;
-static gint hf_s5066dts_data_only_tx_win_uwe = -1;
-static gint hf_s5066dts_data_only_tx_win_lwe = -1;
-static gint hf_s5066dts_data_only_segmented_cpdu_size = -1;
-static gint hf_s5066dts_data_only_transmit_sequence_number = -1;
+static int hf_s5066dts_data_only_cpdu_start;
+static int hf_s5066dts_data_only_cpdu_end;
+static int hf_s5066dts_data_only_deliver_in_order;
+static int hf_s5066dts_data_only_drop_cpdu;
+static int hf_s5066dts_data_only_tx_win_uwe;
+static int hf_s5066dts_data_only_tx_win_lwe;
+static int hf_s5066dts_data_only_segmented_cpdu_size;
+static int hf_s5066dts_data_only_transmit_sequence_number;
 /* { 1, "ACK_ONLY"}, */
-static gint hf_s5066dts_ack_only_rx_lwe = -1;
-static gint hf_s5066dts_ack_only_acks = -1;
+static int hf_s5066dts_ack_only_rx_lwe;
+static int hf_s5066dts_ack_only_acks;
 /* { 2, "DATA_ACK"}, */
-static gint hf_s5066dts_data_ack_cpdu_start = -1;
-static gint hf_s5066dts_data_ack_cpdu_end = -1;
-static gint hf_s5066dts_data_ack_deliver_in_order = -1;
-static gint hf_s5066dts_data_ack_drop_cpdu = -1;
-static gint hf_s5066dts_data_ack_tx_win_uwe = -1;
-static gint hf_s5066dts_data_ack_tx_win_lwe = -1;
-static gint hf_s5066dts_data_ack_segmented_cpdu_size = -1;
-static gint hf_s5066dts_data_ack_transmit_sequence_number = -1;
-static gint hf_s5066dts_data_ack_rx_lwe = -1;
-static gint hf_s5066dts_data_ack_acks = -1;
+static int hf_s5066dts_data_ack_cpdu_start;
+static int hf_s5066dts_data_ack_cpdu_end;
+static int hf_s5066dts_data_ack_deliver_in_order;
+static int hf_s5066dts_data_ack_drop_cpdu;
+static int hf_s5066dts_data_ack_tx_win_uwe;
+static int hf_s5066dts_data_ack_tx_win_lwe;
+static int hf_s5066dts_data_ack_segmented_cpdu_size;
+static int hf_s5066dts_data_ack_transmit_sequence_number;
+static int hf_s5066dts_data_ack_rx_lwe;
+static int hf_s5066dts_data_ack_acks;
 /* { 3, "RESET_WIN_RESYNC"}, */
-static gint hf_s5066dts_reset_win_resync_unused = -1;
-static gint hf_s5066dts_reset_win_resync_full_reset_command = -1;
-static gint hf_s5066dts_reset_win_resync_reset_tx_win_rqst = -1;
-static gint hf_s5066dts_reset_win_resync_reset_rx_win_cmnd = -1;
-static gint hf_s5066dts_reset_win_resync_reset_ack = -1;
-static gint hf_s5066dts_reset_win_resync_new_rx_lwe = -1;
-static gint hf_s5066dts_reset_win_resync_reset_frame_id_number = -1;
+static int hf_s5066dts_reset_win_resync_unused;
+static int hf_s5066dts_reset_win_resync_full_reset_command;
+static int hf_s5066dts_reset_win_resync_reset_tx_win_rqst;
+static int hf_s5066dts_reset_win_resync_reset_rx_win_cmnd;
+static int hf_s5066dts_reset_win_resync_reset_ack;
+static int hf_s5066dts_reset_win_resync_new_rx_lwe;
+static int hf_s5066dts_reset_win_resync_reset_frame_id_number;
 /* { 4, "EXP_DATA_ONLY"}, */
-static gint hf_s5066dts_exp_data_only_cpdu_start = -1;
-static gint hf_s5066dts_exp_data_only_cpdu_end = -1;
-static gint hf_s5066dts_exp_data_only_cpdu_id = -1;
-static gint hf_s5066dts_exp_data_only_segmented_cpdu_size = -1;
-static gint hf_s5066dts_exp_data_only_transmit_sequence_number = -1;
+static int hf_s5066dts_exp_data_only_cpdu_start;
+static int hf_s5066dts_exp_data_only_cpdu_end;
+static int hf_s5066dts_exp_data_only_cpdu_id;
+static int hf_s5066dts_exp_data_only_segmented_cpdu_size;
+static int hf_s5066dts_exp_data_only_transmit_sequence_number;
 /* { 5, "EXP_ACK_ONLY"}, */
-static gint hf_s5066dts_exp_ack_only_rx_lwe = -1;
-static gint hf_s5066dts_exp_ack_only_acks = -1;
+static int hf_s5066dts_exp_ack_only_rx_lwe;
+static int hf_s5066dts_exp_ack_only_acks;
 /* { 6, "MANAGEMENT"}, */
-static gint hf_s5066dts_management_unused = -1;
-static gint hf_s5066dts_management_extended_message_flag = -1;
-static gint hf_s5066dts_management_message = -1;
-static gint hf_s5066dts_management_ack = -1;
-static gint hf_s5066dts_management_management_frame_id = -1;
-static gint hf_s5066dts_management_extended_message = -1;
-static gint hf_s5066dts_management_extended_message_hftrp_payload_size = -1;
-static gint hf_s5066dts_management_extended_message_hftrp_ra = -1;
-static gint hf_s5066dts_management_extended_message_hftrp_seq_id = -1;
-static gint hf_s5066dts_management_extended_message_hftrp_gen_seq_id = -1;
-static gint hf_s5066dts_management_extended_message_hftrp_new_successor_id = -1;
-static gint hf_s5066dts_management_extended_message_hftrp_number_of_nodes = -1;
+static int hf_s5066dts_management_unused;
+static int hf_s5066dts_management_extended_message_flag;
+static int hf_s5066dts_management_message;
+static int hf_s5066dts_management_ack;
+static int hf_s5066dts_management_management_frame_id;
+static int hf_s5066dts_management_extended_message;
+static int hf_s5066dts_management_extended_message_hftrp_payload_size;
+static int hf_s5066dts_management_extended_message_hftrp_ra;
+static int hf_s5066dts_management_extended_message_hftrp_seq_id;
+static int hf_s5066dts_management_extended_message_hftrp_gen_seq_id;
+static int hf_s5066dts_management_extended_message_hftrp_new_successor_id;
+static int hf_s5066dts_management_extended_message_hftrp_number_of_nodes;
 /* { 7, "NON_ARQ_DATA"}, */
-static gint hf_s5066dts_non_arq_data_cpdu_id_1 = -1;
-static gint hf_s5066dts_non_arq_data_deliver_in_order = -1;
-static gint hf_s5066dts_non_arq_data_group_address = -1;
-static gint hf_s5066dts_non_arq_data_cpdu_id_2 = -1;
-static gint hf_s5066dts_non_arq_data_cpdu_size = -1;
-static gint hf_s5066dts_non_arq_data_cpdu_segment_offset = -1;
-static gint hf_s5066dts_non_arq_data_cpdu_reception_window = -1;
-static gint hf_s5066dts_non_arq_data_segmented_cpdu_size = -1;
+static int hf_s5066dts_non_arq_data_cpdu_id_1;
+static int hf_s5066dts_non_arq_data_deliver_in_order;
+static int hf_s5066dts_non_arq_data_group_address;
+static int hf_s5066dts_non_arq_data_cpdu_id_2;
+static int hf_s5066dts_non_arq_data_cpdu_size;
+static int hf_s5066dts_non_arq_data_cpdu_segment_offset;
+static int hf_s5066dts_non_arq_data_cpdu_reception_window;
+static int hf_s5066dts_non_arq_data_segmented_cpdu_size;
 /* { 8, "EXP_NON_ARQ_DATA"}, */
-static gint hf_s5066dts_exp_non_arq_data_cpdu_id_1 = -1;
-static gint hf_s5066dts_exp_non_arq_data_deliver_in_order = -1;
-static gint hf_s5066dts_exp_non_arq_data_group_address = -1;
-static gint hf_s5066dts_exp_non_arq_data_cpdu_id_2 = -1;
-static gint hf_s5066dts_exp_non_arq_data_cpdu_size = -1;
-static gint hf_s5066dts_exp_non_arq_data_cpdu_segment_offset = -1;
-static gint hf_s5066dts_exp_non_arq_data_cpdu_reception_window = -1;
-static gint hf_s5066dts_exp_non_arq_data_segmented_cpdu_size = -1;
+static int hf_s5066dts_exp_non_arq_data_cpdu_id_1;
+static int hf_s5066dts_exp_non_arq_data_deliver_in_order;
+static int hf_s5066dts_exp_non_arq_data_group_address;
+static int hf_s5066dts_exp_non_arq_data_cpdu_id_2;
+static int hf_s5066dts_exp_non_arq_data_cpdu_size;
+static int hf_s5066dts_exp_non_arq_data_cpdu_segment_offset;
+static int hf_s5066dts_exp_non_arq_data_cpdu_reception_window;
+static int hf_s5066dts_exp_non_arq_data_segmented_cpdu_size;
 /* {15, "WARNING"}, */
-static gint hf_s5066dts_warning_frame_type = -1;
-static gint hf_s5066dts_warning_reason = -1;
+static int hf_s5066dts_warning_frame_type;
+static int hf_s5066dts_warning_reason;
 
-static gint ett_s5066dts = -1;
-static gint ett_s5066dts_eow = -1;
-static gint ett_s5066dts_address = -1;
-static gint ett_s5066dts_pdu = -1;
-static gint ett_s5066dts_hftrp_token = -1;
+static int ett_s5066dts;
+static int ett_s5066dts_eow;
+static int ett_s5066dts_address;
+static int ett_s5066dts_pdu;
+static int ett_s5066dts_hftrp_token;
 
 static const value_string s5066dts_dpdu_type[] = {
     { 0, "DATA_ONLY"},
@@ -342,7 +333,7 @@ static const value_string s5066dts_alm_reason[] = {
 void proto_reg_handoff_s5066dts(void);
 
 /* { 1, "DRC_REQUEST"}, */
-static void dissect_s5066dts_eow_drc_request(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static void dissect_s5066dts_eow_drc_request(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
     proto_tree_add_item(tree, hf_s5066dts_eow_drc_request_data_rate, tvb, offset, 1, ENC_BIG_ENDIAN);
     proto_tree_add_item(tree, hf_s5066dts_eow_drc_request_interleaving, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -350,21 +341,21 @@ static void dissect_s5066dts_eow_drc_request(tvbuff_t *tvb, guint offset, proto_
 }
 
 /* { 2, "DRC_RESPONSE"}, */
-static void dissect_s5066dts_eow_drc_response(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static void dissect_s5066dts_eow_drc_response(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
     proto_tree_add_item(tree, hf_s5066dts_eow_drc_response_response, tvb, offset, 1, ENC_BIG_ENDIAN);
     proto_tree_add_item(tree, hf_s5066dts_eow_drc_response_reason, tvb, offset, 1, ENC_BIG_ENDIAN);
 }
 
 /* { 3, "UNRECOGNIZED_TYPE"}, */
-static void dissect_s5066dts_eow_unrec_type(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static void dissect_s5066dts_eow_unrec_type(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
     proto_tree_add_item(tree, hf_s5066dts_eow_unrec_type_response, tvb, offset, 1, ENC_BIG_ENDIAN);
     proto_tree_add_item(tree, hf_s5066dts_eow_unrec_type_reason, tvb, offset, 1, ENC_BIG_ENDIAN);
 }
 
 /* { 4, "CAPABILITY"}, */
-static void dissect_s5066dts_eow_capability(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static void dissect_s5066dts_eow_capability(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
     proto_tree_add_item(tree, hf_s5066dts_eow_capability_adaptive, tvb, offset, 1, ENC_BIG_ENDIAN);
     proto_tree_add_item(tree, hf_s5066dts_eow_capability_stanag_4529, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -377,7 +368,7 @@ static void dissect_s5066dts_eow_capability(tvbuff_t *tvb, guint offset, proto_t
 }
 
 /* { 5, "ALM_REQUEST"}, */
-static void dissect_s5066dts_eow_alm_request(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static void dissect_s5066dts_eow_alm_request(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
     proto_tree_add_item(tree, hf_s5066dts_eow_alm_request_data_rate, tvb, offset, 1, ENC_BIG_ENDIAN);
     proto_tree_add_item(tree, hf_s5066dts_eow_alm_request_interleaving, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -385,15 +376,15 @@ static void dissect_s5066dts_eow_alm_request(tvbuff_t *tvb, guint offset, proto_
 }
 
 /* { 6, "ALM_RESPONSE"}, */
-static void dissect_s5066dts_eow_alm_response(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static void dissect_s5066dts_eow_alm_response(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
     proto_tree_add_item(tree, hf_s5066dts_eow_alm_response_response, tvb, offset, 1, ENC_BIG_ENDIAN);
     proto_tree_add_item(tree, hf_s5066dts_eow_alm_response_reason, tvb, offset, 1, ENC_BIG_ENDIAN);
 }
 
 /* { 7, "HDR_DRC_REQUEST"}, */
-static void dissect_s5066dts_eow_hdr_drc_request(tvbuff_t *tvb, packet_info * pinfo, guint offset,
-        proto_tree *tree, guint pdu_type)
+static void dissect_s5066dts_eow_hdr_drc_request(tvbuff_t *tvb, packet_info * pinfo, unsigned offset,
+        proto_tree *tree, unsigned pdu_type)
 {
 
     if (pdu_type != S5066_DPDU_MANAGEMENT)
@@ -408,8 +399,8 @@ static void dissect_s5066dts_eow_hdr_drc_request(tvbuff_t *tvb, packet_info * pi
 }
 
 /* {15, "HFTRP FRAME CONTROL"}, */
-static void dissect_s5066dts_eow_hftrp(tvbuff_t *tvb,  packet_info * pinfo, guint offset,
-        proto_tree *tree, guint pdu_type)
+static void dissect_s5066dts_eow_hftrp(tvbuff_t *tvb,  packet_info * pinfo, unsigned offset,
+        proto_tree *tree, unsigned pdu_type)
 {
     if (pdu_type != S5066_DPDU_MANAGEMENT)
     {
@@ -423,13 +414,13 @@ static void dissect_s5066dts_eow_hftrp(tvbuff_t *tvb,  packet_info * pinfo, guin
 /*
  * Dissect EOW type according to C.5 EOW and Management Message Types
  */
-static guint dissect_s5066dts_eow(tvbuff_t *tvb,  packet_info * pinfo, guint offset, proto_tree *tree,
-        guint pdu_type)
+static unsigned dissect_s5066dts_eow(tvbuff_t *tvb,  packet_info * pinfo, unsigned offset, proto_tree *tree,
+        unsigned pdu_type)
 {
     proto_tree *eow_tree;
-    guint eow_type;
+    unsigned eow_type;
 
-    eow_type = tvb_get_guint8(tvb, offset) & 0x0F;
+    eow_type = tvb_get_uint8(tvb, offset) & 0x0F;
     eow_tree = proto_tree_add_subtree(tree, tvb, offset, 2, ett_s5066dts_eow, NULL, "EOW Field");
     proto_tree_add_item(eow_tree, hf_s5066dts_eow_type, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
 
@@ -458,30 +449,30 @@ static guint dissect_s5066dts_eow(tvbuff_t *tvb,  packet_info * pinfo, guint off
 }
 
 static void
-s5066dts_address_format( gchar *result, guint32 address_value )
+s5066dts_address_format( char *result, uint32_t address_value )
 {
-   g_snprintf( result, ITEM_LABEL_LENGTH, "%d.%d.%d.%d",
+   snprintf( result, ITEM_LABEL_LENGTH, "%d.%d.%d.%d",
             address_value >> 24,
             (address_value >> 16) & 0xFF,
             (address_value >> 8) & 0xFF,
             address_value & 0xFF);
 }
 
-static guint dissect_s5066dts_address(tvbuff_t *tvb, guint offset, proto_tree *tree, packet_info *pinfo,
-        guint addr_size)
+static unsigned dissect_s5066dts_address(tvbuff_t *tvb, unsigned offset, proto_tree *tree, packet_info *pinfo,
+        unsigned addr_size)
 {
-    guint32 source_address = 0, destination_address = 0;
+    uint32_t source_address = 0, destination_address = 0;
     proto_tree *address_tree;
     unsigned int i;
 
     for ( i = 0; i < addr_size; i++)
     {
         destination_address = (destination_address << 4) | ((!(i % 2)
-                ? (tvb_get_guint8(tvb, offset + i / 2) >> 4)
-                : (tvb_get_guint8(tvb, offset + i / 2))) & 0x0F);
+                ? (tvb_get_uint8(tvb, offset + i / 2) >> 4)
+                : (tvb_get_uint8(tvb, offset + i / 2))) & 0x0F);
         source_address = (source_address << 4) | ((!((i + addr_size) % 2)
-                ? (tvb_get_guint8(tvb, offset + (i + addr_size) / 2) >> 4)
-                : (tvb_get_guint8(tvb, offset + (i + addr_size) / 2))) & 0x0F);
+                ? (tvb_get_uint8(tvb, offset + (i + addr_size) / 2) >> 4)
+                : (tvb_get_uint8(tvb, offset + (i + addr_size) / 2))) & 0x0F);
     }
 
     address_tree = proto_tree_add_subtree(tree, tvb, offset, addr_size, ett_s5066dts_address, NULL, "Destination & Source Addresses");
@@ -505,10 +496,10 @@ static guint dissect_s5066dts_address(tvbuff_t *tvb, guint offset, proto_tree *t
     return offset;
 }
 
-static guint dissect_s5066dts_header_crc(tvbuff_t *tvb, guint offset, proto_tree *tree,
-        guint address_size, guint header_size)
+static unsigned dissect_s5066dts_header_crc(tvbuff_t *tvb, unsigned offset, proto_tree *tree,
+        unsigned address_size, unsigned header_size)
 {
-    guint16 header_crc;
+    uint16_t header_crc;
     proto_item *ti;
 
     header_crc = crc16_0x9949_tvb_offset_seed(tvb, S5066_DPDU_SYNC_SEQUENCE_SIZE,
@@ -524,10 +515,10 @@ static guint dissect_s5066dts_header_crc(tvbuff_t *tvb, guint offset, proto_tree
     return offset;
 }
 
-static guint dissect_s5066dts_cpdu_crc(tvbuff_t *tvb, guint offset, proto_tree *tree,
-        guint address_size, guint header_size, guint segmented_cpdu_size)
+static unsigned dissect_s5066dts_cpdu_crc(tvbuff_t *tvb, unsigned offset, proto_tree *tree,
+        unsigned address_size, unsigned header_size, unsigned segmented_cpdu_size)
 {
-    guint32 cpdu_crc;
+    uint32_t cpdu_crc;
     proto_item *ti;
 
     cpdu_crc = crc32_0x0AA725CF_tvb_offset_seed(tvb, header_size + address_size + S5066_DPDU_SYNC_SEQUENCE_SIZE,
@@ -544,7 +535,7 @@ static guint dissect_s5066dts_cpdu_crc(tvbuff_t *tvb, guint offset, proto_tree *
 }
 
 /* { 0, "DATA_ONLY"}, */
-static guint dissect_s5066dts_data_only(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static unsigned dissect_s5066dts_data_only(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
     proto_tree_add_item(tree, hf_s5066dts_data_only_cpdu_start, tvb, offset, 1, ENC_BIG_ENDIAN);
     proto_tree_add_item(tree, hf_s5066dts_data_only_cpdu_end, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -559,10 +550,10 @@ static guint dissect_s5066dts_data_only(tvbuff_t *tvb, guint offset, proto_tree 
 }
 
 /* { 1, "ACK_ONLY"}, */
-static guint dissect_s5066dts_ack_only(tvbuff_t *tvb, guint offset, proto_tree *tree,
-        guint header_size)
+static unsigned dissect_s5066dts_ack_only(tvbuff_t *tvb, unsigned offset, proto_tree *tree,
+        unsigned header_size)
 {
-    guint ack_size;
+    unsigned ack_size;
     ack_size = header_size - 7;
 
     proto_tree_add_item(tree, hf_s5066dts_ack_only_rx_lwe, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
@@ -574,10 +565,10 @@ static guint dissect_s5066dts_ack_only(tvbuff_t *tvb, guint offset, proto_tree *
 }
 
 /* { 2, "DATA_ACK"}, */
-static guint dissect_s5066dts_data_ack(tvbuff_t *tvb, guint offset, proto_tree *tree,
-        guint header_size)
+static unsigned dissect_s5066dts_data_ack(tvbuff_t *tvb, unsigned offset, proto_tree *tree,
+        unsigned header_size)
 {
-    guint ack_size;
+    unsigned ack_size;
     ack_size = header_size - 10;
 
     proto_tree_add_item(tree, hf_s5066dts_data_ack_cpdu_start, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -597,7 +588,7 @@ static guint dissect_s5066dts_data_ack(tvbuff_t *tvb, guint offset, proto_tree *
 }
 
 /* { 3, "RESET_WIN_RESYNC"}, */
-static guint dissect_s5066dts_reset_win_resync(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static unsigned dissect_s5066dts_reset_win_resync(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
     proto_tree_add_item(tree, hf_s5066dts_reset_win_resync_unused, tvb, offset, 1, ENC_BIG_ENDIAN);
     proto_tree_add_item(tree, hf_s5066dts_reset_win_resync_full_reset_command, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -611,7 +602,7 @@ static guint dissect_s5066dts_reset_win_resync(tvbuff_t *tvb, guint offset, prot
 }
 
 /* { 4, "EXP_DATA_ONLY"}, */
-static guint dissect_s5066dts_exp_data_only(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static unsigned dissect_s5066dts_exp_data_only(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
     proto_tree_add_item(tree, hf_s5066dts_exp_data_only_cpdu_start, tvb, offset, 1, ENC_BIG_ENDIAN);
     proto_tree_add_item(tree, hf_s5066dts_exp_data_only_cpdu_end, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -623,10 +614,10 @@ static guint dissect_s5066dts_exp_data_only(tvbuff_t *tvb, guint offset, proto_t
 }
 
 /* { 5, "EXP_ACK_ONLY"}, */
-static guint dissect_s5066dts_exp_ack_only(tvbuff_t *tvb, guint offset, proto_tree *tree,
-        guint header_size)
+static unsigned dissect_s5066dts_exp_ack_only(tvbuff_t *tvb, unsigned offset, proto_tree *tree,
+        unsigned header_size)
 {
-    guint ack_size;
+    unsigned ack_size;
     ack_size = header_size - 7;
 
     proto_tree_add_item(tree, hf_s5066dts_exp_ack_only_rx_lwe, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
@@ -638,15 +629,15 @@ static guint dissect_s5066dts_exp_ack_only(tvbuff_t *tvb, guint offset, proto_tr
 }
 
 /* { 6, "MANAGEMENT"}, */
-static guint dissect_s5066dts_management(tvbuff_t *tvb, guint offset, proto_tree *tree, guint header_size)
+static unsigned dissect_s5066dts_management(tvbuff_t *tvb, unsigned offset, proto_tree *tree, unsigned header_size)
 {
-    guint8 eow_content;
+    uint8_t eow_content;
     proto_tree *hftrp_token_tree = NULL;
-    guint eow_type;
-    guint extended_message_size;
+    unsigned eow_type;
+    unsigned extended_message_size;
 
-    eow_type = tvb_get_guint8(tvb, offset) & 0x0F;
-    eow_content = tvb_get_guint8(tvb, S5066_DPDU_EOW_CONTENT_INDEX);
+    eow_type = tvb_get_uint8(tvb, offset) & 0x0F;
+    eow_content = tvb_get_uint8(tvb, S5066_DPDU_EOW_CONTENT_INDEX);
     extended_message_size = header_size - 8;
 
     proto_tree_add_item(tree, hf_s5066dts_management_unused, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -698,7 +689,7 @@ static guint dissect_s5066dts_management(tvbuff_t *tvb, guint offset, proto_tree
 }
 
 /* { 7, "NON_ARQ_DATA"}, */
-static guint dissect_s5066dts_non_arq_data(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static unsigned dissect_s5066dts_non_arq_data(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
     proto_tree_add_item(tree, hf_s5066dts_non_arq_data_cpdu_id_1, tvb, offset, 1, ENC_BIG_ENDIAN);
     proto_tree_add_item(tree, hf_s5066dts_non_arq_data_deliver_in_order, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -713,7 +704,7 @@ static guint dissect_s5066dts_non_arq_data(tvbuff_t *tvb, guint offset, proto_tr
 }
 
 /* { 8, "EXP_NON_ARQ_DATA"}, */
-static guint dissect_s5066dts_exp_non_arq_data(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static unsigned dissect_s5066dts_exp_non_arq_data(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
     proto_tree_add_item(tree, hf_s5066dts_exp_non_arq_data_cpdu_id_1, tvb, offset, 1, ENC_BIG_ENDIAN);
     proto_tree_add_item(tree, hf_s5066dts_exp_non_arq_data_deliver_in_order, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -728,7 +719,7 @@ static guint dissect_s5066dts_exp_non_arq_data(tvbuff_t *tvb, guint offset, prot
 }
 
 /* {15, "WARNING"}, */
-static guint dissect_s5066dts_warning(tvbuff_t *tvb, guint offset, proto_tree *tree)
+static unsigned dissect_s5066dts_warning(tvbuff_t *tvb, unsigned offset, proto_tree *tree)
 {
     proto_tree_add_item(tree, hf_s5066dts_warning_frame_type, tvb, offset, 1, ENC_BIG_ENDIAN);
     proto_tree_add_item(tree, hf_s5066dts_warning_reason, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
@@ -736,24 +727,24 @@ static guint dissect_s5066dts_warning(tvbuff_t *tvb, guint offset, proto_tree *t
     return offset;
 }
 
-static guint calculate_s5066dts_dpdu_len(packet_info *pinfo _U_, tvbuff_t *tvb,
+static unsigned calculate_s5066dts_dpdu_len(packet_info *pinfo _U_, tvbuff_t *tvb,
                                          int offset _U_, void *data _U_)
 {
-    guint pdu_type;
-    guint address_size;
-    guint header_size;
-    guint pdu_size;
-    guint segmented_cpdu_size;
+    unsigned pdu_type;
+    unsigned address_size;
+    unsigned header_size;
+    unsigned pdu_size;
+    unsigned segmented_cpdu_size;
 
     /* XXX: why is the offset not used to get this value? */
-    if (tvb_get_guint8(tvb, 0) != 0x90)
+    if (tvb_get_uint8(tvb, 0) != 0x90)
         return 1;
-    else if (tvb_get_guint8(tvb, 1) != 0xEB)
+    else if (tvb_get_uint8(tvb, 1) != 0xEB)
         return 2;
 
-    pdu_type = (tvb_get_guint8(tvb, 2) & 0xF0) >> 4;
-    address_size = (tvb_get_guint8(tvb, S5066_DPDU_SIZE_OF_ADDRESS_INDEX) & 0xE0) >> 5;
-    header_size = tvb_get_guint8(tvb, S5066_DPDU_SIZE_OF_HEADER_INDEX) & 0x1F;
+    pdu_type = (tvb_get_uint8(tvb, 2) & 0xF0) >> 4;
+    address_size = (tvb_get_uint8(tvb, S5066_DPDU_SIZE_OF_ADDRESS_INDEX) & 0xE0) >> 5;
+    header_size = tvb_get_uint8(tvb, S5066_DPDU_SIZE_OF_HEADER_INDEX) & 0x1F;
     pdu_size = header_size + address_size + S5066_DPDU_SYNC_SEQUENCE_SIZE;
 
     if (pdu_type == S5066_DPDU_DATA_ONLY || pdu_type == S5066_DPDU_DATA_ACK ||
@@ -770,35 +761,35 @@ static int dissect_s5066dts(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 {
     proto_tree *s5066dts_tree = NULL, *pdu_tree = NULL;
     proto_item *ti = NULL;
-    guint offset = 0;
-    guint pdu_type;
-    guint address_size;
-    guint header_size;
-    guint segmented_cpdu_size;
+    unsigned offset = 0;
+    unsigned pdu_type;
+    unsigned address_size;
+    unsigned header_size;
+    unsigned segmented_cpdu_size;
     /* Add EOW (Engineering OrderWire */
-    guint8 eow_type;
-    guint8 eow_content;
+    uint8_t eow_type;
+    uint8_t eow_content;
 
-    if (tvb_get_guint8(tvb, 0) != 0x90 || tvb_get_guint8(tvb, 1) != 0xEB) {
+    if (tvb_get_uint8(tvb, 0) != 0x90 || tvb_get_uint8(tvb, 1) != 0xEB) {
         /* Cannot find sync pattern at dissect_s5066dts()! */
         return 0;
     }
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, DISSECTOR_NAME);
-    pdu_type = (tvb_get_guint8(tvb, 2) & 0xF0) >> 4;
+    pdu_type = (tvb_get_uint8(tvb, 2) & 0xF0) >> 4;
 
     /* Add DPDU type and name */
-    col_add_fstr(pinfo->cinfo, COL_INFO, "DpduType=%d (%s)", pdu_type, val_to_str(pdu_type, s5066dts_dpdu_type,
-            "Unknown (0x%02x)"));
+    col_add_fstr(pinfo->cinfo, COL_INFO, "DpduType=%d (%s)", pdu_type,
+            val_to_str(pinfo->pool, pdu_type, s5066dts_dpdu_type, "Unknown (0x%02x)"));
 
-    address_size = (tvb_get_guint8(tvb, S5066_DPDU_SIZE_OF_ADDRESS_INDEX) & 0xE0) >> 5;
-    eow_type = tvb_get_guint8(tvb, S5066_DPDU_EOW_TYPE_INDEX) & 0x0F;
-    eow_content = tvb_get_guint8(tvb, S5066_DPDU_EOW_CONTENT_INDEX);
+    address_size = (tvb_get_uint8(tvb, S5066_DPDU_SIZE_OF_ADDRESS_INDEX) & 0xE0) >> 5;
+    eow_type = tvb_get_uint8(tvb, S5066_DPDU_EOW_TYPE_INDEX) & 0x0F;
+    eow_content = tvb_get_uint8(tvb, S5066_DPDU_EOW_CONTENT_INDEX);
 
     switch (eow_type)
     {
         case S5066_EOW_RESERVED:
-            col_append_fstr(pinfo->cinfo, COL_INFO, " EowType=RESERVED");
+            col_append_str(pinfo->cinfo, COL_INFO, " EowType=RESERVED");
             break;
         case S5066_EOW_DRC_REQUEST: /* Data Rate Change Request */
         case S5066_EOW_DRC_RESPONSE: /* Data Rate Change Response */
@@ -817,7 +808,7 @@ static int dissect_s5066dts(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         case 12: /* Unspecified/User Defined */
         case 13: /* Unspecified/User Defined */
         case 14: /* Unspecified/User Defined */
-            col_append_fstr(pinfo->cinfo, COL_INFO, " EowType=UNSPECIFIED");
+            col_append_str(pinfo->cinfo, COL_INFO, " EowType=UNSPECIFIED");
             break;
         case S5066_EOW_HFTRP_TOKEN:
             col_append_fstr(pinfo->cinfo, COL_INFO, " EowType=%d (%s:%s)", eow_type,
@@ -827,26 +818,26 @@ static int dissect_s5066dts(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     }
 
     /* Append EOT (End of Transmission) */
-    col_append_fstr(pinfo->cinfo, COL_INFO, " EOT=%d", tvb_get_guint8(tvb, S5066_DPDU_EOT_INDEX));
+    col_append_fstr(pinfo->cinfo, COL_INFO, " EOT=%d", tvb_get_uint8(tvb, S5066_DPDU_EOT_INDEX));
 
     /* Append DPDU-specific information */
     switch (pdu_type)
     {
         case S5066_DPDU_DATA_ONLY:
         case S5066_DPDU_EXP_DATA_ONLY:
-            col_append_fstr(pinfo->cinfo, COL_INFO, " Seq=%d", tvb_get_guint8(tvb, 8 + address_size));
+            col_append_fstr(pinfo->cinfo, COL_INFO, " Seq=%d", tvb_get_uint8(tvb, 8 + address_size));
             break;
         case S5066_DPDU_ACK_ONLY:
         case S5066_DPDU_EXP_ACK_ONLY:
-            col_append_fstr(pinfo->cinfo, COL_INFO, " RxLWE=%d", tvb_get_guint8(tvb, 6 + address_size));
+            col_append_fstr(pinfo->cinfo, COL_INFO, " RxLWE=%d", tvb_get_uint8(tvb, 6 + address_size));
             break;
         case S5066_DPDU_DATA_ACK:
             col_append_fstr(pinfo->cinfo, COL_INFO, " Seq=%d RxLWE=%d",
-                    tvb_get_guint8(tvb, 8 + address_size),
-                    tvb_get_guint8(tvb, 9 + address_size));
+                    tvb_get_uint8(tvb, 8 + address_size),
+                    tvb_get_uint8(tvb, 9 + address_size));
             break;
         case S5066_DPDU_MANAGEMENT:
-            col_append_fstr(pinfo->cinfo, COL_INFO, " FrameID=%d", tvb_get_guint8(tvb, 7 + address_size));
+            col_append_fstr(pinfo->cinfo, COL_INFO, " FrameID=%d", tvb_get_uint8(tvb, 7 + address_size));
             break;
     }
 
@@ -866,7 +857,7 @@ static int dissect_s5066dts(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         proto_tree_add_item(s5066dts_tree, hf_s5066dts_address_size, tvb, offset, 1, ENC_BIG_ENDIAN);
         proto_tree_add_item(s5066dts_tree, hf_s5066dts_header_size, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
         offset = dissect_s5066dts_address(tvb, offset, s5066dts_tree, pinfo, address_size);
-        header_size = tvb_get_guint8(tvb, S5066_DPDU_SIZE_OF_HEADER_INDEX) & 0x1F;
+        header_size = tvb_get_uint8(tvb, S5066_DPDU_SIZE_OF_HEADER_INDEX) & 0x1F;
         pdu_tree = proto_tree_add_subtree(s5066dts_tree, tvb, offset, header_size - 6, ett_s5066dts_pdu, NULL, "D_PDU Type Specific Header");
 
         switch (pdu_type)
@@ -899,7 +890,7 @@ static int dissect_s5066dts(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
 static int dissect_s5066dts_raw(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    guint b_length =  tvb_captured_length(tvb);
+    unsigned b_length =  tvb_captured_length(tvb);
 
     /* Make sure there are enough bytes for a DPDU */
     if ( b_length < S5066_DPDU_FRAME_HEADER_LEN){
@@ -910,7 +901,7 @@ static int dissect_s5066dts_raw(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
     /* Check if the first two bytes are 0x90 and 0xEB
      * If not then this is neither a DPDU nor an un-reassembled one
      */
-    if ((tvb_get_guint8(tvb, 0) != 0x90) || (tvb_get_guint8(tvb, 1) != 0xEB)) {
+    if ((tvb_get_uint8(tvb, 0) != 0x90) || (tvb_get_uint8(tvb, 1) != 0xEB)) {
         /* Cannot find sync pattern at dissect_s5066dts_raw()! */
         return 0;
     }
@@ -922,7 +913,7 @@ static int dissect_s5066dts_raw(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
 
 static int dissect_s5066dts_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
-    guint b_length = tvb_captured_length(tvb);
+    unsigned b_length = tvb_captured_length(tvb);
 
     /* Make sure there are enough bytes for a DPDU */
     if ( b_length < S5066_DPDU_FRAME_HEADER_LEN){
@@ -933,13 +924,13 @@ static int dissect_s5066dts_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
     /* Check if the first two bytes are 0x90 and 0xEB
      * If not then this is neitger a DPDU nor an un-reassembled one
      */
-    if ((tvb_get_guint8(tvb, 0) != 0x90) || (tvb_get_guint8(tvb, 1) != 0xEB)) {
+    if ((tvb_get_uint8(tvb, 0) != 0x90) || (tvb_get_uint8(tvb, 1) != 0xEB)) {
         /* Cannot find sync pattern at dissect_s5066dts_tcp()! */
         return 0;
     }
 
     /* Drop packets with port matches other than the destination port. */
-    if ( pinfo->destport != config_s5066dts_port) {
+    if (!value_is_in_range(config_s5066dts_ports, pinfo->destport)) {
         /* Configured to dissect TCP destination port matches only, dropping.. */
         return 0;
     }
@@ -948,6 +939,13 @@ static int dissect_s5066dts_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
                 dissect_s5066dts, data);
 
     return b_length;
+}
+
+static void
+apply_s5066dts_prefs(void)
+{
+    /* STANAG 5066 uses the port preference for some heuristics */
+    config_s5066dts_ports = prefs_get_range_value("s5066dts", "tcp.port");
 }
 
 void proto_register_s5066dts (void)
@@ -1212,7 +1210,7 @@ void proto_register_s5066dts (void)
                 { "Acknowledgment", "s5066dts.management.ack", FT_BOOLEAN, 8, NULL, 0x01, NULL, HFILL }
             },
             { &hf_s5066dts_management_management_frame_id,
-                { "Management frame ID number", "s5066dts.management.manegement_frame_id", FT_UINT8, BASE_DEC,
+                { "Management frame ID number", "s5066dts.management.management_frame_id", FT_UINT8, BASE_DEC,
                         NULL, 0x0, NULL, HFILL }
             },
             { &hf_s5066dts_management_extended_message,
@@ -1305,7 +1303,7 @@ void proto_register_s5066dts (void)
             },
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
             &ett_s5066dts,
             &ett_s5066dts_eow,
             &ett_s5066dts_address,
@@ -1323,53 +1321,35 @@ void proto_register_s5066dts (void)
 
     expert_module_t* expert_s5066dts;
 
-    if (proto_s5066dts == -1) /* do protocol initialization only once */
+    if (proto_s5066dts <= 0) /* do protocol initialization only once */
     {
         proto_s5066dts = proto_register_protocol ("STANAG 5066(DTS layer)", "STANAG 5066 DTS", "s5066dts");
         proto_register_field_array(proto_s5066dts, hf, array_length(hf));
         proto_register_subtree_array(ett, array_length(ett));
         expert_s5066dts = expert_register_protocol(proto_s5066dts);
         expert_register_field_array(expert_s5066dts, ei, array_length(ei));
-        register_dissector(DISSECTOR_NAME, dissect_s5066dts_tcp, proto_s5066dts);
+        s5066dts_handle = register_dissector(DISSECTOR_NAME ".raw", dissect_s5066dts_raw, proto_s5066dts);
+        s5066dts_over_tcp_handle = register_dissector(DISSECTOR_NAME, dissect_s5066dts_tcp, proto_s5066dts);
     }
 
-    s5066dts_module = prefs_register_protocol(proto_s5066dts, proto_reg_handoff_s5066dts);
+    s5066dts_module = prefs_register_protocol(proto_s5066dts, apply_s5066dts_prefs);
 
     prefs_register_bool_preference(s5066dts_module, "proto_desegment",
         "Reassemble STANAG 5066 DPDUs spanning multiple TCP segments",
         "Whether the STANAG 5066 DTS Layer dissector should reassemble DPDUs spanning multiple TCP segments",
         &config_proto_desegment);
-
-    prefs_register_uint_preference(s5066dts_module, "tcp.port",
-        "STANAG 5066 DTS Layer TCP Port",
-        "Set the port for STANAG 5066 DTS Layer. (If other than the default 5067.)",
-        10, &config_s5066dts_port);
 }
 
 /* Routine that will be called when s5066dts is handing off to the next dissector */
 void proto_reg_handoff_s5066dts(void)
 {
-    static gint initialized = FALSE;
-    static dissector_handle_t s5066dts_handle;
-    static dissector_handle_t s5066dts_over_tcp_handle;
-    static int currentPort;
-
-    if (!initialized) {
-        s5066dts_handle = create_dissector_handle(dissect_s5066dts_raw, proto_s5066dts);
-        dissector_add_uint("wtap_encap", WTAP_ENCAP_STANAG_5066_D_PDU, s5066dts_handle);
-        s5066dts_over_tcp_handle = create_dissector_handle(dissect_s5066dts_tcp, proto_s5066dts);
-        initialized = TRUE;
-    }
-    else {
-        dissector_delete_uint("tcp.port", currentPort, s5066dts_over_tcp_handle);
-    }
-
-    currentPort = config_s5066dts_port;
-    dissector_add_uint("tcp.port", currentPort, s5066dts_over_tcp_handle);
+    dissector_add_uint("wtap_encap", WTAP_ENCAP_STANAG_5066_D_PDU, s5066dts_handle);
+    dissector_add_for_decode_as_with_preference("tcp.port", s5066dts_over_tcp_handle);
+    apply_s5066dts_prefs();
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

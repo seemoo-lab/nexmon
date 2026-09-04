@@ -10,27 +10,13 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
-#include <glib.h>
-#include <string.h>
-
 #include <epan/packet.h>
+#include <wsutil/array.h>
 #include "packet-dcerpc.h"
 #include "packet-dcerpc-nt.h"
 #include "packet-windows-common.h"
@@ -39,224 +25,224 @@
 void proto_register_budb(void);
 void proto_reg_handoff_budb(void);
 
-static int proto_budb = -1;
+static int proto_budb;
 
 
 /* INCLUDED FILE : ETH_HF */
-static int hf_budb_opnum = -1;
-static int hf_budb_rc = -1;
-static int hf_budb_principal_name = -1;
-static int hf_budb_principal_instance = -1;
-static int hf_budb_principal_cell = -1;
-static int hf_budb_principal_spare = -1;
-static int hf_budb_principal_spare1 = -1;
-static int hf_budb_principal_spare2 = -1;
-static int hf_budb_principal_spare3 = -1;
-static int hf_budb_principal_spare4 = -1;
-static int hf_budb_tapeSet_id = -1;
-static int hf_budb_tapeSet_tapeServer = -1;
-static int hf_budb_tapeSet_format = -1;
-static int hf_budb_tapeSet_maxTapes = -1;
-static int hf_budb_tapeSet_a = -1;
-static int hf_budb_tapeSet_b = -1;
-static int hf_budb_tapeSet_spare1 = -1;
-static int hf_budb_tapeSet_spare2 = -1;
-static int hf_budb_tapeSet_spare3 = -1;
-static int hf_budb_tapeSet_spare4 = -1;
-static int hf_budb_dumpEntry_id = -1;
-static int hf_budb_dumpEntry_parent = -1;
-static int hf_budb_dumpEntry_level = -1;
-static int hf_budb_dumpEntry_flags = -1;
-static int hf_budb_dumpEntry_volumeSetName = -1;
-static int hf_budb_dumpEntry_dumpPath = -1;
-static int hf_budb_dumpEntry_name = -1;
-static int hf_budb_dumpEntry_created = -1;
-static int hf_budb_dumpEntry_incTime = -1;
-static int hf_budb_dumpEntry_nVolumes = -1;
-static int hf_budb_dumpEntry_tapes = -1;
-static int hf_budb_dumpEntry_dumper = -1;
-static int hf_budb_dumpEntry_spare1 = -1;
-static int hf_budb_dumpEntry_spare2 = -1;
-static int hf_budb_dumpEntry_spare3 = -1;
-static int hf_budb_dumpEntry_spare4 = -1;
-static int hf_budb_tapeEntry_name = -1;
-static int hf_budb_tapeEntry_flags = -1;
-static int hf_budb_tapeEntry_written = -1;
-static int hf_budb_tapeEntry_expires = -1;
-static int hf_budb_tapeEntry_nMBytes = -1;
-static int hf_budb_tapeEntry_nBytes = -1;
-static int hf_budb_tapeEntry_nFiles = -1;
-static int hf_budb_tapeEntry_nVolumes = -1;
-static int hf_budb_tapeEntry_seq = -1;
-static int hf_budb_tapeEntry_tapeid = -1;
-static int hf_budb_tapeEntry_useCount = -1;
-static int hf_budb_tapeEntry_mediaType = -1;
-static int hf_budb_tapeEntry_dump = -1;
-static int hf_budb_tapeEntry_spare1 = -1;
-static int hf_budb_tapeEntry_spare2 = -1;
-static int hf_budb_tapeEntry_spare3 = -1;
-static int hf_budb_tapeEntry_spare4 = -1;
-static int hf_budb_volumeEntry_name = -1;
-static int hf_budb_volumeEntry_flags = -1;
-static int hf_budb_volumeEntry_id = -1;
-static int hf_budb_volumeEntry_server = -1;
-static int hf_budb_volumeEntry_partition = -1;
-static int hf_budb_volumeEntry_nFrags = -1;
-static int hf_budb_volumeEntry_position = -1;
-static int hf_budb_volumeEntry_clone = -1;
-static int hf_budb_volumeEntry_incTime = -1;
-static int hf_budb_volumeEntry_startByte = -1;
-static int hf_budb_volumeEntry_nBytes = -1;
-static int hf_budb_volumeEntry_seq = -1;
-static int hf_budb_volumeEntry_dump = -1;
-static int hf_budb_volumeEntry_tape = -1;
-static int hf_budb_volumeEntry_spare1 = -1;
-static int hf_budb_volumeEntry_spare2 = -1;
-static int hf_budb_volumeEntry_spare3 = -1;
-static int hf_budb_volumeEntry_spare4 = -1;
-static int hf_budb_volumeList_volumeList_len = -1;
-static int hf_budb_volumeList_volumeList_val = -1;
-static int hf_budb_dumpList_dumpList_len = -1;
-static int hf_budb_dumpList_dumpList_val = -1;
-static int hf_budb_tapeList_tapeList_len = -1;
-static int hf_budb_tapeList_tapeList_val = -1;
-static int hf_budb_charListT_charListT_len = -1;
-static int hf_budb_charListT_charListT_val = -1;
-static int hf_budb_DbHeader_dbversion = -1;
-static int hf_budb_DbHeader_created = -1;
-static int hf_budb_DbHeader_cell = -1;
-static int hf_budb_DbHeader_lastDumpId = -1;
-static int hf_budb_DbHeader_lastInstanceId = -1;
-static int hf_budb_DbHeader_lastTapeId = -1;
-static int hf_budb_DbHeader_spare1 = -1;
-static int hf_budb_DbHeader_spare2 = -1;
-static int hf_budb_DbHeader_spare3 = -1;
-static int hf_budb_DbHeader_spare4 = -1;
-static int hf_budb_dbVolume_name = -1;
-static int hf_budb_dbVolume_flags = -1;
-static int hf_budb_dbVolume_id = -1;
-static int hf_budb_dbVolume_server = -1;
-static int hf_budb_dbVolume_partition = -1;
-static int hf_budb_dbVolume_nFrags = -1;
-static int hf_budb_dbVolume_position = -1;
-static int hf_budb_dbVolume_clone = -1;
-static int hf_budb_dbVolume_incTime = -1;
-static int hf_budb_dbVolume_startByte = -1;
-static int hf_budb_dbVolume_nBytes = -1;
-static int hf_budb_dbVolume_seq = -1;
-static int hf_budb_dbVolume_dump = -1;
-static int hf_budb_dbVolume_tape = -1;
-static int hf_budb_dbVolume_spare1 = -1;
-static int hf_budb_dbVolume_spare2 = -1;
-static int hf_budb_dbVolume_spare3 = -1;
-static int hf_budb_dbVolume_spare4 = -1;
-static int hf_budb_structDumpHeader_type = -1;
-static int hf_budb_structDumpHeader_structversion = -1;
-static int hf_budb_structDumpHeader_size = -1;
-static int hf_budb_structDumpHeader_spare1 = -1;
-static int hf_budb_structDumpHeader_spare2 = -1;
-static int hf_budb_structDumpHeader_spare3 = -1;
-static int hf_budb_structDumpHeader_spare4 = -1;
-static int hf_budb_AddVolume_vol = -1;
-static int hf_budb_CreateDump_dump = -1;
-static int hf_budb_DeleteDump_id = -1;
-static int hf_budb_DeleteTape_tape = -1;
-static int hf_budb_DeleteVDP_dsname = -1;
-static int hf_budb_DeleteVDP_dumpPath = -1;
-static int hf_budb_DeleteVDP_curDumpId = -1;
-static int hf_budb_FindClone_dumpID = -1;
-static int hf_budb_FindClone_volName = -1;
-static int hf_budb_FindClone_clonetime = -1;
-static int hf_budb_FindClone_cloneSpare = -1;
-static int hf_budb_FindDump_volName = -1;
-static int hf_budb_FindDump_beforeDate = -1;
-static int hf_budb_FindDump_dateSpare = -1;
-static int hf_budb_FindDump_deptr = -1;
-static int hf_budb_FindLatestDump_vsname = -1;
-static int hf_budb_FindLatestDump_dname = -1;
-static int hf_budb_FindLatestDump_dumpentry = -1;
-static int hf_budb_FinishDump_dump = -1;
-static int hf_budb_FinishTape_tape = -1;
-static int hf_budb_GetDumps_majorVersion = -1;
-static int hf_budb_GetDumps_flags = -1;
-static int hf_budb_GetDumps_name = -1;
-static int hf_budb_GetDumps_start = -1;
-static int hf_budb_GetDumps_end = -1;
-static int hf_budb_GetDumps_index = -1;
-static int hf_budb_GetDumps_nextIndex = -1;
-static int hf_budb_GetDumps_dbUpdate = -1;
-static int hf_budb_GetDumps_dumps = -1;
-static int hf_budb_GetTapes_majorVersion = -1;
-static int hf_budb_GetTapes_flags = -1;
-static int hf_budb_GetTapes_name = -1;
-static int hf_budb_GetTapes_start = -1;
-static int hf_budb_GetTapes_end = -1;
-static int hf_budb_GetTapes_index = -1;
-static int hf_budb_GetTapes_nextIndex = -1;
-static int hf_budb_GetTapes_dbUpdate = -1;
-static int hf_budb_GetTapes_tapes = -1;
-static int hf_budb_GetVolumes_majorVersion = -1;
-static int hf_budb_GetVolumes_flags = -1;
-static int hf_budb_GetVolumes_name = -1;
-static int hf_budb_GetVolumes_start = -1;
-static int hf_budb_GetVolumes_end = -1;
-static int hf_budb_GetVolumes_index = -1;
-static int hf_budb_GetVolumes_nextIndex = -1;
-static int hf_budb_GetVolumes_dbUpdate = -1;
-static int hf_budb_GetVolumes_volumes = -1;
-static int hf_budb_UseTape_tape = -1;
-static int hf_budb_UseTape_new = -1;
-static int hf_budb_GetText_lockHandle = -1;
-static int hf_budb_GetText_textType = -1;
-static int hf_budb_GetText_maxLength = -1;
-static int hf_budb_GetText_offset = -1;
-static int hf_budb_GetText_nextOffset = -1;
-static int hf_budb_GetText_charListPtr = -1;
-static int hf_budb_GetTextVersion_textType = -1;
-static int hf_budb_GetTextVersion_tversion = -1;
-static int hf_budb_SaveText_lockHandle = -1;
-static int hf_budb_SaveText_textType = -1;
-static int hf_budb_SaveText_offset = -1;
-static int hf_budb_SaveText_flags = -1;
-static int hf_budb_SaveText_charListPtr = -1;
-static int hf_budb_FreeAllLocks_instanceId = -1;
-static int hf_budb_FreeLock_lockHandle = -1;
-static int hf_budb_GetInstanceId_instanceId = -1;
-static int hf_budb_GetLock_instanceId = -1;
-static int hf_budb_GetLock_lockName = -1;
-static int hf_budb_GetLock_expiration = -1;
-static int hf_budb_GetLock_lockHandle = -1;
-static int hf_budb_DbVerify_status = -1;
-static int hf_budb_DbVerify_orphans = -1;
-static int hf_budb_DbVerify_host = -1;
-static int hf_budb_DumpDB_maxLength = -1;
-static int hf_budb_DumpDB_flags = -1;
-static int hf_budb_DumpDB_charListPtr = -1;
-static int hf_budb_RestoreDbHeader_header = -1;
-static int hf_budb_T_GetVersion_majorVersion = -1;
-static int hf_budb_T_DumpHashTable_type = -1;
-static int hf_budb_T_DumpHashTable_filename = -1;
-static int hf_budb_T_DumpDatabase_filename = -1;
-static int hf_budb_dfs_interfaceDescription_interface_uuid = -1;
-static int hf_budb_dfs_interfaceDescription_vers_major = -1;
-static int hf_budb_dfs_interfaceDescription_vers_minor = -1;
-static int hf_budb_dfs_interfaceDescription_vers_provider = -1;
-static int hf_budb_dfs_interfaceDescription_spare0 = -1;
-static int hf_budb_dfs_interfaceDescription_spare1 = -1;
-static int hf_budb_dfs_interfaceDescription_spare2 = -1;
-static int hf_budb_dfs_interfaceDescription_spare3 = -1;
-static int hf_budb_dfs_interfaceDescription_spare4 = -1;
-static int hf_budb_dfs_interfaceDescription_spare5 = -1;
-static int hf_budb_dfs_interfaceDescription_spare6 = -1;
-static int hf_budb_dfs_interfaceDescription_spare7 = -1;
-static int hf_budb_dfs_interfaceDescription_spare8 = -1;
-static int hf_budb_dfs_interfaceDescription_spare9 = -1;
-static int hf_budb_dfs_interfaceDescription_spareText = -1;
-static int hf_budb_dfs_interfaceList_dfs_interfaceList_len = -1;
-static int hf_budb_dfs_interfaceList_dfs_interfaceList_val = -1;
-static int hf_budb_GetServerInterfaces_serverInterfacesP = -1;
-static int hf_budb_AddVolumes_cnt = -1;
-static int hf_budb_AddVolumes_vol = -1;
+static int hf_budb_opnum;
+static int hf_budb_rc;
+static int hf_budb_principal_name;
+static int hf_budb_principal_instance;
+static int hf_budb_principal_cell;
+static int hf_budb_principal_spare;
+static int hf_budb_principal_spare1;
+static int hf_budb_principal_spare2;
+static int hf_budb_principal_spare3;
+static int hf_budb_principal_spare4;
+static int hf_budb_tapeSet_id;
+static int hf_budb_tapeSet_tapeServer;
+static int hf_budb_tapeSet_format;
+static int hf_budb_tapeSet_maxTapes;
+static int hf_budb_tapeSet_a;
+static int hf_budb_tapeSet_b;
+static int hf_budb_tapeSet_spare1;
+static int hf_budb_tapeSet_spare2;
+static int hf_budb_tapeSet_spare3;
+static int hf_budb_tapeSet_spare4;
+static int hf_budb_dumpEntry_id;
+static int hf_budb_dumpEntry_parent;
+static int hf_budb_dumpEntry_level;
+static int hf_budb_dumpEntry_flags;
+static int hf_budb_dumpEntry_volumeSetName;
+static int hf_budb_dumpEntry_dumpPath;
+static int hf_budb_dumpEntry_name;
+static int hf_budb_dumpEntry_created;
+static int hf_budb_dumpEntry_incTime;
+static int hf_budb_dumpEntry_nVolumes;
+static int hf_budb_dumpEntry_tapes;
+static int hf_budb_dumpEntry_dumper;
+static int hf_budb_dumpEntry_spare1;
+static int hf_budb_dumpEntry_spare2;
+static int hf_budb_dumpEntry_spare3;
+static int hf_budb_dumpEntry_spare4;
+static int hf_budb_tapeEntry_name;
+static int hf_budb_tapeEntry_flags;
+static int hf_budb_tapeEntry_written;
+static int hf_budb_tapeEntry_expires;
+static int hf_budb_tapeEntry_nMBytes;
+static int hf_budb_tapeEntry_nBytes;
+static int hf_budb_tapeEntry_nFiles;
+static int hf_budb_tapeEntry_nVolumes;
+static int hf_budb_tapeEntry_seq;
+static int hf_budb_tapeEntry_tapeid;
+static int hf_budb_tapeEntry_useCount;
+static int hf_budb_tapeEntry_mediaType;
+static int hf_budb_tapeEntry_dump;
+static int hf_budb_tapeEntry_spare1;
+static int hf_budb_tapeEntry_spare2;
+static int hf_budb_tapeEntry_spare3;
+static int hf_budb_tapeEntry_spare4;
+static int hf_budb_volumeEntry_name;
+static int hf_budb_volumeEntry_flags;
+static int hf_budb_volumeEntry_id;
+static int hf_budb_volumeEntry_server;
+static int hf_budb_volumeEntry_partition;
+static int hf_budb_volumeEntry_nFrags;
+static int hf_budb_volumeEntry_position;
+static int hf_budb_volumeEntry_clone;
+static int hf_budb_volumeEntry_incTime;
+static int hf_budb_volumeEntry_startByte;
+static int hf_budb_volumeEntry_nBytes;
+static int hf_budb_volumeEntry_seq;
+static int hf_budb_volumeEntry_dump;
+static int hf_budb_volumeEntry_tape;
+static int hf_budb_volumeEntry_spare1;
+static int hf_budb_volumeEntry_spare2;
+static int hf_budb_volumeEntry_spare3;
+static int hf_budb_volumeEntry_spare4;
+static int hf_budb_volumeList_volumeList_len;
+static int hf_budb_volumeList_volumeList_val;
+static int hf_budb_dumpList_dumpList_len;
+static int hf_budb_dumpList_dumpList_val;
+static int hf_budb_tapeList_tapeList_len;
+static int hf_budb_tapeList_tapeList_val;
+static int hf_budb_charListT_charListT_len;
+static int hf_budb_charListT_charListT_val;
+static int hf_budb_DbHeader_dbversion;
+static int hf_budb_DbHeader_created;
+static int hf_budb_DbHeader_cell;
+static int hf_budb_DbHeader_lastDumpId;
+static int hf_budb_DbHeader_lastInstanceId;
+static int hf_budb_DbHeader_lastTapeId;
+static int hf_budb_DbHeader_spare1;
+static int hf_budb_DbHeader_spare2;
+static int hf_budb_DbHeader_spare3;
+static int hf_budb_DbHeader_spare4;
+static int hf_budb_dbVolume_name;
+static int hf_budb_dbVolume_flags;
+static int hf_budb_dbVolume_id;
+static int hf_budb_dbVolume_server;
+static int hf_budb_dbVolume_partition;
+static int hf_budb_dbVolume_nFrags;
+static int hf_budb_dbVolume_position;
+static int hf_budb_dbVolume_clone;
+static int hf_budb_dbVolume_incTime;
+static int hf_budb_dbVolume_startByte;
+static int hf_budb_dbVolume_nBytes;
+static int hf_budb_dbVolume_seq;
+static int hf_budb_dbVolume_dump;
+static int hf_budb_dbVolume_tape;
+static int hf_budb_dbVolume_spare1;
+static int hf_budb_dbVolume_spare2;
+static int hf_budb_dbVolume_spare3;
+static int hf_budb_dbVolume_spare4;
+static int hf_budb_structDumpHeader_type;
+static int hf_budb_structDumpHeader_structversion;
+static int hf_budb_structDumpHeader_size;
+static int hf_budb_structDumpHeader_spare1;
+static int hf_budb_structDumpHeader_spare2;
+static int hf_budb_structDumpHeader_spare3;
+static int hf_budb_structDumpHeader_spare4;
+static int hf_budb_AddVolume_vol;
+static int hf_budb_CreateDump_dump;
+static int hf_budb_DeleteDump_id;
+static int hf_budb_DeleteTape_tape;
+static int hf_budb_DeleteVDP_dsname;
+static int hf_budb_DeleteVDP_dumpPath;
+static int hf_budb_DeleteVDP_curDumpId;
+static int hf_budb_FindClone_dumpID;
+static int hf_budb_FindClone_volName;
+static int hf_budb_FindClone_clonetime;
+static int hf_budb_FindClone_cloneSpare;
+static int hf_budb_FindDump_volName;
+static int hf_budb_FindDump_beforeDate;
+static int hf_budb_FindDump_dateSpare;
+static int hf_budb_FindDump_deptr;
+static int hf_budb_FindLatestDump_vsname;
+static int hf_budb_FindLatestDump_dname;
+static int hf_budb_FindLatestDump_dumpentry;
+static int hf_budb_FinishDump_dump;
+static int hf_budb_FinishTape_tape;
+static int hf_budb_GetDumps_majorVersion;
+static int hf_budb_GetDumps_flags;
+static int hf_budb_GetDumps_name;
+static int hf_budb_GetDumps_start;
+static int hf_budb_GetDumps_end;
+static int hf_budb_GetDumps_index;
+static int hf_budb_GetDumps_nextIndex;
+static int hf_budb_GetDumps_dbUpdate;
+static int hf_budb_GetDumps_dumps;
+static int hf_budb_GetTapes_majorVersion;
+static int hf_budb_GetTapes_flags;
+static int hf_budb_GetTapes_name;
+static int hf_budb_GetTapes_start;
+static int hf_budb_GetTapes_end;
+static int hf_budb_GetTapes_index;
+static int hf_budb_GetTapes_nextIndex;
+static int hf_budb_GetTapes_dbUpdate;
+static int hf_budb_GetTapes_tapes;
+static int hf_budb_GetVolumes_majorVersion;
+static int hf_budb_GetVolumes_flags;
+static int hf_budb_GetVolumes_name;
+static int hf_budb_GetVolumes_start;
+static int hf_budb_GetVolumes_end;
+static int hf_budb_GetVolumes_index;
+static int hf_budb_GetVolumes_nextIndex;
+static int hf_budb_GetVolumes_dbUpdate;
+static int hf_budb_GetVolumes_volumes;
+static int hf_budb_UseTape_tape;
+static int hf_budb_UseTape_new;
+static int hf_budb_GetText_lockHandle;
+static int hf_budb_GetText_textType;
+static int hf_budb_GetText_maxLength;
+static int hf_budb_GetText_offset;
+static int hf_budb_GetText_nextOffset;
+static int hf_budb_GetText_charListPtr;
+static int hf_budb_GetTextVersion_textType;
+static int hf_budb_GetTextVersion_tversion;
+static int hf_budb_SaveText_lockHandle;
+static int hf_budb_SaveText_textType;
+static int hf_budb_SaveText_offset;
+static int hf_budb_SaveText_flags;
+static int hf_budb_SaveText_charListPtr;
+static int hf_budb_FreeAllLocks_instanceId;
+static int hf_budb_FreeLock_lockHandle;
+static int hf_budb_GetInstanceId_instanceId;
+static int hf_budb_GetLock_instanceId;
+static int hf_budb_GetLock_lockName;
+static int hf_budb_GetLock_expiration;
+static int hf_budb_GetLock_lockHandle;
+static int hf_budb_DbVerify_status;
+static int hf_budb_DbVerify_orphans;
+static int hf_budb_DbVerify_host;
+static int hf_budb_DumpDB_maxLength;
+static int hf_budb_DumpDB_flags;
+static int hf_budb_DumpDB_charListPtr;
+static int hf_budb_RestoreDbHeader_header;
+static int hf_budb_T_GetVersion_majorVersion;
+static int hf_budb_T_DumpHashTable_type;
+static int hf_budb_T_DumpHashTable_filename;
+static int hf_budb_T_DumpDatabase_filename;
+static int hf_budb_dfs_interfaceDescription_interface_uuid;
+static int hf_budb_dfs_interfaceDescription_vers_major;
+static int hf_budb_dfs_interfaceDescription_vers_minor;
+static int hf_budb_dfs_interfaceDescription_vers_provider;
+static int hf_budb_dfs_interfaceDescription_spare0;
+static int hf_budb_dfs_interfaceDescription_spare1;
+static int hf_budb_dfs_interfaceDescription_spare2;
+static int hf_budb_dfs_interfaceDescription_spare3;
+static int hf_budb_dfs_interfaceDescription_spare4;
+static int hf_budb_dfs_interfaceDescription_spare5;
+static int hf_budb_dfs_interfaceDescription_spare6;
+static int hf_budb_dfs_interfaceDescription_spare7;
+static int hf_budb_dfs_interfaceDescription_spare8;
+static int hf_budb_dfs_interfaceDescription_spare9;
+static int hf_budb_dfs_interfaceDescription_spareText;
+static int hf_budb_dfs_interfaceList_dfs_interfaceList_len;
+static int hf_budb_dfs_interfaceList_dfs_interfaceList_val;
+static int hf_budb_GetServerInterfaces_serverInterfacesP;
+static int hf_budb_AddVolumes_cnt;
+static int hf_budb_AddVolumes_vol;
 /* END OF INCLUDED FILE : ETH_HF */
 
 
@@ -264,29 +250,29 @@ static int hf_budb_AddVolumes_vol = -1;
 
 
 /* INCLUDED FILE : ETH_ETT */
-static gint ett_budb = -1;
-static gint ett_budb_principal = -1;
-static gint ett_budb_tapeSet = -1;
-static gint ett_budb_dumpEntry = -1;
-static gint ett_budb_tapeEntry = -1;
-static gint ett_budb_volumeEntry = -1;
-static gint ett_budb_volumeList = -1;
-static gint ett_budb_dumpList = -1;
-static gint ett_budb_tapeList = -1;
-static gint ett_budb_charListT = -1;
-static gint ett_budb_DbHeader = -1;
-static gint ett_budb_dbVolume = -1;
-static gint ett_budb_structDumpHeader = -1;
-static gint ett_budb_dfs_interfaceDescription = -1;
-static gint ett_budb_dfs_interfaceList = -1;
+static int ett_budb;
+static int ett_budb_principal;
+static int ett_budb_tapeSet;
+static int ett_budb_dumpEntry;
+static int ett_budb_tapeEntry;
+static int ett_budb_volumeEntry;
+static int ett_budb_volumeList;
+static int ett_budb_dumpList;
+static int ett_budb_tapeList;
+static int ett_budb_charListT;
+static int ett_budb_DbHeader;
+static int ett_budb_dbVolume;
+static int ett_budb_structDumpHeader;
+static int ett_budb_dfs_interfaceDescription;
+static int ett_budb_dfs_interfaceList;
 /* END OF INCLUDED FILE : ETH_ETT */
 
 
 
 static int
-budb_dissect_NameString_t(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep, int hf_index, guint32 param _U_)
+budb_dissect_NameString_t(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep, int hf_index, uint32_t param _U_)
 {
-    offset=dissect_ndr_vstring(tvb, offset, pinfo, tree, di, drep, 1, hf_index, FALSE, NULL);
+    offset=dissect_ndr_vstring(tvb, offset, pinfo, tree, di, drep, 1, hf_index, false, NULL);
     return offset;
 }
 
@@ -298,83 +284,83 @@ static e_guid_t uuid_dcerpc_budb = {
 	  { 0x86, 0x78, 0x02, 0x60, 0x8c, 0x2e, 0xa9, 0x6e}
 };
 
-static guint16 ver_budb = 4;
+static uint16_t ver_budb = 4;
 
 static int
-budb_dissect_principal_name(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_principal_name(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_NameString_t(tvb, offset, pinfo, tree, di, drep, hf_budb_principal_name, param);
 	 return offset;
 }
 
 static int
-budb_dissect_principal_instance(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_principal_instance(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_NameString_t(tvb, offset, pinfo, tree, di, drep, hf_budb_principal_instance, param);
 	 return offset;
 }
 
 static int
-budb_dissect_principal_cell(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_principal_cell(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_NameString_t(tvb, offset, pinfo, tree, di, drep, hf_budb_principal_cell, param);
 	 return offset;
 }
 
 static int
-budb_dissect_principal_spare(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_principal_spare(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_NameString_t(tvb, offset, pinfo, tree, di, drep, hf_budb_principal_spare, param);
 	 return offset;
 }
 
 
 static int
-budb_dissect_uint32(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep, int hf_index, guint32 param _U_)
+budb_dissect_uint32(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep, int hf_index, uint32_t param _U_)
 {
     offset=dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_index, NULL);
     return offset;
 }
 
 static int
-budb_dissect_principal_spare1(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_principal_spare1(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_principal_spare1, param);
 	 return offset;
 }
 
 static int
-budb_dissect_principal_spare2(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_principal_spare2(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_principal_spare2, param);
 	 return offset;
 }
 
 static int
-budb_dissect_principal_spare3(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_principal_spare3(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_principal_spare3, param);
 	 return offset;
 }
 
 static int
-budb_dissect_principal_spare4(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_principal_spare4(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_principal_spare4, param);
 	 return offset;
 }
 
 
 int
-budb_dissect_principal(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *parent_tree, dcerpc_info *di _U_, guint8 *drep _U_, int hf_index, guint32 param _U_)
+budb_dissect_principal(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *parent_tree, dcerpc_info *di _U_, uint8_t *drep _U_, int hf_index, uint32_t param _U_)
 {
     proto_item *item=NULL;
     proto_tree *tree=NULL;
@@ -410,95 +396,95 @@ budb_dissect_principal(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_
 }
 
 static int
-budb_dissect_int32(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep, int hf_index, guint32 param _U_)
+budb_dissect_int32(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep, int hf_index, uint32_t param _U_)
 {
     offset=dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_index, NULL);
     return offset;
 }
 
 static int
-budb_dissect_tapeSet_id(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeSet_id(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeSet_id, param);
 	 return offset;
 }
 
 static int
-budb_dissect_tapeSet_tapeServer(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeSet_tapeServer(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_NameString_t(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeSet_tapeServer, param);
 	 return offset;
 }
 
 static int
-budb_dissect_tapeSet_format(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeSet_format(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_NameString_t(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeSet_format, param);
 	 return offset;
 }
 
 static int
-budb_dissect_tapeSet_maxTapes(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeSet_maxTapes(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeSet_maxTapes, param);
 	 return offset;
 }
 
 static int
-budb_dissect_tapeSet_a(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeSet_a(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeSet_a, param);
 	 return offset;
 }
 
 static int
-budb_dissect_tapeSet_b(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeSet_b(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeSet_b, param);
 	 return offset;
 }
 
 static int
-budb_dissect_tapeSet_spare1(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeSet_spare1(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeSet_spare1, param);
 	 return offset;
 }
 
 static int
-budb_dissect_tapeSet_spare2(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeSet_spare2(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeSet_spare2, param);
 	 return offset;
 }
 
 static int
-budb_dissect_tapeSet_spare3(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeSet_spare3(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeSet_spare3, param);
 	 return offset;
 }
 
 static int
-budb_dissect_tapeSet_spare4(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeSet_spare4(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeSet_spare4, param);
 	 return offset;
 }
 
 
 int
-budb_dissect_tapeSet(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *parent_tree, dcerpc_info *di _U_, guint8 *drep _U_, int hf_index, guint32 param _U_)
+budb_dissect_tapeSet(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *parent_tree, dcerpc_info *di _U_, uint8_t *drep _U_, int hf_index, uint32_t param _U_)
 {
     proto_item *item=NULL;
     proto_tree *tree=NULL;
@@ -537,146 +523,146 @@ budb_dissect_tapeSet(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tr
     return offset;
 }
 static int
-budb_dissect_dumpEntry_id(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dumpEntry_id(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_dumpEntry_id, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dumpEntry_parent(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dumpEntry_parent(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_dumpEntry_parent, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dumpEntry_level(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dumpEntry_level(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_dumpEntry_level, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dumpEntry_flags(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dumpEntry_flags(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_dumpEntry_flags, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dumpEntry_volumeSetName(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dumpEntry_volumeSetName(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_NameString_t(tvb, offset, pinfo, tree, di, drep, hf_budb_dumpEntry_volumeSetName, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dumpEntry_dumpPath(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dumpEntry_dumpPath(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_NameString_t(tvb, offset, pinfo, tree, di, drep, hf_budb_dumpEntry_dumpPath, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dumpEntry_name(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dumpEntry_name(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_NameString_t(tvb, offset, pinfo, tree, di, drep, hf_budb_dumpEntry_name, param);
 	 return offset;
 }
 
 
 static int
-budb_dissect_time_t(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep, int hf_index, guint32 param _U_)
+budb_dissect_time_t(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep, int hf_index, uint32_t param _U_)
 {
-    
+
     offset=dissect_ndr_time_t(tvb, offset, pinfo, tree, di, drep, hf_index, NULL);
 
     return offset;
 }
 
 static int
-budb_dissect_dumpEntry_created(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dumpEntry_created(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_time_t(tvb, offset, pinfo, tree, di, drep, hf_budb_dumpEntry_created, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dumpEntry_incTime(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dumpEntry_incTime(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_time_t(tvb, offset, pinfo, tree, di, drep, hf_budb_dumpEntry_incTime, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dumpEntry_nVolumes(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dumpEntry_nVolumes(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_dumpEntry_nVolumes, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dumpEntry_tapes(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dumpEntry_tapes(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_tapeSet(tvb, offset, pinfo, tree, di, drep, hf_budb_dumpEntry_tapes, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dumpEntry_dumper(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dumpEntry_dumper(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_principal(tvb, offset, pinfo, tree, di, drep, hf_budb_dumpEntry_dumper, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dumpEntry_spare1(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dumpEntry_spare1(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_dumpEntry_spare1, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dumpEntry_spare2(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dumpEntry_spare2(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_dumpEntry_spare2, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dumpEntry_spare3(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dumpEntry_spare3(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_dumpEntry_spare3, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dumpEntry_spare4(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dumpEntry_spare4(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_dumpEntry_spare4, param);
 	 return offset;
 }
 
 
 int
-budb_dissect_dumpEntry(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *parent_tree, dcerpc_info *di _U_, guint8 *drep _U_, int hf_index, guint32 param _U_)
+budb_dissect_dumpEntry(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *parent_tree, dcerpc_info *di _U_, uint8_t *drep _U_, int hf_index, uint32_t param _U_)
 {
     proto_item *item=NULL;
     proto_tree *tree=NULL;
@@ -727,144 +713,144 @@ budb_dissect_dumpEntry(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_
     return offset;
 }
 static int
-budb_dissect_tapeEntry_name(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeEntry_name(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_NameString_t(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeEntry_name, param);
 	 return offset;
 }
 
 static int
-budb_dissect_tapeEntry_flags(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeEntry_flags(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeEntry_flags, param);
 	 return offset;
 }
 
 static int
-budb_dissect_tapeEntry_written(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeEntry_written(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_time_t(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeEntry_written, param);
 	 return offset;
 }
 
 static int
-budb_dissect_tapeEntry_expires(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeEntry_expires(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_time_t(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeEntry_expires, param);
 	 return offset;
 }
 
 static int
-budb_dissect_tapeEntry_nMBytes(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeEntry_nMBytes(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeEntry_nMBytes, param);
 	 return offset;
 }
 
 static int
-budb_dissect_tapeEntry_nBytes(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeEntry_nBytes(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeEntry_nBytes, param);
 	 return offset;
 }
 
 static int
-budb_dissect_tapeEntry_nFiles(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeEntry_nFiles(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeEntry_nFiles, param);
 	 return offset;
 }
 
 static int
-budb_dissect_tapeEntry_nVolumes(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeEntry_nVolumes(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeEntry_nVolumes, param);
 	 return offset;
 }
 
 static int
-budb_dissect_tapeEntry_seq(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeEntry_seq(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeEntry_seq, param);
 	 return offset;
 }
 
 static int
-budb_dissect_tapeEntry_tapeid(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeEntry_tapeid(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeEntry_tapeid, param);
 	 return offset;
 }
 
 static int
-budb_dissect_tapeEntry_useCount(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeEntry_useCount(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeEntry_useCount, param);
 	 return offset;
 }
 
 static int
-budb_dissect_tapeEntry_mediaType(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeEntry_mediaType(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeEntry_mediaType, param);
 	 return offset;
 }
 
 static int
-budb_dissect_tapeEntry_dump(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeEntry_dump(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeEntry_dump, param);
 	 return offset;
 }
 
 static int
-budb_dissect_tapeEntry_spare1(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeEntry_spare1(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeEntry_spare1, param);
 	 return offset;
 }
 
 static int
-budb_dissect_tapeEntry_spare2(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeEntry_spare2(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeEntry_spare2, param);
 	 return offset;
 }
 
 static int
-budb_dissect_tapeEntry_spare3(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeEntry_spare3(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeEntry_spare3, param);
 	 return offset;
 }
 
 static int
-budb_dissect_tapeEntry_spare4(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeEntry_spare4(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeEntry_spare4, param);
 	 return offset;
 }
 
 
 int
-budb_dissect_tapeEntry(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *parent_tree, dcerpc_info *di _U_, guint8 *drep _U_, int hf_index, guint32 param _U_)
+budb_dissect_tapeEntry(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *parent_tree, dcerpc_info *di _U_, uint8_t *drep _U_, int hf_index, uint32_t param _U_)
 {
     proto_item *item=NULL;
     proto_tree *tree=NULL;
@@ -917,24 +903,24 @@ budb_dissect_tapeEntry(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_
     return offset;
 }
 static int
-budb_dissect_volumeEntry_name(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_volumeEntry_name(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_NameString_t(tvb, offset, pinfo, tree, di, drep, hf_budb_volumeEntry_name, param);
 	 return offset;
 }
 
 static int
-budb_dissect_volumeEntry_flags(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_volumeEntry_flags(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_volumeEntry_flags, param);
 	 return offset;
 }
 
 
 static int
-budb_dissect_udlong(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep, int hf_index, guint32 param _U_)
+budb_dissect_udlong(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep, int hf_index, uint32_t param _U_)
 {
 
     offset=dissect_ndr_duint32(tvb, offset, pinfo, tree, di, drep, hf_index, NULL);
@@ -943,136 +929,136 @@ budb_dissect_udlong(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *t
 }
 
 static int
-budb_dissect_volumeEntry_id(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_volumeEntry_id(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_udlong(tvb, offset, pinfo, tree, di, drep, hf_budb_volumeEntry_id, param);
 	 return offset;
 }
 
 static int
-budb_dissect_volumeEntry_server(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_volumeEntry_server(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_NameString_t(tvb, offset, pinfo, tree, di, drep, hf_budb_volumeEntry_server, param);
 	 return offset;
 }
 
 static int
-budb_dissect_volumeEntry_partition(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_volumeEntry_partition(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_volumeEntry_partition, param);
 	 return offset;
 }
 
 static int
-budb_dissect_volumeEntry_nFrags(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_volumeEntry_nFrags(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_volumeEntry_nFrags, param);
 	 return offset;
 }
 
 static int
-budb_dissect_volumeEntry_position(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_volumeEntry_position(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_volumeEntry_position, param);
 	 return offset;
 }
 
 static int
-budb_dissect_volumeEntry_clone(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_volumeEntry_clone(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_time_t(tvb, offset, pinfo, tree, di, drep, hf_budb_volumeEntry_clone, param);
 	 return offset;
 }
 
 static int
-budb_dissect_volumeEntry_incTime(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_volumeEntry_incTime(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_time_t(tvb, offset, pinfo, tree, di, drep, hf_budb_volumeEntry_incTime, param);
 	 return offset;
 }
 
 static int
-budb_dissect_volumeEntry_startByte(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_volumeEntry_startByte(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_volumeEntry_startByte, param);
 	 return offset;
 }
 
 static int
-budb_dissect_volumeEntry_nBytes(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_volumeEntry_nBytes(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_volumeEntry_nBytes, param);
 	 return offset;
 }
 
 static int
-budb_dissect_volumeEntry_seq(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_volumeEntry_seq(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_volumeEntry_seq, param);
 	 return offset;
 }
 
 static int
-budb_dissect_volumeEntry_dump(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_volumeEntry_dump(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_volumeEntry_dump, param);
 	 return offset;
 }
 
 static int
-budb_dissect_volumeEntry_tape(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_volumeEntry_tape(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_NameString_t(tvb, offset, pinfo, tree, di, drep, hf_budb_volumeEntry_tape, param);
 	 return offset;
 }
 
 static int
-budb_dissect_volumeEntry_spare1(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_volumeEntry_spare1(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_volumeEntry_spare1, param);
 	 return offset;
 }
 
 static int
-budb_dissect_volumeEntry_spare2(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_volumeEntry_spare2(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_volumeEntry_spare2, param);
 	 return offset;
 }
 
 static int
-budb_dissect_volumeEntry_spare3(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_volumeEntry_spare3(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_volumeEntry_spare3, param);
 	 return offset;
 }
 
 static int
-budb_dissect_volumeEntry_spare4(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_volumeEntry_spare4(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_volumeEntry_spare4, param);
 	 return offset;
 }
 
 
 int
-budb_dissect_volumeEntry(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *parent_tree, dcerpc_info *di _U_, guint8 *drep _U_, int hf_index, guint32 param _U_)
+budb_dissect_volumeEntry(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *parent_tree, dcerpc_info *di _U_, uint8_t *drep _U_, int hf_index, uint32_t param _U_)
 {
     proto_item *item=NULL;
     proto_tree *tree=NULL;
@@ -1127,30 +1113,30 @@ budb_dissect_volumeEntry(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, prot
     return offset;
 }
 static int
-budb_dissect_volumeList_volumeList_len(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_volumeList_volumeList_len(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_volumeList_volumeList_len, param);
 	 return offset;
 }
 
 static int
-budb_dissect_volumeList_volumeList_val(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_volumeList_volumeList_val(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_volumeEntry(tvb, offset, pinfo, tree, di, drep, hf_budb_volumeList_volumeList_val, param);
 	 return offset;
 }
 
 static int
-ptr_budb_dissect_volumeList_volumeList_val(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ptr_budb_dissect_volumeList_volumeList_val(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
 	 offset=dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_volumeList_volumeList_val, NDR_POINTER_PTR, "volumeList_val", -1);
 	 return offset;
 }
 
 static int
-ucarray_ptr_budb_dissect_volumeList_volumeList_val(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ucarray_ptr_budb_dissect_volumeList_volumeList_val(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
 	 offset=dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, ptr_budb_dissect_volumeList_volumeList_val);
 	 return offset;
@@ -1158,7 +1144,7 @@ ucarray_ptr_budb_dissect_volumeList_volumeList_val(tvbuff_t *tvb, int offset, pa
 
 
 int
-budb_dissect_volumeList(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *parent_tree, dcerpc_info *di _U_, guint8 *drep _U_, int hf_index, guint32 param _U_)
+budb_dissect_volumeList(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *parent_tree, dcerpc_info *di _U_, uint8_t *drep _U_, int hf_index, uint32_t param _U_)
 {
     proto_item *item=NULL;
     proto_tree *tree=NULL;
@@ -1181,30 +1167,30 @@ budb_dissect_volumeList(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto
     return offset;
 }
 static int
-budb_dissect_dumpList_dumpList_len(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dumpList_dumpList_len(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_dumpList_dumpList_len, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dumpList_dumpList_val(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dumpList_dumpList_val(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_dumpEntry(tvb, offset, pinfo, tree, di, drep, hf_budb_dumpList_dumpList_val, param);
 	 return offset;
 }
 
 static int
-ptr_budb_dissect_dumpList_dumpList_val(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ptr_budb_dissect_dumpList_dumpList_val(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
 	 offset=dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_dumpList_dumpList_val, NDR_POINTER_PTR, "dumpList_val", -1);
 	 return offset;
 }
 
 static int
-ucarray_ptr_budb_dissect_dumpList_dumpList_val(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ucarray_ptr_budb_dissect_dumpList_dumpList_val(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
 	 offset=dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, ptr_budb_dissect_dumpList_dumpList_val);
 	 return offset;
@@ -1212,7 +1198,7 @@ ucarray_ptr_budb_dissect_dumpList_dumpList_val(tvbuff_t *tvb, int offset, packet
 
 
 int
-budb_dissect_dumpList(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *parent_tree, dcerpc_info *di _U_, guint8 *drep _U_, int hf_index, guint32 param _U_)
+budb_dissect_dumpList(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *parent_tree, dcerpc_info *di _U_, uint8_t *drep _U_, int hf_index, uint32_t param _U_)
 {
     proto_item *item=NULL;
     proto_tree *tree=NULL;
@@ -1235,30 +1221,30 @@ budb_dissect_dumpList(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_t
     return offset;
 }
 static int
-budb_dissect_tapeList_tapeList_len(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeList_tapeList_len(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeList_tapeList_len, param);
 	 return offset;
 }
 
 static int
-budb_dissect_tapeList_tapeList_val(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_tapeList_tapeList_val(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_tapeEntry(tvb, offset, pinfo, tree, di, drep, hf_budb_tapeList_tapeList_val, param);
 	 return offset;
 }
 
 static int
-ptr_budb_dissect_tapeList_tapeList_val(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ptr_budb_dissect_tapeList_tapeList_val(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
 	 offset=dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_tapeList_tapeList_val, NDR_POINTER_PTR, "tapeList_val", -1);
 	 return offset;
 }
 
 static int
-ucarray_ptr_budb_dissect_tapeList_tapeList_val(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ucarray_ptr_budb_dissect_tapeList_tapeList_val(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
 	 offset=dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, ptr_budb_dissect_tapeList_tapeList_val);
 	 return offset;
@@ -1266,7 +1252,7 @@ ucarray_ptr_budb_dissect_tapeList_tapeList_val(tvbuff_t *tvb, int offset, packet
 
 
 int
-budb_dissect_tapeList(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *parent_tree, dcerpc_info *di _U_, guint8 *drep _U_, int hf_index, guint32 param _U_)
+budb_dissect_tapeList(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *parent_tree, dcerpc_info *di _U_, uint8_t *drep _U_, int hf_index, uint32_t param _U_)
 {
     proto_item *item=NULL;
     proto_tree *tree=NULL;
@@ -1289,31 +1275,31 @@ budb_dissect_tapeList(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_t
     return offset;
 }
 static int
-budb_dissect_charListT_charListT_len(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_charListT_charListT_len(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_charListT_charListT_len, param);
 	 return offset;
 }
 
 
 static int
-budb_dissect_uint8(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep, int hf_index, guint32 param _U_)
+budb_dissect_uint8(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep, int hf_index, uint32_t param _U_)
 {
     offset=dissect_ndr_uint8(tvb, offset, pinfo, tree, di, drep, hf_index, NULL);
     return offset;
 }
 
 static int
-budb_dissect_charListT_charListT_val(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_charListT_charListT_val(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint8(tvb, offset, pinfo, tree, di, drep, hf_budb_charListT_charListT_val, param);
 	 return offset;
 }
 
 static int
-fixedarray_budb_dissect_charListT_charListT_val(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+fixedarray_budb_dissect_charListT_charListT_val(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
 	 int count=1024;
 	 while(count--){
@@ -1324,7 +1310,7 @@ fixedarray_budb_dissect_charListT_charListT_val(tvbuff_t *tvb, int offset, packe
 }
 
 static int
-uvarray_fixedarray_budb_dissect_charListT_charListT_val(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+uvarray_fixedarray_budb_dissect_charListT_charListT_val(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
 	 offset=dissect_ndr_uvarray(tvb, offset, pinfo, tree, di, drep, fixedarray_budb_dissect_charListT_charListT_val);
 	 return offset;
@@ -1332,7 +1318,7 @@ uvarray_fixedarray_budb_dissect_charListT_charListT_val(tvbuff_t *tvb, int offse
 
 
 int
-budb_dissect_charListT(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *parent_tree, dcerpc_info *di _U_, guint8 *drep _U_, int hf_index, guint32 param _U_)
+budb_dissect_charListT(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *parent_tree, dcerpc_info *di _U_, uint8_t *drep _U_, int hf_index, uint32_t param _U_)
 {
     proto_item *item=NULL;
     proto_tree *tree=NULL;
@@ -1355,88 +1341,88 @@ budb_dissect_charListT(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_
     return offset;
 }
 static int
-budb_dissect_DbHeader_dbversion(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_DbHeader_dbversion(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_DbHeader_dbversion, param);
 	 return offset;
 }
 
 static int
-budb_dissect_DbHeader_created(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_DbHeader_created(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_DbHeader_created, param);
 	 return offset;
 }
 
 static int
-budb_dissect_DbHeader_cell(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_DbHeader_cell(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_NameString_t(tvb, offset, pinfo, tree, di, drep, hf_budb_DbHeader_cell, param);
 	 return offset;
 }
 
 static int
-budb_dissect_DbHeader_lastDumpId(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_DbHeader_lastDumpId(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_DbHeader_lastDumpId, param);
 	 return offset;
 }
 
 static int
-budb_dissect_DbHeader_lastInstanceId(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_DbHeader_lastInstanceId(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_DbHeader_lastInstanceId, param);
 	 return offset;
 }
 
 static int
-budb_dissect_DbHeader_lastTapeId(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_DbHeader_lastTapeId(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_DbHeader_lastTapeId, param);
 	 return offset;
 }
 
 static int
-budb_dissect_DbHeader_spare1(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_DbHeader_spare1(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_DbHeader_spare1, param);
 	 return offset;
 }
 
 static int
-budb_dissect_DbHeader_spare2(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_DbHeader_spare2(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_DbHeader_spare2, param);
 	 return offset;
 }
 
 static int
-budb_dissect_DbHeader_spare3(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_DbHeader_spare3(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_DbHeader_spare3, param);
 	 return offset;
 }
 
 static int
-budb_dissect_DbHeader_spare4(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_DbHeader_spare4(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_DbHeader_spare4, param);
 	 return offset;
 }
 
 
 int
-budb_dissect_DbHeader(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *parent_tree, dcerpc_info *di _U_, guint8 *drep _U_, int hf_index, guint32 param _U_)
+budb_dissect_DbHeader(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *parent_tree, dcerpc_info *di _U_, uint8_t *drep _U_, int hf_index, uint32_t param _U_)
 {
     proto_item *item=NULL;
     proto_tree *tree=NULL;
@@ -1475,152 +1461,152 @@ budb_dissect_DbHeader(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_t
     return offset;
 }
 static int
-budb_dissect_dbVolume_name(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dbVolume_name(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_NameString_t(tvb, offset, pinfo, tree, di, drep, hf_budb_dbVolume_name, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dbVolume_flags(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dbVolume_flags(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_dbVolume_flags, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dbVolume_id(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dbVolume_id(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_udlong(tvb, offset, pinfo, tree, di, drep, hf_budb_dbVolume_id, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dbVolume_server(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dbVolume_server(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_NameString_t(tvb, offset, pinfo, tree, di, drep, hf_budb_dbVolume_server, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dbVolume_partition(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dbVolume_partition(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_dbVolume_partition, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dbVolume_nFrags(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dbVolume_nFrags(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_dbVolume_nFrags, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dbVolume_position(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dbVolume_position(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_dbVolume_position, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dbVolume_clone(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dbVolume_clone(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_time_t(tvb, offset, pinfo, tree, di, drep, hf_budb_dbVolume_clone, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dbVolume_incTime(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dbVolume_incTime(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_time_t(tvb, offset, pinfo, tree, di, drep, hf_budb_dbVolume_incTime, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dbVolume_startByte(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dbVolume_startByte(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_dbVolume_startByte, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dbVolume_nBytes(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dbVolume_nBytes(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_dbVolume_nBytes, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dbVolume_seq(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dbVolume_seq(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_dbVolume_seq, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dbVolume_dump(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dbVolume_dump(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_dbVolume_dump, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dbVolume_tape(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dbVolume_tape(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_NameString_t(tvb, offset, pinfo, tree, di, drep, hf_budb_dbVolume_tape, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dbVolume_spare1(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dbVolume_spare1(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_dbVolume_spare1, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dbVolume_spare2(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dbVolume_spare2(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_dbVolume_spare2, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dbVolume_spare3(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dbVolume_spare3(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_dbVolume_spare3, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dbVolume_spare4(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dbVolume_spare4(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_dbVolume_spare4, param);
 	 return offset;
 }
 
 
 int
-budb_dissect_dbVolume(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *parent_tree, dcerpc_info *di _U_, guint8 *drep _U_, int hf_index, guint32 param _U_)
+budb_dissect_dbVolume(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *parent_tree, dcerpc_info *di _U_, uint8_t *drep _U_, int hf_index, uint32_t param _U_)
 {
     proto_item *item=NULL;
     proto_tree *tree=NULL;
@@ -1675,64 +1661,64 @@ budb_dissect_dbVolume(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_t
     return offset;
 }
 static int
-budb_dissect_structDumpHeader_type(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_structDumpHeader_type(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_structDumpHeader_type, param);
 	 return offset;
 }
 
 static int
-budb_dissect_structDumpHeader_structversion(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_structDumpHeader_structversion(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_structDumpHeader_structversion, param);
 	 return offset;
 }
 
 static int
-budb_dissect_structDumpHeader_size(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_structDumpHeader_size(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_structDumpHeader_size, param);
 	 return offset;
 }
 
 static int
-budb_dissect_structDumpHeader_spare1(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_structDumpHeader_spare1(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_structDumpHeader_spare1, param);
 	 return offset;
 }
 
 static int
-budb_dissect_structDumpHeader_spare2(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_structDumpHeader_spare2(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_structDumpHeader_spare2, param);
 	 return offset;
 }
 
 static int
-budb_dissect_structDumpHeader_spare3(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_structDumpHeader_spare3(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_structDumpHeader_spare3, param);
 	 return offset;
 }
 
 static int
-budb_dissect_structDumpHeader_spare4(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_structDumpHeader_spare4(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_structDumpHeader_spare4, param);
 	 return offset;
 }
 
 
 int
-budb_dissect_structDumpHeader(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *parent_tree, dcerpc_info *di _U_, guint8 *drep _U_, int hf_index, guint32 param _U_)
+budb_dissect_structDumpHeader(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *parent_tree, dcerpc_info *di _U_, uint8_t *drep _U_, int hf_index, uint32_t param _U_)
 {
     proto_item *item=NULL;
     proto_tree *tree=NULL;
@@ -1765,15 +1751,15 @@ budb_dissect_structDumpHeader(tvbuff_t *tvb, int offset, packet_info *pinfo _U_,
     return offset;
 }
 static int
-budb_dissect_AddVolume_vol(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_AddVolume_vol(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_volumeEntry(tvb, offset, pinfo, tree, di, drep, hf_budb_AddVolume_vol, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_AddVolume_vol(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_AddVolume_vol(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_AddVolume_vol, NDR_POINTER_REF, "vol", -1);
     return offset;
@@ -1781,7 +1767,7 @@ ref_budb_dissect_AddVolume_vol(tvbuff_t *tvb, int offset, packet_info *pinfo, pr
 
 
 static int
-budb_dissect_AddVolume_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_AddVolume_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ref_budb_dissect_AddVolume_vol(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -1791,7 +1777,7 @@ budb_dissect_AddVolume_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *p
 }
 
 static int
-budb_dissect_AddVolume_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_AddVolume_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
    offset=dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_budb_rc, NULL);
 
@@ -1799,15 +1785,15 @@ budb_dissect_AddVolume_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *
    return offset;
 }
 static int
-budb_dissect_CreateDump_dump(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_CreateDump_dump(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_dumpEntry(tvb, offset, pinfo, tree, di, drep, hf_budb_CreateDump_dump, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_CreateDump_dump(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_CreateDump_dump(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_CreateDump_dump, NDR_POINTER_REF, "dump", -1);
     return offset;
@@ -1815,7 +1801,7 @@ ref_budb_dissect_CreateDump_dump(tvbuff_t *tvb, int offset, packet_info *pinfo, 
 
 
 static int
-budb_dissect_CreateDump_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_CreateDump_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ref_budb_dissect_CreateDump_dump(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -1825,7 +1811,7 @@ budb_dissect_CreateDump_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 }
 
 static int
-budb_dissect_CreateDump_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_CreateDump_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ref_budb_dissect_CreateDump_dump(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -1836,16 +1822,16 @@ budb_dissect_CreateDump_response(tvbuff_t *tvb _U_, int offset _U_, packet_info 
    return offset;
 }
 static int
-budb_dissect_DeleteDump_id(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_DeleteDump_id(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_DeleteDump_id, param);
     return offset;
 }
 
 
 static int
-budb_dissect_DeleteDump_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_DeleteDump_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=budb_dissect_DeleteDump_id(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -1855,7 +1841,7 @@ budb_dissect_DeleteDump_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 }
 
 static int
-budb_dissect_DeleteDump_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_DeleteDump_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
    offset=dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_budb_rc, NULL);
 
@@ -1863,15 +1849,15 @@ budb_dissect_DeleteDump_response(tvbuff_t *tvb _U_, int offset _U_, packet_info 
    return offset;
 }
 static int
-budb_dissect_DeleteTape_tape(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_DeleteTape_tape(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_tapeEntry(tvb, offset, pinfo, tree, di, drep, hf_budb_DeleteTape_tape, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_DeleteTape_tape(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_DeleteTape_tape(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_DeleteTape_tape, NDR_POINTER_REF, "tape", -1);
     return offset;
@@ -1879,7 +1865,7 @@ ref_budb_dissect_DeleteTape_tape(tvbuff_t *tvb, int offset, packet_info *pinfo, 
 
 
 static int
-budb_dissect_DeleteTape_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_DeleteTape_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ref_budb_dissect_DeleteTape_tape(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -1889,7 +1875,7 @@ budb_dissect_DeleteTape_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 }
 
 static int
-budb_dissect_DeleteTape_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_DeleteTape_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
    offset=dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_budb_rc, NULL);
 
@@ -1897,46 +1883,46 @@ budb_dissect_DeleteTape_response(tvbuff_t *tvb _U_, int offset _U_, packet_info 
    return offset;
 }
 static int
-budb_dissect_DeleteVDP_dsname(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_DeleteVDP_dsname(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_NameString_t(tvb, offset, pinfo, tree, di, drep, hf_budb_DeleteVDP_dsname, param);
     return offset;
 }
 
 static int
-ptr_budb_dissect_DeleteVDP_dsname(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ptr_budb_dissect_DeleteVDP_dsname(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_DeleteVDP_dsname, NDR_POINTER_PTR, "dsname", -1);
     return offset;
 }
 
 static int
-budb_dissect_DeleteVDP_dumpPath(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_DeleteVDP_dumpPath(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_NameString_t(tvb, offset, pinfo, tree, di, drep, hf_budb_DeleteVDP_dumpPath, param);
     return offset;
 }
 
 static int
-ptr_budb_dissect_DeleteVDP_dumpPath(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ptr_budb_dissect_DeleteVDP_dumpPath(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_DeleteVDP_dumpPath, NDR_POINTER_PTR, "dumpPath", -1);
     return offset;
 }
 
 static int
-budb_dissect_DeleteVDP_curDumpId(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_DeleteVDP_curDumpId(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_DeleteVDP_curDumpId, param);
     return offset;
 }
 
 
 static int
-budb_dissect_DeleteVDP_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_DeleteVDP_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ptr_budb_dissect_DeleteVDP_dsname(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -1952,7 +1938,7 @@ budb_dissect_DeleteVDP_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *p
 }
 
 static int
-budb_dissect_DeleteVDP_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_DeleteVDP_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
    offset=dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_budb_rc, NULL);
 
@@ -1960,53 +1946,53 @@ budb_dissect_DeleteVDP_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *
    return offset;
 }
 static int
-budb_dissect_FindClone_dumpID(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_FindClone_dumpID(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_FindClone_dumpID, param);
     return offset;
 }
 
 static int
-budb_dissect_FindClone_volName(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_FindClone_volName(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_NameString_t(tvb, offset, pinfo, tree, di, drep, hf_budb_FindClone_volName, param);
     return offset;
 }
 
 static int
-ptr_budb_dissect_FindClone_volName(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ptr_budb_dissect_FindClone_volName(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_FindClone_volName, NDR_POINTER_PTR, "volName", -1);
     return offset;
 }
 
 static int
-budb_dissect_FindClone_clonetime(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_FindClone_clonetime(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_FindClone_clonetime, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_FindClone_clonetime(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_FindClone_clonetime(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_FindClone_clonetime, NDR_POINTER_REF, "clonetime", -1);
     return offset;
 }
 
 static int
-budb_dissect_FindClone_cloneSpare(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_FindClone_cloneSpare(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_FindClone_cloneSpare, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_FindClone_cloneSpare(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_FindClone_cloneSpare(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_FindClone_cloneSpare, NDR_POINTER_REF, "cloneSpare", -1);
     return offset;
@@ -2014,7 +2000,7 @@ ref_budb_dissect_FindClone_cloneSpare(tvbuff_t *tvb, int offset, packet_info *pi
 
 
 static int
-budb_dissect_FindClone_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_FindClone_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=budb_dissect_FindClone_dumpID(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -2027,7 +2013,7 @@ budb_dissect_FindClone_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *p
 }
 
 static int
-budb_dissect_FindClone_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_FindClone_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ref_budb_dissect_FindClone_clonetime(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -2041,46 +2027,46 @@ budb_dissect_FindClone_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *
    return offset;
 }
 static int
-budb_dissect_FindDump_volName(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_FindDump_volName(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_NameString_t(tvb, offset, pinfo, tree, di, drep, hf_budb_FindDump_volName, param);
     return offset;
 }
 
 static int
-ptr_budb_dissect_FindDump_volName(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ptr_budb_dissect_FindDump_volName(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_FindDump_volName, NDR_POINTER_PTR, "volName", -1);
     return offset;
 }
 
 static int
-budb_dissect_FindDump_beforeDate(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_FindDump_beforeDate(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_FindDump_beforeDate, param);
     return offset;
 }
 
 static int
-budb_dissect_FindDump_dateSpare(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_FindDump_dateSpare(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_FindDump_dateSpare, param);
     return offset;
 }
 
 static int
-budb_dissect_FindDump_deptr(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_FindDump_deptr(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_dumpEntry(tvb, offset, pinfo, tree, di, drep, hf_budb_FindDump_deptr, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_FindDump_deptr(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_FindDump_deptr(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_FindDump_deptr, NDR_POINTER_REF, "deptr", -1);
     return offset;
@@ -2088,7 +2074,7 @@ ref_budb_dissect_FindDump_deptr(tvbuff_t *tvb, int offset, packet_info *pinfo, p
 
 
 static int
-budb_dissect_FindDump_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_FindDump_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ptr_budb_dissect_FindDump_volName(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -2104,7 +2090,7 @@ budb_dissect_FindDump_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pi
 }
 
 static int
-budb_dissect_FindDump_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_FindDump_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ref_budb_dissect_FindDump_deptr(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -2115,45 +2101,45 @@ budb_dissect_FindDump_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *p
    return offset;
 }
 static int
-budb_dissect_FindLatestDump_vsname(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_FindLatestDump_vsname(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_NameString_t(tvb, offset, pinfo, tree, di, drep, hf_budb_FindLatestDump_vsname, param);
     return offset;
 }
 
 static int
-ptr_budb_dissect_FindLatestDump_vsname(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ptr_budb_dissect_FindLatestDump_vsname(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_FindLatestDump_vsname, NDR_POINTER_PTR, "vsname", -1);
     return offset;
 }
 
 static int
-budb_dissect_FindLatestDump_dname(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_FindLatestDump_dname(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_NameString_t(tvb, offset, pinfo, tree, di, drep, hf_budb_FindLatestDump_dname, param);
     return offset;
 }
 
 static int
-ptr_budb_dissect_FindLatestDump_dname(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ptr_budb_dissect_FindLatestDump_dname(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_FindLatestDump_dname, NDR_POINTER_PTR, "dname", -1);
     return offset;
 }
 
 static int
-budb_dissect_FindLatestDump_dumpentry(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_FindLatestDump_dumpentry(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_dumpEntry(tvb, offset, pinfo, tree, di, drep, hf_budb_FindLatestDump_dumpentry, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_FindLatestDump_dumpentry(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_FindLatestDump_dumpentry(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_FindLatestDump_dumpentry, NDR_POINTER_REF, "dumpentry", -1);
     return offset;
@@ -2161,7 +2147,7 @@ ref_budb_dissect_FindLatestDump_dumpentry(tvbuff_t *tvb, int offset, packet_info
 
 
 static int
-budb_dissect_FindLatestDump_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_FindLatestDump_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ptr_budb_dissect_FindLatestDump_vsname(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -2174,7 +2160,7 @@ budb_dissect_FindLatestDump_request(tvbuff_t *tvb _U_, int offset _U_, packet_in
 }
 
 static int
-budb_dissect_FindLatestDump_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_FindLatestDump_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ref_budb_dissect_FindLatestDump_dumpentry(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -2185,15 +2171,15 @@ budb_dissect_FindLatestDump_response(tvbuff_t *tvb _U_, int offset _U_, packet_i
    return offset;
 }
 static int
-budb_dissect_FinishDump_dump(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_FinishDump_dump(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_dumpEntry(tvb, offset, pinfo, tree, di, drep, hf_budb_FinishDump_dump, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_FinishDump_dump(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_FinishDump_dump(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_FinishDump_dump, NDR_POINTER_REF, "dump", -1);
     return offset;
@@ -2201,7 +2187,7 @@ ref_budb_dissect_FinishDump_dump(tvbuff_t *tvb, int offset, packet_info *pinfo, 
 
 
 static int
-budb_dissect_FinishDump_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_FinishDump_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ref_budb_dissect_FinishDump_dump(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -2211,7 +2197,7 @@ budb_dissect_FinishDump_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 }
 
 static int
-budb_dissect_FinishDump_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_FinishDump_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ref_budb_dissect_FinishDump_dump(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -2222,15 +2208,15 @@ budb_dissect_FinishDump_response(tvbuff_t *tvb _U_, int offset _U_, packet_info 
    return offset;
 }
 static int
-budb_dissect_FinishTape_tape(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_FinishTape_tape(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_tapeEntry(tvb, offset, pinfo, tree, di, drep, hf_budb_FinishTape_tape, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_FinishTape_tape(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_FinishTape_tape(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_FinishTape_tape, NDR_POINTER_REF, "tape", -1);
     return offset;
@@ -2238,7 +2224,7 @@ ref_budb_dissect_FinishTape_tape(tvbuff_t *tvb, int offset, packet_info *pinfo, 
 
 
 static int
-budb_dissect_FinishTape_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_FinishTape_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ref_budb_dissect_FinishTape_tape(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -2248,7 +2234,7 @@ budb_dissect_FinishTape_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 }
 
 static int
-budb_dissect_FinishTape_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_FinishTape_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
    offset=dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_budb_rc, NULL);
 
@@ -2256,107 +2242,107 @@ budb_dissect_FinishTape_response(tvbuff_t *tvb _U_, int offset _U_, packet_info 
    return offset;
 }
 static int
-budb_dissect_GetDumps_majorVersion(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetDumps_majorVersion(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetDumps_majorVersion, param);
     return offset;
 }
 
 static int
-budb_dissect_GetDumps_flags(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetDumps_flags(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetDumps_flags, param);
     return offset;
 }
 
 static int
-budb_dissect_GetDumps_name(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetDumps_name(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_NameString_t(tvb, offset, pinfo, tree, di, drep, hf_budb_GetDumps_name, param);
     return offset;
 }
 
 static int
-ptr_budb_dissect_GetDumps_name(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ptr_budb_dissect_GetDumps_name(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_GetDumps_name, NDR_POINTER_PTR, "name", -1);
     return offset;
 }
 
 static int
-budb_dissect_GetDumps_start(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetDumps_start(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetDumps_start, param);
     return offset;
 }
 
 static int
-budb_dissect_GetDumps_end(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetDumps_end(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetDumps_end, param);
     return offset;
 }
 
 static int
-budb_dissect_GetDumps_index(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetDumps_index(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetDumps_index, param);
     return offset;
 }
 
 static int
-budb_dissect_GetDumps_nextIndex(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetDumps_nextIndex(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetDumps_nextIndex, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_GetDumps_nextIndex(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_GetDumps_nextIndex(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_GetDumps_nextIndex, NDR_POINTER_REF, "nextIndex", -1);
     return offset;
 }
 
 static int
-budb_dissect_GetDumps_dbUpdate(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetDumps_dbUpdate(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetDumps_dbUpdate, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_GetDumps_dbUpdate(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_GetDumps_dbUpdate(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_GetDumps_dbUpdate, NDR_POINTER_REF, "dbUpdate", -1);
     return offset;
 }
 
 static int
-budb_dissect_GetDumps_dumps(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetDumps_dumps(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_dumpList(tvb, offset, pinfo, tree, di, drep, hf_budb_GetDumps_dumps, param);
     return offset;
 }
 
 static int
-ptr_budb_dissect_GetDumps_dumps(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ptr_budb_dissect_GetDumps_dumps(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_GetDumps_dumps, NDR_POINTER_PTR, "dumps", -1);
     return offset;
 }
 
 static int
-ptr_ptr_budb_dissect_GetDumps_dumps(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ptr_ptr_budb_dissect_GetDumps_dumps(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, ptr_budb_dissect_GetDumps_dumps, NDR_POINTER_PTR, "dumps", -1);
     return offset;
@@ -2364,7 +2350,7 @@ ptr_ptr_budb_dissect_GetDumps_dumps(tvbuff_t *tvb, int offset, packet_info *pinf
 
 
 static int
-budb_dissect_GetDumps_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_GetDumps_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=budb_dissect_GetDumps_majorVersion(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -2389,7 +2375,7 @@ budb_dissect_GetDumps_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pi
 }
 
 static int
-budb_dissect_GetDumps_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_GetDumps_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ref_budb_dissect_GetDumps_nextIndex(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -2406,107 +2392,107 @@ budb_dissect_GetDumps_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *p
    return offset;
 }
 static int
-budb_dissect_GetTapes_majorVersion(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetTapes_majorVersion(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetTapes_majorVersion, param);
     return offset;
 }
 
 static int
-budb_dissect_GetTapes_flags(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetTapes_flags(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetTapes_flags, param);
     return offset;
 }
 
 static int
-budb_dissect_GetTapes_name(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetTapes_name(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_NameString_t(tvb, offset, pinfo, tree, di, drep, hf_budb_GetTapes_name, param);
     return offset;
 }
 
 static int
-ptr_budb_dissect_GetTapes_name(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ptr_budb_dissect_GetTapes_name(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_GetTapes_name, NDR_POINTER_PTR, "name", -1);
     return offset;
 }
 
 static int
-budb_dissect_GetTapes_start(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetTapes_start(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetTapes_start, param);
     return offset;
 }
 
 static int
-budb_dissect_GetTapes_end(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetTapes_end(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetTapes_end, param);
     return offset;
 }
 
 static int
-budb_dissect_GetTapes_index(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetTapes_index(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetTapes_index, param);
     return offset;
 }
 
 static int
-budb_dissect_GetTapes_nextIndex(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetTapes_nextIndex(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetTapes_nextIndex, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_GetTapes_nextIndex(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_GetTapes_nextIndex(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_GetTapes_nextIndex, NDR_POINTER_REF, "nextIndex", -1);
     return offset;
 }
 
 static int
-budb_dissect_GetTapes_dbUpdate(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetTapes_dbUpdate(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetTapes_dbUpdate, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_GetTapes_dbUpdate(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_GetTapes_dbUpdate(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_GetTapes_dbUpdate, NDR_POINTER_REF, "dbUpdate", -1);
     return offset;
 }
 
 static int
-budb_dissect_GetTapes_tapes(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetTapes_tapes(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_tapeList(tvb, offset, pinfo, tree, di, drep, hf_budb_GetTapes_tapes, param);
     return offset;
 }
 
 static int
-ptr_budb_dissect_GetTapes_tapes(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ptr_budb_dissect_GetTapes_tapes(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_GetTapes_tapes, NDR_POINTER_PTR, "tapes", -1);
     return offset;
 }
 
 static int
-ptr_ptr_budb_dissect_GetTapes_tapes(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ptr_ptr_budb_dissect_GetTapes_tapes(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, ptr_budb_dissect_GetTapes_tapes, NDR_POINTER_PTR, "tapes", -1);
     return offset;
@@ -2514,7 +2500,7 @@ ptr_ptr_budb_dissect_GetTapes_tapes(tvbuff_t *tvb, int offset, packet_info *pinf
 
 
 static int
-budb_dissect_GetTapes_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_GetTapes_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=budb_dissect_GetTapes_majorVersion(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -2539,7 +2525,7 @@ budb_dissect_GetTapes_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pi
 }
 
 static int
-budb_dissect_GetTapes_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_GetTapes_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ref_budb_dissect_GetTapes_nextIndex(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -2556,107 +2542,107 @@ budb_dissect_GetTapes_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *p
    return offset;
 }
 static int
-budb_dissect_GetVolumes_majorVersion(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetVolumes_majorVersion(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetVolumes_majorVersion, param);
     return offset;
 }
 
 static int
-budb_dissect_GetVolumes_flags(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetVolumes_flags(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetVolumes_flags, param);
     return offset;
 }
 
 static int
-budb_dissect_GetVolumes_name(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetVolumes_name(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_NameString_t(tvb, offset, pinfo, tree, di, drep, hf_budb_GetVolumes_name, param);
     return offset;
 }
 
 static int
-ptr_budb_dissect_GetVolumes_name(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ptr_budb_dissect_GetVolumes_name(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_GetVolumes_name, NDR_POINTER_PTR, "name", -1);
     return offset;
 }
 
 static int
-budb_dissect_GetVolumes_start(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetVolumes_start(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetVolumes_start, param);
     return offset;
 }
 
 static int
-budb_dissect_GetVolumes_end(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetVolumes_end(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetVolumes_end, param);
     return offset;
 }
 
 static int
-budb_dissect_GetVolumes_index(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetVolumes_index(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetVolumes_index, param);
     return offset;
 }
 
 static int
-budb_dissect_GetVolumes_nextIndex(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetVolumes_nextIndex(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetVolumes_nextIndex, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_GetVolumes_nextIndex(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_GetVolumes_nextIndex(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_GetVolumes_nextIndex, NDR_POINTER_REF, "nextIndex", -1);
     return offset;
 }
 
 static int
-budb_dissect_GetVolumes_dbUpdate(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetVolumes_dbUpdate(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetVolumes_dbUpdate, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_GetVolumes_dbUpdate(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_GetVolumes_dbUpdate(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_GetVolumes_dbUpdate, NDR_POINTER_REF, "dbUpdate", -1);
     return offset;
 }
 
 static int
-budb_dissect_GetVolumes_volumes(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetVolumes_volumes(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_volumeList(tvb, offset, pinfo, tree, di, drep, hf_budb_GetVolumes_volumes, param);
     return offset;
 }
 
 static int
-ptr_budb_dissect_GetVolumes_volumes(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ptr_budb_dissect_GetVolumes_volumes(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_GetVolumes_volumes, NDR_POINTER_PTR, "volumes", -1);
     return offset;
 }
 
 static int
-ptr_ptr_budb_dissect_GetVolumes_volumes(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ptr_ptr_budb_dissect_GetVolumes_volumes(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, ptr_budb_dissect_GetVolumes_volumes, NDR_POINTER_PTR, "volumes", -1);
     return offset;
@@ -2664,7 +2650,7 @@ ptr_ptr_budb_dissect_GetVolumes_volumes(tvbuff_t *tvb, int offset, packet_info *
 
 
 static int
-budb_dissect_GetVolumes_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_GetVolumes_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=budb_dissect_GetVolumes_majorVersion(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -2689,7 +2675,7 @@ budb_dissect_GetVolumes_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 }
 
 static int
-budb_dissect_GetVolumes_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_GetVolumes_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ref_budb_dissect_GetVolumes_nextIndex(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -2706,30 +2692,30 @@ budb_dissect_GetVolumes_response(tvbuff_t *tvb _U_, int offset _U_, packet_info 
    return offset;
 }
 static int
-budb_dissect_UseTape_tape(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_UseTape_tape(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_tapeEntry(tvb, offset, pinfo, tree, di, drep, hf_budb_UseTape_tape, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_UseTape_tape(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_UseTape_tape(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_UseTape_tape, NDR_POINTER_REF, "tape", -1);
     return offset;
 }
 
 static int
-budb_dissect_UseTape_new(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_UseTape_new(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_UseTape_new, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_UseTape_new(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_UseTape_new(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_UseTape_new, NDR_POINTER_REF, "new", -1);
     return offset;
@@ -2737,7 +2723,7 @@ ref_budb_dissect_UseTape_new(tvbuff_t *tvb, int offset, packet_info *pinfo, prot
 
 
 static int
-budb_dissect_UseTape_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_UseTape_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ref_budb_dissect_UseTape_tape(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -2747,7 +2733,7 @@ budb_dissect_UseTape_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pin
 }
 
 static int
-budb_dissect_UseTape_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_UseTape_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ref_budb_dissect_UseTape_new(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -2758,62 +2744,62 @@ budb_dissect_UseTape_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pi
    return offset;
 }
 static int
-budb_dissect_GetText_lockHandle(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetText_lockHandle(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetText_lockHandle, param);
     return offset;
 }
 
 static int
-budb_dissect_GetText_textType(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetText_textType(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetText_textType, param);
     return offset;
 }
 
 static int
-budb_dissect_GetText_maxLength(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetText_maxLength(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetText_maxLength, param);
     return offset;
 }
 
 static int
-budb_dissect_GetText_offset(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetText_offset(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetText_offset, param);
     return offset;
 }
 
 static int
-budb_dissect_GetText_nextOffset(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetText_nextOffset(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetText_nextOffset, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_GetText_nextOffset(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_GetText_nextOffset(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_GetText_nextOffset, NDR_POINTER_REF, "nextOffset", -1);
     return offset;
 }
 
 static int
-budb_dissect_GetText_charListPtr(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetText_charListPtr(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_charListT(tvb, offset, pinfo, tree, di, drep, hf_budb_GetText_charListPtr, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_GetText_charListPtr(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_GetText_charListPtr(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_GetText_charListPtr, NDR_POINTER_REF, "charListPtr", -1);
     return offset;
@@ -2821,7 +2807,7 @@ ref_budb_dissect_GetText_charListPtr(tvbuff_t *tvb, int offset, packet_info *pin
 
 
 static int
-budb_dissect_GetText_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_GetText_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=budb_dissect_GetText_lockHandle(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -2840,7 +2826,7 @@ budb_dissect_GetText_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pin
 }
 
 static int
-budb_dissect_GetText_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_GetText_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ref_budb_dissect_GetText_nextOffset(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -2854,23 +2840,23 @@ budb_dissect_GetText_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pi
    return offset;
 }
 static int
-budb_dissect_GetTextVersion_textType(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetTextVersion_textType(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetTextVersion_textType, param);
     return offset;
 }
 
 static int
-budb_dissect_GetTextVersion_tversion(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetTextVersion_tversion(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetTextVersion_tversion, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_GetTextVersion_tversion(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_GetTextVersion_tversion(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_GetTextVersion_tversion, NDR_POINTER_REF, "tversion", -1);
     return offset;
@@ -2878,7 +2864,7 @@ ref_budb_dissect_GetTextVersion_tversion(tvbuff_t *tvb, int offset, packet_info 
 
 
 static int
-budb_dissect_GetTextVersion_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_GetTextVersion_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=budb_dissect_GetTextVersion_textType(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -2888,7 +2874,7 @@ budb_dissect_GetTextVersion_request(tvbuff_t *tvb _U_, int offset _U_, packet_in
 }
 
 static int
-budb_dissect_GetTextVersion_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_GetTextVersion_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ref_budb_dissect_GetTextVersion_tversion(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -2899,47 +2885,47 @@ budb_dissect_GetTextVersion_response(tvbuff_t *tvb _U_, int offset _U_, packet_i
    return offset;
 }
 static int
-budb_dissect_SaveText_lockHandle(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_SaveText_lockHandle(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_SaveText_lockHandle, param);
     return offset;
 }
 
 static int
-budb_dissect_SaveText_textType(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_SaveText_textType(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_SaveText_textType, param);
     return offset;
 }
 
 static int
-budb_dissect_SaveText_offset(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_SaveText_offset(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_SaveText_offset, param);
     return offset;
 }
 
 static int
-budb_dissect_SaveText_flags(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_SaveText_flags(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_SaveText_flags, param);
     return offset;
 }
 
 static int
-budb_dissect_SaveText_charListPtr(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_SaveText_charListPtr(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_charListT(tvb, offset, pinfo, tree, di, drep, hf_budb_SaveText_charListPtr, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_SaveText_charListPtr(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_SaveText_charListPtr(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_SaveText_charListPtr, NDR_POINTER_REF, "charListPtr", -1);
     return offset;
@@ -2947,7 +2933,7 @@ ref_budb_dissect_SaveText_charListPtr(tvbuff_t *tvb, int offset, packet_info *pi
 
 
 static int
-budb_dissect_SaveText_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_SaveText_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=budb_dissect_SaveText_lockHandle(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -2969,7 +2955,7 @@ budb_dissect_SaveText_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pi
 }
 
 static int
-budb_dissect_SaveText_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_SaveText_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
    offset=dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_budb_rc, NULL);
 
@@ -2977,16 +2963,16 @@ budb_dissect_SaveText_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *p
    return offset;
 }
 static int
-budb_dissect_FreeAllLocks_instanceId(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_FreeAllLocks_instanceId(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_FreeAllLocks_instanceId, param);
     return offset;
 }
 
 
 static int
-budb_dissect_FreeAllLocks_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_FreeAllLocks_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=budb_dissect_FreeAllLocks_instanceId(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -2996,7 +2982,7 @@ budb_dissect_FreeAllLocks_request(tvbuff_t *tvb _U_, int offset _U_, packet_info
 }
 
 static int
-budb_dissect_FreeAllLocks_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_FreeAllLocks_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
    offset=dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_budb_rc, NULL);
 
@@ -3004,16 +2990,16 @@ budb_dissect_FreeAllLocks_response(tvbuff_t *tvb _U_, int offset _U_, packet_inf
    return offset;
 }
 static int
-budb_dissect_FreeLock_lockHandle(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_FreeLock_lockHandle(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_FreeLock_lockHandle, param);
     return offset;
 }
 
 
 static int
-budb_dissect_FreeLock_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_FreeLock_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=budb_dissect_FreeLock_lockHandle(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -3023,7 +3009,7 @@ budb_dissect_FreeLock_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pi
 }
 
 static int
-budb_dissect_FreeLock_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_FreeLock_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
    offset=dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_budb_rc, NULL);
 
@@ -3031,15 +3017,15 @@ budb_dissect_FreeLock_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *p
    return offset;
 }
 static int
-budb_dissect_GetInstanceId_instanceId(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetInstanceId_instanceId(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetInstanceId_instanceId, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_GetInstanceId_instanceId(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_GetInstanceId_instanceId(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_GetInstanceId_instanceId, NDR_POINTER_REF, "instanceId", -1);
     return offset;
@@ -3047,14 +3033,14 @@ ref_budb_dissect_GetInstanceId_instanceId(tvbuff_t *tvb, int offset, packet_info
 
 
 static int
-budb_dissect_GetInstanceId_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_GetInstanceId_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 
    return offset;
 }
 
 static int
-budb_dissect_GetInstanceId_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_GetInstanceId_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ref_budb_dissect_GetInstanceId_instanceId(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -3065,39 +3051,39 @@ budb_dissect_GetInstanceId_response(tvbuff_t *tvb _U_, int offset _U_, packet_in
    return offset;
 }
 static int
-budb_dissect_GetLock_instanceId(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetLock_instanceId(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetLock_instanceId, param);
     return offset;
 }
 
 static int
-budb_dissect_GetLock_lockName(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetLock_lockName(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetLock_lockName, param);
     return offset;
 }
 
 static int
-budb_dissect_GetLock_expiration(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetLock_expiration(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetLock_expiration, param);
     return offset;
 }
 
 static int
-budb_dissect_GetLock_lockHandle(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetLock_lockHandle(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_GetLock_lockHandle, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_GetLock_lockHandle(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_GetLock_lockHandle(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_GetLock_lockHandle, NDR_POINTER_REF, "lockHandle", -1);
     return offset;
@@ -3105,7 +3091,7 @@ ref_budb_dissect_GetLock_lockHandle(tvbuff_t *tvb, int offset, packet_info *pinf
 
 
 static int
-budb_dissect_GetLock_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_GetLock_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=budb_dissect_GetLock_instanceId(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -3121,7 +3107,7 @@ budb_dissect_GetLock_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pin
 }
 
 static int
-budb_dissect_GetLock_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_GetLock_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ref_budb_dissect_GetLock_lockHandle(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -3132,45 +3118,45 @@ budb_dissect_GetLock_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pi
    return offset;
 }
 static int
-budb_dissect_DbVerify_status(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_DbVerify_status(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_DbVerify_status, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_DbVerify_status(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_DbVerify_status(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_DbVerify_status, NDR_POINTER_REF, "status", -1);
     return offset;
 }
 
 static int
-budb_dissect_DbVerify_orphans(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_DbVerify_orphans(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_DbVerify_orphans, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_DbVerify_orphans(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_DbVerify_orphans(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_DbVerify_orphans, NDR_POINTER_REF, "orphans", -1);
     return offset;
 }
 
 static int
-budb_dissect_DbVerify_host(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_DbVerify_host(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_DbVerify_host, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_DbVerify_host(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_DbVerify_host(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_DbVerify_host, NDR_POINTER_REF, "host", -1);
     return offset;
@@ -3178,14 +3164,14 @@ ref_budb_dissect_DbVerify_host(tvbuff_t *tvb, int offset, packet_info *pinfo, pr
 
 
 static int
-budb_dissect_DbVerify_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_DbVerify_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 
    return offset;
 }
 
 static int
-budb_dissect_DbVerify_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_DbVerify_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ref_budb_dissect_DbVerify_status(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -3202,38 +3188,38 @@ budb_dissect_DbVerify_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *p
    return offset;
 }
 static int
-budb_dissect_DumpDB_maxLength(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_DumpDB_maxLength(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_DumpDB_maxLength, param);
     return offset;
 }
 
 static int
-budb_dissect_DumpDB_flags(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_DumpDB_flags(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_DumpDB_flags, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_DumpDB_flags(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_DumpDB_flags(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_DumpDB_flags, NDR_POINTER_REF, "flags", -1);
     return offset;
 }
 
 static int
-budb_dissect_DumpDB_charListPtr(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_DumpDB_charListPtr(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_charListT(tvb, offset, pinfo, tree, di, drep, hf_budb_DumpDB_charListPtr, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_DumpDB_charListPtr(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_DumpDB_charListPtr(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_DumpDB_charListPtr, NDR_POINTER_REF, "charListPtr", -1);
     return offset;
@@ -3241,7 +3227,7 @@ ref_budb_dissect_DumpDB_charListPtr(tvbuff_t *tvb, int offset, packet_info *pinf
 
 
 static int
-budb_dissect_DumpDB_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_DumpDB_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=budb_dissect_DumpDB_maxLength(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -3251,7 +3237,7 @@ budb_dissect_DumpDB_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinf
 }
 
 static int
-budb_dissect_DumpDB_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_DumpDB_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ref_budb_dissect_DumpDB_flags(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -3265,15 +3251,15 @@ budb_dissect_DumpDB_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pin
    return offset;
 }
 static int
-budb_dissect_RestoreDbHeader_header(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_RestoreDbHeader_header(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_DbHeader(tvb, offset, pinfo, tree, di, drep, hf_budb_RestoreDbHeader_header, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_RestoreDbHeader_header(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_RestoreDbHeader_header(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_RestoreDbHeader_header, NDR_POINTER_REF, "header", -1);
     return offset;
@@ -3281,7 +3267,7 @@ ref_budb_dissect_RestoreDbHeader_header(tvbuff_t *tvb, int offset, packet_info *
 
 
 static int
-budb_dissect_RestoreDbHeader_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_RestoreDbHeader_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ref_budb_dissect_RestoreDbHeader_header(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -3291,7 +3277,7 @@ budb_dissect_RestoreDbHeader_request(tvbuff_t *tvb _U_, int offset _U_, packet_i
 }
 
 static int
-budb_dissect_RestoreDbHeader_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_RestoreDbHeader_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
    offset=dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_budb_rc, NULL);
 
@@ -3299,15 +3285,15 @@ budb_dissect_RestoreDbHeader_response(tvbuff_t *tvb _U_, int offset _U_, packet_
    return offset;
 }
 static int
-budb_dissect_T_GetVersion_majorVersion(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_T_GetVersion_majorVersion(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_T_GetVersion_majorVersion, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_T_GetVersion_majorVersion(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_T_GetVersion_majorVersion(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_T_GetVersion_majorVersion, NDR_POINTER_REF, "majorVersion", -1);
     return offset;
@@ -3315,14 +3301,14 @@ ref_budb_dissect_T_GetVersion_majorVersion(tvbuff_t *tvb, int offset, packet_inf
 
 
 static int
-budb_dissect_T_GetVersion_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_T_GetVersion_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 
    return offset;
 }
 
 static int
-budb_dissect_T_GetVersion_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_T_GetVersion_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ref_budb_dissect_T_GetVersion_majorVersion(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -3333,23 +3319,23 @@ budb_dissect_T_GetVersion_response(tvbuff_t *tvb _U_, int offset _U_, packet_inf
    return offset;
 }
 static int
-budb_dissect_T_DumpHashTable_type(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_T_DumpHashTable_type(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_int32(tvb, offset, pinfo, tree, di, drep, hf_budb_T_DumpHashTable_type, param);
     return offset;
 }
 
 static int
-budb_dissect_T_DumpHashTable_filename(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_T_DumpHashTable_filename(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_NameString_t(tvb, offset, pinfo, tree, di, drep, hf_budb_T_DumpHashTable_filename, param);
     return offset;
 }
 
 static int
-ptr_budb_dissect_T_DumpHashTable_filename(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ptr_budb_dissect_T_DumpHashTable_filename(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_T_DumpHashTable_filename, NDR_POINTER_PTR, "filename", -1);
     return offset;
@@ -3357,7 +3343,7 @@ ptr_budb_dissect_T_DumpHashTable_filename(tvbuff_t *tvb, int offset, packet_info
 
 
 static int
-budb_dissect_T_DumpHashTable_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_T_DumpHashTable_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=budb_dissect_T_DumpHashTable_type(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -3370,7 +3356,7 @@ budb_dissect_T_DumpHashTable_request(tvbuff_t *tvb _U_, int offset _U_, packet_i
 }
 
 static int
-budb_dissect_T_DumpHashTable_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_T_DumpHashTable_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
    offset=dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_budb_rc, NULL);
 
@@ -3378,15 +3364,15 @@ budb_dissect_T_DumpHashTable_response(tvbuff_t *tvb _U_, int offset _U_, packet_
    return offset;
 }
 static int
-budb_dissect_T_DumpDatabase_filename(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_T_DumpDatabase_filename(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_NameString_t(tvb, offset, pinfo, tree, di, drep, hf_budb_T_DumpDatabase_filename, param);
     return offset;
 }
 
 static int
-ptr_budb_dissect_T_DumpDatabase_filename(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ptr_budb_dissect_T_DumpDatabase_filename(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_T_DumpDatabase_filename, NDR_POINTER_PTR, "filename", -1);
     return offset;
@@ -3394,7 +3380,7 @@ ptr_budb_dissect_T_DumpDatabase_filename(tvbuff_t *tvb, int offset, packet_info 
 
 
 static int
-budb_dissect_T_DumpDatabase_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_T_DumpDatabase_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ptr_budb_dissect_T_DumpDatabase_filename(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -3404,7 +3390,7 @@ budb_dissect_T_DumpDatabase_request(tvbuff_t *tvb _U_, int offset _U_, packet_in
 }
 
 static int
-budb_dissect_T_DumpDatabase_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_T_DumpDatabase_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
    offset=dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_budb_rc, NULL);
 
@@ -3413,142 +3399,142 @@ budb_dissect_T_DumpDatabase_response(tvbuff_t *tvb _U_, int offset _U_, packet_i
 }
 
 static int
-budb_dissect_uuid_t(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep, int hf_index, guint32 param _U_)
+budb_dissect_uuid_t(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep, int hf_index, uint32_t param _U_)
 {
     offset=dissect_ndr_uuid_t(tvb, offset, pinfo, tree, di, drep, hf_index, NULL);
     return offset;
 }
 
 static int
-budb_dissect_dfs_interfaceDescription_interface_uuid(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dfs_interfaceDescription_interface_uuid(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uuid_t(tvb, offset, pinfo, tree, di, drep, hf_budb_dfs_interfaceDescription_interface_uuid, param);
 	 return offset;
 }
 
 
 static int
-budb_dissect_uint16(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep, int hf_index, guint32 param _U_)
+budb_dissect_uint16(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep, int hf_index, uint32_t param _U_)
 {
     offset=dissect_ndr_uint16(tvb, offset, pinfo, tree, di, drep, hf_index, NULL);
     return offset;
 }
 
 static int
-budb_dissect_dfs_interfaceDescription_vers_major(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dfs_interfaceDescription_vers_major(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint16(tvb, offset, pinfo, tree, di, drep, hf_budb_dfs_interfaceDescription_vers_major, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dfs_interfaceDescription_vers_minor(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dfs_interfaceDescription_vers_minor(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint16(tvb, offset, pinfo, tree, di, drep, hf_budb_dfs_interfaceDescription_vers_minor, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dfs_interfaceDescription_vers_provider(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dfs_interfaceDescription_vers_provider(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_dfs_interfaceDescription_vers_provider, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dfs_interfaceDescription_spare0(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dfs_interfaceDescription_spare0(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_dfs_interfaceDescription_spare0, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dfs_interfaceDescription_spare1(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dfs_interfaceDescription_spare1(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_dfs_interfaceDescription_spare1, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dfs_interfaceDescription_spare2(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dfs_interfaceDescription_spare2(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_dfs_interfaceDescription_spare2, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dfs_interfaceDescription_spare3(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dfs_interfaceDescription_spare3(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_dfs_interfaceDescription_spare3, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dfs_interfaceDescription_spare4(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dfs_interfaceDescription_spare4(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_dfs_interfaceDescription_spare4, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dfs_interfaceDescription_spare5(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dfs_interfaceDescription_spare5(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_dfs_interfaceDescription_spare5, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dfs_interfaceDescription_spare6(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dfs_interfaceDescription_spare6(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_dfs_interfaceDescription_spare6, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dfs_interfaceDescription_spare7(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dfs_interfaceDescription_spare7(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_dfs_interfaceDescription_spare7, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dfs_interfaceDescription_spare8(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dfs_interfaceDescription_spare8(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_dfs_interfaceDescription_spare8, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dfs_interfaceDescription_spare9(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dfs_interfaceDescription_spare9(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_dfs_interfaceDescription_spare9, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dfs_interfaceDescription_spareText(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dfs_interfaceDescription_spareText(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint8(tvb, offset, pinfo, tree, di, drep, hf_budb_dfs_interfaceDescription_spareText, param);
 	 return offset;
 }
 
 static int
-fixedarray_budb_dissect_dfs_interfaceDescription_spareText(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+fixedarray_budb_dissect_dfs_interfaceDescription_spareText(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
 	 int count=50;
 	 while(count--){
@@ -3560,7 +3546,7 @@ fixedarray_budb_dissect_dfs_interfaceDescription_spareText(tvbuff_t *tvb, int of
 
 
 int
-budb_dissect_dfs_interfaceDescription(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *parent_tree, dcerpc_info *di _U_, guint8 *drep _U_, int hf_index, guint32 param _U_)
+budb_dissect_dfs_interfaceDescription(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *parent_tree, dcerpc_info *di _U_, uint8_t *drep _U_, int hf_index, uint32_t param _U_)
 {
     proto_item *item=NULL;
     proto_tree *tree=NULL;
@@ -3609,23 +3595,23 @@ budb_dissect_dfs_interfaceDescription(tvbuff_t *tvb, int offset, packet_info *pi
     return offset;
 }
 static int
-budb_dissect_dfs_interfaceList_dfs_interfaceList_len(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dfs_interfaceList_dfs_interfaceList_len(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_dfs_interfaceList_dfs_interfaceList_len, param);
 	 return offset;
 }
 
 static int
-budb_dissect_dfs_interfaceList_dfs_interfaceList_val(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_dfs_interfaceList_dfs_interfaceList_val(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	 guint32 param=0;
+	 uint32_t param=0;
 	 offset=budb_dissect_dfs_interfaceDescription(tvb, offset, pinfo, tree, di, drep, hf_budb_dfs_interfaceList_dfs_interfaceList_val, param);
 	 return offset;
 }
 
 static int
-uvarray_budb_dissect_dfs_interfaceList_dfs_interfaceList_val(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+uvarray_budb_dissect_dfs_interfaceList_dfs_interfaceList_val(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
 	 offset=dissect_ndr_uvarray(tvb, offset, pinfo, tree, di, drep, budb_dissect_dfs_interfaceList_dfs_interfaceList_val);
 	 return offset;
@@ -3633,7 +3619,7 @@ uvarray_budb_dissect_dfs_interfaceList_dfs_interfaceList_val(tvbuff_t *tvb, int 
 
 
 int
-budb_dissect_dfs_interfaceList(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *parent_tree, dcerpc_info *di _U_, guint8 *drep _U_, int hf_index, guint32 param _U_)
+budb_dissect_dfs_interfaceList(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *parent_tree, dcerpc_info *di _U_, uint8_t *drep _U_, int hf_index, uint32_t param _U_)
 {
     proto_item *item=NULL;
     proto_tree *tree=NULL;
@@ -3656,15 +3642,15 @@ budb_dissect_dfs_interfaceList(tvbuff_t *tvb, int offset, packet_info *pinfo _U_
     return offset;
 }
 static int
-budb_dissect_GetServerInterfaces_serverInterfacesP(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_GetServerInterfaces_serverInterfacesP(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_dfs_interfaceList(tvb, offset, pinfo, tree, di, drep, hf_budb_GetServerInterfaces_serverInterfacesP, param);
     return offset;
 }
 
 static int
-ref_budb_dissect_GetServerInterfaces_serverInterfacesP(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ref_budb_dissect_GetServerInterfaces_serverInterfacesP(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, budb_dissect_GetServerInterfaces_serverInterfacesP, NDR_POINTER_REF, "serverInterfacesP", -1);
     return offset;
@@ -3672,7 +3658,7 @@ ref_budb_dissect_GetServerInterfaces_serverInterfacesP(tvbuff_t *tvb, int offset
 
 
 static int
-budb_dissect_GetServerInterfaces_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_GetServerInterfaces_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ref_budb_dissect_GetServerInterfaces_serverInterfacesP(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -3682,7 +3668,7 @@ budb_dissect_GetServerInterfaces_request(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-budb_dissect_GetServerInterfaces_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_GetServerInterfaces_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=ref_budb_dissect_GetServerInterfaces_serverInterfacesP(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -3693,23 +3679,23 @@ budb_dissect_GetServerInterfaces_response(tvbuff_t *tvb _U_, int offset _U_, pac
    return offset;
 }
 static int
-budb_dissect_AddVolumes_cnt(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_AddVolumes_cnt(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_budb_AddVolumes_cnt, param);
     return offset;
 }
 
 static int
-budb_dissect_AddVolumes_vol(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+budb_dissect_AddVolumes_vol(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 param=0;
+    uint32_t param=0;
     offset=budb_dissect_volumeEntry(tvb, offset, pinfo, tree, di, drep, hf_budb_AddVolumes_vol, param);
     return offset;
 }
 
 static int
-ucarray_budb_dissect_AddVolumes_vol(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+ucarray_budb_dissect_AddVolumes_vol(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     offset=dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, budb_dissect_AddVolumes_vol);
     return offset;
@@ -3717,7 +3703,7 @@ ucarray_budb_dissect_AddVolumes_vol(tvbuff_t *tvb, int offset, packet_info *pinf
 
 
 static int
-budb_dissect_AddVolumes_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_AddVolumes_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
  	   offset=budb_dissect_AddVolumes_cnt(tvb, offset, pinfo, tree, di, drep);
  	   offset=dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
@@ -3730,7 +3716,7 @@ budb_dissect_AddVolumes_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 }
 
 static int
-budb_dissect_AddVolumes_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+budb_dissect_AddVolumes_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
    offset=dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_budb_rc, NULL);
 
@@ -3755,8 +3741,8 @@ proto_register_budb(void)
 		 NULL, HFILL }},
 
 		{ &hf_budb_rc,
-		  { "Return code", "budb.rc", FT_UINT32, BASE_HEX,
-		  VALS(NT_errors), 0,
+		  { "Return code", "budb.rc", FT_UINT32, BASE_HEX|BASE_EXT_STRING,
+		  &NT_errors_ext, 0,
 		 NULL, HFILL }},
 
 		{ &hf_budb_principal_name,
@@ -4824,7 +4810,7 @@ proto_register_budb(void)
 
 	};
 
-        static gint *ett[] = {
+        static int *ett[] = {
 
 
 /* INCLUDED FILE : ETH_ETTARR */
@@ -4848,14 +4834,12 @@ proto_register_budb(void)
 
         };
 
-        proto_budb = proto_register_protocol(
-                "DCE/DFS BUDB", 
-		"BUDB", "budb");
+        proto_budb = proto_register_protocol("DCE/DFS BUDB", "BUDB", "budb");
 	proto_register_field_array(proto_budb, hf, array_length(hf));
         proto_register_subtree_array(ett, array_length(ett));
 }
 
-static dcerpc_sub_dissector function_dissectors[] = {
+static const dcerpc_sub_dissector function_dissectors[] = {
 
 
 /* INCLUDED FILE : ETH_FT */

@@ -1,14 +1,17 @@
 -- Extracted from RFC5652
 -- and massaged/modified so it passes through our asn2wrs compiler
 
-CryptographicMessageSyntax { iso(1) member-body(2) us(840) rsadsi(113549)
-      pkcs(1) pkcs-9(9) smime(16) modules(0) cms-2004(24) } DEFINITIONS IMPLICIT TAGS ::=
+CryptographicMessageSyntax
+  { iso(1) member-body(2) us(840) rsadsi(113549)
+    pkcs(1) pkcs-9(9) smime(16) modules(0) cms-2004(24) }
+
+DEFINITIONS IMPLICIT TAGS ::=
 BEGIN
 
 -- EXPORTS All
--- The types and values defined in this module are exported for use in
--- the other ASN.1 modules.  Other applications may use them for their
--- own purposes.
+-- The types and values defined in this module are exported for use
+-- in the other ASN.1 modules.  Other applications may use them for
+-- their own purposes.
 
 IMPORTS
   -- Directory Information Framework (X.501)
@@ -24,13 +27,10 @@ IMPORTS
 
 
 -- Cryptographic Message Syntax
--- 
-
 
 ContentInfo ::= SEQUENCE {
-   contentType ContentType,
-   content [0] EXPLICIT ANY DEFINED BY contentType
-}
+  contentType ContentType,
+  content [0] EXPLICIT ANY DEFINED BY contentType }
 
 ContentType ::= OBJECT IDENTIFIER
 
@@ -70,8 +70,7 @@ UnsignedAttributes ::= SET SIZE (1..MAX) OF Attribute
 
 Attribute ::= SEQUENCE {
   attrType OBJECT IDENTIFIER,
-  attrValues SET OF AttributeValue 
-}
+  attrValues SET OF AttributeValue }
 
 AttributeValue ::= ANY
 
@@ -245,8 +244,7 @@ UserKeyingMaterial ::= OCTET STRING
 
 OtherKeyAttribute ::= SEQUENCE {
   keyAttrId OBJECT IDENTIFIER,
-  keyAttr ANY DEFINED BY keyAttrId OPTIONAL
-}
+  keyAttr ANY DEFINED BY keyAttrId OPTIONAL }
 
 -- Content Type Object Identifiers
 
@@ -274,12 +272,12 @@ id-ct-authData OBJECT IDENTIFIER ::= { iso(1) member-body(2)
 -- The CMS Attributes
 
 MessageDigest ::= OCTET STRING
- 
+
 SigningTime  ::= Time
- 
+
 Time ::= CHOICE {
-   utcTime UTCTime,
-   generalTime GeneralizedTime }
+  utcTime UTCTime,
+  generalTime GeneralizedTime }
 
 Countersignature ::= SignerInfo
 
@@ -349,11 +347,11 @@ id-signingTime OBJECT IDENTIFIER ::= { iso(1) member-body(2)
 id-countersignature OBJECT IDENTIFIER ::= { iso(1) member-body(2)
     us(840) rsadsi(113549) pkcs(1) pkcs9(9) 6 }
 
--- Obsolete Extended Certificate syntax from PKCS#6
+-- Obsolete Extended Certificate syntax from PKCS #6
 
 ExtendedCertificateOrCertificate ::= CHOICE {
-     certificate Certificate,
-     extendedCertificate [0] IMPLICIT ExtendedCertificate }
+  certificate Certificate,
+  extendedCertificate [0] IMPLICIT ExtendedCertificate }
 
 ExtendedCertificate ::= SEQUENCE {
   extendedCertificateInfo ExtendedCertificateInfo,
@@ -366,6 +364,12 @@ ExtendedCertificateInfo ::= SEQUENCE {
   attributes UnauthAttributes }
 
 Signature ::= BIT STRING
+
+-- PKCS #7 type that was removed from CMS
+
+DigestInfo ::= SEQUENCE {
+  digestAlgorithm DigestAlgorithmIdentifier,
+  digest Digest }
 
 -- From S/MIME
 
@@ -394,3 +398,88 @@ RC2CBCParameters ::= CHOICE {
 
 
 END -- of CryptographicMessageSyntax2004
+
+CMS-AuthEnvelopedData-2007 { iso(1) member-body(2) us(840) rsadsi(113549) pkcs(1)
+    pkcs-9(9) smime(16) modules(0) cms-authEnvelopedData(31) }
+
+DEFINITIONS IMPLICIT TAGS ::=
+BEGIN
+
+-- EXPORTS All
+-- The types and values defined in this module are exported for use
+-- in the other ASN.1 modules.  Other applications may use them for
+-- their own purposes.
+
+-- IMPORTS
+
+-- Imports from RFC 3852 [CMS], Section 12.1
+--   AuthAttributes,
+--   CMSVersion,
+--   EncryptedContentInfo,
+--   MessageAuthenticationCode,
+--   OriginatorInfo,
+--   RecipientInfos,
+--   UnauthAttributes
+--      FROM CryptographicMessageSyntax2004
+--           { iso(1) member-body(2) us(840) rsadsi(113549)
+--             pkcs(1) pkcs-9(9) smime(16) modules(0)
+--             cms-2004(24) } ;
+
+
+AuthEnvelopedData ::= SEQUENCE {
+  version CMSVersion,
+  originatorInfo [0] IMPLICIT OriginatorInfo OPTIONAL,
+  recipientInfos RecipientInfos,
+  authEncryptedContentInfo EncryptedContentInfo,
+  authAttrs [1] IMPLICIT AuthAttributes OPTIONAL,
+  mac MessageAuthenticationCode,
+  unauthAttrs [2] IMPLICIT UnauthAttributes OPTIONAL }
+
+id-ct-authEnvelopedData OBJECT IDENTIFIER ::= { iso(1)
+  member-body(2) us(840) rsadsi(113549) pkcs(1) pkcs-9(9)
+  smime(16) ct(1) 23 }
+
+END -- of CMS-AuthEnvelopedData-2007
+
+CMS-AES-CCM-and-AES-GCM
+    { iso(1) member-body(2) us(840) rsadsi(113549) pkcs(1)
+      pkcs-9(9) smime(16) modules(0) cms-aes-ccm-and-gcm(32) }
+
+DEFINITIONS IMPLICIT TAGS ::= BEGIN
+
+-- EXPORTS All
+
+-- Object Identifiers
+
+aes OBJECT IDENTIFIER ::= { joint-iso-itu-t(2) country(16) us(840)
+    organization(1) gov(101) csor(3) nistAlgorithm(4) 1 }
+
+id-aes128-CCM OBJECT IDENTIFIER ::= { aes 7 }
+
+id-aes192-CCM OBJECT IDENTIFIER ::= { aes 27 }
+
+id-aes256-CCM OBJECT IDENTIFIER ::= { aes 47 }
+
+id-aes128-GCM OBJECT IDENTIFIER ::= { aes 6 }
+
+id-aes192-GCM OBJECT IDENTIFIER ::= { aes 26 }
+
+id-aes256-GCM OBJECT IDENTIFIER ::= { aes 46 }
+
+
+-- Parameters for AigorithmIdentifier
+
+CCMParameters ::= SEQUENCE {
+  aes-nonce         OCTET STRING (SIZE(7..13)),
+  aes-ICVlen        AES-CCM-ICVlen DEFAULT 12 }
+
+AES-CCM-ICVlen ::= INTEGER (4 | 6 | 8 | 10 | 12 | 14 | 16)
+
+GCMParameters ::= SEQUENCE {
+  aes-nonce        OCTET STRING, -- recommended size is 12 octets
+  aes-ICVlen       AES-GCM-ICVlen DEFAULT 12 }
+
+AES-GCM-ICVlen ::= INTEGER (12 | 13 | 14 | 15 | 16)
+
+END
+

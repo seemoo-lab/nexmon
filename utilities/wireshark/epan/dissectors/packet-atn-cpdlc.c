@@ -1,46 +1,28 @@
 /* Do not modify this file. Changes will be overwritten.                      */
 /* Generated automatically by the ASN.1 to Wireshark dissector compiler       */
 /* packet-atn-cpdlc.c                                                         */
-/* asn2wrs.py -u -L -p atn-cpdlc -c ./atn-cpdlc.cnf -s ./packet-atn-cpdlc-template -D . -O ../.. atn-cpdlc.asn */
+/* asn2wrs.py -u -q -L -p atn-cpdlc -c ./atn-cpdlc.cnf -s ./packet-atn-cpdlc-template -D . -O ../.. atn-cpdlc.asn */
 
-/* Input file: packet-atn-cpdlc-template.c */
-
-#line 1 "./asn1/atn-cpdlc/packet-atn-cpdlc-template.c"
 /* packet-atn-cpdlc-template.c
  * By Mathias Guettler <guettler@web.de>
  * Copyright 2013
  *
  * Routines for ATN Cpdlcc protocol packet disassembly
-
+ *
  * details see:
- * http://en.wikipedia.org/wiki/CPDLC
- * http://members.optusnet.com.au/~cjr/introduction.htm
-
+ * https://en.wikipedia.org/wiki/CPDLC
+ * https://members.optusnet.com.au/~cjr/introduction.htm
+ *
  * standards:
- * http://legacy.icao.int/anb/panels/acp/repository.cfm
-
- * note:
- * We are dealing with ATN/CPDLC aka ICAO Doc 9705 Ed2 here
+ * We are dealing with ATN/CPDLC aka ICAO Doc 9705 Second Edition here
  * (CPDLC may also be transmitted via ACARS/AOA aka "FANS-1/A ").
-
+ * https://www.icao.int/safety/acp/repository/_%20Doc9705_ed2_1999.pdf
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -55,6 +37,7 @@
 #include <epan/packet.h>
 #include <epan/exceptions.h>
 #include <epan/conversation.h>
+#include <wsutil/array.h>
 #include "packet-ber.h"
 #include "packet-per.h"
 #include "packet-atn-ulcs.h"
@@ -67,7 +50,7 @@ void proto_reg_handoff_atn_cpdlc(void);
 static const char *object_identifier_id;
 
 /* IA5 charset (7-bit) for PER IA5 decoding */
-static const gchar ia5alpha[] = {
+static const char ia5alpha[] = {
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, \
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, \
     0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, \
@@ -101,767 +84,752 @@ static int dissect_ProtectedAircraftPDUs_PDU(
     proto_tree *tree _U_,
     void *data _U_);
 
+static int hf_atn_cpdlc_GroundPDUs_PDU;           /* GroundPDUs */
+static int hf_atn_cpdlc_AircraftPDUs_PDU;         /* AircraftPDUs */
+static int hf_atn_cpdlc_ProtectedGroundPDUs_PDU;  /* ProtectedGroundPDUs */
+static int hf_atn_cpdlc_ProtectedAircraftPDUs_PDU;  /* ProtectedAircraftPDUs */
+static int hf_atn_cpdlc_abortUser;                /* CPDLCUserAbortReason */
+static int hf_atn_cpdlc_abortProvider;            /* CPDLCProviderAbortReason */
+static int hf_atn_cpdlc_startup;                  /* UplinkMessage */
+static int hf_atn_cpdlc_groundpdus_send;          /* ATCUplinkMessage */
+static int hf_atn_cpdlc_forward;                  /* ATCForwardMessage */
+static int hf_atn_cpdlc_forwardresponse;          /* ATCForwardResponse */
+static int hf_atn_cpdlc_noMessage;                /* NULL */
+static int hf_atn_cpdlc_aTCUplinkMessage;         /* ATCUplinkMessage */
+static int hf_atn_cpdlc_startdown;                /* StartDownMessage */
+static int hf_atn_cpdlc_aircraftpdus_send;        /* ATCDownlinkMessage */
+static int hf_atn_cpdlc_mode;                     /* Mode */
+static int hf_atn_cpdlc_startDownlinkMessage;     /* DownlinkMessage */
+static int hf_atn_cpdlc_aTCDownlinkMessage;       /* ATCDownlinkMessage */
+static int hf_atn_cpdlc_pmcpdlcuserabortreason;   /* PMCPDLCUserAbortReason */
+static int hf_atn_cpdlc_pmcpdlcproviderabortreason;  /* PMCPDLCProviderAbortReason */
+static int hf_atn_cpdlc_protecteduplinkmessage;   /* ProtectedUplinkMessage */
+static int hf_atn_cpdlc_algorithmIdentifier;      /* AlgorithmIdentifier */
+static int hf_atn_cpdlc_protectedMessage;         /* CPDLCMessage */
+static int hf_atn_cpdlc_integrityCheck;           /* BIT_STRING */
+static int hf_atn_cpdlc_forwardHeader;            /* ForwardHeader */
+static int hf_atn_cpdlc_forwardMessage;           /* ForwardMessage */
+static int hf_atn_cpdlc_dateTime;                 /* DateTimeGroup */
+static int hf_atn_cpdlc_aircraftID;               /* AircraftFlightIdentification */
+static int hf_atn_cpdlc_aircraftAddress;          /* AircraftAddress */
+static int hf_atn_cpdlc_upElementIDs;             /* BIT_STRING */
+static int hf_atn_cpdlc_downElementIDs;           /* BIT_STRING */
+static int hf_atn_cpdlc_protectedstartDownmessage;  /* ProtectedStartDownMessage */
+static int hf_atn_cpdlc_send;                     /* ProtectedDownlinkMessage */
+static int hf_atn_cpdlc_protectedmode;            /* ProtectedMode */
+static int hf_atn_cpdlc_protecteddownlinkmessage;  /* ProtectedDownlinkMessage */
+static int hf_atn_cpdlc_header;                   /* ATCMessageHeader */
+static int hf_atn_cpdlc_atcuplinkmessage_messagedata;  /* ATCUplinkMessageData */
+static int hf_atn_cpdlc_atcuplinkmessagedata_elementids;  /* SEQUENCE_SIZE_1_5_OF_ATCUplinkMsgElementId */
+static int hf_atn_cpdlc_atcuplinkmessagedata_elementids_item;  /* ATCUplinkMsgElementId */
+static int hf_atn_cpdlc_atcuplinkmessagedata_constraineddata;  /* T_atcuplinkmessagedata_constraineddata */
+static int hf_atn_cpdlc_routeClearanceData;       /* SEQUENCE_SIZE_1_2_OF_RouteClearance */
+static int hf_atn_cpdlc_routeClearanceData_item;  /* RouteClearance */
+static int hf_atn_cpdlc_atcdownlinkmessage_messagedata;  /* ATCDownlinkMessageData */
+static int hf_atn_cpdlc_atcdownlinkmessagedata_elementids;  /* SEQUENCE_SIZE_1_5_OF_ATCDownlinkMsgElementId */
+static int hf_atn_cpdlc_atcdownlinkmessagedata_elementids_item;  /* ATCDownlinkMsgElementId */
+static int hf_atn_cpdlc_atcdownlinkmessagedata_constraineddata;  /* T_atcdownlinkmessagedata_constraineddata */
+static int hf_atn_cpdlc_messageIdNumber;          /* MsgIdentificationNumber */
+static int hf_atn_cpdlc_messageRefNumber;         /* MsgReferenceNumber */
+static int hf_atn_cpdlc_logicalAck;               /* LogicalAck */
+static int hf_atn_cpdlc_uM0NULL;                  /* NULL */
+static int hf_atn_cpdlc_uM1NULL;                  /* NULL */
+static int hf_atn_cpdlc_uM2NULL;                  /* NULL */
+static int hf_atn_cpdlc_uM3NULL;                  /* NULL */
+static int hf_atn_cpdlc_uM4NULL;                  /* NULL */
+static int hf_atn_cpdlc_uM5NULL;                  /* NULL */
+static int hf_atn_cpdlc_uM6Level;                 /* Level */
+static int hf_atn_cpdlc_uM7Time;                  /* Time */
+static int hf_atn_cpdlc_uM8Position;              /* Position */
+static int hf_atn_cpdlc_uM9Time;                  /* Time */
+static int hf_atn_cpdlc_uM10Position;             /* Position */
+static int hf_atn_cpdlc_uM11Time;                 /* Time */
+static int hf_atn_cpdlc_uM12Position;             /* Position */
+static int hf_atn_cpdlc_uM13TimeLevel;            /* TimeLevel */
+static int hf_atn_cpdlc_uM14PositionLevel;        /* PositionLevel */
+static int hf_atn_cpdlc_uM15TimeLevel;            /* TimeLevel */
+static int hf_atn_cpdlc_uM16PositionLevel;        /* PositionLevel */
+static int hf_atn_cpdlc_uM17TimeLevel;            /* TimeLevel */
+static int hf_atn_cpdlc_uM18PositionLevel;        /* PositionLevel */
+static int hf_atn_cpdlc_uM19Level;                /* Level */
+static int hf_atn_cpdlc_uM20Level;                /* Level */
+static int hf_atn_cpdlc_uM21TimeLevel;            /* TimeLevel */
+static int hf_atn_cpdlc_uM22PositionLevel;        /* PositionLevel */
+static int hf_atn_cpdlc_uM23Level;                /* Level */
+static int hf_atn_cpdlc_uM24TimeLevel;            /* TimeLevel */
+static int hf_atn_cpdlc_uM25PositionLevel;        /* PositionLevel */
+static int hf_atn_cpdlc_uM26LevelTime;            /* LevelTime */
+static int hf_atn_cpdlc_uM27LevelPosition;        /* LevelPosition */
+static int hf_atn_cpdlc_uM28LevelTime;            /* LevelTime */
+static int hf_atn_cpdlc_uM29LevelPosition;        /* LevelPosition */
+static int hf_atn_cpdlc_uM30LevelLevel;           /* LevelLevel */
+static int hf_atn_cpdlc_uM31LevelLevel;           /* LevelLevel */
+static int hf_atn_cpdlc_uM32LevelLevel;           /* LevelLevel */
+static int hf_atn_cpdlc_uM33NULL;                 /* NULL */
+static int hf_atn_cpdlc_uM34Level;                /* Level */
+static int hf_atn_cpdlc_uM35Level;                /* Level */
+static int hf_atn_cpdlc_uM36Level;                /* Level */
+static int hf_atn_cpdlc_uM37Level;                /* Level */
+static int hf_atn_cpdlc_uM38Level;                /* Level */
+static int hf_atn_cpdlc_uM39Level;                /* Level */
+static int hf_atn_cpdlc_uM40NULL;                 /* NULL */
+static int hf_atn_cpdlc_uM41NULL;                 /* NULL */
+static int hf_atn_cpdlc_uM42PositionLevel;        /* PositionLevel */
+static int hf_atn_cpdlc_uM43PositionLevel;        /* PositionLevel */
+static int hf_atn_cpdlc_uM44PositionLevel;        /* PositionLevel */
+static int hf_atn_cpdlc_uM45PositionLevel;        /* PositionLevel */
+static int hf_atn_cpdlc_uM46PositionLevel;        /* PositionLevel */
+static int hf_atn_cpdlc_uM47PositionLevel;        /* PositionLevel */
+static int hf_atn_cpdlc_uM48PositionLevel;        /* PositionLevel */
+static int hf_atn_cpdlc_uM49PositionLevel;        /* PositionLevel */
+static int hf_atn_cpdlc_uM50PositionLevelLevel;   /* PositionLevelLevel */
+static int hf_atn_cpdlc_uM51PositionTime;         /* PositionTime */
+static int hf_atn_cpdlc_uM52PositionTime;         /* PositionTime */
+static int hf_atn_cpdlc_uM53PositionTime;         /* PositionTime */
+static int hf_atn_cpdlc_uM54PositionTimeTime;     /* PositionTimeTime */
+static int hf_atn_cpdlc_uM55PositionSpeed;        /* PositionSpeed */
+static int hf_atn_cpdlc_uM56PositionSpeed;        /* PositionSpeed */
+static int hf_atn_cpdlc_uM57PositionSpeed;        /* PositionSpeed */
+static int hf_atn_cpdlc_uM58PositionTimeLevel;    /* PositionTimeLevel */
+static int hf_atn_cpdlc_uM59PositionTimeLevel;    /* PositionTimeLevel */
+static int hf_atn_cpdlc_uM60PositionTimeLevel;    /* PositionTimeLevel */
+static int hf_atn_cpdlc_uM61PositionLevelSpeed;   /* PositionLevelSpeed */
+static int hf_atn_cpdlc_uM62TimePositionLevel;    /* TimePositionLevel */
+static int hf_atn_cpdlc_uM63TimePositionLevelSpeed;  /* TimePositionLevelSpeed */
+static int hf_atn_cpdlc_uM64DistanceSpecifiedDirection;  /* DistanceSpecifiedDirection */
+static int hf_atn_cpdlc_uM65PositionDistanceSpecifiedDirection;  /* PositionDistanceSpecifiedDirection */
+static int hf_atn_cpdlc_uM66TimeDistanceSpecifiedDirection;  /* TimeDistanceSpecifiedDirection */
+static int hf_atn_cpdlc_uM67NULL;                 /* NULL */
+static int hf_atn_cpdlc_uM68Position;             /* Position */
+static int hf_atn_cpdlc_uM69Time;                 /* Time */
+static int hf_atn_cpdlc_uM70Position;             /* Position */
+static int hf_atn_cpdlc_uM71Time;                 /* Time */
+static int hf_atn_cpdlc_uM72NULL;                 /* NULL */
+static int hf_atn_cpdlc_uM73DepartureClearance;   /* DepartureClearance */
+static int hf_atn_cpdlc_uM74Position;             /* Position */
+static int hf_atn_cpdlc_uM75Position;             /* Position */
+static int hf_atn_cpdlc_uM76TimePosition;         /* TimePosition */
+static int hf_atn_cpdlc_uM77PositionPosition;     /* PositionPosition */
+static int hf_atn_cpdlc_uM78LevelPosition;        /* LevelPosition */
+static int hf_atn_cpdlc_uM79PositionRouteClearance;  /* PositionRouteClearanceIndex */
+static int hf_atn_cpdlc_uM80RouteClearance;       /* RouteClearanceIndex */
+static int hf_atn_cpdlc_uM81ProcedureName;        /* ProcedureName */
+static int hf_atn_cpdlc_uM82DistanceSpecifiedDirection;  /* DistanceSpecifiedDirection */
+static int hf_atn_cpdlc_uM83PositionRouteClearance;  /* PositionRouteClearanceIndex */
+static int hf_atn_cpdlc_uM84PositionProcedureName;  /* PositionProcedureName */
+static int hf_atn_cpdlc_uM85RouteClearance;       /* RouteClearanceIndex */
+static int hf_atn_cpdlc_uM86PositionRouteClearance;  /* PositionRouteClearanceIndex */
+static int hf_atn_cpdlc_uM87Position;             /* Position */
+static int hf_atn_cpdlc_uM88PositionPosition;     /* PositionPosition */
+static int hf_atn_cpdlc_uM89TimePosition;         /* TimePosition */
+static int hf_atn_cpdlc_uM90LevelPosition;        /* LevelPosition */
+static int hf_atn_cpdlc_uM91HoldClearance;        /* HoldClearance */
+static int hf_atn_cpdlc_uM92PositionLevel;        /* PositionLevel */
+static int hf_atn_cpdlc_uM93Time;                 /* Time */
+static int hf_atn_cpdlc_uM94DirectionDegrees;     /* DirectionDegrees */
+static int hf_atn_cpdlc_uM95DirectionDegrees;     /* DirectionDegrees */
+static int hf_atn_cpdlc_uM96NULL;                 /* NULL */
+static int hf_atn_cpdlc_uM97PositionDegrees;      /* PositionDegrees */
+static int hf_atn_cpdlc_uM98DirectionDegrees;     /* DirectionDegrees */
+static int hf_atn_cpdlc_uM99ProcedureName;        /* ProcedureName */
+static int hf_atn_cpdlc_uM100TimeSpeed;           /* TimeSpeed */
+static int hf_atn_cpdlc_uM101PositionSpeed;       /* PositionSpeed */
+static int hf_atn_cpdlc_uM102LevelSpeed;          /* LevelSpeed */
+static int hf_atn_cpdlc_uM103TimeSpeedSpeed;      /* TimeSpeedSpeed */
+static int hf_atn_cpdlc_uM104PositionSpeedSpeed;  /* PositionSpeedSpeed */
+static int hf_atn_cpdlc_uM105LevelSpeedSpeed;     /* LevelSpeedSpeed */
+static int hf_atn_cpdlc_uM106Speed;               /* Speed */
+static int hf_atn_cpdlc_uM107NULL;                /* NULL */
+static int hf_atn_cpdlc_uM108Speed;               /* Speed */
+static int hf_atn_cpdlc_uM109Speed;               /* Speed */
+static int hf_atn_cpdlc_uM110SpeedSpeed;          /* SpeedSpeed */
+static int hf_atn_cpdlc_uM111Speed;               /* Speed */
+static int hf_atn_cpdlc_uM112Speed;               /* Speed */
+static int hf_atn_cpdlc_uM113Speed;               /* Speed */
+static int hf_atn_cpdlc_uM114Speed;               /* Speed */
+static int hf_atn_cpdlc_uM115Speed;               /* Speed */
+static int hf_atn_cpdlc_uM116NULL;                /* NULL */
+static int hf_atn_cpdlc_uM117UnitNameFrequency;   /* UnitNameFrequency */
+static int hf_atn_cpdlc_uM118PositionUnitNameFrequency;  /* PositionUnitNameFrequency */
+static int hf_atn_cpdlc_uM119TimeUnitNameFrequency;  /* TimeUnitNameFrequency */
+static int hf_atn_cpdlc_uM120UnitNameFrequency;   /* UnitNameFrequency */
+static int hf_atn_cpdlc_uM121PositionUnitNameFrequency;  /* PositionUnitNameFrequency */
+static int hf_atn_cpdlc_uM122TimeUnitNameFrequency;  /* TimeUnitNameFrequency */
+static int hf_atn_cpdlc_uM123Code;                /* Code */
+static int hf_atn_cpdlc_uM124NULL;                /* NULL */
+static int hf_atn_cpdlc_uM125NULL;                /* NULL */
+static int hf_atn_cpdlc_uM126NULL;                /* NULL */
+static int hf_atn_cpdlc_uM127NULL;                /* NULL */
+static int hf_atn_cpdlc_uM128Level;               /* Level */
+static int hf_atn_cpdlc_uM129Level;               /* Level */
+static int hf_atn_cpdlc_uM130Position;            /* Position */
+static int hf_atn_cpdlc_uM131NULL;                /* NULL */
+static int hf_atn_cpdlc_uM132NULL;                /* NULL */
+static int hf_atn_cpdlc_uM133NULL;                /* NULL */
+static int hf_atn_cpdlc_uM134SpeedTypeSpeedTypeSpeedType;  /* SpeedTypeSpeedTypeSpeedType */
+static int hf_atn_cpdlc_uM135NULL;                /* NULL */
+static int hf_atn_cpdlc_uM136NULL;                /* NULL */
+static int hf_atn_cpdlc_uM137NULL;                /* NULL */
+static int hf_atn_cpdlc_uM138NULL;                /* NULL */
+static int hf_atn_cpdlc_uM139NULL;                /* NULL */
+static int hf_atn_cpdlc_uM140NULL;                /* NULL */
+static int hf_atn_cpdlc_uM141NULL;                /* NULL */
+static int hf_atn_cpdlc_uM142NULL;                /* NULL */
+static int hf_atn_cpdlc_uM143NULL;                /* NULL */
+static int hf_atn_cpdlc_uM144NULL;                /* NULL */
+static int hf_atn_cpdlc_uM145NULL;                /* NULL */
+static int hf_atn_cpdlc_uM146NULL;                /* NULL */
+static int hf_atn_cpdlc_uM147NULL;                /* NULL */
+static int hf_atn_cpdlc_uM148Level;               /* Level */
+static int hf_atn_cpdlc_uM149LevelPosition;       /* LevelPosition */
+static int hf_atn_cpdlc_uM150LevelTime;           /* LevelTime */
+static int hf_atn_cpdlc_uM151Speed;               /* Speed */
+static int hf_atn_cpdlc_uM152DistanceSpecifiedDirection;  /* DistanceSpecifiedDirection */
+static int hf_atn_cpdlc_uM153Altimeter;           /* Altimeter */
+static int hf_atn_cpdlc_uM154NULL;                /* NULL */
+static int hf_atn_cpdlc_uM155Position;            /* Position */
+static int hf_atn_cpdlc_uM156NULL;                /* NULL */
+static int hf_atn_cpdlc_uM157Frequency;           /* Frequency */
+static int hf_atn_cpdlc_uM158AtisCode;            /* ATISCode */
+static int hf_atn_cpdlc_uM159ErrorInformation;    /* ErrorInformation */
+static int hf_atn_cpdlc_uM160Facility;            /* Facility */
+static int hf_atn_cpdlc_uM161NULL;                /* NULL */
+static int hf_atn_cpdlc_uM162NULL;                /* NULL */
+static int hf_atn_cpdlc_uM163FacilityDesignation;  /* FacilityDesignation */
+static int hf_atn_cpdlc_uM164NULL;                /* NULL */
+static int hf_atn_cpdlc_uM165NULL;                /* NULL */
+static int hf_atn_cpdlc_uM166TrafficType;         /* TrafficType */
+static int hf_atn_cpdlc_uM167NULL;                /* NULL */
+static int hf_atn_cpdlc_uM168NULL;                /* NULL */
+static int hf_atn_cpdlc_uM169FreeText;            /* FreeText */
+static int hf_atn_cpdlc_uM170FreeText;            /* FreeText */
+static int hf_atn_cpdlc_uM171VerticalRate;        /* VerticalRate */
+static int hf_atn_cpdlc_uM172VerticalRate;        /* VerticalRate */
+static int hf_atn_cpdlc_uM173VerticalRate;        /* VerticalRate */
+static int hf_atn_cpdlc_uM174VerticalRate;        /* VerticalRate */
+static int hf_atn_cpdlc_uM175Level;               /* Level */
+static int hf_atn_cpdlc_uM176NULL;                /* NULL */
+static int hf_atn_cpdlc_uM177NULL;                /* NULL */
+static int hf_atn_cpdlc_uM178NULL;                /* NULL */
+static int hf_atn_cpdlc_uM179NULL;                /* NULL */
+static int hf_atn_cpdlc_uM180LevelLevel;          /* LevelLevel */
+static int hf_atn_cpdlc_uM181ToFromPosition;      /* ToFromPosition */
+static int hf_atn_cpdlc_uM182NULL;                /* NULL */
+static int hf_atn_cpdlc_uM183FreeText;            /* FreeText */
+static int hf_atn_cpdlc_uM184TimeToFromPosition;  /* TimeToFromPosition */
+static int hf_atn_cpdlc_uM185PositionLevel;       /* PositionLevel */
+static int hf_atn_cpdlc_uM186PositionLevel;       /* PositionLevel */
+static int hf_atn_cpdlc_uM187FreeText;            /* FreeText */
+static int hf_atn_cpdlc_uM188PositionSpeed;       /* PositionSpeed */
+static int hf_atn_cpdlc_uM189Speed;               /* Speed */
+static int hf_atn_cpdlc_uM190Degrees;             /* Degrees */
+static int hf_atn_cpdlc_uM191NULL;                /* NULL */
+static int hf_atn_cpdlc_uM192LevelTime;           /* LevelTime */
+static int hf_atn_cpdlc_uM193NULL;                /* NULL */
+static int hf_atn_cpdlc_uM194FreeText;            /* FreeText */
+static int hf_atn_cpdlc_uM195FreeText;            /* FreeText */
+static int hf_atn_cpdlc_uM196FreeText;            /* FreeText */
+static int hf_atn_cpdlc_uM197FreeText;            /* FreeText */
+static int hf_atn_cpdlc_uM198FreeText;            /* FreeText */
+static int hf_atn_cpdlc_uM199FreeText;            /* FreeText */
+static int hf_atn_cpdlc_uM200NULL;                /* NULL */
+static int hf_atn_cpdlc_uM201NULL;                /* NULL */
+static int hf_atn_cpdlc_uM202NULL;                /* NULL */
+static int hf_atn_cpdlc_uM203FreeText;            /* FreeText */
+static int hf_atn_cpdlc_uM204FreeText;            /* FreeText */
+static int hf_atn_cpdlc_uM205FreeText;            /* FreeText */
+static int hf_atn_cpdlc_uM206FreeText;            /* FreeText */
+static int hf_atn_cpdlc_uM207FreeText;            /* FreeText */
+static int hf_atn_cpdlc_uM208FreeText;            /* FreeText */
+static int hf_atn_cpdlc_uM209LevelPosition;       /* LevelPosition */
+static int hf_atn_cpdlc_uM210Position;            /* Position */
+static int hf_atn_cpdlc_uM211NULL;                /* NULL */
+static int hf_atn_cpdlc_uM212FacilityDesignationATISCode;  /* FacilityDesignationATISCode */
+static int hf_atn_cpdlc_uM213FacilityDesignationAltimeter;  /* FacilityDesignationAltimeter */
+static int hf_atn_cpdlc_uM214RunwayRVR;           /* RunwayRVR */
+static int hf_atn_cpdlc_uM215DirectionDegrees;    /* DirectionDegrees */
+static int hf_atn_cpdlc_uM216NULL;                /* NULL */
+static int hf_atn_cpdlc_uM217NULL;                /* NULL */
+static int hf_atn_cpdlc_uM218NULL;                /* NULL */
+static int hf_atn_cpdlc_uM219Level;               /* Level */
+static int hf_atn_cpdlc_uM220Level;               /* Level */
+static int hf_atn_cpdlc_uM221Degrees;             /* Degrees */
+static int hf_atn_cpdlc_uM222NULL;                /* NULL */
+static int hf_atn_cpdlc_uM223NULL;                /* NULL */
+static int hf_atn_cpdlc_uM224NULL;                /* NULL */
+static int hf_atn_cpdlc_uM225NULL;                /* NULL */
+static int hf_atn_cpdlc_uM226Time;                /* Time */
+static int hf_atn_cpdlc_uM227NULL;                /* NULL */
+static int hf_atn_cpdlc_uM228Position;            /* Position */
+static int hf_atn_cpdlc_uM229NULL;                /* NULL */
+static int hf_atn_cpdlc_uM230NULL;                /* NULL */
+static int hf_atn_cpdlc_uM231NULL;                /* NULL */
+static int hf_atn_cpdlc_uM232NULL;                /* NULL */
+static int hf_atn_cpdlc_uM233NULL;                /* NULL */
+static int hf_atn_cpdlc_uM234NULL;                /* NULL */
+static int hf_atn_cpdlc_uM235NULL;                /* NULL */
+static int hf_atn_cpdlc_uM236NULL;                /* NULL */
+static int hf_atn_cpdlc_uM237NULL;                /* NULL */
+static int hf_atn_cpdlc_dM0NULL;                  /* NULL */
+static int hf_atn_cpdlc_dM1NULL;                  /* NULL */
+static int hf_atn_cpdlc_dM2NULL;                  /* NULL */
+static int hf_atn_cpdlc_dM3NULL;                  /* NULL */
+static int hf_atn_cpdlc_dM4NULL;                  /* NULL */
+static int hf_atn_cpdlc_dM5NULL;                  /* NULL */
+static int hf_atn_cpdlc_dM6Level;                 /* Level */
+static int hf_atn_cpdlc_dM7LevelLevel;            /* LevelLevel */
+static int hf_atn_cpdlc_dM8Level;                 /* Level */
+static int hf_atn_cpdlc_dM9Level;                 /* Level */
+static int hf_atn_cpdlc_dM10Level;                /* Level */
+static int hf_atn_cpdlc_dM11PositionLevel;        /* PositionLevel */
+static int hf_atn_cpdlc_dM12PositionLevel;        /* PositionLevel */
+static int hf_atn_cpdlc_dM13TimeLevel;            /* TimeLevel */
+static int hf_atn_cpdlc_dM14TimeLevel;            /* TimeLevel */
+static int hf_atn_cpdlc_dM15DistanceSpecifiedDirection;  /* DistanceSpecifiedDirection */
+static int hf_atn_cpdlc_dM16PositionDistanceSpecifiedDirection;  /* PositionDistanceSpecifiedDirection */
+static int hf_atn_cpdlc_dM17TimeDistanceSpecifiedDirection;  /* TimeDistanceSpecifiedDirection */
+static int hf_atn_cpdlc_dM18Speed;                /* Speed */
+static int hf_atn_cpdlc_dM19SpeedSpeed;           /* SpeedSpeed */
+static int hf_atn_cpdlc_dM20NULL;                 /* NULL */
+static int hf_atn_cpdlc_dM21Frequency;            /* Frequency */
+static int hf_atn_cpdlc_dM22Position;             /* Position */
+static int hf_atn_cpdlc_dM23ProcedureName;        /* ProcedureName */
+static int hf_atn_cpdlc_dM24RouteClearance;       /* RouteClearanceIndex */
+static int hf_atn_cpdlc_dM25ClearanceType;        /* ClearanceType */
+static int hf_atn_cpdlc_dM26PositionRouteClearance;  /* PositionRouteClearanceIndex */
+static int hf_atn_cpdlc_dM27DistanceSpecifiedDirection;  /* DistanceSpecifiedDirection */
+static int hf_atn_cpdlc_dM28Level;                /* Level */
+static int hf_atn_cpdlc_dM29Level;                /* Level */
+static int hf_atn_cpdlc_dM30Level;                /* Level */
+static int hf_atn_cpdlc_dM31Position;             /* Position */
+static int hf_atn_cpdlc_dM32Level;                /* Level */
+static int hf_atn_cpdlc_dM33Position;             /* Position */
+static int hf_atn_cpdlc_dM34Speed;                /* Speed */
+static int hf_atn_cpdlc_dM35Degrees;              /* Degrees */
+static int hf_atn_cpdlc_dM36Degrees;              /* Degrees */
+static int hf_atn_cpdlc_dM37Level;                /* Level */
+static int hf_atn_cpdlc_dM38Level;                /* Level */
+static int hf_atn_cpdlc_dM39Speed;                /* Speed */
+static int hf_atn_cpdlc_dM40RouteClearance;       /* RouteClearanceIndex */
+static int hf_atn_cpdlc_dM41NULL;                 /* NULL */
+static int hf_atn_cpdlc_dM42Position;             /* Position */
+static int hf_atn_cpdlc_dM43Time;                 /* Time */
+static int hf_atn_cpdlc_dM44Position;             /* Position */
+static int hf_atn_cpdlc_dM45Position;             /* Position */
+static int hf_atn_cpdlc_dM46Time;                 /* Time */
+static int hf_atn_cpdlc_dM47Code;                 /* Code */
+static int hf_atn_cpdlc_dM48PositionReport;       /* PositionReport */
+static int hf_atn_cpdlc_dM49Speed;                /* Speed */
+static int hf_atn_cpdlc_dM50SpeedSpeed;           /* SpeedSpeed */
+static int hf_atn_cpdlc_dM51NULL;                 /* NULL */
+static int hf_atn_cpdlc_dM52NULL;                 /* NULL */
+static int hf_atn_cpdlc_dM53NULL;                 /* NULL */
+static int hf_atn_cpdlc_dM54Level;                /* Level */
+static int hf_atn_cpdlc_dM55NULL;                 /* NULL */
+static int hf_atn_cpdlc_dM56NULL;                 /* NULL */
+static int hf_atn_cpdlc_dM57RemainingFuelPersonsOnBoard;  /* RemainingFuelPersonsOnBoard */
+static int hf_atn_cpdlc_dM58NULL;                 /* NULL */
+static int hf_atn_cpdlc_dM59PositionRouteClearance;  /* PositionRouteClearanceIndex */
+static int hf_atn_cpdlc_dM60DistanceSpecifiedDirection;  /* DistanceSpecifiedDirection */
+static int hf_atn_cpdlc_dM61Level;                /* Level */
+static int hf_atn_cpdlc_dM62ErrorInformation;     /* ErrorInformation */
+static int hf_atn_cpdlc_dM63NULL;                 /* NULL */
+static int hf_atn_cpdlc_dM64FacilityDesignation;  /* FacilityDesignation */
+static int hf_atn_cpdlc_dM65NULL;                 /* NULL */
+static int hf_atn_cpdlc_dM66NULL;                 /* NULL */
+static int hf_atn_cpdlc_dM67FreeText;             /* FreeText */
+static int hf_atn_cpdlc_dM68FreeText;             /* FreeText */
+static int hf_atn_cpdlc_dM69NULL;                 /* NULL */
+static int hf_atn_cpdlc_dM70Degrees;              /* Degrees */
+static int hf_atn_cpdlc_dM71Degrees;              /* Degrees */
+static int hf_atn_cpdlc_dM72Level;                /* Level */
+static int hf_atn_cpdlc_dM73Versionnumber;        /* VersionNumber */
+static int hf_atn_cpdlc_dM74NULL;                 /* NULL */
+static int hf_atn_cpdlc_dM75NULL;                 /* NULL */
+static int hf_atn_cpdlc_dM76LevelLevel;           /* LevelLevel */
+static int hf_atn_cpdlc_dM77LevelLevel;           /* LevelLevel */
+static int hf_atn_cpdlc_dM78TimeDistanceToFromPosition;  /* TimeDistanceToFromPosition */
+static int hf_atn_cpdlc_dM79AtisCode;             /* ATISCode */
+static int hf_atn_cpdlc_dM80DistanceSpecifiedDirection;  /* DistanceSpecifiedDirection */
+static int hf_atn_cpdlc_dM81LevelTime;            /* LevelTime */
+static int hf_atn_cpdlc_dM82Level;                /* Level */
+static int hf_atn_cpdlc_dM83SpeedTime;            /* SpeedTime */
+static int hf_atn_cpdlc_dM84Speed;                /* Speed */
+static int hf_atn_cpdlc_dM85DistanceSpecifiedDirectionTime;  /* DistanceSpecifiedDirectionTime */
+static int hf_atn_cpdlc_dM86DistanceSpecifiedDirection;  /* DistanceSpecifiedDirection */
+static int hf_atn_cpdlc_dM87Level;                /* Level */
+static int hf_atn_cpdlc_dM88Level;                /* Level */
+static int hf_atn_cpdlc_dM89UnitnameFrequency;    /* UnitNameFrequency */
+static int hf_atn_cpdlc_dM90FreeText;             /* FreeText */
+static int hf_atn_cpdlc_dM91FreeText;             /* FreeText */
+static int hf_atn_cpdlc_dM92FreeText;             /* FreeText */
+static int hf_atn_cpdlc_dM93FreeText;             /* FreeText */
+static int hf_atn_cpdlc_dM94FreeText;             /* FreeText */
+static int hf_atn_cpdlc_dM95FreeText;             /* FreeText */
+static int hf_atn_cpdlc_dM96FreeText;             /* FreeText */
+static int hf_atn_cpdlc_dM97FreeText;             /* FreeText */
+static int hf_atn_cpdlc_dM98FreeText;             /* FreeText */
+static int hf_atn_cpdlc_dM99NULL;                 /* NULL */
+static int hf_atn_cpdlc_dM100NULL;                /* NULL */
+static int hf_atn_cpdlc_dM101NULL;                /* NULL */
+static int hf_atn_cpdlc_dM102NULL;                /* NULL */
+static int hf_atn_cpdlc_dM103NULL;                /* NULL */
+static int hf_atn_cpdlc_dM104PositionTime;        /* PositionTime */
+static int hf_atn_cpdlc_dM105Airport;             /* Airport */
+static int hf_atn_cpdlc_dM106Level;               /* Level */
+static int hf_atn_cpdlc_dM107NULL;                /* NULL */
+static int hf_atn_cpdlc_dM108NULL;                /* NULL */
+static int hf_atn_cpdlc_dM109Time;                /* Time */
+static int hf_atn_cpdlc_dM110Position;            /* Position */
+static int hf_atn_cpdlc_dM111TimePosition;        /* TimePosition */
+static int hf_atn_cpdlc_dM112NULL;                /* NULL */
+static int hf_atn_cpdlc_dM113SpeedTypeSpeedTypeSpeedTypeSpeed;  /* SpeedTypeSpeedTypeSpeedTypeSpeed */
+static int hf_atn_cpdlc_altimeterEnglish;         /* AltimeterEnglish */
+static int hf_atn_cpdlc_altimeterMetric;          /* AltimeterMetric */
+static int hf_atn_cpdlc_position;                 /* Position */
+static int hf_atn_cpdlc_aTWDistance;              /* ATWDistance */
+static int hf_atn_cpdlc_speed;                    /* Speed */
+static int hf_atn_cpdlc_aTWLevels;                /* ATWLevelSequence */
+static int hf_atn_cpdlc_atw;                      /* ATWLevelTolerance */
+static int hf_atn_cpdlc_level;                    /* Level */
+static int hf_atn_cpdlc_ATWLevelSequence_item;    /* ATWLevel */
+static int hf_atn_cpdlc_atwDistanceTolerance;     /* ATWDistanceTolerance */
+static int hf_atn_cpdlc_distance;                 /* Distance */
+static int hf_atn_cpdlc_Code_item;                /* CodeOctalDigit */
+static int hf_atn_cpdlc_time;                     /* Time */
+static int hf_atn_cpdlc_timeTolerance;            /* TimeTolerance */
+static int hf_atn_cpdlc_year;                     /* Year */
+static int hf_atn_cpdlc_month;                    /* Month */
+static int hf_atn_cpdlc_day;                      /* Day */
+static int hf_atn_cpdlc_date;                     /* Date */
+static int hf_atn_cpdlc_timehhmmss;               /* Timehhmmss */
+static int hf_atn_cpdlc_degreesMagnetic;          /* DegreesMagnetic */
+static int hf_atn_cpdlc_degreesTrue;              /* DegreesTrue */
+static int hf_atn_cpdlc_aircraftFlightIdentification;  /* AircraftFlightIdentification */
+static int hf_atn_cpdlc_clearanceLimit;           /* Position */
+static int hf_atn_cpdlc_flightInformation;        /* FlightInformation */
+static int hf_atn_cpdlc_furtherInstructions;      /* FurtherInstructions */
+static int hf_atn_cpdlc_direction;                /* Direction */
+static int hf_atn_cpdlc_degrees;                  /* Degrees */
+static int hf_atn_cpdlc_distanceNm;               /* DistanceNm */
+static int hf_atn_cpdlc_distanceKm;               /* DistanceKm */
+static int hf_atn_cpdlc_distanceSpecifiedNm;      /* DistanceSpecifiedNm */
+static int hf_atn_cpdlc_distanceSpecifiedKm;      /* DistanceSpecifiedKm */
+static int hf_atn_cpdlc_distanceSpecified;        /* DistanceSpecified */
+static int hf_atn_cpdlc_distanceSpecifiedDirection;  /* DistanceSpecifiedDirection */
+static int hf_atn_cpdlc_noFacility;               /* NULL */
+static int hf_atn_cpdlc_facilityDesignation;      /* FacilityDesignation */
+static int hf_atn_cpdlc_altimeter;                /* Altimeter */
+static int hf_atn_cpdlc_aTISCode;                 /* ATISCode */
+static int hf_atn_cpdlc_fixname_name;             /* Fix */
+static int hf_atn_cpdlc_latlon;                   /* LatitudeLongitude */
+static int hf_atn_cpdlc_routeOfFlight;            /* RouteInformation */
+static int hf_atn_cpdlc_levelsOfFlight;           /* LevelsOfFlight */
+static int hf_atn_cpdlc_routeAndLevels;           /* RouteAndLevels */
+static int hf_atn_cpdlc_frequencyhf;              /* Frequencyhf */
+static int hf_atn_cpdlc_frequencyvhf;             /* Frequencyvhf */
+static int hf_atn_cpdlc_frequencyuhf;             /* Frequencyuhf */
+static int hf_atn_cpdlc_frequencysatchannel;      /* Frequencysatchannel */
+static int hf_atn_cpdlc_code;                     /* Code */
+static int hf_atn_cpdlc_frequencyDeparture;       /* UnitNameFrequency */
+static int hf_atn_cpdlc_clearanceExpiryTime;      /* Time */
+static int hf_atn_cpdlc_airportDeparture;         /* Airport */
+static int hf_atn_cpdlc_airportDestination;       /* Airport */
+static int hf_atn_cpdlc_timeDeparture;            /* TimeDeparture */
+static int hf_atn_cpdlc_runwayDeparture;          /* Runway */
+static int hf_atn_cpdlc_revisionNumber;           /* RevisionNumber */
+static int hf_atn_cpdlc_holdatwaypointspeedlow;   /* Speed */
+static int hf_atn_cpdlc_aTWlevel;                 /* ATWLevel */
+static int hf_atn_cpdlc_holdatwaypointspeedhigh;  /* Speed */
+static int hf_atn_cpdlc_eFCtime;                  /* Time */
+static int hf_atn_cpdlc_legtype;                  /* LegType */
+static int hf_atn_cpdlc_legType;                  /* LegType */
+static int hf_atn_cpdlc_fromSelection;            /* InterceptCourseFromSelection */
+static int hf_atn_cpdlc_publishedIdentifier;      /* PublishedIdentifier */
+static int hf_atn_cpdlc_latitudeLongitude;        /* LatitudeLongitude */
+static int hf_atn_cpdlc_placeBearingPlaceBearing;  /* PlaceBearingPlaceBearing */
+static int hf_atn_cpdlc_placeBearingDistance;     /* PlaceBearingDistance */
+static int hf_atn_cpdlc_latitudeType;             /* LatitudeType */
+static int hf_atn_cpdlc_latitudeDirection;        /* LatitudeDirection */
+static int hf_atn_cpdlc_latitudeWholeDegrees;     /* LatitudeWholeDegrees */
+static int hf_atn_cpdlc_minutesLatLon;            /* MinutesLatLon */
+static int hf_atn_cpdlc_latlonWholeMinutes;       /* LatLonWholeMinutes */
+static int hf_atn_cpdlc_secondsLatLon;            /* SecondsLatLon */
+static int hf_atn_cpdlc_latitude;                 /* Latitude */
+static int hf_atn_cpdlc_longitude;                /* Longitude */
+static int hf_atn_cpdlc_latitudeDegrees;          /* LatitudeDegrees */
+static int hf_atn_cpdlc_latitudeDegreesMinutes;   /* LatitudeDegreesMinutes */
+static int hf_atn_cpdlc_latitudeDMS;              /* LatitudeDegreesMinutesSeconds */
+static int hf_atn_cpdlc_latitudeReportingPoints;  /* LatitudeReportingPoints */
+static int hf_atn_cpdlc_longitudeReportingPoints;  /* LongitudeReportingPoints */
+static int hf_atn_cpdlc_legDistanceEnglish;       /* LegDistanceEnglish */
+static int hf_atn_cpdlc_legDistanceMetric;        /* LegDistanceMetric */
+static int hf_atn_cpdlc_legDistance;              /* LegDistance */
+static int hf_atn_cpdlc_legTime;                  /* LegTime */
+static int hf_atn_cpdlc_singleLevel;              /* LevelType */
+static int hf_atn_cpdlc_blockLevel;               /* SEQUENCE_SIZE_2_OF_LevelType */
+static int hf_atn_cpdlc_blockLevel_item;          /* LevelType */
+static int hf_atn_cpdlc_LevelLevel_item;          /* Level */
+static int hf_atn_cpdlc_procedureName;            /* ProcedureName */
+static int hf_atn_cpdlc_levelProcedureName;       /* LevelProcedureName */
+static int hf_atn_cpdlc_levelspeed_speed;         /* SpeedSpeed */
+static int hf_atn_cpdlc_speeds;                   /* SpeedSpeed */
+static int hf_atn_cpdlc_levelFeet;                /* LevelFeet */
+static int hf_atn_cpdlc_levelMeters;              /* LevelMeters */
+static int hf_atn_cpdlc_levelFlightLevel;         /* LevelFlightLevel */
+static int hf_atn_cpdlc_levelFlightLevelMetric;   /* LevelFlightLevelMetric */
+static int hf_atn_cpdlc_longitudeType;            /* LongitudeType */
+static int hf_atn_cpdlc_longitudeDirection;       /* LongitudeDirection */
+static int hf_atn_cpdlc_longitudeWholeDegrees;    /* LongitudeWholeDegrees */
+static int hf_atn_cpdlc_latLonWholeMinutes;       /* LatLonWholeMinutes */
+static int hf_atn_cpdlc_longitudeDegrees;         /* LongitudeDegrees */
+static int hf_atn_cpdlc_longitudeDegreesMinutes;  /* LongitudeDegreesMinutes */
+static int hf_atn_cpdlc_longitudeDMS;             /* LongitudeDegreesMinutesSeconds */
+static int hf_atn_cpdlc_navaid_name;              /* NavaidName */
+static int hf_atn_cpdlc_PlaceBearingPlaceBearing_item;  /* PlaceBearing */
+static int hf_atn_cpdlc_fixName;                  /* FixName */
+static int hf_atn_cpdlc_navaid;                   /* Navaid */
+static int hf_atn_cpdlc_airport;                  /* Airport */
+static int hf_atn_cpdlc_levels;                   /* LevelLevel */
+static int hf_atn_cpdlc_positionlevel;            /* PositionLevel */
+static int hf_atn_cpdlc_PositionPosition_item;    /* Position */
+static int hf_atn_cpdlc_positioncurrent;          /* Position */
+static int hf_atn_cpdlc_timeatpositioncurrent;    /* Time */
+static int hf_atn_cpdlc_fixnext;                  /* Position */
+static int hf_atn_cpdlc_timeetaatfixnext;         /* Time */
+static int hf_atn_cpdlc_fixnextplusone;           /* Position */
+static int hf_atn_cpdlc_timeetaatdestination;     /* Time */
+static int hf_atn_cpdlc_remainingFuel;            /* RemainingFuel */
+static int hf_atn_cpdlc_temperature;              /* Temperature */
+static int hf_atn_cpdlc_winds;                    /* Winds */
+static int hf_atn_cpdlc_turbulence;               /* Turbulence */
+static int hf_atn_cpdlc_icing;                    /* Icing */
+static int hf_atn_cpdlc_speedground;              /* SpeedGround */
+static int hf_atn_cpdlc_verticalChange;           /* VerticalChange */
+static int hf_atn_cpdlc_trackAngle;               /* Degrees */
+static int hf_atn_cpdlc_heading;                  /* Degrees */
+static int hf_atn_cpdlc_humidity;                 /* Humidity */
+static int hf_atn_cpdlc_reportedWaypointPosition;  /* Position */
+static int hf_atn_cpdlc_reportedWaypointTime;     /* Time */
+static int hf_atn_cpdlc_reportedWaypointLevel;    /* Level */
+static int hf_atn_cpdlc_routeClearanceIndex;      /* RouteClearanceIndex */
+static int hf_atn_cpdlc_positionTime;             /* PositionTime */
+static int hf_atn_cpdlc_times;                    /* TimeTime */
+static int hf_atn_cpdlc_unitname;                 /* UnitName */
+static int hf_atn_cpdlc_frequency;                /* Frequency */
+static int hf_atn_cpdlc_type;                     /* ProcedureType */
+static int hf_atn_cpdlc_procedure;                /* Procedure */
+static int hf_atn_cpdlc_transition;               /* ProcedureTransition */
+static int hf_atn_cpdlc_personsOnBoard;           /* PersonsOnBoard */
+static int hf_atn_cpdlc_latLonReportingPoints;    /* LatLonReportingPoints */
+static int hf_atn_cpdlc_degreeIncrement;          /* DegreeIncrement */
+static int hf_atn_cpdlc_procedureDeparture;       /* ProcedureName */
+static int hf_atn_cpdlc_runwayArrival;            /* Runway */
+static int hf_atn_cpdlc_procedureApproach;        /* ProcedureName */
+static int hf_atn_cpdlc_procedureArrival;         /* ProcedureName */
+static int hf_atn_cpdlc_routeInformations;        /* SEQUENCE_SIZE_1_128_OF_RouteInformation */
+static int hf_atn_cpdlc_routeInformations_item;   /* RouteInformation */
+static int hf_atn_cpdlc_routeInformationAdditional;  /* RouteInformationAdditional */
+static int hf_atn_cpdlc_aTSRouteDesignator;       /* ATSRouteDesignator */
+static int hf_atn_cpdlc_aTWAlongTrackWaypoints;   /* SEQUENCE_SIZE_1_8_OF_ATWAlongTrackWaypoint */
+static int hf_atn_cpdlc_aTWAlongTrackWaypoints_item;  /* ATWAlongTrackWaypoint */
+static int hf_atn_cpdlc_reportingpoints;          /* ReportingPoints */
+static int hf_atn_cpdlc_interceptCourseFroms;     /* SEQUENCE_SIZE_1_4_OF_InterceptCourseFrom */
+static int hf_atn_cpdlc_interceptCourseFroms_item;  /* InterceptCourseFrom */
+static int hf_atn_cpdlc_holdAtWaypoints;          /* SEQUENCE_SIZE_1_8_OF_Holdatwaypoint */
+static int hf_atn_cpdlc_holdAtWaypoints_item;     /* Holdatwaypoint */
+static int hf_atn_cpdlc_waypointSpeedLevels;      /* SEQUENCE_SIZE_1_32_OF_WaypointSpeedLevel */
+static int hf_atn_cpdlc_waypointSpeedLevels_item;  /* WaypointSpeedLevel */
+static int hf_atn_cpdlc_rTARequiredTimeArrivals;  /* SEQUENCE_SIZE_1_32_OF_RTARequiredTimeArrival */
+static int hf_atn_cpdlc_rTARequiredTimeArrivals_item;  /* RTARequiredTimeArrival */
+static int hf_atn_cpdlc_rTATime;                  /* RTATime */
+static int hf_atn_cpdlc_rTATolerance;             /* RTATolerance */
+static int hf_atn_cpdlc_runway_direction;         /* RunwayDirection */
+static int hf_atn_cpdlc_configuration;            /* RunwayConfiguration */
+static int hf_atn_cpdlc_runway;                   /* Runway */
+static int hf_atn_cpdlc_rVR;                      /* RVR */
+static int hf_atn_cpdlc_rVRFeet;                  /* RVRFeet */
+static int hf_atn_cpdlc_rVRMeters;                /* RVRMeters */
+static int hf_atn_cpdlc_speedIndicated;           /* SpeedIndicated */
+static int hf_atn_cpdlc_speedIndicatedMetric;     /* SpeedIndicatedMetric */
+static int hf_atn_cpdlc_speedTrue;                /* SpeedTrue */
+static int hf_atn_cpdlc_speedTrueMetric;          /* SpeedTrueMetric */
+static int hf_atn_cpdlc_speedGround;              /* SpeedGround */
+static int hf_atn_cpdlc_speedGroundMetric;        /* SpeedGroundMetric */
+static int hf_atn_cpdlc_speedMach;                /* SpeedMach */
+static int hf_atn_cpdlc_SpeedSpeed_item;          /* Speed */
+static int hf_atn_cpdlc_SpeedTypeSpeedTypeSpeedType_item;  /* SpeedType */
+static int hf_atn_cpdlc_speedTypes;               /* SpeedTypeSpeedTypeSpeedType */
+static int hf_atn_cpdlc_hours;                    /* TimeHours */
+static int hf_atn_cpdlc_minutes;                  /* TimeMinutes */
+static int hf_atn_cpdlc_timeDepartureAllocated;   /* Time */
+static int hf_atn_cpdlc_timeDepartureControlled;  /* ControlledTime */
+static int hf_atn_cpdlc_timeDepartureClearanceExpected;  /* Time */
+static int hf_atn_cpdlc_departureMinimumInterval;  /* DepartureMinimumInterval */
+static int hf_atn_cpdlc_tofrom;                   /* ToFrom */
+static int hf_atn_cpdlc_hoursminutes;             /* Time */
+static int hf_atn_cpdlc_seconds;                  /* TimeSeconds */
+static int hf_atn_cpdlc_unitName;                 /* UnitName */
+static int hf_atn_cpdlc_timeposition;             /* TimePosition */
+static int hf_atn_cpdlc_levelspeed;               /* LevelSpeed */
+static int hf_atn_cpdlc_speedspeed;               /* SpeedSpeed */
+static int hf_atn_cpdlc_TimeTime_item;            /* Time */
+static int hf_atn_cpdlc_toFrom;                   /* ToFrom */
+static int hf_atn_cpdlc_facilityName;             /* FacilityName */
+static int hf_atn_cpdlc_facilityFunction;         /* FacilityFunction */
+static int hf_atn_cpdlc_vertical_direction;       /* VerticalDirection */
+static int hf_atn_cpdlc_rate;                     /* VerticalRate */
+static int hf_atn_cpdlc_verticalRateEnglish;      /* VerticalRateEnglish */
+static int hf_atn_cpdlc_verticalRateMetric;       /* VerticalRateMetric */
+static int hf_atn_cpdlc_winds_direction;          /* WindDirection */
+static int hf_atn_cpdlc_winds_speed;              /* WindSpeed */
+static int hf_atn_cpdlc_windSpeedEnglish;         /* WindSpeedEnglish */
+static int hf_atn_cpdlc_windSpeedMetric;          /* WindSpeedMetric */
 
-/*--- Included file: packet-atn-cpdlc-hf.c ---*/
-#line 1 "./asn1/atn-cpdlc/packet-atn-cpdlc-hf.c"
-static int hf_atn_cpdlc_GroundPDUs_PDU = -1;      /* GroundPDUs */
-static int hf_atn_cpdlc_AircraftPDUs_PDU = -1;    /* AircraftPDUs */
-static int hf_atn_cpdlc_ProtectedGroundPDUs_PDU = -1;  /* ProtectedGroundPDUs */
-static int hf_atn_cpdlc_ProtectedAircraftPDUs_PDU = -1;  /* ProtectedAircraftPDUs */
-static int hf_atn_cpdlc_abortUser = -1;           /* CPDLCUserAbortReason */
-static int hf_atn_cpdlc_abortProvider = -1;       /* CPDLCProviderAbortReason */
-static int hf_atn_cpdlc_startup = -1;             /* UplinkMessage */
-static int hf_atn_cpdlc_groundpdus_send = -1;     /* ATCUplinkMessage */
-static int hf_atn_cpdlc_forward = -1;             /* ATCForwardMessage */
-static int hf_atn_cpdlc_forwardresponse = -1;     /* ATCForwardResponse */
-static int hf_atn_cpdlc_noMessage = -1;           /* NULL */
-static int hf_atn_cpdlc_aTCUplinkMessage = -1;    /* ATCUplinkMessage */
-static int hf_atn_cpdlc_startdown = -1;           /* StartDownMessage */
-static int hf_atn_cpdlc_aircraftpdus_send = -1;   /* ATCDownlinkMessage */
-static int hf_atn_cpdlc_mode = -1;                /* Mode */
-static int hf_atn_cpdlc_startDownlinkMessage = -1;  /* DownlinkMessage */
-static int hf_atn_cpdlc_aTCDownlinkMessage = -1;  /* ATCDownlinkMessage */
-static int hf_atn_cpdlc_pmcpdlcuserabortreason = -1;  /* PMCPDLCUserAbortReason */
-static int hf_atn_cpdlc_pmcpdlcproviderabortreason = -1;  /* PMCPDLCProviderAbortReason */
-static int hf_atn_cpdlc_protecteduplinkmessage = -1;  /* ProtectedUplinkMessage */
-static int hf_atn_cpdlc_algorithmIdentifier = -1;  /* AlgorithmIdentifier */
-static int hf_atn_cpdlc_protectedMessage = -1;    /* CPDLCMessage */
-static int hf_atn_cpdlc_integrityCheck = -1;      /* BIT_STRING */
-static int hf_atn_cpdlc_forwardHeader = -1;       /* ForwardHeader */
-static int hf_atn_cpdlc_forwardMessage = -1;      /* ForwardMessage */
-static int hf_atn_cpdlc_dateTime = -1;            /* DateTimeGroup */
-static int hf_atn_cpdlc_aircraftID = -1;          /* AircraftFlightIdentification */
-static int hf_atn_cpdlc_aircraftAddress = -1;     /* AircraftAddress */
-static int hf_atn_cpdlc_upElementIDs = -1;        /* BIT_STRING */
-static int hf_atn_cpdlc_downElementIDs = -1;      /* BIT_STRING */
-static int hf_atn_cpdlc_protectedstartDownmessage = -1;  /* ProtectedStartDownMessage */
-static int hf_atn_cpdlc_send = -1;                /* ProtectedDownlinkMessage */
-static int hf_atn_cpdlc_protectedmode = -1;       /* ProtectedMode */
-static int hf_atn_cpdlc_protecteddownlinkmessage = -1;  /* ProtectedDownlinkMessage */
-static int hf_atn_cpdlc_header = -1;              /* ATCMessageHeader */
-static int hf_atn_cpdlc_atcuplinkmessage_messagedata = -1;  /* ATCUplinkMessageData */
-static int hf_atn_cpdlc_atcuplinkmessagedata_elementids = -1;  /* SEQUENCE_SIZE_1_5_OF_ATCUplinkMsgElementId */
-static int hf_atn_cpdlc_atcuplinkmessagedata_elementids_item = -1;  /* ATCUplinkMsgElementId */
-static int hf_atn_cpdlc_atcuplinkmessagedata_constraineddata = -1;  /* T_atcuplinkmessagedata_constraineddata */
-static int hf_atn_cpdlc_routeClearanceData = -1;  /* SEQUENCE_SIZE_1_2_OF_RouteClearance */
-static int hf_atn_cpdlc_routeClearanceData_item = -1;  /* RouteClearance */
-static int hf_atn_cpdlc_atcdownlinkmessage_messagedata = -1;  /* ATCDownlinkMessageData */
-static int hf_atn_cpdlc_atcdownlinkmessagedata_elementids = -1;  /* SEQUENCE_SIZE_1_5_OF_ATCDownlinkMsgElementId */
-static int hf_atn_cpdlc_atcdownlinkmessagedata_elementids_item = -1;  /* ATCDownlinkMsgElementId */
-static int hf_atn_cpdlc_atcdownlinkmessagedata_constraineddata = -1;  /* T_atcdownlinkmessagedata_constraineddata */
-static int hf_atn_cpdlc_messageIdNumber = -1;     /* MsgIdentificationNumber */
-static int hf_atn_cpdlc_messageRefNumber = -1;    /* MsgReferenceNumber */
-static int hf_atn_cpdlc_logicalAck = -1;          /* LogicalAck */
-static int hf_atn_cpdlc_uM0NULL = -1;             /* NULL */
-static int hf_atn_cpdlc_uM1NULL = -1;             /* NULL */
-static int hf_atn_cpdlc_uM2NULL = -1;             /* NULL */
-static int hf_atn_cpdlc_uM3NULL = -1;             /* NULL */
-static int hf_atn_cpdlc_uM4NULL = -1;             /* NULL */
-static int hf_atn_cpdlc_uM5NULL = -1;             /* NULL */
-static int hf_atn_cpdlc_uM6Level = -1;            /* Level */
-static int hf_atn_cpdlc_uM7Time = -1;             /* Time */
-static int hf_atn_cpdlc_uM8Position = -1;         /* Position */
-static int hf_atn_cpdlc_uM9Time = -1;             /* Time */
-static int hf_atn_cpdlc_uM10Position = -1;        /* Position */
-static int hf_atn_cpdlc_uM11Time = -1;            /* Time */
-static int hf_atn_cpdlc_uM12Position = -1;        /* Position */
-static int hf_atn_cpdlc_uM13TimeLevel = -1;       /* TimeLevel */
-static int hf_atn_cpdlc_uM14PositionLevel = -1;   /* PositionLevel */
-static int hf_atn_cpdlc_uM15TimeLevel = -1;       /* TimeLevel */
-static int hf_atn_cpdlc_uM16PositionLevel = -1;   /* PositionLevel */
-static int hf_atn_cpdlc_uM17TimeLevel = -1;       /* TimeLevel */
-static int hf_atn_cpdlc_uM18PositionLevel = -1;   /* PositionLevel */
-static int hf_atn_cpdlc_uM19Level = -1;           /* Level */
-static int hf_atn_cpdlc_uM20Level = -1;           /* Level */
-static int hf_atn_cpdlc_uM21TimeLevel = -1;       /* TimeLevel */
-static int hf_atn_cpdlc_uM22PositionLevel = -1;   /* PositionLevel */
-static int hf_atn_cpdlc_uM23Level = -1;           /* Level */
-static int hf_atn_cpdlc_uM24TimeLevel = -1;       /* TimeLevel */
-static int hf_atn_cpdlc_uM25PositionLevel = -1;   /* PositionLevel */
-static int hf_atn_cpdlc_uM26LevelTime = -1;       /* LevelTime */
-static int hf_atn_cpdlc_uM27LevelPosition = -1;   /* LevelPosition */
-static int hf_atn_cpdlc_uM28LevelTime = -1;       /* LevelTime */
-static int hf_atn_cpdlc_uM29LevelPosition = -1;   /* LevelPosition */
-static int hf_atn_cpdlc_uM30LevelLevel = -1;      /* LevelLevel */
-static int hf_atn_cpdlc_uM31LevelLevel = -1;      /* LevelLevel */
-static int hf_atn_cpdlc_uM32LevelLevel = -1;      /* LevelLevel */
-static int hf_atn_cpdlc_uM33NULL = -1;            /* NULL */
-static int hf_atn_cpdlc_uM34Level = -1;           /* Level */
-static int hf_atn_cpdlc_uM35Level = -1;           /* Level */
-static int hf_atn_cpdlc_uM36Level = -1;           /* Level */
-static int hf_atn_cpdlc_uM37Level = -1;           /* Level */
-static int hf_atn_cpdlc_uM38Level = -1;           /* Level */
-static int hf_atn_cpdlc_uM39Level = -1;           /* Level */
-static int hf_atn_cpdlc_uM40NULL = -1;            /* NULL */
-static int hf_atn_cpdlc_uM41NULL = -1;            /* NULL */
-static int hf_atn_cpdlc_uM42PositionLevel = -1;   /* PositionLevel */
-static int hf_atn_cpdlc_uM43PositionLevel = -1;   /* PositionLevel */
-static int hf_atn_cpdlc_uM44PositionLevel = -1;   /* PositionLevel */
-static int hf_atn_cpdlc_uM45PositionLevel = -1;   /* PositionLevel */
-static int hf_atn_cpdlc_uM46PositionLevel = -1;   /* PositionLevel */
-static int hf_atn_cpdlc_uM47PositionLevel = -1;   /* PositionLevel */
-static int hf_atn_cpdlc_uM48PositionLevel = -1;   /* PositionLevel */
-static int hf_atn_cpdlc_uM49PositionLevel = -1;   /* PositionLevel */
-static int hf_atn_cpdlc_uM50PositionLevelLevel = -1;  /* PositionLevelLevel */
-static int hf_atn_cpdlc_uM51PositionTime = -1;    /* PositionTime */
-static int hf_atn_cpdlc_uM52PositionTime = -1;    /* PositionTime */
-static int hf_atn_cpdlc_uM53PositionTime = -1;    /* PositionTime */
-static int hf_atn_cpdlc_uM54PositionTimeTime = -1;  /* PositionTimeTime */
-static int hf_atn_cpdlc_uM55PositionSpeed = -1;   /* PositionSpeed */
-static int hf_atn_cpdlc_uM56PositionSpeed = -1;   /* PositionSpeed */
-static int hf_atn_cpdlc_uM57PositionSpeed = -1;   /* PositionSpeed */
-static int hf_atn_cpdlc_uM58PositionTimeLevel = -1;  /* PositionTimeLevel */
-static int hf_atn_cpdlc_uM59PositionTimeLevel = -1;  /* PositionTimeLevel */
-static int hf_atn_cpdlc_uM60PositionTimeLevel = -1;  /* PositionTimeLevel */
-static int hf_atn_cpdlc_uM61PositionLevelSpeed = -1;  /* PositionLevelSpeed */
-static int hf_atn_cpdlc_uM62TimePositionLevel = -1;  /* TimePositionLevel */
-static int hf_atn_cpdlc_uM63TimePositionLevelSpeed = -1;  /* TimePositionLevelSpeed */
-static int hf_atn_cpdlc_uM64DistanceSpecifiedDirection = -1;  /* DistanceSpecifiedDirection */
-static int hf_atn_cpdlc_uM65PositionDistanceSpecifiedDirection = -1;  /* PositionDistanceSpecifiedDirection */
-static int hf_atn_cpdlc_uM66TimeDistanceSpecifiedDirection = -1;  /* TimeDistanceSpecifiedDirection */
-static int hf_atn_cpdlc_uM67NULL = -1;            /* NULL */
-static int hf_atn_cpdlc_uM68Position = -1;        /* Position */
-static int hf_atn_cpdlc_uM69Time = -1;            /* Time */
-static int hf_atn_cpdlc_uM70Position = -1;        /* Position */
-static int hf_atn_cpdlc_uM71Time = -1;            /* Time */
-static int hf_atn_cpdlc_uM72NULL = -1;            /* NULL */
-static int hf_atn_cpdlc_uM73DepartureClearance = -1;  /* DepartureClearance */
-static int hf_atn_cpdlc_uM74Position = -1;        /* Position */
-static int hf_atn_cpdlc_uM75Position = -1;        /* Position */
-static int hf_atn_cpdlc_uM76TimePosition = -1;    /* TimePosition */
-static int hf_atn_cpdlc_uM77PositionPosition = -1;  /* PositionPosition */
-static int hf_atn_cpdlc_uM78LevelPosition = -1;   /* LevelPosition */
-static int hf_atn_cpdlc_uM79PositionRouteClearance = -1;  /* PositionRouteClearanceIndex */
-static int hf_atn_cpdlc_uM80RouteClearance = -1;  /* RouteClearanceIndex */
-static int hf_atn_cpdlc_uM81ProcedureName = -1;   /* ProcedureName */
-static int hf_atn_cpdlc_uM82DistanceSpecifiedDirection = -1;  /* DistanceSpecifiedDirection */
-static int hf_atn_cpdlc_uM83PositionRouteClearance = -1;  /* PositionRouteClearanceIndex */
-static int hf_atn_cpdlc_uM84PositionProcedureName = -1;  /* PositionProcedureName */
-static int hf_atn_cpdlc_uM85RouteClearance = -1;  /* RouteClearanceIndex */
-static int hf_atn_cpdlc_uM86PositionRouteClearance = -1;  /* PositionRouteClearanceIndex */
-static int hf_atn_cpdlc_uM87Position = -1;        /* Position */
-static int hf_atn_cpdlc_uM88PositionPosition = -1;  /* PositionPosition */
-static int hf_atn_cpdlc_uM89TimePosition = -1;    /* TimePosition */
-static int hf_atn_cpdlc_uM90LevelPosition = -1;   /* LevelPosition */
-static int hf_atn_cpdlc_uM91HoldClearance = -1;   /* HoldClearance */
-static int hf_atn_cpdlc_uM92PositionLevel = -1;   /* PositionLevel */
-static int hf_atn_cpdlc_uM93Time = -1;            /* Time */
-static int hf_atn_cpdlc_uM94DirectionDegrees = -1;  /* DirectionDegrees */
-static int hf_atn_cpdlc_uM95DirectionDegrees = -1;  /* DirectionDegrees */
-static int hf_atn_cpdlc_uM96NULL = -1;            /* NULL */
-static int hf_atn_cpdlc_uM97PositionDegrees = -1;  /* PositionDegrees */
-static int hf_atn_cpdlc_uM98DirectionDegrees = -1;  /* DirectionDegrees */
-static int hf_atn_cpdlc_uM99ProcedureName = -1;   /* ProcedureName */
-static int hf_atn_cpdlc_uM100TimeSpeed = -1;      /* TimeSpeed */
-static int hf_atn_cpdlc_uM101PositionSpeed = -1;  /* PositionSpeed */
-static int hf_atn_cpdlc_uM102LevelSpeed = -1;     /* LevelSpeed */
-static int hf_atn_cpdlc_uM103TimeSpeedSpeed = -1;  /* TimeSpeedSpeed */
-static int hf_atn_cpdlc_uM104PositionSpeedSpeed = -1;  /* PositionSpeedSpeed */
-static int hf_atn_cpdlc_uM105LevelSpeedSpeed = -1;  /* LevelSpeedSpeed */
-static int hf_atn_cpdlc_uM106Speed = -1;          /* Speed */
-static int hf_atn_cpdlc_uM107NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM108Speed = -1;          /* Speed */
-static int hf_atn_cpdlc_uM109Speed = -1;          /* Speed */
-static int hf_atn_cpdlc_uM110SpeedSpeed = -1;     /* SpeedSpeed */
-static int hf_atn_cpdlc_uM111Speed = -1;          /* Speed */
-static int hf_atn_cpdlc_uM112Speed = -1;          /* Speed */
-static int hf_atn_cpdlc_uM113Speed = -1;          /* Speed */
-static int hf_atn_cpdlc_uM114Speed = -1;          /* Speed */
-static int hf_atn_cpdlc_uM115Speed = -1;          /* Speed */
-static int hf_atn_cpdlc_uM116NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM117UnitNameFrequency = -1;  /* UnitNameFrequency */
-static int hf_atn_cpdlc_uM118PositionUnitNameFrequency = -1;  /* PositionUnitNameFrequency */
-static int hf_atn_cpdlc_uM119TimeUnitNameFrequency = -1;  /* TimeUnitNameFrequency */
-static int hf_atn_cpdlc_uM120UnitNameFrequency = -1;  /* UnitNameFrequency */
-static int hf_atn_cpdlc_uM121PositionUnitNameFrequency = -1;  /* PositionUnitNameFrequency */
-static int hf_atn_cpdlc_uM122TimeUnitNameFrequency = -1;  /* TimeUnitNameFrequency */
-static int hf_atn_cpdlc_uM123Code = -1;           /* Code */
-static int hf_atn_cpdlc_uM124NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM125NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM126NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM127NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM128Level = -1;          /* Level */
-static int hf_atn_cpdlc_uM129Level = -1;          /* Level */
-static int hf_atn_cpdlc_uM130Position = -1;       /* Position */
-static int hf_atn_cpdlc_uM131NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM132NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM133NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM134SpeedTypeSpeedTypeSpeedType = -1;  /* SpeedTypeSpeedTypeSpeedType */
-static int hf_atn_cpdlc_uM135NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM136NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM137NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM138NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM139NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM140NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM141NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM142NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM143NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM144NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM145NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM146NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM147NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM148Level = -1;          /* Level */
-static int hf_atn_cpdlc_uM149LevelPosition = -1;  /* LevelPosition */
-static int hf_atn_cpdlc_uM150LevelTime = -1;      /* LevelTime */
-static int hf_atn_cpdlc_uM151Speed = -1;          /* Speed */
-static int hf_atn_cpdlc_uM152DistanceSpecifiedDirection = -1;  /* DistanceSpecifiedDirection */
-static int hf_atn_cpdlc_uM153Altimeter = -1;      /* Altimeter */
-static int hf_atn_cpdlc_uM154NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM155Position = -1;       /* Position */
-static int hf_atn_cpdlc_uM156NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM157Frequency = -1;      /* Frequency */
-static int hf_atn_cpdlc_uM158AtisCode = -1;       /* ATISCode */
-static int hf_atn_cpdlc_uM159ErrorInformation = -1;  /* ErrorInformation */
-static int hf_atn_cpdlc_uM160Facility = -1;       /* Facility */
-static int hf_atn_cpdlc_uM161NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM162NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM163FacilityDesignation = -1;  /* FacilityDesignation */
-static int hf_atn_cpdlc_uM164NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM165NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM166TrafficType = -1;    /* TrafficType */
-static int hf_atn_cpdlc_uM167NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM168NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM169FreeText = -1;       /* FreeText */
-static int hf_atn_cpdlc_uM170FreeText = -1;       /* FreeText */
-static int hf_atn_cpdlc_uM171VerticalRate = -1;   /* VerticalRate */
-static int hf_atn_cpdlc_uM172VerticalRate = -1;   /* VerticalRate */
-static int hf_atn_cpdlc_uM173VerticalRate = -1;   /* VerticalRate */
-static int hf_atn_cpdlc_uM174VerticalRate = -1;   /* VerticalRate */
-static int hf_atn_cpdlc_uM175Level = -1;          /* Level */
-static int hf_atn_cpdlc_uM176NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM177NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM178NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM179NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM180LevelLevel = -1;     /* LevelLevel */
-static int hf_atn_cpdlc_uM181ToFromPosition = -1;  /* ToFromPosition */
-static int hf_atn_cpdlc_uM182NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM183FreeText = -1;       /* FreeText */
-static int hf_atn_cpdlc_uM184TimeToFromPosition = -1;  /* TimeToFromPosition */
-static int hf_atn_cpdlc_uM185PositionLevel = -1;  /* PositionLevel */
-static int hf_atn_cpdlc_uM186PositionLevel = -1;  /* PositionLevel */
-static int hf_atn_cpdlc_uM187FreeText = -1;       /* FreeText */
-static int hf_atn_cpdlc_uM188PositionSpeed = -1;  /* PositionSpeed */
-static int hf_atn_cpdlc_uM189Speed = -1;          /* Speed */
-static int hf_atn_cpdlc_uM190Degrees = -1;        /* Degrees */
-static int hf_atn_cpdlc_uM191NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM192LevelTime = -1;      /* LevelTime */
-static int hf_atn_cpdlc_uM193NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM194FreeText = -1;       /* FreeText */
-static int hf_atn_cpdlc_uM195FreeText = -1;       /* FreeText */
-static int hf_atn_cpdlc_uM196FreeText = -1;       /* FreeText */
-static int hf_atn_cpdlc_uM197FreeText = -1;       /* FreeText */
-static int hf_atn_cpdlc_uM198FreeText = -1;       /* FreeText */
-static int hf_atn_cpdlc_uM199FreeText = -1;       /* FreeText */
-static int hf_atn_cpdlc_uM200NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM201NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM202NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM203FreeText = -1;       /* FreeText */
-static int hf_atn_cpdlc_uM204FreeText = -1;       /* FreeText */
-static int hf_atn_cpdlc_uM205FreeText = -1;       /* FreeText */
-static int hf_atn_cpdlc_uM206FreeText = -1;       /* FreeText */
-static int hf_atn_cpdlc_uM207FreeText = -1;       /* FreeText */
-static int hf_atn_cpdlc_uM208FreeText = -1;       /* FreeText */
-static int hf_atn_cpdlc_uM209LevelPosition = -1;  /* LevelPosition */
-static int hf_atn_cpdlc_uM210Position = -1;       /* Position */
-static int hf_atn_cpdlc_uM211NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM212FacilityDesignationATISCode = -1;  /* FacilityDesignationATISCode */
-static int hf_atn_cpdlc_uM213FacilityDesignationAltimeter = -1;  /* FacilityDesignationAltimeter */
-static int hf_atn_cpdlc_uM214RunwayRVR = -1;      /* RunwayRVR */
-static int hf_atn_cpdlc_uM215DirectionDegrees = -1;  /* DirectionDegrees */
-static int hf_atn_cpdlc_uM216NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM217NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM218NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM219Level = -1;          /* Level */
-static int hf_atn_cpdlc_uM220Level = -1;          /* Level */
-static int hf_atn_cpdlc_uM221Degrees = -1;        /* Degrees */
-static int hf_atn_cpdlc_uM222NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM223NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM224NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM225NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM226Time = -1;           /* Time */
-static int hf_atn_cpdlc_uM227NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM228Position = -1;       /* Position */
-static int hf_atn_cpdlc_uM229NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM230NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM231NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM232NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM233NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM234NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM235NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM236NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_uM237NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_dM0NULL = -1;             /* NULL */
-static int hf_atn_cpdlc_dM1NULL = -1;             /* NULL */
-static int hf_atn_cpdlc_dM2NULL = -1;             /* NULL */
-static int hf_atn_cpdlc_dM3NULL = -1;             /* NULL */
-static int hf_atn_cpdlc_dM4NULL = -1;             /* NULL */
-static int hf_atn_cpdlc_dM5NULL = -1;             /* NULL */
-static int hf_atn_cpdlc_dM6Level = -1;            /* Level */
-static int hf_atn_cpdlc_dM7LevelLevel = -1;       /* LevelLevel */
-static int hf_atn_cpdlc_dM8Level = -1;            /* Level */
-static int hf_atn_cpdlc_dM9Level = -1;            /* Level */
-static int hf_atn_cpdlc_dM10Level = -1;           /* Level */
-static int hf_atn_cpdlc_dM11PositionLevel = -1;   /* PositionLevel */
-static int hf_atn_cpdlc_dM12PositionLevel = -1;   /* PositionLevel */
-static int hf_atn_cpdlc_dM13TimeLevel = -1;       /* TimeLevel */
-static int hf_atn_cpdlc_dM14TimeLevel = -1;       /* TimeLevel */
-static int hf_atn_cpdlc_dM15DistanceSpecifiedDirection = -1;  /* DistanceSpecifiedDirection */
-static int hf_atn_cpdlc_dM16PositionDistanceSpecifiedDirection = -1;  /* PositionDistanceSpecifiedDirection */
-static int hf_atn_cpdlc_dM17TimeDistanceSpecifiedDirection = -1;  /* TimeDistanceSpecifiedDirection */
-static int hf_atn_cpdlc_dM18Speed = -1;           /* Speed */
-static int hf_atn_cpdlc_dM19SpeedSpeed = -1;      /* SpeedSpeed */
-static int hf_atn_cpdlc_dM20NULL = -1;            /* NULL */
-static int hf_atn_cpdlc_dM21Frequency = -1;       /* Frequency */
-static int hf_atn_cpdlc_dM22Position = -1;        /* Position */
-static int hf_atn_cpdlc_dM23ProcedureName = -1;   /* ProcedureName */
-static int hf_atn_cpdlc_dM24RouteClearance = -1;  /* RouteClearanceIndex */
-static int hf_atn_cpdlc_dM25ClearanceType = -1;   /* ClearanceType */
-static int hf_atn_cpdlc_dM26PositionRouteClearance = -1;  /* PositionRouteClearanceIndex */
-static int hf_atn_cpdlc_dM27DistanceSpecifiedDirection = -1;  /* DistanceSpecifiedDirection */
-static int hf_atn_cpdlc_dM28Level = -1;           /* Level */
-static int hf_atn_cpdlc_dM29Level = -1;           /* Level */
-static int hf_atn_cpdlc_dM30Level = -1;           /* Level */
-static int hf_atn_cpdlc_dM31Position = -1;        /* Position */
-static int hf_atn_cpdlc_dM32Level = -1;           /* Level */
-static int hf_atn_cpdlc_dM33Position = -1;        /* Position */
-static int hf_atn_cpdlc_dM34Speed = -1;           /* Speed */
-static int hf_atn_cpdlc_dM35Degrees = -1;         /* Degrees */
-static int hf_atn_cpdlc_dM36Degrees = -1;         /* Degrees */
-static int hf_atn_cpdlc_dM37Level = -1;           /* Level */
-static int hf_atn_cpdlc_dM38Level = -1;           /* Level */
-static int hf_atn_cpdlc_dM39Speed = -1;           /* Speed */
-static int hf_atn_cpdlc_dM40RouteClearance = -1;  /* RouteClearanceIndex */
-static int hf_atn_cpdlc_dM41NULL = -1;            /* NULL */
-static int hf_atn_cpdlc_dM42Position = -1;        /* Position */
-static int hf_atn_cpdlc_dM43Time = -1;            /* Time */
-static int hf_atn_cpdlc_dM44Position = -1;        /* Position */
-static int hf_atn_cpdlc_dM45Position = -1;        /* Position */
-static int hf_atn_cpdlc_dM46Time = -1;            /* Time */
-static int hf_atn_cpdlc_dM47Code = -1;            /* Code */
-static int hf_atn_cpdlc_dM48PositionReport = -1;  /* PositionReport */
-static int hf_atn_cpdlc_dM49Speed = -1;           /* Speed */
-static int hf_atn_cpdlc_dM50SpeedSpeed = -1;      /* SpeedSpeed */
-static int hf_atn_cpdlc_dM51NULL = -1;            /* NULL */
-static int hf_atn_cpdlc_dM52NULL = -1;            /* NULL */
-static int hf_atn_cpdlc_dM53NULL = -1;            /* NULL */
-static int hf_atn_cpdlc_dM54Level = -1;           /* Level */
-static int hf_atn_cpdlc_dM55NULL = -1;            /* NULL */
-static int hf_atn_cpdlc_dM56NULL = -1;            /* NULL */
-static int hf_atn_cpdlc_dM57RemainingFuelPersonsOnBoard = -1;  /* RemainingFuelPersonsOnBoard */
-static int hf_atn_cpdlc_dM58NULL = -1;            /* NULL */
-static int hf_atn_cpdlc_dM59PositionRouteClearance = -1;  /* PositionRouteClearanceIndex */
-static int hf_atn_cpdlc_dM60DistanceSpecifiedDirection = -1;  /* DistanceSpecifiedDirection */
-static int hf_atn_cpdlc_dM61Level = -1;           /* Level */
-static int hf_atn_cpdlc_dM62ErrorInformation = -1;  /* ErrorInformation */
-static int hf_atn_cpdlc_dM63NULL = -1;            /* NULL */
-static int hf_atn_cpdlc_dM64FacilityDesignation = -1;  /* FacilityDesignation */
-static int hf_atn_cpdlc_dM65NULL = -1;            /* NULL */
-static int hf_atn_cpdlc_dM66NULL = -1;            /* NULL */
-static int hf_atn_cpdlc_dM67FreeText = -1;        /* FreeText */
-static int hf_atn_cpdlc_dM68FreeText = -1;        /* FreeText */
-static int hf_atn_cpdlc_dM69NULL = -1;            /* NULL */
-static int hf_atn_cpdlc_dM70Degrees = -1;         /* Degrees */
-static int hf_atn_cpdlc_dM71Degrees = -1;         /* Degrees */
-static int hf_atn_cpdlc_dM72Level = -1;           /* Level */
-static int hf_atn_cpdlc_dM73Versionnumber = -1;   /* VersionNumber */
-static int hf_atn_cpdlc_dM74NULL = -1;            /* NULL */
-static int hf_atn_cpdlc_dM75NULL = -1;            /* NULL */
-static int hf_atn_cpdlc_dM76LevelLevel = -1;      /* LevelLevel */
-static int hf_atn_cpdlc_dM77LevelLevel = -1;      /* LevelLevel */
-static int hf_atn_cpdlc_dM78TimeDistanceToFromPosition = -1;  /* TimeDistanceToFromPosition */
-static int hf_atn_cpdlc_dM79AtisCode = -1;        /* ATISCode */
-static int hf_atn_cpdlc_dM80DistanceSpecifiedDirection = -1;  /* DistanceSpecifiedDirection */
-static int hf_atn_cpdlc_dM81LevelTime = -1;       /* LevelTime */
-static int hf_atn_cpdlc_dM82Level = -1;           /* Level */
-static int hf_atn_cpdlc_dM83SpeedTime = -1;       /* SpeedTime */
-static int hf_atn_cpdlc_dM84Speed = -1;           /* Speed */
-static int hf_atn_cpdlc_dM85DistanceSpecifiedDirectionTime = -1;  /* DistanceSpecifiedDirectionTime */
-static int hf_atn_cpdlc_dM86DistanceSpecifiedDirection = -1;  /* DistanceSpecifiedDirection */
-static int hf_atn_cpdlc_dM87Level = -1;           /* Level */
-static int hf_atn_cpdlc_dM88Level = -1;           /* Level */
-static int hf_atn_cpdlc_dM89UnitnameFrequency = -1;  /* UnitNameFrequency */
-static int hf_atn_cpdlc_dM90FreeText = -1;        /* FreeText */
-static int hf_atn_cpdlc_dM91FreeText = -1;        /* FreeText */
-static int hf_atn_cpdlc_dM92FreeText = -1;        /* FreeText */
-static int hf_atn_cpdlc_dM93FreeText = -1;        /* FreeText */
-static int hf_atn_cpdlc_dM94FreeText = -1;        /* FreeText */
-static int hf_atn_cpdlc_dM95FreeText = -1;        /* FreeText */
-static int hf_atn_cpdlc_dM96FreeText = -1;        /* FreeText */
-static int hf_atn_cpdlc_dM97FreeText = -1;        /* FreeText */
-static int hf_atn_cpdlc_dM98FreeText = -1;        /* FreeText */
-static int hf_atn_cpdlc_dM99NULL = -1;            /* NULL */
-static int hf_atn_cpdlc_dM100NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_dM101NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_dM102NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_dM103NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_dM104PositionTime = -1;   /* PositionTime */
-static int hf_atn_cpdlc_dM105Airport = -1;        /* Airport */
-static int hf_atn_cpdlc_dM106Level = -1;          /* Level */
-static int hf_atn_cpdlc_dM107NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_dM108NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_dM109Time = -1;           /* Time */
-static int hf_atn_cpdlc_dM110Position = -1;       /* Position */
-static int hf_atn_cpdlc_dM111TimePosition = -1;   /* TimePosition */
-static int hf_atn_cpdlc_dM112NULL = -1;           /* NULL */
-static int hf_atn_cpdlc_dM113SpeedTypeSpeedTypeSpeedTypeSpeed = -1;  /* SpeedTypeSpeedTypeSpeedTypeSpeed */
-static int hf_atn_cpdlc_altimeterEnglish = -1;    /* AltimeterEnglish */
-static int hf_atn_cpdlc_altimeterMetric = -1;     /* AltimeterMetric */
-static int hf_atn_cpdlc_position = -1;            /* Position */
-static int hf_atn_cpdlc_aTWDistance = -1;         /* ATWDistance */
-static int hf_atn_cpdlc_speed = -1;               /* Speed */
-static int hf_atn_cpdlc_aTWLevels = -1;           /* ATWLevelSequence */
-static int hf_atn_cpdlc_atw = -1;                 /* ATWLevelTolerance */
-static int hf_atn_cpdlc_level = -1;               /* Level */
-static int hf_atn_cpdlc_ATWLevelSequence_item = -1;  /* ATWLevel */
-static int hf_atn_cpdlc_atwDistanceTolerance = -1;  /* ATWDistanceTolerance */
-static int hf_atn_cpdlc_distance = -1;            /* Distance */
-static int hf_atn_cpdlc_Code_item = -1;           /* CodeOctalDigit */
-static int hf_atn_cpdlc_time = -1;                /* Time */
-static int hf_atn_cpdlc_timeTolerance = -1;       /* TimeTolerance */
-static int hf_atn_cpdlc_year = -1;                /* Year */
-static int hf_atn_cpdlc_month = -1;               /* Month */
-static int hf_atn_cpdlc_day = -1;                 /* Day */
-static int hf_atn_cpdlc_date = -1;                /* Date */
-static int hf_atn_cpdlc_timehhmmss = -1;          /* Timehhmmss */
-static int hf_atn_cpdlc_degreesMagnetic = -1;     /* DegreesMagnetic */
-static int hf_atn_cpdlc_degreesTrue = -1;         /* DegreesTrue */
-static int hf_atn_cpdlc_aircraftFlightIdentification = -1;  /* AircraftFlightIdentification */
-static int hf_atn_cpdlc_clearanceLimit = -1;      /* Position */
-static int hf_atn_cpdlc_flightInformation = -1;   /* FlightInformation */
-static int hf_atn_cpdlc_furtherInstructions = -1;  /* FurtherInstructions */
-static int hf_atn_cpdlc_direction = -1;           /* Direction */
-static int hf_atn_cpdlc_degrees = -1;             /* Degrees */
-static int hf_atn_cpdlc_distanceNm = -1;          /* DistanceNm */
-static int hf_atn_cpdlc_distanceKm = -1;          /* DistanceKm */
-static int hf_atn_cpdlc_distanceSpecifiedNm = -1;  /* DistanceSpecifiedNm */
-static int hf_atn_cpdlc_distanceSpecifiedKm = -1;  /* DistanceSpecifiedKm */
-static int hf_atn_cpdlc_distanceSpecified = -1;   /* DistanceSpecified */
-static int hf_atn_cpdlc_distanceSpecifiedDirection = -1;  /* DistanceSpecifiedDirection */
-static int hf_atn_cpdlc_noFacility = -1;          /* NULL */
-static int hf_atn_cpdlc_facilityDesignation = -1;  /* FacilityDesignation */
-static int hf_atn_cpdlc_altimeter = -1;           /* Altimeter */
-static int hf_atn_cpdlc_aTISCode = -1;            /* ATISCode */
-static int hf_atn_cpdlc_fixname_name = -1;        /* Fix */
-static int hf_atn_cpdlc_latlon = -1;              /* LatitudeLongitude */
-static int hf_atn_cpdlc_routeOfFlight = -1;       /* RouteInformation */
-static int hf_atn_cpdlc_levelsOfFlight = -1;      /* LevelsOfFlight */
-static int hf_atn_cpdlc_routeAndLevels = -1;      /* RouteAndLevels */
-static int hf_atn_cpdlc_frequencyhf = -1;         /* Frequencyhf */
-static int hf_atn_cpdlc_frequencyvhf = -1;        /* Frequencyvhf */
-static int hf_atn_cpdlc_frequencyuhf = -1;        /* Frequencyuhf */
-static int hf_atn_cpdlc_frequencysatchannel = -1;  /* Frequencysatchannel */
-static int hf_atn_cpdlc_code = -1;                /* Code */
-static int hf_atn_cpdlc_frequencyDeparture = -1;  /* UnitNameFrequency */
-static int hf_atn_cpdlc_clearanceExpiryTime = -1;  /* Time */
-static int hf_atn_cpdlc_airportDeparture = -1;    /* Airport */
-static int hf_atn_cpdlc_airportDestination = -1;  /* Airport */
-static int hf_atn_cpdlc_timeDeparture = -1;       /* TimeDeparture */
-static int hf_atn_cpdlc_runwayDeparture = -1;     /* Runway */
-static int hf_atn_cpdlc_revisionNumber = -1;      /* RevisionNumber */
-static int hf_atn_cpdlc_holdatwaypointspeedlow = -1;  /* Speed */
-static int hf_atn_cpdlc_aTWlevel = -1;            /* ATWLevel */
-static int hf_atn_cpdlc_holdatwaypointspeedhigh = -1;  /* Speed */
-static int hf_atn_cpdlc_eFCtime = -1;             /* Time */
-static int hf_atn_cpdlc_legtype = -1;             /* LegType */
-static int hf_atn_cpdlc_legType = -1;             /* LegType */
-static int hf_atn_cpdlc_fromSelection = -1;       /* InterceptCourseFromSelection */
-static int hf_atn_cpdlc_publishedIdentifier = -1;  /* PublishedIdentifier */
-static int hf_atn_cpdlc_latitudeLongitude = -1;   /* LatitudeLongitude */
-static int hf_atn_cpdlc_placeBearingPlaceBearing = -1;  /* PlaceBearingPlaceBearing */
-static int hf_atn_cpdlc_placeBearingDistance = -1;  /* PlaceBearingDistance */
-static int hf_atn_cpdlc_latitudeType = -1;        /* LatitudeType */
-static int hf_atn_cpdlc_latitudeDirection = -1;   /* LatitudeDirection */
-static int hf_atn_cpdlc_latitudeWholeDegrees = -1;  /* LatitudeWholeDegrees */
-static int hf_atn_cpdlc_minutesLatLon = -1;       /* MinutesLatLon */
-static int hf_atn_cpdlc_latlonWholeMinutes = -1;  /* LatLonWholeMinutes */
-static int hf_atn_cpdlc_secondsLatLon = -1;       /* SecondsLatLon */
-static int hf_atn_cpdlc_latitude = -1;            /* Latitude */
-static int hf_atn_cpdlc_longitude = -1;           /* Longitude */
-static int hf_atn_cpdlc_latitudeDegrees = -1;     /* LatitudeDegrees */
-static int hf_atn_cpdlc_latitudeDegreesMinutes = -1;  /* LatitudeDegreesMinutes */
-static int hf_atn_cpdlc_latitudeDMS = -1;         /* LatitudeDegreesMinutesSeconds */
-static int hf_atn_cpdlc_latitudeReportingPoints = -1;  /* LatitudeReportingPoints */
-static int hf_atn_cpdlc_longitudeReportingPoints = -1;  /* LongitudeReportingPoints */
-static int hf_atn_cpdlc_legDistanceEnglish = -1;  /* LegDistanceEnglish */
-static int hf_atn_cpdlc_legDistanceMetric = -1;   /* LegDistanceMetric */
-static int hf_atn_cpdlc_legDistance = -1;         /* LegDistance */
-static int hf_atn_cpdlc_legTime = -1;             /* LegTime */
-static int hf_atn_cpdlc_singleLevel = -1;         /* LevelType */
-static int hf_atn_cpdlc_blockLevel = -1;          /* SEQUENCE_SIZE_2_OF_LevelType */
-static int hf_atn_cpdlc_blockLevel_item = -1;     /* LevelType */
-static int hf_atn_cpdlc_LevelLevel_item = -1;     /* Level */
-static int hf_atn_cpdlc_procedureName = -1;       /* ProcedureName */
-static int hf_atn_cpdlc_levelProcedureName = -1;  /* LevelProcedureName */
-static int hf_atn_cpdlc_levelspeed_speed = -1;    /* SpeedSpeed */
-static int hf_atn_cpdlc_speeds = -1;              /* SpeedSpeed */
-static int hf_atn_cpdlc_levelFeet = -1;           /* LevelFeet */
-static int hf_atn_cpdlc_levelMeters = -1;         /* LevelMeters */
-static int hf_atn_cpdlc_levelFlightLevel = -1;    /* LevelFlightLevel */
-static int hf_atn_cpdlc_levelFlightLevelMetric = -1;  /* LevelFlightLevelMetric */
-static int hf_atn_cpdlc_longitudeType = -1;       /* LongitudeType */
-static int hf_atn_cpdlc_longitudeDirection = -1;  /* LongitudeDirection */
-static int hf_atn_cpdlc_longitudeWholeDegrees = -1;  /* LongitudeWholeDegrees */
-static int hf_atn_cpdlc_latLonWholeMinutes = -1;  /* LatLonWholeMinutes */
-static int hf_atn_cpdlc_longitudeDegrees = -1;    /* LongitudeDegrees */
-static int hf_atn_cpdlc_longitudeDegreesMinutes = -1;  /* LongitudeDegreesMinutes */
-static int hf_atn_cpdlc_longitudeDMS = -1;        /* LongitudeDegreesMinutesSeconds */
-static int hf_atn_cpdlc_navaid_name = -1;         /* NavaidName */
-static int hf_atn_cpdlc_PlaceBearingPlaceBearing_item = -1;  /* PlaceBearing */
-static int hf_atn_cpdlc_fixName = -1;             /* FixName */
-static int hf_atn_cpdlc_navaid = -1;              /* Navaid */
-static int hf_atn_cpdlc_airport = -1;             /* Airport */
-static int hf_atn_cpdlc_levels = -1;              /* LevelLevel */
-static int hf_atn_cpdlc_positionlevel = -1;       /* PositionLevel */
-static int hf_atn_cpdlc_PositionPosition_item = -1;  /* Position */
-static int hf_atn_cpdlc_positioncurrent = -1;     /* Position */
-static int hf_atn_cpdlc_timeatpositioncurrent = -1;  /* Time */
-static int hf_atn_cpdlc_fixnext = -1;             /* Position */
-static int hf_atn_cpdlc_timeetaatfixnext = -1;    /* Time */
-static int hf_atn_cpdlc_fixnextplusone = -1;      /* Position */
-static int hf_atn_cpdlc_timeetaatdestination = -1;  /* Time */
-static int hf_atn_cpdlc_remainingFuel = -1;       /* RemainingFuel */
-static int hf_atn_cpdlc_temperature = -1;         /* Temperature */
-static int hf_atn_cpdlc_winds = -1;               /* Winds */
-static int hf_atn_cpdlc_turbulence = -1;          /* Turbulence */
-static int hf_atn_cpdlc_icing = -1;               /* Icing */
-static int hf_atn_cpdlc_speedground = -1;         /* SpeedGround */
-static int hf_atn_cpdlc_verticalChange = -1;      /* VerticalChange */
-static int hf_atn_cpdlc_trackAngle = -1;          /* Degrees */
-static int hf_atn_cpdlc_heading = -1;             /* Degrees */
-static int hf_atn_cpdlc_humidity = -1;            /* Humidity */
-static int hf_atn_cpdlc_reportedWaypointPosition = -1;  /* Position */
-static int hf_atn_cpdlc_reportedWaypointTime = -1;  /* Time */
-static int hf_atn_cpdlc_reportedWaypointLevel = -1;  /* Level */
-static int hf_atn_cpdlc_routeClearanceIndex = -1;  /* RouteClearanceIndex */
-static int hf_atn_cpdlc_positionTime = -1;        /* PositionTime */
-static int hf_atn_cpdlc_times = -1;               /* TimeTime */
-static int hf_atn_cpdlc_unitname = -1;            /* UnitName */
-static int hf_atn_cpdlc_frequency = -1;           /* Frequency */
-static int hf_atn_cpdlc_type = -1;                /* ProcedureType */
-static int hf_atn_cpdlc_procedure = -1;           /* Procedure */
-static int hf_atn_cpdlc_transition = -1;          /* ProcedureTransition */
-static int hf_atn_cpdlc_personsOnBoard = -1;      /* PersonsOnBoard */
-static int hf_atn_cpdlc_latLonReportingPoints = -1;  /* LatLonReportingPoints */
-static int hf_atn_cpdlc_degreeIncrement = -1;     /* DegreeIncrement */
-static int hf_atn_cpdlc_procedureDeparture = -1;  /* ProcedureName */
-static int hf_atn_cpdlc_runwayArrival = -1;       /* Runway */
-static int hf_atn_cpdlc_procedureApproach = -1;   /* ProcedureName */
-static int hf_atn_cpdlc_procedureArrival = -1;    /* ProcedureName */
-static int hf_atn_cpdlc_routeInformations = -1;   /* SEQUENCE_SIZE_1_128_OF_RouteInformation */
-static int hf_atn_cpdlc_routeInformations_item = -1;  /* RouteInformation */
-static int hf_atn_cpdlc_routeInformationAdditional = -1;  /* RouteInformationAdditional */
-static int hf_atn_cpdlc_aTSRouteDesignator = -1;  /* ATSRouteDesignator */
-static int hf_atn_cpdlc_aTWAlongTrackWaypoints = -1;  /* SEQUENCE_SIZE_1_8_OF_ATWAlongTrackWaypoint */
-static int hf_atn_cpdlc_aTWAlongTrackWaypoints_item = -1;  /* ATWAlongTrackWaypoint */
-static int hf_atn_cpdlc_reportingpoints = -1;     /* ReportingPoints */
-static int hf_atn_cpdlc_interceptCourseFroms = -1;  /* SEQUENCE_SIZE_1_4_OF_InterceptCourseFrom */
-static int hf_atn_cpdlc_interceptCourseFroms_item = -1;  /* InterceptCourseFrom */
-static int hf_atn_cpdlc_holdAtWaypoints = -1;     /* SEQUENCE_SIZE_1_8_OF_Holdatwaypoint */
-static int hf_atn_cpdlc_holdAtWaypoints_item = -1;  /* Holdatwaypoint */
-static int hf_atn_cpdlc_waypointSpeedLevels = -1;  /* SEQUENCE_SIZE_1_32_OF_WaypointSpeedLevel */
-static int hf_atn_cpdlc_waypointSpeedLevels_item = -1;  /* WaypointSpeedLevel */
-static int hf_atn_cpdlc_rTARequiredTimeArrivals = -1;  /* SEQUENCE_SIZE_1_32_OF_RTARequiredTimeArrival */
-static int hf_atn_cpdlc_rTARequiredTimeArrivals_item = -1;  /* RTARequiredTimeArrival */
-static int hf_atn_cpdlc_rTATime = -1;             /* RTATime */
-static int hf_atn_cpdlc_rTATolerance = -1;        /* RTATolerance */
-static int hf_atn_cpdlc_runway_direction = -1;    /* RunwayDirection */
-static int hf_atn_cpdlc_configuration = -1;       /* RunwayConfiguration */
-static int hf_atn_cpdlc_runway = -1;              /* Runway */
-static int hf_atn_cpdlc_rVR = -1;                 /* RVR */
-static int hf_atn_cpdlc_rVRFeet = -1;             /* RVRFeet */
-static int hf_atn_cpdlc_rVRMeters = -1;           /* RVRMeters */
-static int hf_atn_cpdlc_speedIndicated = -1;      /* SpeedIndicated */
-static int hf_atn_cpdlc_speedIndicatedMetric = -1;  /* SpeedIndicatedMetric */
-static int hf_atn_cpdlc_speedTrue = -1;           /* SpeedTrue */
-static int hf_atn_cpdlc_speedTrueMetric = -1;     /* SpeedTrueMetric */
-static int hf_atn_cpdlc_speedGround = -1;         /* SpeedGround */
-static int hf_atn_cpdlc_speedGroundMetric = -1;   /* SpeedGroundMetric */
-static int hf_atn_cpdlc_speedMach = -1;           /* SpeedMach */
-static int hf_atn_cpdlc_SpeedSpeed_item = -1;     /* Speed */
-static int hf_atn_cpdlc_SpeedTypeSpeedTypeSpeedType_item = -1;  /* SpeedType */
-static int hf_atn_cpdlc_speedTypes = -1;          /* SpeedTypeSpeedTypeSpeedType */
-static int hf_atn_cpdlc_hours = -1;               /* TimeHours */
-static int hf_atn_cpdlc_minutes = -1;             /* TimeMinutes */
-static int hf_atn_cpdlc_timeDepartureAllocated = -1;  /* Time */
-static int hf_atn_cpdlc_timeDepartureControlled = -1;  /* ControlledTime */
-static int hf_atn_cpdlc_timeDepartureClearanceExpected = -1;  /* Time */
-static int hf_atn_cpdlc_departureMinimumInterval = -1;  /* DepartureMinimumInterval */
-static int hf_atn_cpdlc_tofrom = -1;              /* ToFrom */
-static int hf_atn_cpdlc_hoursminutes = -1;        /* Time */
-static int hf_atn_cpdlc_seconds = -1;             /* TimeSeconds */
-static int hf_atn_cpdlc_unitName = -1;            /* UnitName */
-static int hf_atn_cpdlc_timeposition = -1;        /* TimePosition */
-static int hf_atn_cpdlc_levelspeed = -1;          /* LevelSpeed */
-static int hf_atn_cpdlc_speedspeed = -1;          /* SpeedSpeed */
-static int hf_atn_cpdlc_TimeTime_item = -1;       /* Time */
-static int hf_atn_cpdlc_toFrom = -1;              /* ToFrom */
-static int hf_atn_cpdlc_facilityName = -1;        /* FacilityName */
-static int hf_atn_cpdlc_facilityFunction = -1;    /* FacilityFunction */
-static int hf_atn_cpdlc_vertical_direction = -1;  /* VerticalDirection */
-static int hf_atn_cpdlc_rate = -1;                /* VerticalRate */
-static int hf_atn_cpdlc_verticalRateEnglish = -1;  /* VerticalRateEnglish */
-static int hf_atn_cpdlc_verticalRateMetric = -1;  /* VerticalRateMetric */
-static int hf_atn_cpdlc_winds_direction = -1;     /* WindDirection */
-static int hf_atn_cpdlc_winds_speed = -1;         /* WindSpeed */
-static int hf_atn_cpdlc_windSpeedEnglish = -1;    /* WindSpeedEnglish */
-static int hf_atn_cpdlc_windSpeedMetric = -1;     /* WindSpeedMetric */
+static int ett_atn_cpdlc_GroundPDUs;
+static int ett_atn_cpdlc_UplinkMessage;
+static int ett_atn_cpdlc_AircraftPDUs;
+static int ett_atn_cpdlc_StartDownMessage;
+static int ett_atn_cpdlc_DownlinkMessage;
+static int ett_atn_cpdlc_ProtectedGroundPDUs;
+static int ett_atn_cpdlc_ProtectedUplinkMessage;
+static int ett_atn_cpdlc_ATCForwardMessage;
+static int ett_atn_cpdlc_ForwardHeader;
+static int ett_atn_cpdlc_ForwardMessage;
+static int ett_atn_cpdlc_ProtectedAircraftPDUs;
+static int ett_atn_cpdlc_ProtectedStartDownMessage;
+static int ett_atn_cpdlc_ProtectedDownlinkMessage;
+static int ett_atn_cpdlc_ATCUplinkMessage;
+static int ett_atn_cpdlc_ATCUplinkMessageData;
+static int ett_atn_cpdlc_SEQUENCE_SIZE_1_5_OF_ATCUplinkMsgElementId;
+static int ett_atn_cpdlc_T_atcuplinkmessagedata_constraineddata;
+static int ett_atn_cpdlc_SEQUENCE_SIZE_1_2_OF_RouteClearance;
+static int ett_atn_cpdlc_ATCDownlinkMessage;
+static int ett_atn_cpdlc_ATCDownlinkMessageData;
+static int ett_atn_cpdlc_SEQUENCE_SIZE_1_5_OF_ATCDownlinkMsgElementId;
+static int ett_atn_cpdlc_T_atcdownlinkmessagedata_constraineddata;
+static int ett_atn_cpdlc_ATCMessageHeader;
+static int ett_atn_cpdlc_ATCUplinkMsgElementId;
+static int ett_atn_cpdlc_ATCDownlinkMsgElementId;
+static int ett_atn_cpdlc_Altimeter;
+static int ett_atn_cpdlc_ATWAlongTrackWaypoint;
+static int ett_atn_cpdlc_ATWLevel;
+static int ett_atn_cpdlc_ATWLevelSequence;
+static int ett_atn_cpdlc_ATWDistance;
+static int ett_atn_cpdlc_Code;
+static int ett_atn_cpdlc_ControlledTime;
+static int ett_atn_cpdlc_Date;
+static int ett_atn_cpdlc_DateTimeGroup;
+static int ett_atn_cpdlc_Degrees;
+static int ett_atn_cpdlc_DepartureClearance;
+static int ett_atn_cpdlc_DirectionDegrees;
+static int ett_atn_cpdlc_Distance;
+static int ett_atn_cpdlc_DistanceSpecified;
+static int ett_atn_cpdlc_DistanceSpecifiedDirection;
+static int ett_atn_cpdlc_DistanceSpecifiedDirectionTime;
+static int ett_atn_cpdlc_Facility;
+static int ett_atn_cpdlc_FacilityDesignationAltimeter;
+static int ett_atn_cpdlc_FacilityDesignationATISCode;
+static int ett_atn_cpdlc_FixName;
+static int ett_atn_cpdlc_FlightInformation;
+static int ett_atn_cpdlc_Frequency;
+static int ett_atn_cpdlc_FurtherInstructions;
+static int ett_atn_cpdlc_Holdatwaypoint;
+static int ett_atn_cpdlc_HoldClearance;
+static int ett_atn_cpdlc_InterceptCourseFrom;
+static int ett_atn_cpdlc_InterceptCourseFromSelection;
+static int ett_atn_cpdlc_Latitude;
+static int ett_atn_cpdlc_LatitudeDegreesMinutes;
+static int ett_atn_cpdlc_LatitudeDegreesMinutesSeconds;
+static int ett_atn_cpdlc_LatitudeLongitude;
+static int ett_atn_cpdlc_LatitudeReportingPoints;
+static int ett_atn_cpdlc_LatitudeType;
+static int ett_atn_cpdlc_LatLonReportingPoints;
+static int ett_atn_cpdlc_LegDistance;
+static int ett_atn_cpdlc_LegType;
+static int ett_atn_cpdlc_Level;
+static int ett_atn_cpdlc_SEQUENCE_SIZE_2_OF_LevelType;
+static int ett_atn_cpdlc_LevelLevel;
+static int ett_atn_cpdlc_LevelPosition;
+static int ett_atn_cpdlc_LevelProcedureName;
+static int ett_atn_cpdlc_LevelsOfFlight;
+static int ett_atn_cpdlc_LevelSpeed;
+static int ett_atn_cpdlc_LevelSpeedSpeed;
+static int ett_atn_cpdlc_LevelTime;
+static int ett_atn_cpdlc_LevelType;
+static int ett_atn_cpdlc_Longitude;
+static int ett_atn_cpdlc_LongitudeDegreesMinutes;
+static int ett_atn_cpdlc_LongitudeDegreesMinutesSeconds;
+static int ett_atn_cpdlc_LongitudeReportingPoints;
+static int ett_atn_cpdlc_LongitudeType;
+static int ett_atn_cpdlc_Navaid;
+static int ett_atn_cpdlc_PlaceBearing;
+static int ett_atn_cpdlc_PlaceBearingDistance;
+static int ett_atn_cpdlc_PlaceBearingPlaceBearing;
+static int ett_atn_cpdlc_Position;
+static int ett_atn_cpdlc_PositionDegrees;
+static int ett_atn_cpdlc_PositionDistanceSpecifiedDirection;
+static int ett_atn_cpdlc_PositionLevel;
+static int ett_atn_cpdlc_PositionLevelLevel;
+static int ett_atn_cpdlc_PositionLevelSpeed;
+static int ett_atn_cpdlc_PositionPosition;
+static int ett_atn_cpdlc_PositionProcedureName;
+static int ett_atn_cpdlc_PositionReport;
+static int ett_atn_cpdlc_PositionRouteClearanceIndex;
+static int ett_atn_cpdlc_PositionSpeed;
+static int ett_atn_cpdlc_PositionSpeedSpeed;
+static int ett_atn_cpdlc_PositionTime;
+static int ett_atn_cpdlc_PositionTimeLevel;
+static int ett_atn_cpdlc_PositionTimeTime;
+static int ett_atn_cpdlc_PositionUnitNameFrequency;
+static int ett_atn_cpdlc_ProcedureName;
+static int ett_atn_cpdlc_PublishedIdentifier;
+static int ett_atn_cpdlc_RemainingFuelPersonsOnBoard;
+static int ett_atn_cpdlc_ReportingPoints;
+static int ett_atn_cpdlc_RouteAndLevels;
+static int ett_atn_cpdlc_RouteClearance;
+static int ett_atn_cpdlc_SEQUENCE_SIZE_1_128_OF_RouteInformation;
+static int ett_atn_cpdlc_RouteInformation;
+static int ett_atn_cpdlc_RouteInformationAdditional;
+static int ett_atn_cpdlc_SEQUENCE_SIZE_1_8_OF_ATWAlongTrackWaypoint;
+static int ett_atn_cpdlc_SEQUENCE_SIZE_1_4_OF_InterceptCourseFrom;
+static int ett_atn_cpdlc_SEQUENCE_SIZE_1_8_OF_Holdatwaypoint;
+static int ett_atn_cpdlc_SEQUENCE_SIZE_1_32_OF_WaypointSpeedLevel;
+static int ett_atn_cpdlc_SEQUENCE_SIZE_1_32_OF_RTARequiredTimeArrival;
+static int ett_atn_cpdlc_RTARequiredTimeArrival;
+static int ett_atn_cpdlc_RTATime;
+static int ett_atn_cpdlc_Runway;
+static int ett_atn_cpdlc_RunwayRVR;
+static int ett_atn_cpdlc_RVR;
+static int ett_atn_cpdlc_Speed;
+static int ett_atn_cpdlc_SpeedSpeed;
+static int ett_atn_cpdlc_SpeedTime;
+static int ett_atn_cpdlc_SpeedTypeSpeedTypeSpeedType;
+static int ett_atn_cpdlc_SpeedTypeSpeedTypeSpeedTypeSpeed;
+static int ett_atn_cpdlc_Time;
+static int ett_atn_cpdlc_TimeLevel;
+static int ett_atn_cpdlc_TimeDeparture;
+static int ett_atn_cpdlc_TimeDistanceSpecifiedDirection;
+static int ett_atn_cpdlc_TimeDistanceToFromPosition;
+static int ett_atn_cpdlc_Timehhmmss;
+static int ett_atn_cpdlc_TimeUnitNameFrequency;
+static int ett_atn_cpdlc_TimePosition;
+static int ett_atn_cpdlc_TimePositionLevel;
+static int ett_atn_cpdlc_TimePositionLevelSpeed;
+static int ett_atn_cpdlc_TimeSpeed;
+static int ett_atn_cpdlc_TimeSpeedSpeed;
+static int ett_atn_cpdlc_TimeTime;
+static int ett_atn_cpdlc_TimeToFromPosition;
+static int ett_atn_cpdlc_ToFromPosition;
+static int ett_atn_cpdlc_UnitName;
+static int ett_atn_cpdlc_UnitNameFrequency;
+static int ett_atn_cpdlc_VerticalChange;
+static int ett_atn_cpdlc_VerticalRate;
+static int ett_atn_cpdlc_WaypointSpeedLevel;
+static int ett_atn_cpdlc_Winds;
+static int ett_atn_cpdlc_WindSpeed;
+static int ett_atn_cpdlc;
 
-/*--- End of included file: packet-atn-cpdlc-hf.c ---*/
-#line 97 "./asn1/atn-cpdlc/packet-atn-cpdlc-template.c"
-
-
-/*--- Included file: packet-atn-cpdlc-ett.c ---*/
-#line 1 "./asn1/atn-cpdlc/packet-atn-cpdlc-ett.c"
-static gint ett_atn_cpdlc_GroundPDUs = -1;
-static gint ett_atn_cpdlc_UplinkMessage = -1;
-static gint ett_atn_cpdlc_AircraftPDUs = -1;
-static gint ett_atn_cpdlc_StartDownMessage = -1;
-static gint ett_atn_cpdlc_DownlinkMessage = -1;
-static gint ett_atn_cpdlc_ProtectedGroundPDUs = -1;
-static gint ett_atn_cpdlc_ProtectedUplinkMessage = -1;
-static gint ett_atn_cpdlc_ATCForwardMessage = -1;
-static gint ett_atn_cpdlc_ForwardHeader = -1;
-static gint ett_atn_cpdlc_ForwardMessage = -1;
-static gint ett_atn_cpdlc_ProtectedAircraftPDUs = -1;
-static gint ett_atn_cpdlc_ProtectedStartDownMessage = -1;
-static gint ett_atn_cpdlc_ProtectedDownlinkMessage = -1;
-static gint ett_atn_cpdlc_ATCUplinkMessage = -1;
-static gint ett_atn_cpdlc_ATCUplinkMessageData = -1;
-static gint ett_atn_cpdlc_SEQUENCE_SIZE_1_5_OF_ATCUplinkMsgElementId = -1;
-static gint ett_atn_cpdlc_T_atcuplinkmessagedata_constraineddata = -1;
-static gint ett_atn_cpdlc_SEQUENCE_SIZE_1_2_OF_RouteClearance = -1;
-static gint ett_atn_cpdlc_ATCDownlinkMessage = -1;
-static gint ett_atn_cpdlc_ATCDownlinkMessageData = -1;
-static gint ett_atn_cpdlc_SEQUENCE_SIZE_1_5_OF_ATCDownlinkMsgElementId = -1;
-static gint ett_atn_cpdlc_T_atcdownlinkmessagedata_constraineddata = -1;
-static gint ett_atn_cpdlc_ATCMessageHeader = -1;
-static gint ett_atn_cpdlc_ATCUplinkMsgElementId = -1;
-static gint ett_atn_cpdlc_ATCDownlinkMsgElementId = -1;
-static gint ett_atn_cpdlc_Altimeter = -1;
-static gint ett_atn_cpdlc_ATWAlongTrackWaypoint = -1;
-static gint ett_atn_cpdlc_ATWLevel = -1;
-static gint ett_atn_cpdlc_ATWLevelSequence = -1;
-static gint ett_atn_cpdlc_ATWDistance = -1;
-static gint ett_atn_cpdlc_Code = -1;
-static gint ett_atn_cpdlc_ControlledTime = -1;
-static gint ett_atn_cpdlc_Date = -1;
-static gint ett_atn_cpdlc_DateTimeGroup = -1;
-static gint ett_atn_cpdlc_Degrees = -1;
-static gint ett_atn_cpdlc_DepartureClearance = -1;
-static gint ett_atn_cpdlc_DirectionDegrees = -1;
-static gint ett_atn_cpdlc_Distance = -1;
-static gint ett_atn_cpdlc_DistanceSpecified = -1;
-static gint ett_atn_cpdlc_DistanceSpecifiedDirection = -1;
-static gint ett_atn_cpdlc_DistanceSpecifiedDirectionTime = -1;
-static gint ett_atn_cpdlc_Facility = -1;
-static gint ett_atn_cpdlc_FacilityDesignationAltimeter = -1;
-static gint ett_atn_cpdlc_FacilityDesignationATISCode = -1;
-static gint ett_atn_cpdlc_FixName = -1;
-static gint ett_atn_cpdlc_FlightInformation = -1;
-static gint ett_atn_cpdlc_Frequency = -1;
-static gint ett_atn_cpdlc_FurtherInstructions = -1;
-static gint ett_atn_cpdlc_Holdatwaypoint = -1;
-static gint ett_atn_cpdlc_HoldClearance = -1;
-static gint ett_atn_cpdlc_InterceptCourseFrom = -1;
-static gint ett_atn_cpdlc_InterceptCourseFromSelection = -1;
-static gint ett_atn_cpdlc_Latitude = -1;
-static gint ett_atn_cpdlc_LatitudeDegreesMinutes = -1;
-static gint ett_atn_cpdlc_LatitudeDegreesMinutesSeconds = -1;
-static gint ett_atn_cpdlc_LatitudeLongitude = -1;
-static gint ett_atn_cpdlc_LatitudeReportingPoints = -1;
-static gint ett_atn_cpdlc_LatitudeType = -1;
-static gint ett_atn_cpdlc_LatLonReportingPoints = -1;
-static gint ett_atn_cpdlc_LegDistance = -1;
-static gint ett_atn_cpdlc_LegType = -1;
-static gint ett_atn_cpdlc_Level = -1;
-static gint ett_atn_cpdlc_SEQUENCE_SIZE_2_OF_LevelType = -1;
-static gint ett_atn_cpdlc_LevelLevel = -1;
-static gint ett_atn_cpdlc_LevelPosition = -1;
-static gint ett_atn_cpdlc_LevelProcedureName = -1;
-static gint ett_atn_cpdlc_LevelsOfFlight = -1;
-static gint ett_atn_cpdlc_LevelSpeed = -1;
-static gint ett_atn_cpdlc_LevelSpeedSpeed = -1;
-static gint ett_atn_cpdlc_LevelTime = -1;
-static gint ett_atn_cpdlc_LevelType = -1;
-static gint ett_atn_cpdlc_Longitude = -1;
-static gint ett_atn_cpdlc_LongitudeDegreesMinutes = -1;
-static gint ett_atn_cpdlc_LongitudeDegreesMinutesSeconds = -1;
-static gint ett_atn_cpdlc_LongitudeReportingPoints = -1;
-static gint ett_atn_cpdlc_LongitudeType = -1;
-static gint ett_atn_cpdlc_Navaid = -1;
-static gint ett_atn_cpdlc_PlaceBearing = -1;
-static gint ett_atn_cpdlc_PlaceBearingDistance = -1;
-static gint ett_atn_cpdlc_PlaceBearingPlaceBearing = -1;
-static gint ett_atn_cpdlc_Position = -1;
-static gint ett_atn_cpdlc_PositionDegrees = -1;
-static gint ett_atn_cpdlc_PositionDistanceSpecifiedDirection = -1;
-static gint ett_atn_cpdlc_PositionLevel = -1;
-static gint ett_atn_cpdlc_PositionLevelLevel = -1;
-static gint ett_atn_cpdlc_PositionLevelSpeed = -1;
-static gint ett_atn_cpdlc_PositionPosition = -1;
-static gint ett_atn_cpdlc_PositionProcedureName = -1;
-static gint ett_atn_cpdlc_PositionReport = -1;
-static gint ett_atn_cpdlc_PositionRouteClearanceIndex = -1;
-static gint ett_atn_cpdlc_PositionSpeed = -1;
-static gint ett_atn_cpdlc_PositionSpeedSpeed = -1;
-static gint ett_atn_cpdlc_PositionTime = -1;
-static gint ett_atn_cpdlc_PositionTimeLevel = -1;
-static gint ett_atn_cpdlc_PositionTimeTime = -1;
-static gint ett_atn_cpdlc_PositionUnitNameFrequency = -1;
-static gint ett_atn_cpdlc_ProcedureName = -1;
-static gint ett_atn_cpdlc_PublishedIdentifier = -1;
-static gint ett_atn_cpdlc_RemainingFuelPersonsOnBoard = -1;
-static gint ett_atn_cpdlc_ReportingPoints = -1;
-static gint ett_atn_cpdlc_RouteAndLevels = -1;
-static gint ett_atn_cpdlc_RouteClearance = -1;
-static gint ett_atn_cpdlc_SEQUENCE_SIZE_1_128_OF_RouteInformation = -1;
-static gint ett_atn_cpdlc_RouteInformation = -1;
-static gint ett_atn_cpdlc_RouteInformationAdditional = -1;
-static gint ett_atn_cpdlc_SEQUENCE_SIZE_1_8_OF_ATWAlongTrackWaypoint = -1;
-static gint ett_atn_cpdlc_SEQUENCE_SIZE_1_4_OF_InterceptCourseFrom = -1;
-static gint ett_atn_cpdlc_SEQUENCE_SIZE_1_8_OF_Holdatwaypoint = -1;
-static gint ett_atn_cpdlc_SEQUENCE_SIZE_1_32_OF_WaypointSpeedLevel = -1;
-static gint ett_atn_cpdlc_SEQUENCE_SIZE_1_32_OF_RTARequiredTimeArrival = -1;
-static gint ett_atn_cpdlc_RTARequiredTimeArrival = -1;
-static gint ett_atn_cpdlc_RTATime = -1;
-static gint ett_atn_cpdlc_Runway = -1;
-static gint ett_atn_cpdlc_RunwayRVR = -1;
-static gint ett_atn_cpdlc_RVR = -1;
-static gint ett_atn_cpdlc_Speed = -1;
-static gint ett_atn_cpdlc_SpeedSpeed = -1;
-static gint ett_atn_cpdlc_SpeedTime = -1;
-static gint ett_atn_cpdlc_SpeedTypeSpeedTypeSpeedType = -1;
-static gint ett_atn_cpdlc_SpeedTypeSpeedTypeSpeedTypeSpeed = -1;
-static gint ett_atn_cpdlc_Time = -1;
-static gint ett_atn_cpdlc_TimeLevel = -1;
-static gint ett_atn_cpdlc_TimeDeparture = -1;
-static gint ett_atn_cpdlc_TimeDistanceSpecifiedDirection = -1;
-static gint ett_atn_cpdlc_TimeDistanceToFromPosition = -1;
-static gint ett_atn_cpdlc_Timehhmmss = -1;
-static gint ett_atn_cpdlc_TimeUnitNameFrequency = -1;
-static gint ett_atn_cpdlc_TimePosition = -1;
-static gint ett_atn_cpdlc_TimePositionLevel = -1;
-static gint ett_atn_cpdlc_TimePositionLevelSpeed = -1;
-static gint ett_atn_cpdlc_TimeSpeed = -1;
-static gint ett_atn_cpdlc_TimeSpeedSpeed = -1;
-static gint ett_atn_cpdlc_TimeTime = -1;
-static gint ett_atn_cpdlc_TimeToFromPosition = -1;
-static gint ett_atn_cpdlc_ToFromPosition = -1;
-static gint ett_atn_cpdlc_UnitName = -1;
-static gint ett_atn_cpdlc_UnitNameFrequency = -1;
-static gint ett_atn_cpdlc_VerticalChange = -1;
-static gint ett_atn_cpdlc_VerticalRate = -1;
-static gint ett_atn_cpdlc_WaypointSpeedLevel = -1;
-static gint ett_atn_cpdlc_Winds = -1;
-static gint ett_atn_cpdlc_WindSpeed = -1;
-
-/*--- End of included file: packet-atn-cpdlc-ett.c ---*/
-#line 99 "./asn1/atn-cpdlc/packet-atn-cpdlc-template.c"
-static gint ett_atn_cpdlc = -1;
-
-
-/*--- Included file: packet-atn-cpdlc-fn.c ---*/
-#line 1 "./asn1/atn-cpdlc/packet-atn-cpdlc-fn.c"
 
 static const value_string atn_cpdlc_CPDLCUserAbortReason_vals[] = {
   {   0, "undefined" },
@@ -878,7 +846,7 @@ static const value_string atn_cpdlc_CPDLCUserAbortReason_vals[] = {
 static int
 dissect_atn_cpdlc_CPDLCUserAbortReason(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     7, NULL, TRUE, 0, NULL);
+                                     7, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -900,7 +868,7 @@ static const value_string atn_cpdlc_CPDLCProviderAbortReason_vals[] = {
 static int
 dissect_atn_cpdlc_CPDLCProviderAbortReason(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     8, NULL, TRUE, 0, NULL);
+                                     8, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -919,7 +887,7 @@ dissect_atn_cpdlc_NULL(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 static int
 dissect_atn_cpdlc_MsgIdentificationNumber(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 63U, NULL, FALSE);
+                                                            0U, 63U, NULL, false);
 
   return offset;
 }
@@ -929,7 +897,7 @@ dissect_atn_cpdlc_MsgIdentificationNumber(tvbuff_t *tvb _U_, int offset _U_, asn
 static int
 dissect_atn_cpdlc_MsgReferenceNumber(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 63U, NULL, FALSE);
+                                                            0U, 63U, NULL, false);
 
   return offset;
 }
@@ -939,7 +907,7 @@ dissect_atn_cpdlc_MsgReferenceNumber(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx
 static int
 dissect_atn_cpdlc_Year(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1996U, 2095U, NULL, FALSE);
+                                                            1996U, 2095U, NULL, false);
 
   return offset;
 }
@@ -949,7 +917,7 @@ dissect_atn_cpdlc_Year(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 static int
 dissect_atn_cpdlc_Month(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 12U, NULL, FALSE);
+                                                            1U, 12U, NULL, false);
 
   return offset;
 }
@@ -959,7 +927,7 @@ dissect_atn_cpdlc_Month(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 static int
 dissect_atn_cpdlc_Day(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 31U, NULL, FALSE);
+                                                            1U, 31U, NULL, false);
 
   return offset;
 }
@@ -985,7 +953,7 @@ dissect_atn_cpdlc_Date(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 static int
 dissect_atn_cpdlc_TimeHours(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 23U, NULL, FALSE);
+                                                            0U, 23U, NULL, false);
 
   return offset;
 }
@@ -995,7 +963,7 @@ dissect_atn_cpdlc_TimeHours(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 static int
 dissect_atn_cpdlc_TimeMinutes(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 59U, NULL, FALSE);
+                                                            0U, 59U, NULL, false);
 
   return offset;
 }
@@ -1020,7 +988,7 @@ dissect_atn_cpdlc_Time(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 static int
 dissect_atn_cpdlc_TimeSeconds(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 59U, NULL, FALSE);
+                                                            0U, 59U, NULL, false);
 
   return offset;
 }
@@ -1066,7 +1034,7 @@ static const value_string atn_cpdlc_LogicalAck_vals[] = {
 static int
 dissect_atn_cpdlc_LogicalAck(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -1093,7 +1061,7 @@ dissect_atn_cpdlc_ATCMessageHeader(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 static int
 dissect_atn_cpdlc_LevelFeet(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -60, 7000U, NULL, FALSE);
+                                                            -60, 7000U, NULL, false);
 
   return offset;
 }
@@ -1103,7 +1071,7 @@ dissect_atn_cpdlc_LevelFeet(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 static int
 dissect_atn_cpdlc_LevelMeters(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -30, 25000U, NULL, FALSE);
+                                                            -30, 25000U, NULL, false);
 
   return offset;
 }
@@ -1113,7 +1081,7 @@ dissect_atn_cpdlc_LevelMeters(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_atn_cpdlc_LevelFlightLevel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            30U, 700U, NULL, FALSE);
+                                                            30U, 700U, NULL, false);
 
   return offset;
 }
@@ -1123,7 +1091,7 @@ dissect_atn_cpdlc_LevelFlightLevel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 static int
 dissect_atn_cpdlc_LevelFlightLevelMetric(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            100U, 2500U, NULL, FALSE);
+                                                            100U, 2500U, NULL, false);
 
   return offset;
 }
@@ -1163,7 +1131,7 @@ static int
 dissect_atn_cpdlc_SEQUENCE_SIZE_2_OF_LevelType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_atn_cpdlc_SEQUENCE_SIZE_2_OF_LevelType, SEQUENCE_SIZE_2_OF_LevelType_sequence_of,
-                                                  2, 2, FALSE);
+                                                  2, 2, false);
 
   return offset;
 }
@@ -1194,7 +1162,7 @@ dissect_atn_cpdlc_Level(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 
 static int
 dissect_atn_cpdlc_Fix(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-    offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,1, 5, FALSE, ia5alpha , 127, NULL);
+    offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,1, 5, false, ia5alpha , 127, NULL);
 
   return offset;
 }
@@ -1204,7 +1172,7 @@ dissect_atn_cpdlc_Fix(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, p
 static int
 dissect_atn_cpdlc_LatitudeDegrees(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 90000U, NULL, FALSE);
+                                                            0U, 90000U, NULL, false);
 
   return offset;
 }
@@ -1214,7 +1182,7 @@ dissect_atn_cpdlc_LatitudeDegrees(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 static int
 dissect_atn_cpdlc_LatitudeWholeDegrees(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 89U, NULL, FALSE);
+                                                            0U, 89U, NULL, false);
 
   return offset;
 }
@@ -1224,7 +1192,7 @@ dissect_atn_cpdlc_LatitudeWholeDegrees(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 static int
 dissect_atn_cpdlc_MinutesLatLon(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 5999U, NULL, FALSE);
+                                                            0U, 5999U, NULL, false);
 
   return offset;
 }
@@ -1249,7 +1217,7 @@ dissect_atn_cpdlc_LatitudeDegreesMinutes(tvbuff_t *tvb _U_, int offset _U_, asn1
 static int
 dissect_atn_cpdlc_LatLonWholeMinutes(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 59U, NULL, FALSE);
+                                                            0U, 59U, NULL, false);
 
   return offset;
 }
@@ -1259,7 +1227,7 @@ dissect_atn_cpdlc_LatLonWholeMinutes(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx
 static int
 dissect_atn_cpdlc_SecondsLatLon(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 59U, NULL, FALSE);
+                                                            0U, 59U, NULL, false);
 
   return offset;
 }
@@ -1315,7 +1283,7 @@ static const value_string atn_cpdlc_LatitudeDirection_vals[] = {
 static int
 dissect_atn_cpdlc_LatitudeDirection(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -1340,7 +1308,7 @@ dissect_atn_cpdlc_Latitude(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 static int
 dissect_atn_cpdlc_LongitudeDegrees(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 180000U, NULL, FALSE);
+                                                            0U, 180000U, NULL, false);
 
   return offset;
 }
@@ -1350,7 +1318,7 @@ dissect_atn_cpdlc_LongitudeDegrees(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 static int
 dissect_atn_cpdlc_LongitudeWholeDegrees(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 179U, NULL, FALSE);
+                                                            0U, 179U, NULL, false);
 
   return offset;
 }
@@ -1421,7 +1389,7 @@ static const value_string atn_cpdlc_LongitudeDirection_vals[] = {
 static int
 dissect_atn_cpdlc_LongitudeDirection(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -1475,7 +1443,7 @@ dissect_atn_cpdlc_FixName(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 
 static int
 dissect_atn_cpdlc_NavaidName(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-    offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,1, 4, FALSE, ia5alpha , 127, NULL);
+    offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,1, 4, false, ia5alpha , 127, NULL);
 
   return offset;
 }
@@ -1499,7 +1467,7 @@ dissect_atn_cpdlc_Navaid(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 
 static int
 dissect_atn_cpdlc_Airport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-    offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,4, 4, FALSE, ia5alpha , 127, NULL);
+    offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,4, 4, false, ia5alpha , 127, NULL);
 
   return offset;
 }
@@ -1531,7 +1499,7 @@ dissect_atn_cpdlc_PublishedIdentifier(tvbuff_t *tvb _U_, int offset _U_, asn1_ct
 static int
 dissect_atn_cpdlc_DegreesMagnetic(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 360U, NULL, FALSE);
+                                                            1U, 360U, NULL, false);
 
   return offset;
 }
@@ -1541,7 +1509,7 @@ dissect_atn_cpdlc_DegreesMagnetic(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 static int
 dissect_atn_cpdlc_DegreesTrue(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 360U, NULL, FALSE);
+                                                            1U, 360U, NULL, false);
 
   return offset;
 }
@@ -1573,7 +1541,7 @@ dissect_atn_cpdlc_Degrees(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 static int
 dissect_atn_cpdlc_DistanceNm(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 9999U, NULL, FALSE);
+                                                            0U, 9999U, NULL, false);
 
   return offset;
 }
@@ -1583,7 +1551,7 @@ dissect_atn_cpdlc_DistanceNm(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 static int
 dissect_atn_cpdlc_DistanceKm(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 8000U, NULL, FALSE);
+                                                            0U, 8000U, NULL, false);
 
   return offset;
 }
@@ -1723,7 +1691,7 @@ static int
 dissect_atn_cpdlc_LevelLevel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_atn_cpdlc_LevelLevel, LevelLevel_sequence_of,
-                                                  2, 2, FALSE);
+                                                  2, 2, false);
 
   return offset;
 }
@@ -1767,7 +1735,7 @@ static int
 dissect_atn_cpdlc_TimeTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_atn_cpdlc_TimeTime, TimeTime_sequence_of,
-                                                  2, 2, FALSE);
+                                                  2, 2, false);
 
   return offset;
 }
@@ -1792,7 +1760,7 @@ dissect_atn_cpdlc_PositionTimeTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 static int
 dissect_atn_cpdlc_SpeedIndicated(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 400U, NULL, FALSE);
+                                                            0U, 400U, NULL, false);
 
   return offset;
 }
@@ -1802,7 +1770,7 @@ dissect_atn_cpdlc_SpeedIndicated(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 static int
 dissect_atn_cpdlc_SpeedIndicatedMetric(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 800U, NULL, FALSE);
+                                                            0U, 800U, NULL, false);
 
   return offset;
 }
@@ -1812,7 +1780,7 @@ dissect_atn_cpdlc_SpeedIndicatedMetric(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 static int
 dissect_atn_cpdlc_SpeedTrue(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 2000U, NULL, FALSE);
+                                                            0U, 2000U, NULL, false);
 
   return offset;
 }
@@ -1822,7 +1790,7 @@ dissect_atn_cpdlc_SpeedTrue(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 static int
 dissect_atn_cpdlc_SpeedTrueMetric(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 4000U, NULL, FALSE);
+                                                            0U, 4000U, NULL, false);
 
   return offset;
 }
@@ -1832,7 +1800,7 @@ dissect_atn_cpdlc_SpeedTrueMetric(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 static int
 dissect_atn_cpdlc_SpeedGround(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -50, 2000U, NULL, FALSE);
+                                                            -50, 2000U, NULL, false);
 
   return offset;
 }
@@ -1842,7 +1810,7 @@ dissect_atn_cpdlc_SpeedGround(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_atn_cpdlc_SpeedGroundMetric(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -100, 4000U, NULL, FALSE);
+                                                            -100, 4000U, NULL, false);
 
   return offset;
 }
@@ -1852,7 +1820,7 @@ dissect_atn_cpdlc_SpeedGroundMetric(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_
 static int
 dissect_atn_cpdlc_SpeedMach(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            500U, 4000U, NULL, FALSE);
+                                                            500U, 4000U, NULL, false);
 
   return offset;
 }
@@ -1973,7 +1941,7 @@ static int
 dissect_atn_cpdlc_SpeedSpeed(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_atn_cpdlc_SpeedSpeed, SpeedSpeed_sequence_of,
-                                                  2, 2, FALSE);
+                                                  2, 2, false);
 
   return offset;
 }
@@ -2013,7 +1981,7 @@ dissect_atn_cpdlc_TimePositionLevelSpeed(tvbuff_t *tvb _U_, int offset _U_, asn1
 static int
 dissect_atn_cpdlc_DistanceSpecifiedNm(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 250U, NULL, FALSE);
+                                                            1U, 250U, NULL, false);
 
   return offset;
 }
@@ -2023,7 +1991,7 @@ dissect_atn_cpdlc_DistanceSpecifiedNm(tvbuff_t *tvb _U_, int offset _U_, asn1_ct
 static int
 dissect_atn_cpdlc_DistanceSpecifiedKm(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 500U, NULL, FALSE);
+                                                            1U, 500U, NULL, false);
 
   return offset;
 }
@@ -2070,7 +2038,7 @@ static const value_string atn_cpdlc_Direction_vals[] = {
 static int
 dissect_atn_cpdlc_Direction(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     11, NULL, FALSE, 0, NULL);
+                                     11, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -2124,7 +2092,7 @@ dissect_atn_cpdlc_TimeDistanceSpecifiedDirection(tvbuff_t *tvb _U_, int offset _
 
 static int
 dissect_atn_cpdlc_AircraftFlightIdentification(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-    offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,2, 8, FALSE, ia5alpha , 127, NULL);
+    offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,2, 8, false, ia5alpha , 127, NULL);
 
   return offset;
 }
@@ -2153,7 +2121,7 @@ static int
 dissect_atn_cpdlc_PlaceBearingPlaceBearing(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_atn_cpdlc_PlaceBearingPlaceBearing, PlaceBearingPlaceBearing_sequence_of,
-                                                  2, 2, FALSE);
+                                                  2, 2, false);
 
   return offset;
 }
@@ -2162,7 +2130,7 @@ dissect_atn_cpdlc_PlaceBearingPlaceBearing(tvbuff_t *tvb _U_, int offset _U_, as
 
 static int
 dissect_atn_cpdlc_ATSRouteDesignator(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-    offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,2, 7, FALSE, ia5alpha , 127, NULL);
+    offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,2, 7, false, ia5alpha , 127, NULL);
 
   return offset;
 }
@@ -2207,7 +2175,7 @@ static const value_string atn_cpdlc_ProcedureType_vals[] = {
 static int
 dissect_atn_cpdlc_ProcedureType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, FALSE, 0, NULL);
+                                     3, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -2216,7 +2184,7 @@ dissect_atn_cpdlc_ProcedureType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 
 static int
 dissect_atn_cpdlc_Procedure(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-    offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,1, 20, FALSE, ia5alpha , 127, NULL);
+    offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,1, 20, false, ia5alpha , 127, NULL);
 
   return offset;
 }
@@ -2225,7 +2193,7 @@ dissect_atn_cpdlc_Procedure(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 
 static int
 dissect_atn_cpdlc_ProcedureTransition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-    offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,1, 5, FALSE, ia5alpha , 127, NULL);
+    offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,1, 5, false, ia5alpha , 127, NULL);
 
   return offset;
 }
@@ -2329,7 +2297,7 @@ dissect_atn_cpdlc_FlightInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_
 static int
 dissect_atn_cpdlc_CodeOctalDigit(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 7U, NULL, FALSE);
+                                                            0U, 7U, NULL, false);
 
   return offset;
 }
@@ -2343,7 +2311,7 @@ static int
 dissect_atn_cpdlc_Code(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_atn_cpdlc_Code, Code_sequence_of,
-                                                  4, 4, FALSE);
+                                                  4, 4, false);
 
   return offset;
 }
@@ -2352,7 +2320,7 @@ dissect_atn_cpdlc_Code(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 
 static int
 dissect_atn_cpdlc_FacilityDesignation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-    offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,4, 8, FALSE, ia5alpha , 127, NULL);
+    offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,4, 8, false, ia5alpha , 127, NULL);
 
   return offset;
 }
@@ -2361,7 +2329,7 @@ dissect_atn_cpdlc_FacilityDesignation(tvbuff_t *tvb _U_, int offset _U_, asn1_ct
 
 static int
 dissect_atn_cpdlc_FacilityName(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-    offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,3, 18, FALSE, ia5alpha , 127, NULL);
+    offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,3, 18, false, ia5alpha , 127, NULL);
 
   return offset;
 }
@@ -2384,7 +2352,7 @@ static const value_string atn_cpdlc_FacilityFunction_vals[] = {
 static int
 dissect_atn_cpdlc_FacilityFunction(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     9, NULL, TRUE, 0, NULL);
+                                     9, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -2410,7 +2378,7 @@ dissect_atn_cpdlc_UnitName(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 static int
 dissect_atn_cpdlc_Frequencyhf(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            2850U, 28000U, NULL, FALSE);
+                                                            2850U, 28000U, NULL, false);
 
   return offset;
 }
@@ -2420,7 +2388,7 @@ dissect_atn_cpdlc_Frequencyhf(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_atn_cpdlc_Frequencyvhf(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            23600U, 27398U, NULL, FALSE);
+                                                            23600U, 27398U, NULL, false);
 
   return offset;
 }
@@ -2430,7 +2398,7 @@ dissect_atn_cpdlc_Frequencyvhf(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int
 dissect_atn_cpdlc_Frequencyuhf(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            9000U, 15999U, NULL, FALSE);
+                                                            9000U, 15999U, NULL, false);
 
   return offset;
 }
@@ -2440,7 +2408,8 @@ dissect_atn_cpdlc_Frequencyuhf(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int
 dissect_atn_cpdlc_Frequencysatchannel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_NumericString(tvb, offset, actx, tree, hf_index,
-                                          12, 12, FALSE);
+                                          12, 12, false,
+                                          NULL);
 
   return offset;
 }
@@ -2498,7 +2467,7 @@ static const value_string atn_cpdlc_TimeTolerance_vals[] = {
 static int
 dissect_atn_cpdlc_TimeTolerance(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, FALSE, 0, NULL);
+                                     3, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -2523,7 +2492,7 @@ dissect_atn_cpdlc_ControlledTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 static int
 dissect_atn_cpdlc_DepartureMinimumInterval(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 150U, NULL, FALSE);
+                                                            1U, 150U, NULL, false);
 
   return offset;
 }
@@ -2550,7 +2519,7 @@ dissect_atn_cpdlc_TimeDeparture(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_atn_cpdlc_RunwayDirection(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 36U, NULL, FALSE);
+                                                            1U, 36U, NULL, false);
 
   return offset;
 }
@@ -2568,7 +2537,7 @@ static const value_string atn_cpdlc_RunwayConfiguration_vals[] = {
 static int
 dissect_atn_cpdlc_RunwayConfiguration(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     4, NULL, FALSE, 0, NULL);
+                                     4, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -2593,7 +2562,7 @@ dissect_atn_cpdlc_Runway(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 static int
 dissect_atn_cpdlc_RevisionNumber(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 16U, NULL, FALSE);
+                                                            1U, 16U, NULL, false);
 
   return offset;
 }
@@ -2602,7 +2571,7 @@ dissect_atn_cpdlc_RevisionNumber(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 
 static int
 dissect_atn_cpdlc_ATISCode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-    offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,1, 1, FALSE, ia5alpha , 127, NULL);
+    offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,1, 1, false, ia5alpha , 127, NULL);
 
   return offset;
 }
@@ -2655,7 +2624,7 @@ static int
 dissect_atn_cpdlc_PositionPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_atn_cpdlc_PositionPosition, PositionPosition_sequence_of,
-                                                  2, 2, FALSE);
+                                                  2, 2, false);
 
   return offset;
 }
@@ -2665,7 +2634,7 @@ dissect_atn_cpdlc_PositionPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 static int
 dissect_atn_cpdlc_RouteClearanceIndex(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 2U, NULL, FALSE);
+                                                            1U, 2U, NULL, false);
 
   return offset;
 }
@@ -2705,7 +2674,7 @@ dissect_atn_cpdlc_PositionProcedureName(tvbuff_t *tvb _U_, int offset _U_, asn1_
 static int
 dissect_atn_cpdlc_LegDistanceEnglish(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 50U, NULL, FALSE);
+                                                            0U, 50U, NULL, false);
 
   return offset;
 }
@@ -2715,7 +2684,7 @@ dissect_atn_cpdlc_LegDistanceEnglish(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx
 static int
 dissect_atn_cpdlc_LegDistanceMetric(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 128U, NULL, FALSE);
+                                                            1U, 128U, NULL, false);
 
   return offset;
 }
@@ -2747,7 +2716,7 @@ dissect_atn_cpdlc_LegDistance(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_atn_cpdlc_LegTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 10U, NULL, FALSE);
+                                                            0U, 10U, NULL, false);
 
   return offset;
 }
@@ -2932,7 +2901,7 @@ static const value_string atn_cpdlc_SpeedType_vals[] = {
 static int
 dissect_atn_cpdlc_SpeedType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     9, NULL, TRUE, 0, NULL);
+                                     9, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -2946,7 +2915,7 @@ static int
 dissect_atn_cpdlc_SpeedTypeSpeedTypeSpeedType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_atn_cpdlc_SpeedTypeSpeedTypeSpeedType, SpeedTypeSpeedTypeSpeedType_sequence_of,
-                                                  3, 3, FALSE);
+                                                  3, 3, false);
 
   return offset;
 }
@@ -2956,7 +2925,7 @@ dissect_atn_cpdlc_SpeedTypeSpeedTypeSpeedType(tvbuff_t *tvb _U_, int offset _U_,
 static int
 dissect_atn_cpdlc_AltimeterEnglish(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            2200U, 3200U, NULL, FALSE);
+                                                            2200U, 3200U, NULL, false);
 
   return offset;
 }
@@ -2966,7 +2935,7 @@ dissect_atn_cpdlc_AltimeterEnglish(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 static int
 dissect_atn_cpdlc_AltimeterMetric(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            7500U, 12500U, NULL, FALSE);
+                                                            7500U, 12500U, NULL, false);
 
   return offset;
 }
@@ -3007,7 +2976,7 @@ static const value_string atn_cpdlc_ErrorInformation_vals[] = {
 static int
 dissect_atn_cpdlc_ErrorInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     5, NULL, TRUE, 0, NULL);
+                                     5, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -3049,7 +3018,7 @@ static const value_string atn_cpdlc_TrafficType_vals[] = {
 static int
 dissect_atn_cpdlc_TrafficType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     6, NULL, TRUE, 0, NULL);
+                                     6, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -3058,7 +3027,7 @@ dissect_atn_cpdlc_TrafficType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 
 static int
 dissect_atn_cpdlc_FreeText(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-    offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,1, 256, FALSE, ia5alpha , 127, NULL);
+    offset = dissect_per_restricted_character_string(tvb, offset, actx, tree, hf_index,1, 256, false, ia5alpha , 127, NULL);
 
   return offset;
 }
@@ -3068,7 +3037,7 @@ dissect_atn_cpdlc_FreeText(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 static int
 dissect_atn_cpdlc_VerticalRateEnglish(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 3000U, NULL, FALSE);
+                                                            0U, 3000U, NULL, false);
 
   return offset;
 }
@@ -3078,7 +3047,7 @@ dissect_atn_cpdlc_VerticalRateEnglish(tvbuff_t *tvb _U_, int offset _U_, asn1_ct
 static int
 dissect_atn_cpdlc_VerticalRateMetric(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 1000U, NULL, FALSE);
+                                                            0U, 1000U, NULL, false);
 
   return offset;
 }
@@ -3116,7 +3085,7 @@ static const value_string atn_cpdlc_ToFrom_vals[] = {
 static int
 dissect_atn_cpdlc_ToFrom(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -3187,7 +3156,7 @@ dissect_atn_cpdlc_FacilityDesignationAltimeter(tvbuff_t *tvb _U_, int offset _U_
 static int
 dissect_atn_cpdlc_RVRFeet(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 6100U, NULL, FALSE);
+                                                            0U, 6100U, NULL, false);
 
   return offset;
 }
@@ -3197,7 +3166,7 @@ dissect_atn_cpdlc_RVRFeet(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 static int
 dissect_atn_cpdlc_RVRMeters(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 1500U, NULL, FALSE);
+                                                            0U, 1500U, NULL, false);
 
   return offset;
 }
@@ -3742,7 +3711,7 @@ static int
 dissect_atn_cpdlc_SEQUENCE_SIZE_1_5_OF_ATCUplinkMsgElementId(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_atn_cpdlc_SEQUENCE_SIZE_1_5_OF_ATCUplinkMsgElementId, SEQUENCE_SIZE_1_5_OF_ATCUplinkMsgElementId_sequence_of,
-                                                  1, 5, FALSE);
+                                                  1, 5, false);
 
   return offset;
 }
@@ -3756,7 +3725,7 @@ static int
 dissect_atn_cpdlc_SEQUENCE_SIZE_1_128_OF_RouteInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_atn_cpdlc_SEQUENCE_SIZE_1_128_OF_RouteInformation, SEQUENCE_SIZE_1_128_OF_RouteInformation_sequence_of,
-                                                  1, 128, FALSE);
+                                                  1, 128, false);
 
   return offset;
 }
@@ -3772,7 +3741,7 @@ static const value_string atn_cpdlc_ATWDistanceTolerance_vals[] = {
 static int
 dissect_atn_cpdlc_ATWDistanceTolerance(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -3804,7 +3773,7 @@ static const value_string atn_cpdlc_ATWLevelTolerance_vals[] = {
 static int
 dissect_atn_cpdlc_ATWLevelTolerance(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, FALSE, 0, NULL);
+                                     3, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -3833,7 +3802,7 @@ static int
 dissect_atn_cpdlc_ATWLevelSequence(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_atn_cpdlc_ATWLevelSequence, ATWLevelSequence_sequence_of,
-                                                  1, 2, FALSE);
+                                                  1, 2, false);
 
   return offset;
 }
@@ -3864,7 +3833,7 @@ static int
 dissect_atn_cpdlc_SEQUENCE_SIZE_1_8_OF_ATWAlongTrackWaypoint(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_atn_cpdlc_SEQUENCE_SIZE_1_8_OF_ATWAlongTrackWaypoint, SEQUENCE_SIZE_1_8_OF_ATWAlongTrackWaypoint_sequence_of,
-                                                  1, 8, FALSE);
+                                                  1, 8, false);
 
   return offset;
 }
@@ -3926,7 +3895,7 @@ dissect_atn_cpdlc_LatLonReportingPoints(tvbuff_t *tvb _U_, int offset _U_, asn1_
 static int
 dissect_atn_cpdlc_DegreeIncrement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 20U, NULL, FALSE);
+                                                            1U, 20U, NULL, false);
 
   return offset;
 }
@@ -3996,7 +3965,7 @@ static int
 dissect_atn_cpdlc_SEQUENCE_SIZE_1_4_OF_InterceptCourseFrom(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_atn_cpdlc_SEQUENCE_SIZE_1_4_OF_InterceptCourseFrom, SEQUENCE_SIZE_1_4_OF_InterceptCourseFrom_sequence_of,
-                                                  1, 4, FALSE);
+                                                  1, 4, false);
 
   return offset;
 }
@@ -4031,7 +4000,7 @@ static int
 dissect_atn_cpdlc_SEQUENCE_SIZE_1_8_OF_Holdatwaypoint(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_atn_cpdlc_SEQUENCE_SIZE_1_8_OF_Holdatwaypoint, SEQUENCE_SIZE_1_8_OF_Holdatwaypoint_sequence_of,
-                                                  1, 8, FALSE);
+                                                  1, 8, false);
 
   return offset;
 }
@@ -4061,7 +4030,7 @@ static int
 dissect_atn_cpdlc_SEQUENCE_SIZE_1_32_OF_WaypointSpeedLevel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_atn_cpdlc_SEQUENCE_SIZE_1_32_OF_WaypointSpeedLevel, SEQUENCE_SIZE_1_32_OF_WaypointSpeedLevel_sequence_of,
-                                                  1, 32, FALSE);
+                                                  1, 32, false);
 
   return offset;
 }
@@ -4086,7 +4055,7 @@ dissect_atn_cpdlc_RTATime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 static int
 dissect_atn_cpdlc_RTATolerance(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 150U, NULL, FALSE);
+                                                            1U, 150U, NULL, false);
 
   return offset;
 }
@@ -4116,7 +4085,7 @@ static int
 dissect_atn_cpdlc_SEQUENCE_SIZE_1_32_OF_RTARequiredTimeArrival(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_atn_cpdlc_SEQUENCE_SIZE_1_32_OF_RTARequiredTimeArrival, SEQUENCE_SIZE_1_32_OF_RTARequiredTimeArrival_sequence_of,
-                                                  1, 32, FALSE);
+                                                  1, 32, false);
 
   return offset;
 }
@@ -4171,7 +4140,7 @@ static int
 dissect_atn_cpdlc_SEQUENCE_SIZE_1_2_OF_RouteClearance(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_atn_cpdlc_SEQUENCE_SIZE_1_2_OF_RouteClearance, SEQUENCE_SIZE_1_2_OF_RouteClearance_sequence_of,
-                                                  1, 2, FALSE);
+                                                  1, 2, false);
 
   return offset;
 }
@@ -4247,7 +4216,7 @@ dissect_atn_cpdlc_UplinkMessage(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_atn_cpdlc_AircraftAddress(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     24, 24, FALSE, NULL, NULL);
+                                     24, 24, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -4273,7 +4242,7 @@ dissect_atn_cpdlc_ForwardHeader(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_atn_cpdlc_BIT_STRING(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     NO_BOUND, NO_BOUND, FALSE, NULL, NULL);
+                                     NO_BOUND, NO_BOUND, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -4327,7 +4296,7 @@ static const value_string atn_cpdlc_ATCForwardResponse_vals[] = {
 static int
 dissect_atn_cpdlc_ATCForwardResponse(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, TRUE, 0, NULL);
+                                     3, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -4373,7 +4342,7 @@ static const value_string atn_cpdlc_Mode_vals[] = {
 static int
 dissect_atn_cpdlc_Mode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -4399,7 +4368,7 @@ static const value_string atn_cpdlc_ClearanceType_vals[] = {
 static int
 dissect_atn_cpdlc_ClearanceType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     12, NULL, TRUE, 0, NULL);
+                                     12, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -4418,7 +4387,7 @@ dissect_atn_cpdlc_RemainingFuel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_atn_cpdlc_Temperature(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -100, 100U, NULL, FALSE);
+                                                            -100, 100U, NULL, false);
 
   return offset;
 }
@@ -4428,7 +4397,7 @@ dissect_atn_cpdlc_Temperature(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_atn_cpdlc_WindDirection(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 360U, NULL, FALSE);
+                                                            1U, 360U, NULL, false);
 
   return offset;
 }
@@ -4438,7 +4407,7 @@ dissect_atn_cpdlc_WindDirection(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_atn_cpdlc_WindSpeedEnglish(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 255U, NULL, FALSE);
+                                                            0U, 255U, NULL, false);
 
   return offset;
 }
@@ -4448,7 +4417,7 @@ dissect_atn_cpdlc_WindSpeedEnglish(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 static int
 dissect_atn_cpdlc_WindSpeedMetric(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 511U, NULL, FALSE);
+                                                            0U, 511U, NULL, false);
 
   return offset;
 }
@@ -4502,7 +4471,7 @@ static const value_string atn_cpdlc_Turbulence_vals[] = {
 static int
 dissect_atn_cpdlc_Turbulence(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, FALSE, 0, NULL);
+                                     3, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -4520,7 +4489,7 @@ static const value_string atn_cpdlc_Icing_vals[] = {
 static int
 dissect_atn_cpdlc_Icing(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     4, NULL, FALSE, 0, NULL);
+                                     4, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -4536,7 +4505,7 @@ static const value_string atn_cpdlc_VerticalDirection_vals[] = {
 static int
 dissect_atn_cpdlc_VerticalDirection(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -4561,7 +4530,7 @@ dissect_atn_cpdlc_VerticalChange(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 static int
 dissect_atn_cpdlc_Humidity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 100U, NULL, FALSE);
+                                                            0U, 100U, NULL, false);
 
   return offset;
 }
@@ -4606,7 +4575,7 @@ dissect_atn_cpdlc_PositionReport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 static int
 dissect_atn_cpdlc_PersonsOnBoard(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 1024U, NULL, FALSE);
+                                                            1U, 1024U, NULL, false);
 
   return offset;
 }
@@ -4631,7 +4600,7 @@ dissect_atn_cpdlc_RemainingFuelPersonsOnBoard(tvbuff_t *tvb _U_, int offset _U_,
 static int
 dissect_atn_cpdlc_VersionNumber(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 15U, NULL, FALSE);
+                                                            0U, 15U, NULL, false);
 
   return offset;
 }
@@ -4953,7 +4922,7 @@ static int
 dissect_atn_cpdlc_SEQUENCE_SIZE_1_5_OF_ATCDownlinkMsgElementId(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_atn_cpdlc_SEQUENCE_SIZE_1_5_OF_ATCDownlinkMsgElementId, SEQUENCE_SIZE_1_5_OF_ATCDownlinkMsgElementId_sequence_of,
-                                                  1, 5, FALSE);
+                                                  1, 5, false);
 
   return offset;
 }
@@ -5087,7 +5056,7 @@ static const value_string atn_cpdlc_PMCPDLCUserAbortReason_vals[] = {
 static int
 dissect_atn_cpdlc_PMCPDLCUserAbortReason(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     13, NULL, TRUE, 0, NULL);
+                                     13, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -5109,7 +5078,7 @@ static const value_string atn_cpdlc_PMCPDLCProviderAbortReason_vals[] = {
 static int
 dissect_atn_cpdlc_PMCPDLCProviderAbortReason(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     8, NULL, TRUE, 0, NULL);
+                                     8, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -5132,7 +5101,7 @@ static int
 dissect_atn_cpdlc_CPDLCMessage(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
     tvbuff_t *tvb_usr = NULL;
 
-    offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index, NO_BOUND, NO_BOUND, FALSE, &tvb_usr, NULL);
+    offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index, NO_BOUND, NO_BOUND, false, NULL, 0, &tvb_usr, NULL);
 
     if (tvb_usr) {
       switch(check_heur_msg_type(actx->pinfo)){
@@ -5208,7 +5177,7 @@ static const value_string atn_cpdlc_ProtectedMode_vals[] = {
 static int
 dissect_atn_cpdlc_ProtectedMode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -5275,7 +5244,7 @@ dissect_atn_cpdlc_ProtectedAircraftPDUs(tvbuff_t *tvb _U_, int offset _U_, asn1_
 static int dissect_GroundPDUs_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, FALSE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, false, pinfo);
   offset = dissect_atn_cpdlc_GroundPDUs(tvb, offset, &asn1_ctx, tree, hf_atn_cpdlc_GroundPDUs_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -5283,7 +5252,7 @@ static int dissect_GroundPDUs_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, pro
 static int dissect_AircraftPDUs_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, FALSE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, false, pinfo);
   offset = dissect_atn_cpdlc_AircraftPDUs(tvb, offset, &asn1_ctx, tree, hf_atn_cpdlc_AircraftPDUs_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -5291,7 +5260,7 @@ static int dissect_AircraftPDUs_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, p
 static int dissect_ProtectedGroundPDUs_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, FALSE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, false, pinfo);
   offset = dissect_atn_cpdlc_ProtectedGroundPDUs(tvb, offset, &asn1_ctx, tree, hf_atn_cpdlc_ProtectedGroundPDUs_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -5299,18 +5268,15 @@ static int dissect_ProtectedGroundPDUs_PDU(tvbuff_t *tvb _U_, packet_info *pinfo
 static int dissect_ProtectedAircraftPDUs_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, FALSE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, false, pinfo);
   offset = dissect_atn_cpdlc_ProtectedAircraftPDUs(tvb, offset, &asn1_ctx, tree, hf_atn_cpdlc_ProtectedAircraftPDUs_PDU);
   offset += 7; offset >>= 3;
   return offset;
 }
 
 
-/*--- End of included file: packet-atn-cpdlc-fn.c ---*/
-#line 102 "./asn1/atn-cpdlc/packet-atn-cpdlc-template.c"
-
 /* Wireshark ID of CPDLC protocol */
-static int proto_atn_cpdlc = -1;
+static int proto_atn_cpdlc;
 
 
 static int
@@ -5416,7 +5382,7 @@ dissect_atn_cpdlc(
     return tvb_reported_length_remaining(tvb, 0);
 }
 
-static gboolean
+static bool
 dissect_atn_cpdlc_heur(
     tvbuff_t *tvb,
     packet_info *pinfo,
@@ -5424,8 +5390,8 @@ dissect_atn_cpdlc_heur(
     void *data _U_)
 {
     atn_conversation_t *volatile atn_cv = NULL;
-    volatile gboolean is_atn_cpdlc = FALSE;
-    volatile gboolean is_pm = FALSE;
+    volatile bool is_atn_cpdlc = false;
+    volatile bool is_pm = false;
     int type;
 
     type = check_heur_msg_type(pinfo);
@@ -5434,43 +5400,43 @@ dissect_atn_cpdlc_heur(
       case um:
           TRY {
             dissect_ProtectedGroundPDUs_PDU(tvb, pinfo, NULL, NULL);
-            is_atn_cpdlc = TRUE;
-            is_pm = TRUE;}
+            is_atn_cpdlc = true;
+            is_pm = true;}
           CATCH_ALL{
-            is_atn_cpdlc = FALSE;
-            is_pm = FALSE;}
+            is_atn_cpdlc = false;
+            is_pm = false;}
           ENDTRY;
           if (is_atn_cpdlc) {
             break;
           }
           TRY {
             dissect_GroundPDUs_PDU(tvb, pinfo, NULL, NULL);
-            is_pm = FALSE;
-            is_atn_cpdlc = TRUE;}
+            is_pm = false;
+            is_atn_cpdlc = true;}
           CATCH_ALL{
-            is_atn_cpdlc = FALSE;
-            is_pm = FALSE;}
+            is_atn_cpdlc = false;
+            is_pm = false;}
           ENDTRY;
         break;
     case dm:
           TRY {
             dissect_ProtectedAircraftPDUs_PDU(tvb, pinfo, NULL, NULL);
-            is_atn_cpdlc = TRUE;
-            is_pm = TRUE;}
+            is_atn_cpdlc = true;
+            is_pm = true;}
           CATCH_ALL {
-            is_atn_cpdlc = FALSE;
-            is_pm = FALSE; }
+            is_atn_cpdlc = false;
+            is_pm = false; }
           ENDTRY;
           if (is_atn_cpdlc) {
             break;
           }
           TRY{
             dissect_AircraftPDUs_PDU(tvb, pinfo, NULL, NULL);
-            is_atn_cpdlc = TRUE;
-            is_pm = FALSE;}
+            is_atn_cpdlc = true;
+            is_pm = false;}
           CATCH_ALL{
-            is_atn_cpdlc = FALSE;
-            is_pm = FALSE;}
+            is_atn_cpdlc = false;
+            is_pm = false;}
           ENDTRY;
       break;
     default:
@@ -5504,14 +5470,14 @@ dissect_atn_cpdlc_heur(
     }
 
     if(atn_cv){ /* atn conversation found */
-      if(is_pm == TRUE) {
+      if(is_pm == true) {
           atn_cv->ae_qualifier =  pmcpdlc; }
       else {
           atn_cv->ae_qualifier =  cpdlc; }
       dissect_atn_cpdlc(tvb, pinfo, tree, NULL);
     }
   }else { /* there should *always* be an atn conversation */
-      is_atn_cpdlc = FALSE;
+      is_atn_cpdlc = false;
   }
 
   return is_atn_cpdlc;
@@ -5522,9 +5488,6 @@ dissect_atn_cpdlc_heur(
 void proto_register_atn_cpdlc (void)
 {
     static hf_register_info hf_atn_cpdlc[] = {
-
-/*--- Included file: packet-atn-cpdlc-hfarr.c ---*/
-#line 1 "./asn1/atn-cpdlc/packet-atn-cpdlc-hfarr.c"
     { &hf_atn_cpdlc_GroundPDUs_PDU,
       { "GroundPDUs", "atn-cpdlc.GroundPDUs",
         FT_UINT32, BASE_DEC, VALS(atn_cpdlc_GroundPDUs_vals), 0,
@@ -5554,7 +5517,7 @@ void proto_register_atn_cpdlc (void)
         FT_UINT32, BASE_DEC, VALS(atn_cpdlc_UplinkMessage_vals), 0,
         "UplinkMessage", HFILL }},
     { &hf_atn_cpdlc_groundpdus_send,
-      { "send", "atn-cpdlc.send_element",
+      { "send", "atn-cpdlc.groundpdus_send_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "ATCUplinkMessage", HFILL }},
     { &hf_atn_cpdlc_forward,
@@ -5578,7 +5541,7 @@ void proto_register_atn_cpdlc (void)
         FT_NONE, BASE_NONE, NULL, 0,
         "StartDownMessage", HFILL }},
     { &hf_atn_cpdlc_aircraftpdus_send,
-      { "send", "atn-cpdlc.send_element",
+      { "send", "atn-cpdlc.aircraftpdus_send_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "ATCDownlinkMessage", HFILL }},
     { &hf_atn_cpdlc_mode,
@@ -5594,15 +5557,15 @@ void proto_register_atn_cpdlc (void)
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
     { &hf_atn_cpdlc_pmcpdlcuserabortreason,
-      { "abortUser", "atn-cpdlc.abortUser",
+      { "abortUser", "atn-cpdlc.pmcpdlcuserabortreason",
         FT_UINT32, BASE_DEC, VALS(atn_cpdlc_PMCPDLCUserAbortReason_vals), 0,
         "PMCPDLCUserAbortReason", HFILL }},
     { &hf_atn_cpdlc_pmcpdlcproviderabortreason,
-      { "abortProvider", "atn-cpdlc.abortProvider",
+      { "abortProvider", "atn-cpdlc.pmcpdlcproviderabortreason",
         FT_UINT32, BASE_DEC, VALS(atn_cpdlc_PMCPDLCProviderAbortReason_vals), 0,
         "PMCPDLCProviderAbortReason", HFILL }},
     { &hf_atn_cpdlc_protecteduplinkmessage,
-      { "startup", "atn-cpdlc.startup_element",
+      { "startup", "atn-cpdlc.protecteduplinkmessage_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "ProtectedUplinkMessage", HFILL }},
     { &hf_atn_cpdlc_algorithmIdentifier,
@@ -5646,7 +5609,7 @@ void proto_register_atn_cpdlc (void)
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING", HFILL }},
     { &hf_atn_cpdlc_protectedstartDownmessage,
-      { "startdown", "atn-cpdlc.startdown_element",
+      { "startdown", "atn-cpdlc.protectedstartDownmessage_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "ProtectedStartDownMessage", HFILL }},
     { &hf_atn_cpdlc_send,
@@ -5654,11 +5617,11 @@ void proto_register_atn_cpdlc (void)
         FT_NONE, BASE_NONE, NULL, 0,
         "ProtectedDownlinkMessage", HFILL }},
     { &hf_atn_cpdlc_protectedmode,
-      { "mode", "atn-cpdlc.mode",
+      { "mode", "atn-cpdlc.protectedmode",
         FT_UINT32, BASE_DEC, VALS(atn_cpdlc_ProtectedMode_vals), 0,
         "ProtectedMode", HFILL }},
     { &hf_atn_cpdlc_protecteddownlinkmessage,
-      { "startDownlinkMessage", "atn-cpdlc.startDownlinkMessage_element",
+      { "startDownlinkMessage", "atn-cpdlc.protecteddownlinkmessage_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "ProtectedDownlinkMessage", HFILL }},
     { &hf_atn_cpdlc_header,
@@ -5666,11 +5629,11 @@ void proto_register_atn_cpdlc (void)
         FT_NONE, BASE_NONE, NULL, 0,
         "ATCMessageHeader", HFILL }},
     { &hf_atn_cpdlc_atcuplinkmessage_messagedata,
-      { "messageData", "atn-cpdlc.messageData_element",
+      { "messageData", "atn-cpdlc.atcuplinkmessage_messagedata_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "ATCUplinkMessageData", HFILL }},
     { &hf_atn_cpdlc_atcuplinkmessagedata_elementids,
-      { "elementIds", "atn-cpdlc.elementIds",
+      { "elementIds", "atn-cpdlc.atcuplinkmessagedata_elementids",
         FT_UINT32, BASE_DEC, NULL, 0,
         "SEQUENCE_SIZE_1_5_OF_ATCUplinkMsgElementId", HFILL }},
     { &hf_atn_cpdlc_atcuplinkmessagedata_elementids_item,
@@ -5678,7 +5641,7 @@ void proto_register_atn_cpdlc (void)
         FT_UINT32, BASE_DEC, VALS(atn_cpdlc_ATCUplinkMsgElementId_vals), 0,
         NULL, HFILL }},
     { &hf_atn_cpdlc_atcuplinkmessagedata_constraineddata,
-      { "constrainedData", "atn-cpdlc.constrainedData_element",
+      { "constrainedData", "atn-cpdlc.atcuplinkmessagedata_constraineddata_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "T_atcuplinkmessagedata_constraineddata", HFILL }},
     { &hf_atn_cpdlc_routeClearanceData,
@@ -5690,11 +5653,11 @@ void proto_register_atn_cpdlc (void)
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
     { &hf_atn_cpdlc_atcdownlinkmessage_messagedata,
-      { "messageData", "atn-cpdlc.messageData_element",
+      { "messageData", "atn-cpdlc.atcdownlinkmessage_messagedata_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "ATCDownlinkMessageData", HFILL }},
     { &hf_atn_cpdlc_atcdownlinkmessagedata_elementids,
-      { "elementIds", "atn-cpdlc.elementIds",
+      { "elementIds", "atn-cpdlc.atcdownlinkmessagedata_elementids",
         FT_UINT32, BASE_DEC, NULL, 0,
         "SEQUENCE_SIZE_1_5_OF_ATCDownlinkMsgElementId", HFILL }},
     { &hf_atn_cpdlc_atcdownlinkmessagedata_elementids_item,
@@ -5702,7 +5665,7 @@ void proto_register_atn_cpdlc (void)
         FT_UINT32, BASE_DEC, VALS(atn_cpdlc_ATCDownlinkMsgElementId_vals), 0,
         NULL, HFILL }},
     { &hf_atn_cpdlc_atcdownlinkmessagedata_constraineddata,
-      { "constrainedData", "atn-cpdlc.constrainedData_element",
+      { "constrainedData", "atn-cpdlc.atcdownlinkmessagedata_constraineddata_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "T_atcdownlinkmessagedata_constraineddata", HFILL }},
     { &hf_atn_cpdlc_messageIdNumber,
@@ -7274,7 +7237,7 @@ void proto_register_atn_cpdlc (void)
         FT_STRING, BASE_NONE, NULL, 0,
         NULL, HFILL }},
     { &hf_atn_cpdlc_fixname_name,
-      { "name", "atn-cpdlc.name",
+      { "name", "atn-cpdlc.fixname_name",
         FT_STRING, BASE_NONE, NULL, 0,
         "Fix", HFILL }},
     { &hf_atn_cpdlc_latlon,
@@ -7478,7 +7441,7 @@ void proto_register_atn_cpdlc (void)
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
     { &hf_atn_cpdlc_levelspeed_speed,
-      { "speed", "atn-cpdlc.speed",
+      { "speed", "atn-cpdlc.levelspeed_speed",
         FT_UINT32, BASE_DEC, NULL, 0,
         "SpeedSpeed", HFILL }},
     { &hf_atn_cpdlc_speeds,
@@ -7530,7 +7493,7 @@ void proto_register_atn_cpdlc (void)
         FT_NONE, BASE_NONE, NULL, 0,
         "LongitudeDegreesMinutesSeconds", HFILL }},
     { &hf_atn_cpdlc_navaid_name,
-      { "name", "atn-cpdlc.name",
+      { "name", "atn-cpdlc.navaid_name",
         FT_STRING, BASE_NONE, NULL, 0,
         "NavaidName", HFILL }},
     { &hf_atn_cpdlc_PlaceBearingPlaceBearing_item,
@@ -7766,7 +7729,7 @@ void proto_register_atn_cpdlc (void)
         FT_UINT32, BASE_DEC, NULL, 0,
         NULL, HFILL }},
     { &hf_atn_cpdlc_runway_direction,
-      { "direction", "atn-cpdlc.direction",
+      { "direction", "atn-cpdlc.runway_direction",
         FT_UINT32, BASE_DEC, NULL, 0,
         "RunwayDirection", HFILL }},
     { &hf_atn_cpdlc_configuration,
@@ -7898,7 +7861,7 @@ void proto_register_atn_cpdlc (void)
         FT_UINT32, BASE_DEC, VALS(atn_cpdlc_FacilityFunction_vals), 0,
         NULL, HFILL }},
     { &hf_atn_cpdlc_vertical_direction,
-      { "direction", "atn-cpdlc.direction",
+      { "direction", "atn-cpdlc.vertical_direction",
         FT_UINT32, BASE_DEC, VALS(atn_cpdlc_VerticalDirection_vals), 0,
         "VerticalDirection", HFILL }},
     { &hf_atn_cpdlc_rate,
@@ -7914,11 +7877,11 @@ void proto_register_atn_cpdlc (void)
         FT_UINT32, BASE_DEC, NULL, 0,
         NULL, HFILL }},
     { &hf_atn_cpdlc_winds_direction,
-      { "direction", "atn-cpdlc.direction",
+      { "direction", "atn-cpdlc.winds_direction",
         FT_UINT32, BASE_DEC, NULL, 0,
         "WindDirection", HFILL }},
     { &hf_atn_cpdlc_winds_speed,
-      { "speed", "atn-cpdlc.speed",
+      { "speed", "atn-cpdlc.winds_speed",
         FT_UINT32, BASE_DEC, VALS(atn_cpdlc_WindSpeed_vals), 0,
         "WindSpeed", HFILL }},
     { &hf_atn_cpdlc_windSpeedEnglish,
@@ -7929,15 +7892,9 @@ void proto_register_atn_cpdlc (void)
       { "windSpeedMetric", "atn-cpdlc.windSpeedMetric",
         FT_UINT32, BASE_DEC, NULL, 0,
         NULL, HFILL }},
-
-/*--- End of included file: packet-atn-cpdlc-hfarr.c ---*/
-#line 317 "./asn1/atn-cpdlc/packet-atn-cpdlc-template.c"
       };
 
-    static gint *ett[] = {
-
-/*--- Included file: packet-atn-cpdlc-ettarr.c ---*/
-#line 1 "./asn1/atn-cpdlc/packet-atn-cpdlc-ettarr.c"
+    static int *ett[] = {
     &ett_atn_cpdlc_GroundPDUs,
     &ett_atn_cpdlc_UplinkMessage,
     &ett_atn_cpdlc_AircraftPDUs,
@@ -8080,17 +8037,11 @@ void proto_register_atn_cpdlc (void)
     &ett_atn_cpdlc_WaypointSpeedLevel,
     &ett_atn_cpdlc_Winds,
     &ett_atn_cpdlc_WindSpeed,
-
-/*--- End of included file: packet-atn-cpdlc-ettarr.c ---*/
-#line 321 "./asn1/atn-cpdlc/packet-atn-cpdlc-template.c"
         &ett_atn_cpdlc
     };
 
     /* register CPDLC */
-    proto_atn_cpdlc = proto_register_protocol(
-        ATN_CPDLC_PROTO ,
-        "ATN-CPDLC",
-        "atn-cpdlc");
+    proto_atn_cpdlc = proto_register_protocol(ATN_CPDLC_PROTO, "ATN-CPDLC", "atn-cpdlc");
 
     proto_register_field_array(
         proto_atn_cpdlc,
@@ -8119,7 +8070,7 @@ void proto_reg_handoff_atn_cpdlc(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

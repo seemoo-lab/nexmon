@@ -9,19 +9,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -32,60 +20,62 @@
 void proto_register_pptp(void);
 void proto_reg_handoff_pptp(void);
 
-static int proto_pptp = -1;
-static int hf_pptp_length = -1;
-static int hf_pptp_message_type = -1;
-static int hf_pptp_magic_cookie = -1;
-static int hf_pptp_control_message_type = -1;
-static int hf_pptp_reserved = -1;
-static int hf_pptp_protocol_version = -1;
-static int hf_pptp_framing_capabilities = -1;
-static int hf_pptp_bearer_capabilities = -1;
-static int hf_pptp_maximum_channels = -1;
-static int hf_pptp_firmware_revision = -1;
-static int hf_pptp_host_name = -1;
-static int hf_pptp_vendor_name = -1;
-static int hf_pptp_control_result = -1;
-static int hf_pptp_error = -1;
-static int hf_pptp_reason = -1;
-static int hf_pptp_stop_result = -1;
-static int hf_pptp_identifier = -1;
-static int hf_pptp_echo_result = -1;
-static int hf_pptp_call_id = -1;
-static int hf_pptp_call_serial_number = -1;
-static int hf_pptp_minimum_bps = -1;
-static int hf_pptp_maximum_bps = -1;
-static int hf_pptp_bearer_type = -1;
-static int hf_pptp_framing_type = -1;
-static int hf_pptp_packet_receive_window_size = -1;
-static int hf_pptp_packet_processing_delay = -1;
-static int hf_pptp_phone_number_length = -1;
-static int hf_pptp_phone_number = -1;
-static int hf_pptp_subaddress = -1;
-static int hf_pptp_peer_call_id = -1;
-static int hf_pptp_out_result = -1;
-static int hf_pptp_cause = -1;
-static int hf_pptp_connect_speed = -1;
-static int hf_pptp_physical_channel_id = -1;
-static int hf_pptp_dialed_number_length = -1;
-static int hf_pptp_dialed_number = -1;
-static int hf_pptp_dialing_number_length = -1;
-static int hf_pptp_dialing_number = -1;
-static int hf_pptp_in_result = -1;
-static int hf_pptp_disc_result = -1;
-static int hf_pptp_call_statistics = -1;
-static int hf_pptp_crc_errors = -1;
-static int hf_pptp_framing_errors = -1;
-static int hf_pptp_hardware_overruns = -1;
-static int hf_pptp_buffer_overruns = -1;
-static int hf_pptp_timeout_errors = -1;
-static int hf_pptp_alignment_errors = -1;
-static int hf_pptp_send_accm = -1;
-static int hf_pptp_receive_accm = -1;
+static dissector_handle_t pptp_handle;
 
-static gint ett_pptp = -1;
+static int proto_pptp;
+static int hf_pptp_length;
+static int hf_pptp_message_type;
+static int hf_pptp_magic_cookie;
+static int hf_pptp_control_message_type;
+static int hf_pptp_reserved;
+static int hf_pptp_protocol_version;
+static int hf_pptp_framing_capabilities;
+static int hf_pptp_bearer_capabilities;
+static int hf_pptp_maximum_channels;
+static int hf_pptp_firmware_revision;
+static int hf_pptp_host_name;
+static int hf_pptp_vendor_name;
+static int hf_pptp_control_result;
+static int hf_pptp_error;
+static int hf_pptp_reason;
+static int hf_pptp_stop_result;
+static int hf_pptp_identifier;
+static int hf_pptp_echo_result;
+static int hf_pptp_call_id;
+static int hf_pptp_call_serial_number;
+static int hf_pptp_minimum_bps;
+static int hf_pptp_maximum_bps;
+static int hf_pptp_bearer_type;
+static int hf_pptp_framing_type;
+static int hf_pptp_packet_receive_window_size;
+static int hf_pptp_packet_processing_delay;
+static int hf_pptp_phone_number_length;
+static int hf_pptp_phone_number;
+static int hf_pptp_subaddress;
+static int hf_pptp_peer_call_id;
+static int hf_pptp_out_result;
+static int hf_pptp_cause;
+static int hf_pptp_connect_speed;
+static int hf_pptp_physical_channel_id;
+static int hf_pptp_dialed_number_length;
+static int hf_pptp_dialed_number;
+static int hf_pptp_dialing_number_length;
+static int hf_pptp_dialing_number;
+static int hf_pptp_in_result;
+static int hf_pptp_disc_result;
+static int hf_pptp_call_statistics;
+static int hf_pptp_crc_errors;
+static int hf_pptp_framing_errors;
+static int hf_pptp_hardware_overruns;
+static int hf_pptp_buffer_overruns;
+static int hf_pptp_timeout_errors;
+static int hf_pptp_alignment_errors;
+static int hf_pptp_send_accm;
+static int hf_pptp_receive_accm;
 
-static expert_field ei_pptp_incorrect_magic_cookie = EI_INIT;
+static int ett_pptp;
+
+static expert_field ei_pptp_incorrect_magic_cookie;
 
 #define TCP_PORT_PPTP           1723
 
@@ -224,7 +214,7 @@ dissect_cntrl_req(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree 
 
   proto_tree_add_uint_format_value(tree, hf_pptp_protocol_version, tvb, offset,
                                2, tvb_get_ntohs(tvb, offset), "%u.%u",
-                               tvb_get_guint8(tvb, offset), tvb_get_guint8(tvb, offset + 1));
+                               tvb_get_uint8(tvb, offset), tvb_get_uint8(tvb, offset + 1));
   offset += 2;
 
   proto_tree_add_item(tree, hf_pptp_reserved,             tvb, offset, 2, ENC_NA);
@@ -242,10 +232,10 @@ dissect_cntrl_req(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree 
   proto_tree_add_item(tree, hf_pptp_firmware_revision,    tvb, offset, 2, ENC_BIG_ENDIAN);
   offset += 2;
 
-  proto_tree_add_item(tree, hf_pptp_host_name,            tvb, offset, 64, ENC_ASCII|ENC_NA);
+  proto_tree_add_item(tree, hf_pptp_host_name,            tvb, offset, 64, ENC_ASCII);
   offset += 64;
 
-  proto_tree_add_item(tree, hf_pptp_vendor_name,          tvb, offset, 64, ENC_ASCII|ENC_NA);
+  proto_tree_add_item(tree, hf_pptp_vendor_name,          tvb, offset, 64, ENC_ASCII);
 }
 
 static void
@@ -256,7 +246,7 @@ dissect_cntrl_reply(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tre
 
   proto_tree_add_uint_format_value(tree, hf_pptp_protocol_version, tvb, offset,
                                2, tvb_get_ntohs(tvb, offset), "%u.%u",
-                               tvb_get_guint8(tvb, offset), tvb_get_guint8(tvb, offset + 1));
+                               tvb_get_uint8(tvb, offset), tvb_get_uint8(tvb, offset + 1));
   offset += 2;
 
   proto_tree_add_item(tree, hf_pptp_control_result,       tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -277,10 +267,10 @@ dissect_cntrl_reply(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tre
   proto_tree_add_item(tree, hf_pptp_firmware_revision,    tvb, offset, 2, ENC_BIG_ENDIAN);
   offset += 2;
 
-  proto_tree_add_item(tree, hf_pptp_host_name,            tvb, offset, 64, ENC_ASCII|ENC_NA);
+  proto_tree_add_item(tree, hf_pptp_host_name,            tvb, offset, 64, ENC_ASCII);
   offset += 64;
 
-  proto_tree_add_item(tree, hf_pptp_vendor_name,          tvb, offset, 64, ENC_ASCII|ENC_NA);
+  proto_tree_add_item(tree, hf_pptp_vendor_name,          tvb, offset, 64, ENC_ASCII);
 
 }
 
@@ -292,10 +282,10 @@ dissect_stop_req(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *
 
   proto_tree_add_item(tree, hf_pptp_reason,   tvb, offset, 1, ENC_BIG_ENDIAN);
   offset += 1;
-
+  /* Reserved1 */
   proto_tree_add_item(tree, hf_pptp_reserved, tvb, offset, 1, ENC_NA);
   offset += 1;
-
+  /* Reserved2 */
   proto_tree_add_item(tree, hf_pptp_reserved, tvb, offset, 2, ENC_NA);
 }
 
@@ -378,10 +368,10 @@ dissect_out_req(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *t
   proto_tree_add_item(tree, hf_pptp_reserved,                   tvb, offset, 2, ENC_NA);
   offset += 2;
 
-  proto_tree_add_item(tree, hf_pptp_phone_number,               tvb, offset, 64, ENC_ASCII|ENC_NA);
+  proto_tree_add_item(tree, hf_pptp_phone_number,               tvb, offset, 64, ENC_ASCII);
   offset += 64;
 
-  proto_tree_add_item(tree, hf_pptp_subaddress,                 tvb, offset, 64, ENC_ASCII|ENC_NA);
+  proto_tree_add_item(tree, hf_pptp_subaddress,                 tvb, offset, 64, ENC_ASCII);
 }
 
 static void
@@ -441,13 +431,13 @@ dissect_in_req(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tr
   proto_tree_add_item(tree, hf_pptp_dialing_number_length, tvb, offset, 2, ENC_BIG_ENDIAN);
   offset += 2;
 
-  proto_tree_add_item(tree, hf_pptp_dialed_number,         tvb, offset, 64, ENC_ASCII|ENC_NA);
+  proto_tree_add_item(tree, hf_pptp_dialed_number,         tvb, offset, 64, ENC_ASCII);
   offset += 64;
 
-  proto_tree_add_item(tree, hf_pptp_dialing_number,        tvb, offset, 64, ENC_ASCII|ENC_NA);
+  proto_tree_add_item(tree, hf_pptp_dialing_number,        tvb, offset, 64, ENC_ASCII);
   offset += 64;
 
-  proto_tree_add_item(tree, hf_pptp_subaddress,            tvb, offset, 64, ENC_ASCII|ENC_NA);
+  proto_tree_add_item(tree, hf_pptp_subaddress,            tvb, offset, 64, ENC_ASCII);
 }
 
 static void
@@ -534,7 +524,7 @@ dissect_disc_notify(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tre
   proto_tree_add_item(tree, hf_pptp_reserved,        tvb, offset, 2, ENC_NA);
   offset += 2;
 
-  proto_tree_add_item(tree, hf_pptp_call_statistics, tvb, offset, 64, ENC_ASCII|ENC_NA);
+  proto_tree_add_item(tree, hf_pptp_call_statistics, tvb, offset, 64, ENC_ASCII);
 }
 
 static void
@@ -591,8 +581,8 @@ dissect_pptp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
   proto_tree *pptp_tree = NULL;
   proto_item *item      = NULL;
   int         offset    = 0;
-  guint16     len;
-  guint16     control_message_type;
+  uint16_t    len;
+  uint16_t    control_message_type;
 
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "PPTP");
   col_clear(pinfo->cinfo, COL_INFO);
@@ -601,7 +591,7 @@ dissect_pptp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
   control_message_type = tvb_get_ntohs(tvb, offset + 8);
 
   col_add_str(pinfo->cinfo, COL_INFO,
-              val_to_str(control_message_type, control_message_type_vals,
+              val_to_str(pinfo->pool, control_message_type, control_message_type_vals,
                          "Unknown control type (%d)"));
 
   if (tree) {
@@ -688,7 +678,7 @@ dissect_pptp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 void
 proto_register_pptp(void)
 {
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_pptp,
   };
 
@@ -949,6 +939,7 @@ proto_register_pptp(void)
 
   proto_pptp = proto_register_protocol("Point-to-Point Tunnelling Protocol",
                                        "PPTP", "pptp");
+  pptp_handle = register_dissector("pptp", dissect_pptp, proto_pptp);
   proto_register_field_array(proto_pptp, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
   expert_pptp = expert_register_protocol(proto_pptp);
@@ -958,14 +949,11 @@ proto_register_pptp(void)
 void
 proto_reg_handoff_pptp(void)
 {
-  dissector_handle_t pptp_handle;
-
-  pptp_handle = create_dissector_handle(dissect_pptp, proto_pptp);
-  dissector_add_uint("tcp.port", TCP_PORT_PPTP, pptp_handle);
+  dissector_add_uint_with_preference("tcp.port", TCP_PORT_PPTP, pptp_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

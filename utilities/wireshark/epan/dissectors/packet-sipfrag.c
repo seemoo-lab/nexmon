@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -33,25 +21,26 @@
 void proto_register_sipfrag(void);
 
 /* Initialize the protocol and registered fields. */
-static int proto_sipfrag = -1;
-static int hf_sipfrag_line = -1;
+static int proto_sipfrag;
+static int hf_sipfrag_line;
 
 /* Protocol subtree. */
-static int ett_sipfrag = -1;
+static int ett_sipfrag;
 
 void proto_reg_handoff_sipfrag(void);
 
+static dissector_handle_t sipfrag_handle;
 
 /* Main dissection function. */
 static int dissect_sipfrag(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
     proto_tree  *sipfrag_tree;
     proto_item  *ti;
-    gint        offset = 0;
-    gint        next_offset;
+    int         offset = 0;
+    int         next_offset;
     int         linelen;
     char        *string;
-    gint        lines = 0;
+    int         lines = 0;
 
     /* Append this protocol name rather than replace. */
     col_append_str(pinfo->cinfo, COL_PROTOCOL, "/sipfrag");
@@ -72,7 +61,7 @@ static int dissect_sipfrag(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
         /* For now, add all lines as unparsed strings */
 
         /* Extract & add the string. */
-        string = (char*)tvb_get_string_enc(wmem_packet_scope(), tvb, offset, linelen, ENC_ASCII);
+        string = (char*)tvb_get_string_enc(pinfo->pool, tvb, offset, linelen, ENC_ASCII);
         proto_tree_add_string_format(sipfrag_tree, hf_sipfrag_line,
                                      tvb, offset,
                                      linelen, string,
@@ -104,7 +93,7 @@ void proto_register_sipfrag(void)
         },
     };
 
-    static gint *ett[] =
+    static int *ett[] =
     {
         &ett_sipfrag
     };
@@ -115,17 +104,16 @@ void proto_register_sipfrag(void)
     proto_register_subtree_array(ett, array_length(ett));
 
     /* Allow other dissectors to find this one by name. */
-    register_dissector("sipfrag", dissect_sipfrag, proto_sipfrag);
+    sipfrag_handle = register_dissector("sipfrag", dissect_sipfrag, proto_sipfrag);
 }
 
 void proto_reg_handoff_sipfrag(void)
 {
-    dissector_handle_t sipfrag_handle = find_dissector("sipfrag");
     dissector_add_string("media_type", "message/sipfrag", sipfrag_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

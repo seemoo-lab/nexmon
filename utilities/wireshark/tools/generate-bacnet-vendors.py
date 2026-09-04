@@ -1,54 +1,60 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
+#
+# Wireshark - Network traffic analyzer
+# By Gerald Combs <gerald@wireshark.org>
+# Copyright 1998 Gerald Combs
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+'''Update the BACNET vendors list.
+
+generate-bacnet-vendors generates output containing BACNET vendor Identifiers.
+
+Copyright 2023 Jaap Keuter <jaap.keuter@xs4all.nl>
+based on work by Anish Bhatt <anish@chelsio.com>
 
 '''
- Copyright 2014 Anish Bhatt <anish@chelsio.com>
 
- This program is free software; you can redistribute it and/or
- modify it under the terms of the GNU General Public License
- as published by the Free Software Foundation; either version 2
- of the License, or (at your option) any later version.
-
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License
- along with this program; if not, write to the Free Software
- Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-'''
-
-from bs4 import BeautifulSoup
-import urllib
 import sys
-import string
-# Required to convert accents/diaeresis etc.
-import translitcodec
+import urllib.request, urllib.error, urllib.parse
+from bs4 import BeautifulSoup
 
-f = urllib.urlopen("http://www.bacnet.org/VendorID/BACnet%20Vendor%20IDs.htm")
-html = f.read()
-soup = BeautifulSoup(''.join(html))
+def exit_msg(msg=None, status=1):
+    if msg is not None:
+        sys.stderr.write(msg + '\n\n')
+    sys.stderr.write(__doc__ + '\n')
+    sys.exit(status)
 
-entry = "static const value_string\nBACnetVendorIdentifiers [] = {"
+req_headers = { 'User-Agent': 'Wireshark generate-bacnet-vendors' }
+try:
+    req = urllib.request.Request("https://bacnet.org/assigned-vendor-ids/", headers=req_headers)
+    response = urllib.request.urlopen(req)
+    lines = response.read().decode()
+    response.close()
+except urllib.error.HTTPError as err:
+    exit_msg("HTTP error fetching {0}: {1}".format(url, err.reason))
+except urllib.error.URLError as err:
+    exit_msg("URL error fetching {0}: {1}".format(url, err.reason))
+except OSError as err:
+    exit_msg("OS error fetching {0}".format(url, err.strerror))
+except Exception:
+    exit_msg("Unexpected error:", sys.exc_info()[0])
+
+soup = BeautifulSoup(lines, "html.parser")
 table = soup.find('table')
-
 rows = table.findAll('tr')
 
+entry = "static const value_string\nBACnetVendorIdentifiers [] = {"
+
 for tr in rows:
-  cols = tr.findAll('td')
-  for index,td in enumerate(cols[0:2]):
-    text = ''.join(td.find(text=True))
-    if index == 0:
-      entry = "    { %3s" % text
-    else:
-      entry += ", \"%s\" }," % text.rstrip()
-  # Required specially for "Dorsette's Inc." due to malformed html
-  entry = entry.replace(u'\u0092', u'\'')
-  # Required to convert accents/diaeresis etc.
-  entry = entry.encode('translit/long')
-  # Encode to ascii so we can out to file
-  entry = entry.encode("ascii",'ignore')
-  print entry
+    cols = tr.findAll('td')
+    for index,td in enumerate(cols[0:2]):
+        text = ''.join(td.find(string=True))
+        if index == 0:
+            entry = "    { %4s" % text
+        else:
+            entry += ", \"%s\" }," % text.rstrip()
+    print(entry)
 
 entry = "    { 0, NULL }\n};"
-print entry.encode("ascii")
+print(entry)
+

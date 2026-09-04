@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 #ifndef __PACKET_BTLE_H__
 #define __PACKET_BTLE_H__
@@ -30,20 +18,6 @@
  * These structures are meant to support the provision of contextual
  * metadata to the BTLE dissector.
  */
-typedef struct {
-    guint64 InitA;
-    guint64 AdvA;
-    guint32 LinkAA;
-    guint32 CRCInit;
-    guint8  WinSize;
-    guint16 WinOffset;
-    guint16 Interval;
-    guint16 Latency;
-    guint16 Timeout;
-    guint64 ChM;
-    guint8  Hop;
-    guint8  SCA;
-} btle_CONNECT_REQ_t;
 
 typedef enum {
     E_AA_NO_COMMENT = 0,
@@ -52,14 +26,34 @@ typedef enum {
     E_AA_ILLEGAL
 } btle_AA_category_t;
 
+#define BTLE_DIR_UNKNOWN 0
+#define BTLE_DIR_CENTRAL_PERIPHERAL 1
+#define BTLE_DIR_PERIPHERAL_CENTRAL 2
+
+#define BTLE_PDU_TYPE_UNKNOWN       0 /* Unknown physical channel PDU */
+#define BTLE_PDU_TYPE_ADVERTISING   1 /* Advertising physical channel PDU */
+#define BTLE_PDU_TYPE_DATA          2 /* Data physical channel PDU */
+#define BTLE_PDU_TYPE_CONNECTEDISO  3 /* Connected isochronous physical channel PDU */
+#define BTLE_PDU_TYPE_BROADCASTISO  4 /* Broadcast isochronous physical channel PDU */
+
+#define LE_1M_PHY     0
+#define LE_2M_PHY     1
+#define LE_CODED_PHY  2
+
 typedef struct {
     btle_AA_category_t aa_category;
-    btle_CONNECT_REQ_t connection_info;
-    gint connection_info_valid: 1;
-    gint crc_checked_at_capture: 1;
-    gint crc_valid_at_capture: 1;
-    gint mic_checked_at_capture: 1;
-    gint mic_valid_at_capture: 1;
+    unsigned crc_checked_at_capture: 1;
+    unsigned crc_valid_at_capture: 1;
+    unsigned mic_checked_at_capture: 1;
+    unsigned mic_valid_at_capture: 1;
+    unsigned direction: 2; /* 0 Unknown, 1 Central -> Peripheral, 2 Peripheral -> Central */
+    unsigned aux_pdu_type_valid: 1;
+    unsigned event_counter_valid: 1;
+    uint8_t pdu_type;
+    uint8_t aux_pdu_type;
+    uint8_t channel;
+    uint8_t phy;
+    uint16_t event_counter;
 
     union {
         void              *data;
@@ -70,7 +64,7 @@ typedef struct {
 #endif /* __PACKET_BTLE_H__ */
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

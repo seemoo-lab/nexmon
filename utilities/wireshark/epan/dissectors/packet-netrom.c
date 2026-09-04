@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -47,6 +35,8 @@
 #include <epan/to_str.h>
 #include <epan/capture_dissectors.h>
 #include <epan/ax25_pids.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 
 void proto_register_netrom(void);
 void proto_reg_handoff_netrom(void);
@@ -74,28 +64,28 @@ void proto_reg_handoff_netrom(void);
 static dissector_handle_t ip_handle;
 
 /* Initialize the protocol and registered fields */
-static int proto_netrom			= -1;
-static int hf_netrom_src		= -1;
-static int hf_netrom_dst		= -1;
-static int hf_netrom_ttl		= -1;
-static int hf_netrom_my_cct_index	= -1;
-static int hf_netrom_my_cct_id		= -1;
-static int hf_netrom_your_cct_index	= -1;
-static int hf_netrom_your_cct_id	= -1;
-static int hf_netrom_n_r		= -1;
-static int hf_netrom_n_s		= -1;
-static int hf_netrom_type		= -1;
-static int hf_netrom_op			= -1;
-static int hf_netrom_more		= -1;
-static int hf_netrom_nak		= -1;
-static int hf_netrom_choke		= -1;
+static int proto_netrom;
+static int hf_netrom_src;
+static int hf_netrom_dst;
+static int hf_netrom_ttl;
+static int hf_netrom_my_cct_index;
+static int hf_netrom_my_cct_id;
+static int hf_netrom_your_cct_index;
+static int hf_netrom_your_cct_id;
+static int hf_netrom_n_r;
+static int hf_netrom_n_s;
+static int hf_netrom_type;
+static int hf_netrom_op;
+static int hf_netrom_more;
+static int hf_netrom_nak;
+static int hf_netrom_choke;
 
-static int hf_netrom_user		= -1;
-static int hf_netrom_node		= -1;
-static int hf_netrom_pwindow		= -1;
-static int hf_netrom_awindow		= -1;
+static int hf_netrom_user;
+static int hf_netrom_node;
+static int hf_netrom_pwindow;
+static int hf_netrom_awindow;
 
-static int hf_netrom_mnemonic		= -1;
+static int hf_netrom_mnemonic;
 
 /*
  * Structure containing pointers to hf_ values for various subfields of
@@ -116,7 +106,7 @@ static const netrom_tf_items netrom_type_items = {
 };
 
 
-const value_string op_code_vals_abbrev[] = {
+static const value_string op_code_vals_abbrev[] = {
 	{ NETROM_PROTOEXT	, "PROTOEXT"},
 	{ NETROM_CONNREQ	, "CONNREQ"},
 	{ NETROM_CONNACK	, "CONNACK"},
@@ -127,7 +117,7 @@ const value_string op_code_vals_abbrev[] = {
 	{ 0			, NULL}
 };
 
-const value_string op_code_vals_text[] = {
+static const value_string op_code_vals_text[] = {
 	{ NETROM_PROTOEXT	, "Protocol extension"},
 	{ NETROM_CONNREQ	, "Connect request"},
 	{ NETROM_CONNACK	, "Connect acknowledge"},
@@ -139,23 +129,23 @@ const value_string op_code_vals_text[] = {
 };
 
 /* Initialize the subtree pointers */
-static gint ett_netrom      = -1;
-static gint ett_netrom_type = -1;
+static int ett_netrom;
+static int ett_netrom_type;
 
 static void
 dissect_netrom_type(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree,
-			int hf_netrom_type_param, gint ett_netrom_type_param, const netrom_tf_items *type_items )
+			int hf_netrom_type_param, int ett_netrom_type_param, const netrom_tf_items *type_items )
 {
 	proto_tree *tc;
 	proto_tree *type_tree;
 	char       *info_buffer;
-	guint8      type;
-	guint8      op_code;
+	uint8_t     type;
+	uint8_t     op_code;
 
-	type    =  tvb_get_guint8( tvb, offset );
+	type    =  tvb_get_uint8( tvb, offset );
 	op_code = type &0x0f;
 
-	info_buffer = wmem_strdup_printf( wmem_packet_scope(), "%s%s%s%s (0x%02x)",
+	info_buffer = wmem_strdup_printf( pinfo->pool, "%s%s%s%s (0x%02x)",
 					val_to_str_const( op_code, op_code_vals_text, "Unknown" ),
 					( type & NETROM_MORE_FLAG  ) ? ", More"  : "",
 					( type & NETROM_NAK_FLAG   ) ? ", NAK"   : "",
@@ -190,12 +180,12 @@ dissect_netrom_proto(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 	proto_tree   *netrom_tree;
 	int           offset;
 #if 0
-	guint8        src_ssid;
-	guint8        dst_ssid;
+	uint8_t       src_ssid;
+	uint8_t       dst_ssid;
 #endif
-	guint8        op_code;
-	guint8        cct_index;
-	guint8        cct_id;
+	uint8_t       op_code;
+	uint8_t       cct_index;
+	uint8_t       cct_id;
 	tvbuff_t     *next_tvb;
 
 	col_set_str( pinfo->cinfo, COL_PROTOCOL, "NET/ROM" );
@@ -206,28 +196,28 @@ dissect_netrom_proto(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 	/* source */
 	set_address_tvb(&pinfo->dl_src,	AT_AX25, AX25_ADDR_LEN, tvb, offset);
 	set_address_tvb(&pinfo->src,	AT_AX25, AX25_ADDR_LEN, tvb, offset);
-	/* src_ssid = tvb_get_guint8(tvb, offset+6); */
+	/* src_ssid = tvb_get_uint8(tvb, offset+6); */
 	offset += AX25_ADDR_LEN; /* step over src addr */
 
 	/* destination */
 	set_address_tvb(&pinfo->dl_dst,	AT_AX25, AX25_ADDR_LEN, tvb, offset);
 	set_address_tvb(&pinfo->dst,	AT_AX25, AX25_ADDR_LEN, tvb, offset);
-	/* dst_ssid = tvb_get_guint8(tvb, offset+6); */
+	/* dst_ssid = tvb_get_uint8(tvb, offset+6); */
 	offset += AX25_ADDR_LEN; /* step over dst addr */
 
 	offset += 1; /* step over ttl */
-	cct_index =  tvb_get_guint8( tvb, offset );
+	cct_index =  tvb_get_uint8( tvb, offset );
 	offset += 1; /* step over cct index*/
-	cct_id =  tvb_get_guint8( tvb, offset );
+	cct_id =  tvb_get_uint8( tvb, offset );
 	offset += 1; /* step over cct id */
 	offset += 1; /* step over n_s */
 	offset += 1; /* step over n_r */
 
 	/* frame type */
-	op_code =  tvb_get_guint8( tvb, offset ) & 0x0f;
+	op_code =  tvb_get_uint8( tvb, offset ) & 0x0f;
 	/*offset += 1;*/ /* step over op_code */
 
-	col_add_fstr( pinfo->cinfo, COL_INFO, "%s", val_to_str_const( op_code, op_code_vals_text, "Unknown" ));
+	col_set_str( pinfo->cinfo, COL_INFO, val_to_str_const( op_code, op_code_vals_text, "Unknown" ));
 
 	/* if ( tree ) */
 		{
@@ -235,8 +225,8 @@ dissect_netrom_proto(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 
 		ti = proto_tree_add_protocol_format( tree, proto_netrom, tvb, 0, NETROM_HEADER_SIZE,
 			"NET/ROM, Src: %s, Dst: %s",
-			address_to_str(wmem_packet_scope(), &pinfo->src),
-			address_to_str(wmem_packet_scope(), &pinfo->dst));
+			address_to_str(pinfo->pool, &pinfo->src),
+			address_to_str(pinfo->pool, &pinfo->dst));
 
 		netrom_tree = proto_item_add_subtree( ti, ett_netrom );
 
@@ -451,8 +441,8 @@ static void
 dissect_netrom_routing(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
 	tvbuff_t *next_tvb;
-	const guint8* mnemonic;
-	gint mnemonic_len;
+	const uint8_t* mnemonic;
+	int mnemonic_len;
 
 	col_set_str( pinfo->cinfo, COL_PROTOCOL, "NET/ROM");
 	col_set_str( pinfo->cinfo, COL_INFO, "routing table frame");
@@ -464,9 +454,9 @@ dissect_netrom_routing(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 		ti = proto_tree_add_item( tree, proto_netrom, tvb, 0, -1, ENC_NA);
 		netrom_tree = proto_item_add_subtree( ti, ett_netrom );
 
-		proto_tree_add_item_ret_string_and_length(netrom_tree, hf_netrom_mnemonic, tvb, 1, 6, ENC_ASCII|ENC_NA,
-													wmem_packet_scope(), &mnemonic, &mnemonic_len);
-		proto_item_append_text(ti, ", routing table frame, Node: %.6s", mnemonic);
+		proto_tree_add_item_ret_string_and_length(netrom_tree, hf_netrom_mnemonic, tvb, 1, 6, ENC_ASCII,
+													pinfo->pool, &mnemonic, &mnemonic_len);
+		proto_item_append_text(ti, ", routing table frame, Node: %s", mnemonic);
 	}
 
 	next_tvb = tvb_new_subset_remaining(tvb, 7);
@@ -478,7 +468,7 @@ dissect_netrom_routing(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 static int
 dissect_netrom(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	if ( tvb_get_guint8( tvb, 0 ) == 0xff )
+	if ( tvb_get_uint8( tvb, 0 ) == 0xff )
 		dissect_netrom_routing( tvb, pinfo, tree );
 	else
 		dissect_netrom_proto( tvb, pinfo, tree );
@@ -486,14 +476,14 @@ dissect_netrom(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 	return tvb_captured_length(tvb);
 }
 
-static gboolean
-capture_netrom( const guchar *pd _U_, int offset, int len, capture_packet_info_t *cpinfo _U_, const union wtap_pseudo_header *pseudo_header _U_)
+static bool
+capture_netrom( const unsigned char *pd _U_, int offset, int len, capture_packet_info_t *cpinfo _U_, const union wtap_pseudo_header *pseudo_header _U_)
 {
 	if ( ! BYTES_ARE_IN_FRAME( offset, len, NETROM_MIN_SIZE ) )
-		return FALSE;
+		return false;
 
 	/* XXX - check for IP-over-NetROM here! */
-	return FALSE;
+	return false;
 }
 
 void
@@ -599,7 +589,7 @@ proto_register_netrom(void)
 	};
 
 	/* Setup protocol subtree array */
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_netrom,
 		&ett_netrom_type,
 	};
@@ -615,14 +605,17 @@ proto_register_netrom(void)
 void
 proto_reg_handoff_netrom(void)
 {
+	capture_dissector_handle_t netrom_cap_handle;
+
 	dissector_add_uint( "ax25.pid", AX25_P_NETROM, create_dissector_handle( dissect_netrom, proto_netrom ) );
-	register_capture_dissector("ax25.pid", AX25_P_NETROM, capture_netrom, proto_netrom);
+	netrom_cap_handle = create_capture_dissector_handle(capture_netrom, proto_netrom);
+	capture_dissector_add_uint("ax25.pid", AX25_P_NETROM, netrom_cap_handle);
 
 	ip_handle   = find_dissector_add_dependency( "ip", proto_netrom );
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

@@ -23,10 +23,10 @@ AP-invocation-id TYPE=FT_UINT32
 AE-qualifier TYPE=FT_UINT32
 
 #.FN_BODY User-information
-  gint8 end_device_class;
-  gboolean pc, ind;
-  gint32 tag;
-  guint32 len;
+  int8_t end_device_class;
+  bool pc, ind;
+  int32_t tag;
+  uint32_t len;
   proto_item *tf = NULL;
   proto_tree *epsem_tree = NULL;
   FILL_START;
@@ -97,14 +97,12 @@ AE-qualifier TYPE=FT_UINT32
   FILL_TABLE(iv_element);
 
 #.FN_BODY MESSAGE
-/**/#ifdef HAVE_LIBGCRYPT
   clear_canon();
-/**/#endif
   %(DEFAULT_BODY)s
 #.END
 
 #
-# Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+# Editor modelines  -  https://www.wireshark.org/tools/modelines.html
 #
 # Local variables:
 # c-basic-offset: 2

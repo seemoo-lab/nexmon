@@ -1,22 +1,10 @@
-/* sctp_assoc_analyse_dialog.h
+/** @file
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef SCTP_ASSOC_ANALYSE_DIALOG_H
@@ -24,13 +12,10 @@
 
 #include <config.h>
 
-#include <glib.h>
-
 #include <file.h>
 
 #include <epan/dissectors/packet-sctp.h>
 
-#include "ui/tap-sctp-analysis.h"
 #include "sctp_all_assocs_dialog.h"
 
 #include <QDialog>
@@ -44,16 +29,20 @@ namespace Ui {
 class SCTPAssocAnalyseDialog;
 }
 
+struct _sctp_assoc_info;
+
 class SCTPAssocAnalyseDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit SCTPAssocAnalyseDialog(QWidget *parent = 0, sctp_assoc_info_t *assoc = NULL, capture_file *cf = NULL, SCTPAllAssocsDialog *caller = NULL);
+    explicit SCTPAssocAnalyseDialog(QWidget *parent = 0, const _sctp_assoc_info *assoc = NULL,
+            capture_file *cf = NULL);
     ~SCTPAssocAnalyseDialog();
 
-    void fillTabs();
-    static sctp_assoc_info_t* findAssocForPacket(capture_file* cf);
+    void fillTabs(const _sctp_assoc_info* selected_assoc);
+    static const _sctp_assoc_info* findAssocForPacket(capture_file* cf);
+    static const _sctp_assoc_info* findAssoc(QWidget *parent, uint16_t assoc_id);
 
 public slots:
     void setCaptureFile(capture_file *cf) { cap_file_ = cf; }
@@ -72,9 +61,8 @@ private slots:
 
 private:
     Ui::SCTPAssocAnalyseDialog *ui;
-    sctp_assoc_info_t     *selected_assoc;
+    uint16_t selected_assoc_id;
     capture_file *cap_file_;
-    SCTPAllAssocsDialog *caller_;
     void openGraphDialog(int direction);
     void openGraphByteDialog(int direction);
     void openGraphArwndDialog(int direction);
@@ -85,16 +73,3 @@ signals:
 };
 
 #endif // SCTP_ASSOC_ANALYSE_DIALOG_H
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

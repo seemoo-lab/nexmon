@@ -1,36 +1,27 @@
-/*
- * sign_ext.h
+/** @file
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __WSUTIL_SIGN_EXT_H__
 #define __WSUTIL_SIGN_EXT_H__
 
+#include <inttypes.h>
+
 #include <glib.h>
+
+#include <wsutil/ws_assert.h>
 
 /* sign extension routines */
 
-static inline guint32
-ws_sign_ext32(guint32 val, int no_of_bits)
+static inline uint32_t
+ws_sign_ext32(uint32_t val, int no_of_bits)
 {
-	g_assert (no_of_bits >= 0 && no_of_bits <= 32);
+	ws_assert (no_of_bits >= 0 && no_of_bits <= 32);
 
 	if ((no_of_bits == 0) || (no_of_bits == 32))
 		return val;
@@ -47,10 +38,10 @@ ws_sign_ext32(guint32 val, int no_of_bits)
 	return val;
 }
 
-static inline guint64
-ws_sign_ext64(guint64 val, int no_of_bits)
+static inline uint64_t
+ws_sign_ext64(uint64_t val, int no_of_bits)
 {
-	g_assert (no_of_bits >= 0 && no_of_bits <= 64);
+	ws_assert (no_of_bits >= 0 && no_of_bits <= 64);
 
 	if ((no_of_bits == 0) || (no_of_bits == 64))
 		return val;
@@ -61,19 +52,19 @@ ws_sign_ext64(guint64 val, int no_of_bits)
 	 * the number of bits in the value - 1, and we might get
 	 * compile-time or run-time complaints about that.
 	 */
-	if (val & (G_GUINT64_CONSTANT(1) << (no_of_bits-1)))
-		val |= (G_GUINT64_CONSTANT(0xFFFFFFFFFFFFFFFF) << no_of_bits);
+	if (val & (UINT64_C(1) << (no_of_bits-1)))
+		val |= (UINT64_C(0xFFFFFFFFFFFFFFFF) << no_of_bits);
 
 	return val;
 }
 
 /*
-static inline guint64
-ws_sign_ext64(guint64 val, int no_of_bits)
+static inline uint64_t
+ws_sign_ext64(uint64_t val, int no_of_bits)
 {
-	gint64 sval = (val << (64 - no_of_bits));
+	int64_t sval = (val << (64 - no_of_bits));
 
-	return (guint64) (sval >> (64 - no_of_bits));
+	return (uint64_t) (sval >> (64 - no_of_bits));
 }
 */
 

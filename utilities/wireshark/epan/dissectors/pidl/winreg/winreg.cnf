@@ -1,9 +1,9 @@
-TYPE lsa_StringLarge "offset=lsarpc_dissect_struct_lsa_StringLarge(tvb, offset, pinfo, tree, di, drep, @HF@, @PARAM@);" FT_NONE BASE_NONE 0 NULL NULL
-TYPE winreg_Type "offset=misc_dissect_enum_winreg_Type(tvb, offset, pinfo, tree, di, drep, @HF@, @PARAM@);" FT_NONE BASE_NONE 0 NULL NULL
+TYPE lsa_StringLarge "offset=lsarpc_dissect_struct_lsa_StringLarge(tvb, offset, pinfo, tree, di, drep, @HF@, @PARAM@);" FT_NONE BASE_NONE 0 NULL 0
+TYPE winreg_Type "offset=misc_dissect_enum_winreg_Type(tvb, offset, pinfo, tree, di, drep, @HF@, @PARAM@);" FT_NONE BASE_NONE 0 NULL 0
 IMPORT security_secinfo 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_winreg_winreg_GetKeySecurity_sec_info, NULL);
 
 #
-# Make all instances of an access mask use the same hf field display filter 
+# Make all instances of an access mask use the same hf field display filter
 # name
 #
 HF_FIELD hf_winreg_access_mask "Access Mask" "winreg.access_mask" FT_UINT32 BASE_HEX NULL 0 "" "" ""
@@ -100,16 +100,16 @@ PARAM_VALUE winreg_dissect_element_CloseKey_handle_ PIDL_POLHND_CLOSE
 #
 # Create a new type to handle winreg_String so that we can get nice and
 # pretty dissection of the strings contained within winreg
-TYPE winreg_String "offset=cnf_dissect_winreg_String(tvb, offset, pinfo, tree, di, drep, @PARAM@, @HF@);" FT_STRING BASE_NONE 0 NULL 4 
+TYPE winreg_String "offset=cnf_dissect_winreg_String(tvb, offset, pinfo, tree, di, drep, @PARAM@, @HF@);" FT_STRING BASE_NONE 0 NULL 5
 #
 #
 #
 PARAM_VALUE winreg_dissect_element_CreateKey_name 2|PIDL_SET_COL_INFO
 PARAM_VALUE winreg_dissect_element_DeleteKey_key 2|PIDL_SET_COL_INFO
-PARAM_VALUE winreg_dissect_element_LoadKey_keyname 2|PIDL_SET_COL_INFO
+PARAM_VALUE winreg_dissect_element_LoadKey_keyname_ 2|PIDL_SET_COL_INFO
 PARAM_VALUE winreg_dissect_element_OpenKey_keyname 2|PIDL_SET_COL_INFO|PIDL_STR_SAVE
-PARAM_VALUE winreg_dissect_element_QueryValue_value_name 2|PIDL_SET_COL_INFO
-PARAM_VALUE winreg_dissect_element_SaveKey_filename 2|PIDL_SET_COL_INFO
+PARAM_VALUE winreg_dissect_element_QueryValue_value_name_ 2|PIDL_SET_COL_INFO
+PARAM_VALUE winreg_dissect_element_SaveKey_filename_ 2|PIDL_SET_COL_INFO
 PARAM_VALUE winreg_dissect_element_SetValue_name 2|PIDL_SET_COL_INFO
 
 #
@@ -136,9 +136,9 @@ MANUAL winreg_dissect_bitmap_AccessMask
 CODE START
  #include "packet-dcerpc-lsa.h"
 static void
-winreg_specific_rights(tvbuff_t *tvb, gint offset, proto_tree *tree, guint32 access)
+winreg_specific_rights(tvbuff_t *tvb, int offset, proto_tree *tree, uint32_t access)
 {
-	static const int* access_flags[] = {
+	static int* const access_flags[] = {
 		&hf_winreg_winreg_AccessMask_KEY_WOW64_32KEY,
 		&hf_winreg_winreg_AccessMask_KEY_WOW64_64KEY,
 		&hf_winreg_winreg_AccessMask_KEY_CREATE_LINK,
@@ -153,7 +153,7 @@ winreg_specific_rights(tvbuff_t *tvb, gint offset, proto_tree *tree, guint32 acc
 	proto_tree_add_bitmask_list_value(tree, tvb, offset, 4, access_flags, access);
 }
 
-struct access_mask_info winreg_access_mask_info = {
+static struct access_mask_info winreg_access_mask_info = {
 	"WINREG",		/* Name of specific rights */
 	winreg_specific_rights,	/* Dissection function */
 	NULL,			/* Generic mapping table */
@@ -161,9 +161,9 @@ struct access_mask_info winreg_access_mask_info = {
 };
 
 static int
-winreg_dissect_element_KeySecurityData_data_(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, guint8 *drep)
+winreg_dissect_element_KeySecurityData_data_(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, uint8_t *drep)
 {
-	guint32 len;
+	uint32_t len;
 
 	if(di->conformant_run){
 		/*just a run to handle conformant arrays, nothing to dissect */
@@ -175,7 +175,7 @@ winreg_dissect_element_KeySecurityData_data_(tvbuff_t *tvb, int offset, packet_i
 	offset = dissect_ndr_uint32 (tvb, offset, pinfo, tree, di, drep, hf_winreg_sd_offset, NULL);
 	offset = dissect_ndr_uint32 (tvb, offset, pinfo, tree, di, drep, hf_winreg_sd_actual_size, &len);
 
-	dissect_nt_sec_desc(tvb, offset, pinfo, tree, drep, TRUE, len,
+	dissect_nt_sec_desc(tvb, offset, pinfo, tree, drep, true, len,
 		&winreg_access_mask_info);
 
 	offset += len;
@@ -184,7 +184,7 @@ winreg_dissect_element_KeySecurityData_data_(tvbuff_t *tvb, int offset, packet_i
 }
 
 int
-winreg_dissect_bitmap_AccessMask(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, guint8 *drep, int hf_index _U_, guint32 param _U_)
+winreg_dissect_bitmap_AccessMask(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info* di, uint8_t *drep, int hf_index _U_, uint32_t param _U_)
 {
 	offset = dissect_nt_access_mask(
 		tvb, offset, pinfo, tree, di, drep, hf_winreg_access_mask,
@@ -200,14 +200,14 @@ winreg_dissect_bitmap_AccessMask(tvbuff_t *tvb, int offset, packet_info *pinfo, 
  *	} winreg_String;
  */
 static int
-cnf_dissect_winreg_String(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *parent_tree, dcerpc_info* di, guint8 *drep, guint32 param, int hfindex)
+cnf_dissect_winreg_String(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *parent_tree, dcerpc_info* di, uint8_t *drep, uint32_t param, int hfindex)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
 	int old_offset;
 	header_field_info *hf_info;
 
-	ALIGN_TO_4_BYTES;
+	ALIGN_TO_5_BYTES;
 
 	old_offset = offset;
 	hf_info=proto_registrar_get_nth(hfindex);
@@ -215,7 +215,7 @@ cnf_dissect_winreg_String(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_t
 	if (parent_tree) {
 		tree = proto_tree_add_subtree_format(parent_tree, tvb, offset, 0, ett_winreg_winreg_String, &item, "%s: ", hf_info->name);
 	}
-	
+
 	offset = winreg_dissect_element_String_name_len(tvb, offset, pinfo, tree, di, drep);
 
 	offset = winreg_dissect_element_String_name_size(tvb, offset, pinfo, tree, di, drep);

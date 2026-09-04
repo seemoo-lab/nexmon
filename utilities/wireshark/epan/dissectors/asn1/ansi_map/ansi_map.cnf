@@ -443,7 +443,7 @@ ReturnData
 	tvbuff_t *parameter_tvb = NULL;
 %(DEFAULT_BODY)s
 	if (parameter_tvb){
-		ServiceIndicator = tvb_get_guint8(parameter_tvb,0);
+		ServiceIndicator = tvb_get_uint8(parameter_tvb,0);
 		if (SMS_BearerData_tvb !=NULL)
 		{
 			switch(ServiceIndicator){
@@ -461,7 +461,7 @@ ReturnData
 	}
 
 #.TYPE_ATTR
-# Dont't put the bytes after the name in the display
+# Don't put the bytes after the name in the display
 CDMA2000HandoffInvokeIOSData TYPE = FT_NONE DISPLAY = BASE_NONE STRINGS = NULL
 CDMA2000HandoffResponseIOSData TYPE = FT_NONE DISPLAY = BASE_NONE STRINGS = NULL
 InterMSCCircuitID TYPE = FT_NONE DISPLAY = BASE_NONE STRINGS = NULL

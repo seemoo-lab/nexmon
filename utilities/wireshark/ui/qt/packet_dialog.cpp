@@ -4,19 +4,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "packet_dialog.h"
@@ -26,16 +14,20 @@
 
 #include "epan/column.h"
 #include "epan/ftypes/ftypes.h"
-
-#include "frame_tvbuff.h"
+#include "epan/prefs.h"
+#include "epan/prefs-int.h"
+#include "ui/preference_utils.h"
 
 #include <wsutil/utf8_entities.h>
 
-#include "byte_view_tab.h"
+#include "data_source_tab.h"
 #include "proto_tree.h"
-#include "wireshark_application.h"
+#include "main_application.h"
 
+#include <ui/qt/utils/field_information.h>
 #include <QTreeWidgetItemIterator>
+
+Q_DECLARE_METATYPE(splitter_layout_e)
 
 // To do:
 // - Copy over experimental packet editing code.
@@ -44,75 +36,139 @@
 PacketDialog::PacketDialog(QWidget &parent, CaptureFile &cf, frame_data *fdata) :
     WiresharkDialog(parent, cf),
     ui(new Ui::PacketDialog),
-    packet_data_(NULL)
+    proto_tree_(NULL),
+    data_source_tab_(NULL)
 {
     ui->setupUi(this);
     loadGeometry(parent.width() * 4 / 5, parent.height() * 4 / 5);
     ui->hintLabel->setSmallText();
+    ui->prefsLayout->insertSpacing(1, 20);
+    ui->prefsLayout->addStretch();
+
+    wtap_rec_init(&rec_, 1514);
+
+    edt_.session = NULL;
+    edt_.tvb = NULL;
+    edt_.tree = NULL;
+
+    memset(&edt_.pi, 0x0, sizeof(edt_.pi));
 
     setWindowSubtitle(tr("Packet %1").arg(fdata->num));
 
-    if (!cf_read_record(cap_file_.capFile(), fdata)) reject();
+    if (!cf_read_record(cap_file_.capFile(), fdata, &rec_)) {
+        reject();
+        return;
+    }
 
-    phdr_ = cap_file_.capFile()->phdr;
-    packet_data_ = (guint8 *) g_memdup(ws_buffer_start_ptr(&(cap_file_.capFile()->buf)), fdata->cap_len);
-
-    /* proto tree, visible. We need a proto tree if there's custom columns */
-    epan_dissect_init(&edt_, cap_file_.capFile()->epan, TRUE, TRUE);
+    /* proto tree, visible. We need a proto tree if there are custom columns */
+    epan_dissect_init(&edt_, cap_file_.capFile()->epan, true, true);
     col_custom_prime_edt(&edt_, &(cap_file_.capFile()->cinfo));
 
-    epan_dissect_run(&edt_, cap_file_.capFile()->cd_t, &phdr_,
-                     frame_tvbuff_new(fdata, packet_data_),
+    epan_dissect_run(&edt_, cap_file_.capFile()->cd_t, &rec_,
                      fdata, &(cap_file_.capFile()->cinfo));
-    epan_dissect_fill_in_columns(&edt_, TRUE, TRUE);
+    epan_dissect_fill_in_columns(&edt_, true, true);
 
-    proto_tree_ = new ProtoTree(ui->packetSplitter);
-    proto_tree_->fillProtocolTree(edt_.tree);
+    proto_tree_ = new ProtoTree(ui->packetSplitter, &edt_);
+    // Do not call proto_tree_->setCaptureFile, ProtoTree only needs the
+    // dissection context.
+    proto_tree_->setRootNode(edt_.tree);
 
-    byte_view_tab_ = new ByteViewTab(ui->packetSplitter);
-    byte_view_tab_->setCaptureFile(cap_file_.capFile());
-    byte_view_tab_->clear();
+    data_source_tab_ = new DataSourceTab(ui->packetSplitter, &edt_);
+    data_source_tab_->setCaptureFile(cap_file_.capFile());
+    data_source_tab_->selectedFrameChanged(QList<int>() << 0);
 
-    GSList *src_le;
-    for (src_le = edt_.pi.data_src; src_le != NULL; src_le = src_le->next) {
-        struct data_source *source;
-        char* source_name;
-        source = (struct data_source *)src_le->data;
-        source_name = get_data_source_name(source);
-        byte_view_tab_->addTab(source_name, get_data_source_tvb(source), edt_.tree, proto_tree_,
-                               (packet_char_enc)cap_file_.capFile()->current_frame->flags.encoding);
-        wmem_free(NULL, source_name);
+    // We have to load the splitter state after adding the proto tree
+    // and byte view.
+    loadSplitterState(ui->packetSplitter);
+
+    module_t *gui_module = prefs_find_module("gui");
+    if (gui_module != nullptr) {
+        pref_packet_dialog_layout_ = prefs_find_preference(gui_module, "packet_dialog_layout");
+        if (pref_packet_dialog_layout_ != nullptr) {
+            for (const enum_val_t *ev = prefs_get_enumvals(pref_packet_dialog_layout_); ev && ev->description; ev++) {
+                ui->layoutComboBox->addItem(ev->description, QVariant(ev->value));
+            }
+        }
     }
-    byte_view_tab_->setCurrentIndex(0);
+    ui->layoutComboBox->setCurrentIndex(ui->layoutComboBox->findData(QVariant(prefs.gui_packet_dialog_layout)));
+    Qt::Orientation pref_orientation = Qt::Vertical;
+    switch(prefs.gui_packet_dialog_layout) {
+    case(layout_vertical):
+        pref_orientation = Qt::Vertical;
+        break;
+    case(layout_horizontal):
+        pref_orientation = Qt::Horizontal;
+        break;
+    }
 
-    ui->packetSplitter->setStretchFactor(1, 0);
+    if (ui->packetSplitter->orientation() != pref_orientation) {
+        ui->packetSplitter->setOrientation(pref_orientation);
+        // If the orientation is different than the restore one,
+        // reset the sizes to 50-50.
+        QList<int> sizes = ui->packetSplitter->sizes();
+        int totalsize = sizes.at(0) + sizes.at(1);
+        sizes[0] = totalsize / 2;
+        sizes[1] = totalsize / 2;
+        ui->packetSplitter->setSizes(sizes);
+    }
 
     QStringList col_parts;
     for (int i = 0; i < cap_file_.capFile()->cinfo.num_cols; ++i) {
         // ElidedLabel doesn't support rich text / HTML
-        col_parts << QString("%1: %2")
+        col_parts << QStringLiteral("%1: %2")
                      .arg(get_column_title(i))
-                     .arg(cap_file_.capFile()->cinfo.columns[i].col_data);
+                     .arg(get_column_text(&cap_file_.capFile()->cinfo, i));
     }
     col_info_ = col_parts.join(" " UTF8_MIDDLE_DOT " ");
-    setHintText();
 
-    connect(this, SIGNAL(monospaceFontChanged(QFont)),
+    ui->hintLabel->setText(col_info_);
+
+    /* Handle preference value correctly */
+    Qt::CheckState state = Qt::Checked;
+    if (!prefs.gui_packet_details_show_byteview) {
+        state = Qt::Unchecked;
+        data_source_tab_->setVisible(false);
+    }
+    ui->chkShowByteView->setCheckState(state);
+    ui->layoutComboBox->setEnabled(state);
+
+    connect(mainApp, SIGNAL(zoomMonospaceFont(QFont)),
             proto_tree_, SLOT(setMonospaceFont(QFont)));
-    connect(this, SIGNAL(monospaceFontChanged(QFont)),
-            byte_view_tab_, SLOT(setMonospaceFont(QFont)));
 
-    connect(proto_tree_, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
-            byte_view_tab_, SLOT(protoTreeItemChanged(QTreeWidgetItem*)));
-    connect(byte_view_tab_, SIGNAL(byteFieldHovered(const QString&)),
-            this, SLOT(setHintText(const QString&)));
+    connect(data_source_tab_, SIGNAL(fieldSelected(FieldInformation *)),
+            proto_tree_, SLOT(selectedFieldChanged(FieldInformation *)));
+    connect(proto_tree_, SIGNAL(fieldSelected(FieldInformation *)),
+            data_source_tab_, SLOT(selectedFieldChanged(FieldInformation *)));
+
+    connect(data_source_tab_, SIGNAL(fieldHighlight(FieldInformation *)),
+            this, SLOT(setHintText(FieldInformation *)));
+    connect(data_source_tab_, &DataSourceTab::fieldSelected,
+            this, &PacketDialog::setHintTextSelected);
+    connect(proto_tree_, &ProtoTree::fieldSelected,
+            this, &PacketDialog::setHintTextSelected);
+
+    connect(proto_tree_, SIGNAL(showProtocolPreferences(QString)),
+            this, SIGNAL(showProtocolPreferences(QString)));
+    connect(proto_tree_, SIGNAL(editProtocolPreference(pref_t*,module_t*)),
+            this, SIGNAL(editProtocolPreference(pref_t*,module_t*)));
+
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+    connect(ui->layoutComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &PacketDialog::layoutChanged);
+#else
+    connect(ui->layoutComboBox, &QComboBox::currentIndexChanged, this, &PacketDialog::layoutChanged, Qt::AutoConnection);
+#endif
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+    connect(ui->chkShowByteView, &QCheckBox::checkStateChanged, this, &PacketDialog::viewVisibilityStateChanged);
+#else
+    connect(ui->chkShowByteView, &QCheckBox::stateChanged, this, &PacketDialog::viewVisibilityStateChanged);
+#endif
 }
 
 PacketDialog::~PacketDialog()
 {
     delete ui;
     epan_dissect_cleanup(&edt_);
-    g_free(packet_data_);
+    wtap_rec_cleanup(&rec_);
 }
 
 void PacketDialog::captureFileClosing()
@@ -120,29 +176,104 @@ void PacketDialog::captureFileClosing()
     QString closed_title = tr("[%1 closed] " UTF8_MIDDLE_DOT " %2")
             .arg(cap_file_.fileName())
             .arg(col_info_);
-    setHintText(closed_title);
+    ui->hintLabel->setText(closed_title);
+    data_source_tab_->captureFileClosing();
     WiresharkDialog::captureFileClosing();
-}
-
-void PacketDialog::setHintText(const QString &hint)
-{
-    ui->hintLabel->setText(hint.isEmpty() ? col_info_ : hint);
 }
 
 void PacketDialog::on_buttonBox_helpRequested()
 {
-    wsApp->helpTopicAction(HELP_NEW_PACKET_DIALOG);
+    mainApp->helpTopicAction(HELP_NEW_PACKET_DIALOG);
 }
 
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */
+void PacketDialog::setHintText(FieldInformation * finfo)
+{
+    QString hint;
+
+     if (finfo)
+     {
+         FieldInformation::Position pos = finfo->position();
+         QString field_str;
+
+         if (pos.length < 2) {
+             hint = tr("Byte %1").arg(pos.start);
+         } else {
+             hint = tr("Bytes %1-%2").arg(pos.start).arg(pos.start + pos.length - 1);
+         }
+         hint += QStringLiteral(": %1 (%2)")
+                 .arg(finfo->headerInfo().name)
+                 .arg(finfo->headerInfo().abbreviation);
+     }
+     else {
+         hint = col_info_;
+     }
+     ui->hintLabel->setText(hint);
+}
+
+void PacketDialog::setHintTextSelected(FieldInformation* finfo)
+{
+    QString hint;
+
+    if (finfo)
+    {
+        FieldInformation::HeaderInfo hInfo = finfo->headerInfo();
+
+        if (hInfo.isValid)
+        {
+            if (hInfo.description.length() > 0) {
+                hint.append(hInfo.description);
+            }
+            else {
+                hint.append(hInfo.name);
+            }
+        }
+
+        if (!hint.isEmpty()) {
+            int finfo_length;
+            if (hInfo.isValid)
+                hint.append(" (" + hInfo.abbreviation + ")");
+
+            finfo_length = finfo->position().length + finfo->appendix().length;
+            if (finfo_length > 0) {
+                int finfo_bits = FI_GET_BITS_SIZE(finfo->fieldInfo());
+                if (finfo_bits % 8 == 0) {
+                    hint.append(", " + tr("%Ln byte(s)", "", finfo_length));
+                } else {
+                    hint.append(", " + tr("%Ln bit(s)", "", finfo_bits));
+                }
+            }
+        }
+    }
+    else {
+        hint = col_info_;
+    }
+    ui->hintLabel->setText(hint);
+}
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
+void PacketDialog::viewVisibilityStateChanged(Qt::CheckState state)
+#else
+void PacketDialog::viewVisibilityStateChanged(int state)
+#endif
+{
+    // Qt::PartiallyChecked is not possible
+    data_source_tab_->setVisible(state == Qt::Checked);
+    ui->layoutComboBox->setEnabled(state == Qt::Checked);
+
+    prefs.gui_packet_details_show_byteview = (state == Qt::Checked ? true : false);
+    prefs_main_write();
+}
+
+void PacketDialog::layoutChanged(int index _U_)
+{
+    splitter_layout_e layout = ui->layoutComboBox->currentData().value<splitter_layout_e>();
+    switch(layout) {
+    case(layout_vertical):
+        ui->packetSplitter->setOrientation(Qt::Vertical);
+        break;
+    case(layout_horizontal):
+        ui->packetSplitter->setOrientation(Qt::Horizontal);
+        break;
+    }
+    prefs_set_enum_value(pref_packet_dialog_layout_, layout, pref_current);
+}

@@ -1,46 +1,39 @@
-/* show_packet_bytes_dialog.h
+/** @file
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef SHOW_PACKET_BYTES_DIALOG_H
 #define SHOW_PACKET_BYTES_DIALOG_H
 
 #include <config.h>
-#include <glib.h>
 #include <stdio.h>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
-#include "file.h"
+#include <epan/tvbuff.h>
 #include "wireshark_dialog.h"
 
 #include <QLineEdit>
 #include <QPushButton>
 #include <QTextEdit>
+#include <QTextCodec>
 
 namespace Ui {
 class ShowPacketBytesDialog;
 class ShowPacketBytesTextEdit;
 }
+
+struct uncompress_list_t {
+    QString name;
+    tvbuff_t *(*function)(tvbuff_t *, int, int);
+};
 
 class ShowPacketBytesDialog : public WiresharkDialog
 {
@@ -50,8 +43,7 @@ public:
     explicit ShowPacketBytesDialog(QWidget &parent, CaptureFile &cf);
     ~ShowPacketBytesDialog();
 
-public slots:
-    void captureFileClosing();
+    void addCodecs(const QMap<QString, QTextCodec *> &codecMap);
 
 protected:
     bool eventFilter(QObject *obj, QEvent *event);
@@ -75,48 +67,26 @@ private slots:
     void saveAs();
 
 private:
-    enum DecodeAsType {
-        DecodeAsNone,
-        DecodeAsBASE64,
-        DecodeAsCompressed,
-        DecodeAsQuotedPrintable,
-        DecodeAsROT13
-    };
-    enum ShowAsType {
-        ShowAsASCII,
-        ShowAsASCIIandControl,
-        ShowAsCArray,
-        ShowAsEBCDIC,
-        ShowAsHexDump,
-        ShowAsHTML,
-        ShowAsImage,
-        ShowAsISO8859_1,
-        ShowAsRAW,
-        ShowAsUTF8,
-        ShowAsYAML
-    };
-
     void setStartAndEnd(int start, int end);
     bool enableShowSelected();
     void updateWidgets(); // Needed for WiresharkDialog?
     void updateHintLabel();
     void sanitizeBuffer(QByteArray &ba, bool handle_CR);
     void symbolizeBuffer(QByteArray &ba);
-    QByteArray decodeQuotedPrintable(const guint8 *bytes, int length);
+    QByteArray decodeQuotedPrintable(const uint8_t *bytes, int length);
     void rot13(QByteArray &ba);
     void updateFieldBytes(bool initialization = false);
     void updatePacketBytes();
 
     Ui::ShowPacketBytesDialog  *ui;
 
-    const field_info  *finfo_;
+    tvbuff_t   *tvb_;
     QByteArray  field_bytes_;
     QString     hint_label_;
+    QString     decode_as_name_;
     QPushButton *print_button_;
     QPushButton *copy_button_;
     QPushButton *save_as_button_;
-    DecodeAsType decode_as_;
-    ShowAsType  show_as_;
     bool        use_regex_find_;
     int         start_;
     int         end_;
@@ -149,16 +119,3 @@ private:
 };
 
 #endif // SHOW_PACKET_BYTES_DIALOG_H
-
-/*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
- *
- * Local variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * vi: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

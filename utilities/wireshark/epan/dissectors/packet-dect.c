@@ -11,19 +11,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -70,7 +58,7 @@ enum {
 
 /* ETSI EN 300 175-3 V2.3.0  6.2.4 and Annex E */
 /* scramble table with corrections by Jakub Hruska */
-static const guint8 scrt[8][31]=
+static const uint8_t scrt[8][31]=
 {
 	{0x3B, 0xCD, 0x21, 0x5D, 0x88, 0x65, 0xBD, 0x44, 0xEF, 0x34, 0x85, 0x76, 0x21, 0x96, 0xF5, 0x13, 0xBC, 0xD2, 0x15, 0xD8, 0x86, 0x5B, 0xD4, 0x4E, 0xF3, 0x48, 0x57, 0x62, 0x19, 0x6F, 0x51},
 	{0x32, 0xDE, 0xA2, 0x77, 0x9A, 0x42, 0xBB, 0x10, 0xCB, 0x7A, 0x89, 0xDE, 0x69, 0x0A, 0xEC, 0x43, 0x2D, 0xEA, 0x27, 0x79, 0xA4, 0x2B, 0xB1, 0x0C, 0xB7, 0xA8, 0x9D, 0xE6, 0x90, 0xAE, 0xC4},
@@ -85,146 +73,148 @@ static const guint8 scrt[8][31]=
 void proto_register_dect (void);
 void proto_reg_handoff_dect (void);
 
-static int proto_dect = -1;
+static dissector_handle_t dect_handle;
+
+static int proto_dect;
 
 
-static gint ett_dect				= -1;
-static gint ett_columns				= -1;
-static gint ett_afield				= -1;
-static gint ett_ahead				= -1;
-static gint ett_atail				= -1;
-static gint ett_aqt				= -1;
-static gint ett_bfield				= -1;
-static gint ett_bfdescrdata			= -1;
+static int ett_dect;
+static int ett_columns;
+static int ett_afield;
+static int ett_ahead;
+static int ett_atail;
+static int ett_aqt;
+static int ett_bfield;
+static int ett_bfdescrdata;
 
-static int hf_dect_transceivermode		= -1;
-static int hf_dect_preamble			= -1;
-static int hf_dect_type				= -1;
-static int hf_dect_channel			= -1;
-static int hf_dect_framenumber			= -1;
-static int hf_dect_rssi				= -1;
-static int hf_dect_slot				= -1;
-static int hf_dect_cc				= -1;
-static int hf_dect_cc_TA			= -1;
-static int hf_dect_cc_AField			= -1;
-static int hf_dect_cc_BField			= -1;
-static int hf_dect_A				= -1;
-static int hf_dect_A_Head			= -1;
-static int hf_dect_A_Head_TA_FP			= -1;
-static int hf_dect_A_Head_TA_PP			= -1;
-static int hf_dect_A_Head_Q1			= -1;
-static int hf_dect_A_Head_BA			= -1;
-static int hf_dect_A_Head_Q2			= -1;
-static int hf_dect_A_Tail			= -1;
-static int hf_dect_A_Tail_Nt			= -1;
-static int hf_dect_A_Tail_Qt_Qh			= -1;
-static int hf_dect_A_Tail_Qt_0_Sn		= -1;
-static int hf_dect_A_Tail_Qt_0_Nr		= -1;
-static int hf_dect_A_Tail_Qt_0_Sp		= -1;
-static int hf_dect_A_Tail_Qt_0_Esc		= -1;
-static int hf_dect_A_Tail_Qt_0_Txs		= -1;
-static int hf_dect_A_Tail_Qt_0_Mc		= -1;
-static int hf_dect_A_Tail_Qt_0_CA		= -1;
-static int hf_dect_A_Tail_Qt_0_Spr1		= -1;
-static int hf_dect_A_Tail_Qt_0_Cn		= -1;
-static int hf_dect_A_Tail_Qt_0_Spr2		= -1;
-static int hf_dect_A_Tail_Qt_0_PSCN		= -1;
-static int hf_dect_A_Tail_Qt_3_A12		= -1;
-static int hf_dect_A_Tail_Qt_3_A13		= -1;
-static int hf_dect_A_Tail_Qt_3_A14		= -1;
-static int hf_dect_A_Tail_Qt_3_A15		= -1;
-static int hf_dect_A_Tail_Qt_3_A16		= -1;
-static int hf_dect_A_Tail_Qt_3_A17		= -1;
-static int hf_dect_A_Tail_Qt_3_A18		= -1;
-static int hf_dect_A_Tail_Qt_3_A19		= -1;
-static int hf_dect_A_Tail_Qt_3_A20		= -1;
-static int hf_dect_A_Tail_Qt_3_A21		= -1;
-static int hf_dect_A_Tail_Qt_3_A22		= -1;
-static int hf_dect_A_Tail_Qt_3_A23		= -1;
-static int hf_dect_A_Tail_Qt_3_A24		= -1;
-static int hf_dect_A_Tail_Qt_3_A25		= -1;
-static int hf_dect_A_Tail_Qt_3_A26		= -1;
-static int hf_dect_A_Tail_Qt_3_A27		= -1;
-static int hf_dect_A_Tail_Qt_3_A28		= -1;
-static int hf_dect_A_Tail_Qt_3_A29		= -1;
-static int hf_dect_A_Tail_Qt_3_A30		= -1;
-static int hf_dect_A_Tail_Qt_3_A31		= -1;
-static int hf_dect_A_Tail_Qt_3_A32		= -1;
-static int hf_dect_A_Tail_Qt_3_A33		= -1;
-static int hf_dect_A_Tail_Qt_3_A34		= -1;
-static int hf_dect_A_Tail_Qt_3_A35		= -1;
-static int hf_dect_A_Tail_Qt_3_A36		= -1;
-static int hf_dect_A_Tail_Qt_3_A37		= -1;
-static int hf_dect_A_Tail_Qt_3_A38		= -1;
-static int hf_dect_A_Tail_Qt_3_A39		= -1;
-static int hf_dect_A_Tail_Qt_3_A40		= -1;
-static int hf_dect_A_Tail_Qt_3_A41		= -1;
-static int hf_dect_A_Tail_Qt_3_A42		= -1;
-static int hf_dect_A_Tail_Qt_3_A43		= -1;
-static int hf_dect_A_Tail_Qt_3_A44		= -1;
-static int hf_dect_A_Tail_Qt_3_A45		= -1;
-static int hf_dect_A_Tail_Qt_3_A46		= -1;
-static int hf_dect_A_Tail_Qt_3_A47		= -1;
-static int hf_dect_A_Tail_Qt_4_CRFPHops		= -1;
-static int hf_dect_A_Tail_Qt_4_CRFPEnc		= -1;
-static int hf_dect_A_Tail_Qt_4_REFHops		= -1;
-static int hf_dect_A_Tail_Qt_4_REPCap		= -1;
-static int hf_dect_A_Tail_Qt_4_Sync		= -1;
-static int hf_dect_A_Tail_Qt_4_A20		= -1;
-static int hf_dect_A_Tail_Qt_4_MACSusp		= -1;
-static int hf_dect_A_Tail_Qt_4_MACIpq		= -1;
-static int hf_dect_A_Tail_Qt_4_A23		= -1;
-static int hf_dect_A_Tail_Qt_4_A24		= -1;
-static int hf_dect_A_Tail_Qt_4_A25		= -1;
-static int hf_dect_A_Tail_Qt_4_A26		= -1;
-static int hf_dect_A_Tail_Qt_4_A27		= -1;
-static int hf_dect_A_Tail_Qt_4_A28		= -1;
-static int hf_dect_A_Tail_Qt_4_A29		= -1;
-static int hf_dect_A_Tail_Qt_4_A30		= -1;
-static int hf_dect_A_Tail_Qt_4_A31		= -1;
-static int hf_dect_A_Tail_Qt_4_A32		= -1;
-static int hf_dect_A_Tail_Qt_4_A33		= -1;
-static int hf_dect_A_Tail_Qt_4_A34		= -1;
-static int hf_dect_A_Tail_Qt_4_A35		= -1;
-static int hf_dect_A_Tail_Qt_4_A36		= -1;
-static int hf_dect_A_Tail_Qt_4_A37		= -1;
-static int hf_dect_A_Tail_Qt_4_A38		= -1;
-static int hf_dect_A_Tail_Qt_4_A39		= -1;
-static int hf_dect_A_Tail_Qt_4_A40		= -1;
-static int hf_dect_A_Tail_Qt_4_A41		= -1;
-static int hf_dect_A_Tail_Qt_4_A42		= -1;
-static int hf_dect_A_Tail_Qt_4_A43		= -1;
-static int hf_dect_A_Tail_Qt_4_A44		= -1;
-static int hf_dect_A_Tail_Qt_4_A45		= -1;
-static int hf_dect_A_Tail_Qt_4_A46		= -1;
-static int hf_dect_A_Tail_Qt_4_A47		= -1;
-static int hf_dect_A_Tail_Qt_6_Spare		= -1;
-static int hf_dect_A_Tail_Qt_6_Mfn		= -1;
-static int hf_dect_A_Tail_Mt_Mh			= -1;
-static int hf_dect_A_Tail_Mt_Mh_attr		= -1;
-static int hf_dect_A_Tail_Mt_Mh_fmid		= -1;
-static int hf_dect_A_Tail_Mt_Mh_pmid		= -1;
-static int hf_dect_A_Tail_Mt_BasicConCtrl	= -1;
-static int hf_dect_A_Tail_Mt_Encr_Cmd1		= -1;
-static int hf_dect_A_Tail_Mt_Encr_Cmd2		= -1;
-static int hf_dect_A_Tail_Pt_ExtFlag		= -1;
-static int hf_dect_A_Tail_Pt_SDU		= -1;
-static int hf_dect_A_Tail_Pt_RFPI		= -1;
-static int hf_dect_A_Tail_Pt_BsData		= -1;
-static int hf_dect_A_Tail_Pt_InfoType		= -1;
-static int hf_dect_A_Tail_Pt_SlotPairs		= -1;
-static int hf_dect_A_Tail_Pt_Fillbits		= -1;
-static int hf_dect_A_Tail_Pt_Bearer_Sn		= -1;
-static int hf_dect_A_Tail_Pt_Bearer_Cn		= -1;
-static int hf_dect_A_Tail_Pt_Bearer_Sp		= -1;
-static int hf_dect_A_RCRC			= -1;
-static int hf_dect_B				= -1;
-static int hf_dect_B_Data			= -1;
-static int hf_dect_B_DescrambledData		= -1;
-static int hf_dect_B_fn				= -1;
-static int hf_dect_B_XCRC			= -1;
+static int hf_dect_transceivermode;
+static int hf_dect_preamble;
+static int hf_dect_type;
+static int hf_dect_channel;
+static int hf_dect_framenumber;
+static int hf_dect_rssi;
+static int hf_dect_slot;
+static int hf_dect_cc;
+static int hf_dect_cc_TA;
+static int hf_dect_cc_AField;
+static int hf_dect_cc_BField;
+static int hf_dect_A;
+static int hf_dect_A_Head;
+static int hf_dect_A_Head_TA_FP;
+static int hf_dect_A_Head_TA_PP;
+static int hf_dect_A_Head_Q1;
+static int hf_dect_A_Head_BA;
+static int hf_dect_A_Head_Q2;
+static int hf_dect_A_Tail;
+static int hf_dect_A_Tail_Nt;
+static int hf_dect_A_Tail_Qt_Qh;
+static int hf_dect_A_Tail_Qt_0_Sn;
+static int hf_dect_A_Tail_Qt_0_Nr;
+static int hf_dect_A_Tail_Qt_0_Sp;
+static int hf_dect_A_Tail_Qt_0_Esc;
+static int hf_dect_A_Tail_Qt_0_Txs;
+static int hf_dect_A_Tail_Qt_0_Mc;
+static int hf_dect_A_Tail_Qt_0_CA;
+static int hf_dect_A_Tail_Qt_0_Spr1;
+static int hf_dect_A_Tail_Qt_0_Cn;
+static int hf_dect_A_Tail_Qt_0_Spr2;
+static int hf_dect_A_Tail_Qt_0_PSCN;
+static int hf_dect_A_Tail_Qt_3_A12;
+static int hf_dect_A_Tail_Qt_3_A13;
+static int hf_dect_A_Tail_Qt_3_A14;
+static int hf_dect_A_Tail_Qt_3_A15;
+static int hf_dect_A_Tail_Qt_3_A16;
+static int hf_dect_A_Tail_Qt_3_A17;
+static int hf_dect_A_Tail_Qt_3_A18;
+static int hf_dect_A_Tail_Qt_3_A19;
+static int hf_dect_A_Tail_Qt_3_A20;
+static int hf_dect_A_Tail_Qt_3_A21;
+static int hf_dect_A_Tail_Qt_3_A22;
+static int hf_dect_A_Tail_Qt_3_A23;
+static int hf_dect_A_Tail_Qt_3_A24;
+static int hf_dect_A_Tail_Qt_3_A25;
+static int hf_dect_A_Tail_Qt_3_A26;
+static int hf_dect_A_Tail_Qt_3_A27;
+static int hf_dect_A_Tail_Qt_3_A28;
+static int hf_dect_A_Tail_Qt_3_A29;
+static int hf_dect_A_Tail_Qt_3_A30;
+static int hf_dect_A_Tail_Qt_3_A31;
+static int hf_dect_A_Tail_Qt_3_A32;
+static int hf_dect_A_Tail_Qt_3_A33;
+static int hf_dect_A_Tail_Qt_3_A34;
+static int hf_dect_A_Tail_Qt_3_A35;
+static int hf_dect_A_Tail_Qt_3_A36;
+static int hf_dect_A_Tail_Qt_3_A37;
+static int hf_dect_A_Tail_Qt_3_A38;
+static int hf_dect_A_Tail_Qt_3_A39;
+static int hf_dect_A_Tail_Qt_3_A40;
+static int hf_dect_A_Tail_Qt_3_A41;
+static int hf_dect_A_Tail_Qt_3_A42;
+static int hf_dect_A_Tail_Qt_3_A43;
+static int hf_dect_A_Tail_Qt_3_A44;
+static int hf_dect_A_Tail_Qt_3_A45;
+static int hf_dect_A_Tail_Qt_3_A46;
+static int hf_dect_A_Tail_Qt_3_A47;
+static int hf_dect_A_Tail_Qt_4_CRFPHops;
+static int hf_dect_A_Tail_Qt_4_CRFPEnc;
+static int hf_dect_A_Tail_Qt_4_REFHops;
+static int hf_dect_A_Tail_Qt_4_REPCap;
+static int hf_dect_A_Tail_Qt_4_Sync;
+static int hf_dect_A_Tail_Qt_4_A20;
+static int hf_dect_A_Tail_Qt_4_MACSusp;
+static int hf_dect_A_Tail_Qt_4_MACIpq;
+static int hf_dect_A_Tail_Qt_4_A23;
+static int hf_dect_A_Tail_Qt_4_A24;
+static int hf_dect_A_Tail_Qt_4_A25;
+static int hf_dect_A_Tail_Qt_4_A26;
+static int hf_dect_A_Tail_Qt_4_A27;
+static int hf_dect_A_Tail_Qt_4_A28;
+static int hf_dect_A_Tail_Qt_4_A29;
+static int hf_dect_A_Tail_Qt_4_A30;
+static int hf_dect_A_Tail_Qt_4_A31;
+static int hf_dect_A_Tail_Qt_4_A32;
+static int hf_dect_A_Tail_Qt_4_A33;
+static int hf_dect_A_Tail_Qt_4_A34;
+static int hf_dect_A_Tail_Qt_4_A35;
+static int hf_dect_A_Tail_Qt_4_A36;
+static int hf_dect_A_Tail_Qt_4_A37;
+static int hf_dect_A_Tail_Qt_4_A38;
+static int hf_dect_A_Tail_Qt_4_A39;
+static int hf_dect_A_Tail_Qt_4_A40;
+static int hf_dect_A_Tail_Qt_4_A41;
+static int hf_dect_A_Tail_Qt_4_A42;
+static int hf_dect_A_Tail_Qt_4_A43;
+static int hf_dect_A_Tail_Qt_4_A44;
+static int hf_dect_A_Tail_Qt_4_A45;
+static int hf_dect_A_Tail_Qt_4_A46;
+static int hf_dect_A_Tail_Qt_4_A47;
+static int hf_dect_A_Tail_Qt_6_Spare;
+static int hf_dect_A_Tail_Qt_6_Mfn;
+static int hf_dect_A_Tail_Mt_Mh;
+static int hf_dect_A_Tail_Mt_Mh_attr;
+static int hf_dect_A_Tail_Mt_Mh_fmid;
+static int hf_dect_A_Tail_Mt_Mh_pmid;
+static int hf_dect_A_Tail_Mt_BasicConCtrl;
+static int hf_dect_A_Tail_Mt_Encr_Cmd1;
+static int hf_dect_A_Tail_Mt_Encr_Cmd2;
+static int hf_dect_A_Tail_Pt_ExtFlag;
+static int hf_dect_A_Tail_Pt_SDU;
+static int hf_dect_A_Tail_Pt_RFPI;
+static int hf_dect_A_Tail_Pt_BsData;
+static int hf_dect_A_Tail_Pt_InfoType;
+static int hf_dect_A_Tail_Pt_SlotPairs;
+static int hf_dect_A_Tail_Pt_Fillbits;
+static int hf_dect_A_Tail_Pt_Bearer_Sn;
+static int hf_dect_A_Tail_Pt_Bearer_Cn;
+static int hf_dect_A_Tail_Pt_Bearer_Sp;
+static int hf_dect_A_RCRC;
+static int hf_dect_B;
+static int hf_dect_B_Data;
+static int hf_dect_B_DescrambledData;
+static int hf_dect_B_fn;
+static int hf_dect_B_XCRC;
 
-static const value_string tranceiver_mode[]=
+static const value_string transceiver_mode[]=
 {
 	{0, "Receive"},
 	{1, "Send"},
@@ -344,7 +334,7 @@ static const value_string QTEscape_vals[]=
 };
 
 /* ETSI EN 300 175-3 V2.3.0  7.2.3.2.6 */
-static const value_string QTTranceiver_vals[]=
+static const value_string QTTransceiver_vals[]=
 {
 	{0, "RFP has 1 Transceiver"},
 	{1, "RFP has 2 Transceiver"},
@@ -1143,15 +1133,15 @@ static const value_string PTRFPPower_vals[]=
 
 
 static unsigned char
-dect_getbit(guint8 *data, int bit)
+dect_getbit(uint8_t *data, int bit)
 {
-	guint8 byte=data[bit/8];
+	uint8_t byte=data[bit/8];
 
 	return (byte>>bit%8)&1;
 }
 
 static void
-dect_setbit(guint8 *data, int bit, guint8 value)
+dect_setbit(uint8_t *data, int bit, uint8_t value)
 {
 	if(!value)
 		data[bit/8]&=~(1<<(bit%8));
@@ -1160,13 +1150,13 @@ dect_setbit(guint8 *data, int bit, guint8 value)
 }
 
 /* EN 300 175-3 V2.3.0  6.2.5.4 */
-static guint8
-calc_xcrc(guint8* data, guint8 length)
+static uint8_t
+calc_xcrc(uint8_t* data, uint8_t length)
 {
-	guint8 bits[21];
-	guint8 gp=0x1;
-	guint8 crc;
-	guint8 next;
+	uint8_t bits[21];
+	uint8_t gp=0x1;
+	uint8_t crc;
+	uint8_t next;
 	int y, x;
 
 	memset(bits, 0, sizeof(bits));
@@ -1209,13 +1199,13 @@ calc_xcrc(guint8* data, guint8 length)
 }
 
 /* EN 300 175-3 V2.3.0  6.2.5.2 */
-static guint16
-calc_rcrc(guint8* data)
+static uint16_t
+calc_rcrc(uint8_t* data)
 {
-	guint16 gp=0x0589; /* 10000010110001001 without the leading 1 */
+	uint16_t gp=0x0589; /* 10000010110001001 without the leading 1 */
 
-	guint16 crc;
-	guint8 next;
+	uint16_t crc;
+	uint8_t next;
 	int y, x;
 
 	crc=data[0]<<8|data[1];
@@ -1250,13 +1240,13 @@ calc_rcrc(guint8* data)
 }
 
 /* ETSI EN 300 175-3 V2.3.0  6.2.1.3 */
-static gint
-dissect_bfield(gboolean dect_packet_type _U_, guint8 ba,
-	packet_info *pinfo _U_, tvbuff_t *tvb, gint offset, proto_tree *DectTree, proto_tree *ColumnsTree)
+static int
+dissect_bfield(bool dect_packet_type _U_, uint8_t ba,
+	packet_info *pinfo _U_, tvbuff_t *tvb, int offset, proto_tree *DectTree, proto_tree *ColumnsTree)
 {
-	guint8 xcrc/*, xcrclen*/;
-	guint16 blen;
-	gint start_offset;
+	uint8_t xcrc/*, xcrclen*/;
+	uint16_t blen;
+	int start_offset;
 	const char *bfield_str;
 	const char *bfield_short_str;
 
@@ -1266,8 +1256,8 @@ dissect_bfield(gboolean dect_packet_type _U_, guint8 ba,
 	proto_item *bfdescrdatati   = NULL;
 	proto_tree *BFDescrData	    = NULL;
 
-	guint8 bfield_data[DECT_BFIELD_DATA_SIZE];
-	guint bfield_length = tvb_reported_length_remaining(tvb, offset);
+	uint8_t bfield_data[DECT_BFIELD_DATA_SIZE];
+	unsigned bfield_length = tvb_reported_length_remaining(tvb, offset);
 
 	if (bfield_length > DECT_BFIELD_DATA_SIZE)
 		bfield_length = DECT_BFIELD_DATA_SIZE;
@@ -1336,11 +1326,11 @@ dissect_bfield(gboolean dect_packet_type _U_, guint8 ba,
 
 	if(blen<=bfield_length)
 	{
-		gint fn;
-		guint16 x, y;
+		int fn;
+		uint16_t x, y;
 		for(fn=0;fn<8;fn++)
 		{
-			guint16 bytecount=0;
+			uint16_t bytecount=0;
 
 			offset=start_offset;
 
@@ -1359,7 +1349,7 @@ dissect_bfield(gboolean dect_packet_type _U_, guint8 ba,
 				 * the range of all possible descramblings. (a.schuler)
 				 */
 				wmem_strbuf_t *string;
-				string = wmem_strbuf_new(wmem_packet_scope(), NULL);
+				string = wmem_strbuf_new(pinfo->pool, NULL);
 				for(y=0;y<16;y++)
 				{
 					if((x+y)>=blen)
@@ -1399,12 +1389,12 @@ dissect_bfield(gboolean dect_packet_type _U_, guint8 ba,
 
 /* ETSI EN 300 175-3 V2.3.0  6.2.1.2 */
 static void
-dissect_afield(gboolean dect_packet_type, guint8 *ba,
-	packet_info *pinfo _U_, tvbuff_t *tvb, gint offset, proto_tree *DectTree, proto_tree *ColumnsTree)
+dissect_afield(bool dect_packet_type, uint8_t *ba,
+	packet_info *pinfo _U_, tvbuff_t *tvb, int offset, proto_tree *DectTree, proto_tree *ColumnsTree)
 {
-	guint8 ta;
-	guint8 rcrcdat[8];
-	guint16 computed_rcrc;
+	uint8_t ta;
+	uint8_t rcrcdat[8];
+	uint16_t computed_rcrc;
 	wmem_strbuf_t *afield_str;
 
 	proto_item *afieldti	= NULL;
@@ -1414,10 +1404,10 @@ dissect_afield(gboolean dect_packet_type, guint8 *ba,
 	proto_tree *AHead	= NULL;
 	proto_tree *ATail	= NULL;
 
-	guint8	header, tail_0, tail_1, tail_2, tail_3, tail_4;
-	guint16	rcrc;
+	uint8_t	header, tail_0, tail_1, tail_2, tail_3, tail_4;
+	uint16_t	rcrc;
 
-	afield_str = wmem_strbuf_new(wmem_packet_scope(), NULL);
+	afield_str = wmem_strbuf_new(pinfo->pool, NULL);
 
 	/************************** A-Field ***********************************/
 
@@ -1429,12 +1419,12 @@ dissect_afield(gboolean dect_packet_type, guint8 *ba,
 	 */
 
 	/* A-Field */
-	header = tvb_get_guint8(tvb, offset+0);
-	tail_0 = tvb_get_guint8(tvb, offset+1);
-	tail_1 = tvb_get_guint8(tvb, offset+2);
-	tail_2 = tvb_get_guint8(tvb, offset+3);
-	tail_3 = tvb_get_guint8(tvb, offset+4);
-	tail_4 = tvb_get_guint8(tvb, offset+5);
+	header = tvb_get_uint8(tvb, offset+0);
+	tail_0 = tvb_get_uint8(tvb, offset+1);
+	tail_1 = tvb_get_uint8(tvb, offset+2);
+	tail_2 = tvb_get_uint8(tvb, offset+3);
+	tail_3 = tvb_get_uint8(tvb, offset+4);
+	tail_4 = tvb_get_uint8(tvb, offset+5);
 	rcrc = tvb_get_ntohs(tvb, offset+6);
 
 	ta = (header & DECT_A_TA_MASK) >> DECT_A_TA_SHIFT;
@@ -1461,12 +1451,12 @@ dissect_afield(gboolean dect_packet_type, guint8 *ba,
 	if(dect_packet_type==DECT_PACKET_FP)
 	{
 		atailti = proto_tree_add_none_format(afieldti, hf_dect_A_Tail, tvb, offset, 5,
-			"FP-Tail: %s", val_to_str(ta, TA_vals_FP, "Error, please report: %d"));
+			"FP-Tail: %s", val_to_str(pinfo->pool, ta, TA_vals_FP, "Error, please report: %d"));
 	}
 	else
 	{
 		atailti = proto_tree_add_none_format(afieldti, hf_dect_A_Tail, tvb, offset, 5,
-			"PP-Tail: %s", val_to_str(ta, TA_vals_PP, "Error, please report: %d"));
+			"PP-Tail: %s", val_to_str(pinfo->pool, ta, TA_vals_PP, "Error, please report: %d"));
 	}
 
 	ATail = proto_item_add_subtree(atailti, ett_atail);
@@ -1477,9 +1467,9 @@ dissect_afield(gboolean dect_packet_type, guint8 *ba,
 		proto_tree_add_string(ColumnsTree, hf_dect_cc_TA, tvb, offset, 1, "[Ct]");
 
 		if(ta==DECT_TA_CT0)
-			wmem_strbuf_append_printf(afield_str,"C-Channel Next  Data: %s",tvb_bytes_to_str(wmem_packet_scope(), tvb, offset, 5));
+			wmem_strbuf_append_printf(afield_str,"C-Channel Next  Data: %s",tvb_bytes_to_str(pinfo->pool, tvb, offset, 5));
 		else
-			wmem_strbuf_append_printf(afield_str,"C-Channel First Data: %s",tvb_bytes_to_str(wmem_packet_scope(), tvb, offset, 5));
+			wmem_strbuf_append_printf(afield_str,"C-Channel First Data: %s",tvb_bytes_to_str(pinfo->pool, tvb, offset, 5));
 
 		proto_tree_add_string(ColumnsTree, hf_dect_cc_AField, tvb, offset, 1, wmem_strbuf_get_str(afield_str));
 	}
@@ -1488,7 +1478,7 @@ dissect_afield(gboolean dect_packet_type, guint8 *ba,
 		/* ETSI EN 300 175-3 V2.3.0  7.2.2 */
 		proto_tree_add_string(ColumnsTree, hf_dect_cc_TA, tvb, offset, 1, "[Nt]");
 
-		wmem_strbuf_append_printf(afield_str,"RFPI: %s",tvb_bytes_to_str(wmem_packet_scope(), tvb, offset, 5));
+		wmem_strbuf_append_printf(afield_str,"RFPI: %s",tvb_bytes_to_str(pinfo->pool, tvb, offset, 5));
 		proto_tree_add_string(ColumnsTree, hf_dect_cc_AField, tvb, offset, 1, wmem_strbuf_get_str(afield_str));
 
 		proto_tree_add_item(atailti, hf_dect_A_Tail_Nt, tvb, offset, 5, ENC_NA);
@@ -1540,14 +1530,14 @@ dissect_afield(gboolean dect_packet_type, guint8 *ba,
 			break;
 		case 3:		/* Fixed Part Capabilities */
 			{
-			static const int * cap1_flags[] = {
+			static int * const cap1_flags[] = {
 				&hf_dect_A_Tail_Qt_3_A12,
 				&hf_dect_A_Tail_Qt_3_A13,
 				&hf_dect_A_Tail_Qt_3_A14,
 				&hf_dect_A_Tail_Qt_3_A15,
 				NULL
 			};
-			static const int * cap2_flags[] = {
+			static int * const cap2_flags[] = {
 				&hf_dect_A_Tail_Qt_3_A16,
 				&hf_dect_A_Tail_Qt_3_A17,
 				&hf_dect_A_Tail_Qt_3_A18,
@@ -1558,7 +1548,7 @@ dissect_afield(gboolean dect_packet_type, guint8 *ba,
 				&hf_dect_A_Tail_Qt_3_A23,
 				NULL
 			};
-			static const int * cap3_flags[] = {
+			static int * const cap3_flags[] = {
 				&hf_dect_A_Tail_Qt_3_A24,
 				&hf_dect_A_Tail_Qt_3_A25,
 				&hf_dect_A_Tail_Qt_3_A26,
@@ -1569,7 +1559,7 @@ dissect_afield(gboolean dect_packet_type, guint8 *ba,
 				&hf_dect_A_Tail_Qt_3_A31,
 				NULL
 			};
-			static const int * cap4_flags[] = {
+			static int * const cap4_flags[] = {
 				&hf_dect_A_Tail_Qt_3_A32,
 				&hf_dect_A_Tail_Qt_3_A33,
 				&hf_dect_A_Tail_Qt_3_A34,
@@ -1581,7 +1571,7 @@ dissect_afield(gboolean dect_packet_type, guint8 *ba,
 				NULL
 			};
 
-			static const int * cap5_flags[] = {
+			static int * const cap5_flags[] = {
 				&hf_dect_A_Tail_Qt_3_A40,
 				&hf_dect_A_Tail_Qt_3_A41,
 				&hf_dect_A_Tail_Qt_3_A42,
@@ -1671,7 +1661,7 @@ dissect_afield(gboolean dect_packet_type, guint8 *ba,
 			proto_tree_add_item(ATail, hf_dect_A_Tail_Qt_6_Spare, tvb, offset, 2, ENC_BIG_ENDIAN);
 			offset+=2;
 
-			wmem_strbuf_append_printf(afield_str,"Multi-Frame No.: %s",tvb_bytes_to_str(wmem_packet_scope(), tvb, offset, 3));
+			wmem_strbuf_append_printf(afield_str,"Multi-Frame No.: %s",tvb_bytes_to_str(pinfo->pool, tvb, offset, 3));
 			proto_tree_add_string(ColumnsTree, hf_dect_cc_AField, tvb, offset, 1, wmem_strbuf_get_str(afield_str));
 
 			proto_tree_add_item(ATail, hf_dect_A_Tail_Qt_6_Mfn, tvb, offset, 3, ENC_NA);
@@ -1682,7 +1672,7 @@ dissect_afield(gboolean dect_packet_type, guint8 *ba,
 			break;
 		case 7:		/* Escape */
 			/* ETSI EN 300 175-3 V2.3.0  7.2.3.8 */
-			wmem_strbuf_append_printf(afield_str,"Escape Data: %s",tvb_bytes_to_str(wmem_packet_scope(), tvb, offset, 5));
+			wmem_strbuf_append_printf(afield_str,"Escape Data: %s",tvb_bytes_to_str(pinfo->pool, tvb, offset, 5));
 			proto_tree_add_string(ColumnsTree, hf_dect_cc_AField, tvb, offset, 1, wmem_strbuf_get_str(afield_str));
 			break;
 		case 8:		/* Obsolete */
@@ -1769,8 +1759,8 @@ dissect_afield(gboolean dect_packet_type, guint8 *ba,
 		case 5:		/* Encryption Control */
 			/* ETSI EN 300 175-3 V2.3.0  7.2.5.7 */
 			wmem_strbuf_append_printf(afield_str,"Encryption Control: %s %s",
-				val_to_str((tail_0&0x0c)>>2, MTEncrCmd1_vals, "Error, please report: %d"),
-				val_to_str(tail_0&0x03, MTEncrCmd2_vals, "Error, please report: %d"));
+				val_to_str(pinfo->pool, (tail_0&0x0c)>>2, MTEncrCmd1_vals, "Error, please report: %d"),
+				val_to_str(pinfo->pool, tail_0&0x03, MTEncrCmd2_vals, "Error, please report: %d"));
 
 			proto_tree_add_string(ColumnsTree, hf_dect_cc_AField, tvb, offset, 1, wmem_strbuf_get_str(afield_str));
 
@@ -1822,7 +1812,7 @@ dissect_afield(gboolean dect_packet_type, guint8 *ba,
 		proto_tree_add_item(ATail, hf_dect_A_Tail_Pt_SDU, tvb, offset, 1, ENC_BIG_ENDIAN);
 
 		if(((tail_0&0x70)>>4)&0xfe)
-			wmem_strbuf_append_printf(afield_str,"%s, ",val_to_str((tail_0&0x70)>>4, PTSDU_vals, "Error, please report: %d"));
+			wmem_strbuf_append_printf(afield_str,"%s, ",val_to_str(pinfo->pool, (tail_0&0x70)>>4, PTSDU_vals, "Error, please report: %d"));
 
 		switch((tail_0&0x70)>>4)
 		{
@@ -1845,7 +1835,7 @@ dissect_afield(gboolean dect_packet_type, guint8 *ba,
 				proto_tree_add_item(ATail, hf_dect_A_Tail_Pt_InfoType, tvb, offset, 1, ENC_BIG_ENDIAN);
 			}
 
-			wmem_strbuf_append_printf(afield_str,"%s",val_to_str(tail_3>>4, PTInfoType_vals, "Error, please report: %d"));
+			wmem_strbuf_append_printf(afield_str,"%s",val_to_str(pinfo->pool, tail_3>>4, PTInfoType_vals, "Error, please report: %d"));
 
 			switch(tail_3>>4)
 			{
@@ -1950,11 +1940,11 @@ dissect_dect(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 	proto_item *ti		=NULL;
 	proto_item *typeti	=NULL;
 	proto_tree *DectTree	=NULL;
-	gint offset		=0;
+	int offset		=0;
 
-	guint16			type;
-	guint			pkt_len;
-	guint8			ba;
+	uint16_t			type;
+	unsigned			pkt_len;
+	uint8_t			ba;
 
 	/************************** Custom Columns ****************************/
 	proto_item *columnstreeti;
@@ -2030,7 +2020,7 @@ proto_register_dect(void)
 	static hf_register_info hf[]=
 	{
 		{ &hf_dect_transceivermode,
-		{"Tranceiver-Mode", "dect.tranceivermode", FT_UINT8, BASE_HEX, VALS(tranceiver_mode),
+		{"Transceiver-Mode", "dect.transceivermode", FT_UINT8, BASE_HEX, VALS(transceiver_mode),
 			0x0, NULL, HFILL}},
 
 		{ &hf_dect_channel,
@@ -2141,7 +2131,7 @@ proto_register_dect(void)
 			0x20, NULL, HFILL}},
 
 		{ &hf_dect_A_Tail_Qt_0_Txs,
-		{"Txs", "dect.afield.tail.Qt.Txs", FT_UINT8, BASE_DEC, VALS(QTTranceiver_vals),
+		{"Txs", "dect.afield.tail.Qt.Txs", FT_UINT8, BASE_DEC, VALS(QTTransceiver_vals),
 			0x18, NULL, HFILL}},
 
 		{ &hf_dect_A_Tail_Qt_0_Mc,
@@ -2568,7 +2558,7 @@ proto_register_dect(void)
 
 
 	/* Setup protocol subtree array */
-	static gint *ett[]=
+	static int *ett[]=
 	{
 		&ett_dect,
 		&ett_columns,
@@ -2583,19 +2573,18 @@ proto_register_dect(void)
 	proto_dect=proto_register_protocol("DECT Protocol", "DECT", "dect");
 	proto_register_field_array(proto_dect, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
+
+	dect_handle = register_dissector("dect", dissect_dect, proto_dect);
 }
 
 void
 proto_reg_handoff_dect(void)
 {
-	dissector_handle_t dect_handle;
-
-	dect_handle = create_dissector_handle(dissect_dect, proto_dect);
 	dissector_add_uint("ethertype", ETHERTYPE_DECT , dect_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

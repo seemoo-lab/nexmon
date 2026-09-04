@@ -14,22 +14,16 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
+
+#include "config.h"
+
+#define WS_LOG_DOMAIN LOG_DOMAIN_EPAN
+
 #include <stdio.h>
 #include "reedsolomon.h"
+#include <wsutil/wslog.h>
 
 #ifdef CCSDS
 /* CCSDS field generator polynomial: 1+x+x^2+x^7+x^8 */
@@ -249,7 +243,7 @@ gen_ldec(void)
    of the integer "alpha_to[i]" with a(0) being the LSB and a(m-1) the MSB. Thus for
    example the polynomial representation of @^5 would be given by the binary
    representation of the integer "alpha_to[5]".
-                   Similarily, index_of[] can be used as follows:
+                   Similarly, index_of[] can be used as follows:
         As above, let @ represent the primitive element of GF(2^m) that is
    the root of the primitive polynomial p(x). In order to find the power
    of @ (alpha) that has the polynomial representation
@@ -261,7 +255,7 @@ gen_ldec(void)
    NOTE:
         The element alpha_to[2^m-1] = 0 always signifying that the
    representation of "@^infinity" = 0 is (0,0,0,...,0).
-        Similarily, the element index_of[0] = A0 always signifying
+        Similarly, the element index_of[0] = A0 always signifying
    that the power of alpha which has the polynomial representation
    (0,0,...,0) is "infinity".
 
@@ -349,7 +343,7 @@ gen_poly(void)
  */
 
 int
-encode_rs(dtype data[KK], dtype bb[NN-KK])
+encode_rs(dtype data[], dtype bb[])
 {
   register int i, j;
   gf feedback;
@@ -417,7 +411,7 @@ encode_rs(dtype data[KK], dtype bb[NN-KK])
  */
 
 int
-eras_dec_rs(dtype data[NN], int eras_pos[NN-KK], int no_eras)
+eras_dec_rs(dtype data[], int eras_pos[], int no_eras)
 {
   int deg_lambda, el, deg_omega;
   int i, j, r,k;
@@ -462,7 +456,7 @@ eras_dec_rs(dtype data[NN], int eras_pos[NN-KK], int no_eras)
   syn_error = 0;
   for(i=1;i<=NN-KK;i++){
     syn_error |= s[i];
-        /*printf("syndrome %d = %x\n",i,s[i]);*/
+        /*ws_debug("syndrome %d = %x\n",i,s[i]);*/
     s[i] = Index_of[s[i]];
   }
 
@@ -510,7 +504,7 @@ eras_dec_rs(dtype data[NN], int eras_pos[NN-KK], int no_eras)
       count++;
     }
     if (count != no_eras) {
-      printf("\n lambda(x) is WRONG\n");
+      ws_debug("\n lambda(x) is WRONG\n");
       count = -1;
       goto finish;
     }
@@ -648,7 +642,7 @@ eras_dec_rs(dtype data[NN], int eras_pos[NN-KK], int no_eras)
     }
     if (den == 0) {
 #if DEBUG >= 1
-      printf("\n ERROR: denominator = 0\n");
+      ws_debug("\n ERROR: denominator = 0\n");
 #endif
       /* Convert to dual- basis */
       count = -1;
@@ -689,7 +683,7 @@ init_rs(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

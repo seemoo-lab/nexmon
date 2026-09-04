@@ -10,19 +10,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -36,29 +24,32 @@
 void proto_register_vrrp(void);
 void proto_reg_handoff_vrrp(void);
 
-static gint proto_vrrp = -1;
-static gint ett_vrrp = -1;
-static gint ett_vrrp_ver_type = -1;
+static dissector_handle_t vrrp_handle;
 
-static gint hf_vrrp_ver_type = -1;
-static gint hf_vrrp_version = -1;
-static gint hf_vrrp_type = -1;
-static gint hf_vrrp_virt_rtr_id = -1;
-static gint hf_vrrp_prio = -1;
-static gint hf_vrrp_addr_count = -1;
-static gint hf_vrrp_checksum = -1;
-static gint hf_vrrp_checksum_status = -1;
-static gint hf_vrrp_auth_type = -1;
-static gint hf_vrrp_adver_int = -1;
-static gint hf_vrrp_reserved_mbz = -1;
-static gint hf_vrrp_short_adver_int = -1;
-static gint hf_vrrp_ip = -1;
-static gint hf_vrrp_ip6 = -1;
-static gint hf_vrrp_auth_string = -1;
+static int proto_vrrp;
+static int ett_vrrp;
+static int ett_vrrp_ver_type;
 
-static gboolean g_vrrp_v3_checksum_as_in_v2 = FALSE;
+static int hf_vrrp_ver_type;
+static int hf_vrrp_version;
+static int hf_vrrp_type;
+static int hf_vrrp_virt_rtr_id;
+static int hf_vrrp_prio;
+static int hf_vrrp_addr_count;
+static int hf_vrrp_checksum;
+static int hf_vrrp_checksum_status;
+static int hf_vrrp_auth_type;
+static int hf_vrrp_adver_int;
+static int hf_vrrp_reserved_mbz;
+static int hf_vrrp_short_adver_int;
+static int hf_vrrp_ip;
+static int hf_vrrp_ip6;
+static int hf_vrrp_auth_string;
+static int hf_vrrp_md5_auth_data;
 
-static expert_field ei_vrrp_checksum = EI_INIT;
+static bool g_vrrp_v3_checksum_as_in_v2 = true;
+
+static expert_field ei_vrrp_checksum;
 
 #define VRRP_VERSION_MASK  0xf0
 #define VRRP_TYPE_MASK     0x0f
@@ -73,10 +64,12 @@ static const value_string vrrp_type_vals[] = {
 #define VRRP_AUTH_TYPE_NONE        0
 #define VRRP_AUTH_TYPE_SIMPLE_TEXT 1
 #define VRRP_AUTH_TYPE_IP_AUTH_HDR 2
+#define VRRP_AUTH_TYPE_IP_MD5      254
 static const value_string vrrp_auth_vals[] = {
     {VRRP_AUTH_TYPE_NONE,        "No Authentication"},
     {VRRP_AUTH_TYPE_SIMPLE_TEXT, "Simple Text Authentication [RFC 2338] / Reserved [RFC 3768]"},
     {VRRP_AUTH_TYPE_IP_AUTH_HDR, "IP Authentication Header [RFC 2338] / Reserved [RFC 3768]"},
+    {VRRP_AUTH_TYPE_IP_MD5,      "Cisco VRRP MD5 authentication"},
     {0, NULL}
 };
 
@@ -96,30 +89,30 @@ static int
 dissect_vrrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
     int         offset = 0;
-    gint        vrrp_len;
-    guint8      ver_type;
+    int         vrrp_len;
+    uint8_t     ver_type;
     vec_t       cksum_vec[4];
-    guint32     phdr[2];
-    gboolean    is_ipv6;
+    uint32_t    phdr[2];
+    bool        is_ipv6;
     proto_item *ti, *tv;
     proto_tree *vrrp_tree, *ver_type_tree;
-    guint8      priority, addr_count = 0, auth_type = VRRP_AUTH_TYPE_NONE;
-    guint16     computed_cksum;
+    uint8_t     priority, addr_count = 0, auth_type = VRRP_AUTH_TYPE_NONE;
+    uint16_t    computed_cksum = 0;
 
     is_ipv6 = (pinfo->src.type == AT_IPv6);
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "VRRP");
     col_clear(pinfo->cinfo, COL_INFO);
 
-    ver_type = tvb_get_guint8(tvb, 0);
+    ver_type = tvb_get_uint8(tvb, 0);
     col_add_fstr(pinfo->cinfo, COL_INFO, "Announcement (v%u)",
             hi_nibble(ver_type));
 
     ti = proto_tree_add_item(tree, proto_vrrp, tvb, 0, -1, ENC_NA);
     vrrp_tree = proto_item_add_subtree(ti, ett_vrrp);
 
-    priority = tvb_get_guint8(tvb, 2);
-    addr_count = tvb_get_guint8(tvb, 3);
+    priority = tvb_get_uint8(tvb, 2);
+    addr_count = tvb_get_uint8(tvb, 3);
 
     tv = proto_tree_add_uint_format(vrrp_tree, hf_vrrp_ver_type,
             tvb, offset, 1, ver_type,
@@ -156,7 +149,7 @@ dissect_vrrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
         case 2:
         default:
             /* 1 byte auth type + 1 byte interval */
-            auth_type = tvb_get_guint8(tvb, offset);
+            auth_type = tvb_get_uint8(tvb, offset);
             proto_tree_add_item(vrrp_tree, hf_vrrp_auth_type, tvb, offset, 1, ENC_BIG_ENDIAN);
             offset += 1;
 
@@ -168,23 +161,24 @@ dissect_vrrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
         offset += 6;
     }
 
-    vrrp_len = (gint)tvb_reported_length(tvb);
-    if (!pinfo->fragmented && (gint)tvb_captured_length(tvb) >= vrrp_len) {
+    vrrp_len = (int)tvb_reported_length(tvb);
+    if (!pinfo->fragmented && (int)tvb_captured_length(tvb) >= vrrp_len) {
         /* The packet isn't part of a fragmented datagram
            and isn't truncated, so we can checksum it. */
         switch(hi_nibble(ver_type)) {
             case 3:
-                if((g_vrrp_v3_checksum_as_in_v2 == FALSE)||(pinfo->src.type == AT_IPv6)){
+                if((g_vrrp_v3_checksum_as_in_v2 == false)||(pinfo->src.type == AT_IPv6)){
                     /* Set up the fields of the pseudo-header. */
-                    SET_CKSUM_VEC_PTR(cksum_vec[0], (const guint8 *)pinfo->src.data, pinfo->src.len);
-                    SET_CKSUM_VEC_PTR(cksum_vec[1], (const guint8 *)pinfo->dst.data, pinfo->dst.len);
+                    SET_CKSUM_VEC_PTR(cksum_vec[0], (const uint8_t *)pinfo->src.data, pinfo->src.len);
+                    SET_CKSUM_VEC_PTR(cksum_vec[1], (const uint8_t *)pinfo->dst.data, pinfo->dst.len);
                     phdr[0] = g_htonl(vrrp_len);
                     phdr[1] = g_htonl(IP_PROTO_VRRP);
-                    SET_CKSUM_VEC_PTR(cksum_vec[2], (const guint8 *)&phdr, 8);
+                    SET_CKSUM_VEC_PTR(cksum_vec[2], (const uint8_t *)&phdr, 8);
                     SET_CKSUM_VEC_TVB(cksum_vec[3], tvb, 0, vrrp_len);
                     computed_cksum = in_cksum(cksum_vec, 4);
                     break;
                 }
+            /* FALL THROUGH */
             case 2:
             default:
                 SET_CKSUM_VEC_TVB(cksum_vec[0], tvb, 0, vrrp_len);
@@ -212,8 +206,12 @@ dissect_vrrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
     }
 
     if (auth_type == VRRP_AUTH_TYPE_SIMPLE_TEXT) {
-        proto_tree_add_item(vrrp_tree, hf_vrrp_auth_string, tvb, offset, VRRP_AUTH_DATA_LEN, ENC_ASCII|ENC_NA);
+        proto_tree_add_item(vrrp_tree, hf_vrrp_auth_string, tvb, offset, VRRP_AUTH_DATA_LEN, ENC_ASCII);
         offset += VRRP_AUTH_DATA_LEN;
+    } else if (auth_type == VRRP_AUTH_TYPE_IP_MD5) {
+        if (vrrp_len - offset >= 16) {
+            proto_tree_add_item(vrrp_tree, hf_vrrp_md5_auth_data, tvb, vrrp_len - 16, 16, ENC_NA);
+        }
     }
 
     return offset;
@@ -226,17 +224,17 @@ void proto_register_vrrp(void)
         { &hf_vrrp_ver_type,
             {"VRRP message version and type", "vrrp.typever",
                 FT_UINT8, BASE_DEC, NULL, 0x0,
-                "VRRP version and type", HFILL }},
+                NULL, HFILL }},
 
         { &hf_vrrp_version,
             {"VRRP protocol version", "vrrp.version",
                 FT_UINT8, BASE_DEC, NULL, VRRP_VERSION_MASK,
-                "VRRP version", HFILL }},
+                NULL, HFILL }},
 
         { &hf_vrrp_type,
             {"VRRP packet type", "vrrp.type",
                 FT_UINT8, BASE_DEC, VALS(vrrp_type_vals), VRRP_TYPE_MASK,
-                "VRRP type", HFILL }},
+                NULL, HFILL }},
 
         { &hf_vrrp_virt_rtr_id,
             {"Virtual Rtr ID", "vrrp.virt_rtr_id",
@@ -297,9 +295,14 @@ void proto_register_vrrp(void)
             {"Authentication String", "vrrp.auth_string",
                 FT_STRING, BASE_NONE, NULL, 0x0,
                 NULL, HFILL }},
+
+        { &hf_vrrp_md5_auth_data,
+            {"MD5 Authentication Data", "vrrp.md5_auth_data",
+                FT_BYTES, BASE_NONE, NULL, 0x0,
+                "MD5 digest string is contained.", HFILL }},
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_vrrp,
         &ett_vrrp_ver_type
     };
@@ -311,10 +314,11 @@ void proto_register_vrrp(void)
     expert_module_t* expert_vrrp;
     module_t *vrrp_module;
 
-    proto_vrrp = proto_register_protocol("Virtual Router Redundancy Protocol",
-            "VRRP", "vrrp");
+    proto_vrrp = proto_register_protocol("Virtual Router Redundancy Protocol", "VRRP", "vrrp");
     proto_register_field_array(proto_vrrp, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+
+    vrrp_handle = register_dissector("vrrp", dissect_vrrp, proto_vrrp);
 
     expert_vrrp = expert_register_protocol(proto_vrrp);
     expert_register_field_array(expert_vrrp, ei, array_length(ei));
@@ -323,24 +327,20 @@ void proto_register_vrrp(void)
 
     prefs_register_bool_preference(vrrp_module, "v3_checksum_as_in_v2",
         "Calculate V3 checksum as in V2 for IPv4 packets",
-        "There is some ambiguity on how to calculate V3 checksums"
-        "As in V3 will use a pseudo header(which may only be implemented for IPv6 by some manufacturers)",
+        "There was some ambiguity on how to calculate IPv4 V3 checksums. "
+        "As in v2 will not use a pseudo header (some manufacturers add a pseudo header for IPv4 checksum "
+        "since RFC5798 was ambiguous). RFC9568 specifies that there is no pseudo header for IPv4.",
         &g_vrrp_v3_checksum_as_in_v2);
-
-
 }
 
 void
 proto_reg_handoff_vrrp(void)
 {
-    dissector_handle_t vrrp_handle;
-
-    vrrp_handle = create_dissector_handle(dissect_vrrp, proto_vrrp);
     dissector_add_uint("ip.proto", IP_PROTO_VRRP, vrrp_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

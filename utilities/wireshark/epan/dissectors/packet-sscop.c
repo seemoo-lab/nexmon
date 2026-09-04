@@ -7,19 +7,7 @@
  * Copyright 1998
  *
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -34,31 +22,27 @@
 void proto_register_sscop(void);
 void proto_reg_handoff_sscop(void);
 
-int proto_sscop = -1;
+int proto_sscop;
 
-static int hf_sscop_type = -1;
-static int hf_sscop_sq = -1;
-static int hf_sscop_mr = -1;
-static int hf_sscop_s = -1;
-static int hf_sscop_ps = -1;
-static int hf_sscop_r = -1;
-static int hf_sscop_stat_s = -1;
-static int hf_sscop_pad_length = -1;
-static int hf_sscop_source = -1;
-/* static int hf_sscop_stat_count = -1; */
+static int hf_sscop_type;
+static int hf_sscop_sq;
+static int hf_sscop_mr;
+static int hf_sscop_s;
+static int hf_sscop_ps;
+static int hf_sscop_r;
+static int hf_sscop_stat_s;
+static int hf_sscop_pad_length;
+static int hf_sscop_source;
+/* static int hf_sscop_stat_count; */
 
-static gint ett_sscop = -1;
-static gint ett_stat = -1;
+static int ett_sscop;
+static int ett_stat;
 
 static dissector_handle_t q2931_handle;
 static dissector_handle_t data_handle;
 static dissector_handle_t sscf_nni_handle;
 static dissector_handle_t alcap_handle;
 static dissector_handle_t nbap_handle;
-
-static module_t *sscop_module;
-
-static range_t *global_udp_port_range;
 
 static dissector_handle_t sscop_handle;
 
@@ -72,14 +56,14 @@ static const enum_val_t sscop_payload_dissector_options[] = {
   { NULL,       NULL,                           0 }
 };
 
-static guint sscop_payload_dissector = Q2931_DISSECTOR;
+static unsigned sscop_payload_dissector = Q2931_DISSECTOR;
 static dissector_handle_t default_handle;
 
 static sscop_info_t sscop_info;
 /*
  * See
  *
- *   http://www.protocols.com/pbook/atmsig.htm
+ *   http://web.archive.org/web/20150408122122/http://www.protocols.com/pbook/atmsig.htm
  *
  * for some information on SSCOP, although, alas, not the actual PDU
  * type values - those I got from the FreeBSD 3.2 ATM code.
@@ -169,8 +153,8 @@ static value_string_ext sscop_type_vals_ext = VALUE_STRING_EXT_INIT(sscop_type_v
 #define SSCOP_SS_N_MR   (reported_length - 8)   /* lower 3 bytes thereof */
 #define SSCOP_SS_N_R    (reported_length - 4)   /* lower 3 bytes thereof */
 
-static void dissect_stat_list(proto_tree *tree, tvbuff_t *tvb,guint h) {
-  gint n,i;
+static void dissect_stat_list(proto_tree *tree, tvbuff_t *tvb,unsigned h) {
+  int n,i;
 
   if ((n = (tvb_reported_length(tvb))/4 - h)) {
     tree = proto_tree_add_subtree(tree,tvb,0,n*4,ett_stat,NULL,"SD List");
@@ -184,20 +168,20 @@ static void dissect_stat_list(proto_tree *tree, tvbuff_t *tvb,guint h) {
 extern void
 dissect_sscop_and_payload(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, dissector_handle_t payload_handle)
 {
-  guint reported_length;
+  unsigned reported_length;
   proto_item *ti;
   proto_tree *sscop_tree = NULL;
-  guint8 sscop_pdu_type;
+  uint8_t sscop_pdu_type;
   int pdu_len;
   int pad_len;
   tvbuff_t *next_tvb;
 
   reported_length = tvb_reported_length(tvb);   /* frame length */
-  sscop_pdu_type = tvb_get_guint8(tvb, SSCOP_PDU_TYPE);
+  sscop_pdu_type = tvb_get_uint8(tvb, SSCOP_PDU_TYPE);
   sscop_info.type = sscop_pdu_type & SSCOP_TYPE_MASK;
 
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "SSCOP");
-  col_add_str(pinfo->cinfo, COL_INFO, val_to_str_ext(sscop_info.type, &sscop_type_vals_ext,
+  col_add_str(pinfo->cinfo, COL_INFO, val_to_str_ext(pinfo->pool, sscop_info.type, &sscop_type_vals_ext,
                                                  "Unknown PDU type (0x%02x)"));
 
   /*
@@ -361,7 +345,7 @@ static int dissect_sscop(tvbuff_t* tvb, packet_info* pinfo,proto_tree* tree, voi
 
 /* Make sure handles for various protocols are initialized */
 static void initialize_handles_once(void) {
-  static gboolean initialized = FALSE;
+  static bool initialized = false;
   if (!initialized) {
     q2931_handle = find_dissector("q2931");
     data_handle = find_dissector("data");
@@ -369,41 +353,32 @@ static void initialize_handles_once(void) {
     alcap_handle = find_dissector("alcap");
     nbap_handle = find_dissector("nbap");
 
-    initialized = TRUE;
+    initialized = true;
   }
 }
 
-gboolean sscop_allowed_subdissector(dissector_handle_t handle)
+bool sscop_allowed_subdissector(dissector_handle_t handle)
 {
   initialize_handles_once();
   if (handle == q2931_handle || handle == data_handle
       || handle == sscf_nni_handle || handle == alcap_handle
       || handle == nbap_handle)
-    return TRUE;
-  return FALSE;
+    return true;
+  return false;
 }
 
 void
 proto_reg_handoff_sscop(void)
 {
-  static gboolean prefs_initialized = FALSE;
-  static range_t *udp_port_range;
+  static bool prefs_initialized = false;
 
   if (!prefs_initialized) {
     initialize_handles_once();
-    prefs_initialized = TRUE;
+    dissector_add_uint_range_with_preference("udp.port", "", sscop_handle);
+    dissector_add_uint("atm.aal5.type", TRAF_SSCOP, sscop_handle);
 
-  } else {
-
-    dissector_delete_uint_range("udp.port", udp_port_range, sscop_handle);
-    g_free(udp_port_range);
-
+    prefs_initialized = true;
   }
-
-  udp_port_range = range_copy(global_udp_port_range);
-  dissector_add_uint_range("udp.port", udp_port_range, sscop_handle);
-
-  dissector_add_uint("atm.aal5.type", TRAF_SSCOP, sscop_handle);
 
   switch(sscop_payload_dissector) {
   case DATA_DISSECTOR:     default_handle = data_handle;     break;
@@ -433,10 +408,12 @@ proto_register_sscop(void)
 #endif
   };
 
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_sscop,
     &ett_stat
   };
+
+  module_t *sscop_module;
 
   proto_sscop = proto_register_protocol("SSCOP", "SSCOP", "sscop");
   proto_register_field_array(proto_sscop, hf, array_length(hf));
@@ -446,22 +423,15 @@ proto_register_sscop(void)
 
   sscop_module = prefs_register_protocol(proto_sscop, proto_reg_handoff_sscop);
 
-  global_udp_port_range = range_empty();
-
-  prefs_register_range_preference(sscop_module, "udp.ports",
-                                  "SSCOP UDP port range",
-                                  "Set the UDP port for SSCOP messages encapsulated in UDP (0 to disable)",
-                                  &global_udp_port_range, MAX_UDP_PORT);
-
   prefs_register_enum_preference(sscop_module, "payload",
                                  "SSCOP payload protocol",
                                  "SSCOP payload (dissector to call on SSCOP payload)",
-                                 (gint *)&sscop_payload_dissector,
-                                 sscop_payload_dissector_options, FALSE);
+                                 (int *)&sscop_payload_dissector,
+                                 sscop_payload_dissector_options, false);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

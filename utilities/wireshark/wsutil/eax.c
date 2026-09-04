@@ -6,43 +6,30 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 #include "config.h"
+#include "eax.h"
 #include <stdlib.h>
-#ifdef HAVE_LIBGCRYPT
 #include <string.h>
 /* Use libgcrypt for cipher libraries. */
-#include <wsutil/wsgcrypt.h>
-#include "eax.h"
+#include <gcrypt.h>
+
+#include <wsutil/ws_roundup.h>
 
 typedef struct {
-    guint8 L[EAX_SIZEOF_KEY];
-    guint8 D[EAX_SIZEOF_KEY];
-    guint8 Q[EAX_SIZEOF_KEY];
+    uint8_t L[EAX_SIZEOF_KEY];
+    uint8_t D[EAX_SIZEOF_KEY];
+    uint8_t Q[EAX_SIZEOF_KEY];
 } eax_s;
-
-static eax_s instance;
 
 /* these are defined as macros so they'll be easy to redo in assembly if desired */
 #define BLK_CPY(dst, src) { memcpy(dst, src, EAX_SIZEOF_KEY); }
 #define BLK_XOR(dst, src) { int z; for (z=0; z < EAX_SIZEOF_KEY; z++) dst[z] ^= src[z]; }
-static void Dbl(guint8 *out, const guint8 *in);
-static void CTR(const guint8 *ws, guint8 *pK, guint8 *pN, guint16 SizeN);
-static void CMAC(guint8 *pK, guint8 *ws, const guint8 *pN, guint16 SizeN);
-static void dCMAC(guint8 *pK, guint8 *ws, const guint8 *pN, guint16 SizeN, const guint8 *pC, guint16 SizeC);
+static void Dbl(uint8_t *out, const uint8_t *in);
+static void CTR(const uint8_t *ws, uint8_t *pK, uint8_t *pN, uint32_t SizeN);
+static bool CMAC(const eax_s *instance, uint8_t *pK, uint8_t *ws, const uint8_t *pN, uint32_t SizeN);
+static bool dCMAC(const eax_s *instance, uint8_t *pK, uint8_t *ws, const uint8_t *pN, uint32_t SizeN, const uint8_t *pC, uint32_t SizeC);
 void AesEncrypt(unsigned char msg[EAX_SIZEOF_KEY], unsigned char key[EAX_SIZEOF_KEY]);
 
 /*!
@@ -56,20 +43,21 @@ void AesEncrypt(unsigned char msg[EAX_SIZEOF_KEY], unsigned char key[EAX_SIZEOF_
  @param[in]     SizeC   byte length of ciphertext (pC) buffer
  @param[in]     pMac    four-byte Message Authentication Code
  @param[in]     Mode    EAX_MODE_CLEARTEXT_AUTH or EAX_MODE_CIPHERTEXT_AUTH
- @return                TRUE if message has been authenticated; FALSE if not
+ @return                true if message has been authenticated; false if not
                         authenticated, invalid Mode or error
  */
-gboolean Eax_Decrypt(guint8 *pN, guint8 *pK, guint8 *pC,
-                     guint32 SizeN, guint32 SizeK, guint32 SizeC, MAC_T *pMac,
-                     guint8 Mode)
+bool Eax_Decrypt(uint8_t *pN, uint8_t *pK, uint8_t *pC,
+                     uint32_t SizeN, uint32_t SizeK, uint32_t SizeC, MAC_T *pMac,
+                     uint8_t Mode)
 {
-    guint8 wsn[EAX_SIZEOF_KEY];
-    guint8 wsc[EAX_SIZEOF_KEY];
+    eax_s instance;
+    uint8_t wsn[EAX_SIZEOF_KEY];
+    uint8_t wsc[EAX_SIZEOF_KEY];
     int i;
 
     /* key size must match this implementation */
     if (SizeK != EAX_SIZEOF_KEY)
-        return FALSE;
+        return false;
 
     /* the key is new */
     for (i = 0; i < EAX_SIZEOF_KEY; i++)
@@ -81,9 +69,13 @@ gboolean Eax_Decrypt(guint8 *pN, guint8 *pK, guint8 *pC,
     /* first copy the nonce into our working space */
     BLK_CPY(wsn, instance.D);
     if (Mode == EAX_MODE_CLEARTEXT_AUTH) {
-        dCMAC(pK, wsn, pN, SizeN, pC, SizeC);
+        if (!dCMAC(&instance, pK, wsn, pN, SizeN, pC, SizeC)) {
+            return false;
+        }
     } else {
-        CMAC(pK, wsn, pN, SizeN);
+        if (!CMAC(&instance, pK, wsn, pN, SizeN)) {
+            return false;
+        }
     }
     /*
      *  In authentication mode the inputs are: pN, pK (and associated sizes),
@@ -91,7 +83,7 @@ gboolean Eax_Decrypt(guint8 *pN, guint8 *pK, guint8 *pC,
      */
     if (Mode == EAX_MODE_CLEARTEXT_AUTH)
     {
-        return (memcmp(pMac, &wsn[EAX_SIZEOF_KEY-sizeof(*pMac)], sizeof(*pMac)) ? FALSE : TRUE);
+        return (memcmp(pMac, &wsn[EAX_SIZEOF_KEY-sizeof(*pMac)], sizeof(*pMac)) ? false : true);
 
     }
 
@@ -102,27 +94,27 @@ gboolean Eax_Decrypt(guint8 *pN, guint8 *pK, guint8 *pC,
     else if (Mode == EAX_MODE_CIPHERTEXT_AUTH)
     {
         if (SizeC == 0)
-            return (memcmp(pMac, &wsn[EAX_SIZEOF_KEY-sizeof(*pMac)], sizeof(*pMac)) ? FALSE : TRUE);
+            return (memcmp(pMac, &wsn[EAX_SIZEOF_KEY-sizeof(*pMac)], sizeof(*pMac)) ? false : true);
         {
             /* first copy the nonce into our working space */
             BLK_CPY(wsc, instance.Q);
-            CMAC(pK, wsc, pC, SizeC);
+            CMAC(&instance, pK, wsc, pC, SizeC);
             BLK_XOR(wsc, wsn);
         }
         if (memcmp(pMac, &wsc[EAX_SIZEOF_KEY-sizeof(*pMac)], sizeof(*pMac)) == 0)
         {
             CTR(wsn, pK, pC, SizeC);
-            return TRUE;
+            return true;
         }
     }
-    return FALSE;
+    return false;
 }
 
 /* set up D or Q from L */
-static void Dbl(guint8 *out, const guint8 *in)
+static void Dbl(uint8_t *out, const uint8_t *in)
 {
     int i;
-    guint8 carry = 0;
+    uint8_t carry = 0;
 
     /* this might be a lot more efficient in assembly language */
     for (i=0; i < EAX_SIZEOF_KEY; i++)
@@ -134,26 +126,30 @@ static void Dbl(guint8 *out, const guint8 *in)
         out[0] ^= 0x87;
 }
 
-static void CMAC(guint8 *pK, guint8 *ws, const guint8 *pN, guint16 SizeN)
+static bool CMAC(const eax_s *instance, uint8_t *pK, uint8_t *ws, const uint8_t *pN, uint32_t SizeN)
 {
-    dCMAC(pK, ws, pN, SizeN, NULL, 0);
+    return dCMAC(instance, pK, ws, pN, SizeN, NULL, 0);
 }
 
-static void dCMAC(guint8 *pK, guint8 *ws, const guint8 *pN, guint16 SizeN, const guint8 *pC, guint16 SizeC)
+static bool dCMAC(const eax_s *instance, uint8_t *pK, uint8_t *ws, const uint8_t *pN, uint32_t SizeN, const uint8_t *pC, uint32_t SizeC)
 {
     gcry_cipher_hd_t cipher_hd;
-    guint8 *work;
-    guint8  *ptr;
-    guint16 SizeT = SizeN + SizeC;
-    guint16 worksize = SizeT;
+    uint8_t *work;
+    uint8_t *ptr;
+    uint32_t SizeT;
+    size_t worksize;
+
+    if (ckd_add(&SizeT, SizeN, SizeC)) {
+        return false;
+    }
 
     /* worksize must be an integral multiple of 16 */
-    if (SizeT & 0xf)  {
-        worksize += 0x10 - (worksize & 0xf);
-    }
-    work = (guint8 *)g_malloc(worksize);
+    worksize = WS_ROUNDUP_16(SizeT);
+    /* WS_ROUNDUP_16 can "round up" to 0, but then g_malloc will
+     * safely return NULL and we'll return false. */
+    work = (uint8_t *)g_malloc(worksize);
     if (work == NULL) {
-        return;
+        return false;
     }
     memcpy(work, pN, SizeN);
     if (pC != NULL) {
@@ -165,45 +161,45 @@ static void dCMAC(guint8 *pK, guint8 *ws, const guint8 *pN, guint16 SizeN, const
      */
     if (worksize != SizeT) {
         work[SizeT] = 0x80;
-        for (ptr = &work[SizeT+1]; ptr < &work[worksize]; ptr++)
+        for (ptr = &work[SizeT+1]; ptr <= &work[worksize-1]; ptr++)
             *ptr = 0;
         ptr= &work[worksize-0x10];
-        BLK_XOR(ptr, instance.Q);
+        BLK_XOR(ptr, instance->Q);
     } else {
         ptr = &work[worksize-0x10];
-        BLK_XOR(ptr, instance.D);
+        BLK_XOR(ptr, instance->D);
     }
     /* open the cipher */
     if (gcry_cipher_open(&cipher_hd, GCRY_CIPHER_AES128, GCRY_CIPHER_MODE_CBC,0)){/* GCRY_CIPHER_CBC_MAC)) { */
         g_free(work);
-        return;
+        return false;
     }
     if (gcry_cipher_setkey(cipher_hd, pK, EAX_SIZEOF_KEY)) {
         g_free(work);
         gcry_cipher_close(cipher_hd);
-        return;
+        return false;
     }
     if (gcry_cipher_setiv(cipher_hd, ws, EAX_SIZEOF_KEY)) {
         g_free(work);
         gcry_cipher_close(cipher_hd);
-        return;
+        return false;
     }
     if (gcry_cipher_encrypt(cipher_hd, work, worksize, work, worksize)) {
         g_free(work);
         gcry_cipher_close(cipher_hd);
-        return;
+        return false;
     }
     memcpy(ws, ptr, EAX_SIZEOF_KEY);
 
     g_free(work);
     gcry_cipher_close(cipher_hd);
-    return;
+    return true;
 }
 
-static void CTR(const guint8 *ws, guint8 *pK, guint8 *pN, guint16 SizeN)
+static void CTR(const uint8_t *ws, uint8_t *pK, uint8_t *pN, uint32_t SizeN)
 {
     gcry_cipher_hd_t cipher_hd;
-    guint8 ctr[EAX_SIZEOF_KEY];
+    uint8_t ctr[EAX_SIZEOF_KEY];
 
     BLK_CPY(ctr, ws);
     ctr[12] &= 0x7f;
@@ -247,10 +243,9 @@ void AesEncrypt(unsigned char msg[EAX_SIZEOF_KEY], unsigned char key[EAX_SIZEOF_
     gcry_cipher_close(cipher_hd);
     return;
 }
-#endif /* HAVE_LIBGCRYPT */
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

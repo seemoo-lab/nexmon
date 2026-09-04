@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * LGE Monitor is a trace tool from Nortel.
  */
@@ -26,24 +14,24 @@
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/prefs.h>
 
 void proto_reg_handoff_lge_monitor(void);
 void proto_register_lge_monitor(void);
 
-/* Initialize the protocol and registered fields */
-static int proto_lge_monitor		= -1;
+static dissector_handle_t lge_monitor_handle;
 
-static int hf_lge_monitor_dir = -1;
-static int hf_lge_monitor_prot = -1;
-static int hf_lge_monitor_length = -1;
-static int hf_lge_monitor_data = -1;
+/* Initialize the protocol and registered fields */
+static int proto_lge_monitor;
+
+static int hf_lge_monitor_dir;
+static int hf_lge_monitor_prot;
+static int hf_lge_monitor_length;
+static int hf_lge_monitor_data;
 
 /* Initialize the subtree pointers */
-static int ett_lge_monitor = -1;
-static int ett_lge_header = -1;
+static int ett_lge_monitor;
+static int ett_lge_header;
 
-static guint LGEMonitorUDPPort = 0;
 static dissector_handle_t mtp3_handle, m3ua_handle, sccp_handle, sctp_handle;
 
 static const value_string lge_monitor_dir_vals[] = {
@@ -67,7 +55,7 @@ static int
 dissect_lge_monitor(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	int offset = 0;
-	guint32 lge_monitor_proto_id;
+	uint32_t lge_monitor_proto_id;
 	tvbuff_t* next_tvb = NULL;
 	proto_tree* header_tree;
 
@@ -116,36 +104,16 @@ dissect_lge_monitor(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
 void
 proto_reg_handoff_lge_monitor(void)
 {
-	static dissector_handle_t lge_monitor_handle;
-	static guint saved_udp_port;
-	static gboolean lge_monitor_prefs_initialized = FALSE;
-
-	if (!lge_monitor_prefs_initialized) {
-		lge_monitor_handle = create_dissector_handle(dissect_lge_monitor, proto_lge_monitor);
-		dissector_add_for_decode_as("udp.port", lge_monitor_handle);
-		mtp3_handle  = find_dissector_add_dependency("mtp3", proto_lge_monitor);
-		m3ua_handle  = find_dissector_add_dependency("m3ua", proto_lge_monitor);
-		sccp_handle  = find_dissector_add_dependency("sccp", proto_lge_monitor);
-		sctp_handle  = find_dissector_add_dependency("sctp", proto_lge_monitor);
-		lge_monitor_prefs_initialized = TRUE;
-	  }
-	else {
-		if (saved_udp_port != 0) {
-			dissector_delete_uint("udp.port", saved_udp_port, lge_monitor_handle);
-		}
-	}
-
-	if (LGEMonitorUDPPort != 0) {
-		dissector_add_uint("udp.port", LGEMonitorUDPPort, lge_monitor_handle);
-	}
-	saved_udp_port = LGEMonitorUDPPort;
+	dissector_add_for_decode_as_with_preference("udp.port", lge_monitor_handle);
+	mtp3_handle  = find_dissector_add_dependency("mtp3", proto_lge_monitor);
+	m3ua_handle  = find_dissector_add_dependency("m3ua", proto_lge_monitor);
+	sccp_handle  = find_dissector_add_dependency("sccp", proto_lge_monitor);
+	sctp_handle  = find_dissector_add_dependency("sctp", proto_lge_monitor);
 }
 
 void
 proto_register_lge_monitor(void)
 {
-
-	module_t *lge_monitor_module;
 
 /* Setup list of header fields  */
 	static hf_register_info hf[] = {
@@ -172,7 +140,7 @@ proto_register_lge_monitor(void)
 	};
 
 /* Setup protocol subtree array */
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_lge_monitor,
 		&ett_lge_header
 	};
@@ -183,21 +151,13 @@ proto_register_lge_monitor(void)
 /* Required function calls to register the header fields and subtrees used */
 	proto_register_field_array(proto_lge_monitor, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
-	/* Register a configuration option for port */
 
-
-	lge_monitor_module = prefs_register_protocol(proto_lge_monitor, proto_reg_handoff_lge_monitor);
-
-	prefs_register_uint_preference(lge_monitor_module, "udp.port",
-								   "LGE Monitor UDP Port",
-								   "Set UDP port for LGE Monitor messages",
-								   10,
-								   &LGEMonitorUDPPort);
-
+/* Register the dissector */
+	lge_monitor_handle = register_dissector("lge_monitor", dissect_lge_monitor, proto_lge_monitor);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

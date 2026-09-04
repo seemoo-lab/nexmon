@@ -6,28 +6,16 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
-#include <stddef.h>
-
 #include <epan/packet.h>
 #include <epan/to_str.h>
 #include <epan/expert.h>
+#include <epan/tfs.h>
+#include <epan/unit_strings.h>
 
 /*
  * See
@@ -44,6 +32,7 @@
  */
 void proto_register_aodv(void);
 void proto_reg_handoff_aodv(void);
+static dissector_handle_t aodv_handle;
 
 #define INET6_ADDRLEN   16
 #define UDP_PORT_AODV   654
@@ -64,16 +53,16 @@ void proto_reg_handoff_aodv(void);
 #define AODV_EXT_NTP    3
 
 /* Flag bits: */
-#define RREQ_UNKNSEQ    0x08
-#define RREQ_DESTONLY   0x10
-#define RREQ_GRATRREP   0x20
-#define RREQ_REP        0x40
-#define RREQ_JOIN       0x80
+#define RREQ_UNKNSEQ    0x0800
+#define RREQ_DESTONLY   0x1000
+#define RREQ_GRATRREP   0x2000
+#define RREQ_REP        0x4000
+#define RREQ_JOIN       0x8000
 
-#define RREP_ACK_REQ    0x40
-#define RREP_REP        0x80
+#define RREP_ACK_REQ    0x4000
+#define RREP_REP        0x8000
 
-#define RERR_NODEL      0x80
+#define RERR_NODEL      0x8000
 
 static const value_string type_vals[] = {
     { RREQ,                 "Route Request" },
@@ -95,49 +84,49 @@ static const value_string exttype_vals[] = {
 };
 
 typedef struct v6_ext {
-    guint8 type;
-    guint8 length;
+    uint8_t type;
+    uint8_t length;
 } aodv_ext_t;
 
 /* Initialize the protocol and registered fields */
-static int proto_aodv = -1;
-static int hf_aodv_type = -1;
-static int hf_aodv_flags = -1;
-static int hf_aodv_prefix_sz = -1;
-static int hf_aodv_hopcount = -1;
-static int hf_aodv_rreq_id = -1;
-static int hf_aodv_dest_ip = -1;
-static int hf_aodv_dest_ipv6 = -1;
-static int hf_aodv_dest_seqno = -1;
-static int hf_aodv_orig_ip = -1;
-static int hf_aodv_orig_ipv6 = -1;
-static int hf_aodv_orig_seqno = -1;
-static int hf_aodv_lifetime = -1;
-static int hf_aodv_destcount = -1;
-static int hf_aodv_unreach_dest_ip = -1;
-static int hf_aodv_unreach_dest_ipv6 = -1;
-/* static int hf_aodv_unreach_dest_seqno = -1; */
-static int hf_aodv_flags_rreq_join = -1;
-static int hf_aodv_flags_rreq_repair = -1;
-static int hf_aodv_flags_rreq_gratuitous = -1;
-static int hf_aodv_flags_rreq_destinationonly = -1;
-static int hf_aodv_flags_rreq_unknown = -1;
-static int hf_aodv_flags_rrep_repair = -1;
-static int hf_aodv_flags_rrep_ack = -1;
-static int hf_aodv_flags_rerr_nodelete = -1;
-static int hf_aodv_ext_type = -1;
-static int hf_aodv_ext_length = -1;
-static int hf_aodv_ext_interval = -1;
-static int hf_aodv_ext_timestamp = -1;
+static int proto_aodv;
+static int hf_aodv_type;
+static int hf_aodv_flags;
+static int hf_aodv_prefix_sz;
+static int hf_aodv_hopcount;
+static int hf_aodv_rreq_id;
+static int hf_aodv_dest_ip;
+static int hf_aodv_dest_ipv6;
+static int hf_aodv_dest_seqno;
+static int hf_aodv_orig_ip;
+static int hf_aodv_orig_ipv6;
+static int hf_aodv_orig_seqno;
+static int hf_aodv_lifetime;
+static int hf_aodv_destcount;
+static int hf_aodv_unreach_dest_ip;
+static int hf_aodv_unreach_dest_ipv6;
+/* static int hf_aodv_unreach_dest_seqno; */
+static int hf_aodv_flags_rreq_join;
+static int hf_aodv_flags_rreq_repair;
+static int hf_aodv_flags_rreq_gratuitous;
+static int hf_aodv_flags_rreq_destinationonly;
+static int hf_aodv_flags_rreq_unknown;
+static int hf_aodv_flags_rrep_repair;
+static int hf_aodv_flags_rrep_ack;
+static int hf_aodv_flags_rerr_nodelete;
+static int hf_aodv_ext_type;
+static int hf_aodv_ext_length;
+static int hf_aodv_ext_interval;
+static int hf_aodv_ext_timestamp;
 
 /* Initialize the subtree pointers */
-static gint ett_aodv = -1;
-static gint ett_aodv_flags = -1;
-static gint ett_aodv_unreach_dest = -1;
-static gint ett_aodv_extensions = -1;
+static int ett_aodv;
+static int ett_aodv_flags;
+static int ett_aodv_unreach_dest;
+static int ett_aodv_extensions;
 
-static expert_field ei_aodv_ext_length = EI_INIT;
-static expert_field ei_aodv_type = EI_INIT;
+static expert_field ei_aodv_ext_length;
+static expert_field ei_aodv_type;
 
 /* Code to actually dissect the packets */
 
@@ -146,21 +135,20 @@ dissect_aodv_ext(tvbuff_t * tvb, packet_info *pinfo, int offset, proto_tree * tr
 {
     proto_tree *ext_tree;
     proto_item *len_item;
-    guint8      type, len;
+    uint8_t     type, len;
 
 again:
     if ((int) tvb_reported_length(tvb) <= offset)
         return;                 /* No more options left */
 
-    type = tvb_get_guint8(tvb, offset);
-    len = tvb_get_guint8(tvb, offset + 1);
+    type = tvb_get_uint8(tvb, offset);
+    len = tvb_get_uint8(tvb, offset + 1);
 
     ext_tree = proto_tree_add_subtree(tree, tvb, offset, 2 + len, ett_aodv_extensions, NULL, "Extensions");
 
     proto_tree_add_item(ext_tree, hf_aodv_ext_type, tvb, offset, 1, ENC_BIG_ENDIAN);
 
-    len_item = proto_tree_add_uint_format_value(ext_tree, hf_aodv_ext_length, tvb, offset + 1, 1,
-                                                len, "%u bytes", len);
+    len_item = proto_tree_add_uint(ext_tree, hf_aodv_ext_length, tvb, offset + 1, 1, len);
     if (len == 0) {
         expert_add_info(pinfo, len_item, &ei_aodv_ext_length);
         return;                 /* we must not try to decode this */
@@ -170,8 +158,8 @@ again:
 
     switch (type) {
     case AODV_EXT_INT:
-        proto_tree_add_uint(ext_tree, hf_aodv_ext_interval,
-                            tvb, offset, 4, tvb_get_ntohl(tvb, offset));
+        proto_tree_add_item(ext_tree, hf_aodv_ext_interval,
+                            tvb, offset, 4, ENC_BIG_ENDIAN);
         break;
     case AODV_EXT_NTP:
         proto_tree_add_item(ext_tree, hf_aodv_ext_timestamp,
@@ -189,21 +177,19 @@ again:
 
 static void
 dissect_aodv_rreq(tvbuff_t *tvb, packet_info *pinfo, proto_tree *aodv_tree,
-                  proto_item *ti, gboolean is_ipv6)
+                  proto_item *ti, bool is_ipv6)
 {
     int                offset = 1;
-    proto_item        *tj;
-    guint8             flags;
-    guint8             hop_count;
-    guint32            rreq_id;
-    const gchar       *dest_addr_v4;
-    const gchar       *dest_addr_v6;
-    guint32            dest_seqno;
-    const gchar       *orig_addr_v4;
-    const gchar       *orig_addr_v6;
-    guint32            orig_seqno;
+    uint8_t            hop_count;
+    uint32_t           rreq_id;
+    const char        *dest_addr_v4;
+    const char        *dest_addr_v6;
+    uint32_t           dest_seqno;
+    const char        *orig_addr_v4;
+    const char        *orig_addr_v6;
+    uint32_t           orig_seqno;
     int                extlen;
-    static const int * aodv_flags[] = {
+    static int * const aodv_flags[] = {
         &hf_aodv_flags_rreq_join,
         &hf_aodv_flags_rreq_repair,
         &hf_aodv_flags_rreq_gratuitous,
@@ -212,22 +198,11 @@ dissect_aodv_rreq(tvbuff_t *tvb, packet_info *pinfo, proto_tree *aodv_tree,
         NULL
     };
 
-    flags = tvb_get_guint8(tvb, offset);
-    tj = proto_tree_add_bitmask(aodv_tree, tvb, offset, hf_aodv_flags,
-                   ett_aodv_flags, aodv_flags, ENC_NA);
-    if (flags & RREQ_JOIN)
-        proto_item_append_text(tj, " J");
-    if (flags & RREQ_REP)
-        proto_item_append_text(tj, " R");
-    if (flags & RREQ_GRATRREP)
-        proto_item_append_text(tj, " G");
-    if (flags & RREQ_DESTONLY)
-        proto_item_append_text(tj, " D");
-    if (flags & RREQ_UNKNSEQ)
-        proto_item_append_text(tj, " U");
+    proto_tree_add_bitmask_with_flags(aodv_tree, tvb, offset, hf_aodv_flags,
+                   ett_aodv_flags, aodv_flags, ENC_BIG_ENDIAN, BMT_NO_FALSE | BMT_NO_TFS | BMT_NO_INT);
     offset += 2;        /* skip reserved byte */
 
-    hop_count = tvb_get_guint8(tvb, offset);
+    hop_count = tvb_get_uint8(tvb, offset);
     proto_tree_add_uint(aodv_tree, hf_aodv_hopcount, tvb, offset, 1,
                             hop_count);
     offset += 1;
@@ -238,7 +213,7 @@ dissect_aodv_rreq(tvbuff_t *tvb, packet_info *pinfo, proto_tree *aodv_tree,
     offset += 4;
 
     if (is_ipv6) {
-        dest_addr_v6 = tvb_ip6_to_str(tvb, offset);
+        dest_addr_v6 = tvb_ip6_to_str(pinfo->pool, tvb, offset);
         if (aodv_tree) {
             proto_tree_add_item(aodv_tree, hf_aodv_dest_ipv6, tvb, offset,
                                 INET6_ADDRLEN, ENC_NA);
@@ -247,7 +222,7 @@ dissect_aodv_rreq(tvbuff_t *tvb, packet_info *pinfo, proto_tree *aodv_tree,
         col_append_fstr(pinfo->cinfo, COL_INFO, ", D: %s", dest_addr_v6);
         offset += INET6_ADDRLEN;
     } else {
-        dest_addr_v4 = tvb_ip_to_str(tvb, offset);
+        dest_addr_v4 = tvb_ip_to_str(pinfo->pool, tvb, offset);
         if (aodv_tree) {
             proto_tree_add_item(aodv_tree, hf_aodv_dest_ip, tvb, offset, 4,
                                 ENC_BIG_ENDIAN);
@@ -263,7 +238,7 @@ dissect_aodv_rreq(tvbuff_t *tvb, packet_info *pinfo, proto_tree *aodv_tree,
     offset += 4;
 
     if (is_ipv6) {
-        orig_addr_v6 = tvb_ip6_to_str(tvb, offset);
+        orig_addr_v6 = tvb_ip6_to_str(pinfo->pool, tvb, offset);
         if (aodv_tree) {
             proto_tree_add_item(aodv_tree, hf_aodv_orig_ipv6, tvb, offset,
                                 INET6_ADDRLEN, ENC_NA);
@@ -272,7 +247,7 @@ dissect_aodv_rreq(tvbuff_t *tvb, packet_info *pinfo, proto_tree *aodv_tree,
         col_append_fstr(pinfo->cinfo, COL_INFO, ", O: %s", orig_addr_v6);
         offset += INET6_ADDRLEN;
     } else {
-        orig_addr_v4 = tvb_ip_to_str(tvb, offset);
+        orig_addr_v4 = tvb_ip_to_str(pinfo->pool, tvb, offset);
         if (aodv_tree) {
             proto_tree_add_item(aodv_tree, hf_aodv_orig_ip, tvb, offset, 4,
                                 ENC_BIG_ENDIAN);
@@ -299,49 +274,44 @@ dissect_aodv_rreq(tvbuff_t *tvb, packet_info *pinfo, proto_tree *aodv_tree,
 
 static void
 dissect_aodv_rrep(tvbuff_t *tvb, packet_info *pinfo, proto_tree *aodv_tree,
-                  proto_item *ti, gboolean is_ipv6)
+                  proto_item *ti, bool is_ipv6)
 {
     int                offset = 1;
-    proto_item        *tj;
-    guint8             flags;
-    guint8             prefix_sz;
-    guint8             hop_count;
-    const gchar       *dest_addr_v4;
-    const gchar       *dest_addr_v6;
-    guint32            dest_seqno;
-    const gchar       *orig_addr_v4;
-    const gchar       *orig_addr_v6;
-    guint32            lifetime;
+    uint16_t           flags;
+    uint8_t            prefix_sz;
+    uint8_t            hop_count;
+    const char        *dest_addr_v4;
+    const char        *dest_addr_v6;
+    uint32_t           dest_seqno;
+    const char        *orig_addr_v4;
+    const char        *orig_addr_v6;
+    uint32_t           lifetime;
     int                extlen;
-    static const int * aodv_flags[] = {
+    static int * const aodv_flags[] = {
         &hf_aodv_flags_rrep_repair,
         &hf_aodv_flags_rrep_ack,
         NULL
     };
 
-    flags = tvb_get_guint8(tvb, offset);
-    tj = proto_tree_add_bitmask(aodv_tree, tvb, offset, hf_aodv_flags,
-                   ett_aodv_flags, aodv_flags, ENC_NA);
-     if (flags & RREP_REP)
-        proto_item_append_text(tj, " R");
-     if (flags & RREP_ACK_REQ)
-        proto_item_append_text(tj, " A");
+    flags = tvb_get_ntohs(tvb, offset);
+    proto_tree_add_bitmask_with_flags(aodv_tree, tvb, offset, hf_aodv_flags,
+                   ett_aodv_flags, aodv_flags, ENC_BIG_ENDIAN, BMT_NO_FALSE | BMT_NO_TFS | BMT_NO_INT);
     offset += 1;
 
-    prefix_sz = tvb_get_guint8(tvb, offset) & 0x1F;
+    prefix_sz = flags & 0x1F;
     if (aodv_tree)
         proto_tree_add_uint(aodv_tree, hf_aodv_prefix_sz, tvb, offset, 1,
                             prefix_sz);
     offset += 1;
 
-    hop_count = tvb_get_guint8(tvb, offset);
+    hop_count = tvb_get_uint8(tvb, offset);
     if (aodv_tree)
         proto_tree_add_uint(aodv_tree, hf_aodv_hopcount, tvb, offset, 1,
                             hop_count);
     offset += 1;
 
     if (is_ipv6) {
-        dest_addr_v6 = tvb_ip6_to_str(tvb, offset);
+        dest_addr_v6 = tvb_ip6_to_str(pinfo->pool, tvb, offset);
         if (aodv_tree) {
             proto_tree_add_item(aodv_tree, hf_aodv_dest_ipv6, tvb, offset,
                                 INET6_ADDRLEN, ENC_NA);
@@ -351,7 +321,7 @@ dissect_aodv_rrep(tvbuff_t *tvb, packet_info *pinfo, proto_tree *aodv_tree,
         col_append_fstr(pinfo->cinfo, COL_INFO, ", D: %s", dest_addr_v6);
         offset += INET6_ADDRLEN;
     } else {
-        dest_addr_v4 = tvb_ip_to_str(tvb, offset);
+        dest_addr_v4 = tvb_ip_to_str(pinfo->pool, tvb, offset);
         if (aodv_tree) {
             proto_tree_add_item(aodv_tree, hf_aodv_dest_ip, tvb, offset, 4,
                                 ENC_BIG_ENDIAN);
@@ -368,7 +338,7 @@ dissect_aodv_rrep(tvbuff_t *tvb, packet_info *pinfo, proto_tree *aodv_tree,
     offset += 4;
 
     if (is_ipv6) {
-        orig_addr_v6 = tvb_ip6_to_str(tvb, offset);
+        orig_addr_v6 = tvb_ip6_to_str(pinfo->pool, tvb, offset);
         if (aodv_tree) {
             proto_tree_add_item(aodv_tree, hf_aodv_orig_ipv6, tvb, offset,
                                 INET6_ADDRLEN, ENC_NA);
@@ -377,7 +347,7 @@ dissect_aodv_rrep(tvbuff_t *tvb, packet_info *pinfo, proto_tree *aodv_tree,
         col_append_fstr(pinfo->cinfo, COL_INFO, ", O: %s", orig_addr_v6);
         offset += INET6_ADDRLEN;
     } else {
-        orig_addr_v4 = tvb_ip_to_str(tvb, offset);
+        orig_addr_v4 = tvb_ip_to_str(pinfo->pool, tvb, offset);
         if (aodv_tree) {
             proto_tree_add_item(aodv_tree, hf_aodv_orig_ip, tvb, offset, 4,
                                 ENC_BIG_ENDIAN);
@@ -407,27 +377,22 @@ dissect_aodv_rrep(tvbuff_t *tvb, packet_info *pinfo, proto_tree *aodv_tree,
 
 static void
 dissect_aodv_rerr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *aodv_tree,
-                  gboolean is_ipv6)
+                  bool is_ipv6)
 {
     int         offset = 1;
-    proto_item *tj;
     proto_tree *aodv_unreach_dest_tree;
-    guint8      flags;
-    guint8      dest_count;
+    uint8_t     dest_count;
     int         i;
-    static const int * aodv_flags[] = {
+    static int * const aodv_flags[] = {
         &hf_aodv_flags_rerr_nodelete,
         NULL
     };
 
-    flags = tvb_get_guint8(tvb, offset);
-    tj = proto_tree_add_bitmask(aodv_tree, tvb, offset, hf_aodv_flags,
-               ett_aodv_flags, aodv_flags, ENC_NA);
-    if (flags & RERR_NODEL)
-        proto_item_append_text(tj, " N");
+    proto_tree_add_bitmask_with_flags(aodv_tree, tvb, offset, hf_aodv_flags,
+                   ett_aodv_flags, aodv_flags, ENC_BIG_ENDIAN, BMT_NO_FALSE | BMT_NO_TFS | BMT_NO_INT);
     offset += 2;        /* skip reserved byte */
 
-    dest_count = tvb_get_guint8(tvb, offset);
+    dest_count = tvb_get_uint8(tvb, offset);
     if (aodv_tree)
         proto_tree_add_uint(aodv_tree, hf_aodv_destcount, tvb, offset, 1,
                             dest_count);
@@ -467,16 +432,14 @@ dissect_aodv_draft_01_v6_rreq(tvbuff_t *tvb, packet_info *pinfo,
                               proto_tree *aodv_tree, proto_item *ti)
 {
     int                offset = 1;
-    proto_item        *tj;
-    guint8             flags;
-    guint8             hop_count;
-    guint32            rreq_id;
-    guint32            dest_seqno;
-    guint32            orig_seqno;
-    const gchar       *dest_addr_v6;
-    const gchar       *orig_addr_v6;
+    uint8_t            hop_count;
+    uint32_t           rreq_id;
+    uint32_t           dest_seqno;
+    uint32_t           orig_seqno;
+    const char        *dest_addr_v6;
+    const char        *orig_addr_v6;
     int                extlen;
-    static const int * aodv_flags[] = {
+    static int * const aodv_flags[] = {
         &hf_aodv_flags_rreq_join,
         &hf_aodv_flags_rreq_repair,
         &hf_aodv_flags_rreq_gratuitous,
@@ -485,22 +448,11 @@ dissect_aodv_draft_01_v6_rreq(tvbuff_t *tvb, packet_info *pinfo,
         NULL
     };
 
-    flags = tvb_get_guint8(tvb, offset);
-    tj = proto_tree_add_bitmask(aodv_tree, tvb, offset, hf_aodv_flags,
-                   ett_aodv_flags, aodv_flags, ENC_NA);
-    if (flags & RREQ_JOIN)
-        proto_item_append_text(tj, " J");
-    if (flags & RREQ_REP)
-        proto_item_append_text(tj, " R");
-    if (flags & RREQ_GRATRREP)
-        proto_item_append_text(tj, " G");
-    if (flags & RREQ_DESTONLY)
-        proto_item_append_text(tj, " D");
-    if (flags & RREQ_UNKNSEQ)
-        proto_item_append_text(tj, " U");
+    proto_tree_add_bitmask_with_flags(aodv_tree, tvb, offset, hf_aodv_flags,
+                   ett_aodv_flags, aodv_flags, ENC_BIG_ENDIAN, BMT_NO_FALSE | BMT_NO_TFS | BMT_NO_INT);
     offset += 2;        /* skip reserved byte */
 
-    hop_count = tvb_get_guint8(tvb, offset);
+    hop_count = tvb_get_uint8(tvb, offset);
     proto_tree_add_uint(aodv_tree, hf_aodv_hopcount, tvb, offset, 1,
                              hop_count);
     offset += 1;
@@ -520,7 +472,7 @@ dissect_aodv_draft_01_v6_rreq(tvbuff_t *tvb, packet_info *pinfo,
                             orig_seqno);
     offset += 4;
 
-    dest_addr_v6 = tvb_ip6_to_str(tvb, offset);
+    dest_addr_v6 = tvb_ip6_to_str(pinfo->pool, tvb, offset);
     if (aodv_tree) {
         proto_tree_add_item(aodv_tree, hf_aodv_dest_ipv6, tvb, offset,
                             INET6_ADDRLEN, ENC_NA);
@@ -530,7 +482,7 @@ dissect_aodv_draft_01_v6_rreq(tvbuff_t *tvb, packet_info *pinfo,
     col_append_fstr(pinfo->cinfo, COL_INFO, ", D: %s", dest_addr_v6);
     offset += INET6_ADDRLEN;
 
-    orig_addr_v6 = tvb_ip6_to_str(tvb, offset);
+    orig_addr_v6 = tvb_ip6_to_str(pinfo->pool, tvb, offset);
     if (aodv_tree) {
         proto_tree_add_item(aodv_tree, hf_aodv_orig_ipv6, tvb, offset,
                             INET6_ADDRLEN, ENC_NA);
@@ -556,36 +508,31 @@ dissect_aodv_draft_01_v6_rrep(tvbuff_t *tvb, packet_info *pinfo,
                               proto_tree *aodv_tree, proto_item *ti)
 {
     int                offset = 1;
-    proto_item        *tj;
-    guint8             flags;
-    guint8             prefix_sz;
-    guint8             hop_count;
-    guint32            dest_seqno;
-    const gchar       *dest_addr_v6;
-    const gchar       *orig_addr_v6;
-    guint32            lifetime;
+    uint16_t           flags;
+    uint8_t            prefix_sz;
+    uint8_t            hop_count;
+    uint32_t           dest_seqno;
+    const char        *dest_addr_v6;
+    const char        *orig_addr_v6;
+    uint32_t           lifetime;
     int                extlen;
-    static const int * aodv_flags[] = {
+    static int * const aodv_flags[] = {
         &hf_aodv_flags_rrep_repair,
         &hf_aodv_flags_rrep_ack,
         NULL
     };
 
-    flags = tvb_get_guint8(tvb, offset);
-    tj = proto_tree_add_bitmask(aodv_tree, tvb, offset, hf_aodv_flags,
-                   ett_aodv_flags, aodv_flags, ENC_NA);
-    if (flags & RREP_REP)
-        proto_item_append_text(tj, " R");
-    if (flags & RREP_ACK_REQ)
-        proto_item_append_text(tj, " A");
+    flags = tvb_get_ntohs(tvb, offset);
+    proto_tree_add_bitmask_with_flags(aodv_tree, tvb, offset, hf_aodv_flags,
+                   ett_aodv_flags, aodv_flags, ENC_BIG_ENDIAN, BMT_NO_FALSE | BMT_NO_TFS | BMT_NO_INT);
     offset += 1;
 
-    prefix_sz = tvb_get_guint8(tvb, offset) & 0x7F;
+    prefix_sz = flags & 0x7F;
     proto_tree_add_uint(aodv_tree, hf_aodv_prefix_sz, tvb, offset, 1,
                             prefix_sz);
     offset += 1;
 
-    hop_count = tvb_get_guint8(tvb, offset);
+    hop_count = tvb_get_uint8(tvb, offset);
     proto_tree_add_uint(aodv_tree, hf_aodv_hopcount, tvb, offset, 1,
                             hop_count);
     offset += 1;
@@ -595,7 +542,7 @@ dissect_aodv_draft_01_v6_rrep(tvbuff_t *tvb, packet_info *pinfo,
                             dest_seqno);
     offset += 4;
 
-    dest_addr_v6 = tvb_ip6_to_str(tvb, offset);
+    dest_addr_v6 = tvb_ip6_to_str(pinfo->pool, tvb, offset);
     if (aodv_tree) {
         proto_tree_add_item(aodv_tree, hf_aodv_dest_ipv6, tvb, offset,
                             INET6_ADDRLEN, ENC_NA);
@@ -605,7 +552,7 @@ dissect_aodv_draft_01_v6_rrep(tvbuff_t *tvb, packet_info *pinfo,
     col_append_fstr(pinfo->cinfo, COL_INFO, ", D: %s", dest_addr_v6);
     offset += INET6_ADDRLEN;
 
-    orig_addr_v6 = tvb_ip6_to_str(tvb, offset);
+    orig_addr_v6 = tvb_ip6_to_str(pinfo->pool, tvb, offset);
     if (aodv_tree) {
         proto_tree_add_item(aodv_tree, hf_aodv_orig_ipv6, tvb, offset,
                             INET6_ADDRLEN, ENC_NA);
@@ -638,24 +585,19 @@ dissect_aodv_draft_01_v6_rerr(tvbuff_t *tvb, packet_info *pinfo,
                               proto_tree *aodv_tree)
 {
     int         offset = 1;
-    proto_item *tj;
     proto_tree *aodv_unreach_dest_tree;
-    guint8      flags;
-    guint8      dest_count;
+    uint8_t     dest_count;
     int         i;
-    static const int * aodv_flags[] = {
+    static int * const aodv_flags[] = {
         &hf_aodv_flags_rerr_nodelete,
         NULL
     };
 
-    flags = tvb_get_guint8(tvb, offset);
-    tj = proto_tree_add_bitmask(aodv_tree, tvb, offset, hf_aodv_flags,
-                   ett_aodv_flags, aodv_flags, ENC_NA);
-    if (flags & RERR_NODEL)
-        proto_item_append_text(tj, " N");
+    proto_tree_add_bitmask_with_flags(aodv_tree, tvb, offset, hf_aodv_flags,
+                   ett_aodv_flags, aodv_flags, ENC_BIG_ENDIAN, BMT_NO_FALSE | BMT_NO_TFS | BMT_NO_INT);
     offset += 2;        /* skip reserved byte */
 
-    dest_count = tvb_get_guint8(tvb, offset);
+    dest_count = tvb_get_uint8(tvb, offset);
     proto_tree_add_uint(aodv_tree, hf_aodv_destcount, tvb, offset, 1,
                             dest_count);
 
@@ -683,8 +625,9 @@ dissect_aodv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
 {
     proto_item *ti, *type_item;
     proto_tree *aodv_tree;
-    gboolean    is_ipv6;
-    guint8      type;
+    bool        is_ipv6;
+    uint8_t     type;
+    char        *str_type;
 
 /* Make entries in Protocol column and Info column on summary display */
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "AODV");
@@ -695,7 +638,7 @@ dissect_aodv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
     is_ipv6 = (pinfo->src.type == AT_IPv6);
 
     /* Check the type of AODV packet. */
-    type = tvb_get_guint8(tvb, 0);
+    type = tvb_get_uint8(tvb, 0);
     if (try_val_to_str(type, type_vals) == NULL) {
         /*
          * We assume this is not an AODV packet.
@@ -703,13 +646,10 @@ dissect_aodv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
         return 0;
     }
 
-
-    col_add_str(pinfo->cinfo, COL_INFO,
-                val_to_str(type, type_vals,
-                           "Unknown AODV Packet Type (%u)"));
+    str_type = val_to_str(pinfo->pool, type, type_vals, "Unknown AODV Packet Type (%u)");
+    col_add_str(pinfo->cinfo, COL_INFO, str_type);
         ti = proto_tree_add_protocol_format(tree, proto_aodv, tvb, 0, -1,
-            "Ad hoc On-demand Distance Vector Routing Protocol, %s",
-            val_to_str(type, type_vals, "Unknown AODV Packet Type (%u)"));
+            "Ad hoc On-demand Distance Vector Routing Protocol, %s", str_type);
         aodv_tree = proto_item_add_subtree(ti, ett_aodv);
 
         type_item = proto_tree_add_uint(aodv_tree, hf_aodv_type, tvb, 0, 1, type);
@@ -762,42 +702,42 @@ proto_register_aodv(void)
         },
         { &hf_aodv_flags_rreq_join,
           { "RREQ Join", "aodv.flags.rreq_join",
-            FT_BOOLEAN, 8, TFS(&tfs_set_notset), RREQ_JOIN,
+            FT_BOOLEAN, 16, TFS(&tfs_set_notset), RREQ_JOIN,
             NULL, HFILL }
         },
         { &hf_aodv_flags_rreq_repair,
           { "RREQ Repair", "aodv.flags.rreq_repair",
-            FT_BOOLEAN, 8, TFS(&tfs_set_notset), RREQ_REP,
+            FT_BOOLEAN, 16, TFS(&tfs_set_notset), RREQ_REP,
             NULL, HFILL }
         },
         { &hf_aodv_flags_rreq_gratuitous,
           { "RREQ Gratuitous RREP", "aodv.flags.rreq_gratuitous",
-            FT_BOOLEAN, 8, TFS(&tfs_set_notset), RREQ_GRATRREP,
+            FT_BOOLEAN, 16, TFS(&tfs_set_notset), RREQ_GRATRREP,
             NULL, HFILL }
         },
         { &hf_aodv_flags_rreq_destinationonly,
           { "RREQ Destination only", "aodv.flags.rreq_destinationonly",
-            FT_BOOLEAN, 8, TFS(&tfs_set_notset), RREQ_DESTONLY,
+            FT_BOOLEAN, 16, TFS(&tfs_set_notset), RREQ_DESTONLY,
             NULL, HFILL }
         },
         { &hf_aodv_flags_rreq_unknown,
           { "RREQ Unknown Sequence Number", "aodv.flags.rreq_unknown",
-            FT_BOOLEAN, 8, TFS(&tfs_set_notset), RREQ_UNKNSEQ,
+            FT_BOOLEAN, 16, TFS(&tfs_set_notset), RREQ_UNKNSEQ,
             NULL, HFILL }
         },
         { &hf_aodv_flags_rrep_repair,
           { "RREP Repair", "aodv.flags.rrep_repair",
-            FT_BOOLEAN, 8, TFS(&tfs_set_notset), RREP_REP,
+            FT_BOOLEAN, 16, TFS(&tfs_set_notset), RREP_REP,
             NULL, HFILL }
         },
         { &hf_aodv_flags_rrep_ack,
           { "RREP Acknowledgement", "aodv.flags.rrep_ack",
-            FT_BOOLEAN, 8, TFS(&tfs_set_notset), RREP_ACK_REQ,
+            FT_BOOLEAN, 16, TFS(&tfs_set_notset), RREP_ACK_REQ,
             NULL, HFILL }
         },
         { &hf_aodv_flags_rerr_nodelete,
           { "RERR No Delete", "aodv.flags.rerr_nodelete",
-            FT_BOOLEAN, 8, TFS(&tfs_set_notset), RERR_NODEL,
+            FT_BOOLEAN, 16, TFS(&tfs_set_notset), RERR_NODEL,
             NULL, HFILL }
         },
         { &hf_aodv_prefix_sz,
@@ -879,7 +819,7 @@ proto_register_aodv(void)
         },
         { &hf_aodv_ext_length,
           { "Extension Length", "aodv.ext_length",
-            FT_UINT8, BASE_DEC, NULL, 0x0,
+            FT_UINT8, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0x0,
             "Extension Data Length", HFILL}
         },
         { &hf_aodv_ext_interval,
@@ -895,7 +835,7 @@ proto_register_aodv(void)
     };
 
 /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_aodv,
         &ett_aodv_flags,
         &ett_aodv_unreach_dest,
@@ -911,6 +851,7 @@ proto_register_aodv(void)
 
 /* Register the protocol name and description */
     proto_aodv = proto_register_protocol("Ad hoc On-demand Distance Vector Routing Protocol", "AODV", "aodv");
+    aodv_handle = register_dissector("aodv", dissect_aodv, proto_aodv);
 
 /* Required function calls to register the header fields and subtrees used */
     proto_register_field_array(proto_aodv, hf, array_length(hf));
@@ -923,15 +864,11 @@ proto_register_aodv(void)
 void
 proto_reg_handoff_aodv(void)
 {
-    dissector_handle_t aodv_handle;
-
-    aodv_handle = create_dissector_handle(dissect_aodv,
-                                              proto_aodv);
-    dissector_add_uint("udp.port", UDP_PORT_AODV, aodv_handle);
+    dissector_add_uint_with_preference("udp.port", UDP_PORT_AODV, aodv_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

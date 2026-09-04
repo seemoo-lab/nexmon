@@ -10,9 +10,10 @@
 
 
 #include "config.h"
-#include <glib.h>
 #include <string.h>
+#include <wsutil/array.h>
 #include <epan/packet.h>
+#include <epan/tfs.h>
 
 #include "packet-dcerpc.h"
 #include "packet-dcerpc-nt.h"
@@ -22,149 +23,149 @@ void proto_register_dcerpc_nspi(void);
 void proto_reg_handoff_dcerpc_nspi(void);
 
 /* Ett declarations */
-static gint ett_dcerpc_nspi = -1;
-static gint ett_nspi_MAPIUID = -1;
-static gint ett_nspi_input_locale = -1;
-static gint ett_nspi_MAPI_SETTINGS = -1;
-static gint ett_nspi_SPropTagArray = -1;
-static gint ett_nspi_instance_key = -1;
-static gint ett_nspi_MAPINAMEID = -1;
-static gint ett_nspi_SPropertyRestriction = -1;
-static gint ett_nspi_SAndRestriction = -1;
-static gint ett_nspi_SRestriction_CTR = -1;
-static gint ett_nspi_SRestriction = -1;
-static gint ett_nspi_SSortOrder = -1;
-static gint ett_nspi_SSortOrderSet = -1;
-static gint ett_nspi_NAME_STRING = -1;
-static gint ett_nspi_SBinary = -1;
-static gint ett_nspi_FILETIME = -1;
-static gint ett_nspi_SShortArray = -1;
-static gint ett_nspi_MV_LONG_STRUCT = -1;
-static gint ett_nspi_LPSTR = -1;
-static gint ett_nspi_SLPSTRArray = -1;
-static gint ett_nspi_SBinaryArray = -1;
-static gint ett_nspi_SGuidArray = -1;
-static gint ett_nspi_MV_UNICODE_STRUCT = -1;
-static gint ett_nspi_SDateTimeArray = -1;
-static gint ett_nspi_SPropValue_CTR = -1;
-static gint ett_nspi_SPropValue = -1;
-static gint ett_nspi_SRow = -1;
-static gint ett_nspi_SRowSet = -1;
+static int ett_dcerpc_nspi;
+static int ett_nspi_MAPIUID;
+static int ett_nspi_input_locale;
+static int ett_nspi_MAPI_SETTINGS;
+static int ett_nspi_SPropTagArray;
+static int ett_nspi_instance_key;
+static int ett_nspi_MAPINAMEID;
+static int ett_nspi_SPropertyRestriction;
+static int ett_nspi_SAndRestriction;
+static int ett_nspi_SRestriction_CTR;
+static int ett_nspi_SRestriction;
+static int ett_nspi_SSortOrder;
+static int ett_nspi_SSortOrderSet;
+static int ett_nspi_NAME_STRING;
+static int ett_nspi_SBinary;
+static int ett_nspi_FILETIME;
+static int ett_nspi_SShortArray;
+static int ett_nspi_MV_LONG_STRUCT;
+static int ett_nspi_LPSTR;
+static int ett_nspi_SLPSTRArray;
+static int ett_nspi_SBinaryArray;
+static int ett_nspi_SGuidArray;
+static int ett_nspi_MV_UNICODE_STRUCT;
+static int ett_nspi_SDateTimeArray;
+static int ett_nspi_SPropValue_CTR;
+static int ett_nspi_SPropValue;
+static int ett_nspi_SRow;
+static int ett_nspi_SRowSet;
 
 
 /* Header field declarations */
-static gint hf_nspi_FILETIME_dwHighDateTime = -1;
-static gint hf_nspi_FILETIME_dwLowDateTime = -1;
-static gint hf_nspi_LPSTR_lppszA = -1;
-static gint hf_nspi_MAPINAMEID_lID = -1;
-static gint hf_nspi_MAPINAMEID_lpguid = -1;
-static gint hf_nspi_MAPINAMEID_ulKind = -1;
-static gint hf_nspi_MAPISTATUS_status = -1;
-static gint hf_nspi_MAPIUID_ab = -1;
-static gint hf_nspi_MAPI_SETTINGS_codepage = -1;
-static gint hf_nspi_MAPI_SETTINGS_flag = -1;
-static gint hf_nspi_MAPI_SETTINGS_handle = -1;
-static gint hf_nspi_MAPI_SETTINGS_input_locale = -1;
-static gint hf_nspi_MAPI_SETTINGS_service_provider = -1;
-static gint hf_nspi_MV_LONG_STRUCT_cValues = -1;
-static gint hf_nspi_MV_LONG_STRUCT_lpl = -1;
-static gint hf_nspi_MV_UNICODE_STRUCT_cValues = -1;
-static gint hf_nspi_MV_UNICODE_STRUCT_lpi = -1;
-static gint hf_nspi_NAME_STRING_str = -1;
-static gint hf_nspi_NspiBind_mapiuid = -1;
-static gint hf_nspi_NspiBind_settings = -1;
-static gint hf_nspi_NspiBind_unknown = -1;
-static gint hf_nspi_NspiDNToEph_flag = -1;
-static gint hf_nspi_NspiDNToEph_instance_key = -1;
-static gint hf_nspi_NspiDNToEph_server_dn = -1;
-static gint hf_nspi_NspiDNToEph_size = -1;
-static gint hf_nspi_NspiGetHierarchyInfo_RowSet = -1;
-static gint hf_nspi_NspiGetHierarchyInfo_settings = -1;
-static gint hf_nspi_NspiGetHierarchyInfo_unknown1 = -1;
-static gint hf_nspi_NspiGetHierarchyInfo_unknown2 = -1;
-static gint hf_nspi_NspiGetMatches_PropTagArray = -1;
-static gint hf_nspi_NspiGetMatches_REQ_properties = -1;
-static gint hf_nspi_NspiGetMatches_RowSet = -1;
-static gint hf_nspi_NspiGetMatches_instance_key = -1;
-static gint hf_nspi_NspiGetMatches_restrictions = -1;
-static gint hf_nspi_NspiGetMatches_settings = -1;
-static gint hf_nspi_NspiGetMatches_unknown1 = -1;
-static gint hf_nspi_NspiGetMatches_unknown2 = -1;
-static gint hf_nspi_NspiGetMatches_unknown3 = -1;
-static gint hf_nspi_NspiGetProps_REPL_values = -1;
-static gint hf_nspi_NspiGetProps_REQ_properties = -1;
-static gint hf_nspi_NspiGetProps_flag = -1;
-static gint hf_nspi_NspiGetProps_settings = -1;
-static gint hf_nspi_NspiQueryRows_REQ_properties = -1;
-static gint hf_nspi_NspiQueryRows_RowSet = -1;
-static gint hf_nspi_NspiQueryRows_flag = -1;
-static gint hf_nspi_NspiQueryRows_instance_key = -1;
-static gint hf_nspi_NspiQueryRows_lRows = -1;
-static gint hf_nspi_NspiQueryRows_settings = -1;
-static gint hf_nspi_NspiQueryRows_unknown = -1;
-static gint hf_nspi_NspiUnbind_status = -1;
-static gint hf_nspi_SAndRestriction_cRes = -1;
-static gint hf_nspi_SAndRestriction_lpRes = -1;
-static gint hf_nspi_SBinaryArray_cValues = -1;
-static gint hf_nspi_SBinaryArray_lpbin = -1;
-static gint hf_nspi_SBinary_cb = -1;
-static gint hf_nspi_SBinary_lpb = -1;
-static gint hf_nspi_SDateTimeArray_cValues = -1;
-static gint hf_nspi_SDateTimeArray_lpft = -1;
-static gint hf_nspi_SGuidArray_cValues = -1;
-static gint hf_nspi_SGuidArray_lpguid = -1;
-static gint hf_nspi_SLPSTRArray_cValues = -1;
-static gint hf_nspi_SLPSTRArray_strings = -1;
-static gint hf_nspi_SPropTagArray_aulPropTag = -1;
-static gint hf_nspi_SPropTagArray_cValues = -1;
-static gint hf_nspi_SPropValue_CTR_MVbin = -1;
-static gint hf_nspi_SPropValue_CTR_MVft = -1;
-static gint hf_nspi_SPropValue_CTR_MVguid = -1;
-static gint hf_nspi_SPropValue_CTR_MVi = -1;
-static gint hf_nspi_SPropValue_CTR_MVl = -1;
-static gint hf_nspi_SPropValue_CTR_MVszA = -1;
-static gint hf_nspi_SPropValue_CTR_MVszW = -1;
-static gint hf_nspi_SPropValue_CTR_b = -1;
-static gint hf_nspi_SPropValue_CTR_bin = -1;
-static gint hf_nspi_SPropValue_CTR_err = -1;
-static gint hf_nspi_SPropValue_CTR_ft = -1;
-static gint hf_nspi_SPropValue_CTR_i = -1;
-static gint hf_nspi_SPropValue_CTR_l = -1;
-static gint hf_nspi_SPropValue_CTR_lpguid = -1;
-static gint hf_nspi_SPropValue_CTR_lpszA = -1;
-static gint hf_nspi_SPropValue_CTR_lpszW = -1;
-static gint hf_nspi_SPropValue_CTR_null = -1;
-static gint hf_nspi_SPropValue_CTR_object = -1;
-static gint hf_nspi_SPropValue_dwAlignPad = -1;
-static gint hf_nspi_SPropValue_ulPropTag = -1;
-static gint hf_nspi_SPropertyRestriction_lpProp = -1;
-static gint hf_nspi_SPropertyRestriction_relop = -1;
-static gint hf_nspi_SPropertyRestriction_ulPropTag = -1;
-static gint hf_nspi_SRestriction_CTR_resAnd = -1;
-static gint hf_nspi_SRestriction_CTR_resProperty = -1;
-static gint hf_nspi_SRestriction_PTTYPE = -1;
-static gint hf_nspi_SRowSet_aRow = -1;
-static gint hf_nspi_SRowSet_cRows = -1;
-static gint hf_nspi_SRow_cValues = -1;
-static gint hf_nspi_SRow_lpProps = -1;
-static gint hf_nspi_SRow_ulAdrEntryPad = -1;
-static gint hf_nspi_SShortArray_cValues = -1;
-static gint hf_nspi_SShortArray_lpi = -1;
-static gint hf_nspi_SSortOrderSet_aSort = -1;
-static gint hf_nspi_SSortOrderSet_cCategories = -1;
-static gint hf_nspi_SSortOrderSet_cExpanded = -1;
-static gint hf_nspi_SSortOrderSet_cSorts = -1;
-static gint hf_nspi_SSortOrder_ulOrder = -1;
-static gint hf_nspi_SSortOrder_ulPropTag = -1;
-static gint hf_nspi_handle = -1;
-static gint hf_nspi_input_locale_language = -1;
-static gint hf_nspi_input_locale_method = -1;
-static gint hf_nspi_instance_key_cValues = -1;
-static gint hf_nspi_instance_key_value = -1;
-static gint hf_nspi_opnum = -1;
-static gint hf_nspi_property_type = -1;
+static int hf_nspi_FILETIME_dwHighDateTime;
+static int hf_nspi_FILETIME_dwLowDateTime;
+static int hf_nspi_LPSTR_lppszA;
+static int hf_nspi_MAPINAMEID_lID;
+static int hf_nspi_MAPINAMEID_lpguid;
+static int hf_nspi_MAPINAMEID_ulKind;
+static int hf_nspi_MAPISTATUS_status;
+static int hf_nspi_MAPIUID_ab;
+static int hf_nspi_MAPI_SETTINGS_codepage;
+static int hf_nspi_MAPI_SETTINGS_flag;
+static int hf_nspi_MAPI_SETTINGS_handle;
+static int hf_nspi_MAPI_SETTINGS_input_locale;
+static int hf_nspi_MAPI_SETTINGS_service_provider;
+static int hf_nspi_MV_LONG_STRUCT_cValues;
+static int hf_nspi_MV_LONG_STRUCT_lpl;
+static int hf_nspi_MV_UNICODE_STRUCT_cValues;
+static int hf_nspi_MV_UNICODE_STRUCT_lpi;
+static int hf_nspi_NAME_STRING_str;
+static int hf_nspi_NspiBind_mapiuid;
+static int hf_nspi_NspiBind_settings;
+static int hf_nspi_NspiBind_unknown;
+static int hf_nspi_NspiDNToEph_flag;
+static int hf_nspi_NspiDNToEph_instance_key;
+static int hf_nspi_NspiDNToEph_server_dn;
+static int hf_nspi_NspiDNToEph_size;
+static int hf_nspi_NspiGetHierarchyInfo_RowSet;
+static int hf_nspi_NspiGetHierarchyInfo_settings;
+static int hf_nspi_NspiGetHierarchyInfo_unknown1;
+static int hf_nspi_NspiGetHierarchyInfo_unknown2;
+static int hf_nspi_NspiGetMatches_PropTagArray;
+static int hf_nspi_NspiGetMatches_REQ_properties;
+static int hf_nspi_NspiGetMatches_RowSet;
+static int hf_nspi_NspiGetMatches_instance_key;
+static int hf_nspi_NspiGetMatches_restrictions;
+static int hf_nspi_NspiGetMatches_settings;
+static int hf_nspi_NspiGetMatches_unknown1;
+static int hf_nspi_NspiGetMatches_unknown2;
+static int hf_nspi_NspiGetMatches_unknown3;
+static int hf_nspi_NspiGetProps_REPL_values;
+static int hf_nspi_NspiGetProps_REQ_properties;
+static int hf_nspi_NspiGetProps_flag;
+static int hf_nspi_NspiGetProps_settings;
+static int hf_nspi_NspiQueryRows_REQ_properties;
+static int hf_nspi_NspiQueryRows_RowSet;
+static int hf_nspi_NspiQueryRows_flag;
+static int hf_nspi_NspiQueryRows_instance_key;
+static int hf_nspi_NspiQueryRows_lRows;
+static int hf_nspi_NspiQueryRows_settings;
+static int hf_nspi_NspiQueryRows_unknown;
+static int hf_nspi_NspiUnbind_status;
+static int hf_nspi_SAndRestriction_cRes;
+static int hf_nspi_SAndRestriction_lpRes;
+static int hf_nspi_SBinaryArray_cValues;
+static int hf_nspi_SBinaryArray_lpbin;
+static int hf_nspi_SBinary_cb;
+static int hf_nspi_SBinary_lpb;
+static int hf_nspi_SDateTimeArray_cValues;
+static int hf_nspi_SDateTimeArray_lpft;
+static int hf_nspi_SGuidArray_cValues;
+static int hf_nspi_SGuidArray_lpguid;
+static int hf_nspi_SLPSTRArray_cValues;
+static int hf_nspi_SLPSTRArray_strings;
+static int hf_nspi_SPropTagArray_aulPropTag;
+static int hf_nspi_SPropTagArray_cValues;
+static int hf_nspi_SPropValue_CTR_MVbin;
+static int hf_nspi_SPropValue_CTR_MVft;
+static int hf_nspi_SPropValue_CTR_MVguid;
+static int hf_nspi_SPropValue_CTR_MVi;
+static int hf_nspi_SPropValue_CTR_MVl;
+static int hf_nspi_SPropValue_CTR_MVszA;
+static int hf_nspi_SPropValue_CTR_MVszW;
+static int hf_nspi_SPropValue_CTR_b;
+static int hf_nspi_SPropValue_CTR_bin;
+static int hf_nspi_SPropValue_CTR_err;
+static int hf_nspi_SPropValue_CTR_ft;
+static int hf_nspi_SPropValue_CTR_i;
+static int hf_nspi_SPropValue_CTR_l;
+static int hf_nspi_SPropValue_CTR_lpguid;
+static int hf_nspi_SPropValue_CTR_lpszA;
+static int hf_nspi_SPropValue_CTR_lpszW;
+static int hf_nspi_SPropValue_CTR_null;
+static int hf_nspi_SPropValue_CTR_object;
+static int hf_nspi_SPropValue_dwAlignPad;
+static int hf_nspi_SPropValue_ulPropTag;
+static int hf_nspi_SPropertyRestriction_lpProp;
+static int hf_nspi_SPropertyRestriction_relop;
+static int hf_nspi_SPropertyRestriction_ulPropTag;
+static int hf_nspi_SRestriction_CTR_resAnd;
+static int hf_nspi_SRestriction_CTR_resProperty;
+static int hf_nspi_SRestriction_PTTYPE;
+static int hf_nspi_SRowSet_aRow;
+static int hf_nspi_SRowSet_cRows;
+static int hf_nspi_SRow_cValues;
+static int hf_nspi_SRow_lpProps;
+static int hf_nspi_SRow_ulAdrEntryPad;
+static int hf_nspi_SShortArray_cValues;
+static int hf_nspi_SShortArray_lpi;
+static int hf_nspi_SSortOrderSet_aSort;
+static int hf_nspi_SSortOrderSet_cCategories;
+static int hf_nspi_SSortOrderSet_cExpanded;
+static int hf_nspi_SSortOrderSet_cSorts;
+static int hf_nspi_SSortOrder_ulOrder;
+static int hf_nspi_SSortOrder_ulPropTag;
+static int hf_nspi_handle;
+static int hf_nspi_input_locale_language;
+static int hf_nspi_input_locale_method;
+static int hf_nspi_instance_key_cValues;
+static int hf_nspi_instance_key_value;
+static int hf_nspi_opnum;
+static int hf_nspi_property_type;
 
-static gint proto_dcerpc_nspi = -1;
+static int proto_dcerpc_nspi;
 /* Version information */
 
 
@@ -172,7 +173,7 @@ static e_guid_t uuid_dcerpc_nspi = {
 	0xf5cc5a18, 0x4264, 0x101a,
 	{ 0x8c, 0x59, 0x08, 0x00, 0x2b, 0x2f, 0x84, 0x26 }
 };
-static guint16 ver_dcerpc_nspi = 56;
+static uint16_t ver_dcerpc_nspi = 56;
 
 const value_string nspi_MAPITAGS_vals[] = {
 	{ PR_ACKNOWLEDGEMENT_MODE, "PR_ACKNOWLEDGEMENT_MODE" },
@@ -3637,34 +3638,34 @@ const value_string nspi_MAPISTATUS_vals[] = {
 	{ MAPI_E_NO_RECIPIENTS, "MAPI_E_NO_RECIPIENTS" },
 	{ MAPI_E_SUBMITTED, "MAPI_E_SUBMITTED" },
 	{ MAPI_E_HAS_FOLDERS, "MAPI_E_HAS_FOLDERS" },
-	{ MAPI_E_HAS_MESAGES, "MAPI_E_HAS_MESAGES" },
+	{ MAPI_E_HAS_MESSAGES, "MAPI_E_HAS_MESSAGES" },
 	{ MAPI_E_FOLDER_CYCLE, "MAPI_E_FOLDER_CYCLE" },
 	{ MAPI_W_PARTIAL_COMPLETION, "MAPI_W_PARTIAL_COMPLETION" },
 	{ MAPI_E_AMBIGUOUS_RECIP, "MAPI_E_AMBIGUOUS_RECIP" },
 	{ MAPI_E_RESERVED, "MAPI_E_RESERVED" },
 { 0, NULL }
 };
-static int nspi_dissect_element_MAPIUID_ab(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_MAPIUID_ab_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_input_locale_language(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_input_locale_method(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_MAPI_SETTINGS_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_MAPI_SETTINGS_flag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_MAPI_SETTINGS_service_provider(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_MAPI_SETTINGS_codepage(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_MAPI_SETTINGS_input_locale(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropTagArray_aulPropTag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropTagArray_aulPropTag_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropTagArray_aulPropTag__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropTagArray_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_instance_key_value(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_instance_key_value_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_instance_key_value__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_instance_key_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_MAPINAMEID_lpguid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_MAPINAMEID_lpguid_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_MAPINAMEID_ulKind(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_MAPINAMEID_lID(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
+static int nspi_dissect_element_MAPIUID_ab(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_MAPIUID_ab_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_input_locale_language(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_input_locale_method(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_MAPI_SETTINGS_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_MAPI_SETTINGS_flag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_MAPI_SETTINGS_service_provider(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_MAPI_SETTINGS_codepage(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_MAPI_SETTINGS_input_locale(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropTagArray_aulPropTag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropTagArray_aulPropTag_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropTagArray_aulPropTag__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropTagArray_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_instance_key_value(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_instance_key_value_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_instance_key_value__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_instance_key_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_MAPINAMEID_lpguid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_MAPINAMEID_lpguid_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_MAPINAMEID_ulKind(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_MAPINAMEID_lID(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
 const value_string nspi_nspi_RestrictionType_vals[] = {
 	{ RES_AND, "RES_AND" },
 	{ RES_OR, "RES_OR" },
@@ -3679,28 +3680,28 @@ const value_string nspi_nspi_RestrictionType_vals[] = {
 	{ RES_COMMENT, "RES_COMMENT" },
 { 0, NULL }
 };
-static int nspi_dissect_element_SPropertyRestriction_relop(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropertyRestriction_ulPropTag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropertyRestriction_lpProp(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropertyRestriction_lpProp_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SAndRestriction_cRes(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SAndRestriction_lpRes(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SAndRestriction_lpRes_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SAndRestriction_lpRes__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SRestriction_CTR_resAnd(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SRestriction_CTR_resProperty(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SRestriction_rt(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, guint32 *rt);
-static int nspi_dissect_element_SRestriction_res(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, guint32 *rt);
-static int nspi_dissect_element_SSortOrder_ulPropTag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SSortOrder_ulOrder(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SSortOrderSet_cSorts(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SSortOrderSet_cCategories(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SSortOrderSet_cExpanded(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SSortOrderSet_aSort(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SSortOrderSet_aSort_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SSortOrderSet_aSort__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NAME_STRING_str(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NAME_STRING_str_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
+static int nspi_dissect_element_SPropertyRestriction_relop(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropertyRestriction_ulPropTag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropertyRestriction_lpProp(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropertyRestriction_lpProp_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SAndRestriction_cRes(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SAndRestriction_lpRes(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SAndRestriction_lpRes_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SAndRestriction_lpRes__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SRestriction_CTR_resAnd(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SRestriction_CTR_resProperty(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SRestriction_rt(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, uint32_t *rt);
+static int nspi_dissect_element_SRestriction_res(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, uint32_t *rt);
+static int nspi_dissect_element_SSortOrder_ulPropTag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SSortOrder_ulOrder(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SSortOrderSet_cSorts(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SSortOrderSet_cCategories(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SSortOrderSet_cExpanded(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SSortOrderSet_aSort(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SSortOrderSet_aSort_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SSortOrderSet_aSort__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NAME_STRING_str(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NAME_STRING_str_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
 const value_string nspi_property_types_vals[] = {
 	{ PT_UNSPECIFIED, "PT_UNSPECIFIED" },
 	{ PT_NULL, "PT_NULL" },
@@ -3727,153 +3728,152 @@ const value_string nspi_property_types_vals[] = {
 	{ PT_MV_APPTIME, "PT_MV_APPTIME" },
 	{ PT_MV_I8, "PT_MV_I8" },
 	{ PT_MV_STRING8, "PT_MV_STRING8" },
-	{ PT_MV_TSTRING, "PT_MV_TSTRING" },
 	{ PT_MV_UNICODE, "PT_MV_UNICODE" },
 	{ PT_MV_SYSTIME, "PT_MV_SYSTIME" },
 	{ PT_MV_CLSID, "PT_MV_CLSID" },
 	{ PT_MV_BINARY, "PT_MV_BINARY" },
 { 0, NULL }
 };
-static int nspi_dissect_element_SBinary_cb(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SBinary_lpb(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SBinary_lpb_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SBinary_lpb__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_FILETIME_dwLowDateTime(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_FILETIME_dwHighDateTime(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SShortArray_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SShortArray_lpi(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SShortArray_lpi_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SShortArray_lpi__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_MV_LONG_STRUCT_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_MV_LONG_STRUCT_lpl(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_MV_LONG_STRUCT_lpl_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_MV_LONG_STRUCT_lpl__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_LPSTR_lppszA(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SLPSTRArray_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SLPSTRArray_strings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SLPSTRArray_strings_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SLPSTRArray_strings__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SLPSTRArray_strings___(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SBinaryArray_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SBinaryArray_lpbin(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SBinaryArray_lpbin_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SBinaryArray_lpbin__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SGuidArray_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SGuidArray_lpguid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SGuidArray_lpguid_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SGuidArray_lpguid__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_MV_UNICODE_STRUCT_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_MV_UNICODE_STRUCT_lpi(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_MV_UNICODE_STRUCT_lpi_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_MV_UNICODE_STRUCT_lpi__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SDateTimeArray_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SDateTimeArray_lpft(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SDateTimeArray_lpft_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SDateTimeArray_lpft__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropValue_CTR_i(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropValue_CTR_l(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropValue_CTR_b(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropValue_CTR_lpszA(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropValue_CTR_lpszA_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropValue_CTR_bin(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropValue_CTR_lpszW(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropValue_CTR_lpszW_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropValue_CTR_lpguid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropValue_CTR_lpguid_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropValue_CTR_ft(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropValue_CTR_err(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropValue_CTR_MVi(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropValue_CTR_MVl(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropValue_CTR_MVszA(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropValue_CTR_MVbin(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropValue_CTR_MVguid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropValue_CTR_MVszW(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropValue_CTR_MVft(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropValue_CTR_null(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropValue_CTR_object(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropValue_ulPropTag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropValue_dwAlignPad(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SPropValue_value(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SRow_ulAdrEntryPad(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SRow_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SRow_lpProps(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SRow_lpProps_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SRow_lpProps__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SRowSet_cRows(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SRowSet_aRow(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_SRowSet_aRow_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiBind_unknown(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiBind_settings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiBind_settings_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiBind_mapiuid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiBind_mapiuid_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiBind_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiBind_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiUnbind_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiUnbind_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiUnbind_status(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiQueryRows_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiQueryRows_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiQueryRows_flag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiQueryRows_settings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiQueryRows_settings_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiQueryRows_lRows(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiQueryRows_instance_key(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiQueryRows_instance_key_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiQueryRows_instance_key__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiQueryRows_unknown(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiQueryRows_REQ_properties(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiQueryRows_REQ_properties_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiQueryRows_RowSet(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiQueryRows_RowSet_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiQueryRows_RowSet__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetMatches_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetMatches_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetMatches_unknown1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetMatches_settings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetMatches_settings_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetMatches_PropTagArray(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetMatches_PropTagArray_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetMatches_unknown2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetMatches_restrictions(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetMatches_restrictions_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetMatches_unknown3(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetMatches_instance_key(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetMatches_instance_key_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetMatches_REQ_properties(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetMatches_REQ_properties_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetMatches_RowSet(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetMatches_RowSet_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetMatches_RowSet__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiDNToEph_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiDNToEph_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiDNToEph_flag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiDNToEph_size(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiDNToEph_server_dn(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiDNToEph_server_dn_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiDNToEph_server_dn__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiDNToEph_instance_key(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiDNToEph_instance_key_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetProps_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetProps_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetProps_flag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetProps_settings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetProps_settings_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetProps_REQ_properties(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetProps_REQ_properties_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetProps_REPL_values(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetProps_REPL_values_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetProps_REPL_values__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetHierarchyInfo_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetHierarchyInfo_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetHierarchyInfo_unknown1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetHierarchyInfo_settings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetHierarchyInfo_settings_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetHierarchyInfo_unknown2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetHierarchyInfo_unknown2_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetHierarchyInfo_RowSet(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetHierarchyInfo_RowSet_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int nspi_dissect_element_NspiGetHierarchyInfo_RowSet__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
+static int nspi_dissect_element_SBinary_cb(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SBinary_lpb(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SBinary_lpb_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SBinary_lpb__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_FILETIME_dwLowDateTime(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_FILETIME_dwHighDateTime(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SShortArray_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SShortArray_lpi(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SShortArray_lpi_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SShortArray_lpi__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_MV_LONG_STRUCT_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_MV_LONG_STRUCT_lpl(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_MV_LONG_STRUCT_lpl_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_MV_LONG_STRUCT_lpl__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_LPSTR_lppszA(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SLPSTRArray_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SLPSTRArray_strings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SLPSTRArray_strings_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SLPSTRArray_strings__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SLPSTRArray_strings___(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SBinaryArray_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SBinaryArray_lpbin(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SBinaryArray_lpbin_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SBinaryArray_lpbin__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SGuidArray_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SGuidArray_lpguid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SGuidArray_lpguid_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SGuidArray_lpguid__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_MV_UNICODE_STRUCT_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_MV_UNICODE_STRUCT_lpi(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_MV_UNICODE_STRUCT_lpi_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_MV_UNICODE_STRUCT_lpi__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SDateTimeArray_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SDateTimeArray_lpft(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SDateTimeArray_lpft_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SDateTimeArray_lpft__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropValue_CTR_i(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropValue_CTR_l(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropValue_CTR_b(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropValue_CTR_lpszA(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropValue_CTR_lpszA_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropValue_CTR_bin(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropValue_CTR_lpszW(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropValue_CTR_lpszW_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropValue_CTR_lpguid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropValue_CTR_lpguid_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropValue_CTR_ft(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropValue_CTR_err(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropValue_CTR_MVi(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropValue_CTR_MVl(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropValue_CTR_MVszA(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropValue_CTR_MVbin(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropValue_CTR_MVguid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropValue_CTR_MVszW(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropValue_CTR_MVft(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropValue_CTR_null(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropValue_CTR_object(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropValue_ulPropTag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropValue_dwAlignPad(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SPropValue_value(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SRow_ulAdrEntryPad(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SRow_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SRow_lpProps(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SRow_lpProps_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SRow_lpProps__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SRowSet_cRows(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SRowSet_aRow(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_SRowSet_aRow_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiBind_unknown(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiBind_settings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiBind_settings_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiBind_mapiuid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiBind_mapiuid_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiBind_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiBind_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiUnbind_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiUnbind_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiUnbind_status(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiQueryRows_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiQueryRows_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiQueryRows_flag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiQueryRows_settings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiQueryRows_settings_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiQueryRows_lRows(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiQueryRows_instance_key(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiQueryRows_instance_key_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiQueryRows_instance_key__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiQueryRows_unknown(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiQueryRows_REQ_properties(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiQueryRows_REQ_properties_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiQueryRows_RowSet(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiQueryRows_RowSet_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiQueryRows_RowSet__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetMatches_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetMatches_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetMatches_unknown1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetMatches_settings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetMatches_settings_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetMatches_PropTagArray(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetMatches_PropTagArray_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetMatches_unknown2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetMatches_restrictions(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetMatches_restrictions_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetMatches_unknown3(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetMatches_instance_key(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetMatches_instance_key_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetMatches_REQ_properties(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetMatches_REQ_properties_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetMatches_RowSet(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetMatches_RowSet_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetMatches_RowSet__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiDNToEph_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiDNToEph_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiDNToEph_flag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiDNToEph_size(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiDNToEph_server_dn(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiDNToEph_server_dn_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiDNToEph_server_dn__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiDNToEph_instance_key(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiDNToEph_instance_key_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetProps_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetProps_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetProps_flag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetProps_settings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetProps_settings_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetProps_REQ_properties(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetProps_REQ_properties_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetProps_REPL_values(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetProps_REPL_values_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetProps_REPL_values__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetHierarchyInfo_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetHierarchyInfo_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetHierarchyInfo_unknown1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetHierarchyInfo_settings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetHierarchyInfo_settings_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetHierarchyInfo_unknown2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetHierarchyInfo_unknown2_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetHierarchyInfo_RowSet(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetHierarchyInfo_RowSet_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int nspi_dissect_element_NspiGetHierarchyInfo_RowSet__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
 
 
 /* IDL: enum { */
@@ -7273,9 +7273,9 @@ static int nspi_dissect_element_NspiGetHierarchyInfo_RowSet__(tvbuff_t *tvb _U_,
 /* IDL: } */
 
 int
-nspi_dissect_enum_MAPITAGS(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 *param _U_)
+nspi_dissect_enum_MAPITAGS(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t *param _U_)
 {
-	guint32 parameter=0;
+	uint32_t parameter=0;
 	if (param) {
 		parameter = *param;
 	}
@@ -7354,7 +7354,7 @@ nspi_dissect_enum_MAPITAGS(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo
 /* IDL: 	MAPI_E_NO_RECIPIENTS=0x80040607, */
 /* IDL: 	MAPI_E_SUBMITTED=0x80040608, */
 /* IDL: 	MAPI_E_HAS_FOLDERS=0x80040609, */
-/* IDL: 	MAPI_E_HAS_MESAGES=0x8004060A, */
+/* IDL: 	MAPI_E_HAS_MESSAGES=0x8004060A, */
 /* IDL: 	MAPI_E_FOLDER_CYCLE=0x8004060B, */
 /* IDL: 	MAPI_W_PARTIAL_COMPLETION=0x80040680, */
 /* IDL: 	MAPI_E_AMBIGUOUS_RECIP=0x80040700, */
@@ -7362,9 +7362,9 @@ nspi_dissect_enum_MAPITAGS(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo
 /* IDL: } */
 
 int
-nspi_dissect_enum_MAPISTATUS(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 *param _U_)
+nspi_dissect_enum_MAPISTATUS(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t *param _U_)
 {
-	guint32 parameter=0;
+	uint32_t parameter=0;
 	if (param) {
 		parameter = *param;
 	}
@@ -7381,7 +7381,7 @@ nspi_dissect_enum_MAPISTATUS(tvbuff_t *tvb _U_, int offset _U_, packet_info *pin
 /* IDL: } */
 
 static int
-nspi_dissect_element_MAPIUID_ab(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_MAPIUID_ab(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	int i;
 	for (i = 0; i < 16; i++)
@@ -7391,7 +7391,7 @@ nspi_dissect_element_MAPIUID_ab(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 }
 
 static int
-nspi_dissect_element_MAPIUID_ab_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_MAPIUID_ab_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint8(tvb, offset, pinfo, tree, di, drep, hf_nspi_MAPIUID_ab, 0);
 
@@ -7399,7 +7399,7 @@ nspi_dissect_element_MAPIUID_ab_(tvbuff_t *tvb _U_, int offset _U_, packet_info 
 }
 
 int
-nspi_dissect_struct_MAPIUID(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+nspi_dissect_struct_MAPIUID(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -7434,7 +7434,7 @@ nspi_dissect_struct_MAPIUID(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinf
 /* IDL: } */
 
 static int
-nspi_dissect_element_input_locale_language(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_input_locale_language(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_input_locale_language, 0);
 
@@ -7442,7 +7442,7 @@ nspi_dissect_element_input_locale_language(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-nspi_dissect_element_input_locale_method(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_input_locale_method(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_input_locale_method, 0);
 
@@ -7450,7 +7450,7 @@ nspi_dissect_element_input_locale_method(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 int
-nspi_dissect_struct_input_locale(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+nspi_dissect_struct_input_locale(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -7490,7 +7490,7 @@ nspi_dissect_struct_input_locale(tvbuff_t *tvb _U_, int offset _U_, packet_info 
 /* IDL: } */
 
 static int
-nspi_dissect_element_MAPI_SETTINGS_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_MAPI_SETTINGS_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_MAPI_SETTINGS_handle, 0);
 
@@ -7498,7 +7498,7 @@ nspi_dissect_element_MAPI_SETTINGS_handle(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 static int
-nspi_dissect_element_MAPI_SETTINGS_flag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_MAPI_SETTINGS_flag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_MAPI_SETTINGS_flag, 0);
 
@@ -7506,7 +7506,7 @@ nspi_dissect_element_MAPI_SETTINGS_flag(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-nspi_dissect_element_MAPI_SETTINGS_service_provider(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_MAPI_SETTINGS_service_provider(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_MAPIUID(tvb,offset,pinfo,tree,di,drep,hf_nspi_MAPI_SETTINGS_service_provider,0);
 
@@ -7514,7 +7514,7 @@ nspi_dissect_element_MAPI_SETTINGS_service_provider(tvbuff_t *tvb _U_, int offse
 }
 
 static int
-nspi_dissect_element_MAPI_SETTINGS_codepage(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_MAPI_SETTINGS_codepage(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_MAPI_SETTINGS_codepage, 0);
 
@@ -7522,7 +7522,7 @@ nspi_dissect_element_MAPI_SETTINGS_codepage(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-nspi_dissect_element_MAPI_SETTINGS_input_locale(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_MAPI_SETTINGS_input_locale(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_input_locale(tvb,offset,pinfo,tree,di,drep,hf_nspi_MAPI_SETTINGS_input_locale,0);
 
@@ -7530,14 +7530,14 @@ nspi_dissect_element_MAPI_SETTINGS_input_locale(tvbuff_t *tvb _U_, int offset _U
 }
 
 int
-nspi_dissect_struct_MAPI_SETTINGS(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+nspi_dissect_struct_MAPI_SETTINGS(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
-	gboolean oldalign = di->no_align;
+	bool oldalign = di->no_align;
 	int old_offset;
 
-	di->no_align = TRUE;
+	di->no_align = true;
 
 	old_offset = offset;
 
@@ -7572,15 +7572,15 @@ nspi_dissect_struct_MAPI_SETTINGS(tvbuff_t *tvb _U_, int offset _U_, packet_info
 /* IDL: } */
 
 static int
-nspi_dissect_element_SPropTagArray_aulPropTag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropTagArray_aulPropTag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SPropTagArray_aulPropTag_, NDR_POINTER_UNIQUE, "Pointer to Aulproptag (MAPITAGS)",hf_nspi_SPropTagArray_aulPropTag);
+	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SPropTagArray_aulPropTag_, NDR_POINTER_UNIQUE, "Pointer to AulPropTag (MAPITAGS)",hf_nspi_SPropTagArray_aulPropTag);
 
 	return offset;
 }
 
 static int
-nspi_dissect_element_SPropTagArray_aulPropTag_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropTagArray_aulPropTag_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_ucvarray(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SPropTagArray_aulPropTag__);
 
@@ -7588,7 +7588,7 @@ nspi_dissect_element_SPropTagArray_aulPropTag_(tvbuff_t *tvb _U_, int offset _U_
 }
 
 static int
-nspi_dissect_element_SPropTagArray_aulPropTag__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropTagArray_aulPropTag__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_enum_MAPITAGS(tvb, offset, pinfo, tree, di, drep, hf_nspi_SPropTagArray_aulPropTag, 0);
 
@@ -7596,7 +7596,7 @@ nspi_dissect_element_SPropTagArray_aulPropTag__(tvbuff_t *tvb _U_, int offset _U
 }
 
 static int
-nspi_dissect_element_SPropTagArray_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropTagArray_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_SPropTagArray_cValues, 0);
 
@@ -7604,7 +7604,7 @@ nspi_dissect_element_SPropTagArray_cValues(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 int
-nspi_dissect_struct_SPropTagArray(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+nspi_dissect_struct_SPropTagArray(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -7641,7 +7641,7 @@ nspi_dissect_struct_SPropTagArray(tvbuff_t *tvb _U_, int offset _U_, packet_info
 /* IDL: } */
 
 static int
-nspi_dissect_element_instance_key_value(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_instance_key_value(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_instance_key_value_, NDR_POINTER_UNIQUE, "Pointer to Value (uint32)",hf_nspi_instance_key_value);
 
@@ -7649,7 +7649,7 @@ nspi_dissect_element_instance_key_value(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-nspi_dissect_element_instance_key_value_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_instance_key_value_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_ucvarray(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_instance_key_value__);
 
@@ -7657,7 +7657,7 @@ nspi_dissect_element_instance_key_value_(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-nspi_dissect_element_instance_key_value__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_instance_key_value__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_instance_key_value, 0);
 
@@ -7665,7 +7665,7 @@ nspi_dissect_element_instance_key_value__(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 static int
-nspi_dissect_element_instance_key_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_instance_key_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_instance_key_cValues, 0);
 
@@ -7673,7 +7673,7 @@ nspi_dissect_element_instance_key_cValues(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 int
-nspi_dissect_struct_instance_key(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+nspi_dissect_struct_instance_key(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -7711,7 +7711,7 @@ nspi_dissect_struct_instance_key(tvbuff_t *tvb _U_, int offset _U_, packet_info 
 /* IDL: } */
 
 static int
-nspi_dissect_element_MAPINAMEID_lpguid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_MAPINAMEID_lpguid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_MAPINAMEID_lpguid_, NDR_POINTER_UNIQUE, "Pointer to Lpguid (MAPIUID)",hf_nspi_MAPINAMEID_lpguid);
 
@@ -7719,7 +7719,7 @@ nspi_dissect_element_MAPINAMEID_lpguid(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-nspi_dissect_element_MAPINAMEID_lpguid_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_MAPINAMEID_lpguid_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_MAPIUID(tvb,offset,pinfo,tree,di,drep,hf_nspi_MAPINAMEID_lpguid,0);
 
@@ -7727,7 +7727,7 @@ nspi_dissect_element_MAPINAMEID_lpguid_(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-nspi_dissect_element_MAPINAMEID_ulKind(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_MAPINAMEID_ulKind(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_MAPINAMEID_ulKind, 0);
 
@@ -7735,7 +7735,7 @@ nspi_dissect_element_MAPINAMEID_ulKind(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-nspi_dissect_element_MAPINAMEID_lID(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_MAPINAMEID_lID(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_MAPINAMEID_lID, 0);
 
@@ -7743,7 +7743,7 @@ nspi_dissect_element_MAPINAMEID_lID(tvbuff_t *tvb _U_, int offset _U_, packet_in
 }
 
 int
-nspi_dissect_struct_MAPINAMEID(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+nspi_dissect_struct_MAPINAMEID(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -7791,9 +7791,9 @@ nspi_dissect_struct_MAPINAMEID(tvbuff_t *tvb _U_, int offset _U_, packet_info *p
 /* IDL: } */
 
 int
-nspi_dissect_enum_RestrictionType(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 *param _U_)
+nspi_dissect_enum_RestrictionType(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t *param _U_)
 {
-	guint32 parameter=0;
+	uint32_t parameter=0;
 	if (param) {
 		parameter = *param;
 	}
@@ -7812,7 +7812,7 @@ nspi_dissect_enum_RestrictionType(tvbuff_t *tvb _U_, int offset _U_, packet_info
 /* IDL: } */
 
 static int
-nspi_dissect_element_SPropertyRestriction_relop(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropertyRestriction_relop(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_SPropertyRestriction_relop, 0);
 
@@ -7820,7 +7820,7 @@ nspi_dissect_element_SPropertyRestriction_relop(tvbuff_t *tvb _U_, int offset _U
 }
 
 static int
-nspi_dissect_element_SPropertyRestriction_ulPropTag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropertyRestriction_ulPropTag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_enum_MAPITAGS(tvb, offset, pinfo, tree, di, drep, hf_nspi_SPropertyRestriction_ulPropTag, 0);
 
@@ -7828,15 +7828,15 @@ nspi_dissect_element_SPropertyRestriction_ulPropTag(tvbuff_t *tvb _U_, int offse
 }
 
 static int
-nspi_dissect_element_SPropertyRestriction_lpProp(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropertyRestriction_lpProp(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SPropertyRestriction_lpProp_, NDR_POINTER_UNIQUE, "Pointer to Lpprop (SPropValue)",hf_nspi_SPropertyRestriction_lpProp);
+	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SPropertyRestriction_lpProp_, NDR_POINTER_UNIQUE, "Pointer to LpProp (SPropValue)",hf_nspi_SPropertyRestriction_lpProp);
 
 	return offset;
 }
 
 static int
-nspi_dissect_element_SPropertyRestriction_lpProp_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropertyRestriction_lpProp_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_SPropValue(tvb,offset,pinfo,tree,di,drep,hf_nspi_SPropertyRestriction_lpProp,0);
 
@@ -7844,7 +7844,7 @@ nspi_dissect_element_SPropertyRestriction_lpProp_(tvbuff_t *tvb _U_, int offset 
 }
 
 int
-nspi_dissect_struct_SPropertyRestriction(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+nspi_dissect_struct_SPropertyRestriction(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -7883,7 +7883,7 @@ nspi_dissect_struct_SPropertyRestriction(tvbuff_t *tvb _U_, int offset _U_, pack
 /* IDL: } */
 
 static int
-nspi_dissect_element_SAndRestriction_cRes(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SAndRestriction_cRes(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_SAndRestriction_cRes, 0);
 
@@ -7891,15 +7891,15 @@ nspi_dissect_element_SAndRestriction_cRes(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 static int
-nspi_dissect_element_SAndRestriction_lpRes(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SAndRestriction_lpRes(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SAndRestriction_lpRes_, NDR_POINTER_UNIQUE, "Pointer to Lpres (SRestriction)",hf_nspi_SAndRestriction_lpRes);
+	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SAndRestriction_lpRes_, NDR_POINTER_UNIQUE, "Pointer to LpRes (SRestriction)",hf_nspi_SAndRestriction_lpRes);
 
 	return offset;
 }
 
 static int
-nspi_dissect_element_SAndRestriction_lpRes_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SAndRestriction_lpRes_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SAndRestriction_lpRes__);
 
@@ -7907,7 +7907,7 @@ nspi_dissect_element_SAndRestriction_lpRes_(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-nspi_dissect_element_SAndRestriction_lpRes__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SAndRestriction_lpRes__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_SRestriction(tvb,offset,pinfo,tree,di,drep,hf_nspi_SAndRestriction_lpRes,0);
 
@@ -7915,7 +7915,7 @@ nspi_dissect_element_SAndRestriction_lpRes__(tvbuff_t *tvb _U_, int offset _U_, 
 }
 
 int
-nspi_dissect_struct_SAndRestriction(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+nspi_dissect_struct_SAndRestriction(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -7952,7 +7952,7 @@ nspi_dissect_struct_SAndRestriction(tvbuff_t *tvb _U_, int offset _U_, packet_in
 /* IDL: } */
 
 static int
-nspi_dissect_element_SRestriction_CTR_resAnd(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SRestriction_CTR_resAnd(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_SAndRestriction(tvb,offset,pinfo,tree,di,drep,hf_nspi_SRestriction_CTR_resAnd,0);
 
@@ -7960,7 +7960,7 @@ nspi_dissect_element_SRestriction_CTR_resAnd(tvbuff_t *tvb _U_, int offset _U_, 
 }
 
 static int
-nspi_dissect_element_SRestriction_CTR_resProperty(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SRestriction_CTR_resProperty(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_SPropertyRestriction(tvb,offset,pinfo,tree,di,drep,hf_nspi_SRestriction_CTR_resProperty,0);
 
@@ -7968,12 +7968,12 @@ nspi_dissect_element_SRestriction_CTR_resProperty(tvbuff_t *tvb _U_, int offset 
 }
 
 static int
-nspi_dissect_SRestriction_CTR(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+nspi_dissect_SRestriction_CTR(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
 	int old_offset;
-	guint32 level;
+	uint32_t level;
 
 	old_offset = offset;
 	if (parent_tree) {
@@ -8004,7 +8004,7 @@ nspi_dissect_SRestriction_CTR(tvbuff_t *tvb _U_, int offset _U_, packet_info *pi
 /* IDL: } */
 
 static int
-nspi_dissect_element_SRestriction_rt(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, guint32 *rt)
+nspi_dissect_element_SRestriction_rt(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, uint32_t *rt)
 {
 	offset = nspi_dissect_enum_RestrictionType(tvb, offset, pinfo, tree, di, drep, hf_nspi_SRestriction_PTTYPE, rt);
 
@@ -8012,7 +8012,7 @@ nspi_dissect_element_SRestriction_rt(tvbuff_t *tvb _U_, int offset _U_, packet_i
 }
 
 static int
-nspi_dissect_element_SRestriction_res(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, guint32 *rt)
+nspi_dissect_element_SRestriction_res(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, uint32_t *rt)
 {
 	offset = nspi_dissect_SRestriction_CTR(tvb, offset, pinfo, tree, di, drep, hf_nspi_SRestriction_PTTYPE, *rt);
 
@@ -8020,9 +8020,9 @@ nspi_dissect_element_SRestriction_res(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 int
-nspi_dissect_struct_SRestriction(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+nspi_dissect_struct_SRestriction(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
-	guint32 rt = 0;
+	uint32_t rt = 0;
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
 	int old_offset;
@@ -8058,7 +8058,7 @@ nspi_dissect_struct_SRestriction(tvbuff_t *tvb _U_, int offset _U_, packet_info 
 /* IDL: } */
 
 static int
-nspi_dissect_element_SSortOrder_ulPropTag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SSortOrder_ulPropTag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_SSortOrder_ulPropTag, 0);
 
@@ -8066,7 +8066,7 @@ nspi_dissect_element_SSortOrder_ulPropTag(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 static int
-nspi_dissect_element_SSortOrder_ulOrder(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SSortOrder_ulOrder(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_SSortOrder_ulOrder, 0);
 
@@ -8074,7 +8074,7 @@ nspi_dissect_element_SSortOrder_ulOrder(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 int
-nspi_dissect_struct_SSortOrder(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+nspi_dissect_struct_SSortOrder(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -8113,7 +8113,7 @@ nspi_dissect_struct_SSortOrder(tvbuff_t *tvb _U_, int offset _U_, packet_info *p
 /* IDL: } */
 
 static int
-nspi_dissect_element_SSortOrderSet_cSorts(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SSortOrderSet_cSorts(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_SSortOrderSet_cSorts, 0);
 
@@ -8121,7 +8121,7 @@ nspi_dissect_element_SSortOrderSet_cSorts(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 static int
-nspi_dissect_element_SSortOrderSet_cCategories(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SSortOrderSet_cCategories(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_SSortOrderSet_cCategories, 0);
 
@@ -8129,7 +8129,7 @@ nspi_dissect_element_SSortOrderSet_cCategories(tvbuff_t *tvb _U_, int offset _U_
 }
 
 static int
-nspi_dissect_element_SSortOrderSet_cExpanded(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SSortOrderSet_cExpanded(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_SSortOrderSet_cExpanded, 0);
 
@@ -8137,15 +8137,15 @@ nspi_dissect_element_SSortOrderSet_cExpanded(tvbuff_t *tvb _U_, int offset _U_, 
 }
 
 static int
-nspi_dissect_element_SSortOrderSet_aSort(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SSortOrderSet_aSort(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SSortOrderSet_aSort_, NDR_POINTER_UNIQUE, "Pointer to Asort (SSortOrder)",hf_nspi_SSortOrderSet_aSort);
+	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SSortOrderSet_aSort_, NDR_POINTER_UNIQUE, "Pointer to ASort (SSortOrder)",hf_nspi_SSortOrderSet_aSort);
 
 	return offset;
 }
 
 static int
-nspi_dissect_element_SSortOrderSet_aSort_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SSortOrderSet_aSort_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SSortOrderSet_aSort__);
 
@@ -8153,7 +8153,7 @@ nspi_dissect_element_SSortOrderSet_aSort_(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 static int
-nspi_dissect_element_SSortOrderSet_aSort__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SSortOrderSet_aSort__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_SSortOrder(tvb,offset,pinfo,tree,di,drep,hf_nspi_SSortOrderSet_aSort,0);
 
@@ -8161,7 +8161,7 @@ nspi_dissect_element_SSortOrderSet_aSort__(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 int
-nspi_dissect_struct_SSortOrderSet(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+nspi_dissect_struct_SSortOrderSet(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -8201,7 +8201,7 @@ nspi_dissect_struct_SSortOrderSet(tvbuff_t *tvb _U_, int offset _U_, packet_info
 /* IDL: } */
 
 static int
-nspi_dissect_element_NAME_STRING_str(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NAME_STRING_str(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NAME_STRING_str_, NDR_POINTER_UNIQUE, "Pointer to Str (uint8)",hf_nspi_NAME_STRING_str);
 
@@ -8209,18 +8209,18 @@ nspi_dissect_element_NAME_STRING_str(tvbuff_t *tvb _U_, int offset _U_, packet_i
 }
 
 static int
-nspi_dissect_element_NAME_STRING_str_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NAME_STRING_str_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint8), hf_nspi_NAME_STRING_str, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint8_t), hf_nspi_NAME_STRING_str, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 int
-nspi_dissect_struct_NAME_STRING(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+nspi_dissect_struct_NAME_STRING(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -8275,7 +8275,6 @@ nspi_dissect_struct_NAME_STRING(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 /* IDL: 	PT_MV_APPTIME=0x1007, */
 /* IDL: 	PT_MV_I8=0x1014, */
 /* IDL: 	PT_MV_STRING8=0x101e, */
-/* IDL: 	PT_MV_TSTRING=0x101e, */
 /* IDL: 	PT_MV_UNICODE=0x101f, */
 /* IDL: 	PT_MV_SYSTIME=0x1040, */
 /* IDL: 	PT_MV_CLSID=0x1048, */
@@ -8283,9 +8282,9 @@ nspi_dissect_struct_NAME_STRING(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 /* IDL: } */
 
 int
-nspi_dissect_enum_property_types(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 *param _U_)
+nspi_dissect_enum_property_types(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t *param _U_)
 {
-	guint32 parameter=0;
+	uint32_t parameter=0;
 	if (param) {
 		parameter = *param;
 	}
@@ -8303,7 +8302,7 @@ nspi_dissect_enum_property_types(tvbuff_t *tvb _U_, int offset _U_, packet_info 
 /* IDL: } */
 
 static int
-nspi_dissect_element_SBinary_cb(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SBinary_cb(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_SBinary_cb, 0);
 
@@ -8311,7 +8310,7 @@ nspi_dissect_element_SBinary_cb(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 }
 
 static int
-nspi_dissect_element_SBinary_lpb(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SBinary_lpb(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SBinary_lpb_, NDR_POINTER_UNIQUE, "Pointer to Lpb (uint8)",hf_nspi_SBinary_lpb);
 
@@ -8319,7 +8318,7 @@ nspi_dissect_element_SBinary_lpb(tvbuff_t *tvb _U_, int offset _U_, packet_info 
 }
 
 static int
-nspi_dissect_element_SBinary_lpb_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SBinary_lpb_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SBinary_lpb__);
 
@@ -8327,7 +8326,7 @@ nspi_dissect_element_SBinary_lpb_(tvbuff_t *tvb _U_, int offset _U_, packet_info
 }
 
 static int
-nspi_dissect_element_SBinary_lpb__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SBinary_lpb__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint8(tvb, offset, pinfo, tree, di, drep, hf_nspi_SBinary_lpb, 0);
 
@@ -8335,7 +8334,7 @@ nspi_dissect_element_SBinary_lpb__(tvbuff_t *tvb _U_, int offset _U_, packet_inf
 }
 
 int
-nspi_dissect_struct_SBinary(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+nspi_dissect_struct_SBinary(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -8372,7 +8371,7 @@ nspi_dissect_struct_SBinary(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinf
 /* IDL: } */
 
 static int
-nspi_dissect_element_FILETIME_dwLowDateTime(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_FILETIME_dwLowDateTime(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_FILETIME_dwLowDateTime, 0);
 
@@ -8380,7 +8379,7 @@ nspi_dissect_element_FILETIME_dwLowDateTime(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-nspi_dissect_element_FILETIME_dwHighDateTime(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_FILETIME_dwHighDateTime(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_FILETIME_dwHighDateTime, 0);
 
@@ -8388,7 +8387,7 @@ nspi_dissect_element_FILETIME_dwHighDateTime(tvbuff_t *tvb _U_, int offset _U_, 
 }
 
 int
-nspi_dissect_struct_FILETIME(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+nspi_dissect_struct_FILETIME(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -8425,7 +8424,7 @@ nspi_dissect_struct_FILETIME(tvbuff_t *tvb _U_, int offset _U_, packet_info *pin
 /* IDL: } */
 
 static int
-nspi_dissect_element_SShortArray_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SShortArray_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_SShortArray_cValues, 0);
 
@@ -8433,7 +8432,7 @@ nspi_dissect_element_SShortArray_cValues(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-nspi_dissect_element_SShortArray_lpi(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SShortArray_lpi(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SShortArray_lpi_, NDR_POINTER_UNIQUE, "Pointer to Lpi (uint16)",hf_nspi_SShortArray_lpi);
 
@@ -8441,7 +8440,7 @@ nspi_dissect_element_SShortArray_lpi(tvbuff_t *tvb _U_, int offset _U_, packet_i
 }
 
 static int
-nspi_dissect_element_SShortArray_lpi_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SShortArray_lpi_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SShortArray_lpi__);
 
@@ -8449,7 +8448,7 @@ nspi_dissect_element_SShortArray_lpi_(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-nspi_dissect_element_SShortArray_lpi__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SShortArray_lpi__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint16(tvb, offset, pinfo, tree, di, drep, hf_nspi_SShortArray_lpi, 0);
 
@@ -8457,7 +8456,7 @@ nspi_dissect_element_SShortArray_lpi__(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 int
-nspi_dissect_struct_SShortArray(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+nspi_dissect_struct_SShortArray(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -8494,7 +8493,7 @@ nspi_dissect_struct_SShortArray(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 /* IDL: } */
 
 static int
-nspi_dissect_element_MV_LONG_STRUCT_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_MV_LONG_STRUCT_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_MV_LONG_STRUCT_cValues, 0);
 
@@ -8502,7 +8501,7 @@ nspi_dissect_element_MV_LONG_STRUCT_cValues(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-nspi_dissect_element_MV_LONG_STRUCT_lpl(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_MV_LONG_STRUCT_lpl(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_MV_LONG_STRUCT_lpl_, NDR_POINTER_UNIQUE, "Pointer to Lpl (uint32)",hf_nspi_MV_LONG_STRUCT_lpl);
 
@@ -8510,7 +8509,7 @@ nspi_dissect_element_MV_LONG_STRUCT_lpl(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-nspi_dissect_element_MV_LONG_STRUCT_lpl_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_MV_LONG_STRUCT_lpl_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_MV_LONG_STRUCT_lpl__);
 
@@ -8518,7 +8517,7 @@ nspi_dissect_element_MV_LONG_STRUCT_lpl_(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-nspi_dissect_element_MV_LONG_STRUCT_lpl__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_MV_LONG_STRUCT_lpl__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_MV_LONG_STRUCT_lpl, 0);
 
@@ -8526,7 +8525,7 @@ nspi_dissect_element_MV_LONG_STRUCT_lpl__(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 int
-nspi_dissect_struct_MV_LONG_STRUCT(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+nspi_dissect_struct_MV_LONG_STRUCT(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -8562,18 +8561,18 @@ nspi_dissect_struct_MV_LONG_STRUCT(tvbuff_t *tvb _U_, int offset _U_, packet_inf
 /* IDL: } */
 
 static int
-nspi_dissect_element_LPSTR_lppszA(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_LPSTR_lppszA(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, 1, hf_nspi_LPSTR_lppszA, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, 1, hf_nspi_LPSTR_lppszA, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 int
-nspi_dissect_struct_LPSTR(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+nspi_dissect_struct_LPSTR(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -8608,7 +8607,7 @@ nspi_dissect_struct_LPSTR(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo 
 /* IDL: } */
 
 static int
-nspi_dissect_element_SLPSTRArray_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SLPSTRArray_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_SLPSTRArray_cValues, 0);
 
@@ -8616,7 +8615,7 @@ nspi_dissect_element_SLPSTRArray_cValues(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-nspi_dissect_element_SLPSTRArray_strings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SLPSTRArray_strings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SLPSTRArray_strings_, NDR_POINTER_UNIQUE, "Pointer to Strings (LPSTR)",hf_nspi_SLPSTRArray_strings);
 
@@ -8624,7 +8623,7 @@ nspi_dissect_element_SLPSTRArray_strings(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-nspi_dissect_element_SLPSTRArray_strings_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SLPSTRArray_strings_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SLPSTRArray_strings__);
 
@@ -8632,7 +8631,7 @@ nspi_dissect_element_SLPSTRArray_strings_(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 static int
-nspi_dissect_element_SLPSTRArray_strings__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SLPSTRArray_strings__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SLPSTRArray_strings___, NDR_POINTER_UNIQUE, "Pointer to Strings (LPSTR)",hf_nspi_SLPSTRArray_strings);
 
@@ -8640,7 +8639,7 @@ nspi_dissect_element_SLPSTRArray_strings__(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-nspi_dissect_element_SLPSTRArray_strings___(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SLPSTRArray_strings___(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_LPSTR(tvb,offset,pinfo,tree,di,drep,hf_nspi_SLPSTRArray_strings,0);
 
@@ -8648,7 +8647,7 @@ nspi_dissect_element_SLPSTRArray_strings___(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 int
-nspi_dissect_struct_SLPSTRArray(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+nspi_dissect_struct_SLPSTRArray(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -8685,7 +8684,7 @@ nspi_dissect_struct_SLPSTRArray(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 /* IDL: } */
 
 static int
-nspi_dissect_element_SBinaryArray_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SBinaryArray_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_SBinaryArray_cValues, 0);
 
@@ -8693,7 +8692,7 @@ nspi_dissect_element_SBinaryArray_cValues(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 static int
-nspi_dissect_element_SBinaryArray_lpbin(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SBinaryArray_lpbin(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SBinaryArray_lpbin_, NDR_POINTER_UNIQUE, "Pointer to Lpbin (SBinary)",hf_nspi_SBinaryArray_lpbin);
 
@@ -8701,7 +8700,7 @@ nspi_dissect_element_SBinaryArray_lpbin(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-nspi_dissect_element_SBinaryArray_lpbin_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SBinaryArray_lpbin_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SBinaryArray_lpbin__);
 
@@ -8709,7 +8708,7 @@ nspi_dissect_element_SBinaryArray_lpbin_(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-nspi_dissect_element_SBinaryArray_lpbin__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SBinaryArray_lpbin__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_SBinary(tvb,offset,pinfo,tree,di,drep,hf_nspi_SBinaryArray_lpbin,0);
 
@@ -8717,7 +8716,7 @@ nspi_dissect_element_SBinaryArray_lpbin__(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 int
-nspi_dissect_struct_SBinaryArray(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+nspi_dissect_struct_SBinaryArray(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -8754,7 +8753,7 @@ nspi_dissect_struct_SBinaryArray(tvbuff_t *tvb _U_, int offset _U_, packet_info 
 /* IDL: } */
 
 static int
-nspi_dissect_element_SGuidArray_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SGuidArray_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_SGuidArray_cValues, 0);
 
@@ -8762,7 +8761,7 @@ nspi_dissect_element_SGuidArray_cValues(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-nspi_dissect_element_SGuidArray_lpguid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SGuidArray_lpguid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SGuidArray_lpguid_, NDR_POINTER_UNIQUE, "Pointer to Lpguid (uint32)",hf_nspi_SGuidArray_lpguid);
 
@@ -8770,7 +8769,7 @@ nspi_dissect_element_SGuidArray_lpguid(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-nspi_dissect_element_SGuidArray_lpguid_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SGuidArray_lpguid_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SGuidArray_lpguid__);
 
@@ -8778,7 +8777,7 @@ nspi_dissect_element_SGuidArray_lpguid_(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-nspi_dissect_element_SGuidArray_lpguid__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SGuidArray_lpguid__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_SGuidArray_lpguid, 0);
 
@@ -8786,14 +8785,14 @@ nspi_dissect_element_SGuidArray_lpguid__(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 int
-nspi_dissect_struct_SGuidArray(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+nspi_dissect_struct_SGuidArray(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
-	gboolean oldalign = di->no_align;
+	bool oldalign = di->no_align;
 	int old_offset;
 
-	di->no_align = TRUE;
+	di->no_align = true;
 
 	old_offset = offset;
 
@@ -8822,7 +8821,7 @@ nspi_dissect_struct_SGuidArray(tvbuff_t *tvb _U_, int offset _U_, packet_info *p
 /* IDL: } */
 
 static int
-nspi_dissect_element_MV_UNICODE_STRUCT_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_MV_UNICODE_STRUCT_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_MV_UNICODE_STRUCT_cValues, 0);
 
@@ -8830,7 +8829,7 @@ nspi_dissect_element_MV_UNICODE_STRUCT_cValues(tvbuff_t *tvb _U_, int offset _U_
 }
 
 static int
-nspi_dissect_element_MV_UNICODE_STRUCT_lpi(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_MV_UNICODE_STRUCT_lpi(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_MV_UNICODE_STRUCT_lpi_, NDR_POINTER_UNIQUE, "Pointer to Lpi (uint32)",hf_nspi_MV_UNICODE_STRUCT_lpi);
 
@@ -8838,7 +8837,7 @@ nspi_dissect_element_MV_UNICODE_STRUCT_lpi(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-nspi_dissect_element_MV_UNICODE_STRUCT_lpi_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_MV_UNICODE_STRUCT_lpi_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_MV_UNICODE_STRUCT_lpi__);
 
@@ -8846,7 +8845,7 @@ nspi_dissect_element_MV_UNICODE_STRUCT_lpi_(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-nspi_dissect_element_MV_UNICODE_STRUCT_lpi__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_MV_UNICODE_STRUCT_lpi__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_MV_UNICODE_STRUCT_lpi, 0);
 
@@ -8854,7 +8853,7 @@ nspi_dissect_element_MV_UNICODE_STRUCT_lpi__(tvbuff_t *tvb _U_, int offset _U_, 
 }
 
 int
-nspi_dissect_struct_MV_UNICODE_STRUCT(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+nspi_dissect_struct_MV_UNICODE_STRUCT(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -8891,7 +8890,7 @@ nspi_dissect_struct_MV_UNICODE_STRUCT(tvbuff_t *tvb _U_, int offset _U_, packet_
 /* IDL: } */
 
 static int
-nspi_dissect_element_SDateTimeArray_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SDateTimeArray_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_SDateTimeArray_cValues, 0);
 
@@ -8899,7 +8898,7 @@ nspi_dissect_element_SDateTimeArray_cValues(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-nspi_dissect_element_SDateTimeArray_lpft(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SDateTimeArray_lpft(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SDateTimeArray_lpft_, NDR_POINTER_UNIQUE, "Pointer to Lpft (FILETIME)",hf_nspi_SDateTimeArray_lpft);
 
@@ -8907,7 +8906,7 @@ nspi_dissect_element_SDateTimeArray_lpft(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-nspi_dissect_element_SDateTimeArray_lpft_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SDateTimeArray_lpft_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SDateTimeArray_lpft__);
 
@@ -8915,7 +8914,7 @@ nspi_dissect_element_SDateTimeArray_lpft_(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 static int
-nspi_dissect_element_SDateTimeArray_lpft__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SDateTimeArray_lpft__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_FILETIME(tvb,offset,pinfo,tree,di,drep,hf_nspi_SDateTimeArray_lpft,0);
 
@@ -8923,7 +8922,7 @@ nspi_dissect_element_SDateTimeArray_lpft__(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 int
-nspi_dissect_struct_SDateTimeArray(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+nspi_dissect_struct_SDateTimeArray(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -8976,7 +8975,7 @@ nspi_dissect_struct_SDateTimeArray(tvbuff_t *tvb _U_, int offset _U_, packet_inf
 /* IDL: } */
 
 static int
-nspi_dissect_element_SPropValue_CTR_i(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropValue_CTR_i(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint16(tvb, offset, pinfo, tree, di, drep, hf_nspi_SPropValue_CTR_i, 0);
 
@@ -8984,7 +8983,7 @@ nspi_dissect_element_SPropValue_CTR_i(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-nspi_dissect_element_SPropValue_CTR_l(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropValue_CTR_l(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_SPropValue_CTR_l, 0);
 
@@ -8992,7 +8991,7 @@ nspi_dissect_element_SPropValue_CTR_l(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-nspi_dissect_element_SPropValue_CTR_b(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropValue_CTR_b(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint16(tvb, offset, pinfo, tree, di, drep, hf_nspi_SPropValue_CTR_b, 0);
 
@@ -9000,26 +8999,26 @@ nspi_dissect_element_SPropValue_CTR_b(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-nspi_dissect_element_SPropValue_CTR_lpszA(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropValue_CTR_lpszA(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SPropValue_CTR_lpszA_, NDR_POINTER_UNIQUE, "Pointer to Lpsza (uint8)",hf_nspi_SPropValue_CTR_lpszA);
+	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SPropValue_CTR_lpszA_, NDR_POINTER_UNIQUE, "Pointer to LpszA (uint8)",hf_nspi_SPropValue_CTR_lpszA);
 
 	return offset;
 }
 
 static int
-nspi_dissect_element_SPropValue_CTR_lpszA_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropValue_CTR_lpszA_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint8), hf_nspi_SPropValue_CTR_lpszA, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint8_t), hf_nspi_SPropValue_CTR_lpszA, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-nspi_dissect_element_SPropValue_CTR_bin(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropValue_CTR_bin(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_SBinary(tvb,offset,pinfo,tree,di,drep,hf_nspi_SPropValue_CTR_bin,0);
 
@@ -9027,26 +9026,26 @@ nspi_dissect_element_SPropValue_CTR_bin(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-nspi_dissect_element_SPropValue_CTR_lpszW(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropValue_CTR_lpszW(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SPropValue_CTR_lpszW_, NDR_POINTER_UNIQUE, "Pointer to Lpszw (uint16)",hf_nspi_SPropValue_CTR_lpszW);
+	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SPropValue_CTR_lpszW_, NDR_POINTER_UNIQUE, "Pointer to LpszW (uint16)",hf_nspi_SPropValue_CTR_lpszW);
 
 	return offset;
 }
 
 static int
-nspi_dissect_element_SPropValue_CTR_lpszW_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropValue_CTR_lpszW_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_nspi_SPropValue_CTR_lpszW, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_nspi_SPropValue_CTR_lpszW, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-nspi_dissect_element_SPropValue_CTR_lpguid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropValue_CTR_lpguid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SPropValue_CTR_lpguid_, NDR_POINTER_UNIQUE, "Pointer to Lpguid (MAPIUID)",hf_nspi_SPropValue_CTR_lpguid);
 
@@ -9054,7 +9053,7 @@ nspi_dissect_element_SPropValue_CTR_lpguid(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-nspi_dissect_element_SPropValue_CTR_lpguid_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropValue_CTR_lpguid_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_MAPIUID(tvb,offset,pinfo,tree,di,drep,hf_nspi_SPropValue_CTR_lpguid,0);
 
@@ -9062,7 +9061,7 @@ nspi_dissect_element_SPropValue_CTR_lpguid_(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-nspi_dissect_element_SPropValue_CTR_ft(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropValue_CTR_ft(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_FILETIME(tvb,offset,pinfo,tree,di,drep,hf_nspi_SPropValue_CTR_ft,0);
 
@@ -9070,7 +9069,7 @@ nspi_dissect_element_SPropValue_CTR_ft(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-nspi_dissect_element_SPropValue_CTR_err(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropValue_CTR_err(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_enum_MAPISTATUS(tvb, offset, pinfo, tree, di, drep, hf_nspi_SPropValue_CTR_err, 0);
 
@@ -9078,7 +9077,7 @@ nspi_dissect_element_SPropValue_CTR_err(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-nspi_dissect_element_SPropValue_CTR_MVi(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropValue_CTR_MVi(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_SShortArray(tvb,offset,pinfo,tree,di,drep,hf_nspi_SPropValue_CTR_MVi,0);
 
@@ -9086,7 +9085,7 @@ nspi_dissect_element_SPropValue_CTR_MVi(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-nspi_dissect_element_SPropValue_CTR_MVl(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropValue_CTR_MVl(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_MV_LONG_STRUCT(tvb,offset,pinfo,tree,di,drep,hf_nspi_SPropValue_CTR_MVl,0);
 
@@ -9094,7 +9093,7 @@ nspi_dissect_element_SPropValue_CTR_MVl(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-nspi_dissect_element_SPropValue_CTR_MVszA(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropValue_CTR_MVszA(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_SLPSTRArray(tvb,offset,pinfo,tree,di,drep,hf_nspi_SPropValue_CTR_MVszA,0);
 
@@ -9102,7 +9101,7 @@ nspi_dissect_element_SPropValue_CTR_MVszA(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 static int
-nspi_dissect_element_SPropValue_CTR_MVbin(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropValue_CTR_MVbin(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_SBinaryArray(tvb,offset,pinfo,tree,di,drep,hf_nspi_SPropValue_CTR_MVbin,0);
 
@@ -9110,7 +9109,7 @@ nspi_dissect_element_SPropValue_CTR_MVbin(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 static int
-nspi_dissect_element_SPropValue_CTR_MVguid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropValue_CTR_MVguid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_SGuidArray(tvb,offset,pinfo,tree,di,drep,hf_nspi_SPropValue_CTR_MVguid,0);
 
@@ -9118,7 +9117,7 @@ nspi_dissect_element_SPropValue_CTR_MVguid(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-nspi_dissect_element_SPropValue_CTR_MVszW(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropValue_CTR_MVszW(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_MV_UNICODE_STRUCT(tvb,offset,pinfo,tree,di,drep,hf_nspi_SPropValue_CTR_MVszW,0);
 
@@ -9126,7 +9125,7 @@ nspi_dissect_element_SPropValue_CTR_MVszW(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 static int
-nspi_dissect_element_SPropValue_CTR_MVft(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropValue_CTR_MVft(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_SDateTimeArray(tvb,offset,pinfo,tree,di,drep,hf_nspi_SPropValue_CTR_MVft,0);
 
@@ -9134,7 +9133,7 @@ nspi_dissect_element_SPropValue_CTR_MVft(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-nspi_dissect_element_SPropValue_CTR_null(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropValue_CTR_null(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_SPropValue_CTR_null, 0);
 
@@ -9142,7 +9141,7 @@ nspi_dissect_element_SPropValue_CTR_null(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-nspi_dissect_element_SPropValue_CTR_object(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropValue_CTR_object(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_SPropValue_CTR_object, 0);
 
@@ -9150,12 +9149,12 @@ nspi_dissect_element_SPropValue_CTR_object(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-nspi_dissect_SPropValue_CTR(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+nspi_dissect_SPropValue_CTR(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
 	int old_offset;
-	guint32 level;
+	uint32_t level;
 
 	old_offset = offset;
 	if (parent_tree) {
@@ -9251,7 +9250,7 @@ nspi_dissect_SPropValue_CTR(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinf
 /* IDL: } */
 
 static int
-nspi_dissect_element_SPropValue_ulPropTag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropValue_ulPropTag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_enum_MAPITAGS(tvb, offset, pinfo, tree, di, drep, hf_nspi_SPropValue_ulPropTag, 0);
 
@@ -9259,7 +9258,7 @@ nspi_dissect_element_SPropValue_ulPropTag(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 static int
-nspi_dissect_element_SPropValue_dwAlignPad(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropValue_dwAlignPad(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_SPropValue_dwAlignPad, 0);
 
@@ -9267,7 +9266,7 @@ nspi_dissect_element_SPropValue_dwAlignPad(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-nspi_dissect_element_SPropValue_value(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SPropValue_value(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_SPropValue_CTR(tvb, offset, pinfo, tree, di, drep, hf_nspi_property_type, 0);
 
@@ -9275,7 +9274,7 @@ nspi_dissect_element_SPropValue_value(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 int
-nspi_dissect_struct_SPropValue(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+nspi_dissect_struct_SPropValue(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -9315,7 +9314,7 @@ nspi_dissect_struct_SPropValue(tvbuff_t *tvb _U_, int offset _U_, packet_info *p
 /* IDL: } */
 
 static int
-nspi_dissect_element_SRow_ulAdrEntryPad(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SRow_ulAdrEntryPad(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_SRow_ulAdrEntryPad, 0);
 
@@ -9323,7 +9322,7 @@ nspi_dissect_element_SRow_ulAdrEntryPad(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-nspi_dissect_element_SRow_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SRow_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_SRow_cValues, 0);
 
@@ -9331,15 +9330,15 @@ nspi_dissect_element_SRow_cValues(tvbuff_t *tvb _U_, int offset _U_, packet_info
 }
 
 static int
-nspi_dissect_element_SRow_lpProps(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SRow_lpProps(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SRow_lpProps_, NDR_POINTER_UNIQUE, "Pointer to Lpprops (SPropValue)",hf_nspi_SRow_lpProps);
+	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SRow_lpProps_, NDR_POINTER_UNIQUE, "Pointer to LpProps (SPropValue)",hf_nspi_SRow_lpProps);
 
 	return offset;
 }
 
 static int
-nspi_dissect_element_SRow_lpProps_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SRow_lpProps_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SRow_lpProps__);
 
@@ -9347,7 +9346,7 @@ nspi_dissect_element_SRow_lpProps_(tvbuff_t *tvb _U_, int offset _U_, packet_inf
 }
 
 static int
-nspi_dissect_element_SRow_lpProps__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SRow_lpProps__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_SPropValue(tvb,offset,pinfo,tree,di,drep,hf_nspi_SRow_lpProps,0);
 
@@ -9355,7 +9354,7 @@ nspi_dissect_element_SRow_lpProps__(tvbuff_t *tvb _U_, int offset _U_, packet_in
 }
 
 int
-nspi_dissect_struct_SRow(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+nspi_dissect_struct_SRow(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -9394,7 +9393,7 @@ nspi_dissect_struct_SRow(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _
 /* IDL: } */
 
 static int
-nspi_dissect_element_SRowSet_cRows(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SRowSet_cRows(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_SRowSet_cRows, 0);
 
@@ -9402,7 +9401,7 @@ nspi_dissect_element_SRowSet_cRows(tvbuff_t *tvb _U_, int offset _U_, packet_inf
 }
 
 static int
-nspi_dissect_element_SRowSet_aRow(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SRowSet_aRow(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_SRowSet_aRow_);
 
@@ -9410,7 +9409,7 @@ nspi_dissect_element_SRowSet_aRow(tvbuff_t *tvb _U_, int offset _U_, packet_info
 }
 
 static int
-nspi_dissect_element_SRowSet_aRow_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_SRowSet_aRow_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_SRow(tvb,offset,pinfo,tree,di,drep,hf_nspi_SRowSet_aRow,0);
 
@@ -9418,7 +9417,7 @@ nspi_dissect_element_SRowSet_aRow_(tvbuff_t *tvb _U_, int offset _U_, packet_inf
 }
 
 int
-nspi_dissect_struct_SRowSet(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+nspi_dissect_struct_SRowSet(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -9449,7 +9448,7 @@ nspi_dissect_struct_SRowSet(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinf
 }
 
 static int
-nspi_dissect_element_NspiBind_unknown(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiBind_unknown(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_NspiBind_unknown, 0);
 
@@ -9457,7 +9456,7 @@ nspi_dissect_element_NspiBind_unknown(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-nspi_dissect_element_NspiBind_settings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiBind_settings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiBind_settings_, NDR_POINTER_REF, "Pointer to Settings (MAPI_SETTINGS)",hf_nspi_NspiBind_settings);
 
@@ -9465,7 +9464,7 @@ nspi_dissect_element_NspiBind_settings(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-nspi_dissect_element_NspiBind_settings_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiBind_settings_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_MAPI_SETTINGS(tvb,offset,pinfo,tree,di,drep,hf_nspi_NspiBind_settings,0);
 
@@ -9473,7 +9472,7 @@ nspi_dissect_element_NspiBind_settings_(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-nspi_dissect_element_NspiBind_mapiuid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiBind_mapiuid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiBind_mapiuid_, NDR_POINTER_UNIQUE, "Pointer to Mapiuid (GUID)",hf_nspi_NspiBind_mapiuid);
 
@@ -9481,7 +9480,7 @@ nspi_dissect_element_NspiBind_mapiuid(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-nspi_dissect_element_NspiBind_mapiuid_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiBind_mapiuid_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_uuid_t(tvb, offset, pinfo, tree, di, drep, hf_nspi_NspiBind_mapiuid, NULL);
 
@@ -9489,7 +9488,7 @@ nspi_dissect_element_NspiBind_mapiuid_(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-nspi_dissect_element_NspiBind_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiBind_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiBind_handle_, NDR_POINTER_REF, "Pointer to Handle (policy_handle)",hf_nspi_handle);
 
@@ -9497,7 +9496,7 @@ nspi_dissect_element_NspiBind_handle(tvbuff_t *tvb _U_, int offset _U_, packet_i
 }
 
 static int
-nspi_dissect_element_NspiBind_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiBind_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_policy_hnd(tvb, offset, pinfo, tree, di, drep, hf_nspi_handle, 0x0001);
 
@@ -9512,9 +9511,9 @@ nspi_dissect_element_NspiBind_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_
 /* IDL: ); */
 
 static int
-nspi_dissect_NspiBind_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiBind_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="NspiBind";
 	offset = nspi_dissect_element_NspiBind_mapiuid(tvb, offset, pinfo, tree, di, drep);
@@ -9525,13 +9524,13 @@ nspi_dissect_NspiBind_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *p
 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_MAPISTATUS_status, &status);
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Status: %s", val_to_str(status, nspi_MAPISTATUS_vals, "Unknown MAPISTATUS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Status: %s", val_to_str(pinfo->pool, status, nspi_MAPISTATUS_vals, "Unknown MAPISTATUS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-nspi_dissect_NspiBind_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiBind_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiBind";
 	offset = nspi_dissect_element_NspiBind_unknown(tvb, offset, pinfo, tree, di, drep);
@@ -9544,7 +9543,7 @@ nspi_dissect_NspiBind_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pi
 }
 
 static int
-nspi_dissect_element_NspiUnbind_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiUnbind_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiUnbind_handle_, NDR_POINTER_REF, "Pointer to Handle (policy_handle)",hf_nspi_handle);
 
@@ -9552,7 +9551,7 @@ nspi_dissect_element_NspiUnbind_handle(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-nspi_dissect_element_NspiUnbind_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiUnbind_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_policy_hnd(tvb, offset, pinfo, tree, di, drep, hf_nspi_handle, 0x0002);
 
@@ -9560,7 +9559,7 @@ nspi_dissect_element_NspiUnbind_handle_(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-nspi_dissect_element_NspiUnbind_status(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiUnbind_status(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_NspiUnbind_status, 0);
 
@@ -9573,9 +9572,9 @@ nspi_dissect_element_NspiUnbind_status(tvbuff_t *tvb _U_, int offset _U_, packet
 /* IDL: ); */
 
 static int
-nspi_dissect_NspiUnbind_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiUnbind_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="NspiUnbind";
 	offset = nspi_dissect_element_NspiUnbind_handle(tvb, offset, pinfo, tree, di, drep);
@@ -9583,13 +9582,13 @@ nspi_dissect_NspiUnbind_response(tvbuff_t *tvb _U_, int offset _U_, packet_info 
 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_MAPISTATUS_status, &status);
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Status: %s", val_to_str(status, nspi_MAPISTATUS_vals, "Unknown MAPISTATUS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Status: %s", val_to_str(pinfo->pool, status, nspi_MAPISTATUS_vals, "Unknown MAPISTATUS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-nspi_dissect_NspiUnbind_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiUnbind_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiUnbind";
 	offset = nspi_dissect_element_NspiUnbind_handle(tvb, offset, pinfo, tree, di, drep);
@@ -9604,21 +9603,21 @@ nspi_dissect_NspiUnbind_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 /* IDL: ); */
 
 static int
-nspi_dissect_NspiUpdateStat_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiUpdateStat_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiUpdateStat";
 	return offset;
 }
 
 static int
-nspi_dissect_NspiUpdateStat_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiUpdateStat_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiUpdateStat";
 	return offset;
 }
 
 static int
-nspi_dissect_element_NspiQueryRows_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiQueryRows_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiQueryRows_handle_, NDR_POINTER_REF, "Pointer to Handle (policy_handle)",hf_nspi_handle);
 
@@ -9626,7 +9625,7 @@ nspi_dissect_element_NspiQueryRows_handle(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 static int
-nspi_dissect_element_NspiQueryRows_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiQueryRows_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_policy_hnd(tvb, offset, pinfo, tree, di, drep, hf_nspi_handle, 0);
 
@@ -9634,7 +9633,7 @@ nspi_dissect_element_NspiQueryRows_handle_(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-nspi_dissect_element_NspiQueryRows_flag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiQueryRows_flag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_NspiQueryRows_flag, 0);
 
@@ -9642,7 +9641,7 @@ nspi_dissect_element_NspiQueryRows_flag(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-nspi_dissect_element_NspiQueryRows_settings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiQueryRows_settings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiQueryRows_settings_, NDR_POINTER_REF, "Pointer to Settings (MAPI_SETTINGS)",hf_nspi_NspiQueryRows_settings);
 
@@ -9650,7 +9649,7 @@ nspi_dissect_element_NspiQueryRows_settings(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-nspi_dissect_element_NspiQueryRows_settings_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiQueryRows_settings_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_MAPI_SETTINGS(tvb,offset,pinfo,tree,di,drep,hf_nspi_NspiQueryRows_settings,0);
 
@@ -9658,7 +9657,7 @@ nspi_dissect_element_NspiQueryRows_settings_(tvbuff_t *tvb _U_, int offset _U_, 
 }
 
 static int
-nspi_dissect_element_NspiQueryRows_lRows(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiQueryRows_lRows(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_NspiQueryRows_lRows, 0);
 
@@ -9666,7 +9665,7 @@ nspi_dissect_element_NspiQueryRows_lRows(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-nspi_dissect_element_NspiQueryRows_instance_key(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiQueryRows_instance_key(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiQueryRows_instance_key_, NDR_POINTER_UNIQUE, "Pointer to Instance Key (uint32)",hf_nspi_NspiQueryRows_instance_key);
 
@@ -9674,7 +9673,7 @@ nspi_dissect_element_NspiQueryRows_instance_key(tvbuff_t *tvb _U_, int offset _U
 }
 
 static int
-nspi_dissect_element_NspiQueryRows_instance_key_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiQueryRows_instance_key_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiQueryRows_instance_key__);
 
@@ -9682,7 +9681,7 @@ nspi_dissect_element_NspiQueryRows_instance_key_(tvbuff_t *tvb _U_, int offset _
 }
 
 static int
-nspi_dissect_element_NspiQueryRows_instance_key__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiQueryRows_instance_key__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_NspiQueryRows_instance_key, 0);
 
@@ -9690,7 +9689,7 @@ nspi_dissect_element_NspiQueryRows_instance_key__(tvbuff_t *tvb _U_, int offset 
 }
 
 static int
-nspi_dissect_element_NspiQueryRows_unknown(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiQueryRows_unknown(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_NspiQueryRows_unknown, 0);
 
@@ -9698,15 +9697,15 @@ nspi_dissect_element_NspiQueryRows_unknown(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-nspi_dissect_element_NspiQueryRows_REQ_properties(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiQueryRows_REQ_properties(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiQueryRows_REQ_properties_, NDR_POINTER_REF, "Pointer to Req Properties (SPropTagArray)",hf_nspi_NspiQueryRows_REQ_properties);
+	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiQueryRows_REQ_properties_, NDR_POINTER_REF, "Pointer to REQ Properties (SPropTagArray)",hf_nspi_NspiQueryRows_REQ_properties);
 
 	return offset;
 }
 
 static int
-nspi_dissect_element_NspiQueryRows_REQ_properties_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiQueryRows_REQ_properties_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_SPropTagArray(tvb,offset,pinfo,tree,di,drep,hf_nspi_NspiQueryRows_REQ_properties,0);
 
@@ -9714,23 +9713,23 @@ nspi_dissect_element_NspiQueryRows_REQ_properties_(tvbuff_t *tvb _U_, int offset
 }
 
 static int
-nspi_dissect_element_NspiQueryRows_RowSet(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiQueryRows_RowSet(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiQueryRows_RowSet_, NDR_POINTER_REF, "Pointer to Rowset (SRowSet)",hf_nspi_NspiQueryRows_RowSet);
+	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiQueryRows_RowSet_, NDR_POINTER_REF, "Pointer to RowSet (SRowSet)",hf_nspi_NspiQueryRows_RowSet);
 
 	return offset;
 }
 
 static int
-nspi_dissect_element_NspiQueryRows_RowSet_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiQueryRows_RowSet_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiQueryRows_RowSet__, NDR_POINTER_UNIQUE, "Pointer to Rowset (SRowSet)",hf_nspi_NspiQueryRows_RowSet);
+	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiQueryRows_RowSet__, NDR_POINTER_UNIQUE, "Pointer to RowSet (SRowSet)",hf_nspi_NspiQueryRows_RowSet);
 
 	return offset;
 }
 
 static int
-nspi_dissect_element_NspiQueryRows_RowSet__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiQueryRows_RowSet__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_SRowSet(tvb,offset,pinfo,tree,di,drep,hf_nspi_NspiQueryRows_RowSet,0);
 
@@ -9749,9 +9748,9 @@ nspi_dissect_element_NspiQueryRows_RowSet__(tvbuff_t *tvb _U_, int offset _U_, p
 /* IDL: ); */
 
 static int
-nspi_dissect_NspiQueryRows_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiQueryRows_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="NspiQueryRows";
 	offset = nspi_dissect_element_NspiQueryRows_settings(tvb, offset, pinfo, tree, di, drep);
@@ -9762,13 +9761,13 @@ nspi_dissect_NspiQueryRows_response(tvbuff_t *tvb _U_, int offset _U_, packet_in
 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_MAPISTATUS_status, &status);
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Status: %s", val_to_str(status, nspi_MAPISTATUS_vals, "Unknown MAPISTATUS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Status: %s", val_to_str(pinfo->pool, status, nspi_MAPISTATUS_vals, "Unknown MAPISTATUS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-nspi_dissect_NspiQueryRows_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiQueryRows_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiQueryRows";
 	offset = nspi_dissect_element_NspiQueryRows_handle(tvb, offset, pinfo, tree, di, drep);
@@ -9793,21 +9792,21 @@ nspi_dissect_NspiQueryRows_request(tvbuff_t *tvb _U_, int offset _U_, packet_inf
 /* IDL: ); */
 
 static int
-nspi_dissect_NspiSeekEntries_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiSeekEntries_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiSeekEntries";
 	return offset;
 }
 
 static int
-nspi_dissect_NspiSeekEntries_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiSeekEntries_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiSeekEntries";
 	return offset;
 }
 
 static int
-nspi_dissect_element_NspiGetMatches_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetMatches_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiGetMatches_handle_, NDR_POINTER_REF, "Pointer to Handle (policy_handle)",hf_nspi_handle);
 
@@ -9815,7 +9814,7 @@ nspi_dissect_element_NspiGetMatches_handle(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-nspi_dissect_element_NspiGetMatches_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetMatches_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_policy_hnd(tvb, offset, pinfo, tree, di, drep, hf_nspi_handle, 0);
 
@@ -9823,7 +9822,7 @@ nspi_dissect_element_NspiGetMatches_handle_(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-nspi_dissect_element_NspiGetMatches_unknown1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetMatches_unknown1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_NspiGetMatches_unknown1, 0);
 
@@ -9831,7 +9830,7 @@ nspi_dissect_element_NspiGetMatches_unknown1(tvbuff_t *tvb _U_, int offset _U_, 
 }
 
 static int
-nspi_dissect_element_NspiGetMatches_settings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetMatches_settings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiGetMatches_settings_, NDR_POINTER_REF, "Pointer to Settings (MAPI_SETTINGS)",hf_nspi_NspiGetMatches_settings);
 
@@ -9839,7 +9838,7 @@ nspi_dissect_element_NspiGetMatches_settings(tvbuff_t *tvb _U_, int offset _U_, 
 }
 
 static int
-nspi_dissect_element_NspiGetMatches_settings_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetMatches_settings_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_MAPI_SETTINGS(tvb,offset,pinfo,tree,di,drep,hf_nspi_NspiGetMatches_settings,0);
 
@@ -9847,15 +9846,15 @@ nspi_dissect_element_NspiGetMatches_settings_(tvbuff_t *tvb _U_, int offset _U_,
 }
 
 static int
-nspi_dissect_element_NspiGetMatches_PropTagArray(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetMatches_PropTagArray(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiGetMatches_PropTagArray_, NDR_POINTER_UNIQUE, "Pointer to Proptagarray (SPropTagArray)",hf_nspi_NspiGetMatches_PropTagArray);
+	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiGetMatches_PropTagArray_, NDR_POINTER_UNIQUE, "Pointer to PropTagArray (SPropTagArray)",hf_nspi_NspiGetMatches_PropTagArray);
 
 	return offset;
 }
 
 static int
-nspi_dissect_element_NspiGetMatches_PropTagArray_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetMatches_PropTagArray_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_SPropTagArray(tvb,offset,pinfo,tree,di,drep,hf_nspi_NspiGetMatches_PropTagArray,0);
 
@@ -9863,7 +9862,7 @@ nspi_dissect_element_NspiGetMatches_PropTagArray_(tvbuff_t *tvb _U_, int offset 
 }
 
 static int
-nspi_dissect_element_NspiGetMatches_unknown2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetMatches_unknown2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_NspiGetMatches_unknown2, 0);
 
@@ -9871,7 +9870,7 @@ nspi_dissect_element_NspiGetMatches_unknown2(tvbuff_t *tvb _U_, int offset _U_, 
 }
 
 static int
-nspi_dissect_element_NspiGetMatches_restrictions(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetMatches_restrictions(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiGetMatches_restrictions_, NDR_POINTER_UNIQUE, "Pointer to Restrictions (SRestriction)",hf_nspi_NspiGetMatches_restrictions);
 
@@ -9879,7 +9878,7 @@ nspi_dissect_element_NspiGetMatches_restrictions(tvbuff_t *tvb _U_, int offset _
 }
 
 static int
-nspi_dissect_element_NspiGetMatches_restrictions_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetMatches_restrictions_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_SRestriction(tvb,offset,pinfo,tree,di,drep,hf_nspi_NspiGetMatches_restrictions,0);
 
@@ -9887,7 +9886,7 @@ nspi_dissect_element_NspiGetMatches_restrictions_(tvbuff_t *tvb _U_, int offset 
 }
 
 static int
-nspi_dissect_element_NspiGetMatches_unknown3(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetMatches_unknown3(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_NspiGetMatches_unknown3, 0);
 
@@ -9895,7 +9894,7 @@ nspi_dissect_element_NspiGetMatches_unknown3(tvbuff_t *tvb _U_, int offset _U_, 
 }
 
 static int
-nspi_dissect_element_NspiGetMatches_instance_key(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetMatches_instance_key(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiGetMatches_instance_key_, NDR_POINTER_REF, "Pointer to Instance Key (instance_key)",hf_nspi_NspiGetMatches_instance_key);
 
@@ -9903,7 +9902,7 @@ nspi_dissect_element_NspiGetMatches_instance_key(tvbuff_t *tvb _U_, int offset _
 }
 
 static int
-nspi_dissect_element_NspiGetMatches_instance_key_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetMatches_instance_key_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_instance_key(tvb,offset,pinfo,tree,di,drep,hf_nspi_NspiGetMatches_instance_key,0);
 
@@ -9911,15 +9910,15 @@ nspi_dissect_element_NspiGetMatches_instance_key_(tvbuff_t *tvb _U_, int offset 
 }
 
 static int
-nspi_dissect_element_NspiGetMatches_REQ_properties(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetMatches_REQ_properties(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiGetMatches_REQ_properties_, NDR_POINTER_UNIQUE, "Pointer to Req Properties (SPropTagArray)",hf_nspi_NspiGetMatches_REQ_properties);
+	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiGetMatches_REQ_properties_, NDR_POINTER_UNIQUE, "Pointer to REQ Properties (SPropTagArray)",hf_nspi_NspiGetMatches_REQ_properties);
 
 	return offset;
 }
 
 static int
-nspi_dissect_element_NspiGetMatches_REQ_properties_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetMatches_REQ_properties_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_SPropTagArray(tvb,offset,pinfo,tree,di,drep,hf_nspi_NspiGetMatches_REQ_properties,0);
 
@@ -9927,23 +9926,23 @@ nspi_dissect_element_NspiGetMatches_REQ_properties_(tvbuff_t *tvb _U_, int offse
 }
 
 static int
-nspi_dissect_element_NspiGetMatches_RowSet(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetMatches_RowSet(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiGetMatches_RowSet_, NDR_POINTER_REF, "Pointer to Rowset (SRowSet)",hf_nspi_NspiGetMatches_RowSet);
+	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiGetMatches_RowSet_, NDR_POINTER_REF, "Pointer to RowSet (SRowSet)",hf_nspi_NspiGetMatches_RowSet);
 
 	return offset;
 }
 
 static int
-nspi_dissect_element_NspiGetMatches_RowSet_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetMatches_RowSet_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiGetMatches_RowSet__, NDR_POINTER_UNIQUE, "Pointer to Rowset (SRowSet)",hf_nspi_NspiGetMatches_RowSet);
+	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiGetMatches_RowSet__, NDR_POINTER_UNIQUE, "Pointer to RowSet (SRowSet)",hf_nspi_NspiGetMatches_RowSet);
 
 	return offset;
 }
 
 static int
-nspi_dissect_element_NspiGetMatches_RowSet__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetMatches_RowSet__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_SRowSet(tvb,offset,pinfo,tree,di,drep,hf_nspi_NspiGetMatches_RowSet,0);
 
@@ -9964,9 +9963,9 @@ nspi_dissect_element_NspiGetMatches_RowSet__(tvbuff_t *tvb _U_, int offset _U_, 
 /* IDL: ); */
 
 static int
-nspi_dissect_NspiGetMatches_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiGetMatches_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="NspiGetMatches";
 	offset = nspi_dissect_element_NspiGetMatches_settings(tvb, offset, pinfo, tree, di, drep);
@@ -9980,13 +9979,13 @@ nspi_dissect_NspiGetMatches_response(tvbuff_t *tvb _U_, int offset _U_, packet_i
 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_MAPISTATUS_status, &status);
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Status: %s", val_to_str(status, nspi_MAPISTATUS_vals, "Unknown MAPISTATUS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Status: %s", val_to_str(pinfo->pool, status, nspi_MAPISTATUS_vals, "Unknown MAPISTATUS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-nspi_dissect_NspiGetMatches_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiGetMatches_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiGetMatches";
 	offset = nspi_dissect_element_NspiGetMatches_handle(tvb, offset, pinfo, tree, di, drep);
@@ -10013,21 +10012,21 @@ nspi_dissect_NspiGetMatches_request(tvbuff_t *tvb _U_, int offset _U_, packet_in
 /* IDL: ); */
 
 static int
-nspi_dissect_NspiResortRestriction_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiResortRestriction_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiResortRestriction";
 	return offset;
 }
 
 static int
-nspi_dissect_NspiResortRestriction_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiResortRestriction_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiResortRestriction";
 	return offset;
 }
 
 static int
-nspi_dissect_element_NspiDNToEph_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiDNToEph_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiDNToEph_handle_, NDR_POINTER_REF, "Pointer to Handle (policy_handle)",hf_nspi_handle);
 
@@ -10035,7 +10034,7 @@ nspi_dissect_element_NspiDNToEph_handle(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-nspi_dissect_element_NspiDNToEph_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiDNToEph_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_policy_hnd(tvb, offset, pinfo, tree, di, drep, hf_nspi_handle, 0);
 
@@ -10043,7 +10042,7 @@ nspi_dissect_element_NspiDNToEph_handle_(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-nspi_dissect_element_NspiDNToEph_flag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiDNToEph_flag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_NspiDNToEph_flag, 0);
 
@@ -10051,7 +10050,7 @@ nspi_dissect_element_NspiDNToEph_flag(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-nspi_dissect_element_NspiDNToEph_size(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiDNToEph_size(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_NspiDNToEph_size, 0);
 
@@ -10059,7 +10058,7 @@ nspi_dissect_element_NspiDNToEph_size(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-nspi_dissect_element_NspiDNToEph_server_dn(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiDNToEph_server_dn(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiDNToEph_server_dn_, NDR_POINTER_REF, "Pointer to Server Dn (NAME_STRING)",hf_nspi_NspiDNToEph_server_dn);
 
@@ -10067,7 +10066,7 @@ nspi_dissect_element_NspiDNToEph_server_dn(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-nspi_dissect_element_NspiDNToEph_server_dn_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiDNToEph_server_dn_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiDNToEph_server_dn__);
 
@@ -10075,7 +10074,7 @@ nspi_dissect_element_NspiDNToEph_server_dn_(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-nspi_dissect_element_NspiDNToEph_server_dn__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiDNToEph_server_dn__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_NAME_STRING(tvb,offset,pinfo,tree,di,drep,hf_nspi_NspiDNToEph_server_dn,0);
 
@@ -10083,7 +10082,7 @@ nspi_dissect_element_NspiDNToEph_server_dn__(tvbuff_t *tvb _U_, int offset _U_, 
 }
 
 static int
-nspi_dissect_element_NspiDNToEph_instance_key(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiDNToEph_instance_key(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiDNToEph_instance_key_, NDR_POINTER_REF, "Pointer to Instance Key (instance_key)",hf_nspi_NspiDNToEph_instance_key);
 
@@ -10091,7 +10090,7 @@ nspi_dissect_element_NspiDNToEph_instance_key(tvbuff_t *tvb _U_, int offset _U_,
 }
 
 static int
-nspi_dissect_element_NspiDNToEph_instance_key_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiDNToEph_instance_key_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_instance_key(tvb,offset,pinfo,tree,di,drep,hf_nspi_NspiDNToEph_instance_key,0);
 
@@ -10107,9 +10106,9 @@ nspi_dissect_element_NspiDNToEph_instance_key_(tvbuff_t *tvb _U_, int offset _U_
 /* IDL: ); */
 
 static int
-nspi_dissect_NspiDNToEph_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiDNToEph_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="NspiDNToEph";
 	offset = nspi_dissect_element_NspiDNToEph_instance_key(tvb, offset, pinfo, tree, di, drep);
@@ -10117,13 +10116,13 @@ nspi_dissect_NspiDNToEph_response(tvbuff_t *tvb _U_, int offset _U_, packet_info
 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_MAPISTATUS_status, &status);
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Status: %s", val_to_str(status, nspi_MAPISTATUS_vals, "Unknown MAPISTATUS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Status: %s", val_to_str(pinfo->pool, status, nspi_MAPISTATUS_vals, "Unknown MAPISTATUS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-nspi_dissect_NspiDNToEph_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiDNToEph_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiDNToEph";
 	offset = nspi_dissect_element_NspiDNToEph_handle(tvb, offset, pinfo, tree, di, drep);
@@ -10142,21 +10141,21 @@ nspi_dissect_NspiDNToEph_request(tvbuff_t *tvb _U_, int offset _U_, packet_info 
 /* IDL: ); */
 
 static int
-nspi_dissect_NspiGetPropList_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiGetPropList_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiGetPropList";
 	return offset;
 }
 
 static int
-nspi_dissect_NspiGetPropList_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiGetPropList_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiGetPropList";
 	return offset;
 }
 
 static int
-nspi_dissect_element_NspiGetProps_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetProps_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiGetProps_handle_, NDR_POINTER_REF, "Pointer to Handle (policy_handle)",hf_nspi_handle);
 
@@ -10164,7 +10163,7 @@ nspi_dissect_element_NspiGetProps_handle(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-nspi_dissect_element_NspiGetProps_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetProps_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_policy_hnd(tvb, offset, pinfo, tree, di, drep, hf_nspi_handle, 0);
 
@@ -10172,7 +10171,7 @@ nspi_dissect_element_NspiGetProps_handle_(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 static int
-nspi_dissect_element_NspiGetProps_flag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetProps_flag(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_NspiGetProps_flag, 0);
 
@@ -10180,7 +10179,7 @@ nspi_dissect_element_NspiGetProps_flag(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-nspi_dissect_element_NspiGetProps_settings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetProps_settings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiGetProps_settings_, NDR_POINTER_REF, "Pointer to Settings (MAPI_SETTINGS)",hf_nspi_NspiGetProps_settings);
 
@@ -10188,7 +10187,7 @@ nspi_dissect_element_NspiGetProps_settings(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-nspi_dissect_element_NspiGetProps_settings_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetProps_settings_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_MAPI_SETTINGS(tvb,offset,pinfo,tree,di,drep,hf_nspi_NspiGetProps_settings,0);
 
@@ -10196,15 +10195,15 @@ nspi_dissect_element_NspiGetProps_settings_(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-nspi_dissect_element_NspiGetProps_REQ_properties(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetProps_REQ_properties(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiGetProps_REQ_properties_, NDR_POINTER_REF, "Pointer to Req Properties (SPropTagArray)",hf_nspi_NspiGetProps_REQ_properties);
+	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiGetProps_REQ_properties_, NDR_POINTER_REF, "Pointer to REQ Properties (SPropTagArray)",hf_nspi_NspiGetProps_REQ_properties);
 
 	return offset;
 }
 
 static int
-nspi_dissect_element_NspiGetProps_REQ_properties_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetProps_REQ_properties_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_SPropTagArray(tvb,offset,pinfo,tree,di,drep,hf_nspi_NspiGetProps_REQ_properties,0);
 
@@ -10212,23 +10211,23 @@ nspi_dissect_element_NspiGetProps_REQ_properties_(tvbuff_t *tvb _U_, int offset 
 }
 
 static int
-nspi_dissect_element_NspiGetProps_REPL_values(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetProps_REPL_values(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiGetProps_REPL_values_, NDR_POINTER_REF, "Pointer to Repl Values (SRow)",hf_nspi_NspiGetProps_REPL_values);
+	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiGetProps_REPL_values_, NDR_POINTER_REF, "Pointer to REPL Values (SRow)",hf_nspi_NspiGetProps_REPL_values);
 
 	return offset;
 }
 
 static int
-nspi_dissect_element_NspiGetProps_REPL_values_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetProps_REPL_values_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiGetProps_REPL_values__, NDR_POINTER_UNIQUE, "Pointer to Repl Values (SRow)",hf_nspi_NspiGetProps_REPL_values);
+	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiGetProps_REPL_values__, NDR_POINTER_UNIQUE, "Pointer to REPL Values (SRow)",hf_nspi_NspiGetProps_REPL_values);
 
 	return offset;
 }
 
 static int
-nspi_dissect_element_NspiGetProps_REPL_values__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetProps_REPL_values__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_SRow(tvb,offset,pinfo,tree,di,drep,hf_nspi_NspiGetProps_REPL_values,0);
 
@@ -10244,9 +10243,9 @@ nspi_dissect_element_NspiGetProps_REPL_values__(tvbuff_t *tvb _U_, int offset _U
 /* IDL: ); */
 
 static int
-nspi_dissect_NspiGetProps_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiGetProps_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="NspiGetProps";
 	offset = nspi_dissect_element_NspiGetProps_REPL_values(tvb, offset, pinfo, tree, di, drep);
@@ -10254,13 +10253,13 @@ nspi_dissect_NspiGetProps_response(tvbuff_t *tvb _U_, int offset _U_, packet_inf
 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_MAPISTATUS_status, &status);
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Status: %s", val_to_str(status, nspi_MAPISTATUS_vals, "Unknown MAPISTATUS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Status: %s", val_to_str(pinfo->pool, status, nspi_MAPISTATUS_vals, "Unknown MAPISTATUS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-nspi_dissect_NspiGetProps_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiGetProps_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiGetProps";
 	offset = nspi_dissect_element_NspiGetProps_handle(tvb, offset, pinfo, tree, di, drep);
@@ -10279,14 +10278,14 @@ nspi_dissect_NspiGetProps_request(tvbuff_t *tvb _U_, int offset _U_, packet_info
 /* IDL: ); */
 
 static int
-nspi_dissect_NspiCompareDNTs_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiCompareDNTs_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiCompareDNTs";
 	return offset;
 }
 
 static int
-nspi_dissect_NspiCompareDNTs_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiCompareDNTs_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiCompareDNTs";
 	return offset;
@@ -10297,21 +10296,21 @@ nspi_dissect_NspiCompareDNTs_request(tvbuff_t *tvb _U_, int offset _U_, packet_i
 /* IDL: ); */
 
 static int
-nspi_dissect_NspiModProps_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiModProps_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiModProps";
 	return offset;
 }
 
 static int
-nspi_dissect_NspiModProps_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiModProps_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiModProps";
 	return offset;
 }
 
 static int
-nspi_dissect_element_NspiGetHierarchyInfo_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetHierarchyInfo_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiGetHierarchyInfo_handle_, NDR_POINTER_REF, "Pointer to Handle (policy_handle)",hf_nspi_handle);
 
@@ -10319,7 +10318,7 @@ nspi_dissect_element_NspiGetHierarchyInfo_handle(tvbuff_t *tvb _U_, int offset _
 }
 
 static int
-nspi_dissect_element_NspiGetHierarchyInfo_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetHierarchyInfo_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_policy_hnd(tvb, offset, pinfo, tree, di, drep, hf_nspi_handle, 0);
 
@@ -10327,7 +10326,7 @@ nspi_dissect_element_NspiGetHierarchyInfo_handle_(tvbuff_t *tvb _U_, int offset 
 }
 
 static int
-nspi_dissect_element_NspiGetHierarchyInfo_unknown1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetHierarchyInfo_unknown1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_NspiGetHierarchyInfo_unknown1, 0);
 
@@ -10335,7 +10334,7 @@ nspi_dissect_element_NspiGetHierarchyInfo_unknown1(tvbuff_t *tvb _U_, int offset
 }
 
 static int
-nspi_dissect_element_NspiGetHierarchyInfo_settings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetHierarchyInfo_settings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiGetHierarchyInfo_settings_, NDR_POINTER_REF, "Pointer to Settings (MAPI_SETTINGS)",hf_nspi_NspiGetHierarchyInfo_settings);
 
@@ -10343,7 +10342,7 @@ nspi_dissect_element_NspiGetHierarchyInfo_settings(tvbuff_t *tvb _U_, int offset
 }
 
 static int
-nspi_dissect_element_NspiGetHierarchyInfo_settings_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetHierarchyInfo_settings_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_MAPI_SETTINGS(tvb,offset,pinfo,tree,di,drep,hf_nspi_NspiGetHierarchyInfo_settings,0);
 
@@ -10351,7 +10350,7 @@ nspi_dissect_element_NspiGetHierarchyInfo_settings_(tvbuff_t *tvb _U_, int offse
 }
 
 static int
-nspi_dissect_element_NspiGetHierarchyInfo_unknown2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetHierarchyInfo_unknown2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiGetHierarchyInfo_unknown2_, NDR_POINTER_REF, "Pointer to Unknown2 (uint32)",hf_nspi_NspiGetHierarchyInfo_unknown2);
 
@@ -10359,7 +10358,7 @@ nspi_dissect_element_NspiGetHierarchyInfo_unknown2(tvbuff_t *tvb _U_, int offset
 }
 
 static int
-nspi_dissect_element_NspiGetHierarchyInfo_unknown2_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetHierarchyInfo_unknown2_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_NspiGetHierarchyInfo_unknown2, 0);
 
@@ -10367,23 +10366,23 @@ nspi_dissect_element_NspiGetHierarchyInfo_unknown2_(tvbuff_t *tvb _U_, int offse
 }
 
 static int
-nspi_dissect_element_NspiGetHierarchyInfo_RowSet(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetHierarchyInfo_RowSet(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiGetHierarchyInfo_RowSet_, NDR_POINTER_REF, "Pointer to Rowset (SRowSet)",hf_nspi_NspiGetHierarchyInfo_RowSet);
+	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiGetHierarchyInfo_RowSet_, NDR_POINTER_REF, "Pointer to RowSet (SRowSet)",hf_nspi_NspiGetHierarchyInfo_RowSet);
 
 	return offset;
 }
 
 static int
-nspi_dissect_element_NspiGetHierarchyInfo_RowSet_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetHierarchyInfo_RowSet_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiGetHierarchyInfo_RowSet__, NDR_POINTER_UNIQUE, "Pointer to Rowset (SRowSet)",hf_nspi_NspiGetHierarchyInfo_RowSet);
+	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, nspi_dissect_element_NspiGetHierarchyInfo_RowSet__, NDR_POINTER_UNIQUE, "Pointer to RowSet (SRowSet)",hf_nspi_NspiGetHierarchyInfo_RowSet);
 
 	return offset;
 }
 
 static int
-nspi_dissect_element_NspiGetHierarchyInfo_RowSet__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_element_NspiGetHierarchyInfo_RowSet__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = nspi_dissect_struct_SRowSet(tvb,offset,pinfo,tree,di,drep,hf_nspi_NspiGetHierarchyInfo_RowSet,0);
 
@@ -10399,9 +10398,9 @@ nspi_dissect_element_NspiGetHierarchyInfo_RowSet__(tvbuff_t *tvb _U_, int offset
 /* IDL: ); */
 
 static int
-nspi_dissect_NspiGetHierarchyInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiGetHierarchyInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="NspiGetHierarchyInfo";
 	offset = nspi_dissect_element_NspiGetHierarchyInfo_unknown2(tvb, offset, pinfo, tree, di, drep);
@@ -10412,13 +10411,13 @@ nspi_dissect_NspiGetHierarchyInfo_response(tvbuff_t *tvb _U_, int offset _U_, pa
 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_nspi_MAPISTATUS_status, &status);
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Status: %s", val_to_str(status, nspi_MAPISTATUS_vals, "Unknown MAPISTATUS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Status: %s", val_to_str(pinfo->pool, status, nspi_MAPISTATUS_vals, "Unknown MAPISTATUS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-nspi_dissect_NspiGetHierarchyInfo_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiGetHierarchyInfo_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiGetHierarchyInfo";
 	offset = nspi_dissect_element_NspiGetHierarchyInfo_handle(tvb, offset, pinfo, tree, di, drep);
@@ -10437,14 +10436,14 @@ nspi_dissect_NspiGetHierarchyInfo_request(tvbuff_t *tvb _U_, int offset _U_, pac
 /* IDL: ); */
 
 static int
-nspi_dissect_NspiGetTemplateInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiGetTemplateInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiGetTemplateInfo";
 	return offset;
 }
 
 static int
-nspi_dissect_NspiGetTemplateInfo_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiGetTemplateInfo_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiGetTemplateInfo";
 	return offset;
@@ -10455,14 +10454,14 @@ nspi_dissect_NspiGetTemplateInfo_request(tvbuff_t *tvb _U_, int offset _U_, pack
 /* IDL: ); */
 
 static int
-nspi_dissect_NspiModLInkAtt_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiModLInkAtt_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiModLInkAtt";
 	return offset;
 }
 
 static int
-nspi_dissect_NspiModLInkAtt_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiModLInkAtt_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiModLInkAtt";
 	return offset;
@@ -10473,14 +10472,14 @@ nspi_dissect_NspiModLInkAtt_request(tvbuff_t *tvb _U_, int offset _U_, packet_in
 /* IDL: ); */
 
 static int
-nspi_dissect_NspiDeleteEntries_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiDeleteEntries_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiDeleteEntries";
 	return offset;
 }
 
 static int
-nspi_dissect_NspiDeleteEntries_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiDeleteEntries_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiDeleteEntries";
 	return offset;
@@ -10491,14 +10490,14 @@ nspi_dissect_NspiDeleteEntries_request(tvbuff_t *tvb _U_, int offset _U_, packet
 /* IDL: ); */
 
 static int
-nspi_dissect_NspiQueryColumns_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiQueryColumns_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiQueryColumns";
 	return offset;
 }
 
 static int
-nspi_dissect_NspiQueryColumns_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiQueryColumns_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiQueryColumns";
 	return offset;
@@ -10509,14 +10508,14 @@ nspi_dissect_NspiQueryColumns_request(tvbuff_t *tvb _U_, int offset _U_, packet_
 /* IDL: ); */
 
 static int
-nspi_dissect_NspiGetNamesFromIDs_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiGetNamesFromIDs_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiGetNamesFromIDs";
 	return offset;
 }
 
 static int
-nspi_dissect_NspiGetNamesFromIDs_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiGetNamesFromIDs_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiGetNamesFromIDs";
 	return offset;
@@ -10527,14 +10526,14 @@ nspi_dissect_NspiGetNamesFromIDs_request(tvbuff_t *tvb _U_, int offset _U_, pack
 /* IDL: ); */
 
 static int
-nspi_dissect_NspiGetIDsFromNames_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiGetIDsFromNames_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiGetIDsFromNames";
 	return offset;
 }
 
 static int
-nspi_dissect_NspiGetIDsFromNames_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiGetIDsFromNames_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiGetIDsFromNames";
 	return offset;
@@ -10545,14 +10544,14 @@ nspi_dissect_NspiGetIDsFromNames_request(tvbuff_t *tvb _U_, int offset _U_, pack
 /* IDL: ); */
 
 static int
-nspi_dissect_NspiResolveNames_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiResolveNames_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiResolveNames";
 	return offset;
 }
 
 static int
-nspi_dissect_NspiResolveNames_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiResolveNames_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiResolveNames";
 	return offset;
@@ -10563,21 +10562,21 @@ nspi_dissect_NspiResolveNames_request(tvbuff_t *tvb _U_, int offset _U_, packet_
 /* IDL: ); */
 
 static int
-nspi_dissect_NspiResolveNamesW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiResolveNamesW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiResolveNamesW";
 	return offset;
 }
 
 static int
-nspi_dissect_NspiResolveNamesW_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+nspi_dissect_NspiResolveNamesW_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="NspiResolveNamesW";
 	return offset;
 }
 
 
-static dcerpc_sub_dissector nspi_dissectors[] = {
+static const dcerpc_sub_dissector nspi_dissectors[] = {
 	{ 0, "NspiBind",
 	   nspi_dissect_NspiBind_request, nspi_dissect_NspiBind_response},
 	{ 1, "NspiUnbind",
@@ -10627,229 +10626,229 @@ void proto_register_dcerpc_nspi(void)
 {
 	static hf_register_info hf[] = {
 	{ &hf_nspi_FILETIME_dwHighDateTime,
-		{ "Dwhighdatetime", "nspi.FILETIME.dwHighDateTime", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "DwHighDateTime", "nspi.FILETIME.dwHighDateTime", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_FILETIME_dwLowDateTime,
-		{ "Dwlowdatetime", "nspi.FILETIME.dwLowDateTime", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "DwLowDateTime", "nspi.FILETIME.dwLowDateTime", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_LPSTR_lppszA,
-		{ "Lppsza", "nspi.LPSTR.lppszA", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "LppszA", "nspi.LPSTR.lppszA", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_MAPINAMEID_lID,
-		{ "Lid", "nspi.MAPINAMEID.lID", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "LID", "nspi.MAPINAMEID.lID", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_MAPINAMEID_lpguid,
-		{ "Lpguid", "nspi.MAPINAMEID.lpguid", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Lpguid", "nspi.MAPINAMEID.lpguid", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_MAPINAMEID_ulKind,
-		{ "Ulkind", "nspi.MAPINAMEID.ulKind", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "UlKind", "nspi.MAPINAMEID.ulKind", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_MAPISTATUS_status,
-		{ "MAPISTATUS", "nspi.MAPISTATUS_status", FT_UINT32, BASE_HEX, VALS(nspi_MAPISTATUS_vals), 0, NULL, HFILL }},
+	  { "MAPISTATUS", "nspi.MAPISTATUS_status", FT_UINT32, BASE_HEX, VALS(nspi_MAPISTATUS_vals), 0, NULL, HFILL }},
 	{ &hf_nspi_MAPIUID_ab,
-		{ "Ab", "nspi.MAPIUID.ab", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Ab", "nspi.MAPIUID.ab", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_MAPI_SETTINGS_codepage,
-		{ "Codepage", "nspi.MAPI_SETTINGS.codepage", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Codepage", "nspi.MAPI_SETTINGS.codepage", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_MAPI_SETTINGS_flag,
-		{ "Flag", "nspi.MAPI_SETTINGS.flag", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Flag", "nspi.MAPI_SETTINGS.flag", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_MAPI_SETTINGS_handle,
-		{ "Handle", "nspi.MAPI_SETTINGS.handle", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Handle", "nspi.MAPI_SETTINGS.handle", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_MAPI_SETTINGS_input_locale,
-		{ "Input Locale", "nspi.MAPI_SETTINGS.input_locale", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Input Locale", "nspi.MAPI_SETTINGS.input_locale", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_MAPI_SETTINGS_service_provider,
-		{ "Service Provider", "nspi.MAPI_SETTINGS.service_provider", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Service Provider", "nspi.MAPI_SETTINGS.service_provider", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_MV_LONG_STRUCT_cValues,
-		{ "Cvalues", "nspi.MV_LONG_STRUCT.cValues", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "CValues", "nspi.MV_LONG_STRUCT.cValues", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_MV_LONG_STRUCT_lpl,
-		{ "Lpl", "nspi.MV_LONG_STRUCT.lpl", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Lpl", "nspi.MV_LONG_STRUCT.lpl", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_MV_UNICODE_STRUCT_cValues,
-		{ "Cvalues", "nspi.MV_UNICODE_STRUCT.cValues", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "CValues", "nspi.MV_UNICODE_STRUCT.cValues", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_MV_UNICODE_STRUCT_lpi,
-		{ "Lpi", "nspi.MV_UNICODE_STRUCT.lpi", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Lpi", "nspi.MV_UNICODE_STRUCT.lpi", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NAME_STRING_str,
-		{ "Str", "nspi.NAME_STRING.str", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Str", "nspi.NAME_STRING.str", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiBind_mapiuid,
-		{ "Mapiuid", "nspi.NspiBind.mapiuid", FT_GUID, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Mapiuid", "nspi.NspiBind.mapiuid", FT_GUID, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiBind_settings,
-		{ "Settings", "nspi.NspiBind.settings", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Settings", "nspi.NspiBind.settings", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiBind_unknown,
-		{ "Unknown", "nspi.NspiBind.unknown", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Unknown", "nspi.NspiBind.unknown", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiDNToEph_flag,
-		{ "Flag", "nspi.NspiDNToEph.flag", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Flag", "nspi.NspiDNToEph.flag", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiDNToEph_instance_key,
-		{ "Instance Key", "nspi.NspiDNToEph.instance_key", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Instance Key", "nspi.NspiDNToEph.instance_key", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiDNToEph_server_dn,
-		{ "Server Dn", "nspi.NspiDNToEph.server_dn", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Server Dn", "nspi.NspiDNToEph.server_dn", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiDNToEph_size,
-		{ "Size", "nspi.NspiDNToEph.size", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Size", "nspi.NspiDNToEph.size", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiGetHierarchyInfo_RowSet,
-		{ "Rowset", "nspi.NspiGetHierarchyInfo.RowSet", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "RowSet", "nspi.NspiGetHierarchyInfo.RowSet", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiGetHierarchyInfo_settings,
-		{ "Settings", "nspi.NspiGetHierarchyInfo.settings", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Settings", "nspi.NspiGetHierarchyInfo.settings", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiGetHierarchyInfo_unknown1,
-		{ "Unknown1", "nspi.NspiGetHierarchyInfo.unknown1", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Unknown1", "nspi.NspiGetHierarchyInfo.unknown1", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiGetHierarchyInfo_unknown2,
-		{ "Unknown2", "nspi.NspiGetHierarchyInfo.unknown2", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Unknown2", "nspi.NspiGetHierarchyInfo.unknown2", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiGetMatches_PropTagArray,
-		{ "Proptagarray", "nspi.NspiGetMatches.PropTagArray", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "PropTagArray", "nspi.NspiGetMatches.PropTagArray", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiGetMatches_REQ_properties,
-		{ "Req Properties", "nspi.NspiGetMatches.REQ_properties", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "REQ Properties", "nspi.NspiGetMatches.REQ_properties", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiGetMatches_RowSet,
-		{ "Rowset", "nspi.NspiGetMatches.RowSet", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "RowSet", "nspi.NspiGetMatches.RowSet", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiGetMatches_instance_key,
-		{ "Instance Key", "nspi.NspiGetMatches.instance_key", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Instance Key", "nspi.NspiGetMatches.instance_key", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiGetMatches_restrictions,
-		{ "Restrictions", "nspi.NspiGetMatches.restrictions", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Restrictions", "nspi.NspiGetMatches.restrictions", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiGetMatches_settings,
-		{ "Settings", "nspi.NspiGetMatches.settings", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Settings", "nspi.NspiGetMatches.settings", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiGetMatches_unknown1,
-		{ "Unknown1", "nspi.NspiGetMatches.unknown1", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Unknown1", "nspi.NspiGetMatches.unknown1", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiGetMatches_unknown2,
-		{ "Unknown2", "nspi.NspiGetMatches.unknown2", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Unknown2", "nspi.NspiGetMatches.unknown2", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiGetMatches_unknown3,
-		{ "Unknown3", "nspi.NspiGetMatches.unknown3", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Unknown3", "nspi.NspiGetMatches.unknown3", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiGetProps_REPL_values,
-		{ "Repl Values", "nspi.NspiGetProps.REPL_values", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "REPL Values", "nspi.NspiGetProps.REPL_values", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiGetProps_REQ_properties,
-		{ "Req Properties", "nspi.NspiGetProps.REQ_properties", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "REQ Properties", "nspi.NspiGetProps.REQ_properties", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiGetProps_flag,
-		{ "Flag", "nspi.NspiGetProps.flag", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Flag", "nspi.NspiGetProps.flag", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiGetProps_settings,
-		{ "Settings", "nspi.NspiGetProps.settings", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Settings", "nspi.NspiGetProps.settings", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiQueryRows_REQ_properties,
-		{ "Req Properties", "nspi.NspiQueryRows.REQ_properties", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "REQ Properties", "nspi.NspiQueryRows.REQ_properties", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiQueryRows_RowSet,
-		{ "Rowset", "nspi.NspiQueryRows.RowSet", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "RowSet", "nspi.NspiQueryRows.RowSet", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiQueryRows_flag,
-		{ "Flag", "nspi.NspiQueryRows.flag", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Flag", "nspi.NspiQueryRows.flag", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiQueryRows_instance_key,
-		{ "Instance Key", "nspi.NspiQueryRows.instance_key", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Instance Key", "nspi.NspiQueryRows.instance_key", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiQueryRows_lRows,
-		{ "Lrows", "nspi.NspiQueryRows.lRows", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "LRows", "nspi.NspiQueryRows.lRows", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiQueryRows_settings,
-		{ "Settings", "nspi.NspiQueryRows.settings", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Settings", "nspi.NspiQueryRows.settings", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiQueryRows_unknown,
-		{ "Unknown", "nspi.NspiQueryRows.unknown", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Unknown", "nspi.NspiQueryRows.unknown", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_NspiUnbind_status,
-		{ "Status", "nspi.NspiUnbind.status", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Status", "nspi.NspiUnbind.status", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SAndRestriction_cRes,
-		{ "Cres", "nspi.SAndRestriction.cRes", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "CRes", "nspi.SAndRestriction.cRes", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SAndRestriction_lpRes,
-		{ "Lpres", "nspi.SAndRestriction.lpRes", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "LpRes", "nspi.SAndRestriction.lpRes", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SBinaryArray_cValues,
-		{ "Cvalues", "nspi.SBinaryArray.cValues", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "CValues", "nspi.SBinaryArray.cValues", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SBinaryArray_lpbin,
-		{ "Lpbin", "nspi.SBinaryArray.lpbin", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Lpbin", "nspi.SBinaryArray.lpbin", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SBinary_cb,
-		{ "Cb", "nspi.SBinary.cb", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Cb", "nspi.SBinary.cb", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SBinary_lpb,
-		{ "Lpb", "nspi.SBinary.lpb", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Lpb", "nspi.SBinary.lpb", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SDateTimeArray_cValues,
-		{ "Cvalues", "nspi.SDateTimeArray.cValues", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "CValues", "nspi.SDateTimeArray.cValues", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SDateTimeArray_lpft,
-		{ "Lpft", "nspi.SDateTimeArray.lpft", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Lpft", "nspi.SDateTimeArray.lpft", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SGuidArray_cValues,
-		{ "Cvalues", "nspi.SGuidArray.cValues", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "CValues", "nspi.SGuidArray.cValues", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SGuidArray_lpguid,
-		{ "Lpguid", "nspi.SGuidArray.lpguid", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Lpguid", "nspi.SGuidArray.lpguid", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SLPSTRArray_cValues,
-		{ "Cvalues", "nspi.SLPSTRArray.cValues", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "CValues", "nspi.SLPSTRArray.cValues", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SLPSTRArray_strings,
-		{ "Strings", "nspi.SLPSTRArray.strings", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Strings", "nspi.SLPSTRArray.strings", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SPropTagArray_aulPropTag,
-		{ "Aulproptag", "nspi.SPropTagArray.aulPropTag", FT_UINT32, BASE_DEC, VALS(nspi_MAPITAGS_vals), 0, NULL, HFILL }},
+	  { "AulPropTag", "nspi.SPropTagArray.aulPropTag", FT_UINT32, BASE_HEX, VALS(nspi_MAPITAGS_vals), 0, NULL, HFILL }},
 	{ &hf_nspi_SPropTagArray_cValues,
-		{ "Cvalues", "nspi.SPropTagArray.cValues", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "CValues", "nspi.SPropTagArray.cValues", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SPropValue_CTR_MVbin,
-		{ "Mvbin", "nspi.SPropValue_CTR.MVbin", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "MVbin", "nspi.SPropValue_CTR.MVbin", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SPropValue_CTR_MVft,
-		{ "Mvft", "nspi.SPropValue_CTR.MVft", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "MVft", "nspi.SPropValue_CTR.MVft", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SPropValue_CTR_MVguid,
-		{ "Mvguid", "nspi.SPropValue_CTR.MVguid", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "MVguid", "nspi.SPropValue_CTR.MVguid", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SPropValue_CTR_MVi,
-		{ "Mvi", "nspi.SPropValue_CTR.MVi", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "MVi", "nspi.SPropValue_CTR.MVi", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SPropValue_CTR_MVl,
-		{ "Mvl", "nspi.SPropValue_CTR.MVl", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "MVl", "nspi.SPropValue_CTR.MVl", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SPropValue_CTR_MVszA,
-		{ "Mvsza", "nspi.SPropValue_CTR.MVszA", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "MVszA", "nspi.SPropValue_CTR.MVszA", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SPropValue_CTR_MVszW,
-		{ "Mvszw", "nspi.SPropValue_CTR.MVszW", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "MVszW", "nspi.SPropValue_CTR.MVszW", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SPropValue_CTR_b,
-		{ "B", "nspi.SPropValue_CTR.b", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "B", "nspi.SPropValue_CTR.b", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SPropValue_CTR_bin,
-		{ "Bin", "nspi.SPropValue_CTR.bin", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Bin", "nspi.SPropValue_CTR.bin", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SPropValue_CTR_err,
-		{ "Err", "nspi.SPropValue_CTR.err", FT_UINT32, BASE_DEC, VALS(nspi_MAPISTATUS_vals), 0, NULL, HFILL }},
+	  { "Err", "nspi.SPropValue_CTR.err", FT_UINT32, BASE_HEX, VALS(nspi_MAPISTATUS_vals), 0, NULL, HFILL }},
 	{ &hf_nspi_SPropValue_CTR_ft,
-		{ "Ft", "nspi.SPropValue_CTR.ft", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Ft", "nspi.SPropValue_CTR.ft", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SPropValue_CTR_i,
-		{ "I", "nspi.SPropValue_CTR.i", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "I", "nspi.SPropValue_CTR.i", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SPropValue_CTR_l,
-		{ "L", "nspi.SPropValue_CTR.l", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "L", "nspi.SPropValue_CTR.l", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SPropValue_CTR_lpguid,
-		{ "Lpguid", "nspi.SPropValue_CTR.lpguid", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Lpguid", "nspi.SPropValue_CTR.lpguid", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SPropValue_CTR_lpszA,
-		{ "Lpsza", "nspi.SPropValue_CTR.lpszA", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "LpszA", "nspi.SPropValue_CTR.lpszA", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SPropValue_CTR_lpszW,
-		{ "Lpszw", "nspi.SPropValue_CTR.lpszW", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "LpszW", "nspi.SPropValue_CTR.lpszW", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SPropValue_CTR_null,
-		{ "Null", "nspi.SPropValue_CTR.null", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Null", "nspi.SPropValue_CTR.null", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SPropValue_CTR_object,
-		{ "Object", "nspi.SPropValue_CTR.object", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Object", "nspi.SPropValue_CTR.object", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SPropValue_dwAlignPad,
-		{ "Dwalignpad", "nspi.SPropValue.dwAlignPad", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "DwAlignPad", "nspi.SPropValue.dwAlignPad", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SPropValue_ulPropTag,
-		{ "Ulproptag", "nspi.SPropValue.ulPropTag", FT_UINT32, BASE_DEC, VALS(nspi_MAPITAGS_vals), 0, NULL, HFILL }},
+	  { "UlPropTag", "nspi.SPropValue.ulPropTag", FT_UINT32, BASE_HEX, VALS(nspi_MAPITAGS_vals), 0, NULL, HFILL }},
 	{ &hf_nspi_SPropertyRestriction_lpProp,
-		{ "Lpprop", "nspi.SPropertyRestriction.lpProp", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "LpProp", "nspi.SPropertyRestriction.lpProp", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SPropertyRestriction_relop,
-		{ "Relop", "nspi.SPropertyRestriction.relop", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Relop", "nspi.SPropertyRestriction.relop", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SPropertyRestriction_ulPropTag,
-		{ "Ulproptag", "nspi.SPropertyRestriction.ulPropTag", FT_UINT32, BASE_DEC, VALS(nspi_MAPITAGS_vals), 0, NULL, HFILL }},
+	  { "UlPropTag", "nspi.SPropertyRestriction.ulPropTag", FT_UINT32, BASE_HEX, VALS(nspi_MAPITAGS_vals), 0, NULL, HFILL }},
 	{ &hf_nspi_SRestriction_CTR_resAnd,
-		{ "Resand", "nspi.SRestriction_CTR.resAnd", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "ResAnd", "nspi.SRestriction_CTR.resAnd", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SRestriction_CTR_resProperty,
-		{ "Resproperty", "nspi.SRestriction_CTR.resProperty", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "ResProperty", "nspi.SRestriction_CTR.resProperty", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SRestriction_PTTYPE,
-		{ "Restriction Type", "nspi.property_type", FT_UINT32, BASE_HEX, VALS(nspi_nspi_RestrictionType_vals), 0, NULL, HFILL }},
+	  { "Restriction Type", "nspi.property_type", FT_UINT32, BASE_HEX, VALS(nspi_nspi_RestrictionType_vals), 0, NULL, HFILL }},
 	{ &hf_nspi_SRowSet_aRow,
-		{ "Arow", "nspi.SRowSet.aRow", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "ARow", "nspi.SRowSet.aRow", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SRowSet_cRows,
-		{ "Crows", "nspi.SRowSet.cRows", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "CRows", "nspi.SRowSet.cRows", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SRow_cValues,
-		{ "Cvalues", "nspi.SRow.cValues", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "CValues", "nspi.SRow.cValues", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SRow_lpProps,
-		{ "Lpprops", "nspi.SRow.lpProps", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "LpProps", "nspi.SRow.lpProps", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SRow_ulAdrEntryPad,
-		{ "Uladrentrypad", "nspi.SRow.ulAdrEntryPad", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "UlAdrEntryPad", "nspi.SRow.ulAdrEntryPad", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SShortArray_cValues,
-		{ "Cvalues", "nspi.SShortArray.cValues", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "CValues", "nspi.SShortArray.cValues", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SShortArray_lpi,
-		{ "Lpi", "nspi.SShortArray.lpi", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Lpi", "nspi.SShortArray.lpi", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SSortOrderSet_aSort,
-		{ "Asort", "nspi.SSortOrderSet.aSort", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "ASort", "nspi.SSortOrderSet.aSort", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SSortOrderSet_cCategories,
-		{ "Ccategories", "nspi.SSortOrderSet.cCategories", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "CCategories", "nspi.SSortOrderSet.cCategories", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SSortOrderSet_cExpanded,
-		{ "Cexpanded", "nspi.SSortOrderSet.cExpanded", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "CExpanded", "nspi.SSortOrderSet.cExpanded", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SSortOrderSet_cSorts,
-		{ "Csorts", "nspi.SSortOrderSet.cSorts", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "CSorts", "nspi.SSortOrderSet.cSorts", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SSortOrder_ulOrder,
-		{ "Ulorder", "nspi.SSortOrder.ulOrder", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "UlOrder", "nspi.SSortOrder.ulOrder", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_SSortOrder_ulPropTag,
-		{ "Ulproptag", "nspi.SSortOrder.ulPropTag", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "UlPropTag", "nspi.SSortOrder.ulPropTag", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_handle,
-		{ "Handle", "nspi.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Handle", "nspi.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_input_locale_language,
-		{ "Language", "nspi.input_locale.language", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Language", "nspi.input_locale.language", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_input_locale_method,
-		{ "Method", "nspi.input_locale.method", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Method", "nspi.input_locale.method", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_instance_key_cValues,
-		{ "Cvalues", "nspi.instance_key.cValues", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "CValues", "nspi.instance_key.cValues", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_instance_key_value,
-		{ "Value", "nspi.instance_key.value", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Value", "nspi.instance_key.value", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_opnum,
-		{ "Operation", "nspi.opnum", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Operation", "nspi.opnum", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_nspi_property_type,
-		{ "Value", "nspi.SPropValue.value", FT_UINT32, BASE_HEX, VALS(nspi_property_types_vals), 0, NULL, HFILL }},
+	  { "Value", "nspi.SPropValue.value", FT_UINT32, BASE_HEX, VALS(nspi_property_types_vals), 0, NULL, HFILL }},
 	};
 
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_dcerpc_nspi,
 		&ett_nspi_MAPIUID,
 		&ett_nspi_input_locale,

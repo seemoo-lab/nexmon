@@ -7,25 +7,13 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
   http://wiki.mikrotik.com/wiki/Manual:IP/Neighbor_discovery
   TODO:
-  - Find out about first 4 bytes
+  - Find out about first 4 bytes (are the first 2 simply part of the sequence number?)
   - Find out about additional TLVs
   - Find out about unpack values
  */
@@ -36,59 +24,62 @@
 void proto_register_mndp(void);
 void proto_reg_handoff_mndp(void);
 
+static dissector_handle_t mndp_handle;
+
 /* protocol handles */
-static int proto_mndp = -1;
+static int proto_mndp;
 
 /* ett handles */
-static int ett_mndp = -1;
-static int ett_mndp_tlv_header = -1;
+static int ett_mndp;
+static int ett_mndp_tlv_header;
 
 /* hf elements */
 /* tlv generic */
-static int hf_mndp_tlv_type = -1;
-static int hf_mndp_tlv_length = -1;
-static int hf_mndp_tlv_data = -1;
+static int hf_mndp_tlv_type;
+static int hf_mndp_tlv_length;
+static int hf_mndp_tlv_data;
 /* tunnel header */
-static int hf_mndp_header_unknown = -1;
-static int hf_mndp_header_seqno = -1;
+static int hf_mndp_header_unknown;
+static int hf_mndp_header_seqno;
 /* tlvs */
-static int hf_mndp_mac = -1;
-static int hf_mndp_softwareid = -1;
-static int hf_mndp_version = -1;
-static int hf_mndp_identity = -1;
-static int hf_mndp_uptime = -1;
-static int hf_mndp_platform = -1;
-static int hf_mndp_board = -1;
-static int hf_mndp_unpack = -1;
-static int hf_mndp_ipv6address = -1;
-static int hf_mndp_interfacename = -1;
+static int hf_mndp_mac;
+static int hf_mndp_softwareid;
+static int hf_mndp_version;
+static int hf_mndp_identity;
+static int hf_mndp_uptime;
+static int hf_mndp_platform;
+static int hf_mndp_board;
+static int hf_mndp_unpack;
+static int hf_mndp_ipv6address;
+static int hf_mndp_interfacename;
+static int hf_mndp_ipv4address;
 
 #define PROTO_SHORT_NAME "MNDP"
 #define PROTO_LONG_NAME "Mikrotik Neighbor Discovery Protocol"
 
-#define PORT_MNDP	5678
+#define PORT_MNDP	5678 /* Not IANA registered */
 
 /* ============= copy/paste/modify from value_string.[hc] ============== */
 typedef struct _ext_value_string {
-	guint32  value;
-	const gchar   *strptr;
+	uint32_t value;
+	const char    *strptr;
 	int* hf_element;
-	int (*specialfunction)(tvbuff_t *, packet_info *, proto_tree *, guint32,
-			       guint32, const struct _ext_value_string *);
+	int (*specialfunction)(tvbuff_t *, packet_info *, proto_tree *, uint32_t,
+			       uint32_t, const struct _ext_value_string *);
 	const struct _ext_value_string *evs;
 } ext_value_string;
 
 
-static const gchar*
-match_strextval_idx(guint32 val, const ext_value_string *vs, gint *idx) {
-	gint i = 0;
+static const char*
+match_strextval_idx(uint32_t val, const ext_value_string *vs, int *idx) {
+	int i = 0;
 
 	if(vs) {
 		while (vs[i].strptr) {
 			if (vs[i].value == val) {
 				if (idx)
 					*idx = i;
-				return(vs[i].strptr);
+				return vs[i].strptr;
 			}
 			i++;
 		}
@@ -99,9 +90,9 @@ match_strextval_idx(guint32 val, const ext_value_string *vs, gint *idx) {
 	return NULL;
 }
 
-static const gchar*
-extval_to_str_idx(guint32 val, const ext_value_string *vs, gint *idx, const char *fmt) {
-	const gchar *ret;
+static const char*
+extval_to_str_idx(wmem_allocator_t *pool, uint32_t val, const ext_value_string *vs, int *idx, const char *fmt) {
+	const char *ret;
 
 	if (!fmt)
 		fmt="Unknown";
@@ -110,25 +101,26 @@ extval_to_str_idx(guint32 val, const ext_value_string *vs, gint *idx, const char
 	if (ret != NULL)
 		return ret;
 
-	return wmem_strdup_printf(wmem_packet_scope(), fmt, val);
+	return wmem_strdup_printf(pool, fmt, val);
 }
 /* ============= end copy/paste/modify  ============== */
 
 /* Forward decls needed by mndp_tunnel_tlv_vals et al */
 static int dissect_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *mndp_tree,
-	guint32 offset, guint32 length, const ext_value_string *value_array);
+	uint32_t offset, uint32_t length, const ext_value_string *value_array);
 
 static const ext_value_string mndp_body_tlv_vals[] = {
 	{  1, "MAC-Address",	&hf_mndp_mac,		NULL, NULL },
 	{  5, "Identity",	&hf_mndp_identity,	NULL, NULL },
 	{  7, "Version",	&hf_mndp_version,	NULL, NULL },
 	{  8, "Platform",	&hf_mndp_platform,	NULL, NULL },
-	{ 10, "Uptime",		&hf_mndp_uptime,	NULL, (ext_value_string *)TRUE },
+	{ 10, "Uptime",		&hf_mndp_uptime,	NULL, (ext_value_string *)true },
 	{ 11, "Software-ID",	&hf_mndp_softwareid,	NULL, NULL },
 	{ 12, "Board",		&hf_mndp_board,		NULL, NULL },
 	{ 14, "Unpack",		&hf_mndp_unpack,	NULL, NULL },
 	{ 15, "IPv6-Address",	&hf_mndp_ipv6address,	NULL, NULL },
 	{ 16, "Interface name", &hf_mndp_interfacename, NULL, NULL },
+	{ 17, "IPv4-Address",	&hf_mndp_ipv4address,	NULL, NULL },
 
 	{ 0, NULL, NULL, NULL, NULL }
 };
@@ -141,52 +133,49 @@ static const value_string mndp_unpack_vals[] = {
 
 static int
 dissect_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *mndp_tree,
-	guint32 offset, guint32 length _U_, const ext_value_string *value_array)
+	uint32_t offset, uint32_t length _U_, const ext_value_string *value_array)
 {
-	guint32     tlv_type;
-	guint32     tlv_length;
+	uint32_t    tlv_type;
+	uint32_t    tlv_length;
 	proto_item *tlv_tree;
 	proto_item *type_item;
 	int         type_index;
-	guint32     tlv_end;
-	guint       encoding_info;
+	uint32_t    tlv_end;
+	unsigned    encoding_info;
 
 	tlv_type = tvb_get_ntohs(tvb, offset);
 	tlv_length = tvb_get_ntohs(tvb, offset + 2);
-	/* DISSECTOR_ASSERT(tlv_length >= 4); */
 	tlv_tree = proto_tree_add_subtree_format(mndp_tree, tvb,
 		offset, tlv_length+4, ett_mndp_tlv_header, NULL,
 		"T %d, L %d: %s",
 		tlv_type,
 		tlv_length,
-		extval_to_str_idx(tlv_type, value_array, NULL, "Unknown"));
+		extval_to_str_idx(pinfo->pool, tlv_type, value_array, NULL, "Unknown"));
 
 	type_item = proto_tree_add_item(tlv_tree, hf_mndp_tlv_type,
 		tvb, offset, 2, ENC_BIG_ENDIAN);
 	proto_item_append_text(type_item, " = %s",
-		extval_to_str_idx(tlv_type, value_array,
+		extval_to_str_idx(pinfo->pool, tlv_type, value_array,
 			&type_index, "Unknown"));
 	offset += 2;
 	proto_tree_add_item(tlv_tree, hf_mndp_tlv_length,
 		tvb, offset, 2, ENC_BIG_ENDIAN);
 	offset += 2;
 
-	/* tlv_length -= 4; */
-
 	if (tlv_length == 0)
 		return offset;
 
 	tlv_end = offset + tlv_length;
 
-	/* Make hf_ handling independent of specialfuncion */
+	/* Make hf_ handling independent of specialfunction */
 	/* FIXME: Properly handle encoding info */
 	if ( type_index != -1
 		 && !value_array[type_index].specialfunction
 		 && value_array[type_index].evs != NULL
 	) {
-		encoding_info = value_array[type_index].evs ? TRUE : FALSE;
+		encoding_info = value_array[type_index].evs ? true : false;
 	} else {
-		encoding_info = FALSE;
+		encoding_info = false;
 	}
 	if ( type_index != -1 && value_array[type_index].hf_element) {
 		proto_tree_add_item(tlv_tree,
@@ -197,7 +186,7 @@ dissect_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *mndp_tree,
 			tvb, offset, tlv_length, ENC_NA);
 	}
 	if ( type_index != -1 && value_array[type_index].specialfunction ) {
-		guint32 newoffset;
+		uint32_t newoffset;
 
 		while (offset < tlv_end) {
 			newoffset = value_array[type_index].specialfunction (
@@ -215,8 +204,8 @@ dissect_mndp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
 	proto_item *ti;
 	proto_tree *mndp_tree;
-	guint32     offset = 0;
-	guint32     packet_length;
+	uint32_t    offset = 0;
+	uint32_t    packet_length;
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, PROTO_SHORT_NAME);
 
@@ -242,27 +231,57 @@ dissect_mndp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 	return offset;
 }
 
-static gboolean
+static bool
 test_mndp(tvbuff_t *tvb)
 {
+	/* Observed captures of MNDP always seem to have port 5678 as both
+	 * the source and destination port, and have a broadcast destination IP
+	 * and destination MAC address (if we have those layers.)
+	 * The TLVs are also transmitted in increasing type order.
+	 * TLV type 1 (MAC-Address) appears to be mandatory (and thus first),
+	 * and always has length 6.
+	 * We could also step through all the TLVs to see if the types and
+	 * lengths are reasonable.
+	 * Any of these could be used to strengthen the heuristic further.
+	 */
+	int offset = 0;
+	int type, length;
 	/* Minimum of 8 bytes, 4 Bytes header + 1 TLV-header */
-	if ( tvb_captured_length(tvb) < 8
-		    || tvb_get_guint8(tvb, 4) != 0
-		    || tvb_get_guint8(tvb, 6) != 0
-	) {
-		return FALSE;
+	if ( tvb_captured_length(tvb) < 8) {
+		return false;
 	}
-	return TRUE;
+	offset += 4;
+	type = tvb_get_uint16(tvb, offset, ENC_BIG_ENDIAN);
+	if (type != 1) {
+		return false;
+	}
+	offset += 2;
+	length = tvb_get_uint16(tvb, offset, ENC_BIG_ENDIAN);
+	if (length != 6) {
+		return false;
+	}
+	offset += 2;
+	/* Length does *not* include the type and length fields. */
+	if (tvb_reported_length_remaining(tvb, offset) < length) {
+		return false;
+	}
+	offset += length;
+	/* If there's more data left, it should be another TLV. */
+	if (tvb_reported_length_remaining(tvb, offset) > 0 &&
+	    tvb_reported_length_remaining(tvb, offset) < 4) {
+		return false;
+	}
+	return true;
 }
 
-static gboolean
+static bool
 dissect_mndp_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	if ( !test_mndp(tvb) ) {
-		return FALSE;
+		return false;
 	}
 	dissect_mndp(tvb, pinfo, tree);
-	return TRUE;
+	return true;
 }
 
 static int
@@ -342,8 +361,12 @@ proto_register_mndp(void)
 		{ "Interface name", "mndp.interfacename", FT_STRING, BASE_NONE, NULL,
 				0x0, NULL, HFILL }},
 
+		{ &hf_mndp_ipv4address,
+		{ "IPv4-Address", "mndp.ipv4address", FT_IPv4, BASE_NONE, NULL,
+				0x0, NULL, HFILL }},
+
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_mndp,
 		&ett_mndp_tlv_header,
 	};
@@ -351,20 +374,19 @@ proto_register_mndp(void)
 	proto_mndp = proto_register_protocol(PROTO_LONG_NAME, PROTO_SHORT_NAME, "mndp");
 	proto_register_field_array(proto_mndp, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
+
+	mndp_handle = register_dissector("mndp", dissect_mndp_static, proto_mndp);
 }
 
 void
 proto_reg_handoff_mndp(void)
 {
-	dissector_handle_t mndp_handle;
-
-	mndp_handle = create_dissector_handle(dissect_mndp_static, proto_mndp);
-	dissector_add_uint("udp.port", PORT_MNDP, mndp_handle);
+	dissector_add_uint_with_preference("udp.port", PORT_MNDP, mndp_handle);
 	heur_dissector_add("udp", dissect_mndp_heur, "MNDP over UDP", "mndp_udp", proto_mndp, HEURISTIC_DISABLE);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

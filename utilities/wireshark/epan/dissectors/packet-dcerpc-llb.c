@@ -9,19 +9,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -33,19 +21,19 @@
 void proto_register_llb (void);
 void proto_reg_handoff_llb (void);
 
-static int proto_llb = -1;
-static int hf_llb_opnum = -1;
+static int proto_llb;
+static int hf_llb_opnum;
 
-static gint ett_llb = -1;
+static int ett_llb;
 
 
 static e_guid_t uuid_llb =
   { 0x333b33c3, 0x0000, 0x0000, {0x0d, 0x00, 0x00, 0x87, 0x84, 0x00, 0x00,
                                  0x00} };
-static guint16 ver_llb = 4;
+static uint16_t ver_llb = 4;
 
 
-static dcerpc_sub_dissector llb_dissectors[] = {
+static const dcerpc_sub_dissector llb_dissectors[] = {
   {0, "insert", NULL, NULL},
   {1, "delete", NULL, NULL},
   {2, "lookup", NULL, NULL},
@@ -61,7 +49,7 @@ proto_register_llb (void)
       HFILL}},
   };
 
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_llb,
   };
   proto_llb =
@@ -80,7 +68,7 @@ proto_reg_handoff_llb (void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

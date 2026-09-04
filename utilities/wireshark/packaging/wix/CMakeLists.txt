@@ -4,19 +4,7 @@
 # By Gerald Combs <gerald@wireshark.org>
 # Copyright 1998 Gerald Combs
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# SPDX-License-Identifier: GPL-2.0-or-later
 #
 
 # We should use CPack to help generate a .msi using WIX.
@@ -24,11 +12,11 @@
 set(WIX_GENERATED_FILES
 	${CMAKE_CURRENT_BINARY_DIR}/DependentComponents.wxs
 	${CMAKE_CURRENT_BINARY_DIR}/Diameter.wxs
-	${CMAKE_CURRENT_BINARY_DIR}/GtkDependentComponents.wxs
 	${CMAKE_CURRENT_BINARY_DIR}/QtDependentComponents.wxs
 	${CMAKE_CURRENT_BINARY_DIR}/QtTranslation.wxs
 	${CMAKE_CURRENT_BINARY_DIR}/RadiusDict.wxs
 	${CMAKE_CURRENT_BINARY_DIR}/SNMPMibs.wxs
+	${CMAKE_CURRENT_BINARY_DIR}/UsersGuide.wxs
 )
 set(WIX_GENERATED_FILES ${WIX_GENERATED_FILES} PARENT_SCOPE)
 
@@ -56,11 +44,11 @@ set(WIX_FILES
 set(WIX_OUT_FILES
 	${CMAKE_CURRENT_BINARY_DIR}/DependentComponents.wixobj
 	${CMAKE_CURRENT_BINARY_DIR}/Diameter.wixobj
-	${CMAKE_CURRENT_BINARY_DIR}/GtkDependentComponents.wixobj
 	${CMAKE_CURRENT_BINARY_DIR}/QtDependentComponents.wixobj
 	${CMAKE_CURRENT_BINARY_DIR}/QtTranslation.wixobj
 	${CMAKE_CURRENT_BINARY_DIR}/RadiusDict.wixobj
 	${CMAKE_CURRENT_BINARY_DIR}/SNMPMibs.wixobj
+	${CMAKE_CURRENT_BINARY_DIR}/UsersGuide.wixobj
 	${CMAKE_CURRENT_BINARY_DIR}/Wireshark.wixobj
 	${CMAKE_CURRENT_BINARY_DIR}/WiresharkOptionsDlg.wixobj
 	${CMAKE_CURRENT_BINARY_DIR}/WiresharkWixUI.wixobj
@@ -72,45 +60,36 @@ set(PROGRAM_NAME ${CMAKE_PROJECT_NAME})
 file(TO_NATIVE_PATH "${CMAKE_SOURCE_DIR}" TOP_SRC_DIR)
 # STAGING_DIR depends on the build configuration so we pass it
 # on the command line below.
-file(TO_NATIVE_PATH "${CMAKE_BINARY_DIR}/docbook" USER_GUIDE_DIR)
-if ("${WIRESHARK_TARGET_PLATFORM}" STREQUAL "win32")
-	set(TARGET_MACHINE x86)
-elseif ("${WIRESHARK_TARGET_PLATFORM}" STREQUAL "win64")
-	set(TARGET_MACHINE x64)
-else()
-	message(FATAL_ERROR "Your mysterious moon-man architecture \"${WIRESHARK_TARGET_PLATFORM}\" frightens and confuses us.")
-endif()
-
-# Path to the WinPcap installer.
-# XXX Come up with a better variable, e.g. cache WIRESHARK_LIB_DIR in FindWSWinLibs.
-file(TO_NATIVE_PATH "${GLIB2_DLL_DIR}/../.." _wireshark_lib_dir)
-set(WIRESHARK_LIB_DIR "${_wireshark_lib_dir}")
-
-# Must match ${WIRESHARK_LIB_DIR}/WinPcap_X_Y_Z.exe
-set(WINPCAP_PACKAGE_VERSION ${WINPCAP_VERSION})
-string(REPLACE "_" "." PCAP_DISPLAY_VERSION "${WINPCAP_PACKAGE_VERSION}")
-
-set(USBPCAP_DISPLAY_VERSION "1.1.0.0-g794bf26-5")
-
-set(PRODUCT_VERSION ${PROJECT_MAJOR_VERSION}.${PROJECT_MINOR_VERSION}.${PROJECT_PATCH_VERSION}.${PROJECT_BUILD_VERSION})
+file(TO_NATIVE_PATH "${CMAKE_BINARY_DIR}/doc" DOC_DIR)
 
 # To do:
 # - Sync the various version names between CMake and Wix.
-# - Set CMakeLists.txt version strings in make-version.pl
+# - Set CMakeLists.txt version strings in tools/make-version.py
 # - Add a VERSION_EXTRA cmake option
 set (VERSION "${PROJECT_VERSION}")
-set (PRODUCT_VERSION=${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MICRO}.${VERSION_BUILD})
+set(PRODUCT_VERSION ${PROJECT_MAJOR_VERSION}.${PROJECT_MINOR_VERSION}.${PROJECT_PATCH_VERSION}.${PROJECT_BUILD_VERSION})
 
-# Use the merge module that comes with Visual Studio (From MSVC 2013?)
-# This is currently hardcoded for MSVC 2013
-set (MSVC_CRT_VERSION "VC120")
-set (MSVC_REDIST_DIR "$ENV{PROGRAMFILES}/Common Files/Merge Modules")
-message(STATUS "Using ${MSVC_REDIST_DIR}/Microsoft_${MSVC_CRT_VERSION}_CRT_${TARGET_MACHINE}.msm for the installer")
+# Starting with Visual Studio 2019 merge modules are deprecated but
+# are available as an individual component.
+# https://docs.microsoft.com/en-us/visualstudio/releases/2019/release-notes#-deprecations
+set(MERGE_MODULE "Microsoft_VC${MSVC_TOOLSET_VERSION}_CRT_${WIRESHARK_TARGET_PLATFORM}.msm")
+set (PF86_ENV "ProgramFiles(x86)")
 
-if(NOT ENABLE_STATIC)
-	# XXX Replace ENABLE_LIBWIRESHARK with !ENABLE_STATIC everywhere.
-	set(ENABLE_LIBWIRESHARK "-dENABLE_LIBWIRESHARK")
+set(VC_TOOLS_MERGE_MODULES_DIR)
+if (DEFINED ENV{VCToolsRedistDir})
+	set(VC_TOOLS_MERGE_MODULES_DIR "$ENV{VCToolsRedistDir}/MergeModules")
 endif()
+
+find_path(MERGE_MODULE_DIR ${MERGE_MODULE}
+	PATHS
+		#"$ENV{VCINSTALLDIR}/VC/Redist/MSVC/how-do-we-get-this-version/Merge Modules"
+		${VC_TOOLS_MERGE_MODULES_DIR}
+		"$ENV{${PF86_ENV}}/Common Files/Merge Modules"
+		"$ENV{PROGRAMFILES}/Common Files/Merge Modules"
+	NO_DEFAULT_PATH
+)
+file(TO_NATIVE_PATH "${MERGE_MODULE_DIR}/${MERGE_MODULE}" MSM_NATIVE_PATH)
+message(STATUS "Using ${MSM_NATIVE_PATH} for the WiX installer")
 
 # DependentComponents.wxi. Can be created at configure time.
 set(_all_manifest_wix "${CMAKE_CURRENT_BINARY_DIR}/DependentComponents.wxs")
@@ -120,202 +99,116 @@ file(APPEND "${_all_manifest_wix}" "  <!-- Files required for all sections. Gene
 file(APPEND "${_all_manifest_wix}"  "<?include InputPaths.wxi ?>\n")
 file(APPEND "${_all_manifest_wix}" "  <Fragment>\n")
 file(APPEND "${_all_manifest_wix}" "    <DirectoryRef Id=\"INSTALLFOLDER\">\n")
+file(APPEND "${_all_manifest_wix}" "      <?ifdef BUNDLE_DEBUG_DLLS ?>\n")
+foreach(_dll ${GLIB2_DLLS_DEBUG})
+	STRING(REGEX REPLACE "[-|\\.]" "_" _wix_name ${_dll})
+	file(APPEND "${_all_manifest_wix}" "        <Component Id=\"cmp${_wix_name}\" Guid=\"*\">\n")
+	file(APPEND "${_all_manifest_wix}" "          <File Id=\"fil${_wix_name}\" KeyPath=\"yes\" Source=\"$(var.Staging.Dir)\\${_dll}\"/>\n")
+	file(APPEND "${_all_manifest_wix}" "        </Component>\n")
+endforeach()
+file(APPEND "${_all_manifest_wix}" "      <?else?>\n")
+foreach(_dll ${GLIB2_DLLS_RELEASE})
+	STRING(REGEX REPLACE "[-|\\.]" "_" _wix_name ${_dll})
+	file(APPEND "${_all_manifest_wix}" "        <Component Id=\"cmp${_wix_name}\" Guid=\"*\">\n")
+	file(APPEND "${_all_manifest_wix}" "          <File Id=\"fil${_wix_name}\" KeyPath=\"yes\" Source=\"$(var.Staging.Dir)\\${_dll}\"/>\n")
+	file(APPEND "${_all_manifest_wix}" "        </Component>\n")
+endforeach()
+file(APPEND "${_all_manifest_wix}" "      <?endif?>\n")
 SET(unique_component "")
-foreach(_dll ${GLIB2_DLLS} ${CARES_DLL} ${GCRYPT_DLLS} ${GEOIP_DLL}
-		${GNUTLS_DLLS} ${KERBEROS_DLLS} ${LUA_DLL} ${SMI_DLL} ${LIBSSH_DLL}
-		${WINSPARKLE_DLL} ${ZLIB_DLL}
+set (_dll_list ${AMRNB_DLL} ${CARES_DLL} ${PCRE2_RELEASE_DLL} ${GCRYPT_DLLS}
+	${GNUTLS_DLLS} ${KERBEROS_DLLS} ${LIBSSH_DLLS} ${LUA_DLL}
+	${LZ4_DLL} ${MINIZIP_DLL} ${MINIZIPNG_DLLS} ${NGHTTP2_DLL} ${NGHTTP3_DLL} ${SBC_DLL} ${SMI_DLL}
+	${SNAPPY_DLL} ${SPANDSP_DLL} ${BCG729_DLL} ${LIBXML2_DLLS} ${WINSPARKLE_DLL}
+	${XXHASH_DLL} ${ZLIB_DLL} ${ZLIBNG_DLL} ${BROTLI_DLLS} ${ZSTD_DLL} ${ILBC_DLL} ${OPUS_DLL}
+	${SPEEXDSP_DLL}
+	# Required for mmdbresolve
+	${MAXMINDDB_DLL}
 	)
+foreach(_dll ${_dll_list})
 	#ensure uniqueness of files
 	IF(NOT "${unique_component}" MATCHES "(^|;)${_dll}(;|$)")
 		STRING(REGEX REPLACE "[-|\\.]" "_" _wix_name ${_dll})
-		file(APPEND "${_all_manifest_wix}" "       <Component Id=\"cmp${_wix_name}\" Guid=\"*\">\n")
-		file(APPEND "${_all_manifest_wix}" "         <File Id=\"fil${_wix_name}\" KeyPath=\"yes\" Source=\"$(var.Staging.Dir)\\${_dll}\"/>\n")
-		file(APPEND "${_all_manifest_wix}" "       </Component>\n")
+		file(APPEND "${_all_manifest_wix}" "      <Component Id=\"cmp${_wix_name}\" Guid=\"*\">\n")
+		file(APPEND "${_all_manifest_wix}" "        <File Id=\"fil${_wix_name}\" KeyPath=\"yes\" Source=\"$(var.Staging.Dir)\\${_dll}\"/>\n")
+		file(APPEND "${_all_manifest_wix}" "      </Component>\n")
 		SET(unique_component ${unique_component} ${_dll})
 	ENDIF(NOT "${unique_component}" MATCHES "(^|;)${_dll}(;|$)")
-endforeach()
-foreach(_script "init.lua" "console.lua" "dtd_gen.lua")
-	STRING(REGEX REPLACE "[-|\\.]" "_" _wix_name ${_script})
-	file(APPEND "${_all_manifest_wix}" "       <Component Id=\"cmp${_wix_name}\" Guid=\"*\">\n")
-	file(APPEND "${_all_manifest_wix}" "         <File Id=\"fil${_wix_name}\" KeyPath=\"yes\" Source=\"$(var.Staging.Dir)\\${_script}\"/>\n")
-	file(APPEND "${_all_manifest_wix}" "       </Component>\n")
 endforeach()
 file(APPEND "${_all_manifest_wix}" "    </DirectoryRef>\n")
 file(APPEND "${_all_manifest_wix}" "  </Fragment>\n")
 file(APPEND "${_all_manifest_wix}" "  <Fragment>\n")
 file(APPEND "${_all_manifest_wix}" "    <ComponentGroup Id=\"CG.RequiredDependencies\">\n")
+file(APPEND "${_all_manifest_wix}" "      <?ifdef BUNDLE_DEBUG_DLLS ?>\n")
+foreach(_dll ${GLIB2_DLLS_DEBUG})
+	STRING(REGEX REPLACE "[-|\\.]" "_" _wix_name ${_dll})
+	file(APPEND "${_all_manifest_wix}" "        <ComponentRef Id=\"cmp${_wix_name}\" />\n")
+endforeach()
+file(APPEND "${_all_manifest_wix}" "      <?else?>\n")
+foreach(_dll ${GLIB2_DLLS_RELEASE})
+	STRING(REGEX REPLACE "[-|\\.]" "_" _wix_name ${_dll})
+	file(APPEND "${_all_manifest_wix}" "        <ComponentRef Id=\"cmp${_wix_name}\" />\n")
+endforeach()
+file(APPEND "${_all_manifest_wix}" "      <?endif?>\n")
 SET(unique_file "")
-foreach(_dll ${GLIB2_DLLS} ${CARES_DLL} ${GCRYPT_DLLS} ${GEOIP_DLL}
-		${GNUTLS_DLLS} ${KERBEROS_DLLS} ${LUA_DLL} ${SMI_DLL} ${LIBSSH_DLL}
-		${WINSPARKLE_DLL} ${ZLIB_DLL}
-	)
+foreach(_dll ${_dll_list})
 	#ensure uniqueness of files
 	IF(NOT "${unique_file}" MATCHES "(^|;)${_dll}(;|$)")
 		STRING(REGEX REPLACE "[-|\\.]" "_" _wix_name ${_dll})
-		file(APPEND "${_all_manifest_wix}" "       <ComponentRef Id=\"cmp${_wix_name}\" />\n")
+		file(APPEND "${_all_manifest_wix}" "      <ComponentRef Id=\"cmp${_wix_name}\" />\n")
 		SET(unique_file ${unique_file} ${_dll})
 	ENDIF(NOT "${unique_file}" MATCHES "(^|;)${_dll}(;|$)")
-endforeach()
-foreach(_script "init.lua" "console.lua" "dtd_gen.lua")
-	STRING(REGEX REPLACE "[-|\\.]" "_" _wix_name ${_script})
-	file(APPEND "${_all_manifest_wix}" "       <ComponentRef Id=\"cmp${_wix_name}\" />\n")
 endforeach()
 file(APPEND "${_all_manifest_wix}" "    </ComponentGroup>\n")
 file(APPEND "${_all_manifest_wix}" "  </Fragment>\n")
 file(APPEND "${_all_manifest_wix}" "\n</Wix>\n")
 
-# GtkDependentComponents.wxs. Can be created at configure time.
-set(_gtk_dll_manifest_wix "${CMAKE_CURRENT_BINARY_DIR}/GtkDependentComponents.wxs")
-file(WRITE "${_gtk_dll_manifest_wix}" "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n")
-file(APPEND "${_gtk_dll_manifest_wix}" "<Wix xmlns=\"http://schemas.microsoft.com/wix/2006/wi\">\n\n")
-if(BUILD_wireshark_gtk AND GTK_FOUND)
-	file(APPEND "${_gtk_dll_manifest_wix}"  "  <!-- Files required for the GTK+ section. Generated by CMake. -->\n")
-	file(APPEND "${_gtk_dll_manifest_wix}"  "<?include InputPaths.wxi ?>\n")
-	file(APPEND "${_gtk_dll_manifest_wix}"  "  <Fragment>\n")
-	file(APPEND "${_gtk_dll_manifest_wix}"  "    <DirectoryRef Id=\"INSTALLFOLDER\">\n")
-	foreach(_dll ${GTK2_DLLS} ${GTK3_DLLS})
-		IF(NOT "${unique_component}" MATCHES "(^|;)${_dll}(;|$)")
-			STRING(REGEX REPLACE "[-|\\.]" "_" _wix_name ${_dll})
-			file(APPEND "${_gtk_dll_manifest_wix}"  "       <Component Id=\"cmp${_wix_name}\" Guid=\"*\">\n")
-			file(APPEND "${_gtk_dll_manifest_wix}"  "         <File Id=\"fil${_wix_name}\" KeyPath=\"yes\" Source=\"$(var.Staging.Dir)\\${_dll}\"/>\n")
-			file(APPEND "${_gtk_dll_manifest_wix}"  "       </Component>\n")
-			SET(unique_component ${unique_component} ${_dll})
-		ENDIF(NOT "${unique_component}" MATCHES "(^|;)${_dll}(;|$)")
-	endforeach()
-	file(APPEND "${_gtk_dll_manifest_wix}"  "    </DirectoryRef>\n")
-	file(APPEND "${_gtk_dll_manifest_wix}"  "  </Fragment>\n")
-	file(APPEND "${_gtk_dll_manifest_wix}"  "  <Fragment>\n")
-	file(APPEND "${_gtk_dll_manifest_wix}"  "    <ComponentGroup Id=\"CG.GTKRequiredDependencies\">\n")
-	foreach(_dll ${GTK2_DLLS} ${GTK3_DLLS})
-		IF(NOT "${unique_file}" MATCHES "(^|;)${_dll}(;|$)")
-			STRING(REGEX REPLACE "[-|\\.]" "_" _wix_name ${_dll})
-			file(APPEND "${_gtk_dll_manifest_wix}"  "       <ComponentRef Id=\"cmp${_wix_name}\" />\n")
-			SET(unique_file ${unique_file} ${_dll})
-		ENDIF(NOT "${unique_file}" MATCHES "(^|;)${_dll}(;|$)")
-	endforeach()
-	file(APPEND "${_gtk_dll_manifest_wix}"  "    </ComponentGroup>\n")
-	file(APPEND "${_gtk_dll_manifest_wix}"  "  </Fragment>\n")
-
-	#XXX - May be able to do this with heat.exe, but attaching it to existing GTK dependencies for now
-	if(GTK2_ETC_DIR)
-		file(APPEND "${_gtk_dll_manifest_wix}"  "  <Fragment>\n")
-		file(APPEND "${_gtk_dll_manifest_wix}"  "    <DirectoryRef Id=\"dirEtcGtk2_0\">\n")
-		file(GLOB gtk2_etc "${EXECUTABLE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/etc/gtk-2.0/*")
-		foreach(_file ${gtk2_etc})
-			get_filename_component(_gtk_dll ${_file} NAME_WE)
-			get_filename_component(_gtk_dll_ext ${_file} EXT)
-			set(_gtk_dll ${_gtk_dll}${_gtk_dll_ext})
-			STRING(REGEX REPLACE "[-|\\.]" "_" _wix_name ${_gtk_dll})
-			file(APPEND "${_gtk_dll_manifest_wix}"  "       <Component Id=\"cmp${_wix_name}\" Guid=\"*\">\n")
-			file(APPEND "${_gtk_dll_manifest_wix}"  "         <File Id=\"fil${_wix_name}\" KeyPath=\"yes\" Source=\"$(var.GTK2_0.Dir)\\${_gtk_dll}\" />\n")
-			file(APPEND "${_gtk_dll_manifest_wix}"  "       </Component>\n")
-		endforeach()
-		file(APPEND "${_gtk_dll_manifest_wix}"  "    </DirectoryRef>\n")
-		file(APPEND "${_gtk_dll_manifest_wix}"  "  </Fragment>\n")
-	endif()
-	if(GTK2_ENGINES_DLL_DIR)
-		file(APPEND "${_gtk_dll_manifest_wix}"  "  <Fragment>\n")
-		file(APPEND "${_gtk_dll_manifest_wix}"  "    <DirectoryRef Id=\"dirLibGtk2_0_2_10_0_engines\">\n")
-		file(GLOB gtk2_engines "${EXECUTABLE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/lib/gtk-2.0/2.10.0/engines/*")
-		foreach(_file ${gtk2_engines})
-			get_filename_component(_gtk_dll ${_file} NAME_WE)
-			get_filename_component(_gtk_dll_ext ${_file} EXT)
-			set(_gtk_dll ${_gtk_dll}${_gtk_dll_ext})
-			STRING(REGEX REPLACE "[-|\\.]" "_" _wix_name ${_gtk_dll})
-			file(APPEND "${_gtk_dll_manifest_wix}"  "       <Component Id=\"cmp${_wix_name}\" Guid=\"*\">\n")
-			file(APPEND "${_gtk_dll_manifest_wix}"  "         <File Id=\"fil${_wix_name}\" KeyPath=\"yes\" Source=\"$(var.Lib_GTK2_0_Engines.Dir)\\${_gtk_dll}\" />\n")
-			file(APPEND "${_gtk_dll_manifest_wix}"  "       </Component>\n")
-		endforeach()
-		file(APPEND "${_gtk_dll_manifest_wix}"  "    </DirectoryRef>\n")
-		file(APPEND "${_gtk_dll_manifest_wix}"  "  </Fragment>\n")
-	endif()
-	file(APPEND "${_gtk_dll_manifest_wix}"  "  <Fragment>\n")
-	file(APPEND "${_gtk_dll_manifest_wix}"  "    <DirectoryRef Id=\"dirLibGtk2_0_modules\">\n")
-	file(GLOB gtk2_modules "${EXECUTABLE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/lib/gtk-2.0/modules/*")
-	foreach(_file ${gtk2_modules})
-		get_filename_component(_gtk_dll ${_file} NAME_WE)
-		get_filename_component(_gtk_dll_ext ${_file} EXT)
-		set(_gtk_dll ${_gtk_dll}${_gtk_dll_ext})
-		STRING(REGEX REPLACE "[-|\\.]" "_" _wix_name ${_gtk_dll})
-		file(APPEND "${_gtk_dll_manifest_wix}"  "       <Component Id=\"cmp${_wix_name}\" Guid=\"*\">\n")
-		file(APPEND "${_gtk_dll_manifest_wix}"  "         <File Id=\"fil${_wix_name}\" KeyPath=\"yes\" Source=\"$(var.Lib_GTK2_0_Modules.Dir)\\${_gtk_dll}\" />\n")
-		file(APPEND "${_gtk_dll_manifest_wix}"  "       </Component>\n")
-	endforeach()
-	file(APPEND "${_gtk_dll_manifest_wix}"  "    </DirectoryRef>\n")
-	file(APPEND "${_gtk_dll_manifest_wix}"  "  </Fragment>\n")
-	#put the files into a group
-	file(APPEND "${_gtk_dll_manifest_wix}"  "  <Fragment>\n")
-	file(APPEND "${_gtk_dll_manifest_wix}"  "    <ComponentGroup Id=\"CG.GTKSubdirectory\">\n")
-	if(GTK2_ETC_DIR)
-		foreach(_file ${gtk2_etc})
-			get_filename_component(_gtk_dll ${_file} NAME_WE)
-			get_filename_component(_gtk_dll_ext ${_file} EXT)
-			set(_gtk_dll ${_gtk_dll}${_gtk_dll_ext})
-			STRING(REGEX REPLACE "[-|\\.]" "_" _wix_name ${_gtk_dll})
-			file(APPEND "${_gtk_dll_manifest_wix}"  "       <ComponentRef Id=\"cmp${_wix_name}\" />\n")
-		endforeach()
-	endif()
-	if(GTK2_ENGINES_DLL_DIR)
-		foreach(_file ${gtk2_engines})
-			get_filename_component(_gtk_dll ${_file} NAME_WE)
-			get_filename_component(_gtk_dll_ext ${_file} EXT)
-			set(_gtk_dll ${_gtk_dll}${_gtk_dll_ext})
-			STRING(REGEX REPLACE "[-|\\.]" "_" _wix_name ${_gtk_dll})
-			file(APPEND "${_gtk_dll_manifest_wix}"  "       <ComponentRef Id=\"cmp${_wix_name}\" />\n")
-		endforeach()
-	endif()
-	foreach(_file ${gtk2_modules})
-		get_filename_component(_gtk_dll ${_file} NAME_WE)
-		get_filename_component(_gtk_dll_ext ${_file} EXT)
-		set(_gtk_dll ${_gtk_dll}${_gtk_dll_ext})
-		STRING(REGEX REPLACE "[-|\\.]" "_" _wix_name ${_gtk_dll})
-		file(APPEND "${_gtk_dll_manifest_wix}"  "       <ComponentRef Id=\"cmp${_wix_name}\" />\n")
-	endforeach()
-	file(APPEND "${_gtk_dll_manifest_wix}"  "    </ComponentGroup>\n")
-	file(APPEND "${_gtk_dll_manifest_wix}"  "  </Fragment>\n")
-
-endif()
-file(APPEND "${_gtk_dll_manifest_wix}"  "\n</Wix>\n")
-
-if(BUILD_wireshark_gtk AND GTK_FOUND)
-	set(use_gtk "-dGTK_DIR")
-endif()
-
 if(SMI_DIR)
-	set(use_smi "-dSMI_DIR")
+	set(d_smi_dir "-dSMI_DIR")
+endif()
+
+if (MAXMINDDB_FOUND)
+	set(d_mmdbresolve_exe "-dMMDBRESOLVE_EXE")
 endif()
 
 set(WIX_CANDLE_DEFINES
+	-v
 	-sw1076
-	-dPlatform=${TARGET_MACHINE}
+	-dPlatform=${WIRESHARK_TARGET_PLATFORM}
 	-dWiresharkName=${CMAKE_PROJECT_NAME}
 	-dWiresharkVersion=${PRODUCT_VERSION}
+	-dWiresharkMajorVersion=${PROJECT_MAJOR_VERSION}
+	-dWiresharkMinorVersion=${PROJECT_MINOR_VERSION}
 	-dAssetDir=${CMAKE_SOURCE_DIR}/packaging/wix
-	-dBuildOutputDir=${EXECUTABLE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}
-	-dVCRedistVersion=${MSVC_CRT_VERSION}
-	-dVCRedistDir=${MSVC_REDIST_DIR}
-	-dSnmpMibDir=${ARCHIVE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/snmp/mibs
-	-dRadiusDictDir=${ARCHIVE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/radius
-	-dDiameterDir=${ARCHIVE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/diameter
-	-dQtTranslationDir=${ARCHIVE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/translations
-	${use_gtk}
-	${use_smi}
-	${ENABLE_LIBWIRESHARK}
-	-arch ${TARGET_MACHINE}
+	-dBuildOutputDir=${EXECUTABLE_OUTPUT_PATH}/${CMAKE_CFG_INTDIR}
+	-dDiameterDir=${ARCHIVE_OUTPUT_PATH}/${CMAKE_CFG_INTDIR}/diameter
+	-dIconDir=${CMAKE_SOURCE_DIR}/resources/icons
+	-dQtTranslationDir=${ARCHIVE_OUTPUT_PATH}/${CMAKE_CFG_INTDIR}/translations
+	-dRadiusDictDir=${ARCHIVE_OUTPUT_PATH}/${CMAKE_CFG_INTDIR}/radius
+	-dSnmpMibDir=${ARCHIVE_OUTPUT_PATH}/${CMAKE_CFG_INTDIR}/snmp/mibs
+	-dUsersGuideDir=${ARCHIVE_OUTPUT_PATH}/${CMAKE_CFG_INTDIR}/doc/wsug_html_chunked
+	-dVCRedistVersion=VC${MSVC_TOOLSET_VERSION}
+	-dVCRedistDir=${MERGE_MODULE_DIR}
+	${d_smi_dir}
+	${d_mmdbresolve_exe}
+	-arch ${WIRESHARK_TARGET_PLATFORM}
 	-ext WixUIExtension
 	-I${CMAKE_SOURCE_DIR}/packaging/wix
 	-out ${CMAKE_CURRENT_BINARY_DIR}/
 	PARENT_SCOPE
 )
 
+# The NSIS CMakeFile sets the program name + version slightly differently.
 set(WIX_LIGHT_DEFINES
-	-out ${CMAKE_CURRENT_BINARY_DIR}/Wireshark.msi
+	-v
+	-out ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}-${PROJECT_VERSION}-${WIRESHARK_TARGET_PLATFORM}.msi
 	-sw1076
 	-ext WixUIExtension
+	-loc ${CMAKE_CURRENT_SOURCE_DIR}/StringOverrides.wxl
 	PARENT_SCOPE
 )
 
 set(WIX_HEAT_FLAGS
+	-v
 	-ag
 	-nologo
 	-srd
@@ -324,78 +217,112 @@ set(WIX_HEAT_FLAGS
 )
 
 macro( ADD_WIX_PACKAGE_TARGET )
-	set (_wix_source_dir ${CMAKE_SOURCE_DIR}/packaging/wix )
-	set (_wix_binary_dir ${CMAKE_BINARY_DIR}/packaging/wix )
+	#
+	# XXX - if we're not building Wireshark, we can't build
+	# QtDependentComponents.wxs..  On the other hand, if we're
+	# not building Wireshark, we have no need to include Qt
+	# in the installer, so it's not clear we need that file.
+	#
+	# This should probably be fixed, so that people can produce
+	# command-line-only installer packages.
+	if(BUILD_wireshark)
+		set (_wix_source_dir ${CMAKE_SOURCE_DIR}/packaging/wix )
+		set (_wix_binary_dir ${CMAKE_BINARY_DIR}/packaging/wix )
 
-	# QtDependentComponents.wxs. Created using Wireshark.exe.
-	add_custom_command(OUTPUT ${_wix_binary_dir}/QtDependentComponents.wxs
-		COMMAND set "PATH=%PATH%;${QT_BIN_PATH}"
-		COMMAND ${POWERSHELL_COMMAND} "${_wix_source_dir}/windeployqt-to-wix.ps1"
-			-Executable $<TARGET_FILE:wireshark>
-			-FilePath ${_wix_binary_dir}/QtDependentComponents.wxs
-	)
+		# QtDependentComponents.wxs. Created using Wireshark.exe.
+		add_custom_command(OUTPUT ${_wix_binary_dir}/QtDependentComponents.wxs
+			COMMAND set "PATH=${QT_BIN_PATH};%PATH%"
+			COMMAND ${POWERSHELL_COMMAND} "${_wix_source_dir}/windeployqt-to-wix.ps1"
+				-Executable $<TARGET_FILE:wireshark>
+				-FilePath ${_wix_binary_dir}/QtDependentComponents.wxs
+			DEPENDS "${_wix_source_dir}/windeployqt-to-wix.ps1"
+		)
 
-	# SNMPMibs.wxs. Collects all MIBs in "output" snmp/mibs directory. Generated with heat.exe
-	add_custom_command(OUTPUT ${_wix_binary_dir}/SNMPMibs.wxs
-		COMMAND ${WIX_HEAT_EXECUTABLE} dir ${ARCHIVE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/snmp/mibs
-				${WIX_HEAT_FLAGS} -cg CG.Plugins.SNMP -dr dirSnmpMibs -var var.SnmpMibDir
-				-out ${_wix_binary_dir}/SNMPMibs.wxs
-	)
+		# UsersGuide.wxs. Collects the contents of wsug_html_chunked.
+		# Generated with heat.exe
+		add_custom_command(OUTPUT ${_wix_binary_dir}/UsersGuide.wxs
+			COMMAND ${WIX_HEAT_EXECUTABLE} dir ${CMAKE_BINARY_DIR}/doc/wsug_html_chunked
+					${WIX_HEAT_FLAGS} -cg CG.Documentation -dr dirUsersGuide -var var.UsersGuideDir
+					-out ${_wix_binary_dir}/UsersGuide.wxs
+		)
 
-	# RadiusDict.wxs. Collects all Radius dictionary files in "output" radius directory. Generated with heat.exe
-	add_custom_command(OUTPUT ${_wix_binary_dir}/RadiusDict.wxs
-		COMMAND ${WIX_HEAT_EXECUTABLE} dir ${ARCHIVE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/radius
-				${WIX_HEAT_FLAGS} -cg CG.RadiusDict -dr dirRadius -var var.RadiusDictDir
-				-out ${_wix_binary_dir}/RadiusDict.wxs
-	)
+		# SNMPMibs.wxs. Collects all MIBs in "output" snmp/mibs
+		# directory. Generated with heat.exe
+		add_custom_command(OUTPUT ${_wix_binary_dir}/SNMPMibs.wxs
+			COMMAND ${WIX_HEAT_EXECUTABLE} dir ${ARCHIVE_OUTPUT_PATH}/${CMAKE_CFG_INTDIR}/snmp/mibs
+					${WIX_HEAT_FLAGS} -cg CG.Plugins.SNMP -dr dirSnmpMibs -var var.SnmpMibDir
+					-out ${_wix_binary_dir}/SNMPMibs.wxs
+		)
 
-	# Diameter.wxs. Collects all Diameter XML dictionary files in "output" diameter directory. Generated with heat.exe
-	add_custom_command(OUTPUT ${_wix_binary_dir}/Diameter.wxs
-		COMMAND ${WIX_HEAT_EXECUTABLE} dir ${ARCHIVE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/diameter
-				${WIX_HEAT_FLAGS} -cg CG.Diameter -dr dirDiameter -var var.DiameterDir
-				-out ${_wix_binary_dir}/Diameter.wxs
-	)
+		# RadiusDict.wxs. Collects all Radius dictionary files in
+		# "output" radius directory. Generated with heat.exe
+		add_custom_command(OUTPUT ${_wix_binary_dir}/RadiusDict.wxs
+			COMMAND ${WIX_HEAT_EXECUTABLE} dir ${ARCHIVE_OUTPUT_PATH}/${CMAKE_CFG_INTDIR}/radius
+					${WIX_HEAT_FLAGS} -cg CG.RadiusDict -dr dirRadius -var var.RadiusDictDir
+					-out ${_wix_binary_dir}/RadiusDict.wxs
+		)
 
-	# QtTranslation.wxs. Collects all Qt translation files in "output" translations directory. Generated with heat.exe
-	add_custom_command(OUTPUT ${_wix_binary_dir}/QtTranslation.wxs
-		COMMAND ${WIX_HEAT_EXECUTABLE} dir ${ARCHIVE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/translations
-				${WIX_HEAT_FLAGS} -cg CG.QtTranslations -dr dirTranslations -var var.QtTranslationDir
-				-out ${_wix_binary_dir}/QtTranslation.wxs
-	)
+		# Diameter.wxs. Collects all Diameter XML dictionary files
+		# in "output" diameter directory. Generated with heat.exe
+		add_custom_command(OUTPUT ${_wix_binary_dir}/Diameter.wxs
+			COMMAND ${WIX_HEAT_EXECUTABLE} dir ${ARCHIVE_OUTPUT_PATH}/${CMAKE_CFG_INTDIR}/diameter
+					${WIX_HEAT_FLAGS} -cg CG.Diameter -dr dirDiameter -var var.DiameterDir
+					-out ${_wix_binary_dir}/Diameter.wxs
+		)
 
-	# Build WiX package dependencies. We build the package in two stages
-	# so that wix_package below doesn't trigger any dependencies that
-	# might clobber any signed executables.
-	add_custom_target(wix_package_prep
-		DEPENDS
-			${WIX_FILES}
-			copy_data_files
-			user_guides
-			${CMAKE_BINARY_DIR}/docbook/user-guide.chm
-	)
-	set_target_properties(wix_package_prep PROPERTIES FOLDER "Packaging")
+		# QtTranslation.wxs. Collects all Qt translation files in
+		# "output" translations directory. Generated with heat.exe
+		add_custom_command(OUTPUT ${_wix_binary_dir}/QtTranslation.wxs
+			COMMAND ${WIX_HEAT_EXECUTABLE} dir ${ARCHIVE_OUTPUT_PATH}/${CMAKE_CFG_INTDIR}/translations
+					${WIX_HEAT_FLAGS} -cg CG.QtTranslations -dr dirTranslations -var var.QtTranslationDir
+					-out ${_wix_binary_dir}/QtTranslation.wxs
+		)
 
-	# Dump the installer into ${CMAKE_CURRENT_SOURCE_DIR}/packaging/wix
-	# Note that executables and DLLs *must* be built separately
-	add_custom_target(wix_package
-		COMMAND ${WIX_CANDLE_EXECUTABLE} ${WIX_CANDLE_DEFINES} ${WIX_SOURCE_FILES}
-		WORKING_DIRECTORY ${_wix_source_dir}
+		# Build WiX package dependencies. We build the package in
+		# two stages so that wireshark_wix below doesn't trigger any
+		# dependencies that might clobber any signed executables.
+		# XXX Rename this to wireshark_wix_prep
+		add_custom_target(wireshark_wix_prep
+			DEPENDS
+				${WIX_FILES}
+				copy_data_files
+				user_guide_html
+				release_notes_html
+		)
+		set_target_properties(wireshark_wix_prep PROPERTIES
+			FOLDER "Packaging"
+			EXCLUDE_FROM_DEFAULT_BUILD True
+		)
 
-		COMMAND ${WIX_LIGHT_EXECUTABLE} ${WIX_LIGHT_DEFINES} ${WIX_OUT_FILES}
-		WORKING_DIRECTORY ${_wix_binary_dir}
-	)
-	set_target_properties(wix_package PROPERTIES FOLDER "Packaging")
+		# Dump the installer into
+		# ${CMAKE_CURRENT_SOURCE_DIR}/packaging/wix
+		# Note that executables and DLLs *must* be built separately
+		# XXX Rename this to wireshark_wix
+		add_custom_target(wireshark_wix
+			COMMAND ${WIX_CANDLE_EXECUTABLE} ${WIX_CANDLE_DEFINES}
+				$<$<CONFIG:Debug>:-dBUNDLE_DEBUG_DLLS>
+				${WIX_SOURCE_FILES}
+			WORKING_DIRECTORY ${_wix_source_dir}
+
+			COMMAND ${WIX_LIGHT_EXECUTABLE} ${WIX_LIGHT_DEFINES} ${WIX_OUT_FILES}
+			WORKING_DIRECTORY ${_wix_binary_dir}
+		)
+		set_target_properties(wireshark_wix PROPERTIES
+			FOLDER "Packaging"
+			EXCLUDE_FROM_DEFAULT_BUILD True
+		)
+	else()
+		message(WARNING "The WiX installer cannot be built if the Wireshark program isn't built.")
+	endif()
 endmacro( ADD_WIX_PACKAGE_TARGET )
 
 set(CLEAN_FILES
 	DependentComponents.wxs
-	GtkDependentComponents.wxs
 	QtDependentComponents.wxs
+	UsersGuide.wxs
 	SNMPMibs.wxs
 	RadiusDict.wxs
 	Diameter.wxs
 	QtTranslation.wxs
-	#NEWS.txt
-	#user-guide.chm
-	wireshark-$(WIRESHARK_TARGET_PLATFORM)-$(VERSION).exe
+	wireshark-${VERSION}-${WIRESHARK_TARGET_PLATFORM}.msi
 )

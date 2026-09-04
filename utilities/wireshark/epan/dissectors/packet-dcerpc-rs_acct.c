@@ -9,19 +9,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -33,30 +21,30 @@
 void proto_register_rs_acct (void);
 void proto_reg_handoff_rs_acct (void);
 
-static int proto_rs_acct = -1;
-static int hf_rs_acct_opnum = -1;
-static int hf_rs_acct_lookup_rqst_var = -1;
-static int hf_rs_acct_lookup_rqst_key_size = -1;
-static int hf_rs_acct_lookup_rqst_key_t = -1;
-static int hf_rs_acct_get_projlist_rqst_var1 = -1;
-static int hf_rs_acct_get_projlist_rqst_key_size = -1;
-static int hf_rs_acct_get_projlist_rqst_key_t = -1;
+static int proto_rs_acct;
+static int hf_rs_acct_opnum;
+static int hf_rs_acct_lookup_rqst_var;
+static int hf_rs_acct_lookup_rqst_key_size;
+static int hf_rs_acct_lookup_rqst_key_t;
+static int hf_rs_acct_get_projlist_rqst_var1;
+static int hf_rs_acct_get_projlist_rqst_key_size;
+static int hf_rs_acct_get_projlist_rqst_key_t;
 
 
-static gint ett_rs_acct = -1;
+static int ett_rs_acct;
 
 
 
 static e_guid_t uuid_rs_acct = { 0x4c878280, 0x2000, 0x0000, { 0x0d, 0x00, 0x02, 0x87, 0x14, 0x00, 0x00, 0x00 } };
-static guint16  ver_rs_acct = 1;
+static uint16_t ver_rs_acct = 1;
 
 
 static int
 rs_acct_dissect_lookup_rqst (tvbuff_t *tvb, int offset,
-		packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+		packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	guint32 key_size;
-	const guint8 *keyx_t = NULL;
+	uint32_t key_size;
+	const uint8_t *keyx_t = NULL;
 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep,
 			hf_rs_acct_lookup_rqst_var, NULL);
@@ -64,7 +52,7 @@ rs_acct_dissect_lookup_rqst (tvbuff_t *tvb, int offset,
 			hf_rs_acct_lookup_rqst_key_size, &key_size);
 
 	if (key_size){ /* Not able to yet decipher the OTHER versions of this call just yet. */
-		proto_tree_add_item_ret_string(tree, hf_rs_acct_lookup_rqst_key_t, tvb, offset, key_size, ENC_ASCII|ENC_NA, wmem_packet_scope(), &keyx_t);
+		proto_tree_add_item_ret_string(tree, hf_rs_acct_lookup_rqst_key_t, tvb, offset, key_size, ENC_ASCII|ENC_NA, pinfo->pool, &keyx_t);
 		offset += key_size;
 
 		col_append_fstr(pinfo->cinfo, COL_INFO,
@@ -81,10 +69,10 @@ rs_acct_dissect_lookup_rqst (tvbuff_t *tvb, int offset,
 
 static int
 rs_acct_dissect_get_projlist_rqst (tvbuff_t *tvb, int offset,
-		packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+		packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	guint32 key_size;
-	const guint8 *keyx_t = NULL;
+	uint32_t key_size;
+	const uint8_t *keyx_t = NULL;
 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep,
 			hf_rs_acct_get_projlist_rqst_var1, NULL);
@@ -92,7 +80,7 @@ rs_acct_dissect_get_projlist_rqst (tvbuff_t *tvb, int offset,
 			hf_rs_acct_get_projlist_rqst_key_size, &key_size);
 
 	proto_tree_add_item_ret_string(tree, hf_rs_acct_get_projlist_rqst_key_t,
-			     tvb, offset, key_size, ENC_ASCII|ENC_NA, wmem_packet_scope(), &keyx_t);
+			     tvb, offset, key_size, ENC_ASCII|ENC_NA, pinfo->pool, &keyx_t);
 	offset += key_size;
 
 	col_append_fstr(pinfo->cinfo, COL_INFO,
@@ -102,7 +90,7 @@ rs_acct_dissect_get_projlist_rqst (tvbuff_t *tvb, int offset,
 }
 
 
-static dcerpc_sub_dissector rs_acct_dissectors[] = {
+static const dcerpc_sub_dissector rs_acct_dissectors[] = {
 	{ 0, "add",	     NULL,				NULL},
 	{ 1, "delete",	     NULL,				NULL},
 	{ 2, "rename",	     NULL,				NULL},
@@ -132,7 +120,7 @@ proto_register_rs_acct (void)
 		{ "Var1", "rs_acct.get_projlist_rqst_key_t", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }}
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_rs_acct,
 	};
 	proto_rs_acct = proto_register_protocol ("DCE/RPC RS_ACCT", "RS_ACCT", "rs_acct");
@@ -150,7 +138,7 @@ proto_reg_handoff_rs_acct (void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

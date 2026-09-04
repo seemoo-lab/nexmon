@@ -4,45 +4,31 @@
  *
  * Routines for ATN upper layer
  * protocol packet disassembly
-
+ *
  * ATN upper layers are embedded within OSI Layer 4 (COTP).
  *
  * ATN upper layers contain:
  * Session Layer (NUL protocol option)
  * Presentation Layer (NUL protocol option)
  * ATN upper Layer/Application (ACSE PDU or PDV-list PDU)
-
+ *
  * ATN applications protocols (i.e. CM or CPDLC) are contained within
  * ACSE user-information or PDV presentation data.
-
+ *
  * details see:
- * http://en.wikipedia.org/wiki/CPDLC
- * http://members.optusnet.com.au/~cjr/introduction.htm
-
+ * https://en.wikipedia.org/wiki/CPDLC
+ * https://members.optusnet.com.au/~cjr/introduction.htm
+ *
  * standards:
- * http://legacy.icao.int/anb/panels/acp/repository.cfm
-
- * note:
- * We are dealing with ATN/ULCS aka ICAO Doc 9705 Ed2 here
+ * We are dealing with ATN/ULCS aka ICAO Doc 9705 Second Edition here
  * (don't think there is an ULCS equivalent for "FANS-1/A ").
-
+ * https://www.icao.int/safety/acp/repository/_%20Doc9705_ed2_1999.pdf
+ *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -50,10 +36,10 @@
 why not using existing ses, pres and acse dissectors ?
     ATN upper layers are derived from OSI standards for session,
     presentation and application but the encoding differs
-    (it's PER instead of BER encoding to save bandwith).
+    (it's PER instead of BER encoding to save bandwidth).
     Session and presentation use the "null" encoding option,
     meaning that they are only present at connection establishment
-    and ommitted otherwise.
+    and omitted otherwise.
     Instead of adapting existing dissectors it seemed simpler and cleaner
     to implement everything the new atn-ulcs dissector.
 
@@ -116,6 +102,7 @@ which ATN standard is supported ?
 #include <epan/packet.h>
 #include <epan/address.h>
 #include <epan/conversation.h>
+#include <wsutil/array.h>
 #include <epan/osi-utils.h>
 #include "packet-ber.h"
 #include "packet-per.h"
@@ -130,28 +117,20 @@ void proto_reg_handoff_atn_ulcs(void);
 static heur_dissector_list_t atn_ulcs_heur_subdissector_list;
 
 /* presentation subdissectors i.e. CM, CPDLC */
-static dissector_handle_t atn_cm_handle = NULL;
-static dissector_handle_t atn_cpdlc_handle = NULL;
+static dissector_handle_t atn_cm_handle;
+static dissector_handle_t atn_cpdlc_handle;
 
-static int proto_atn_ulcs          = -1;
-static guint32 ulcs_context_value = 0;
+static int proto_atn_ulcs;
+static uint32_t ulcs_context_value;
 static const char *object_identifier_id;
 
-static wmem_tree_t *aarq_data_tree = NULL;
-static wmem_tree_t *atn_conversation_tree = NULL;
+static wmem_tree_t *aarq_data_tree;
+static wmem_tree_t *atn_conversation_tree;
 
 
-static proto_tree *root_tree = NULL;
+static proto_tree *root_tree;
 
 /* forward declarations for functions generated from asn1 */
-static int dissect_atn_ulcs_T_externalt_encoding_single_asn1_type(
-    tvbuff_t *tvb _U_,
-    int offset _U_,
-    asn1_ctx_t *actx _U_,
-    proto_tree *tree _U_,
-    int hf_index
-    _U_);
-
 static int dissect_atn_ulcs_T_externalt_encoding_octet_aligned(
     tvbuff_t *tvb _U_,
     int offset _U_,
@@ -172,15 +151,15 @@ static int dissect_ACSE_apdu_PDU(
     proto_tree *tree _U_,
     void *data _U_);
 
-guint32 dissect_per_object_descriptor_t(
+uint32_t dissect_per_object_descriptor_t(
     tvbuff_t *tvb,
-    guint32 offset,
+    uint32_t offset,
     asn1_ctx_t *actx,
     proto_tree *tree,
     int hf_index,
     tvbuff_t **value_tvb);
 
-static gint dissect_atn_ulcs(
+static int dissect_atn_ulcs(
     tvbuff_t *tvb,
     packet_info *pinfo,
     proto_tree  *tree,
@@ -189,8 +168,8 @@ static gint dissect_atn_ulcs(
 #include "packet-atn-ulcs-hf.c"
 
 #include "packet-atn-ulcs-ett.c"
-static gint ett_atn_ulcs = -1;
-static gint ett_atn_acse = -1;
+static int ett_atn_ulcs;
+static int ett_atn_acse;
 
 #include "packet-atn-ulcs-fn.c"
 
@@ -235,30 +214,30 @@ static const per_choice_t External_encoding_choice[] =
 #define SES_PARAM_B2_MASK     0x02
 #define SES_PARAM_B1_MASK     0x01
 
-static int hf_atn_ses_type = -1;
-static int hf_atn_ses_param_ind = -1;
-static int hf_atn_ses_param_b1 = -1;
-static int hf_atn_ses_param_b2 = -1;
+static int hf_atn_ses_type;
+static int hf_atn_ses_param_ind;
+static int hf_atn_ses_param_b1;
+static int hf_atn_ses_param_b2;
 
-static gint ett_atn_ses = -1;
+static int ett_atn_ses;
 
 #define ATN_SES_PROTO "ICAO Doc9705 ULCS Session (ISO 8326/8327-1:1994)"
 
-const value_string atn_ses_param_ind[] =
+static const value_string atn_ses_param_ind[] =
 {
     {0, "No Parameter Indication "},
     {1, "Parameter Indication "},
     {0, NULL }
 };
 
-const value_string srf_b2[] =
+static const value_string srf_b2[] =
 {
     {0, "Transport Connection is kept"},
     {1, "Transport Connection is released" },
     {0, NULL }
 };
 
-const value_string srf_b1[] =
+static const value_string srf_b1[] =
 {
     {0, "Transport Connection is transient"},
     {1, "Transport Connection is persistent"},
@@ -272,7 +251,7 @@ const value_string srf_b1[] =
 #define SES_ATN_SRF       0xe0
 #define SES_ATN_SRFC      0xa0
 
-const value_string atn_ses_type[] =
+static const value_string atn_ses_type[] =
 {
     { 0x1d, "Short Connect (SCN) SPDU" },
     { 0x1f, "Short Connect Accept (SAC) SPDU" },
@@ -285,15 +264,15 @@ const value_string atn_ses_type[] =
 /* ATN Presentation layer */
 #define ATN_PRES_PROTO "ICAO Doc9705 ULCS Presentation (ISO 8822/8823-1:1994)"
 
-static int hf_atn_pres_err   = -1;
-static int hf_atn_pres_pdu_type = -1;
-static gint ett_atn_pres    = -1;
+static int hf_atn_pres_err;
+static int hf_atn_pres_pdu_type;
+static int ett_atn_pres;
 
 #define ATN_SES_PRES_MASK 0xf803
 #define PRES_CPR_ER_MASK    0x70
 
 /* type determined by SPDU and PPDU */
-const value_string atn_pres_vals[] =
+static const value_string atn_pres_vals[] =
 {
     { 0xe802, "Short Presentation Connect PPDU (CP) " },
     { 0xf802, "Short Presentation Connect PPDU (CP) " },
@@ -305,7 +284,7 @@ const value_string atn_pres_vals[] =
 };
 
 /* Short Presentation Connect Reject PPDU's 0yyy 00zz */
-const value_string atn_pres_err[] =
+static const value_string atn_pres_err[] =
 {
     { 0x00, "Presentation-user" },
     { 0x01, "Reason not specified (transient)"},
@@ -341,9 +320,9 @@ static int  atn_ulcs_Externalt_encoding(
 }
 
 /* re-implementing external data: packet-per.c */
-static guint32  atn_per_external_type(
+static uint32_t atn_per_external_type(
     tvbuff_t *tvb _U_,
-    guint32 offset,
+    uint32_t offset,
     asn1_ctx_t *actx,
     proto_tree *tree _U_,
     int hf_index _U_,
@@ -375,12 +354,12 @@ static guint32  atn_per_external_type(
 
 /* determine 24-bit aircraft address(ARS) */
 /* from 20-byte ATN NSAP. */
-guint32 get_aircraft_24_bit_address_from_nsap(
+uint32_t get_aircraft_24_bit_address_from_nsap(
     packet_info *pinfo)
 {
-    const guint8* addr = NULL;
-    guint32 ars =0;
-    guint32 adr_prefix =0;
+    const uint8_t* addr = NULL;
+    uint32_t ars =0;
+    uint32_t adr_prefix =0;
 
     /* check NSAP address type*/
     if( (pinfo->src.type != get_osi_address_type()) ||
@@ -398,7 +377,7 @@ guint32 get_aircraft_24_bit_address_from_nsap(
     /* from an aircraft it's downlink */
 
     /* convert addr into 32-bit integer */
-    addr = (const guint8 *)pinfo->src.data;
+    addr = (const uint8_t *)pinfo->src.data;
     adr_prefix =
         ((addr[0]<<24) |
         (addr[1]<<16) |
@@ -412,7 +391,7 @@ guint32 get_aircraft_24_bit_address_from_nsap(
     if((adr_prefix == 0x470027c1) ||
         (adr_prefix == 0x47002741)) {
       /* ICAO doc9507 Ed2 SV5 5.4.3.8.4.4 */
-      /* states that the ARS subfield containes */
+      /* states that the ARS subfield contains */
       /* the  24-bitaddress of the aircraft */
         ars = ((addr[8])<<16) |
             ((addr[9])<<8) |
@@ -424,7 +403,7 @@ guint32 get_aircraft_24_bit_address_from_nsap(
     /* from an aircraft it's downlink */
 
     /* convert addr into 32-bit integer */
-    addr = (const guint8 *)pinfo->dst.data;
+    addr = (const uint8_t *)pinfo->dst.data;
     adr_prefix = ((addr[0]<<24) |
         (addr[1]<<16) |
         (addr[2]<<8) |
@@ -437,7 +416,7 @@ guint32 get_aircraft_24_bit_address_from_nsap(
     if((adr_prefix == 0x470027c1) ||
         (adr_prefix == 0x47002741)) {
       /* ICAO doc9507 Ed2 SV5 5.4.3.8.4.4 */
-      /* states that the ARS subfield containes */
+      /* states that the ARS subfield contains */
       /* the  24-bitaddress of the aircraft */
       ars = ((addr[8])<<16) |
             ((addr[9])<<8) |
@@ -447,12 +426,12 @@ guint32 get_aircraft_24_bit_address_from_nsap(
 }
 
 /* determine whether a PDU is uplink or downlink */
-/* by checking for known aircraft  address prefices*/
+/* by checking for known aircraft address prefixes*/
 int check_heur_msg_type(packet_info *pinfo  _U_)
 {
     int t = no_msg;
-    const guint8* addr = NULL;
-    guint32 adr_prefix =0;
+    const uint8_t* addr = NULL;
+    uint32_t adr_prefix =0;
 
     /* check NSAP address type*/
     if( (pinfo->src.type != get_osi_address_type()) || (pinfo->dst.type != get_osi_address_type())) {
@@ -462,7 +441,7 @@ int check_heur_msg_type(packet_info *pinfo  _U_)
     if( (pinfo->src.len != 20) || (pinfo->dst.len != 20)) {
         return t; }
 
-    addr = (const guint8 *)pinfo->src.data;
+    addr = (const uint8_t *)pinfo->src.data;
 
     /* convert address to 32-bit integer  */
     adr_prefix = ((addr[0]<<24) | (addr[1]<<16) | (addr[2]<<8) | addr[3] );
@@ -475,7 +454,7 @@ int check_heur_msg_type(packet_info *pinfo  _U_)
         t = dm; /* source is an aircraft: it's a downlink PDU */
     }
 
-    addr = (const guint8 *)pinfo->dst.data;
+    addr = (const uint8_t *)pinfo->dst.data;
 
     /* convert address to 32-bit integer  */
     adr_prefix = ((addr[0]<<24) | (addr[1]<<16) | (addr[2]<<8) | addr[3] );
@@ -504,12 +483,12 @@ wmem_tree_t *get_atn_conversation_tree(void){
 /* at transport layer (cotp) but this isn't working yet. */
 atn_conversation_t * find_atn_conversation(
     address *address1,
-    guint16 clnp_ref1,
+    uint16_t clnp_ref1,
     address *address2 )
 {
     atn_conversation_t *cv = NULL;
-    guint32 key = 0;
-    guint32 tmp = 0;
+    uint32_t key = 0;
+    uint32_t tmp = 0;
 
     tmp = add_address_to_hash( tmp, address1);
     key = (tmp << 16) | clnp_ref1 ;
@@ -529,13 +508,13 @@ atn_conversation_t * find_atn_conversation(
 /* a conversation may be referenced from both endpoints */
 atn_conversation_t * create_atn_conversation(
     address *address1,
-    guint16 clnp_ref1,
+    uint16_t clnp_ref1,
     address *address2,
     atn_conversation_t *conversation)
 {
     atn_conversation_t *cv = NULL;
-    guint32 key = 0;
-    guint32 tmp = 0;
+    uint32_t key = 0;
+    uint32_t tmp = 0;
 
     tmp = add_address_to_hash( tmp, address1);
     key = (tmp << 16) | clnp_ref1 ;
@@ -572,15 +551,15 @@ dissect_atn_ulcs(
     int offset = 0;
     proto_item *ti = NULL;
     proto_tree *atn_ulcs_tree = NULL;
-    guint8 value_pres = 0;
-    guint8 value_ses = 0;
-    guint16 value_ses_pres = 0;
+    uint8_t value_pres = 0;
+    uint8_t value_ses = 0;
+    uint16_t value_ses_pres = 0;
 
     root_tree = tree;
 
     /* data pointer */
     /* decode as PDV-list */
-    if ( (int)(intptr_t)  data == FALSE )
+    if ( (int)(intptr_t)  data == false )
     {
         ti = proto_tree_add_item(
             tree,
@@ -604,7 +583,7 @@ dissect_atn_ulcs(
     }
 
     /* decode as SPDU, PPDU and ACSE PDU */
-    if ( (int)(intptr_t)  data == TRUE )
+    if ( (int)(intptr_t)  data == true )
     {
         /* get session and presentation PDU's */
         value_ses_pres = tvb_get_ntohs(tvb, offset);
@@ -615,7 +594,7 @@ dissect_atn_ulcs(
             ett_atn_ses, NULL, ATN_SES_PROTO );
 
         /* get SPDU (1 octet) */
-        value_ses = tvb_get_guint8(tvb, offset);
+        value_ses = tvb_get_uint8(tvb, offset);
 
         /* SPDU type/identifier  */
         proto_tree_add_item(atn_ulcs_tree,
@@ -666,7 +645,7 @@ dissect_atn_ulcs(
             tree, tvb, offset, 0,
             ett_atn_pres, NULL, ATN_PRES_PROTO );
 
-        value_pres = tvb_get_guint8(tvb, offset);
+        value_pres = tvb_get_uint8(tvb, offset);
 
         /* need session context to identify PPDU type */
         /* note: */
@@ -676,7 +655,7 @@ dissect_atn_ulcs(
             1,
             value_ses_pres,
             "%s (0x%02x)",
-            val_to_str( value_ses_pres & ATN_SES_PRES_MASK , atn_pres_vals, "?"),
+            val_to_str_const( value_ses_pres & ATN_SES_PRES_MASK, atn_pres_vals, "?"),
             value_pres);
 
         /* PPDU errorcode in case of SRF/CPR */
@@ -713,7 +692,7 @@ dissect_atn_ulcs(
     return offset;
 }
 
-static gboolean dissect_atn_ulcs_heur(
+static bool dissect_atn_ulcs_heur(
     tvbuff_t *tvb,
     packet_info *pinfo,
     proto_tree *tree,
@@ -722,7 +701,7 @@ static gboolean dissect_atn_ulcs_heur(
     /* do we have enough data*/
     /* at least session + presentation data or pdv-list */
     if (tvb_captured_length(tvb) < 2){
-        return FALSE; }
+        return false; }
 
     /* check for session/presentation/ACSE PDU's  */
     /* SPDU and PPDU are one octet each */
@@ -754,8 +733,8 @@ static gboolean dissect_atn_ulcs_heur(
                 tvb,
                 pinfo,
                 tree,
-                (void*) TRUE);
-            return TRUE;
+                (void*) true);
+            return true;
         default:  /* no SPDU */
             break;
     }
@@ -772,13 +751,12 @@ static gboolean dissect_atn_ulcs_heur(
         /* PDV-list PDU may contain */
         /* application protocol data (CM, CPDLC) */
         /* or an ACSE PDU */
-            dissect_atn_ulcs(tvb, pinfo, tree, (void*) FALSE);
-            return TRUE;
-            break;
+            dissect_atn_ulcs(tvb, pinfo, tree, (void*) false);
+            return true;
         default:  /* no or unsupported PDU */
             break;
     }
-    return FALSE;
+    return false;
 }
 
 void proto_register_atn_ulcs (void)
@@ -831,7 +809,7 @@ void proto_register_atn_ulcs (void)
           HFILL}},
       { &hf_atn_pres_pdu_type,
         { "PDU type", "atn-ulcs.pres.pdu_type",
-          FT_UINT8,
+          FT_UINT16,
           BASE_HEX,
           NULL,
           ATN_SES_PRES_MASK,
@@ -839,7 +817,7 @@ void proto_register_atn_ulcs (void)
           HFILL}},
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         #include "packet-atn-ulcs-ettarr.c"
         &ett_atn_ses,
         &ett_atn_pres,
@@ -867,7 +845,7 @@ void proto_register_atn_ulcs (void)
         proto_atn_ulcs);
 
     /* initiate sub dissector list */
-    atn_ulcs_heur_subdissector_list = register_heur_dissector_list("atn-ulcs", proto_atn_ulcs);
+    atn_ulcs_heur_subdissector_list = register_heur_dissector_list_with_description("atn-ulcs", "ATN-ULCS unhandled data", proto_atn_ulcs);
 
     /* init aare/aare data */
     aarq_data_tree = wmem_tree_new_autoreset(wmem_epan_scope(), wmem_file_scope());
@@ -890,7 +868,7 @@ void proto_reg_handoff_atn_ulcs(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

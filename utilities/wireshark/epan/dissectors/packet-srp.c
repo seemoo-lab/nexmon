@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -31,22 +19,22 @@ void proto_register_ccsrl(void);
 void proto_reg_handoff_srp(void);
 
 /* Wireshark ID of the protocols */
-static int proto_srp = -1;
-static int proto_ccsrl = -1;
+static int proto_srp;
+static int proto_ccsrl;
 
 /* The following hf_* variables are used to hold the Wireshark IDs of
  * our header fields; they are filled out when we call
  * proto_register_field_array() in proto_register_srp()
  */
-static int hf_srp_header = -1;
-static int hf_srp_seqno = -1;
-static int hf_srp_crc = -1;
-static int hf_srp_crc_bad = -1;
-static int hf_ccsrl_ls = -1;
+static int hf_srp_header;
+static int hf_srp_seqno;
+static int hf_srp_crc;
+static int hf_srp_crc_bad;
+static int hf_ccsrl_ls;
 
 /* These are the ids of the subtrees that we may be creating */
-static gint ett_srp = -1;
-static gint ett_ccsrl = -1;
+static int ett_srp;
+static int ett_ccsrl;
 
 static dissector_handle_t ccsrl_handle;
 static dissector_handle_t h245dg_handle;
@@ -56,10 +44,16 @@ static dissector_handle_t h245dg_handle;
 #define SRP_SRP_RESPONSE 251
 #define SRP_NSRP_RESPONSE 247
 
+/* WNSRP definitions */
+#define WNSRP_COMMAND_HEADER 241
+#define WNSRP_RESPONSE_HEADER 243
+
 static const value_string srp_frame_types[] = {
     {SRP_SRP_COMMAND, "SRP command"},
     {SRP_SRP_RESPONSE, "SRP response"},
     {SRP_NSRP_RESPONSE, "NSRP response"},
+    {WNSRP_COMMAND_HEADER, "WNSRP command"},
+    {WNSRP_RESPONSE_HEADER, "WNSRP response"},
     {0,NULL}
 };
 
@@ -75,7 +69,7 @@ static int dissect_ccsrl(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree,
 {
     proto_item *ccsrl_item;
     proto_tree *ccsrl_tree=NULL;
-    guint8 lastseg = tvb_get_guint8(tvb,0);
+    uint8_t lastseg = tvb_get_uint8(tvb,0);
     tvbuff_t *next_tvb;
 
     /* add the 'ccsrl' tree to the main tree */
@@ -98,7 +92,7 @@ static int dissect_ccsrl(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree,
 static void dissect_srp_command(tvbuff_t * tvb, packet_info * pinfo, proto_tree * srp_tree)
 {
     tvbuff_t *next_tvb;
-    guint payload_len;
+    unsigned payload_len;
 
     if( srp_tree )
         proto_tree_add_item(srp_tree,hf_srp_seqno,tvb,1,1,ENC_BIG_ENDIAN);
@@ -118,7 +112,7 @@ static int dissect_srp (tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, 
     proto_tree *srp_tree = NULL;
     proto_item *hidden_item;
 
-    guint8 header = tvb_get_guint8(tvb,0);
+    uint8_t header = tvb_get_uint8(tvb,0);
 
     /* add the 'srp' tree to the main tree */
     if (tree) {
@@ -129,6 +123,7 @@ static int dissect_srp (tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, 
 
     switch( header ) {
         case SRP_SRP_COMMAND:
+        case WNSRP_COMMAND_HEADER:
             dissect_srp_command(tvb,pinfo,srp_tree);
             break;
 
@@ -136,6 +131,7 @@ static int dissect_srp (tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, 
             break;
 
         case SRP_NSRP_RESPONSE:
+        case WNSRP_RESPONSE_HEADER:
             if( srp_tree )
                 proto_tree_add_item(srp_tree,hf_srp_seqno,tvb,1,1,ENC_BIG_ENDIAN);
             break;
@@ -145,8 +141,8 @@ static int dissect_srp (tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, 
     }
 
     if( srp_tree ) {
-        guint16 crc, calc_crc;
-        guint crc_offset = tvb_reported_length(tvb)-2;
+        uint16_t crc, calc_crc;
+        unsigned crc_offset = tvb_reported_length(tvb)-2;
         crc = tvb_get_letohs(tvb,-2);
 
         /* crc includes the header */
@@ -158,8 +154,8 @@ static int dissect_srp (tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, 
                                        "0x%04x (correct)", crc);
         } else {
             hidden_item = proto_tree_add_boolean(srp_tree, hf_srp_crc_bad, tvb,
-                                          crc_offset, 2, TRUE);
-            PROTO_ITEM_SET_HIDDEN(hidden_item);
+                                          crc_offset, 2, true);
+            proto_item_set_hidden(hidden_item);
             proto_tree_add_uint_format_value(srp_tree, hf_srp_crc, tvb,
                                        crc_offset, 2, crc,
                                        "0x%04x (incorrect, should be 0x%04x)",
@@ -179,7 +175,7 @@ void proto_register_ccsrl (void)
             "Last segment indicator", HFILL}},
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_ccsrl,
     };
 
@@ -206,7 +202,7 @@ void proto_register_srp (void)
             NULL, HFILL }},
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_srp,
     };
 
@@ -228,7 +224,7 @@ void proto_reg_handoff_srp(void) {
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

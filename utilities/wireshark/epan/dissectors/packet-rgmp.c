@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -30,19 +18,22 @@
 #include "config.h"
 
 #include <epan/packet.h>
+#include <epan/expert.h>
 #include "packet-igmp.h"
 
 void proto_register_rgmp(void);
 void proto_reg_handoff_rgmp(void);
 
-static int proto_rgmp      = -1;
-static int hf_type         = -1;
-static int hf_reserved     = -1;
-static int hf_checksum     = -1;
-static int hf_checksum_status = -1;
-static int hf_maddr        = -1;
+static int proto_rgmp;
+static int hf_type;
+static int hf_reserved;
+static int hf_checksum;
+static int hf_checksum_status;
+static int hf_maddr;
 
-static int ett_rgmp = -1;
+static int ett_rgmp;
+
+static expert_field ei_checksum;
 
 static dissector_handle_t rgmp_handle;
 
@@ -62,12 +53,12 @@ dissect_rgmp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
 {
     proto_tree *tree;
     proto_item *item;
-    guint8 type;
+    uint8_t type;
     int offset = 0;
-    guint32 dst = g_htonl(MC_RGMP);
+    uint32_t dst = g_htonl(MC_RGMP);
 
     /* Shouldn't be destined for us */
-    if (memcmp(pinfo->dst.data, &dst, 4))
+    if ((pinfo->dst.type != AT_IPv4) || memcmp(pinfo->dst.data, &dst, 4))
         return 0;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "RGMP");
@@ -76,9 +67,9 @@ dissect_rgmp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
     item = proto_tree_add_item(parent_tree, proto_rgmp, tvb, offset, -1, ENC_NA);
     tree = proto_item_add_subtree(item, ett_rgmp);
 
-    type = tvb_get_guint8(tvb, offset);
+    type = tvb_get_uint8(tvb, offset);
     col_add_str(pinfo->cinfo, COL_INFO,
-                val_to_str(type, rgmp_types, "Unknown Type: 0x%02x"));
+                val_to_str(pinfo->pool, type, rgmp_types, "Unknown Type: 0x%02x"));
     proto_tree_add_uint(tree, hf_type, tvb, offset, 1, type);
     offset += 1;
 
@@ -86,7 +77,7 @@ dissect_rgmp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
     proto_tree_add_item(tree, hf_reserved, tvb, offset, 1, ENC_NA);
     offset += 1;
 
-    igmp_checksum(tree, tvb, hf_checksum, hf_checksum_status, pinfo, 0);
+    igmp_checksum(tree, tvb, hf_checksum, hf_checksum_status, &ei_checksum, pinfo, 0);
     offset += 2;
 
     proto_tree_add_item(tree, hf_maddr, tvb, offset, 4, ENC_BIG_ENDIAN);
@@ -126,13 +117,21 @@ proto_register_rgmp(void)
         }
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_rgmp
     };
+
+    static ei_register_info ei[] = {
+        { &ei_checksum, { "rgmp.bad_checksum", PI_CHECKSUM, PI_ERROR, "Bad checksum", EXPFILL }},
+    };
+
+    expert_module_t* expert_rgmp;
 
     proto_rgmp = proto_register_protocol("Router-port Group Management Protocol", "RGMP", "rgmp");
     proto_register_field_array(proto_rgmp, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+    expert_rgmp = expert_register_protocol(proto_rgmp);
+    expert_register_field_array(expert_rgmp, ei, array_length(ei));
 
     rgmp_handle = register_dissector("rgmp", dissect_rgmp, proto_rgmp);
 }
@@ -147,7 +146,7 @@ proto_reg_handoff_rgmp(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

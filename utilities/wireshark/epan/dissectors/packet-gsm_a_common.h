@@ -39,7 +39,19 @@
  *   Mobile radio interface Layer 3 specification;
  *   Core network protocols;
  *   Stage 3
- *   (3GPP TS 24.008 version 13.6.0 Release 13)
+ *   (3GPP TS 24.008 version 13.7.0 Release 13)
+ *
+ *   Reference [12]
+ *   Mobile radio interface Layer 3 specification;
+ *   Core network protocols;
+ *   Stage 3
+ *   (3GPP TS 24.008 version 14.4.0 Release 14)
+ *
+ *   Reference [13]
+ *   Mobile radio interface Layer 3 specification;
+ *   Core network protocols;
+ *   Stage 3
+ *   (3GPP TS 24.008 version 15.1.0 Release 15)
  *
  * Copyright 2003, Michael Lum <mlum [AT] telostech.com>,
  * In association with Telos Technology Inc.
@@ -52,19 +64,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 #ifndef __PACKET_GSM_A_COMMON_H__
 #define __PACKET_GSM_A_COMMON_H__
@@ -72,11 +72,12 @@
 #include <epan/proto.h>
 
 #include "packet-sccp.h"
+#include "packet-e212.h"
 #include "ws_symbol_export.h"
 
 /* PROTOTYPES/FORWARDS */
-typedef guint16 (*elem_fcn)(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-typedef void (*msg_fcn)(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len);
+typedef uint16_t (*elem_fcn)(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+typedef void (*msg_fcn)(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len);
 
 /* globals needed as a result of spltting the packet-gsm_a.c into several files
  * until further restructuring can take place to make them more modular
@@ -86,84 +87,105 @@ typedef void (*msg_fcn)(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, gui
 extern const value_string protocol_discriminator_vals[];
 extern const value_string gsm_a_pd_short_str_vals[];
 
-extern guint16 de_cld_party_bcd_num(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
+extern uint16_t de_cld_party_bcd_num(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+extern uint16_t de_clg_party_bcd_num(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
 
 /* Needed to share the packet-gsm_a_common.c functions */
 extern value_string_ext gsm_bssmap_elem_strings_ext;
-extern gint ett_gsm_bssmap_elem[];
+extern int ett_gsm_bssmap_elem[];
 extern elem_fcn bssmap_elem_fcn[];
 extern int hf_gsm_a_bssmap_elem_id;
 
 extern value_string_ext gsm_dtap_elem_strings_ext;
-extern gint ett_gsm_dtap_elem[];
+extern int ett_gsm_dtap_elem[];
 extern elem_fcn dtap_elem_fcn[];
 extern int hf_gsm_a_dtap_elem_id;
 
 extern value_string_ext gsm_rp_elem_strings_ext;
-extern gint ett_gsm_rp_elem[];
+extern int ett_gsm_rp_elem[];
 extern elem_fcn rp_elem_fcn[];
 extern int hf_gsm_a_rp_elem_id;
 
 extern value_string_ext gsm_rr_elem_strings_ext;
-extern gint ett_gsm_rr_elem[];
+extern int ett_gsm_rr_elem[];
 extern elem_fcn rr_elem_fcn[];
 extern int hf_gsm_a_rr_elem_id;
-extern void get_rr_msg_params(guint8 oct, const gchar **msg_str, int *ett_tree, int *hf_idx, msg_fcn *msg_fcn);
+extern void get_rr_msg_params(uint8_t oct, const char **msg_str, int *ett_tree, int *hf_idx, msg_fcn *msg_fcn);
 
 extern value_string_ext gsm_common_elem_strings_ext;
-extern gint ett_gsm_common_elem[];
+extern int ett_gsm_common_elem[];
 extern elem_fcn common_elem_fcn[];
 extern int hf_gsm_a_common_elem_id;
 
 extern value_string_ext gsm_gm_elem_strings_ext;
-extern gint ett_gsm_gm_elem[];
+extern int ett_gsm_gm_elem[];
 extern elem_fcn gm_elem_fcn[];
 extern int hf_gsm_a_gm_elem_id;
-extern void get_gmm_msg_params(guint8 oct, const gchar **msg_str, int *ett_tree, int *hf_idx, msg_fcn *msg_fcn);
-extern void get_sm_msg_params(guint8 oct, const gchar **msg_str, int *ett_tree, int *hf_idx, msg_fcn *msg_fcn);
+extern void get_gmm_msg_params(uint8_t oct, const char **msg_str, int *ett_tree, int *hf_idx, msg_fcn *msg_fcn);
+extern void get_sm_msg_params(uint8_t oct, const char **msg_str, int *ett_tree, int *hf_idx, msg_fcn *msg_fcn);
 
 extern value_string_ext gsm_bsslap_elem_strings_ext;
-extern gint ett_gsm_bsslap_elem[];
+extern int ett_gsm_bsslap_elem[];
 extern elem_fcn bsslap_elem_fcn[];
 extern int hf_gsm_a_bsslap_elem_id;
 
 extern value_string_ext gsm_bssmap_le_elem_strings_ext;
-extern gint ett_gsm_bssmap_le_elem[];
+extern int ett_gsm_bssmap_le_elem[];
 extern elem_fcn bssmap_le_elem_fcn[];
 extern int hf_gsm_bssmap_le_elem_id;
 
 extern value_string_ext nas_eps_common_elem_strings_ext;
-extern gint ett_nas_eps_common_elem[];
+extern int ett_nas_eps_common_elem[];
 extern elem_fcn nas_eps_common_elem_fcn[];
 extern int hf_nas_eps_common_elem_id;
 
 extern value_string_ext nas_emm_elem_strings_ext;
-extern gint ett_nas_eps_emm_elem[];
+extern int ett_nas_eps_emm_elem[];
 extern elem_fcn emm_elem_fcn[];
 extern int hf_nas_eps_emm_elem_id;
 
 extern value_string_ext nas_esm_elem_strings_ext;
-extern gint ett_nas_eps_esm_elem[];
+extern int ett_nas_eps_esm_elem[];
 extern elem_fcn esm_elem_fcn[];
 extern int hf_nas_eps_esm_elem_id;
 
 extern value_string_ext sgsap_elem_strings_ext;
-extern gint ett_sgsap_elem[];
+extern int ett_sgsap_elem[];
 extern elem_fcn sgsap_elem_fcn[];
 extern int hf_sgsap_elem_id;
 
 extern value_string_ext bssgp_elem_strings_ext;
-extern gint ett_bssgp_elem[];
+extern int ett_bssgp_elem[];
 extern elem_fcn bssgp_elem_fcn[];
 extern int hf_bssgp_elem_id;
 
 extern value_string_ext gmr1_ie_common_strings_ext;
 extern elem_fcn gmr1_ie_common_func[];
-extern gint ett_gmr1_ie_common[];
+extern int ett_gmr1_ie_common[];
 
 extern value_string_ext gmr1_ie_rr_strings_ext;
 extern elem_fcn gmr1_ie_rr_func[];
-extern gint ett_gmr1_ie_rr[];
+extern int ett_gmr1_ie_rr[];
+
+extern value_string_ext nas_5gs_common_elem_strings_ext;
+extern int ett_nas_5gs_common_elem[];
+extern elem_fcn nas_5gs_common_elem_fcn[];
+extern int hf_nas_5gs_common_elem_id;
+
+extern value_string_ext nas_5gs_mm_elem_strings_ext;
+extern int ett_nas_5gs_mm_elem[];
+extern elem_fcn nas_5gs_mm_elem_fcn[];
+extern int hf_nas_5gs_mm_elem_id;
+
+extern value_string_ext nas_5gs_sm_elem_strings_ext;
+extern int ett_nas_5gs_sm_elem[];
+extern elem_fcn nas_5gs_sm_elem_fcn[];
+extern int hf_nas_5gs_sm_elem_id;
+
+extern value_string_ext nas_5gs_updp_elem_strings_ext;
+extern int ett_nas_5gs_updp_elem[];
+extern elem_fcn nas_5gs_updp_elem_fcn[];
+extern int hf_nas_5gs_updp_elem_id;
 
 extern sccp_assoc_info_t* sccp_assoc;
 
@@ -171,8 +193,8 @@ extern int gsm_a_tap;
 extern packet_info *gsm_a_dtap_pinfo;
 
 /* TS 23 032 */
-void dissect_geographical_description(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree);
-guint16 dissect_description_of_velocity(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
+int dissect_geographical_description(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree);
+uint16_t dissect_description_of_velocity(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
 
 
 /* common field values */
@@ -187,6 +209,9 @@ extern int hf_gsm_a_rr_t3212;
 extern int hf_gsm_a_gm_rac;
 extern int hf_gsm_a_spare_bits;
 extern int hf_gsm_a_lac;
+
+/* Inter protocol filters*/
+extern int hf_3gpp_tmsi;
 
 /* flags for the packet-gsm_a_common routines */
 #define GSM_A_PDU_TYPE_BSSMAP       0  /* BSSAP_PDU_TYPE_BSSMAP i.e. 0 - until split complete at least! */
@@ -205,8 +230,12 @@ extern int hf_gsm_a_lac;
 #define BSSGP_PDU_TYPE              13
 #define GMR1_IE_COMMON              14
 #define GMR1_IE_RR                  15
+#define NAS_5GS_PDU_TYPE_COMMON     16
+#define NAS_5GS_PDU_TYPE_MM         17
+#define NAS_5GS_PDU_TYPE_SM         18
+#define NAS_5GS_PDU_TYPE_UPDP       19
 
-extern const char* get_gsm_a_msg_string(int pdu_type, int idx);
+extern const char* get_gsm_a_msg_string(wmem_allocator_t* pool, int pdu_type, int idx);
 
 /*
  * this should be set on a per message basis, if possible
@@ -313,6 +342,26 @@ extern const char* get_gsm_a_msg_string(int pdu_type, int idx);
         SEV_elem_ett = ett_gmr1_ie_rr; \
         SEV_elem_funcs = gmr1_ie_rr_func; \
         break; \
+    case NAS_5GS_PDU_TYPE_COMMON: \
+        SEV_elem_names_ext = nas_5gs_common_elem_strings_ext; \
+        SEV_elem_ett = ett_nas_5gs_common_elem; \
+        SEV_elem_funcs = nas_5gs_common_elem_fcn; \
+        break; \
+    case NAS_5GS_PDU_TYPE_MM: \
+        SEV_elem_names_ext = nas_5gs_mm_elem_strings_ext; \
+        SEV_elem_ett = ett_nas_5gs_mm_elem; \
+        SEV_elem_funcs = nas_5gs_mm_elem_fcn; \
+        break; \
+    case NAS_5GS_PDU_TYPE_SM: \
+        SEV_elem_names_ext = nas_5gs_sm_elem_strings_ext; \
+        SEV_elem_ett = ett_nas_5gs_sm_elem; \
+        SEV_elem_funcs = nas_5gs_sm_elem_fcn; \
+        break; \
+    case NAS_5GS_PDU_TYPE_UPDP: \
+        SEV_elem_names_ext = nas_5gs_updp_elem_strings_ext; \
+        SEV_elem_ett = ett_nas_5gs_updp_elem; \
+        SEV_elem_funcs = nas_5gs_updp_elem_fcn; \
+        break; \
     default: \
         proto_tree_add_expert_format(tree, pinfo, ei_unknown, \
             tvb, curr_offset, -1, \
@@ -323,17 +372,17 @@ extern const char* get_gsm_a_msg_string(int pdu_type, int idx);
 /*
  * Type Length Value (TLV) element dissector
  */
-WS_DLL_PUBLIC guint16 elem_tlv(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint8 iei, gint pdu_type, int idx, guint32 offset, guint len, const gchar *name_add);
+WS_DLL_PUBLIC uint16_t elem_tlv(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint8_t iei, int pdu_type, int idx, uint32_t offset, unsigned len, const char *name_add);
 
 /*
  * Type Extendable Length Value (TLVE) element dissector
  */
-guint16 elem_telv(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint8 iei, gint pdu_type, int idx, guint32 offset, guint len, const gchar *name_add);
+uint16_t elem_telv(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint8_t iei, int pdu_type, int idx, uint32_t offset, unsigned len, const char *name_add);
 
 /*
  * Type Length Value (TLV-E) element dissector
  */
-guint16 elem_tlv_e(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint8 iei, gint pdu_type, int idx, guint32 offset, guint len, const gchar *name_add);
+uint16_t elem_tlv_e(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint8_t iei, int pdu_type, int idx, uint32_t offset, unsigned len, const char *name_add);
 
 /*
  * Type Value (TV) element dissector
@@ -341,7 +390,7 @@ guint16 elem_tlv_e(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint8 i
  * Length cannot be used in these functions, big problem if a element dissector
  * is not defined for these.
  */
-WS_DLL_PUBLIC guint16 elem_tv(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint8 iei, gint pdu_type, int idx, guint32 offset, const gchar *name_add);
+WS_DLL_PUBLIC uint16_t elem_tv(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint8_t iei, int pdu_type, int idx, uint32_t offset, const char *name_add);
 
 /*
  * Type Value (TV) element dissector
@@ -350,22 +399,22 @@ WS_DLL_PUBLIC guint16 elem_tv(tvbuff_t *tvb, proto_tree *tree, packet_info *pinf
  * Length cannot be used in these functions, big problem if a element dissector
  * is not defined for these.
  */
-WS_DLL_PUBLIC guint16 elem_tv_short(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint8 iei, gint pdu_type, int idx, guint32 offset, const gchar *name_add);
+WS_DLL_PUBLIC uint16_t elem_tv_short(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint8_t iei, int pdu_type, int idx, uint32_t offset, const char *name_add);
 
 /*
  * Type (T) element dissector
  */
-WS_DLL_PUBLIC guint16 elem_t(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint8 iei, gint pdu_type, int idx, guint32 offset, const gchar *name_add);
+WS_DLL_PUBLIC uint16_t elem_t(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint8_t iei, int pdu_type, int idx, uint32_t offset, const char *name_add);
 
 /*
  * Length Value (LV) element dissector
  */
-WS_DLL_PUBLIC guint16 elem_lv(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, gint pdu_type, int idx, guint32 offset, guint len, const gchar *name_add);
+WS_DLL_PUBLIC uint16_t elem_lv(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, int pdu_type, int idx, uint32_t offset, unsigned len, const char *name_add);
 
 /*
  * Length Value (LV-E) element dissector
  */
-guint16 elem_lv_e(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, gint pdu_type, int idx, guint32 offset, guint len, const gchar *name_add);
+uint16_t elem_lv_e(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, int pdu_type, int idx, uint32_t offset, unsigned len, const char *name_add);
 
 /*
  * Value (V) element dissector
@@ -373,7 +422,7 @@ guint16 elem_lv_e(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, gint pdu_
  * Length cannot be used in these functions, big problem if a element dissector
  * is not defined for these.
  */
-WS_DLL_PUBLIC guint16 elem_v(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, gint pdu_type, int idx, guint32 offset, const gchar *name_add);
+WS_DLL_PUBLIC uint16_t elem_v(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, int pdu_type, int idx, uint32_t offset, const char *name_add);
 
 /*
  * Short Value (V_SHORT) element dissector
@@ -381,12 +430,12 @@ WS_DLL_PUBLIC guint16 elem_v(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo
  * nibble used in this functions to indicate left or right nibble of the octet
  * This is expected to be used right nibble first, as the tables of 24.008.
  */
-WS_DLL_PUBLIC guint16 elem_v_short(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, gint pdu_type, int idx, guint32 offset, guint32 nibble);
+WS_DLL_PUBLIC uint16_t elem_v_short(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, int pdu_type, int idx, uint32_t offset, uint32_t nibble);
 
 
 /* XXX: Most (if not all) the functions which make use of the following macros have the variables 'consumed',
  *      'curr_offset', and 'cur_len' declared as *unsigned*.  This means that the 'if (curr_len <= 0)' statement
- *      originally at the end of each of the macros would always be FALSE since an unsigned cannot be less than 0.
+ *      originally at the end of each of the macros would always be false since an unsigned cannot be less than 0.
  *      I've chosen to change the statement to 'if ((signed)curr_len <= 0)'. (Although this may be a bit of a
  *      hack, it seems simpler than changing declarations to signed in all the places these macros are used).
  *      Is there a better approach ?
@@ -394,7 +443,8 @@ WS_DLL_PUBLIC guint16 elem_v_short(tvbuff_t *tvb, proto_tree *tree, packet_info 
 
 #define ELEM_MAND_TLV(EMT_iei, EMT_pdu_type, EMT_elem_idx, EMT_elem_name_addition, ei_mandatory) \
 {\
-    if ((consumed = elem_tlv(tvb, tree, pinfo, (guint8) EMT_iei, EMT_pdu_type, EMT_elem_idx, curr_offset, curr_len, EMT_elem_name_addition)) > 0) \
+    if (((signed)curr_len > 0) && \
+        ((consumed = elem_tlv(tvb, tree, pinfo, (uint8_t) EMT_iei, EMT_pdu_type, EMT_elem_idx, curr_offset, curr_len, EMT_elem_name_addition)) > 0)) \
     { \
         curr_offset += consumed; \
         curr_len -= consumed; \
@@ -405,12 +455,11 @@ WS_DLL_PUBLIC guint16 elem_v_short(tvbuff_t *tvb, proto_tree *tree, packet_info 
             tvb, curr_offset, 0, \
             "Missing Mandatory element (0x%02x) %s%s, rest of dissection is suspect", \
             EMT_iei, \
-            get_gsm_a_msg_string(EMT_pdu_type, EMT_elem_idx), \
+            get_gsm_a_msg_string(pinfo->pool, EMT_pdu_type, EMT_elem_idx), \
             /* coverity[array_null] */ \
             (EMT_elem_name_addition == NULL) ? "" : EMT_elem_name_addition \
             ); \
     } \
-    if ((signed)curr_len <= 0) return;      \
 }
 /* This is a version where the length field can be one or two octets depending
  * if the extension bit is set or not (TS 48.016 p 10.1.2).
@@ -420,7 +469,8 @@ WS_DLL_PUBLIC guint16 elem_v_short(tvbuff_t *tvb, proto_tree *tree, packet_info 
  */
 #define ELEM_MAND_TELV(EMT_iei, EMT_pdu_type, EMT_elem_idx, EMT_elem_name_addition, ei_mandatory) \
 {\
-    if ((consumed = elem_telv(tvb, tree, pinfo, (guint8) EMT_iei, EMT_pdu_type, EMT_elem_idx, curr_offset, curr_len, EMT_elem_name_addition)) > 0) \
+    if (((signed)curr_len > 0) && \
+        ((consumed = elem_telv(tvb, tree, pinfo, (uint8_t) EMT_iei, EMT_pdu_type, EMT_elem_idx, curr_offset, curr_len, EMT_elem_name_addition)) > 0)) \
     { \
         curr_offset += consumed; \
         curr_len -= consumed; \
@@ -431,17 +481,17 @@ WS_DLL_PUBLIC guint16 elem_v_short(tvbuff_t *tvb, proto_tree *tree, packet_info 
             tvb, curr_offset, 0, \
             "Missing Mandatory element (0x%02x) %s%s, rest of dissection is suspect", \
             EMT_iei, \
-            get_gsm_a_msg_string(EMT_pdu_type, EMT_elem_idx), \
+            get_gsm_a_msg_string(pinfo->pool, EMT_pdu_type, EMT_elem_idx), \
             /* coverity[array_null] */ \
             (EMT_elem_name_addition == NULL) ? "" : EMT_elem_name_addition \
             ); \
     } \
-    if ((signed)curr_len <= 0) return;      \
 }
 
 #define ELEM_MAND_TLV_E(EMT_iei, EMT_pdu_type, EMT_elem_idx, EMT_elem_name_addition, ei_mandatory) \
 {\
-    if ((consumed = elem_tlv_e(tvb, tree, pinfo, (guint8) EMT_iei, EMT_pdu_type, EMT_elem_idx, curr_offset, curr_len, EMT_elem_name_addition)) > 0) \
+    if (((signed)curr_len > 0) && \
+        ((consumed = elem_tlv_e(tvb, tree, pinfo, (uint8_t) EMT_iei, EMT_pdu_type, EMT_elem_idx, curr_offset, curr_len, EMT_elem_name_addition)) > 0)) \
     { \
         curr_offset += consumed; \
         curr_len -= consumed; \
@@ -452,46 +502,46 @@ WS_DLL_PUBLIC guint16 elem_v_short(tvbuff_t *tvb, proto_tree *tree, packet_info 
             tvb, curr_offset, 0, \
             "Missing Mandatory element (0x%02x) %s%s, rest of dissection is suspect", \
             EMT_iei, \
-            get_gsm_a_msg_string(EMT_pdu_type, EMT_elem_idx), \
+            get_gsm_a_msg_string(pinfo->pool, EMT_pdu_type, EMT_elem_idx), \
             /* coverity[array_null] */ \
             (EMT_elem_name_addition == NULL) ? "" : EMT_elem_name_addition \
             ); \
     } \
-    if ((signed)curr_len <= 0) return;      \
 }
 #define ELEM_OPT_TLV(EOT_iei, EOT_pdu_type, EOT_elem_idx, EOT_elem_name_addition) \
 {\
-    if ((consumed = elem_tlv(tvb, tree, pinfo, (guint8) EOT_iei, EOT_pdu_type, EOT_elem_idx, curr_offset, curr_len, EOT_elem_name_addition)) > 0) \
+    if ((signed)curr_len <= 0) return; \
+    if ((consumed = elem_tlv(tvb, tree, pinfo, (uint8_t) EOT_iei, EOT_pdu_type, EOT_elem_idx, curr_offset, curr_len, EOT_elem_name_addition)) > 0) \
     { \
         curr_offset += consumed; \
         curr_len -= consumed; \
     } \
-        if ((signed)curr_len <= 0) return;      \
 }
 
 #define ELEM_OPT_TELV(EOT_iei, EOT_pdu_type, EOT_elem_idx, EOT_elem_name_addition) \
 {\
-    if ((consumed = elem_telv(tvb, tree, pinfo, (guint8) EOT_iei, EOT_pdu_type, EOT_elem_idx, curr_offset, curr_len, EOT_elem_name_addition)) > 0) \
+    if ((signed)curr_len <= 0) return; \
+    if ((consumed = elem_telv(tvb, tree, pinfo, (uint8_t) EOT_iei, EOT_pdu_type, EOT_elem_idx, curr_offset, curr_len, EOT_elem_name_addition)) > 0) \
     { \
         curr_offset += consumed; \
         curr_len -= consumed; \
     } \
-        if ((signed)curr_len <= 0) return;      \
 }
 
 #define ELEM_OPT_TLV_E(EOT_iei, EOT_pdu_type, EOT_elem_idx, EOT_elem_name_addition) \
 {\
-    if ((consumed = elem_tlv_e(tvb, tree, pinfo, (guint8) EOT_iei, EOT_pdu_type, EOT_elem_idx, curr_offset, curr_len, EOT_elem_name_addition)) > 0) \
+    if ((signed)curr_len <= 0) return; \
+    if ((consumed = elem_tlv_e(tvb, tree, pinfo, (uint8_t) EOT_iei, EOT_pdu_type, EOT_elem_idx, curr_offset, curr_len, EOT_elem_name_addition)) > 0) \
     { \
         curr_offset += consumed; \
         curr_len -= consumed; \
     } \
-    if ((signed)curr_len <= 0) return;      \
 }
 
 #define ELEM_MAND_TV(EMT_iei, EMT_pdu_type, EMT_elem_idx, EMT_elem_name_addition, ei_mandatory) \
 {\
-    if ((consumed = elem_tv(tvb, tree, pinfo, (guint8) EMT_iei, EMT_pdu_type, EMT_elem_idx, curr_offset, EMT_elem_name_addition)) > 0) \
+    if (((signed)curr_len > 0) && \
+        ((consumed = elem_tv(tvb, tree, pinfo, (uint8_t) EMT_iei, EMT_pdu_type, EMT_elem_idx, curr_offset, EMT_elem_name_addition)) > 0)) \
     { \
         curr_offset += consumed; \
         curr_len -= consumed; \
@@ -502,93 +552,122 @@ WS_DLL_PUBLIC guint16 elem_v_short(tvbuff_t *tvb, proto_tree *tree, packet_info 
             tvb, curr_offset, 0, \
             "Missing Mandatory element (0x%02x) %s%s, rest of dissection is suspect", \
             EMT_iei, \
-            get_gsm_a_msg_string(EMT_pdu_type, EMT_elem_idx), \
+            get_gsm_a_msg_string(pinfo->pool, EMT_pdu_type, EMT_elem_idx), \
             /* coverity[array_null] */ \
             (EMT_elem_name_addition == NULL) ? "" : EMT_elem_name_addition \
         ); \
     } \
-    if ((signed)curr_len <= 0) return;      \
 }
 
 #define ELEM_OPT_TV(EOT_iei, EOT_pdu_type, EOT_elem_idx, EOT_elem_name_addition) \
 {\
-    if ((consumed = elem_tv(tvb, tree, pinfo, (guint8) EOT_iei, EOT_pdu_type, EOT_elem_idx, curr_offset, EOT_elem_name_addition)) > 0) \
+    if ((signed)curr_len <= 0) return; \
+    if ((consumed = elem_tv(tvb, tree, pinfo, (uint8_t) EOT_iei, EOT_pdu_type, EOT_elem_idx, curr_offset, EOT_elem_name_addition)) > 0) \
     { \
         curr_offset += consumed; \
         curr_len -= consumed; \
     } \
-        if ((signed)curr_len <= 0) return;      \
 }
 
 #define ELEM_OPT_TV_SHORT(EOT_iei, EOT_pdu_type, EOT_elem_idx, EOT_elem_name_addition) \
 {\
+    if ((signed)curr_len <= 0) return; \
     if ((consumed = elem_tv_short(tvb, tree, pinfo, EOT_iei, EOT_pdu_type, EOT_elem_idx, curr_offset, EOT_elem_name_addition)) > 0) \
     { \
         curr_offset += consumed; \
         curr_len -= consumed; \
     } \
-    if ((signed)curr_len <= 0) return;      \
 }
 
 #define ELEM_OPT_T(EOT_iei, EOT_pdu_type, EOT_elem_idx, EOT_elem_name_addition) \
 {\
-    if ((consumed = elem_t(tvb, tree, pinfo, (guint8) EOT_iei, EOT_pdu_type, EOT_elem_idx, curr_offset, EOT_elem_name_addition)) > 0) \
+    if ((signed)curr_len <= 0) return; \
+    if ((consumed = elem_t(tvb, tree, pinfo, (uint8_t) EOT_iei, EOT_pdu_type, EOT_elem_idx, curr_offset, EOT_elem_name_addition)) > 0) \
     { \
         curr_offset += consumed; \
         curr_len -= consumed; \
     } \
-    if ((signed)curr_len <= 0) return;      \
 }
 
-#define ELEM_MAND_LV(EML_pdu_type, EML_elem_idx, EML_elem_name_addition) \
+#define ELEM_MAND_LV(EML_pdu_type, EML_elem_idx, EML_elem_name_addition, ei_mandatory) \
 {\
-    if ((consumed = elem_lv(tvb, tree, pinfo, EML_pdu_type, EML_elem_idx, curr_offset, curr_len, EML_elem_name_addition)) > 0) \
-    { \
-        curr_offset += consumed; \
-        curr_len -= consumed; \
-    } \
-    else \
-    { \
-        /* Mandatory, but nothing we can do */ \
-    } \
-    if ((signed)curr_len <= 0) return;      \
-}
-
-#define ELEM_MAND_LV_E(EML_pdu_type, EML_elem_idx, EML_elem_name_addition) \
-{\
-    if ((consumed = elem_lv_e(tvb, tree, pinfo, EML_pdu_type, EML_elem_idx, curr_offset, curr_len, EML_elem_name_addition)) > 0) \
+    if (((signed)curr_len > 0) && \
+        ((consumed = elem_lv(tvb, tree, pinfo, EML_pdu_type, EML_elem_idx, curr_offset, curr_len, EML_elem_name_addition)) > 0)) \
     { \
         curr_offset += consumed; \
         curr_len -= consumed; \
     } \
     else \
     { \
-        /* Mandatory, but nothing we can do */ \
+        proto_tree_add_expert_format(tree, pinfo, &ei_mandatory,\
+            tvb, curr_offset, 0, \
+            "Missing Mandatory element %s%s, rest of dissection is suspect", \
+            get_gsm_a_msg_string(pinfo->pool, EML_pdu_type, EML_elem_idx), \
+            /* coverity[array_null] */ \
+            (EML_elem_name_addition == NULL) ? "" : EML_elem_name_addition \
+        ); \
     } \
-    if ((signed)curr_len <= 0) return;      \
 }
 
-#define ELEM_MAND_V(EMV_pdu_type, EMV_elem_idx, EMV_elem_name_addition) \
+#define ELEM_MAND_LV_E(EML_pdu_type, EML_elem_idx, EML_elem_name_addition, ei_mandatory) \
 {\
-    if ((consumed = elem_v(tvb, tree, pinfo, EMV_pdu_type, EMV_elem_idx, curr_offset, EMV_elem_name_addition)) > 0) \
+    if (((signed)curr_len > 0) && \
+        ((consumed = elem_lv_e(tvb, tree, pinfo, EML_pdu_type, EML_elem_idx, curr_offset, curr_len, EML_elem_name_addition)) > 0)) \
     { \
         curr_offset += consumed; \
         curr_len -= consumed; \
     } \
     else \
     { \
-        /* Mandatory, but nothing we can do */ \
+        proto_tree_add_expert_format(tree, pinfo, &ei_mandatory,\
+            tvb, curr_offset, 0, \
+            "Missing Mandatory element %s%s, rest of dissection is suspect", \
+            get_gsm_a_msg_string(pinfo->pool, EML_pdu_type, EML_elem_idx), \
+            /* coverity[array_null] */ \
+            (EML_elem_name_addition == NULL) ? "" : EML_elem_name_addition \
+        ); \
     } \
-    if ((signed)curr_len <= 0) return;      \
 }
 
-#define ELEM_MAND_VV_SHORT(EMV_pdu_type1, EMV_elem_idx1, EMV_pdu_type2, EMV_elem_idx2) \
+#define ELEM_MAND_V(EMV_pdu_type, EMV_elem_idx, EMV_elem_name_addition, ei_mandatory) \
 {\
-    elem_v_short(tvb, tree, pinfo, EMV_pdu_type1, EMV_elem_idx1, curr_offset, RIGHT_NIBBLE); \
-    elem_v_short(tvb, tree, pinfo, EMV_pdu_type2, EMV_elem_idx2, curr_offset, LEFT_NIBBLE); \
-    curr_offset ++ ; /* consumed length is 1, regardless of contents */ \
-    curr_len -- ; \
-    if ((signed)curr_len <= 0) return;      \
+    if (((signed)curr_len > 0) && \
+        ((consumed = elem_v(tvb, tree, pinfo, EMV_pdu_type, EMV_elem_idx, curr_offset, EMV_elem_name_addition)) > 0)) \
+    { \
+        curr_offset += consumed; \
+        curr_len -= consumed; \
+    } \
+    else \
+    { \
+        proto_tree_add_expert_format(tree, pinfo, &ei_mandatory,\
+            tvb, curr_offset, 0, \
+            "Missing Mandatory element %s%s, rest of dissection is suspect", \
+            get_gsm_a_msg_string(pinfo->pool, EMV_pdu_type, EMV_elem_idx), \
+            /* coverity[array_null] */ \
+            (EMV_elem_name_addition == NULL) ? "" : EMV_elem_name_addition \
+        ); \
+    } \
+}
+
+#define ELEM_MAND_VV_SHORT(EMV_pdu_type1, EMV_elem_idx1, EMV_pdu_type2, EMV_elem_idx2, ei_mandatory) \
+{\
+    if ((signed)curr_len > 0) \
+    { \
+        elem_v_short(tvb, tree, pinfo, EMV_pdu_type1, EMV_elem_idx1, curr_offset, RIGHT_NIBBLE); \
+        elem_v_short(tvb, tree, pinfo, EMV_pdu_type2, EMV_elem_idx2, curr_offset, LEFT_NIBBLE); \
+        curr_offset ++ ; /* consumed length is 1, regardless of contents */ \
+        curr_len -- ; \
+    } \
+    else \
+    { \
+        proto_tree_add_expert_format(tree, pinfo, &ei_mandatory,\
+            tvb, curr_offset, 0, \
+            "Missing Mandatory elements %s %s, rest of dissection is suspect", \
+            get_gsm_a_msg_string(pinfo->pool, EMV_pdu_type1, EMV_elem_idx1), \
+            get_gsm_a_msg_string(pinfo->pool, EMV_pdu_type2, EMV_elem_idx2) \
+            /* coverity[array_null] */ \
+        ); \
+    } \
 }
 
 /*
@@ -620,126 +699,157 @@ typedef struct _gsm_a_tap_rec_t {
     /*
      * value from packet-bssap.h
      */
-    guint8      pdu_type;
-    guint8      message_type;
+    uint8_t     pdu_type;
+    uint8_t     message_type;
     gsm_a_pd_str_e  protocol_disc;
 } gsm_a_tap_rec_t;
 
 void bssmap_old_bss_to_new_bss_info(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo);
 void bssmap_new_bss_to_old_bss_info(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo);
 
-void dtap_mm_mm_info(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len);
+void dtap_mm_mm_info(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len);
 
-guint16 be_cell_id_aux(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len, guint8 disc);
-guint16 be_cell_id_list(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-guint16 be_chan_type(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-guint16 be_prio(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-
-WS_DLL_PUBLIC
-guint16 de_lai(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-WS_DLL_PUBLIC
-guint16 de_mid(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-WS_DLL_PUBLIC
-guint16 de_cell_id(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-guint16 de_bearer_cap(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-guint16 de_bearer_cap_uplink(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-guint16 be_emlpp_prio(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-guint16 be_ganss_loc_type(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-guint16 be_ganss_pos_dta(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-guint16 be_ganss_ass_dta(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-guint16 de_cn_common_gsm_map_nas_sys_info(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-guint16 de_cs_domain_spec_sys_info(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-guint16 de_ps_domain_spec_sys_info(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-guint16 de_plmn_list(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-WS_DLL_PUBLIC
-guint16 de_ms_cm_1(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-WS_DLL_PUBLIC
-guint16 de_ms_cm_2(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-WS_DLL_PUBLIC
-guint16 de_ms_cm_3(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-guint16 de_serv_cat(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-WS_DLL_PUBLIC
-guint16 de_sm_apn(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-guint16 de_sm_pco(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-WS_DLL_PUBLIC
-guint16 de_sm_qos(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-WS_DLL_PUBLIC
-guint16 de_sm_pflow_id(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-guint16 de_sm_tflow_temp(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-guint16 de_time_zone(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-WS_DLL_PUBLIC
-guint16 de_gmm_drx_param(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-WS_DLL_PUBLIC
-guint16 de_gmm_ms_net_cap(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-WS_DLL_PUBLIC
-guint16 de_gmm_rai(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-WS_DLL_PUBLIC
-guint16 de_gmm_ms_radio_acc_cap(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-guint16 de_gmm_voice_domain_pref(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-
-guint16 de_sup_codec_list(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-
+uint16_t be_cell_id_aux(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len, uint8_t disc);
+uint16_t be_cell_id_type(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len, uint8_t disc, e212_number_type_t number_type);
+uint16_t be_cell_id_list(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+uint16_t be_chan_type(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+uint16_t be_prio(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
 
 WS_DLL_PUBLIC
-guint16 de_rr_cause(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
+uint16_t de_lai(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
 WS_DLL_PUBLIC
-guint16 de_rr_cell_dsc(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
+uint16_t de_mid(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
 WS_DLL_PUBLIC
-guint16 de_rr_ch_dsc(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
+uint16_t de_cell_id(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+uint16_t de_bearer_cap(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+uint16_t de_bearer_cap_uplink(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+uint16_t be_emlpp_prio(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+uint16_t be_ganss_loc_type(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+uint16_t be_ganss_pos_dta(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+uint16_t be_ganss_ass_dta(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+uint16_t de_cn_common_gsm_map_nas_sys_info(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+uint16_t de_cs_domain_spec_sys_info(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+uint16_t de_ps_domain_spec_sys_info(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+uint16_t de_plmn_list(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+uint16_t de_emerg_num_list(tvbuff_t* tvb, proto_tree* tree, packet_info* pinfo, uint32_t offset, unsigned len, char* add_string, int string_len);
 WS_DLL_PUBLIC
-guint16 de_rr_ch_mode(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
+uint16_t de_ms_cm_1(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
 WS_DLL_PUBLIC
-guint16 de_rr_chnl_needed(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
+uint16_t de_ms_cm_2(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
 WS_DLL_PUBLIC
-guint16 de_rr_cip_mode_set(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
+uint16_t de_ms_cm_3(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+uint16_t de_serv_cat(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
 WS_DLL_PUBLIC
-guint16 de_rr_cm_enq_mask(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-guint16 de_rr_meas_res(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
+uint16_t de_sm_apn(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+uint16_t de_sm_cause(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+uint16_t de_sm_mbms_prot_conf_opt(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string _U_, int string_len _U_);
+uint16_t de_sm_pco(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
 WS_DLL_PUBLIC
-guint16 de_rr_multirate_conf(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
+uint16_t de_sm_pdp_addr(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string _U_, int string_len _U_);
 WS_DLL_PUBLIC
-guint16 de_rr_sus_cau(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
+uint16_t de_sm_qos(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
 WS_DLL_PUBLIC
-guint16 de_rr_tlli(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
+uint16_t de_sm_pflow_id(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+uint16_t de_sm_tflow_temp(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+uint16_t de_sm_tmgi(tvbuff_t* tvb, proto_tree* tree, packet_info* pinfo, uint32_t offset, unsigned len, char* add_string _U_, int string_len _U_);
+uint16_t de_time_zone(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+WS_DLL_PUBLIC
+uint16_t de_gmm_drx_param(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+WS_DLL_PUBLIC
+uint16_t de_gmm_ms_net_cap(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+WS_DLL_PUBLIC
+uint16_t de_gmm_rai(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+WS_DLL_PUBLIC
+uint16_t de_gmm_ms_radio_acc_cap(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+uint16_t de_gmm_voice_domain_pref(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+
+uint16_t de_sup_codec_list(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+
+uint16_t de_gc_timer(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len _U_, char *add_string _U_, int string_len _U_);
+uint16_t de_gc_timer3(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
 
 WS_DLL_PUBLIC
-guint16 de_rej_cause(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
+uint16_t de_rr_cause(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
 WS_DLL_PUBLIC
-guint16 de_d_gb_call_ref(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-guint16 de_spare_nibble(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, guint32 offset, guint len _U_, gchar *add_string _U_, int string_len _U_);
+uint16_t de_rr_cell_dsc(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+WS_DLL_PUBLIC
+uint16_t de_rr_ch_dsc(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+WS_DLL_PUBLIC
+uint16_t de_rr_ch_mode(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+WS_DLL_PUBLIC
+uint16_t de_rr_chnl_needed(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+WS_DLL_PUBLIC
+uint16_t de_rr_cip_mode_set(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+WS_DLL_PUBLIC
+uint16_t de_rr_cm_enq_mask(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+uint16_t de_rr_meas_res(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+uint16_t de_rr_mob_all(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+WS_DLL_PUBLIC
+uint16_t de_rr_multirate_conf(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+WS_DLL_PUBLIC
+uint16_t de_rr_sus_cau(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+WS_DLL_PUBLIC
+uint16_t de_rr_tlli(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
 
-guint16 de_emm_ue_net_cap(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-guint16 de_emm_trac_area_id(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string, int string_len);
-guint16 de_emm_sec_par_from_eutra(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, guint32 offset, guint len _U_, gchar *add_string _U_, int string_len _U_);
-guint16 de_emm_sec_par_to_eutra(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, guint32 offset, guint len _U_, gchar *add_string _U_, int string_len _U_);
-guint16 de_esm_qos(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, guint32 offset, guint len, gchar *add_string _U_, int string_len _U_);
-void nas_esm_pdn_con_req(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len);
+WS_DLL_PUBLIC
+uint16_t de_rej_cause(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+WS_DLL_PUBLIC
+uint16_t de_d_gb_call_ref(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+uint16_t de_spare_nibble(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len _U_, char *add_string _U_, int string_len _U_);
 
-void dtap_rr_ho_cmd(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len);
-void dtap_rr_cip_mode_cpte(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len);
+uint16_t de_emm_ue_net_cap(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+uint16_t de_emm_trac_area_id(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+uint16_t de_emm_sec_par_from_eutra(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len _U_, char *add_string _U_, int string_len _U_);
+uint16_t de_emm_sec_par_to_eutra(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len _U_, char *add_string _U_, int string_len _U_);
+uint16_t de_emm_ue_add_sec_cap(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len, char *add_string _U_, int string_len _U_);
+uint16_t de_esm_qos(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len, char *add_string _U_, int string_len _U_);
+uint16_t de_esm_apn_aggr_max_br(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len _U_, char *add_string _U_, int string_len _U_);
+uint16_t de_esm_ext_apn_agr_max_br(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len, char *add_string _U_, int string_len _U_);
+uint16_t de_esm_ext_eps_qos(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len, char *add_string _U_, int string_len _U_);
+uint16_t de_esm_rel_assist_ind(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len _U_, char *add_string _U_, int string_len _U_);
 
-void bssmap_perf_loc_abort(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len);
-void bssmap_reset(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len);
-void bssmap_conn_oriented(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len);
+void nas_esm_pdn_con_req(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len);
 
-void rp_data_n_ms(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len);
+uint16_t de_nas_5gs_cmn_dnn(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string _U_, int string_len _U_);
+uint16_t de_nas_5gs_mm_ue_radio_cap_id(tvbuff_t* tvb, proto_tree* tree, packet_info* pinfo, uint32_t offset, unsigned len, char* add_string _U_, int string_len _U_);
+uint16_t de_nas_5gs_cmn_s_nssai(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len, char *add_string _U_, int string_len _U_);
+uint16_t de_nas_5gs_cmn_service_level_aa_cont(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len, char *add_string _U_, int string_len _U_);
+uint16_t de_nas_5gs_sm_qos_rules(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string _U_, int string_len _U_);
+uint16_t de_nas_5gs_sm_qos_flow_des(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len, char *add_string _U_, int string_len _U_);
+uint16_t de_nas_5gs_sm_session_ambr(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len, char *add_string _U_, int string_len _U_);
+void de_nas_5gs_intra_n1_mode_nas_transparent_cont(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_);
+void de_nas_5gs_n1_mode_to_s1_mode_nas_transparent_cont(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_);
+void de_nas_5gs_s1_mode_to_n1_mode_nas_transparent_cont(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_);
+void dissect_nas_5gs_updp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree);
+
+void dtap_rr_ho_cmd(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len);
+void dtap_rr_cip_mode_cpte(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len);
+
+void bssmap_perf_loc_abort(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len);
+void bssmap_reset(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len);
+void bssmap_conn_oriented(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len);
+uint16_t bssmap_dissect_cause(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string, int string_len);
+
+
+void rp_data_n_ms(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len);
+
+uint16_t de_sgsap_ecgi(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len _U_, char *add_string _U_, int string_len _U_);
 
 /*
  * the following allows TAP code access to the messages
  * without having to duplicate it. With MSVC and a
  * libwireshark.dll, we need a special declaration.
  */
-WS_DLL_PUBLIC const value_string gsm_a_bssmap_msg_strings[];
-WS_DLL_PUBLIC const value_string gsm_a_dtap_msg_mm_strings[];
-WS_DLL_PUBLIC const value_string gsm_a_dtap_msg_rr_strings[];
-WS_DLL_PUBLIC const value_string gsm_a_dtap_msg_cc_strings[];
-WS_DLL_PUBLIC const value_string gsm_a_dtap_msg_gmm_strings[];
-WS_DLL_PUBLIC const value_string gsm_a_dtap_msg_sms_strings[];
-WS_DLL_PUBLIC const value_string gsm_a_dtap_msg_sm_strings[];
-WS_DLL_PUBLIC const value_string gsm_a_dtap_msg_ss_strings[];
-WS_DLL_PUBLIC const value_string gsm_a_dtap_msg_tp_strings[];
-WS_DLL_PUBLIC const value_string gsm_a_rr_short_pd_msg_strings[];
-WS_DLL_PUBLIC const gchar *gsm_a_pd_str[];
+extern const value_string gsm_a_bssmap_msg_strings[];
+extern const value_string gsm_a_dtap_msg_mm_strings[];
+extern const value_string gsm_a_dtap_msg_rr_strings[];
+extern const value_string gsm_a_dtap_msg_cc_strings[];
+extern const value_string gsm_a_dtap_msg_gmm_strings[];
+extern const value_string gsm_a_dtap_msg_sms_strings[];
+extern const value_string gsm_a_dtap_msg_sm_strings[];
+extern const value_string gsm_a_dtap_msg_ss_strings[];
+extern const value_string gsm_a_dtap_msg_tp_strings[];
+extern const value_string gsm_a_rr_short_pd_msg_strings[];
 
 extern const value_string gsm_a_sm_qos_del_of_err_sdu_vals[];
 extern const value_string gsm_a_sm_qos_traffic_cls_vals[];
@@ -752,9 +862,15 @@ extern const value_string gsm_a_dtap_numbering_plan_id_values[];
 extern const value_string gsm_a_sms_vals[];
 extern const value_string tighter_cap_level_vals[];
 extern value_string_ext gsm_a_rr_rxlev_vals_ext;
+extern const value_string gsm_a_rr_rxqual_vals[];
 extern const value_string gsm_a_gm_type_of_ciph_alg_vals[];
 
 extern value_string_ext nas_eps_emm_cause_values_ext;
+extern const value_string nas_eps_emm_cause_values[];
+extern const value_string nas_eps_esm_cause_vals[];
+
+extern const value_string nas_5gs_pdu_session_id_vals[];
+extern const value_string nas_5gs_sm_cause_vals[];
 
 typedef enum
 {
@@ -928,13 +1044,104 @@ typedef enum
     BE_LCLS_BSS_STATUS,                 /* LCLS-BSS-Status                     3.2.2.119    */
     BE_LCLS_BREAK_REQ,                  /* LCLS-Break-Request                  3.2.2.120    */
     BE_CSFB_IND,                        /* CSFB Indication                     3.2.2.121    */
-#if 0
     BE_CS_TO_PS_SRVCC,                  /* CS to PS SRVCC                      3.2.2.122    */
     BE_SRC_ENB_2_TGT_ENB_TRANSP_INF,    /* Source eNB to target eNB transparent information (E-UTRAN)" 3.2.2.123    */
     BE_CS_TO_PS_SRVCC_IND,              /* CS to PS SRVCC Indication           3.2.2.124    */
     BE_CN_TO_MS_TRANSP,                 /* CN to MS transparent information    3.2.2.125    */
-#endif
     BE_SELECTED_PLMN_ID,                /* Selected PLMN ID                    3.2.2.126    */
+    BE_LAST_USED_E_UTRAN_PLMN_ID,       /* Last used E-UTRAN PLMN ID           3.2.2.127    */
+    BE_UDEF_150,                         /* Undefined Old Location Area Identification    3.2.2.128 */
+    BE_UDEF_151,                         /* Undefined Attach Indicator    3.2.2.129 */
+    BE_UDEF_152,                         /* Undefined Selected Operator    3.2.2.130 */
+    BE_UDEF_153,                         /* Undefined PS Registered Operator    3.2.2.131 */
+    BE_UDEF_154,                         /* Undefined CS Registered Operator    3.2.2.132*/
+    BE_UDEF_155,                         /* Undefined */
+    BE_UDEF_156,                         /* Undefined */
+    BE_UDEF_157,                         /* Undefined */
+    BE_UDEF_158,                         /* Undefined */
+    BE_UDEF_159,                         /* Undefined */
+    BE_UDEF_160,                         /* Undefined */
+    BE_UDEF_161,                         /* Undefined */
+    BE_UDEF_162,                         /* Undefined */
+    BE_UDEF_163,                         /* Undefined */
+    BE_UDEF_164,                         /* Undefined */
+    BE_UDEF_165,                         /* Undefined */
+    BE_UDEF_166,                         /* Undefined */
+    BE_UDEF_167,                         /* Undefined */
+    BE_UDEF_168,                         /* Undefined */
+    BE_UDEF_169,                         /* Undefined */
+    BE_UDEF_170,                         /* Undefined */
+    BE_UDEF_171,                         /* Undefined */
+    BE_UDEF_172,                         /* Undefined */
+    BE_UDEF_173,                         /* Undefined */
+    BE_UDEF_174,                         /* Undefined */
+    BE_UDEF_175,                         /* Undefined */
+    BE_UDEF_176,                         /* Undefined */
+    BE_UDEF_177,                         /* Undefined */
+    BE_UDEF_178,                         /* Undefined */
+    BE_UDEF_179,                         /* Undefined */
+    BE_UDEF_180,                         /* Undefined */
+    BE_UDEF_181,                         /* Undefined */
+    BE_UDEF_182,                         /* Undefined */
+    BE_UDEF_183,                         /* Undefined */
+    BE_UDEF_184,                         /* Undefined */
+    BE_UDEF_185,                         /* Undefined */
+    BE_UDEF_186,                         /* Undefined */
+    BE_UDEF_187,                         /* Undefined */
+    BE_UDEF_188,                         /* Undefined */
+    BE_UDEF_189,                         /* Undefined */
+    BE_UDEF_190,                         /* Undefined */
+    BE_UDEF_191,                         /* Undefined */
+    BE_UDEF_192,                         /* Undefined */
+    BE_UDEF_193,                         /* Undefined */
+    BE_UDEF_194,                         /* Undefined */
+    BE_UDEF_195,                         /* Undefined */
+    BE_UDEF_196,                         /* Undefined */
+    BE_UDEF_197,                         /* Undefined */
+    BE_UDEF_198,                         /* Undefined */
+    BE_UDEF_199,                         /* Undefined */
+    BE_UDEF_200,                         /* Undefined */
+    BE_UDEF_201,                         /* Undefined */
+    BE_UDEF_202,                         /* Undefined */
+    BE_UDEF_203,                         /* Undefined */
+    BE_UDEF_204,                         /* Undefined */
+    BE_UDEF_205,                         /* Undefined */
+    BE_UDEF_206,                         /* Undefined */
+    BE_UDEF_207,                         /* Undefined */
+    BE_UDEF_208,                         /* Undefined */
+    BE_UDEF_209,                         /* Undefined */
+    BE_UDEF_210,                         /* Undefined */
+    BE_UDEF_211,                         /* Undefined */
+    BE_UDEF_212,                         /* Undefined */
+    BE_UDEF_213,                         /* Undefined */
+    BE_UDEF_214,                         /* Undefined */
+    BE_UDEF_215,                         /* Undefined */
+    BE_UDEF_216,                         /* Undefined */
+    BE_UDEF_217,                         /* Undefined */
+    BE_UDEF_218,                         /* Undefined */
+    BE_UDEF_219,                         /* Undefined */
+    BE_UDEF_220,                         /* Undefined */
+    BE_UDEF_221,                         /* Undefined */
+    BE_UDEF_222,                         /* Undefined */
+    BE_UDEF_223,                         /* Undefined */
+    BE_UDEF_224,                         /* Undefined */
+    BE_UDEF_225,                         /* Undefined */
+    BE_UDEF_226,                         /* Undefined */
+    BE_UDEF_227,                         /* Undefined */
+    BE_UDEF_228,                         /* Undefined */
+    BE_UDEF_229,                         /* Undefined */
+    BE_UDEF_230,                         /* Undefined */
+    BE_UDEF_231,                         /* Undefined */
+    BE_UDEF_232,                         /* Undefined */
+    BE_UDEF_233,                         /* Undefined */
+    BE_UDEF_234,                         /* Undefined */
+    BE_UDEF_235,                         /* Undefined */
+    BE_UDEF_236,                         /* Undefined */
+    BE_UDEF_237,                         /* Undefined */
+    BE_UDEF_238,                         /* Undefined */
+    BE_UDEF_239,                         /* Undefined */
+    BE_OSMOCOM_OSMUX_SUPPORT = 0xf0,    /* Osmocom extension: Osmux Support */
+    BE_OSMOCOM_OSMUX_CID = 0xf1,        /* Osmocom extension: Osmux CID */
     BE_NONE                             /* NONE */
 }
 bssmap_elem_idx_t;
@@ -1096,6 +1303,10 @@ typedef enum
     DE_TP_EPC_UE_TL_A_LB_SETUP,         /* UE Test Loop Mode A LB Setup */
     DE_TP_EPC_UE_TL_B_LB_SETUP,         /* UE Test Loop Mode B LB Setup */
     DE_TP_EPC_UE_TL_C_SETUP,            /* UE Test Loop Mode C Setup */
+    DE_TP_EPC_UE_TL_D_SETUP,            /* UE Test Loop Mode D Setup */
+    DE_TP_EPC_UE_TL_E_SETUP,            /* UE Test Loop Mode E Setup */
+    DE_TP_EPC_UE_TL_F_SETUP,            /* UE Test Loop Mode F Setup */
+    DE_TP_EPC_UE_TL_GH_SETUP,           /* UE Test Loop Mode GH Setup */
     DE_TP_EPC_UE_POSITIONING_TECHNOLOGY,/* UE Positioning Technology */
     DE_TP_EPC_MBMS_PACKET_COUNTER_VALUE,/* MBMS Packet Counter Value */
     DE_TP_EPC_ELLIPSOID_POINT_WITH_ALT, /* ellipsoidPointWithAltitude */
@@ -1125,7 +1336,7 @@ typedef enum
     DE_ATTACH_RES,                  /* [7] 10.5.5.1 Attach Result*/
     DE_ATTACH_TYPE,                 /* [7] 10.5.5.2 Attach Type */
     DE_CIPH_ALG,                    /* [7] 10.5.5.3 Ciphering Algorithm */
-    DE_INTEG_PROT_ALG,              /* [11] 10.5.5.3a Integrity Protection Algorithm */
+    DE_INTEG_ALG,                   /* [11] 10.5.5.3a Integrity Algorithm */
     DE_TMSI_STAT,                   /* [7] 10.5.5.4 TMSI Status */
     DE_DETACH_TYPE,                 /* [7] 10.5.5.5 Detach Type */
     DE_DRX_PARAM,                   /* [7] 10.5.5.6 DRX Parameter */
@@ -1160,13 +1371,19 @@ typedef enum
     DE_NET_RES_ID_CONT,             /* [11] 10.5.5.31 Network resource identifier container */
     DE_EXT_DRX_PARAMS,              /* [11] 10.5.5.32 Extended DRX parameters */
     DE_MAC,                         /* [11] 10.5.5.33 Message Authentication Code */
+    DE_UP_INTEG_IND,                /* [11] 10.5.5.34 User Plane integrity indicator */
+    DE_DCN_ID,                      /* [12] 10.5.5.35 DCN-ID */
+    DE_PLMN_ID_CN_OPERATOR,         /* [12] 10.5.5.36 PLMN identity of the CN operator */
+    DE_NON_3GPP_NW_PROV_POL,        /* [12] 10.5.5.37 Non-3GPP NW provided policies */
     /* Session Management Information Elements [3] 10.5.6 */
     DE_ACC_POINT_NAME,              /* Access Point Name */
     DE_NET_SAPI,                    /* Network Service Access Point Identifier */
     DE_PRO_CONF_OPT,                /* Protocol Configuration Options */
+    DE_EXT_PRO_CONF_OPT,            /* Extended Protocol Configuration Options */
     DE_PD_PRO_ADDR,                 /* Packet Data Protocol Address */
     DE_QOS,                         /* Quality Of Service */
     DE_RE_ATTEMPT_IND,              /* Re-attempt indicator */
+    DE_EXT_QOS,                     /* [13] Extended quality of service */
     DE_SM_CAUSE,                    /* SM Cause */
     DE_SM_CAUSE_2,                  /* SM Cause 2 */
     DE_LINKED_TI,                   /* Linked TI */
@@ -1293,6 +1510,7 @@ typedef enum
  * [3] 10.5.2.37g SI 19 Rest Octets
  * [3] 10.5.2.37h SI 18 Rest Octets
  * [3] 10.5.2.37i SI 20 Rest Octets */
+    DE_RR_SI21_REST_OCT,            /* [3] 10.5.2.37m SI21 Rest Octets */
     DE_RR_STARTING_TIME,            /* [3] 10.5.2.38 Starting Time                  */
     DE_RR_TIMING_ADV,               /* [3] 10.5.2.40 Timing Advance                 */
     DE_RR_TIME_DIFF,                /* [3] 10.5.2.41 Time Difference                */
@@ -1333,7 +1551,8 @@ typedef enum
  * 10.5.2.68 VGCS AMR Configuration
  */
     DE_RR_CARRIER_IND,              /* 10.5.2.69 Carrier Indication */
-    DE_RR_FEATURE_INDICATOR,        /* 10.5.2.76 feature Inticator */
+    DE_RR_FEATURE_INDICATOR,        /* 10.5.2.76 feature Indicator */
+    DE_RR_EXTENDED_TSC_SET,         /* 10.5.2.82 Extended TSC Set */
     DE_RR_EC_REQUEST_REFERENCE,     /* 10.5.2.83 EC Request reference */
     DE_RR_EC_PKT_CH_DSC1,           /* 10.5.2.84 EC Packet Channel Description Type 1 */
     DE_RR_EC_PKT_CH_DSC2,           /* 10.5.2.85 EC Packet Channel Description Type 2 */
@@ -1345,13 +1564,33 @@ rr_elem_idx_t;
 
 typedef enum
 {
+    DE_EPS_CMN_ADD_INFO,                        /* 9.9.2.0  Additional information */
+    DE_EPS_CMN_DEVICE_PROPERTIES,               /* 9.9.2.0A Device properties */
+    DE_EPS_CMN_EPS_BE_CTX_STATUS,               /* 9.9.2.1  EPS bearer context status */
+    DE_EPS_CMN_LOC_AREA_ID,                     /* 9.9.2.2  Location area identification */
+    DE_EPS_CMN_MOB_ID,                          /* 9.9.2.3  Mobile identity */
+    DE_EPS_MS_CM_2,                             /* 9.9.2.4  Mobile station classmark 2 */
+    DE_EPS_MS_CM_3,                             /* 9.9.2.5  Mobile station classmark 3 */
+    DE_EPS_NAS_SEC_PAR_FROM_EUTRA,              /* 9.9.2.6  NAS security parameters from E-UTRA */
+    DE_EPS_NAS_SEC_PAR_TO_EUTRA,                /* 9.9.2.7  NAS security parameters to E-UTRA */
+
+    DE_EPS_CMN_PLM_LST,                         /* 9.9.2.8  PLMN list */
+    DE_EPS_CMN_SUP_CODEC_LST,                   /* 9.9.2.6  9.9.2.10    Supported codec list */
+    DE_EPS_COMMON_NONE                          /* NONE */
+}
+nas_eps_common_elem_idx_t;
+
+typedef enum
+{
     /* 9.9.3    EPS Mobility Management (EMM) information elements */
     DE_EMM_ADD_UPD_RES,         /* 9.9.3.0A Additional update result */
     DE_EMM_ADD_UPD_TYPE,        /* 9.9.3.0B Additional update type */
     DE_EMM_AUTH_FAIL_PAR,       /* 9.9.3.1  Authentication failure parameter (dissected in packet-gsm_a_dtap.c)*/
     DE_EMM_AUTN,                /* 9.9.3.2  Authentication parameter AUTN */
     DE_EMM_AUTH_PAR_RAND,       /* 9.9.3.3  Authentication parameter RAND */
+    DE_EMM_RAT_UTIL_CNTRL,      /* 9.9.3.3A RAT utilization control */
     DE_EMM_AUTH_RESP_PAR,       /* 9.9.3.4  Authentication response parameter */
+    DE_EMM_SMS_SERVICES_STATUS, /* 9.9.3.4B SMS services status */
     DE_EMM_CSFB_RESP,           /* 9.9.3.5  CSFB response */
     DE_EMM_DAYL_SAV_T,          /* 9.9.3.6  Daylight saving time */
     DE_EMM_DET_TYPE,            /* 9.9.3.7  Detach type */
@@ -1388,9 +1627,10 @@ typedef enum
     DE_EMM_TRAC_AREA_ID,        /* 9.9.3.32 Tracking area identity */
     DE_EMM_TRAC_AREA_ID_LST,    /* 9.9.3.33 Tracking area identity list */
     DE_EMM_UE_NET_CAP,          /* 9.9.3.34 UE network capability */
-    DE_EMM_UE_RA_CAP_INF_UPD_NEED,  /* 9.9.3.35 UE radio capability information update needed */
+    DE_EMM_UE_RA_CAP_INF_UPD_NEED, /* 9.9.3.35 UE radio capability information update needed */
     DE_EMM_UE_SEC_CAP,          /* 9.9.3.36 UE security capability */
-    DE_EMM_EMERG_NUM_LST,       /* 9.9.3.37 Emergency Number List */
+    DE_EMM_EMERG_NUM_LIST,      /* 9.9.3.37 Emergency Number List */
+    DE_EMM_EXT_EMERG_NUM_LIST,  /* 9.9.3.37a Extended Emergency Number List */
     DE_EMM_CLI,                 /* 9.9.3.38 CLI */
     DE_EMM_SS_CODE,             /* 9.9.3.39 SS Code */
     DE_EMM_LCS_IND,             /* 9.9.3.40 LCS indicator */
@@ -1401,10 +1641,73 @@ typedef enum
     DE_EMM_GUTI_TYPE,           /* 9.9.3.45 GUTI type */
     DE_EMM_EXT_DRX_PARAMS,      /* 9.9.3.46 Extended DRX parameters */
     DE_EMM_DATA_SERV_TYPE,      /* 9.9.3.47 Data service type */
+    DE_EMM_DCN_ID,              /* 9.9.3.48 DCN-ID, See subclause 10.5.5.35 in 3GPP TS 24.008 */
+    DE_EMM_NON_3GPP_NW_PROV_POL, /* 9.9.3.49 Non-3GPP NW provided policies, See subclause 10.5.5.37 in 3GPP TS 24.008 */
+    DE_EMM_HASH_MME,            /* 9.9.3.50 HashMME */
+    DE_EMM_REPLAYED_NAS_MSG_CONT, /* 9.9.3.51 Replayed NAS message container */
+    DE_EMM_NETWORK_POLICY,      /* 9.9.3.52 Network policy */
+    DE_EMM_UE_ADD_SEC_CAP,      /* 9.9.3.53 UE additional security capability */
+    DE_EMM_UE_STATUS,           /* 9.9.3.54 UE status */
+    DE_EMM_ADD_INFO_REQ,        /* 9.9.3.55 Additional information requested */
+    DE_EMM_CIPH_KEY_DATA,       /* 9.9.3.56 Ciphering key data */
+    DE_EMM_N1_UE_NETWORK_CAP,   /* 9.9.3.57 N1 UE network capability */
+    DE_EMM_UE_RADIO_CAP_ID_AVAIL, /* 9.9.3.58 UE radio capability ID availability */
+    DE_EMM_UE_RADIO_CAP_ID_REQ, /* 9.9.3.59 UE radio capability ID request */
+    DE_EMM_UE_RADIO_CAP_ID,     /* 9.9.3.60 UE radio capability ID */
+    DE_EMM_UE_RADIO_CAP_ID_DEL_IND, /* 9.9.3.61 UE radio capability ID deletion indication */
+    DE_EMM_WUS_ASSIST_INFO,     /* 9.9.3.62 WUS assistance information */
+    DE_EMM_NB_S1_DRX_PARAM,     /* 9.9.3.63 NB-S1 DRX parameter */
+    DE_EMM_IMSI_OFFSET,         /* 9.9.3.64 IMSI offset */
+    DE_EMM_UE_REQUEST_TYPE,     /* 9.9.3.65 UE request type */
+    DE_EMM_PAGING_RESTRICTION,  /* 9.9.3.66 Paging restriction */
+    DE_EMM_EPS_ADD_REQ_RESULT,  /* 9.9.3.67 EPS additional request result */
+    DE_EMM_UNAVAIL_INFO,        /* 9.9.3.69 Unavailability information */
+    DE_EMM_UNAVAIL_CONFIG,      /* 9.9.3.70 Unavailability configuration */
+    DE_EMM_UE_INFO_REQ,         /* 9.9.3.71 UE information request */
+    DE_EMM_UE_COARSE_LOC_INFO,  /* 9.9.3.72 UE coarse location information */
     DE_EMM_NONE                 /* NONE */
-
 }
 nas_emm_elem_idx_t;
+
+/* 9.9.4 EPS Session Management (ESM) information elements */
+typedef enum
+{
+    DE_ESM_APN,                     /* 9.9.4.1 Access point name */
+    DE_ESM_APN_AGR_MAX_BR,          /* 9.9.4.2 APN aggregate maximum bit rate */
+    DE_ESM_CONNECTIVITY_TYPE,       /* 9.9.4.2A Connectivity type */
+    DE_ESM_EPS_QOS,                 /* 9.9.4.3 EPS quality of service */
+    DE_ESM_CAUSE,                   /* 9.9.4.4 ESM cause */
+    DE_ESM_INF_TRF_FLG,             /* 9.9.4.5 ESM information transfer flag */
+    DE_ESM_LNKED_EPS_B_ID,          /* 9.9.4.6 Linked EPS bearer identity  */
+    DE_ESM_LLC_SAPI,                /* 9.9.4.7 LLC service access point identifier */
+    DE_ESM_NOTIF_IND,               /* 9.9.4.7a Notification indicator */
+    DE_ESM_P_FLW_ID,                /* 9.9.4.8 Packet flow identifier  */
+    DE_ESM_PDN_ADDR,                /* 9.9.4.9 PDN address */
+    DE_ESM_PDN_TYPE,                /* 9.9.4.10 PDN type */
+    DE_ESM_PROT_CONF_OPT,           /* 9.9.4.11 Protocol configuration options */
+    DE_ESM_QOS,                     /* 9.9.4.12 Quality of service */
+    DE_ESM_RA_PRI,                  /* 9.9.4.13 Radio priority  */
+    DE_ESM_RE_ATTEMPT_IND,          /* 9.9.4.13a Re-attempt indicator */
+    DE_ESM_REQ_TYPE,                /* 9.9.4.14 Request type */
+    DE_ESM_TRAF_FLOW_AGR_DESC,      /* 9.9.4.15 Traffic flow aggregate description */
+    DE_ESM_TRAF_FLOW_TEMPL,         /* 9.9.4.16 Traffic flow template */
+    DE_ESM_TID,                     /* 9.9.4.17 Transaction identifier */
+    DE_ESM_WLAN_OFFLOAD_ACCEPT,     /* 9.9.4.18 WLAN offload acceptability */
+    DE_ESM_NBIFOM_CONT,             /* 9.9.4.19 NBIFOM container */
+    DE_ESM_REMOTE_UE_CONTEXT_LIST,  /* 9.9.4.20 Remote UE context list */
+    DE_ESM_PKMF_ADDRESS,            /* 9.9.4.21 PKMF address */
+    DE_ESM_HDR_COMPR_CONFIG,        /* 9.9.4.22 Header compression configuration */
+    DE_ESM_CTRL_PLANE_ONLY_IND,     /* 9.9.4.23 Control plane only indication */
+    DE_ESM_USER_DATA_CONT,          /* 9.9.4.24 User data container */
+    DE_ESM_REL_ASSIST_IND,          /* 9.9.4.25 Release assistance indication */
+    DE_ESM_EXT_PCO,                 /* 9.9.4.26 Extended protocol configuration options */
+    DE_ESM_HDR_COMPR_CONFIG_STATUS, /* 9.9.4.27 Header compression configuration status */
+    DE_ESM_SERV_PLMN_RATE_CTRL,     /* 9.9.4.28 Serving PLMN rate control */
+    DE_ESM_EXT_APN_AGR_MAX_BR,      /* 9.9.4.29 Extended APN aggregate maximum bit rate */
+    DE_ESM_EXT_EPS_QOS,             /* 9.9.4.30 Extended EPS quality of service */
+    DE_ESM_NONE                     /* NONE */
+}
+nas_esm_elem_idx_t;
 
 typedef enum
 {
@@ -1456,10 +1759,135 @@ typedef enum
 }
 sgsap_elem_idx_t;
 
+typedef enum
+{
+    DE_NAS_5GS_MM_5GMM_CAP,                  /* 9.11.3.1     5GMM capability*/
+    DE_NAS_5GS_MM_5GMM_CAUSE,                /* 9.11.3.2     5GMM cause*/
+    DE_NAS_5GS_MM_5GS_DRX_PARAM,             /* 9.11.3.2A    5GS DRX parameters*/
+    DE_NAS_5GS_MM_5GS_IDENTITY_TYPE,         /* 9.11.3.3     5GS identity type*/
+    DE_NAS_5GS_MM_5GS_MOBILE_ID,             /* 9.11.3.4     5GS mobile identity*/
+    DE_NAS_5GS_MM_5GS_NW_FEAT_SUP,           /* 9.11.3.5     5GS network feature support*/
+    DE_NAS_5GS_MM_5GS_REG_RES,               /* 9.11.3.6     5GS registration result*/
+    DE_NAS_5GS_MM_5GS_REG_TYPE,              /* 9.11.3.7     5GS registration type*/
+    DE_NAS_5GS_MM_5GS_TA_ID,                 /* 9.11.3.8     5GS tracking area identity */
+    DE_NAS_5GS_MM_5GS_TA_ID_LIST,            /* 9.11.3.9     5GS tracking area identity list */
+    DE_NAS_5GS_MM_UPDATE_TYPE,               /* 9.11.3.9A    5GS update type */
+    DE_NAS_5GS_MM_ABBA,                      /* 9.11.3.10    ABBA */
+                                             /* 9.11.3.11    void */
+    DE_NAS_5GS_MM_ADD_5G_SEC_INF,            /* 9.11.3.12    Additional 5G security information */
+    DE_NAS_5GS_MM_ADD_INF_REQ,               /* 9.11.3.12A   Additional information requested */
+    DE_NAS_5GS_MM_ALLOW_PDU_SES_STS,         /* 9.11.3.13    Allowed PDU session status*/
+    DE_NAS_5GS_MM_AUT_FAIL_PAR,              /* 9.11.3.14    Authentication failure parameter */
+    DE_NAS_5GS_MM_AUT_PAR_AUTN,              /* 9.11.3.15    Authentication parameter AUTN*/
+    DE_NAS_5GS_MM_AUT_PAR_RAND,              /* 9.11.3.16    Authentication parameter RAND*/
+    DE_NAS_5GS_MM_AUT_RESP_PAR,              /* 9.11.3.17    Authentication response parameter */
+    DE_NAS_5GS_MM_CONF_UPD_IND,              /* 9.11.3.18    Configuration update indication*/
+    DE_NAS_5GS_MM_CAG_INFORMATION_LIST,      /* 9.11.3.18A   CAG information list*/
+    DE_NAS_5GS_MM_CIOT_SMALL_DATA_CONT,      /* 9.11.3.18B   CIoT small data container */
+    DE_NAS_5GS_MM_CIPHERING_KEY_DATA,        /* 9.11.3.18C   Ciphering key data*/
+    DE_NAS_5GS_MM_CTRL_PLANE_SERVICE_TYPE,   /* 9.11.3.18D   Control plane service type*/
+    DE_NAS_5GS_MM_DLGT_SAVING_TIME,          /* 9.11.3.19    Daylight saving time*/
+    DE_NAS_5GS_MM_DE_REG_TYPE,               /* 9.11.3.20    De-registration type*/
+                                             /* 9.11.3.21    Void */
+                                             /* 9.11.3.22    Void*/
+    DE_NAS_5GS_MM_EMRG_NR_LIST,              /* 9.11.3.23    Emergency number list */
+    DE_NAS_5GS_MM_EPS_BEARER_CTX_STATUS,     /* 9.11.3.23A   EPS bearer context status */
+    DE_NAS_5GS_MM_EPS_NAS_MSG_CONT,          /* 9.11.3.24    EPS NAS message container */
+    DE_NAS_5GS_MM_EPS_NAS_SEC_ALGO,          /* 9.11.3.25    EPS NAS security algorithms */
+    DE_NAS_5GS_MM_EXT_EMERG_NUM_LIST,        /* 9.11.3.26    Extended emergency number list */
+    DE_NAS_5GS_MM_EXTENDED_DRX_PARAMETERS,   /* 9.11.3.26A   Extended DRX parameters */
+                                             /* 9.11.3.27    Void*/
+    DE_NAS_5GS_MM_IMEISV_REQ,                /* 9.11.3.28    IMEISV request*/
+    DE_NAS_5GS_MM_LADN_INDIC,                /* 9.11.3.29    LADN indication*/
+    DE_NAS_5GS_MM_LADN_INF,                  /* 9.11.3.30    LADN information */
+    DE_NAS_5GS_MM_MICO_IND,                  /* 9.11.3.31    MICO indication*/
+    DE_NAS_5GS_MM_MA_PDU_SES_INF,            /* 9.11.3.31A   MA PDU session information */
+    DE_NAS_5GS_MM_MAPPED_NSSAI,              /* 9.11.3.31B   Mapped NSSAI */
+    DE_NAS_5GS_MM_MOBILE_STATION_CLSMK_2,    /* 9.11.3.31C   Mobile station classmark 2 */
+    DE_NAS_5GS_MM_NAS_KEY_SET_ID,            /* 9.11.3.32    NAS key set identifier*/
+    DE_NAS_5GS_MM_NAS_KEY_SET_ID_H1,         /* 9.11.3.32    NAS key set identifier*/
+    DE_NAS_5GS_MM_NAS_MSG_CONT,              /* 9.11.3.33    NAS message container*/
+    DE_NAS_5GS_MM_NAS_SEC_ALGO,              /* 9.11.3.34    NAS security algorithms*/
+    DE_NAS_5GS_MM_NW_NAME,                   /* 9.11.3.35    Network name*/
+    DE_NAS_5GS_MM_NW_SLICING_IND,            /* 9.11.3.36    Network slicing indication */
+    DE_NAS_5GS_MM_NW_NON_3GPP_NW_PROV_POL,   /* 9.11.3.36A   Non-3GPP NW provided policies */
+    DE_NAS_5GS_MM_NSSAI,                     /* 9.11.3.37    NSSAI*/
+    DE_NAS_5GS_MM_NSSAI_INC_MODE,            /* 9.11.3.37A   NSSAI inclusion mode */
+    DE_NAS_5GS_MM_OP_DEF_ACC_CAT_DEF,        /* 9.11.3.38    Operator-defined access category definitions */
+    DE_NAS_5GS_MM_PLD_CONT,                  /* 9.11.3.39    Payload container*/
+    DE_NAS_5GS_MM_PLD_CONT_TYPE,             /* 9.11.3.40    Payload container type*/
+    DE_NAS_5GS_MM_PDU_SES_ID_2,              /* 9.11.3.41    PDU session identity 2 */
+    DE_NAS_5GS_MM_PDU_SES_REACT_RES,         /* 9.11.3.42    PDU session reactivation result*/
+    DE_NAS_5GS_MM_PDU_SES_REACT_RES_ERR_C,   /* 9.11.3.43    PDU session reactivation result error cause */
+    DE_NAS_5GS_MM_PDU_SES_STATUS,            /* 9.11.3.44    PDU session status */
+    DE_NAS_5GS_MM_PLMN_LIST,                 /* 9.11.3.45    PLMN list*/
+    DE_NAS_5GS_MM_REJ_NSSAI,                 /* 9.11.3.46    Rejected NSSAI*/
+    DE_NAS_5GS_MM_REL_ASS_IND,               /* 9.11.3.46A   Release assistance indication*/
+    DE_NAS_5GS_MM_REQ_TYPE,                  /* 9.11.3.47    Request type */
+    DE_NAS_5GS_MM_S1_UE_NW_CAP,              /* 9.11.3.48    S1 UE network capability*/
+    DE_NAS_5GS_MM_S1_UE_SEC_CAP,             /* 9.11.3.48A   S1 UE security capability*/
+    DE_NAS_5GS_MM_SAL,                       /* 9.11.3.49    Service area list*/
+    DE_NAS_5GS_MM_SERV_TYPE,                 /* 9.11.3.50    Service type,*/
+    DE_NAS_5GS_MM_SMS_IND,                   /* 9.11.3.50A   SMS indication */
+    DE_NAS_5GS_MM_SOR_TRANSP_CONT,           /* 9.11.3.51    SOR transparent container */
+    DE_NAS_5GS_MM_SUPPORTED_CODEC_LIST,      /* 9.11.3.51A   Supported codec list */
+    DE_NAS_5GS_MM_TZ,                        /* 9.11.3.52    Time zone*/
+    DE_NAS_5GS_MM_TZ_AND_T,                  /* 9.11.3.53    Time zone and time*/
+    DE_NAS_5GS_MM_UE_PAR_UPD_TRANSP_CONT,    /* 9.11.3.53A   UE parameters update transparent container */
+    DE_NAS_5GS_MM_UE_SEC_CAP,                /* 9.11.3.54    UE security capability*/
+    DE_NAS_5GS_MM_UE_USAGE_SET,              /* 9.11.3.55    UE's usage setting */
+    DE_NAS_5GS_MM_UE_STATUS,                 /* 9.11.3.56    UE status */
+    DE_NAS_5GS_MM_UL_DATA_STATUS,            /* 9.11.3.57    Uplink data status */
+    DE_NAS_5GS_MM_UE_RADIO_CAP_ID,           /* 9.11.3.68    UE radio capability ID*/
+    DE_NAS_5GS_MM_UE_RADIO_CAP_ID_DEL_IND,   /* 9.11.3.69    UE radio capability ID deletion indication*/
+    DE_NAS_5GS_MM_TRUNCATED_5G_S_TMSI_CONF,  /* 9.11.3.70    Truncated 5G-S-TMSI configuration*/
+    DE_NAS_5GS_MM_WUS_ASSISTANCE_INF,        /* 9.11.3.71    WUS assistance information*/
+    DE_NAS_5GS_MM_N5GC_INDICATION,           /* 9.11.3.72    N5GC indication*/
+    DE_NAS_5GS_MM_NB_N1_MODE_DRX_PARS,       /* 9.11.3.73    NB-N1 mode DRX parameters*/
+    DE_NAS_5GS_MM_ADDITIONAL_CONF_IND,       /* 9.11.3.74    Additional configuration indication*/
+    DE_NAS_5GS_MM_EXTENDED_REJECTED_NSSAI,   /* 9.11.3.75    Extended rejected NSSAI*/
+    DE_NAS_5GS_MM_UE_REQUEST_TYPE,           /* 9.11.3.76    UE request type */
+    DE_NAS_5GS_MM_PAGING_RESTRICTION,        /* 9.11.3.77    Paging restriction */
+    DE_NAS_5GS_MM_NID,                       /* 9.11.3.79    NID */
+    DE_NAS_5GS_MM_PEIPS_ASSIST_INFO,         /* 9.11.3.80    PEIPS assistance information */
+    DE_NAS_5GS_MM_5GS_ADD_REQ_RES,           /* 9.11.3.81    5GS additional request result */
+    DE_NAS_5GS_MM_NSSRG_INFO,                /* 9.11.3.82    NSSRG information */
+    DE_NAS_5GS_MM_PLMNS_LIST_DISASTER_COND,  /* 9.11.3.83    List of PLMNs to be used in disaster condition */
+    DE_NAS_5GS_MM_REG_WAIT_RANGE,            /* 9.11.3.84    Registration wait range */
+    DE_NAS_5GS_MM_PLMN_ID,                   /* 9.11.3.85    PLMN identity */
+    DE_NAS_5GS_MM_EXT_CAG_INFO_LIST,         /* 9.11.3.86    Extended CAG information list */
+    DE_NAS_5GS_MM_NSAG_INFO,                 /* 9.11.3.87    NSAG information */
+    DE_NAS_5GS_MM_PROSE_RELAY_TRANS_ID,      /* 9.11.3.88    ProSe relay transaction identity */
+    DE_NAS_5GS_MM_RELAY_KEY_REQ_PARAMS,      /* 9.11.3.89    Relay key request parameters */
+    DE_NAS_5GS_MM_RELAY_KEY_RESP_PARAMS,     /* 9.11.3.90    Relay key response parameters */
+    DE_NAS_5GS_MM_PRIO_IND,                  /* 9.11.3.91    Priority indicator */
+    DE_NAS_5GS_MM_SNPN_LIST,                 /* 9.11.3.92    SNPN list */
+    DE_NAS_5GS_MM_N3IWF_ID,                  /* 9.11.3.93    N3IWF identifier */
+    DE_NAS_5GS_MM_TNAN_INFO,                 /* 9.11.3.94    TNAN information */
+    DE_NAS_5GS_MM_RAN_TIMING_SYNC,           /* 9.11.3.95    RAN timing synchronization */
+    DE_NAS_5GS_MM_EXT_LADN_INFO,             /* 9.11.3.96    Extended LADN information */
+    DE_NAS_5GS_MM_ALT_NSSAI,                 /* 9.11.3.97    Alternative NSSAI */
+    DE_NAS_5GS_MM_TYPE_6_IE_CONT,            /* 9.11.3.98    Type 6 IE container */
+    DE_NAS_5GS_MM_N3GPP_ACC_PATH_SWITCH_IND, /* 9.11.9.99    Non-3GPP access path switching indication */
+    DE_NAS_5GS_MM_S_NSSAI_LOC_VALID_INFO,    /* 9.11.3.100   S-NSSAI location validity information */
+    DE_NAS_5GS_MM_S_NSSAI_TIME_VALID_INFO,   /* 9.11.3.101   S-NSSAI time validity information */
+    DE_NAS_5GS_MM_N3GPP_PATH_SWITCH_INFO,    /* 9.11.3.102   Non-3GPP path switching information */
+    DE_NAS_5GS_MM_PARTIAL_NSSAI,             /* 9.11.3.103   Partial NSSAI */
+    DE_NAS_5GS_MM_AU3N_IND,                  /* 9.11.3.104   AUN3 indication */
+    DE_NAS_5GS_MM_FEAT_AUTH_IND,             /* 9.11.3.105   Feature authorization indication */
+    DE_NAS_5GS_MM_PAYLOAD_CONT_INFO,         /* 9.11.3.106   Payload container information */
+    DE_NAS_5GS_MM_AUN3_DEVICE_SEC_KEY,       /* 9.11.3.107   AUN3 device security key */
+    DE_NAS_5GS_MM_ON_DEMAND_NSSAI,           /* 9.11.3.108   On-demand NSSAI */
+    DE_NAS_5GS_MM_EXT_5GMM_CAUSE,            /* 9.11.3.109   Extended 5GMM cause */
+    DE_NAS_5GS_MM_NONE        /* NONE */
+}
+nas_5gs_mm_elem_idx_t;
+
+
 #endif /* __PACKET_GSM_A_COMMON_H__ */
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

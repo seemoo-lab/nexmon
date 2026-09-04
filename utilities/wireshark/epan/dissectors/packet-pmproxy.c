@@ -6,24 +6,13 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 #include "config.h"
 
 #include <epan/packet.h>
 #include <epan/conversation.h>
+#include <epan/strutil.h>
 
 #define PMPROXY_PORT 44322
 /* length of "pmproxy-server 1\n" and also "pmproxy-client 1\n" */
@@ -34,36 +23,36 @@
 static dissector_handle_t pmproxy_handle;
 static dissector_handle_t pcp_handle;
 
-static int proto_pmproxy = -1;
+static int proto_pmproxy;
 
-static int hf_pmproxy_host = -1;
-static int hf_pmproxy_port = -1;
-static int hf_pmproxy_client_version = -1;
-static int hf_pmproxy_server_version = -1;
+static int hf_pmproxy_host;
+static int hf_pmproxy_port;
+static int hf_pmproxy_client_version;
+static int hf_pmproxy_server_version;
 
-static gint ett_pmproxy = -1;
+static int ett_pmproxy;
 
 typedef struct pmproxy_conversation_info_t {
-    guint32 last_proxy_frame;
+    uint32_t last_proxy_frame;
 } pmproxy_conversation_info_t;
 
 void proto_register_pmproxy(void);
 void proto_reg_handoff_pmproxy(void);
 
-static int is_ascii(const guchar *data, gint size)
+static int is_ascii(const unsigned char *data, int size)
 {
     const unsigned char *str = data;
     const unsigned char *end = str + size;
     for (; str != end; str++) {
         if (*str & 0x80)
-            return FALSE;
+            return false;
     }
-    return TRUE;
+    return true;
 }
 
 static int looks_like_proxy_exchange(tvbuff_t *tvb) {
-    gint packet_length;
-    const guchar *packet_data;
+    int packet_length;
+    const unsigned char *packet_data;
 
     packet_length = tvb_ensure_captured_length_remaining(tvb, PMPROXY_START_OF_PACKET);
     packet_data = tvb_get_ptr(tvb, PMPROXY_START_OF_PACKET, packet_length);
@@ -74,27 +63,27 @@ static int looks_like_proxy_exchange(tvbuff_t *tvb) {
 
 static int dissect_proxy_to_host(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree) {
     int offset = 0;
-    gint next_offset;
-    gint proxy_to_length;
-    gchar *pmproxy_host_and_port_string;
-    gchar **host_and_port;
-    gchar *host;
-    gchar *port;
+    int next_offset;
+    int proxy_to_length;
+    char *pmproxy_host_and_port_string;
+    char **host_and_port;
+    char *host;
+    char *port;
 
     col_set_str(pinfo->cinfo, COL_INFO, "Proxy");
 
-    proxy_to_length = tvb_find_line_end(tvb, offset, tvb_ensure_captured_length_remaining(tvb, offset), &next_offset, FALSE);
+    proxy_to_length = tvb_find_line_end(tvb, offset, tvb_ensure_captured_length_remaining(tvb, offset), &next_offset, false);
     if(proxy_to_length != -1) {
-        pmproxy_host_and_port_string = (gchar *) tvb_get_string_enc(wmem_packet_scope(), tvb, offset, proxy_to_length, ENC_ASCII);
-        host_and_port = wmem_strsplit(wmem_packet_scope(), pmproxy_host_and_port_string, " ", -1);
+        pmproxy_host_and_port_string = (char *) tvb_get_string_enc(pinfo->pool, tvb, offset, proxy_to_length, ENC_ASCII);
+        host_and_port = wmem_strsplit(pinfo->pool, pmproxy_host_and_port_string, " ", -1);
         if(host_and_port != NULL) {
             host = host_and_port[0];
             if (host) {
-                proto_tree_add_string(tree, hf_pmproxy_host, tvb, offset, (guint32)strlen(host), host);
+                proto_tree_add_string(tree, hf_pmproxy_host, tvb, offset, (uint32_t)strlen(host), host);
                 offset += (int)strlen(host) + PMPROXY_HOST_AND_PORT_DELIMETER_LENGTH;
                 port = host_and_port[1];
                 if (port) {
-                    proto_tree_add_string(tree, hf_pmproxy_port, tvb, offset, (guint32)strlen(port), port);
+                    proto_tree_add_string(tree, hf_pmproxy_port, tvb, offset, (uint32_t)strlen(port), port);
                 }
             } else {
                 port = NULL;
@@ -106,31 +95,31 @@ static int dissect_proxy_to_host(tvbuff_t *tvb, packet_info *pinfo, proto_tree *
 
 }
 
-static int is_banner_exchange_for(const gchar *type, tvbuff_t *tvb) {
-    gchar *pmproxy_exchange_string;
+static int is_banner_exchange_for(const char *type, tvbuff_t *tvb, packet_info *pinfo) {
+    char *pmproxy_exchange_string;
 
     /* Exchange packets have to be this length */
     if(tvb_ensure_captured_length_remaining(tvb, PMPROXY_START_OF_PACKET) != PMPROXY_CLIENT_SERVER_VERSION_LENGTH) {
         return 0;
     }
 
-    pmproxy_exchange_string = (gchar *) tvb_get_string_enc(wmem_packet_scope(), tvb, PMPROXY_START_OF_PACKET,
+    pmproxy_exchange_string = (char *) tvb_get_string_enc(pinfo->pool, tvb, PMPROXY_START_OF_PACKET,
                                                            PMPROXY_CLIENT_SERVER_VERSION_LENGTH, ENC_ASCII);
-    return g_strcmp0(pmproxy_exchange_string, g_strdup_printf("pmproxy-%s 1\n", type)) == 0;
+    return g_strcmp0(pmproxy_exchange_string, wmem_strdup_printf(pinfo->pool, "pmproxy-%s 1\n", type)) == 0;
 }
 
-static int is_server_exchange(tvbuff_t *tvb) {
-    return is_banner_exchange_for("server", tvb);
+static int is_server_exchange(tvbuff_t *tvb, packet_info *pinfo) {
+    return is_banner_exchange_for("server", tvb, pinfo);
 }
 
-static int is_client_exchange(tvbuff_t *tvb) {
-    return is_banner_exchange_for("client", tvb);
+static int is_client_exchange(tvbuff_t *tvb, packet_info *pinfo) {
+    return is_banner_exchange_for("client", tvb, pinfo);
 }
 
 static int dissect_server_exchange(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pmproxy_tree) {
     int offset = PMPROXY_START_OF_PACKET;
     col_set_str(pinfo->cinfo, COL_INFO, "Server exchange");
-    proto_tree_add_item(pmproxy_tree, hf_pmproxy_server_version, tvb, offset, PMPROXY_CLIENT_SERVER_VERSION_LENGTH, ENC_ASCII|ENC_NA);
+    proto_tree_add_item(pmproxy_tree, hf_pmproxy_server_version, tvb, offset, PMPROXY_CLIENT_SERVER_VERSION_LENGTH, ENC_ASCII);
     offset += PMPROXY_CLIENT_SERVER_VERSION_LENGTH;
     return offset;
 }
@@ -138,7 +127,7 @@ static int dissect_server_exchange(tvbuff_t *tvb, packet_info *pinfo, proto_tree
 static int dissect_client_exchange(tvbuff_t *tvb, packet_info *pinfo, proto_tree *pmproxy_tree) {
     int offset = PMPROXY_START_OF_PACKET;
     col_set_str(pinfo->cinfo, COL_INFO, "Client exchange");
-    proto_tree_add_item(pmproxy_tree, hf_pmproxy_client_version, tvb, offset, PMPROXY_CLIENT_SERVER_VERSION_LENGTH, ENC_ASCII|ENC_NA);
+    proto_tree_add_item(pmproxy_tree, hf_pmproxy_client_version, tvb, offset, PMPROXY_CLIENT_SERVER_VERSION_LENGTH, ENC_ASCII);
     offset += PMPROXY_CLIENT_SERVER_VERSION_LENGTH;
     return offset;
 }
@@ -165,7 +154,7 @@ static int is_pmproxy_exchange_complete(packet_info *pinfo) {
     pmproxy_conversation = (pmproxy_conversation_info_t *)conversation_get_proto_data(conversation, proto_pmproxy);
 
     if(pmproxy_conversation == NULL) {
-        return FALSE;
+        return false;
     }
 
     return pinfo->num >= pmproxy_conversation->last_proxy_frame;
@@ -183,9 +172,9 @@ static int dissect_pmproxy_exchange(tvbuff_t *tvb, packet_info *pinfo, proto_tre
     root_pmproxy_item = proto_tree_add_item(tree, proto_pmproxy, tvb, 0, -1, ENC_NA);
     pmproxy_tree = proto_item_add_subtree(root_pmproxy_item, ett_pmproxy);
 
-    if (is_server_exchange(tvb)) {
+    if (is_server_exchange(tvb, pinfo)) {
         return dissect_server_exchange(tvb, pinfo, pmproxy_tree);
-    } else if (is_client_exchange(tvb)) {
+    } else if (is_client_exchange(tvb, pinfo)) {
         return dissect_client_exchange(tvb, pinfo, pmproxy_tree);
     } else if (looks_like_proxy_exchange(tvb)) {
         return dissect_proxy_to_host(tvb, pinfo, pmproxy_tree);
@@ -242,7 +231,7 @@ void proto_register_pmproxy(void) {
         },
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
             &ett_pmproxy,
     };
 
@@ -250,15 +239,16 @@ void proto_register_pmproxy(void) {
 
     proto_register_field_array(proto_pmproxy, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+
+    pmproxy_handle = register_dissector("pmproxy", dissect_pmproxy, proto_pmproxy);
 }
 
 
 void proto_reg_handoff_pmproxy(void) {
 
-    pmproxy_handle = create_dissector_handle(dissect_pmproxy, proto_pmproxy);
     pcp_handle = find_dissector_add_dependency("pcp", proto_pmproxy);
 
-    dissector_add_uint("tcp.port", PMPROXY_PORT, pmproxy_handle);
+    dissector_add_uint_with_preference("tcp.port", PMPROXY_PORT, pmproxy_handle);
 
 }
 

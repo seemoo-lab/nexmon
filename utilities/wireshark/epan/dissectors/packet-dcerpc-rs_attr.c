@@ -9,19 +9,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -33,18 +21,18 @@
 void proto_register_rs_attr (void);
 void proto_reg_handoff_rs_attr (void);
 
-static int proto_rs_attr = -1;
-static int hf_rs_attr_opnum = -1;
+static int proto_rs_attr;
+static int hf_rs_attr_opnum;
 
 
-static gint ett_rs_attr = -1;
+static int ett_rs_attr;
 
 
 static e_guid_t uuid_rs_attr = { 0xa71fc1e8, 0x567f, 0x11cb, { 0x98, 0xa0, 0x08, 0x00, 0x1e, 0x04, 0xde, 0x8c } };
-static guint16  ver_rs_attr = 0;
+static uint16_t ver_rs_attr;
 
 
-static dcerpc_sub_dissector rs_attr_dissectors[] = {
+static const dcerpc_sub_dissector rs_attr_dissectors[] = {
 	{ 0, "rs_attr_cursor_init",      NULL, NULL},
 	{ 1, "rs_attr_lookup_by_id",     NULL, NULL},
 	{ 2, "rs_attr_lookup_no_expand", NULL, NULL},
@@ -65,7 +53,7 @@ proto_register_rs_attr (void)
 		  { "Operation", "rs_attr.opnum", FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }},
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_rs_attr,
 	};
 	proto_rs_attr = proto_register_protocol ("Registry Server Attributes Manipulation Interface", "RS_ATTR", "rs_attr");
@@ -81,7 +69,7 @@ proto_reg_handoff_rs_attr (void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

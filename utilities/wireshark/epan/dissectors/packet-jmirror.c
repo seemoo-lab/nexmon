@@ -8,50 +8,37 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/prefs.h>
 
 void proto_register_jmirror(void);
 void proto_reg_handoff_jmirror(void);
 
+static dissector_handle_t jmirror_handle;
+
 #define MIRROR_HDR_SZ           8
 #define MIRROR_ID_SZ            4
 #define SESSION_ID_SZ           4
-#define DEF_JMIRROR_UDP_PORT    30030 /* a product of primes (1*2*3*5*7*11*13)  :-) */
+#define DEF_JMIRROR_UDP_PORT    30030 /* a product of primes (1*2*3*5*7*11*13)  :-) Not IANA registered */
 
 /*
  * See www.juniper.net JUNOSe Packet Mirroring documentation
  */
 
 /* Jmirror protocol variables */
-static int proto_jmirror = -1;
-static int hf_jmirror_mid = -1;
-static int hf_jmirror_sid = -1;
-static gint ett_jmirror = -1;
+static int proto_jmirror;
+static int hf_jmirror_mid;
+static int hf_jmirror_sid;
+static int ett_jmirror;
 
 /* Handles which point to the packet dissectors */
 static dissector_handle_t ipv4_handle;
 static dissector_handle_t ipv6_handle;
 static dissector_handle_t hdlc_handle;
-
-static guint global_jmirror_udp_port = DEF_JMIRROR_UDP_PORT;
 
 /* Routine to return the dissector handle based on heuristic packet inspection */
 static dissector_handle_t
@@ -75,10 +62,10 @@ get_heuristic_handle(tvbuff_t *tvb)
 		return NULL;   /* Not enough bytes for heuristic test */
 
 	/* Filter for IPv4 and IPv6 packets */
-	byte0 = tvb_get_guint8(tvb, offset + 0);
-	byte1 = tvb_get_guint8(tvb, offset + 1);
-	byte2 = tvb_get_guint8(tvb, offset + 2);
-	byte3 = tvb_get_guint8(tvb, offset + 3);
+	byte0 = tvb_get_uint8(tvb, offset + 0);
+	byte1 = tvb_get_uint8(tvb, offset + 1);
+	byte2 = tvb_get_uint8(tvb, offset + 2);
+	byte3 = tvb_get_uint8(tvb, offset + 3);
 
 	/* Look for IPv4 with standard header length */
 	if ( byte0 == 0x45 && ipv4_handle )
@@ -158,8 +145,6 @@ dissect_jmirror(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data 
 void
 proto_register_jmirror(void)
 {
-	module_t	*jmirror_module = NULL;
-
 	/* Used by the Expression dialog and filter box */
 	static hf_register_info jmirror_hf[] = {
 		{ &hf_jmirror_mid,
@@ -171,62 +156,41 @@ proto_register_jmirror(void)
 		    "Unique identifier of the user session", HFILL }
 		}
 	};
-	static gint *jmirror_ett[] = {
+	static int *jmirror_ett[] = {
 		&ett_jmirror
 	};
 
 	/* Register the Jmirror protocol with Wireshark */
 	proto_jmirror = proto_register_protocol("Juniper Packet Mirror", "Jmirror", "jmirror");
 
-	/* Register the Jmirror preferences with Wireshark */
-	jmirror_module = prefs_register_protocol(proto_jmirror, proto_reg_handoff_jmirror);
-
-	/* Allow the user to set the UDP port for the decode under the Edit -> Preferences menu */
-	prefs_register_uint_preference(jmirror_module, "udp.port", "JMirror UDP Port",
-		"Set the port for JMirror Port (if other than the default of 30030)",
-		10, &global_jmirror_udp_port);
-
 	/* Register the Jmirror subfields for filters */
 	proto_register_field_array(proto_jmirror, jmirror_hf, array_length(jmirror_hf));
 	proto_register_subtree_array(jmirror_ett, array_length(jmirror_ett));
+
+	/* Create a dissector handle for the Jmirror protocol */
+	jmirror_handle = register_dissector("jmirror", dissect_jmirror, proto_jmirror);
+
 }
 
 /* Create attachment point for dissector in Wireshark */
 void
 proto_reg_handoff_jmirror(void)
 {
-	static int jmirror_inited = FALSE;
-	static guint jmirror_udp_port;
-	static dissector_handle_t jmirror_handle;
 
-	if ( !jmirror_inited )
-	{
-		/* register as heuristic dissector for UDP */
-		/* heur_dissector_add("udp", dissect_jmirror, proto_jmirror); */
+	/* register as heuristic dissector for UDP */
+	/* heur_dissector_add("udp", dissect_jmirror, proto_jmirror); */
 
-		/* Create a dissector handle for the Jmirror protocol */
-		jmirror_handle = create_dissector_handle(dissect_jmirror, proto_jmirror);
-
-		/* Create pointer to ipv4, ipv6, ppp and data dissectors */
-		ipv4_handle = find_dissector("ip");
-		ipv6_handle = find_dissector("ipv6");
-		hdlc_handle = find_dissector("pw_hdlc_nocw_hdlc_ppp");
-
-		/* Set the init flag */
-		jmirror_inited = TRUE;
-	} else {
-		/* Unregister from the old UDP port */
-		dissector_delete_uint("udp.port", jmirror_udp_port, jmirror_handle);
-	}
-
-	jmirror_udp_port = global_jmirror_udp_port;
+	/* Create pointer to ipv4, ipv6, ppp and data dissectors */
+	ipv4_handle = find_dissector_add_dependency("ip", proto_jmirror);
+	ipv6_handle = find_dissector_add_dependency("ipv6", proto_jmirror);
+	hdlc_handle = find_dissector_add_dependency("pw_hdlc_nocw_hdlc_ppp", proto_jmirror);
 
 	/* Register as a normal IP dissector with default UDP port 30030 */
-	dissector_add_uint("udp.port", jmirror_udp_port, jmirror_handle);
+	dissector_add_uint_with_preference("udp.port", DEF_JMIRROR_UDP_PORT, jmirror_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

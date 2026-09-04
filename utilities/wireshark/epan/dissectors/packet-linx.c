@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* The used document is:
@@ -43,121 +31,124 @@
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/prefs.h>
 #include <epan/expert.h>
 #include <epan/etypes.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 
 void proto_register_linx(void);
 void proto_reg_handoff_linx(void);
 void proto_register_linx_tcp(void);
 void proto_reg_handoff_linx_tcp(void);
 
-static int proto_linx     = -1;
-static int proto_linx_tcp = -1;
+static dissector_handle_t linx_handle;
+
+static int proto_linx;
+static int proto_linx_tcp;
 
 /* ALL */
-static int hf_linx_nexthdr         = -1;
+static int hf_linx_nexthdr;
 
 /* MULTICORE */
-static int hf_linx_multicore_scoreid   = -1;
-static int hf_linx_multicore_dcoreid   = -1;
-static int hf_linx_multicore_reserved  = -1;
-static int hf_linx_multicore_reserved1 = -1;
+static int hf_linx_multicore_scoreid;
+static int hf_linx_multicore_dcoreid;
+static int hf_linx_multicore_reserved;
+static int hf_linx_multicore_reserved1;
 
 
 /* MAIN */
-static int hf_linx_main_version    = -1;
-static int hf_linx_main_reserved   = -1;
-static int hf_linx_main_connection = -1;
-static int hf_linx_main_bundle     = -1;
-static int hf_linx_main_pkgsize    = -1;
+static int hf_linx_main_version;
+static int hf_linx_main_reserved;
+static int hf_linx_main_connection;
+static int hf_linx_main_bundle;
+static int hf_linx_main_pkg_size;
 
 /* UDATA */
-static int hf_linx_udata_reserved  = -1;
-static int hf_linx_udata_morefrags = -1;
-static int hf_linx_udata_fragno    = -1;
-static int hf_linx_udata_signo     = -1;
-static int hf_linx_udata_dstaddr16 = -1;
-static int hf_linx_udata_dstaddr32 = -1;
-static int hf_linx_udata_srcaddr16 = -1;
-static int hf_linx_udata_srcaddr32 = -1;
-static int hf_linx_udata_payload   = -1;
+static int hf_linx_udata_reserved;
+static int hf_linx_udata_morefrags;
+static int hf_linx_udata_fragno;
+static int hf_linx_udata_signo;
+static int hf_linx_udata_dstaddr16;
+static int hf_linx_udata_dstaddr32;
+static int hf_linx_udata_srcaddr16;
+static int hf_linx_udata_srcaddr32;
+static int hf_linx_udata_payload;
 
 /* ACK */
-static int hf_linx_ack_reserved    = -1;
-static int hf_linx_ack_request     = -1;
-static int hf_linx_ack_ackno       = -1;
-static int hf_linx_ack_seqno       = -1;
+static int hf_linx_ack_reserved;
+static int hf_linx_ack_request;
+static int hf_linx_ack_ackno;
+static int hf_linx_ack_seqno;
 
 /* CONN */
-static int hf_linx_conn_cmd          = -1;
-static int hf_linx_conn_size         = -1;
-static int hf_linx_conn_reserved     = -1;
-static int hf_linx_conn_srcmac       = -1;
-static int hf_linx_conn_dstmac       = -1;
-static int hf_linx_conn_winsize      = -1;
-static int hf_linx_conn_publcid      = -1;
-static int hf_linx_conn_feat_neg_str = -1;
+static int hf_linx_conn_cmd;
+static int hf_linx_conn_size;
+static int hf_linx_conn_reserved;
+static int hf_linx_conn_srcmac;
+static int hf_linx_conn_dstmac;
+static int hf_linx_conn_winsize;
+static int hf_linx_conn_publcid;
+static int hf_linx_conn_feat_neg_str;
 /* FRAG */
-static int hf_linx_frag_reserved   = -1;
-static int hf_linx_frag_morefrags  = -1;
-static int hf_linx_frag_fragno     = -1;
+static int hf_linx_frag_reserved;
+static int hf_linx_frag_morefrags;
+static int hf_linx_frag_fragno;
 
 /* NACK */
-static int hf_linx_nack_reserv1    = -1;
-static int hf_linx_nack_reserv2    = -1;
-static int hf_linx_nack_count      = -1;
-static int hf_linx_nack_seqno      = -1;
+static int hf_linx_nack_reserv1;
+static int hf_linx_nack_reserv2;
+static int hf_linx_nack_count;
+static int hf_linx_nack_seqno;
 
 /* RLNH */
-static int hf_linx_rlnh_msg_type32    = -1;
-static int hf_linx_rlnh_msg_type8     = -1;
-/* static int hf_linx_rlnh_linkaddr      = -1; */
-static int hf_linx_rlnh_src_linkaddr  = -1;
-static int hf_linx_rlnh_version       = -1;
-static int hf_linx_rlnh_status        = -1;
-static int hf_linx_rlnh_name          = -1;
-static int hf_linx_rlnh_peer_linkaddr = -1;
-static int hf_linx_rlnh_feat_neg_str  = -1;
-static int hf_linx_rlnh_msg_reserved  = -1;
+static int hf_linx_rlnh_msg_type32;
+static int hf_linx_rlnh_msg_type8;
+/* static int hf_linx_rlnh_linkaddr; */
+static int hf_linx_rlnh_src_linkaddr;
+static int hf_linx_rlnh_version;
+static int hf_linx_rlnh_status;
+static int hf_linx_rlnh_name;
+static int hf_linx_rlnh_peer_linkaddr;
+static int hf_linx_rlnh_feat_neg_str;
+static int hf_linx_rlnh_msg_reserved;
 
 /* TCP CM */
-/* static int hf_linx_tcp_reserved           = -1; */
-static int hf_linx_tcp_oob                = -1;
-static int hf_linx_tcp_version            = -1;
-static int hf_linx_tcp_type               = -1;
-static int hf_linx_tcp_src                = -1;
-static int hf_linx_tcp_dst                = -1;
-static int hf_linx_tcp_size               = -1;
-static int hf_linx_tcp_rlnh_msg_type32    = -1;
-static int hf_linx_tcp_rlnh_msg_type8     = -1;
-/* static int hf_linx_tcp_rlnh_linkaddr      = -1; */
-static int hf_linx_tcp_rlnh_src_linkaddr  = -1;
-static int hf_linx_tcp_rlnh_version       = -1;
-static int hf_linx_tcp_rlnh_status        = -1;
-static int hf_linx_tcp_rlnh_name          = -1;
-static int hf_linx_tcp_rlnh_peer_linkaddr = -1;
-static int hf_linx_tcp_rlnh_feat_neg_str  = -1;
-static int hf_linx_tcp_rlnh_msg_reserved  = -1;
-static int hf_linx_tcp_payload            = -1;
+/* static int hf_linx_tcp_reserved; */
+static int hf_linx_tcp_oob;
+static int hf_linx_tcp_version;
+static int hf_linx_tcp_type;
+static int hf_linx_tcp_src;
+static int hf_linx_tcp_dst;
+static int hf_linx_tcp_size;
+static int hf_linx_tcp_rlnh_msg_type32;
+static int hf_linx_tcp_rlnh_msg_type8;
+/* static int hf_linx_tcp_rlnh_linkaddr; */
+static int hf_linx_tcp_rlnh_src_linkaddr;
+static int hf_linx_tcp_rlnh_version;
+static int hf_linx_tcp_rlnh_status;
+static int hf_linx_tcp_rlnh_name;
+static int hf_linx_tcp_rlnh_peer_linkaddr;
+static int hf_linx_tcp_rlnh_feat_neg_str;
+static int hf_linx_tcp_rlnh_msg_reserved;
+static int hf_linx_tcp_payload;
 
 
-static int rlnh_version = 0;
+static int rlnh_version;
 
-static gint ett_linx           = -1;
-static gint ett_linx_multicore = -1;
-static gint ett_linx_main      = -1;
-static gint ett_linx_error     = -1;
-static gint ett_linx_udata     = -1;
-static gint ett_linx_ack       = -1;
-static gint ett_linx_tcp       = -1;
+static int ett_linx;
+static int ett_linx_multicore;
+static int ett_linx_main;
+static int ett_linx_error;
+static int ett_linx_udata;
+static int ett_linx_ack;
+static int ett_linx_tcp;
 
-static expert_field ei_linx_version = EI_INIT;
-static expert_field ei_linx_rlnh_msg = EI_INIT;
-static expert_field ei_linx_header = EI_INIT;
+static expert_field ei_linx_version;
+static expert_field ei_linx_rlnh_msg;
+static expert_field ei_linx_header;
 
-static expert_field ei_linx_tcp_version = EI_INIT;
-static expert_field ei_linx_tcp_rlnh_msg = EI_INIT;
+static expert_field ei_linx_tcp_version;
+static expert_field ei_linx_tcp_rlnh_msg;
 
 
 
@@ -254,12 +245,6 @@ static const value_string linx_rlnh_reply[] = {
 	{ 0, NULL}
 };
 
-static const value_string linx_boolean[] = {
-	{ 0, "No"},
-	{ 1, "Yes"},
-	{ 0,	NULL}
-};
-
 static const value_string linx_nofragment[] = {
 	{ 0x7fff, "No Fragment"},
 	{ 0,	NULL}
@@ -286,7 +271,7 @@ static const value_string linx_conn_cmd[] = {
 static int
 dissect_linx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	guint32 dword;
+	uint32_t dword;
 	int	offset = 0;
 	int	nexthdr;
 	int	thishdr;
@@ -364,7 +349,7 @@ dissect_linx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 		proto_tree_add_item(main_header_tree, hf_linx_main_reserved  , tvb, offset, 4, ENC_BIG_ENDIAN);
 		proto_tree_add_item(main_header_tree, hf_linx_main_connection, tvb, offset, 4, ENC_BIG_ENDIAN);
 		proto_tree_add_item(main_header_tree, hf_linx_main_bundle    , tvb, offset, 4, ENC_BIG_ENDIAN);
-		proto_tree_add_item(main_header_tree, hf_linx_main_pkgsize   , tvb, offset, 4, ENC_BIG_ENDIAN);
+		proto_tree_add_item(main_header_tree, hf_linx_main_pkg_size  , tvb, offset, 4, ENC_BIG_ENDIAN);
 		offset += 4;
 
 		/* Supports version 2 and 3 so far */
@@ -424,7 +409,7 @@ dissect_linx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 					offset += (2*size);
 					/* Feature Negotiation String */
 					if(version > 2) {
-					        proto_tree_add_item(conn_header_tree, hf_linx_conn_feat_neg_str, tvb, offset, -1, ENC_ASCII|ENC_NA);
+					        proto_tree_add_item(conn_header_tree, hf_linx_conn_feat_neg_str, tvb, offset, -1, ENC_ASCII);
 						offset += tvb_strnlen(tvb, offset, -1);
 					}
 					break;
@@ -542,13 +527,13 @@ dissect_linx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 							case RLNH_QUERY_NAME:
 									proto_tree_add_item(rlnh_header_tree, hf_linx_rlnh_src_linkaddr, tvb, offset, 4, ENC_BIG_ENDIAN);
 									offset += 4;
-									proto_tree_add_item(rlnh_header_tree, hf_linx_rlnh_name, tvb, offset, -1, ENC_ASCII|ENC_NA);
+									proto_tree_add_item(rlnh_header_tree, hf_linx_rlnh_name, tvb, offset, -1, ENC_ASCII);
 									offset += tvb_strnlen(tvb, offset, -1);
 								break;
 							case RLNH_PUBLISH:
 									proto_tree_add_item(rlnh_header_tree, hf_linx_rlnh_src_linkaddr, tvb, offset, 4, ENC_BIG_ENDIAN);
 									offset += 4;
-									proto_tree_add_item(rlnh_header_tree, hf_linx_rlnh_name, tvb, offset, -1, ENC_ASCII|ENC_NA);
+									proto_tree_add_item(rlnh_header_tree, hf_linx_rlnh_name, tvb, offset, -1, ENC_ASCII);
 									offset += tvb_strnlen(tvb, offset, -1);
 								break;
 							case RLNH_UNPUBLISH:
@@ -569,7 +554,7 @@ dissect_linx(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 									proto_tree_add_item(rlnh_header_tree, hf_linx_rlnh_status, tvb, offset, 4, ENC_BIG_ENDIAN);
 									offset += 4;
 									if(rlnh_version > 1) {
-									        proto_tree_add_item(rlnh_header_tree, hf_linx_rlnh_feat_neg_str, tvb, offset, -1, ENC_ASCII|ENC_NA);
+									        proto_tree_add_item(rlnh_header_tree, hf_linx_rlnh_feat_neg_str, tvb, offset, -1, ENC_ASCII);
 										offset += tvb_strnlen(tvb, offset, -1);
 									}
 								break;
@@ -676,40 +661,40 @@ proto_register_linx(void)
 			{ "Connection", "linx.connection", FT_UINT32, BASE_DEC, NULL, 0x007f8000, NULL, HFILL },
 		},
 		{ &hf_linx_main_bundle, /* in ETHCM_MAIN */
-			{ "Bundle", "linx.bundle", FT_UINT32, BASE_DEC, VALS(linx_boolean), 0x00004000, NULL, HFILL },
+			{ "Bundle", "linx.bundle", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00004000, NULL, HFILL },
 		},
-		{ &hf_linx_main_pkgsize, /* in ETHCM_MAIN */
+		{ &hf_linx_main_pkg_size, /* in ETHCM_MAIN */
 			{ "Package Size", "linx.pcksize", FT_UINT32, BASE_DEC, NULL, 0x00003fff, NULL, HFILL },
 		},
 		{ &hf_linx_udata_reserved, /* in ETHCM_UDATA */
 			{ "Reserved", "linx.reserved5", FT_UINT32, BASE_DEC, NULL, 0x0fff0000, "Udata Hdr Reserved", HFILL },
 		},
 		{ &hf_linx_udata_morefrags, /* in ETHCM_UDATA */
-			{ "More Fragments", "linx.morefra", FT_UINT32, BASE_DEC, VALS(linx_boolean), 0x00008000, "More fragments follow", HFILL },
+			{ "More Fragments", "linx.morefra", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00008000, "More fragments follow", HFILL },
 		},
 		{ &hf_linx_udata_fragno, /* in ETHCM_UDATA */
 			{ "Fragment Number", "linx.fragno", FT_UINT32, BASE_DEC, VALS(linx_nofragment), 0x00007fff, NULL, HFILL },
 		},
 		{ &hf_linx_udata_signo, /* in ETHCM_UDATA */
-			{ "Signal Number", "linx.signo", FT_UINT32, BASE_DEC, NULL, 0xffffffff, NULL, HFILL },
+			{ "Signal Number", "linx.signo", FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL },
 		},
 		{ &hf_linx_udata_dstaddr16, /* in ETHCM_UDATA - protocol version 2 */
 			{ "Receiver Address", "linx.dstaddr", FT_UINT32, BASE_DEC, NULL, 0xffff0000, NULL, HFILL },
 		},
 		{ &hf_linx_udata_dstaddr32, /* in ETHCM_UDATA - protocol version 3 */
-			{ "Receiver Address", "linx.dstaddr32", FT_UINT32, BASE_DEC, NULL, 0xffffffff, NULL, HFILL },
+			{ "Receiver Address", "linx.dstaddr32", FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL },
 		},
 		{ &hf_linx_udata_srcaddr16, /* in ETHCM_UDATA - protocol version 2 */
 			{ "Sender Address", "linx.srcaddr", FT_UINT32, BASE_DEC, NULL, 0x0000ffff, NULL, HFILL },
 		},
 		{ &hf_linx_udata_srcaddr32, /* in ETHCM_UDATA - protocol version 3 */
-			{ "Sender Address", "linx.srcaddr32", FT_UINT32, BASE_DEC, NULL, 0xffffffff, NULL, HFILL },
+			{ "Sender Address", "linx.srcaddr32", FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL },
 		},
 		{ &hf_linx_udata_payload, /* in ETHCM_UDATA */
 			{ "Payload", "linx.payload", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL },
 		},
 		{ &hf_linx_ack_request, /* in ETHCM_ACK */
-			{ "ACK-request", "linx.ackreq", FT_UINT32, BASE_DEC, VALS(linx_boolean), 0x08000000, NULL, HFILL },
+			{ "ACK-request", "linx.ackreq", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x08000000, NULL, HFILL },
 		},
 		{ &hf_linx_ack_reserved, /* in ETHCM_ACK */
 			{ "Reserved", "linx.reserved7", FT_UINT32, BASE_DEC, NULL, 0x07000000, "ACK Hdr Reserved", HFILL },
@@ -748,7 +733,7 @@ proto_register_linx(void)
 			{ "Reserved", "linx.reserved6", FT_UINT32, BASE_DEC, NULL, 0x0fff0000, "Frag Hdr Reserved", HFILL },
 		},
 		{ &hf_linx_frag_morefrags, /* in ETHCM_FRAG */
-			{ "More Fragments", "linx.morefr2", FT_UINT32, BASE_DEC, VALS(linx_boolean), 0x00008000, NULL, HFILL },
+			{ "More Fragments", "linx.morefr2", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00008000, NULL, HFILL },
 		},
 		{ &hf_linx_frag_fragno, /* in ETHCM_FRAG */
 			{ "Fragment Number", "linx.fragno2", FT_UINT32, BASE_DEC, NULL, 0x00007fff, NULL, HFILL },
@@ -768,7 +753,7 @@ proto_register_linx(void)
 
 	  /* RLNH */
 		{ &hf_linx_rlnh_msg_type32, /* in RLNH */
-			{ "RLNH msg type", "linx.rlnh_msg_type", FT_UINT32, BASE_DEC, VALS(linx_long_rlnh_names), 0xffffffff, "RLNH message type", HFILL },
+			{ "RLNH msg type", "linx.rlnh_msg_type", FT_UINT32, BASE_DEC, VALS(linx_long_rlnh_names), 0x0, "RLNH message type", HFILL },
 		},
 		{ &hf_linx_rlnh_msg_type8, /* in RLNH */
 			{ "RLNH msg type", "linx.rlnh_msg_type8", FT_UINT32, BASE_DEC, VALS(linx_long_rlnh_names), 0x000000ff, "RLNH message type", HFILL },
@@ -782,16 +767,16 @@ proto_register_linx(void)
 		},
 #endif
 		{ &hf_linx_rlnh_src_linkaddr, /* in RLNH */
-			{ "RLNH src linkaddr", "linx.rlnh_src_linkaddr", FT_UINT32, BASE_DEC, NULL, 0xffffffff, "RLNH source linkaddress", HFILL },
+			{ "RLNH src linkaddr", "linx.rlnh_src_linkaddr", FT_UINT32, BASE_DEC, NULL, 0x0, "RLNH source linkaddress", HFILL },
 		},
 		{ &hf_linx_rlnh_peer_linkaddr, /* in RLNH */
-			{ "RLNH peer linkaddr", "linx.rlnh_peer_linkaddr", FT_UINT32, BASE_DEC, NULL, 0xffffffff, "RLNH peer linkaddress", HFILL },
+			{ "RLNH peer linkaddr", "linx.rlnh_peer_linkaddr", FT_UINT32, BASE_DEC, NULL, 0x0, "RLNH peer linkaddress", HFILL },
 		},
 		{ &hf_linx_rlnh_version, /* in RLNH */
-			{ "RLNH version", "linx.rlnh_version", FT_UINT32, BASE_DEC, NULL, 0xffffffff, NULL, HFILL },
+			{ "RLNH version", "linx.rlnh_version", FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL },
 		},
 		{ &hf_linx_rlnh_status, /* in RLNH */
-			{ "RLNH reply", "linx.rlnh_status", FT_UINT32, BASE_DEC, VALS(linx_rlnh_reply), 0xffffffff, NULL, HFILL },
+			{ "RLNH reply", "linx.rlnh_status", FT_UINT32, BASE_DEC, VALS(linx_rlnh_reply), 0x0, NULL, HFILL },
 		},
 		{ &hf_linx_rlnh_name, /* in RLNH */
 			{ "RLNH name", "linx.rlnh_name", FT_STRINGZ, BASE_NONE, NULL, 0x0, NULL, HFILL },
@@ -802,7 +787,7 @@ proto_register_linx(void)
 	};
 
 	/* Setup protocol subtree array */
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_linx,
 		&ett_linx_multicore,
 		&ett_linx_main,
@@ -830,6 +815,9 @@ proto_register_linx(void)
 	proto_register_subtree_array(ett, array_length(ett));
 	expert_linx = expert_register_protocol(proto_linx);
 	expert_register_field_array(expert_linx, ei, array_length(ei));
+
+	/* Register the dissector */
+	linx_handle = register_dissector("linx", dissect_linx, proto_linx);
 }
 
 
@@ -837,23 +825,15 @@ proto_register_linx(void)
 void
 proto_reg_handoff_linx(void)
 {
-	dissector_handle_t linx_handle;
-
-	linx_handle = create_dissector_handle(dissect_linx, proto_linx);
 	dissector_add_uint("ethertype", ETHERTYPE_LINX, linx_handle);
 }
 
 /************ TCP CM **************/
 
-#define TCP_PORT_LINX 19790
-
-/* Default the port to zero */
-static guint linx_tcp_port = 0;
-
 static int
 dissect_linx_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	guint32 dword;
+	uint32_t dword;
 	int offset = 0;
 	proto_item *ti, *ver_item, *msg_item;
 	proto_tree *linx_tcp_tree;
@@ -933,13 +913,13 @@ dissect_linx_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
 				case RLNH_QUERY_NAME:
 					proto_tree_add_item(rlnh_header_tree, hf_linx_tcp_rlnh_src_linkaddr, tvb, offset, 4, ENC_BIG_ENDIAN);
 					offset += 4;
-					proto_tree_add_item(rlnh_header_tree, hf_linx_tcp_rlnh_name, tvb, offset, -1, ENC_ASCII|ENC_NA);
+					proto_tree_add_item(rlnh_header_tree, hf_linx_tcp_rlnh_name, tvb, offset, -1, ENC_ASCII);
 					/*offset += tvb_strnlen(tvb, offset, -1);*/
 					break;
 				case RLNH_PUBLISH:
 					proto_tree_add_item(rlnh_header_tree, hf_linx_tcp_rlnh_src_linkaddr, tvb, offset, 4, ENC_BIG_ENDIAN);
 					offset += 4;
-					proto_tree_add_item(rlnh_header_tree, hf_linx_tcp_rlnh_name, tvb, offset, -1, ENC_ASCII|ENC_NA);
+					proto_tree_add_item(rlnh_header_tree, hf_linx_tcp_rlnh_name, tvb, offset, -1, ENC_ASCII);
 					/*offset += tvb_strnlen(tvb, offset, -1);*/
 					break;
 				case RLNH_UNPUBLISH:
@@ -959,7 +939,7 @@ dissect_linx_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
 					proto_tree_add_item(rlnh_header_tree, hf_linx_tcp_rlnh_status, tvb, offset, 4, ENC_BIG_ENDIAN);
 					offset += 4;
 					if(rlnh_version > 1) {
-						proto_tree_add_item(rlnh_header_tree, hf_linx_tcp_rlnh_feat_neg_str, tvb, offset, -1, ENC_ASCII|ENC_NA);
+						proto_tree_add_item(rlnh_header_tree, hf_linx_tcp_rlnh_feat_neg_str, tvb, offset, -1, ENC_ASCII);
 						/*offset += tvb_strnlen(tvb, offset, -1);*/
 					}
 					break;
@@ -1004,18 +984,18 @@ proto_register_linx_tcp(void)
 			{ "Type", "linxtcp.type", FT_UINT32, BASE_HEX, VALS(linx_long_tcp_names), 0xFF000000, "TCP CM type", HFILL },
 		},
 		{ &hf_linx_tcp_src,
-			{ "Source", "linxtcp.src", FT_UINT32, BASE_DEC, NULL, 0xFFFFFFFF, "TCP CM source", HFILL },
+			{ "Source", "linxtcp.src", FT_UINT32, BASE_DEC, NULL, 0x0, "TCP CM source", HFILL },
 		},
 		{ &hf_linx_tcp_dst,
-			{ "Destination", "linxtcp.dst", FT_UINT32, BASE_DEC, NULL, 0xFFFFFFFF, "TCP CM destination", HFILL },
+			{ "Destination", "linxtcp.dst", FT_UINT32, BASE_DEC, NULL, 0x0, "TCP CM destination", HFILL },
 		},
 		{ &hf_linx_tcp_size,
-			{ "Size", "linxtcp.size", FT_UINT32, BASE_DEC, NULL, 0xFFFFFFFF, "TCP CM size", HFILL },
+			{ "Size", "linxtcp.size", FT_UINT32, BASE_DEC, NULL, 0x0, "TCP CM size", HFILL },
 		},
 
 		/* RLNH */
 		{ &hf_linx_tcp_rlnh_msg_type32,
-			{ "RLNH msg type", "linxtcp.rlnh_msg_type", FT_UINT32, BASE_DEC, VALS(linx_long_rlnh_names), 0xffffffff, "RLNH message type", HFILL },
+			{ "RLNH msg type", "linxtcp.rlnh_msg_type", FT_UINT32, BASE_DEC, VALS(linx_long_rlnh_names), 0x0, "RLNH message type", HFILL },
 		},
 		{ &hf_linx_tcp_rlnh_msg_type8,
 			{ "RLNH msg type", "linxtcp.rlnh_msg_type8", FT_UINT32, BASE_DEC, VALS(linx_long_rlnh_names), 0x000000ff, "RLNH message type", HFILL },
@@ -1025,21 +1005,21 @@ proto_register_linx_tcp(void)
 		},
 #if 0
 		{ &hf_linx_tcp_rlnh_linkaddr,
-			{ "RLNH linkaddr", "linxtcp.rlnh_linkaddr", FT_UINT32, BASE_DEC, NULL, 0xffffffff, "RLNH linkaddress", HFILL },
+			{ "RLNH linkaddr", "linxtcp.rlnh_linkaddr", FT_UINT32, BASE_DEC, NULL, 0x0, "RLNH linkaddress", HFILL },
 		},
 #endif
 		{ &hf_linx_tcp_rlnh_src_linkaddr,
-		        { "RLNH src linkaddr", "linxtcp.rlnh_src_linkaddr", FT_UINT32, BASE_DEC, NULL, 0xffffffff, "RLNH source linkaddress", HFILL },
+				{ "RLNH src linkaddr", "linxtcp.rlnh_src_linkaddr", FT_UINT32, BASE_DEC, NULL, 0x0, "RLNH source linkaddress", HFILL },
 		},
 		{ &hf_linx_tcp_rlnh_peer_linkaddr,
 			{ "RLNH peer linkaddr", "linxtcp.rlnh_peer_linkaddr", FT_UINT32,
-				BASE_DEC, NULL, 0xffffffff, "RLNH peer linkaddress", HFILL },
+				BASE_DEC, NULL, 0x0, "RLNH peer linkaddress", HFILL },
 		},
 		{ &hf_linx_tcp_rlnh_version,
-			{ "RLNH version", "linxtcp.rlnh_version", FT_UINT32, BASE_DEC, NULL, 0xffffffff, NULL, HFILL },
+			{ "RLNH version", "linxtcp.rlnh_version", FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL },
 		},
 		{ &hf_linx_tcp_rlnh_status,
-			{ "RLNH reply", "linxtcp.rlnh_status", FT_UINT32, BASE_DEC, VALS(linx_rlnh_reply), 0xffffffff, NULL, HFILL },
+			{ "RLNH reply", "linxtcp.rlnh_status", FT_UINT32, BASE_DEC, VALS(linx_rlnh_reply), 0x0, NULL, HFILL },
 		},
 		{ &hf_linx_tcp_rlnh_name,
 			{ "RLNH name", "linxtcp.rlnh_name", FT_STRINGZ, BASE_NONE, NULL, 0x0, NULL, HFILL },
@@ -1052,7 +1032,7 @@ proto_register_linx_tcp(void)
 		}
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_linx_tcp,
 	};
 
@@ -1062,50 +1042,26 @@ proto_register_linx_tcp(void)
 	};
 
 	expert_module_t* expert_linx_tcp;
-	module_t *linx_tcp_module;
 
 	proto_linx_tcp = proto_register_protocol("ENEA LINX over TCP", "LINX/TCP", "linxtcp");
 	proto_register_field_array(proto_linx_tcp, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
 	expert_linx_tcp = expert_register_protocol(proto_linx_tcp);
 	expert_register_field_array(expert_linx_tcp, ei, array_length(ei));
-
-	linx_tcp_module = prefs_register_protocol(proto_linx_tcp, proto_reg_handoff_linx_tcp);
-
-	prefs_register_uint_preference(linx_tcp_module, "tcp.port",
-		"ENEA LINX over TCP Port",
-		"TCP port used by ENEA LINX, usually 19790",
-		10, &linx_tcp_port);
-
 }
 
 void
 proto_reg_handoff_linx_tcp(void)
 {
-	static dissector_handle_t linx_tcp_handle;
-	static gboolean linx_tcp_prefs_initialized = FALSE;
+	dissector_handle_t linx_tcp_handle;
 
-	static guint saved_linx_tcp_port;
+	linx_tcp_handle = create_dissector_handle(dissect_linx_tcp, proto_linx_tcp);
 
-
-	if (!linx_tcp_prefs_initialized) {
-		linx_tcp_handle = create_dissector_handle(dissect_linx_tcp, proto_linx_tcp);
-		dissector_add_uint("tcp.port", linx_tcp_port, linx_tcp_handle);
-		linx_tcp_prefs_initialized = TRUE;
-	}
-	else {
-		dissector_delete_uint("tcp.port", saved_linx_tcp_port, linx_tcp_handle);
-	}
-
-	saved_linx_tcp_port = linx_tcp_port;
-	if (linx_tcp_port != 0) {
-		dissector_add_uint("udp.port", linx_tcp_port, linx_tcp_handle);
-	}
-
+	dissector_add_for_decode_as_with_preference("tcp.port", linx_tcp_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

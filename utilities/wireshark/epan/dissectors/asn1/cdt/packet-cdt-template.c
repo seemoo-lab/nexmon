@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * Ref: STANAG 4406 Annex E
  */
@@ -31,7 +19,7 @@
 #include <epan/oids.h>
 #include <epan/expert.h>
 #include <epan/asn1.h>
-
+#include <wsutil/array.h>
 #include "packet-ber.h"
 #include "packet-p1.h"
 
@@ -50,20 +38,20 @@
 void proto_register_cdt(void);
 void proto_reg_handoff_cdt(void);
 
-static proto_tree *top_tree = NULL;
-static proto_item *cdt_item = NULL;
+static proto_tree *top_tree;
+static proto_item *cdt_item;
 
-static guint32 content_type = 0;
+static uint32_t content_type;
 
 /* Initialize the protocol and registered fields */
-static int proto_cdt = -1;
+static int proto_cdt;
 #include "packet-cdt-hf.c"
 
 /* Initialize the subtree pointers */
 #include "packet-cdt-ett.c"
 
-static expert_field ei_cdt_unable_compress_content = EI_INIT;
-static expert_field ei_cdt_unable_uncompress_content = EI_INIT;
+static expert_field ei_cdt_unable_compress_content;
+static expert_field ei_cdt_unable_uncompress_content;
 
 #include "packet-cdt-fn.c"
 
@@ -101,7 +89,7 @@ void proto_register_cdt (void) {
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
 #include "packet-cdt-ettarr.c"
   };
 

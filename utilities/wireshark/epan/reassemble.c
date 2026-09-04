@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -30,6 +18,7 @@
 #include <epan/tvbuff-int.h>
 
 #include <wsutil/str_util.h>
+#include <wsutil/ws_assert.h>
 
 /*
  * Functions for reassembly tables where the endpoint addresses, and a
@@ -38,14 +27,16 @@
 typedef struct _fragment_addresses_key {
 	address src;
 	address dst;
-	guint32 id;
+	uint32_t id;
 } fragment_addresses_key;
 
-static guint
-fragment_addresses_hash(gconstpointer k)
+GList* reassembly_table_list;
+
+static unsigned
+fragment_addresses_hash(const void *k)
 {
 	const fragment_addresses_key* key = (const fragment_addresses_key*) k;
-	guint hash_val;
+	unsigned hash_val;
 /*
 	int i;
 */
@@ -67,8 +58,8 @@ fragment_addresses_hash(gconstpointer k)
 	return hash_val;
 }
 
-static gint
-fragment_addresses_equal(gconstpointer k1, gconstpointer k2)
+static int
+fragment_addresses_equal(const void *k1, const void *k2)
 {
 	const fragment_addresses_key* key1 = (const fragment_addresses_key*) k1;
 	const fragment_addresses_key* key2 = (const fragment_addresses_key*) k2;
@@ -88,8 +79,8 @@ fragment_addresses_equal(gconstpointer k1, gconstpointer k2)
  * persistent data, and so must only be used to look up and
  * delete entries, not to add them.
  */
-static gpointer
-fragment_addresses_temporary_key(const packet_info *pinfo, const guint32 id,
+static void *
+fragment_addresses_temporary_key(const packet_info *pinfo, const uint32_t id,
 				 const void *data _U_)
 {
 	fragment_addresses_key *key = g_slice_new(fragment_addresses_key);
@@ -101,15 +92,15 @@ fragment_addresses_temporary_key(const packet_info *pinfo, const guint32 id,
 	copy_address_shallow(&key->dst, &pinfo->dst);
 	key->id = id;
 
-	return (gpointer)key;
+	return (void *)key;
 }
 
 /*
  * Create a fragment key for permanent use; it must point to persistent
  * data, so that it can be used to add entries.
  */
-static gpointer
-fragment_addresses_persistent_key(const packet_info *pinfo, const guint32 id,
+static void *
+fragment_addresses_persistent_key(const packet_info *pinfo, const uint32_t id,
 				  const void *data _U_)
 {
 	fragment_addresses_key *key = g_slice_new(fragment_addresses_key);
@@ -121,20 +112,18 @@ fragment_addresses_persistent_key(const packet_info *pinfo, const guint32 id,
 	copy_address(&key->dst, &pinfo->dst);
 	key->id = id;
 
-	return (gpointer)key;
+	return (void *)key;
 }
 
 static void
-fragment_addresses_free_temporary_key(gpointer ptr)
+fragment_addresses_free_temporary_key(void *ptr)
 {
 	fragment_addresses_key *key = (fragment_addresses_key *)ptr;
-
-	if(key)
-		g_slice_free(fragment_addresses_key, key);
+	g_slice_free(fragment_addresses_key, key);
 }
 
 static void
-fragment_addresses_free_persistent_key(gpointer ptr)
+fragment_addresses_free_persistent_key(void *ptr)
 {
 	fragment_addresses_key *key = (fragment_addresses_key *)ptr;
 
@@ -166,16 +155,16 @@ addresses_reassembly_table_functions = {
 typedef struct _fragment_addresses_ports_key {
 	address src_addr;
 	address dst_addr;
-	guint32 src_port;
-	guint32 dst_port;
-	guint32 id;
+	uint32_t src_port;
+	uint32_t dst_port;
+	uint32_t id;
 } fragment_addresses_ports_key;
 
-static guint
-fragment_addresses_ports_hash(gconstpointer k)
+static unsigned
+fragment_addresses_ports_hash(const void *k)
 {
 	const fragment_addresses_ports_key* key = (const fragment_addresses_ports_key*) k;
-	guint hash_val;
+	unsigned hash_val;
 /*
 	int i;
 */
@@ -199,8 +188,8 @@ fragment_addresses_ports_hash(gconstpointer k)
 	return hash_val;
 }
 
-static gint
-fragment_addresses_ports_equal(gconstpointer k1, gconstpointer k2)
+static int
+fragment_addresses_ports_equal(const void *k1, const void *k2)
 {
 	const fragment_addresses_ports_key* key1 = (const fragment_addresses_ports_key*) k1;
 	const fragment_addresses_ports_key* key2 = (const fragment_addresses_ports_key*) k2;
@@ -222,8 +211,8 @@ fragment_addresses_ports_equal(gconstpointer k1, gconstpointer k2)
  * persistent data, and so must only be used to look up and
  * delete entries, not to add them.
  */
-static gpointer
-fragment_addresses_ports_temporary_key(const packet_info *pinfo, const guint32 id,
+static void *
+fragment_addresses_ports_temporary_key(const packet_info *pinfo, const uint32_t id,
 				       const void *data _U_)
 {
 	fragment_addresses_ports_key *key = g_slice_new(fragment_addresses_ports_key);
@@ -237,16 +226,16 @@ fragment_addresses_ports_temporary_key(const packet_info *pinfo, const guint32 i
 	key->dst_port = pinfo->destport;
 	key->id = id;
 
-	return (gpointer)key;
+	return (void *)key;
 }
 
 /*
  * Create a fragment key for permanent use; it must point to persistent
  * data, so that it can be used to add entries.
  */
-static gpointer
+static void *
 fragment_addresses_ports_persistent_key(const packet_info *pinfo,
-					const guint32 id, const void *data _U_)
+					const uint32_t id, const void *data _U_)
 {
 	fragment_addresses_ports_key *key = g_slice_new(fragment_addresses_ports_key);
 
@@ -259,20 +248,18 @@ fragment_addresses_ports_persistent_key(const packet_info *pinfo,
 	key->dst_port = pinfo->destport;
 	key->id = id;
 
-	return (gpointer)key;
+	return (void *)key;
 }
 
 static void
-fragment_addresses_ports_free_temporary_key(gpointer ptr)
+fragment_addresses_ports_free_temporary_key(void *ptr)
 {
 	fragment_addresses_ports_key *key = (fragment_addresses_ports_key *)ptr;
-
-	if(key)
-		g_slice_free(fragment_addresses_ports_key, key);
+	g_slice_free(fragment_addresses_ports_key, key);
 }
 
 static void
-fragment_addresses_ports_free_persistent_key(gpointer ptr)
+fragment_addresses_ports_free_persistent_key(void *ptr)
 {
 	fragment_addresses_ports_key *key = (fragment_addresses_ports_key *)ptr;
 
@@ -298,12 +285,12 @@ addresses_ports_reassembly_table_functions = {
 };
 
 typedef struct _reassembled_key {
-	guint32 id;
-	guint32 frame;
+	uint32_t id;
+	uint32_t frame;
 } reassembled_key;
 
-static gint
-reassembled_equal(gconstpointer k1, gconstpointer k2)
+static int
+reassembled_equal(const void *k1, const void *k2)
 {
 	const reassembled_key* key1 = (const reassembled_key*) k1;
 	const reassembled_key* key2 = (const reassembled_key*) k2;
@@ -315,8 +302,8 @@ reassembled_equal(gconstpointer k1, gconstpointer k2)
 	return key1->frame == key2->frame && key1->id == key2->id;
 }
 
-static guint
-reassembled_hash(gconstpointer k)
+static unsigned
+reassembled_hash(const void *k)
 {
 	const reassembled_key* key = (const reassembled_key*) k;
 
@@ -324,7 +311,7 @@ reassembled_hash(gconstpointer k)
 }
 
 static void
-reassembled_key_free(gpointer ptr)
+reassembled_key_free(void *ptr)
 {
 	g_slice_free(reassembled_key, (reassembled_key *)ptr);
 }
@@ -333,30 +320,38 @@ reassembled_key_free(gpointer ptr)
  * For a fragment hash table entry, free the associated fragments.
  * The entry value (fd_chain) is freed herein and the entry is freed
  * when the key freeing routine is called (as a consequence of returning
- * TRUE from this function).
+ * true from this function).
  */
 static gboolean
-free_all_fragments(gpointer key_arg _U_, gpointer value, gpointer user_data _U_)
+free_all_fragments(void *key_arg _U_, void *value, void *user_data _U_)
 {
 	fragment_head *fd_head;
-	fragment_item *tmp_fd;
+	fragment_item *fd_i = NULL, *tmp_fd;
 
 	/* g_hash_table_new_full() was used to supply a function
 	 * to free the key and anything to which it points
 	 */
-	for (fd_head = (fragment_head *)value; fd_head != NULL; fd_head = tmp_fd) {
-		tmp_fd=fd_head->next;
-
+	fd_head = (fragment_head *)value;
+	if (fd_head != NULL) {
+		fd_i = fd_head->next;
 		if(fd_head->tvb_data && !(fd_head->flags&FD_SUBSET_TVB))
 			tvb_free(fd_head->tvb_data);
-		g_slice_free(fragment_item, fd_head);
+		g_slice_free(fragment_head, fd_head);
+	}
+
+	for (; fd_i != NULL; fd_i = tmp_fd) {
+		tmp_fd=fd_i->next;
+
+		if(fd_i->tvb_data && !(fd_i->flags&FD_SUBSET_TVB))
+			tvb_free(fd_i->tvb_data);
+		g_slice_free(fragment_item, fd_i);
 	}
 
 	return TRUE;
 }
 
 /* ------------------------- */
-static fragment_head *new_head(const guint32 flags)
+static fragment_head *new_head(const uint32_t flags)
 {
 	fragment_head *fd_head;
 	/* If head/first structure in list only holds no other data than
@@ -369,46 +364,97 @@ static fragment_head *new_head(const guint32 flags)
 	return fd_head;
 }
 
-#define FD_VISITED_FREE 0xffff
-
 /*
  * For a reassembled-packet hash table entry, free the fragment data
- * to which the value refers and also the key itself.
+ * to which the value refers. (The key is freed by reassembled_key_free.)
  */
-static gboolean
-free_all_reassembled_fragments(gpointer key_arg _U_, gpointer value,
-				   gpointer user_data)
+static void
+free_fd_head(fragment_head *fd_head)
 {
-	GPtrArray *allocated_fragments = (GPtrArray *) user_data;
-	fragment_head *fd_head;
+	fragment_item *fd_i, *tmp;
 
-	for (fd_head = (fragment_head *)value; fd_head != NULL; fd_head = fd_head->next) {
-		/*
-		 * A reassembled packet is inserted into the
-		 * hash table once for every frame that made
-		 * up the reassembled packet; add first seen
-		 * fragments to array and later free them in
-		 * free_fragments()
-		 */
-		if (fd_head->flags != FD_VISITED_FREE) {
-			if (fd_head->flags & FD_SUBSET_TVB)
-				fd_head->tvb_data = NULL;
-			g_ptr_array_add(allocated_fragments, fd_head);
-			fd_head->flags = FD_VISITED_FREE;
+	if (fd_head->flags & FD_SUBSET_TVB)
+		fd_head->tvb_data = NULL;
+	if (fd_head->tvb_data)
+		tvb_free(fd_head->tvb_data);
+	for (fd_i = fd_head->next; fd_i; fd_i = tmp) {
+		tmp = fd_i->next;
+		if (fd_i->flags & FD_SUBSET_TVB)
+			fd_i->tvb_data = NULL;
+		if (fd_i->tvb_data) {
+			tvb_free(fd_i->tvb_data);
 		}
+		g_slice_free(fragment_item, fd_i);
 	}
-
-	return TRUE;
+	g_slice_free(fragment_head, fd_head);
 }
 
 static void
-free_fragments(gpointer data, gpointer user_data _U_)
+unref_fd_head(void *data)
 {
-	fragment_item *fd_head = (fragment_item *) data;
+	fragment_head *fd_head = (fragment_head *) data;
+	fd_head->ref_count--;
 
-	if (fd_head->tvb_data)
-		tvb_free(fd_head->tvb_data);
-	g_slice_free(fragment_item, fd_head);
+	if (fd_head->ref_count == 0) {
+		free_fd_head(fd_head);
+	}
+}
+
+static void
+reassembled_table_insert(GHashTable *reassembled_table, reassembled_key *key, fragment_head *fd_head)
+{
+	fragment_head *old_fd_head;
+	fd_head->ref_count++;
+	if ((old_fd_head = g_hash_table_lookup(reassembled_table, key)) != NULL) {
+		if (old_fd_head->ref_count == 1) {
+			/* We're replacing the last entry in the reassembled
+			 * table for an old reassembly. Does it have a tvb?
+			 * We might still be using that tvb's memory for an
+			 * address via set_address_tvb(). (See #19094.)
+			 */
+			if (old_fd_head->tvb_data && fd_head->tvb_data) {
+				/* Free it when the new tvb is freed */
+				tvb_set_child_real_data_tvbuff(fd_head->tvb_data, old_fd_head->tvb_data);
+			}
+			/* XXX: Set the old data to NULL regardless. If we
+			 * have old data but not new data, that is odd (we're
+			 * replacing a reassembly with tvb data with something
+			 * with no tvb data, possibly because a zero length or
+			 * null tvb was passed into a defragment function,
+			 * which is a dissector bug.)
+			 * This leaks the tvb data if we couldn't add it to
+			 * a new tvb's chain, but we might not be able to free
+			 * it yet if set_address_tvb() was used.
+			 */
+			old_fd_head->tvb_data = NULL;
+		}
+	}
+	g_hash_table_insert(reassembled_table, key, fd_head);
+}
+
+typedef struct register_reassembly_table {
+	reassembly_table *table;
+	const reassembly_table_functions *funcs;
+} register_reassembly_table_t;
+
+/*
+ * Register a reassembly table.
+ */
+void
+reassembly_table_register(reassembly_table *table,
+		      const reassembly_table_functions *funcs)
+{
+	register_reassembly_table_t* reg_table;
+
+	DISSECTOR_ASSERT(table);
+	DISSECTOR_ASSERT(funcs);
+
+	reg_table = g_new(register_reassembly_table_t,1);
+
+	reg_table->table = table;
+	reg_table->funcs = funcs;
+
+	reassembly_table_list = g_list_prepend(reassembly_table_list, reg_table);
 }
 
 /*
@@ -443,25 +489,17 @@ reassembly_table_init(reassembly_table *table,
 	}
 
 	if (table->reassembled_table != NULL) {
-		GPtrArray *allocated_fragments;
-
 		/*
 		 * The reassembled-packet hash table exists.
 		 *
 		 * Remove all entries and free reassembled packet
 		 * data and key for each entry.
 		 */
-
-		allocated_fragments = g_ptr_array_new();
-		g_hash_table_foreach_remove(table->reassembled_table,
-				free_all_reassembled_fragments, allocated_fragments);
-
-		g_ptr_array_foreach(allocated_fragments, free_fragments, NULL);
-		g_ptr_array_free(allocated_fragments, TRUE);
+		g_hash_table_remove_all(table->reassembled_table);
 	} else {
 		/* The fragment table does not exist. Create it */
 		table->reassembled_table = g_hash_table_new_full(reassembled_hash,
-		    reassembled_equal, reassembled_key_free, NULL);
+		    reassembled_equal, reassembled_key_free, unref_fd_head);
 	}
 }
 
@@ -497,8 +535,6 @@ reassembly_table_destroy(reassembly_table *table)
 		table->fragment_table = NULL;
 	}
 	if (table->reassembled_table != NULL) {
-		GPtrArray *allocated_fragments;
-
 		/*
 		 * The reassembled-packet hash table exists.
 		 *
@@ -506,12 +542,7 @@ reassembly_table_destroy(reassembly_table *table)
 		 * data and key for each entry.
 		 */
 
-		allocated_fragments = g_ptr_array_new();
-		g_hash_table_foreach_remove(table->reassembled_table,
-				free_all_reassembled_fragments, allocated_fragments);
-
-		g_ptr_array_foreach(allocated_fragments, free_fragments, NULL);
-		g_ptr_array_free(allocated_fragments, TRUE);
+		g_hash_table_remove_all(table->reassembled_table);
 
 		/*
 		 * Now destroy the hash table.
@@ -527,10 +558,10 @@ reassembly_table_destroy(reassembly_table *table)
  */
 static fragment_head *
 lookup_fd_head(reassembly_table *table, const packet_info *pinfo,
-	       const guint32 id, const void *data, gpointer *orig_keyp)
+	       const uint32_t id, const void *data, void * *orig_keyp)
 {
-	gpointer key;
-	gpointer value;
+	void *key;
+	void *value;
 
 	/* Create key to search hash with */
 	key = table->temporary_key_func(pinfo, id, data);
@@ -550,11 +581,11 @@ lookup_fd_head(reassembly_table *table, const packet_info *pinfo,
 /*
  * Insert an fd_head into the fragment table, and return the key used.
  */
-static gpointer
+static void *
 insert_fd_head(reassembly_table *table, fragment_head *fd_head,
-	       const packet_info *pinfo, const guint32 id, const void *data)
+	       const packet_info *pinfo, const uint32_t id, const void *data)
 {
-	gpointer key;
+	void *key;
 
 	/*
 	 * We're going to use the key to insert the fragment,
@@ -579,12 +610,12 @@ insert_fd_head(reassembly_table *table, fragment_head *fd_head,
  */
 tvbuff_t *
 fragment_delete(reassembly_table *table, const packet_info *pinfo,
-		const guint32 id, const void *data)
+		const uint32_t id, const void *data)
 {
 	fragment_head *fd_head;
 	fragment_item *fd;
 	tvbuff_t *fd_tvb_data=NULL;
-	gpointer key;
+	void *key;
 
 	fd_head = lookup_fd_head(table, pinfo, id, data, &key);
 	if(fd_head==NULL){
@@ -614,29 +645,14 @@ fragment_delete(reassembly_table *table, const packet_info *pinfo,
  */
 fragment_head *
 fragment_get(reassembly_table *table, const packet_info *pinfo,
-	     const guint32 id, const void *data)
+	     const uint32_t id, const void *data)
 {
 	return lookup_fd_head(table, pinfo, id, data, NULL);
 }
 
-/* id *must* be the frame number for this to work! */
-fragment_head *
-fragment_get_reassembled(reassembly_table *table, const guint32 id)
-{
-	fragment_head *fd_head;
-	reassembled_key key;
-
-	/* create key to search hash with */
-	key.frame = id;
-	key.id = id;
-	fd_head = (fragment_head *)g_hash_table_lookup(table->reassembled_table, &key);
-
-	return fd_head;
-}
-
 fragment_head *
 fragment_get_reassembled_id(reassembly_table *table, const packet_info *pinfo,
-			    const guint32 id)
+			    const uint32_t id)
 {
 	fragment_head *fd_head;
 	reassembled_key key;
@@ -653,8 +669,8 @@ fragment_get_reassembled_id(reassembly_table *table, const packet_info *pinfo,
  * afterwards this offset is set. All additional calls to off_seq_check will calculate
  * the number in sequence in regards to the offset */
 void
-fragment_add_seq_offset(reassembly_table *table, const packet_info *pinfo, const guint32 id,
-		const void *data, const guint32 fragment_offset)
+fragment_add_seq_offset(reassembly_table *table, const packet_info *pinfo, const uint32_t id,
+		const void *data, const uint32_t fragment_offset)
 {
 	fragment_head *fd_head;
 
@@ -662,11 +678,107 @@ fragment_add_seq_offset(reassembly_table *table, const packet_info *pinfo, const
 	if (!fd_head)
 		return;
 
-	/* Reseting the offset is not allowed */
+	/* Resetting the offset is not allowed */
 	if ( fd_head->fragment_nr_offset != 0 )
 		return;
 
 	fd_head->fragment_nr_offset = fragment_offset;
+}
+
+static void
+update_first_gap(fragment_head *fd_head, fragment_item *inserted, bool multi_insert)
+{
+	uint32_t frag_end = inserted->offset + inserted->len;
+	fragment_item *iter;
+	uint32_t contiguous;
+
+	if (inserted->offset > fd_head->contiguous_len) {
+		/* first inserted node is after first gap */
+		return;
+	} else if (fd_head->first_gap == NULL) {
+		/* we haven't seen first fragment yet */
+		if (inserted->offset != 0) {
+			/* inserted node is not first fragment */
+			return;
+		}
+		contiguous = inserted->len;
+		iter = inserted;
+	} else {
+		contiguous = MAX(fd_head->contiguous_len, frag_end);
+		iter = multi_insert ? inserted : fd_head->first_gap;
+	}
+
+	while (iter->next) {
+		if (iter->next->offset > contiguous) {
+			break;
+		}
+		iter = iter->next;
+		contiguous = MAX(contiguous, iter->offset + iter->len);
+	}
+
+	/* iter is either pointing to last fragment before gap or tail */
+	fd_head->first_gap = iter;
+	fd_head->contiguous_len = contiguous;
+}
+
+/*
+ * Keeping first gap and contiguous length in sync significantly speeds up
+ * LINK_FRAG() when fragments in capture file are mostly ordered. However, when
+ * fragments are removed from the list, the first gap can point to fragments
+ * that were either moved to another list or freed. Therefore when any fragment
+ * before first gap is removed, the first gap (and contiguous length) must be
+ * invalidated.
+ */
+static void fragment_reset_first_gap(fragment_head *fd_head)
+{
+	fd_head->first_gap = NULL;
+	fd_head->contiguous_len = 0;
+	if (fd_head->next) {
+		bool multi_insert = (fd_head->next->next != NULL);
+		update_first_gap(fd_head, fd_head->next, multi_insert);
+	}
+}
+
+/*
+ * Determines whether list modification requires first gap reset. On entry
+ * modified is NULL if all elements were removed, otherwise it points to
+ * element (reachable from fd_head) whose next pointer was changed.
+ */
+static void fragment_items_removed(fragment_head *fd_head, fragment_item *modified)
+{
+	if ((fd_head->first_gap == modified) ||
+	    ((modified != NULL) && (modified->offset > fd_head->contiguous_len))) {
+		/* Removed elements were after first gap */
+		return;
+	}
+	fragment_reset_first_gap(fd_head);
+}
+
+/*
+ * For use with fragment_add (and not the fragment_add_seq functions).
+ * When the reassembled result is wrong (perhaps it needs to be extended), this
+ * function clears any previous reassembly result, allowing the new reassembled
+ * length to be set again.
+ */
+static void
+fragment_reset_defragmentation(fragment_head *fd_head)
+{
+	/* Caller must ensure that this function is only called when
+	 * defragmentation is safe to undo. */
+	DISSECTOR_ASSERT(fd_head->flags & FD_DEFRAGMENTED);
+
+	for (fragment_item *fd_i = fd_head->next; fd_i; fd_i = fd_i->next) {
+		if (!fd_i->tvb_data) {
+			fd_i->tvb_data = tvb_new_subset_remaining(fd_head->tvb_data, fd_i->offset);
+			fd_i->flags |= FD_SUBSET_TVB;
+		}
+		fd_i->flags &= (~FD_TOOLONGFRAGMENT) & (~FD_MULTIPLETAILS);
+	}
+	fd_head->flags &= ~(FD_DEFRAGMENTED|FD_PARTIAL_REASSEMBLY|FD_DATALEN_SET);
+	fd_head->flags &= ~(FD_TOOLONGFRAGMENT|FD_MULTIPLETAILS);
+	fd_head->datalen = 0;
+	fd_head->reassembled_in = 0;
+	fd_head->reas_in_layer_num = 0;
 }
 
 /* This function can be used to explicitly set the total length (if known)
@@ -675,7 +787,7 @@ fragment_add_seq_offset(reassembly_table *table, const packet_info *pinfo, const
  * in the first fragment instead of as for, say, IPv4 where a flag indicates which
  * is the last fragment.
  *
- * Such protocols might fragment_add with a more_frags==TRUE for every fragment
+ * Such protocols might fragment_add with a more_frags==true for every fragment
  * and just tell the reassembly engine the expected total length of the reassembled data
  * using fragment_set_tot_len immediately after doing fragment_add for the first packet.
  *
@@ -685,11 +797,11 @@ fragment_add_seq_offset(reassembly_table *table, const packet_info *pinfo, const
  */
 void
 fragment_set_tot_len(reassembly_table *table, const packet_info *pinfo,
-		     const guint32 id, const void *data, const guint32 tot_len)
+		     const uint32_t id, const void *data, const uint32_t tot_len)
 {
 	fragment_head *fd_head;
 	fragment_item *fd;
-	guint32        max_offset = 0;
+	uint32_t       max_offset = 0;
 
 	fd_head = lookup_fd_head(table, pinfo, id, data, NULL);
 	if (!fd_head)
@@ -699,9 +811,8 @@ fragment_set_tot_len(reassembly_table *table, const packet_info *pinfo,
 	 * doesn't conflict with values set by existing fragments.
 	 * XXX - eliminate this check?
 	 */
-	fd = fd_head;
 	if (fd_head->flags & FD_BLOCKSEQUENCE) {
-		while (fd) {
+		for (fd = fd_head->next; fd; fd = fd->next) {
 			if (fd->offset > max_offset) {
 				max_offset = fd->offset;
 				if (max_offset > tot_len) {
@@ -709,7 +820,6 @@ fragment_set_tot_len(reassembly_table *table, const packet_info *pinfo,
 					THROW_MESSAGE(ReassemblyError, fd_head->error);
 				}
 			}
-			fd = fd->next;
 		}
 	}
 
@@ -725,9 +835,127 @@ fragment_set_tot_len(reassembly_table *table, const packet_info *pinfo,
 	fd_head->flags |= FD_DATALEN_SET;
 }
 
-guint32
+void
+fragment_reset_tot_len(reassembly_table *table, const packet_info *pinfo,
+		       const uint32_t id, const void *data, const uint32_t tot_len)
+{
+	fragment_head *fd_head;
+
+	fd_head = lookup_fd_head(table, pinfo, id, data, NULL);
+	if (!fd_head)
+		return;
+
+	/*
+	 * If FD_PARTIAL_REASSEMBLY is set, it would make the next fragment_add
+	 * call set the reassembled length based on the fragment offset and
+	 * length. As the length is known now, be sure to disable that magic.
+	 */
+	fd_head->flags &= ~FD_PARTIAL_REASSEMBLY;
+
+	/* If the length is already as expected, there is nothing else to do. */
+	if (tot_len == fd_head->datalen)
+		return;
+
+	if (fd_head->flags & FD_DEFRAGMENTED) {
+		/*
+		 * Fragments were reassembled before, clear it to allow
+		 * increasing the reassembled length.
+		 */
+		fragment_reset_defragmentation(fd_head);
+	}
+
+	fd_head->datalen = tot_len;
+	fd_head->flags |= FD_DATALEN_SET;
+}
+
+void
+fragment_truncate(reassembly_table *table, const packet_info *pinfo,
+		       const uint32_t id, const void *data, const uint32_t tot_len)
+
+{
+	tvbuff_t      *old_tvb_data;
+	fragment_head *fd_head;
+
+	fd_head = lookup_fd_head(table, pinfo, id, data, NULL);
+	if (!fd_head)
+		return;
+
+	/* Caller must ensure that this function is only called when
+	 * we are defragmented. */
+	DISSECTOR_ASSERT(fd_head->flags & FD_DEFRAGMENTED);
+
+	/*
+	 * If FD_PARTIAL_REASSEMBLY is set, it would make the next fragment_add
+	 * call set the reassembled length based on the fragment offset and
+	 * length. As the length is known now, be sure to disable that magic.
+	 */
+	fd_head->flags &= ~FD_PARTIAL_REASSEMBLY;
+
+	/* If the length is already as expected, there is nothing else to do. */
+	if (tot_len == fd_head->datalen)
+		return;
+
+	DISSECTOR_ASSERT(fd_head->datalen > tot_len);
+
+	old_tvb_data=fd_head->tvb_data;
+	fd_head->tvb_data = tvb_clone_offset_len(old_tvb_data, 0, tot_len);
+	tvb_set_free_cb(fd_head->tvb_data, g_free);
+
+	if (old_tvb_data)
+		tvb_add_to_chain(fd_head->tvb_data, old_tvb_data);
+	fd_head->datalen = tot_len;
+
+	/* Keep the fragments before the split point, dividing any if
+	 * necessary.
+	 * XXX: In rare cases, there might be fragments marked as overlap that
+	 * have data both before and after the split point, and which only
+	 * overlap after the split point. In that case, after dividing the
+	 * fragments the first part no longer overlap.
+	 * However, at this point we can't test for overlap conflicts,
+	 * so we'll just leave the overlap flags as-is.
+	 */
+	fd_head->flags &= ~(FD_OVERLAP|FD_OVERLAPCONFLICT|FD_TOOLONGFRAGMENT|FD_MULTIPLETAILS);
+	fragment_item *fd_i, *prev_fd = NULL;
+	for (fd_i = fd_head->next; fd_i && (fd_i->offset < tot_len); fd_i = fd_i->next) {
+		fd_i->flags &= ~(FD_TOOLONGFRAGMENT|FD_MULTIPLETAILS);
+		/* Check for the split point occurring in the middle of the
+		 * fragment. */
+                if (fd_i->offset + fd_i->len > tot_len) {
+			fd_i->len = tot_len - fd_i->offset;
+		}
+		fd_head->flags |= fd_i->flags & (FD_OVERLAP|FD_OVERLAPCONFLICT);
+		prev_fd = fd_i;
+
+		/* Below should do nothing since this is already defragmented */
+		if (fd_i->flags & FD_SUBSET_TVB)
+			fd_i->flags &= ~FD_SUBSET_TVB;
+		else if (fd_i->tvb_data)
+			tvb_free(fd_i->tvb_data);
+
+		fd_i->tvb_data=NULL;
+	}
+
+	/* Remove all the other fragments, as they are past the split point. */
+	if (prev_fd) {
+		prev_fd->next = NULL;
+	} else {
+		fd_head->next = NULL;
+	}
+	fd_head->contiguous_len = MIN(fd_head->contiguous_len, tot_len);
+	fragment_items_removed(fd_head, prev_fd);
+	fragment_item *tmp_fd;
+	for (; fd_i; fd_i = tmp_fd) {
+		tmp_fd=fd_i->next;
+
+		if (fd_i->tvb_data && !(fd_i->flags & FD_SUBSET_TVB))
+			tvb_free(fd_i->tvb_data);
+		g_slice_free(fragment_item, fd_i);
+	}
+}
+
+uint32_t
 fragment_get_tot_len(reassembly_table *table, const packet_info *pinfo,
-		     const guint32 id, const void *data)
+		     const uint32_t id, const void *data)
 {
 	fragment_head *fd_head;
 
@@ -740,7 +968,6 @@ fragment_get_tot_len(reassembly_table *table, const packet_info *pinfo,
 	return 0;
 }
 
-
 /* This function will set the partial reassembly flag for a fh.
    When this function is called, the fh MUST already exist, i.e.
    the fh MUST be created by the initial call to fragment_add() before
@@ -751,7 +978,7 @@ fragment_get_tot_len(reassembly_table *table, const packet_info *pinfo,
 
 void
 fragment_set_partial_reassembly(reassembly_table *table,
-				const packet_info *pinfo, const guint32 id,
+				const packet_info *pinfo, const uint32_t id,
 				const void *data)
 {
 	fragment_head *fd_head;
@@ -781,7 +1008,7 @@ fragment_set_partial_reassembly(reassembly_table *table,
  * The key freeing routine will be called by g_hash_table_remove().
  */
 static void
-fragment_unhash(reassembly_table *table, gpointer key)
+fragment_unhash(reassembly_table *table, void *key)
 {
 	/*
 	 * Remove the entry from the fragment table.
@@ -797,11 +1024,12 @@ fragment_unhash(reassembly_table *table, gpointer key)
  */
 static void
 fragment_reassembled(reassembly_table *table, fragment_head *fd_head,
-		     const packet_info *pinfo, const guint32 id)
+		     const packet_info *pinfo, const uint32_t id)
 {
 	reassembled_key *new_key;
 	fragment_item *fd;
 
+	fd_head->ref_count = 0;
 	if (fd_head->next == NULL) {
 		/*
 		 * This was not fragmented, so there's no fragment
@@ -810,7 +1038,7 @@ fragment_reassembled(reassembly_table *table, fragment_head *fd_head,
 		new_key = g_slice_new(reassembled_key);
 		new_key->frame = pinfo->num;
 		new_key->id = id;
-		g_hash_table_insert(table->reassembled_table, new_key, fd_head);
+		reassembled_table_insert(table->reassembled_table, new_key, fd_head);
 	} else {
 		/*
 		 * Hash it with the frame numbers for all the frames.
@@ -819,8 +1047,45 @@ fragment_reassembled(reassembly_table *table, fragment_head *fd_head,
 			new_key = g_slice_new(reassembled_key);
 			new_key->frame = fd->frame;
 			new_key->id = id;
-			g_hash_table_insert(table->reassembled_table, new_key,
-				fd_head);
+			reassembled_table_insert(table->reassembled_table, new_key, fd_head);
+		}
+	}
+	fd_head->flags |= FD_DEFRAGMENTED;
+	fd_head->reassembled_in = pinfo->num;
+	fd_head->reas_in_layer_num = pinfo->curr_layer_num;
+}
+
+/*
+ * This function is a variant of the above for the single sequence
+ * case, using id+offset (i.e., the original sequence number) for the id
+ * in the key.
+ */
+static void
+fragment_reassembled_single(reassembly_table *table, fragment_head *fd_head,
+			    const packet_info *pinfo, const uint32_t id)
+{
+	reassembled_key *new_key;
+	fragment_item *fd;
+
+	fd_head->ref_count = 0;
+	if (fd_head->next == NULL) {
+		/*
+		 * This was not fragmented, so there's no fragment
+		 * table; just hash it using the current frame number.
+		 */
+		new_key = g_slice_new(reassembled_key);
+		new_key->frame = pinfo->num;
+		new_key->id = id;
+		reassembled_table_insert(table->reassembled_table, new_key, fd_head);
+	} else {
+		/*
+		 * Hash it with the frame numbers for all the frames.
+		 */
+		for (fd = fd_head->next; fd != NULL; fd = fd->next){
+			new_key = g_slice_new(reassembled_key);
+			new_key->frame = fd->frame;
+			new_key->id = id + fd->offset;
+			reassembled_table_insert(table->reassembled_table, new_key, fd_head);
 		}
 	}
 	fd_head->flags |= FD_DEFRAGMENTED;
@@ -834,12 +1099,78 @@ LINK_FRAG(fragment_head *fd_head,fragment_item *fd)
 	fragment_item *fd_i;
 
 	/* add fragment to list, keep list sorted */
-	for(fd_i= fd_head; fd_i->next;fd_i=fd_i->next) {
-		if (fd->offset < fd_i->next->offset )
-			break;
+	if (fd_head->next == NULL || fd->offset < fd_head->next->offset) {
+		/* New first fragment */
+		fd->next = fd_head->next;
+		fd_head->next = fd;
+	} else {
+		fd_i = fd_head->next;
+		if (fd_head->first_gap != NULL) {
+			if (fd->offset >= fd_head->first_gap->offset) {
+				/* fragment is after first gap */
+				fd_i = fd_head->first_gap;
+			}
+		}
+		for(; fd_i->next; fd_i=fd_i->next) {
+			if (fd->offset < fd_i->next->offset )
+				break;
+		}
+		fd->next = fd_i->next;
+		fd_i->next = fd;
 	}
-	fd->next=fd_i->next;
-	fd_i->next=fd;
+
+	update_first_gap(fd_head, fd, false);
+}
+
+static void
+MERGE_FRAG(fragment_head *fd_head, fragment_item *fd)
+{
+	fragment_item *fd_i, *tmp, *inserted = fd;
+	bool multi_insert;
+
+	if (fd == NULL) return;
+
+	multi_insert = (fd->next != NULL);
+
+	if (fd_head->next == NULL) {
+		fd_head->next = fd;
+		update_first_gap(fd_head, fd, multi_insert);
+		return;
+	}
+
+	if ((fd_head->first_gap != NULL) &&
+	    (fd->offset >= fd_head->first_gap->offset)) {
+		/* all new fragments go after first gap */
+		fd_i = fd_head->first_gap;
+	} else {
+		/* at least one new fragment goes before first gap */
+		if (fd->offset < fd_head->next->offset) {
+			/* inserted fragment is new head, "swap" the lists */
+			tmp = fd_head->next;
+			fd_head->next = fd;
+			fd = tmp;
+		}
+		fd_i = fd_head->next;
+	}
+
+	/* Traverse the list linked to fragment head ("main" list), checking if
+	 * fd pointer ("merge" list) should go before or after fd_i->next. Swap
+	 * fd_i->next ("main") and fd pointers ("merge") if "merge" list should
+	 * go before iterated element (fd_i). After the swap what formerly was
+	 * "merge" list essentially becomes part of "main" list (just detached
+	 * element, i.e. fd, is now head of new "merge list").
+	 */
+	for(; fd_i->next; fd_i=fd_i->next) {
+		if (fd->offset < fd_i->next->offset) {
+			tmp = fd_i->next;
+			fd_i->next = fd;
+			fd = tmp;
+		}
+	}
+	/* Reached "main" list end, attach remaining elements */
+	fd_i->next = fd;
+
+	update_first_gap(fd_head, inserted, multi_insert);
 }
 
 /*
@@ -863,27 +1194,26 @@ LINK_FRAG(fragment_head *fd_head,fragment_item *fd)
  * with the new fragment. FD_TOOLONGFRAGMENT and FD_MULTIPLETAILS flags
  * are lowered when a new extension process is started.
  */
-static gboolean
+static bool
 fragment_add_work(fragment_head *fd_head, tvbuff_t *tvb, const int offset,
-		 const packet_info *pinfo, const guint32 frag_offset,
-		 const guint32 frag_data_len, const gboolean more_frags)
+		 const packet_info *pinfo, const uint32_t frag_offset,
+		 const uint32_t frag_data_len, const bool more_frags,
+		 const uint32_t frag_frame, const bool allow_overlaps)
 {
 	fragment_item *fd;
 	fragment_item *fd_i;
-	guint32 max, dfpos, fraglen;
+	uint32_t dfpos, fraglen, overlap;
 	tvbuff_t *old_tvb_data;
-	guint8 *data;
+	uint8_t *data;
 
 	/* create new fd describing this fragment */
 	fd = g_slice_new(fragment_item);
 	fd->next = NULL;
 	fd->flags = 0;
-	fd->frame = pinfo->num;
+	fd->frame = frag_frame;
 	fd->offset = frag_offset;
-	fd->fragment_nr_offset = 0; /* will only be used with sequence */
 	fd->len  = frag_data_len;
 	fd->tvb_data = NULL;
-	fd->error = NULL;
 
 	/*
 	 * Are we adding to an already-completed reassembly?
@@ -892,11 +1222,8 @@ fragment_add_work(fragment_head *fd_head, tvbuff_t *tvb, const int offset,
 		/*
 		 * Yes.  Does this fragment go past the end of the results
 		 * of that reassembly?
-		 * XXX - shouldn't this be ">"?  If frag_offset + frag_data_len
-		 * == fd_head->datalen, this overlaps the end of the
-		 * reassembly, but doesn't go past it, right?
 		 */
-		if (frag_offset + frag_data_len >= fd_head->datalen) {
+		if (frag_offset + frag_data_len > fd_head->datalen) {
 			/*
 			 * Yes.  Have we been requested to continue reassembly?
 			 */
@@ -905,19 +1232,8 @@ fragment_add_work(fragment_head *fd_head, tvbuff_t *tvb, const int offset,
 				 * Yes.  Set flag in already empty fds &
 				 * point old fds to malloc'ed data.
 				 */
-				for(fd_i=fd_head->next; fd_i; fd_i=fd_i->next){
-					if( !fd_i->tvb_data ) {
-						fd_i->tvb_data = tvb_new_subset_remaining(fd_head->tvb_data, fd_i->offset);
-						fd_i->flags |= FD_SUBSET_TVB;
-					}
-					fd_i->flags &= (~FD_TOOLONGFRAGMENT) & (~FD_MULTIPLETAILS);
-				}
-				fd_head->flags &= ~(FD_DEFRAGMENTED|FD_PARTIAL_REASSEMBLY|FD_DATALEN_SET);
-				fd_head->flags &= (~FD_TOOLONGFRAGMENT) & (~FD_MULTIPLETAILS);
-				fd_head->datalen=0;
-				fd_head->reassembled_in=0;
-				fd_head->reas_in_layer_num = 0;
-			} else {
+				fragment_reset_defragmentation(fd_head);
+			} else if (!allow_overlaps) {
 				/*
 				 * No.  Bail out since we have no idea what to
 				 * do with this fragment (and if we keep going
@@ -945,18 +1261,25 @@ fragment_add_work(fragment_head *fd_head, tvbuff_t *tvb, const int offset,
 					 * The fragment starts before the end
 					 * of the reassembled data, but
 					 * runs past the end.  That could
-					 * just be a retransmission.
+					 * just be a retransmission with extra
+					 * data, but the calling dissector
+					 * didn't set FD_PARTIAL_REASSEMBLY
+					 * so it won't be handled correctly.
+					 *
+					 * XXX: We could set FD_TOOLONGFRAGMENT
+					 * below instead.
 					 */
 					THROW_MESSAGE(ReassemblyError, "New fragment overlaps old data (retransmission?)");
 				}
 			}
 		} else {
 			/*
-			 * No.  That means it still overlaps that, so report
-			 * this as a problem, possibly a retransmission.
+			 * No.  That means it overlaps the completed reassembly.
+			 * This is probably a retransmission and normal
+			 * behavior. (If not, it's because the dissector
+			 * doesn't handle reused sequence numbers correctly,
+			 * e.g. #10503). Handle below.
 			 */
-			g_slice_free(fragment_item, fd);
-			THROW_MESSAGE(ReassemblyError, "New fragment overlaps old data (retransmission?)");
 		}
 	}
 
@@ -997,10 +1320,13 @@ fragment_add_work(fragment_head *fd_head, tvbuff_t *tvb, const int offset,
 	 * check it. Someone might play overlap and TTL games.
 	 */
 	if (fd_head->flags & FD_DEFRAGMENTED) {
-		guint32 end_offset = fd->offset + fd->len;
+		uint32_t end_offset = fd->offset + fd->len;
 		fd->flags	   |= FD_OVERLAP;
 		fd_head->flags |= FD_OVERLAP;
 		/* make sure it's not too long */
+		/* XXX: We probably don't call this, unlike the _seq()
+		 * functions, because we throw an exception above.
+		 */
 		if (end_offset > fd_head->datalen || end_offset < fd->offset || end_offset < fd->len) {
 			fd->flags	   |= FD_TOOLONGFRAGMENT;
 			fd_head->flags |= FD_TOOLONGFRAGMENT;
@@ -1013,7 +1339,7 @@ fragment_add_work(fragment_head *fd_head, tvbuff_t *tvb, const int offset,
 		}
 		/* it was just an overlap, link it and return */
 		LINK_FRAG(fd_head,fd);
-		return TRUE;
+		return true;
 	}
 
 
@@ -1033,35 +1359,17 @@ fragment_add_work(fragment_head *fd_head, tvbuff_t *tvb, const int offset,
 		/* if we don't know the datalen, there are still missing
 		 * packets. Cheaper than the check below.
 		 */
-		return FALSE;
+		return false;
 	}
 
-
-	/*
-	 * Check if we have received the entire fragment.
-	 * This is easy since the list is sorted and the head is faked.
-	 *
-	 * First, we compute the amount of contiguous data that's
-	 * available.  (The check for fd_i->offset <= max rules out
-	 * fragments that don't start before or at the end of the
-	 * previous fragment, i.e. fragments that have a gap between
-	 * them and the previous fragment.)
-	 */
-	max = 0;
-	for (fd_i=fd_head->next;fd_i;fd_i=fd_i->next) {
-		if ( ((fd_i->offset)<=max) &&
-			((fd_i->offset+fd_i->len)>max) ){
-			max = fd_i->offset+fd_i->len;
-		}
-	}
-
-	if (max < (fd_head->datalen)) {
+	/* Check if we have received the entire fragment. */
+	if (fd_head->contiguous_len < fd_head->datalen) {
 		/*
 		 * The amount of contiguous data we have is less than the
 		 * amount of data we're trying to reassemble, so we haven't
 		 * received all packets yet.
 		 */
-		return FALSE;
+		return false;
 	}
 
 	/* we have received an entire packet, defragment it and
@@ -1069,15 +1377,15 @@ fragment_add_work(fragment_head *fd_head, tvbuff_t *tvb, const int offset,
 	 */
 	/* store old data just in case */
 	old_tvb_data=fd_head->tvb_data;
-	data = (guint8 *) g_malloc(fd_head->datalen);
+	data = (uint8_t *) g_malloc(fd_head->datalen);
 	fd_head->tvb_data = tvb_new_real_data(data, fd_head->datalen, fd_head->datalen);
 	tvb_set_free_cb(fd_head->tvb_data, g_free);
 
 	/* add all data fragments */
-	for (dfpos=0,fd_i=fd_head;fd_i;fd_i=fd_i->next) {
+	for (dfpos=0,fd_i=fd_head->next;fd_i;fd_i=fd_i->next) {
 		if (fd_i->len) {
 			/*
-			 * The loop above that calculates max also
+			 * The contiguous length check above also
 			 * ensures that the only gaps that exist here
 			 * are ones where a fragment starts past the
 			 * end of the reassembled datagram, and there's
@@ -1093,92 +1401,96 @@ fragment_add_work(fragment_head *fd_head, tvbuff_t *tvb, const int offset,
 			 * done for fragments with (offset+len) <= fd_head->datalen
 			 * and thus within the newly g_malloc'd buffer.
 			 */
-			if (fd_i->offset + fd_i->len > dfpos) {
-				if (fd_i->offset >= fd_head->datalen) {
+
+			if (fd_i->offset >= fd_head->datalen) {
+				/*
+				 * Fragment starts after the end
+				 * of the reassembled packet.
+				 *
+				 * This can happen if the length was
+				 * set after the offending fragment
+				 * was added to the reassembly.
+				 *
+				 * Flag this fragment, but don't
+				 * try to extract any data from
+				 * it, as there's no place to put
+				 * it.
+				 *
+				 * XXX - add different flag value
+				 * for this.
+				 */
+				fd_i->flags    |= FD_TOOLONGFRAGMENT;
+				fd_head->flags |= FD_TOOLONGFRAGMENT;
+			} else if (fd_i->offset + fd_i->len < fd_i->offset) {
+				/* Integer overflow, unhandled by rest of
+				 * code so error out. This check handles
+				 * all possible remaining overflows.
+				 */
+				fd_head->error = "offset + len < offset";
+			} else if (!fd_i->tvb_data) {
+				fd_head->error = "no data";
+			} else {
+				fraglen = fd_i->len;
+				if (fd_i->offset + fraglen > fd_head->datalen) {
 					/*
-					 * Fragment starts after the end
-					 * of the reassembled packet.
+					 * Fragment goes past the end
+					 * of the packet, as indicated
+					 * by the last fragment.
 					 *
-					 * This can happen if the length was
-					 * set after the offending fragment
-					 * was added to the reassembly.
+					 * This can happen if the
+					 * length was set after the
+					 * offending fragment was
+					 * added to the reassembly.
 					 *
-					 * Flag this fragment, but don't
-					 * try to extract any data from
-					 * it, as there's no place to put
-					 * it.
-					 *
-					 * XXX - add different flag value
-					 * for this.
+					 * Mark it as such, and only
+					 * copy from it what fits in
+					 * the packet.
 					 */
 					fd_i->flags    |= FD_TOOLONGFRAGMENT;
 					fd_head->flags |= FD_TOOLONGFRAGMENT;
-				} else if (dfpos < fd_i->offset) {
-					/*
-					 * XXX - can this happen?  We've
-					 * already rejected fragments that
-					 * start past the end of the
-					 * reassembled datagram, and
-					 * the loop that calculated max
-					 * should have ruled out gaps,
-					 * but could fd_i->offset +
-					 * fd_i->len overflow?
-					 */
-					fd_head->error = "dfpos < offset";
-				} else if (dfpos - fd_i->offset > fd_i->len)
-					fd_head->error = "dfpos - offset > len";
-				else if (!fd_head->tvb_data)
-					fd_head->error = "no data";
-				else {
-					fraglen = fd_i->len;
-					if (fd_i->offset + fraglen > fd_head->datalen) {
-						/*
-						 * Fragment goes past the end
-						 * of the packet, as indicated
-						 * by the last fragment.
-						 *
-						 * This can happen if the
-						 * length was set after the
-						 * offending fragment was
-						 * added to the reassembly.
-						 *
-						 * Mark it as such, and only
-						 * copy from it what fits in
-						 * the packet.
-						 */
-						fd_i->flags    |= FD_TOOLONGFRAGMENT;
-						fd_head->flags |= FD_TOOLONGFRAGMENT;
-						fraglen = fd_head->datalen - fd_i->offset;
-					}
-					if (fd_i->offset < dfpos) {
-						guint32 cmp_len = MIN(fd_i->len,(dfpos-fd_i->offset));
+					fraglen = fd_head->datalen - fd_i->offset;
+				}
+				overlap = dfpos - fd_i->offset;
+				/* Guaranteed to be >= 0, previous code
+				 * has checked for gaps. */
+				if (overlap) {
+					/* duplicate/retransmission/overlap */
+					uint32_t cmp_len = MIN(fd_i->len,overlap);
 
-						fd_i->flags    |= FD_OVERLAP;
-						fd_head->flags |= FD_OVERLAP;
-						if ( memcmp(data + fd_i->offset,
-								tvb_get_ptr(fd_i->tvb_data, 0, cmp_len),
-								cmp_len)
-								 ) {
-							fd_i->flags    |= FD_OVERLAPCONFLICT;
-							fd_head->flags |= FD_OVERLAPCONFLICT;
-						}
-					}
-					if (fraglen < dfpos - fd_i->offset) {
-						/*
-						 * XXX - can this happen?
-						 */
-						fd_head->error = "fraglen < dfpos - offset";
-					} else {
-						memcpy(data+dfpos,
-							tvb_get_ptr(fd_i->tvb_data, (dfpos-fd_i->offset), fraglen-(dfpos-fd_i->offset)),
-							fraglen-(dfpos-fd_i->offset));
-						dfpos=MAX(dfpos, (fd_i->offset + fraglen));
+					fd_i->flags    |= FD_OVERLAP;
+					fd_head->flags |= FD_OVERLAP;
+					if ( memcmp(data + fd_i->offset,
+							tvb_get_ptr(fd_i->tvb_data, 0, cmp_len),
+							cmp_len)
+							 ) {
+						fd_i->flags    |= FD_OVERLAPCONFLICT;
+						fd_head->flags |= FD_OVERLAPCONFLICT;
 					}
 				}
-			} else {
-				if (fd_i->offset + fd_i->len < fd_i->offset) {
-					/* Integer overflow? */
-					fd_head->error = "offset + len < offset";
+				/* XXX: As in the fragment_add_seq funcs
+				 * like fragment_defragment_and_free() the
+				 * existing behavior does not overwrite
+				 * overlapping bytes even if there is a
+				 * conflict. It only adds new bytes.
+				 *
+				 * Since we only add fragments to a reassembly
+				 * if the reassembly isn't complete, the most
+				 * common case for overlap conflicts is when
+				 * an earlier reassembly isn't fully contained
+				 * in the capture, and we've reused an
+				 * indentification number / wrapped around
+				 * offset sequence numbers much later in the
+				 * capture. In that case, we probably *do*
+				 * want to overwrite conflicting bytes, since
+				 * the earlier fragments didn't form a complete
+				 * reassembly and should be effectively thrown
+				 * out rather than mixed with the new ones?
+				 */
+				if (fd_i->offset + fraglen > dfpos) {
+					memcpy(data+dfpos,
+						tvb_get_ptr(fd_i->tvb_data, overlap, fraglen-overlap),
+						fraglen-overlap);
+					dfpos = fd_i->offset + fraglen;
 				}
 			}
 
@@ -1204,19 +1516,20 @@ fragment_add_work(fragment_head *fd_head, tvbuff_t *tvb, const int offset,
 		THROW_MESSAGE(ReassemblyError, fd_head->error);
 	}
 
-	return TRUE;
+	return true;
 }
 
 static fragment_head *
 fragment_add_common(reassembly_table *table, tvbuff_t *tvb, const int offset,
-		    const packet_info *pinfo, const guint32 id,
-		    const void *data, const guint32 frag_offset,
-		    const guint32 frag_data_len, const gboolean more_frags,
-		    const gboolean check_already_added)
+		    const packet_info *pinfo, const uint32_t id,
+		    const void *data, const uint32_t frag_offset,
+		    const uint32_t frag_data_len, const bool more_frags,
+		    const bool check_already_added,
+		    const uint32_t frag_frame)
 {
 	fragment_head *fd_head;
 	fragment_item *fd_item;
-	gboolean already_added;
+	bool already_added;
 
 
 	/*
@@ -1235,7 +1548,7 @@ fragment_add_common(reassembly_table *table, tvbuff_t *tvb, const int offset,
 	/* leave it here for future debugging sessions */
 	if(strcmp(pinfo->current_proto, "DCERPC") == 0) {
 		printf("proto:%s num:%u id:%u offset:%u len:%u more:%u visited:%u\n",
-			pinfo->current_proto, pinfo->num, id, frag_offset, frag_data_len, more_frags, pinfo->fd->flags.visited);
+			pinfo->current_proto, pinfo->num, id, frag_offset, frag_data_len, more_frags, pinfo->fd->visited);
 		if(fd_head != NULL) {
 			for(fd_item=fd_head->next;fd_item;fd_item=fd_item->next){
 				printf("fd_frame:%u fd_offset:%u len:%u datalen:%u\n",
@@ -1248,7 +1561,7 @@ fragment_add_common(reassembly_table *table, tvbuff_t *tvb, const int offset,
 	/*
 	 * Is this the first pass through the capture?
 	 */
-	if (!pinfo->fd->flags.visited) {
+	if (!pinfo->fd->visited) {
 		/*
 		 * Yes, so we could be doing reassembly.  If
 		 * "check_already_added" is true, and fd_head is non-null,
@@ -1270,8 +1583,8 @@ fragment_add_common(reassembly_table *table, tvbuff_t *tvb, const int offset,
 			 * reassembly; if this frame is later than that
 			 * frame, we know it hasn't been added yet.
 			 */
-			if (pinfo->num <= fd_head->frame) {
-				already_added = FALSE;
+			if (frag_frame <= fd_head->frame) {
+				already_added = false;
 				/*
 				 * The first item in the reassembly list
 				 * is not a fragment, it's a data structure
@@ -1280,9 +1593,9 @@ fragment_add_common(reassembly_table *table, tvbuff_t *tvb, const int offset,
 				 */
 				for (fd_item = fd_head->next; fd_item;
 				    fd_item = fd_item->next) {
-					if (pinfo->num == fd_item->frame &&
+					if (frag_frame == fd_item->frame &&
 					    frag_offset == fd_item->offset) {
-						already_added = TRUE;
+						already_added = true;
 						break;
 					}
 				}
@@ -1329,7 +1642,7 @@ fragment_add_common(reassembly_table *table, tvbuff_t *tvb, const int offset,
 			 * Is it later in the capture than all of the
 			 * fragments in the reassembly?
 			 */
-			if (pinfo->num > fd_head->frame) {
+			if (frag_frame > fd_head->frame) {
 				/*
 				 * Yes, so report this as a problem,
 				 * possibly a retransmission.
@@ -1384,7 +1697,7 @@ fragment_add_common(reassembly_table *table, tvbuff_t *tvb, const int offset,
 	}
 
 	if (fragment_add_work(fd_head, tvb, offset, pinfo, frag_offset,
-		frag_data_len, more_frags)) {
+		frag_data_len, more_frags, frag_frame, false)) {
 		/*
 		 * Reassembly is complete.
 		 */
@@ -1399,12 +1712,12 @@ fragment_add_common(reassembly_table *table, tvbuff_t *tvb, const int offset,
 
 fragment_head *
 fragment_add(reassembly_table *table, tvbuff_t *tvb, const int offset,
-	     const packet_info *pinfo, const guint32 id, const void *data,
-	     const guint32 frag_offset, const guint32 frag_data_len,
-	     const gboolean more_frags)
+	     const packet_info *pinfo, const uint32_t id, const void *data,
+	     const uint32_t frag_offset, const uint32_t frag_data_len,
+	     const bool more_frags)
 {
 	return fragment_add_common(table, tvb, offset, pinfo, id, data,
-		frag_offset, frag_data_len, more_frags, TRUE);
+		frag_offset, frag_data_len, more_frags, true, pinfo->num);
 }
 
 /*
@@ -1414,39 +1727,77 @@ fragment_add(reassembly_table *table, tvbuff_t *tvb, const int offset,
 fragment_head *
 fragment_add_multiple_ok(reassembly_table *table, tvbuff_t *tvb,
 			 const int offset, const packet_info *pinfo,
-			 const guint32 id, const void *data,
-			 const guint32 frag_offset,
-			 const guint32 frag_data_len, const gboolean more_frags)
+			 const uint32_t id, const void *data,
+			 const uint32_t frag_offset,
+			 const uint32_t frag_data_len, const bool more_frags)
 {
 	return fragment_add_common(table, tvb, offset, pinfo, id, data,
-		frag_offset, frag_data_len, more_frags, FALSE);
+		frag_offset, frag_data_len, more_frags, false, pinfo->num);
+}
+
+/*
+ * For use in protocols like TCP when you are adding an out of order segment
+ * that arrived in an earlier frame because the correct fragment id could not
+ * be determined until later. By allowing fd->frame to be different than
+ * pinfo->num, show_fragment_tree will display the correct fragment numbers.
+ *
+ * Note that pinfo is still used to set reassembled_in if we have all the
+ * fragments, so that results on subsequent passes can be the same as the
+ * first pass.
+ */
+fragment_head *
+fragment_add_out_of_order(reassembly_table *table, tvbuff_t *tvb,
+			  const int offset, const packet_info *pinfo,
+			  const uint32_t id, const void *data,
+			  const uint32_t frag_offset,
+			  const uint32_t frag_data_len,
+			  const bool more_frags, const uint32_t frag_frame)
+{
+	return fragment_add_common(table, tvb, offset, pinfo, id, data,
+		frag_offset, frag_data_len, more_frags, true, frag_frame);
 }
 
 fragment_head *
-fragment_add_check(reassembly_table *table, tvbuff_t *tvb, const int offset,
-		   const packet_info *pinfo, const guint32 id,
-		   const void *data, const guint32 frag_offset,
-		   const guint32 frag_data_len, const gboolean more_frags)
+fragment_add_check_with_fallback(reassembly_table *table, tvbuff_t *tvb, const int offset,
+		   const packet_info *pinfo, const uint32_t id,
+		   const void *data, const uint32_t frag_offset,
+		   const uint32_t frag_data_len, const bool more_frags,
+		   const uint32_t fallback_frame)
 {
 	reassembled_key reass_key;
 	fragment_head *fd_head;
-	gpointer orig_key;
+	void *orig_key;
+	bool late_retransmission = false;
 
 	/*
 	 * If this isn't the first pass, look for this frame in the table
 	 * of reassembled packets.
 	 */
-	if (pinfo->fd->flags.visited) {
+	if (pinfo->fd->visited) {
 		reass_key.frame = pinfo->num;
 		reass_key.id = id;
 		return (fragment_head *)g_hash_table_lookup(table->reassembled_table, &reass_key);
 	}
 
 	/* Looks up a key in the GHashTable, returning the original key and the associated value
-	 * and a gboolean which is TRUE if the key was found. This is useful if you need to free
+	 * and a bool which is true if the key was found. This is useful if you need to free
 	 * the memory allocated for the original key, for example before calling g_hash_table_remove()
 	 */
 	fd_head = lookup_fd_head(table, pinfo, id, data, &orig_key);
+	if ((fd_head == NULL) && (fallback_frame != pinfo->num)) {
+		/* Check if there is completed reassembly reachable from fallback frame */
+		reass_key.frame = fallback_frame;
+		reass_key.id = id;
+		fd_head = (fragment_head *)g_hash_table_lookup(table->reassembled_table, &reass_key);
+		if (fd_head != NULL) {
+			/* Found completely reassembled packet, hash it with current frame number */
+			reassembled_key *new_key = g_slice_new(reassembled_key);
+			new_key->frame = pinfo->num;
+			new_key->id = id;
+			reassembled_table_insert(table->reassembled_table, new_key, fd_head);
+			late_retransmission = true;
+		}
+	}
 	if (fd_head == NULL) {
 		/* not found, this must be the first snooped fragment for this
 		 * packet. Create list-head.
@@ -1463,11 +1814,16 @@ fragment_add_check(reassembly_table *table, tvbuff_t *tvb, const int offset,
 	 * If this is a short frame, then we can't, and don't, do
 	 * reassembly on it.  We just give up.
 	 */
-	if (tvb_reported_length(tvb) > tvb_captured_length(tvb))
+	if (!tvb_bytes_exist(tvb, offset, frag_data_len)) {
 		return NULL;
+	}
 
 	if (fragment_add_work(fd_head, tvb, offset, pinfo, frag_offset,
-		frag_data_len, more_frags)) {
+		frag_data_len, more_frags, pinfo->num, late_retransmission)) {
+		/* Nothing left to do if it was a late retransmission */
+		if (late_retransmission) {
+			return fd_head;
+		}
 		/*
 		 * Reassembly is complete.
 		 * Remove this from the table of in-progress
@@ -1494,25 +1850,40 @@ fragment_add_check(reassembly_table *table, tvbuff_t *tvb, const int offset,
 	}
 }
 
+fragment_head *
+fragment_add_check(reassembly_table *table, tvbuff_t *tvb, const int offset,
+		   const packet_info *pinfo, const uint32_t id,
+		   const void *data, const uint32_t frag_offset,
+		   const uint32_t frag_data_len, const bool more_frags)
+{
+	return fragment_add_check_with_fallback(table, tvb, offset, pinfo, id, data,
+		frag_offset, frag_data_len, more_frags, pinfo->num);
+}
+
 static void
 fragment_defragment_and_free (fragment_head *fd_head, const packet_info *pinfo)
 {
 	fragment_item *fd_i = NULL;
 	fragment_item *last_fd = NULL;
-	guint32  dfpos = 0, size = 0;
+	uint32_t dfpos = 0, size = 0;
 	tvbuff_t *old_tvb_data = NULL;
-	guint8 *data;
+	uint8_t *data;
 
 	for(fd_i=fd_head->next;fd_i;fd_i=fd_i->next) {
 		if(!last_fd || last_fd->offset!=fd_i->offset){
-			size+=fd_i->len;
+			if (ckd_add(&size, size, fd_i->len) || size > INT32_MAX) {
+				/* Change this maximum size when unsigned lengths
+				 * are fully supported (#20103). */
+				size = INT32_MAX;
+				break;
+			}
 		}
 		last_fd=fd_i;
 	}
 
 	/* store old data in case the fd_i->data pointers refer to it */
 	old_tvb_data=fd_head->tvb_data;
-	data = (guint8 *) g_malloc(size);
+	data = (uint8_t *) g_malloc(size);
 	fd_head->tvb_data = tvb_new_real_data(data, size, size);
 	tvb_set_free_cb(fd_head->tvb_data, g_free);
 	fd_head->len = size;		/* record size for caller	*/
@@ -1521,10 +1892,21 @@ fragment_defragment_and_free (fragment_head *fd_head, const packet_info *pinfo)
 	last_fd=NULL;
 	for (fd_i=fd_head->next; fd_i; fd_i=fd_i->next) {
 		if (fd_i->len) {
-			if(!last_fd || last_fd->offset != fd_i->offset) {
+			if (dfpos >= size) {
+				fd_i->flags    |= FD_TOOLONGFRAGMENT; // FD_OVERFLOW?
+				fd_head->flags |= FD_TOOLONGFRAGMENT; // FD_OVERFLOW?
+			} else if (!last_fd || last_fd->offset != fd_i->offset) {
 				/* First fragment or in-sequence fragment */
-				memcpy(data+dfpos, tvb_get_ptr(fd_i->tvb_data, 0, fd_i->len), fd_i->len);
-				dfpos += fd_i->len;
+				/* We need the position for overlap calculation of new fragments */
+				uint32_t copy_len = fd_i->len;
+				uint32_t old_dfpos = dfpos;
+				if (ckd_add(&dfpos, dfpos, fd_i->len) || dfpos > size) {
+					copy_len = size - old_dfpos;
+					dfpos = size;
+					fd_i->flags    |= FD_TOOLONGFRAGMENT; // FD_OVERFLOW?
+					fd_head->flags |= FD_TOOLONGFRAGMENT; // FD_OVERFLOW?
+				}
+				memcpy(data + old_dfpos, tvb_get_ptr(fd_i->tvb_data, 0, fd_i->len), copy_len);
 			} else {
 				/* duplicate/retransmission/overlap */
 				fd_i->flags    |= FD_OVERLAP;
@@ -1565,21 +1947,21 @@ fragment_defragment_and_free (fragment_head *fd_head, const packet_info *pinfo)
  * The list of fragments for a specific datagram is kept sorted for
  * easier handling.
  *
- * Returns TRUE if we have all the fragments, FALSE otherwise.
+ * Returns true if we have all the fragments, false otherwise.
  *
  * This function assumes frag_number being a block sequence number.
  * The bsn for the first block is 0.
  */
-static gboolean
+static bool
 fragment_add_seq_work(fragment_head *fd_head, tvbuff_t *tvb, const int offset,
-		 const packet_info *pinfo, const guint32 frag_number,
-		 const guint32 frag_data_len, const gboolean more_frags)
+		 const packet_info *pinfo, const uint32_t frag_number,
+		 const uint32_t frag_data_len, const bool more_frags)
 {
 	fragment_item *fd;
 	fragment_item *fd_i;
 	fragment_item *last_fd;
-	guint32 max, dfpos;
-	guint32 frag_number_work;
+	uint32_t max, dfpos;
+	uint32_t frag_number_work;
 
 	/* Enables the use of fragment sequence numbers, which do not start with 0 */
 	frag_number_work = frag_number;
@@ -1592,7 +1974,7 @@ fragment_add_seq_work(fragment_head *fd_head, tvbuff_t *tvb, const int offset,
 	 */
 	if(fd_head->flags & FD_DEFRAGMENTED && frag_number_work >= fd_head->datalen &&
 		fd_head->flags & FD_PARTIAL_REASSEMBLY){
-		guint32 lastdfpos = 0;
+		uint32_t lastdfpos = 0;
 		dfpos = 0;
 		for(fd_i=fd_head->next; fd_i; fd_i=fd_i->next){
 			if( !fd_i->tvb_data ) {
@@ -1625,7 +2007,11 @@ fragment_add_seq_work(fragment_head *fd_head, tvbuff_t *tvb, const int offset,
 	fd->offset = frag_number_work;
 	fd->len  = frag_data_len;
 	fd->tvb_data = NULL;
-	fd->error = NULL;
+
+	/* fd_head->frame is the maximum of the frame numbers of all the
+	 * fragments added to the reassembly. */
+	if (fd->frame > fd_head->frame)
+		fd_head->frame = fd->frame;
 
 	if (!more_frags) {
 		/*
@@ -1667,7 +2053,7 @@ fragment_add_seq_work(fragment_head *fd_head, tvbuff_t *tvb, const int offset,
 			fd->flags	|= FD_TOOLONGFRAGMENT;
 			fd_head->flags	|= FD_TOOLONGFRAGMENT;
 			LINK_FRAG(fd_head,fd);
-			return TRUE;
+			return true;
 		}
 		/* make sure it doesn't conflict with previous data */
 		dfpos=0;
@@ -1688,7 +2074,7 @@ fragment_add_seq_work(fragment_head *fd_head, tvbuff_t *tvb, const int offset,
 				fd->flags	|= FD_OVERLAPCONFLICT;
 				fd_head->flags	|= FD_OVERLAPCONFLICT;
 				LINK_FRAG(fd_head,fd);
-				return TRUE;
+				return true;
 			}
 			DISSECTOR_ASSERT(fd_head->len >= dfpos + fd->len);
 			if (tvb_memeql(fd_head->tvb_data, dfpos,
@@ -1700,11 +2086,11 @@ fragment_add_seq_work(fragment_head *fd_head, tvbuff_t *tvb, const int offset,
 				fd->flags	|= FD_OVERLAPCONFLICT;
 				fd_head->flags	|= FD_OVERLAPCONFLICT;
 				LINK_FRAG(fd_head,fd);
-				return TRUE;
+				return true;
 			}
 			/* it was just an overlap, link it and return */
 			LINK_FRAG(fd_head,fd);
-			return TRUE;
+			return true;
 		} else {
 			/*
 			 * New fragment doesn't overlap an existing
@@ -1738,7 +2124,7 @@ fragment_add_seq_work(fragment_head *fd_head, tvbuff_t *tvb, const int offset,
 			 * return.
 			 */
 			LINK_FRAG(fd_head,fd);
-			return TRUE;
+			return true;
 		}
 	}
 
@@ -1751,7 +2137,7 @@ fragment_add_seq_work(fragment_head *fd_head, tvbuff_t *tvb, const int offset,
 			/* abort if we didn't capture the entire fragment due
 			 * to a too-short snapshot length */
 			g_slice_free(fragment_item, fd);
-			return FALSE;
+			return false;
 		}
 
 		fd->tvb_data = tvb_clone_offset_len(tvb, offset, fd->len);
@@ -1764,7 +2150,7 @@ fragment_add_seq_work(fragment_head *fd_head, tvbuff_t *tvb, const int offset,
 		 * there are definitely still missing packets. Cheaper than
 		 * the check below.
 		 */
-		return FALSE;
+		return false;
 	}
 
 
@@ -1782,7 +2168,7 @@ fragment_add_seq_work(fragment_head *fd_head, tvbuff_t *tvb, const int offset,
 
 	if (max <= fd_head->datalen) {
 		/* we have not received all packets yet */
-		return FALSE;
+		return false;
 	}
 
 
@@ -1798,7 +2184,7 @@ fragment_add_seq_work(fragment_head *fd_head, tvbuff_t *tvb, const int offset,
 	 */
 	fragment_defragment_and_free(fd_head, pinfo);
 
-	return TRUE;
+	return true;
 }
 
 /*
@@ -1816,18 +2202,18 @@ fragment_add_seq_work(fragment_head *fd_head, tvbuff_t *tvb, const int offset,
 static fragment_head *
 fragment_add_seq_common(reassembly_table *table, tvbuff_t *tvb,
 			const int offset, const packet_info *pinfo,
-			const guint32 id, const void *data,
-			guint32 frag_number, const guint32 frag_data_len,
-			const gboolean more_frags, const guint32 flags,
-			gpointer *orig_keyp)
+			const uint32_t id, const void *data,
+			uint32_t frag_number, const uint32_t frag_data_len,
+			const bool more_frags, const uint32_t flags,
+			void * *orig_keyp)
 {
 	fragment_head *fd_head;
-	gpointer orig_key;
+	void *orig_key;
 
 	fd_head = lookup_fd_head(table, pinfo, id, data, &orig_key);
 
 	/* have we already seen this frame ?*/
-	if (pinfo->fd->flags.visited) {
+	if (pinfo->fd->visited) {
 		if (fd_head != NULL && fd_head->flags & FD_DEFRAGMENTED) {
 			if (orig_keyp != NULL)
 				*orig_keyp = orig_key;
@@ -1861,6 +2247,12 @@ fragment_add_seq_common(reassembly_table *table, tvbuff_t *tvb,
 			 */
 			if (orig_keyp != NULL)
 				*orig_keyp = NULL;
+			/* To save memory, we don't actually copy the
+			 * fragment from the tvbuff to the fragment, and in
+			 * process_reassembled_data just return back a subset
+			 * of the original tvbuff (which must be passed in).
+			 */
+			fd_head->len = frag_data_len;
 			fd_head->reassembled_in=pinfo->num;
 			fd_head->reas_in_layer_num = pinfo->curr_layer_num;
 			return fd_head;
@@ -1887,7 +2279,7 @@ fragment_add_seq_common(reassembly_table *table, tvbuff_t *tvb,
 			 * use the next expected fragment number as the fragment
 			 * number for this fragment.
 			 */
-			for (fd = fd_head; fd != NULL; fd = fd->next) {
+			for (fd = fd_head->next; fd != NULL; fd = fd->next) {
 				if (fd->next == NULL)
 					frag_number = fd->offset + 1;
 			}
@@ -1910,9 +2302,9 @@ fragment_add_seq_common(reassembly_table *table, tvbuff_t *tvb,
 
 fragment_head *
 fragment_add_seq(reassembly_table *table, tvbuff_t *tvb, const int offset,
-		 const packet_info *pinfo, const guint32 id, const void *data,
-		 const guint32 frag_number, const guint32 frag_data_len,
-		 const gboolean more_frags, const guint32 flags)
+		 const packet_info *pinfo, const uint32_t id, const void *data,
+		 const uint32_t frag_number, const uint32_t frag_data_len,
+		 const bool more_frags, const uint32_t flags)
 {
 	return fragment_add_seq_common(table, tvb, offset, pinfo, id, data,
 				       frag_number, frag_data_len,
@@ -1956,20 +2348,20 @@ fragment_add_seq(reassembly_table *table, tvbuff_t *tvb, const int offset,
 static fragment_head *
 fragment_add_seq_check_work(reassembly_table *table, tvbuff_t *tvb,
 			    const int offset, const packet_info *pinfo,
-			    const guint32 id, const void *data,
-			    const guint32 frag_number,
-			    const guint32 frag_data_len,
-			    const gboolean more_frags, const guint32 flags)
+			    const uint32_t id, const void *data,
+			    const uint32_t frag_number,
+			    const uint32_t frag_data_len,
+			    const bool more_frags, const uint32_t flags)
 {
 	reassembled_key reass_key;
 	fragment_head *fd_head;
-	gpointer orig_key;
+	void *orig_key;
 
 	/*
 	 * Have we already seen this frame?
 	 * If so, look for it in the table of reassembled packets.
 	 */
-	if (pinfo->fd->flags.visited) {
+	if (pinfo->fd->visited) {
 		reass_key.frame = pinfo->num;
 		reass_key.id = id;
 		return (fragment_head *)g_hash_table_lookup(table->reassembled_table, &reass_key);
@@ -2007,10 +2399,10 @@ fragment_add_seq_check_work(reassembly_table *table, tvbuff_t *tvb,
 
 fragment_head *
 fragment_add_seq_check(reassembly_table *table, tvbuff_t *tvb, const int offset,
-		       const packet_info *pinfo, const guint32 id,
+		       const packet_info *pinfo, const uint32_t id,
 		       const void *data,
-		       const guint32 frag_number, const guint32 frag_data_len,
-		       const gboolean more_frags)
+		       const uint32_t frag_number, const uint32_t frag_data_len,
+		       const bool more_frags)
 {
 	return fragment_add_seq_check_work(table, tvb, offset, pinfo, id, data,
 					   frag_number, frag_data_len,
@@ -2020,9 +2412,9 @@ fragment_add_seq_check(reassembly_table *table, tvbuff_t *tvb, const int offset,
 fragment_head *
 fragment_add_seq_802_11(reassembly_table *table, tvbuff_t *tvb,
 			const int offset, const packet_info *pinfo,
-			const guint32 id, const void *data,
-			const guint32 frag_number, const guint32 frag_data_len,
-			const gboolean more_frags)
+			const uint32_t id, const void *data,
+			const uint32_t frag_number, const uint32_t frag_data_len,
+			const bool more_frags)
 {
 	return fragment_add_seq_check_work(table, tvb, offset, pinfo, id, data,
 					   frag_number, frag_data_len,
@@ -2032,9 +2424,9 @@ fragment_add_seq_802_11(reassembly_table *table, tvbuff_t *tvb,
 
 fragment_head *
 fragment_add_seq_next(reassembly_table *table, tvbuff_t *tvb, const int offset,
-		      const packet_info *pinfo, const guint32 id,
-		      const void *data, const guint32 frag_data_len,
-		      const gboolean more_frags)
+		      const packet_info *pinfo, const uint32_t id,
+		      const void *data, const uint32_t frag_data_len,
+		      const bool more_frags)
 {
 	/* Use a dummy frag_number (0), it is ignored since
 	 * REASSEMBLE_FLAGS_NO_FRAG_NUMBER is set. */
@@ -2043,15 +2435,341 @@ fragment_add_seq_next(reassembly_table *table, tvbuff_t *tvb, const int offset,
 					   REASSEMBLE_FLAGS_NO_FRAG_NUMBER);
 }
 
+static void
+fragment_add_seq_single_move(reassembly_table *table, const packet_info *pinfo,
+		             const uint32_t id, const void *data,
+			     const uint32_t offset)
+{
+	fragment_head *fh, *new_fh;
+	fragment_item *fd, *prev_fd;
+	tvbuff_t *old_tvb_data;
+	if (offset == 0) {
+		return;
+	}
+	fh = lookup_fd_head(table, pinfo, id, data, NULL);
+	if (fh == NULL) {
+		/* Shouldn't be called this way.
+		 * Probably wouldn't hurt to just create fh in this case. */
+		ws_assert_not_reached();
+		return;
+	}
+	if (fh->flags & FD_DATALEN_SET && fh->datalen <= offset) {
+		/* Don't take from past the end. <= because we don't
+		 * want to take a First fragment from the next one
+		 * either */
+		return;
+	}
+	new_fh = lookup_fd_head(table, pinfo, id+offset, data, NULL);
+	if (new_fh != NULL) {
+		/* Attach to the end of the sorted list. */
+		prev_fd = NULL;
+		for(fd = fh->next; fd != NULL; fd=fd->next) {
+		    prev_fd = fd;
+		}
+		/* Don't take a reassembly starting with a First fragment. */
+		fd = new_fh->next;
+		if (fd && fd->offset != 0) {
+			fragment_item *inserted = fd;
+			bool multi_insert = (inserted->next != NULL);
+			if (prev_fd) {
+				prev_fd->next = fd;
+			} else {
+				fh->next = fd;
+			}
+			for (; fd; fd=fd->next) {
+				fd->offset += offset;
+				if (fh->frame < fd->frame) {
+					fh->frame = fd->frame;
+				}
+			}
+			update_first_gap(fh, inserted, multi_insert);
+			/* If previously found a Last fragment,
+			 * transfer that info to the new one. */
+			if (new_fh->flags & FD_DATALEN_SET) {
+				fh->flags |= FD_DATALEN_SET;
+				fh->datalen = new_fh->datalen + offset;
+			}
+			/* Now remove and delete */
+			new_fh->next = NULL;
+			old_tvb_data = fragment_delete(table, pinfo, id+offset, data);
+			if (old_tvb_data)
+				tvb_free(old_tvb_data);
+		}
+	}
+}
+
+static fragment_head *
+fragment_add_seq_single_work(reassembly_table *table, tvbuff_t *tvb,
+			     const int offset, const packet_info *pinfo,
+		             const uint32_t id, const void* data,
+			     const uint32_t frag_data_len,
+			     const bool first, const bool last,
+			     const uint32_t max_frags, const uint32_t max_age,
+			     const uint32_t flags)
+{
+	reassembled_key reass_key;
+	tvbuff_t *old_tvb_data;
+	void *orig_key;
+	fragment_head *fh, *new_fh;
+	fragment_item *fd, *prev_fd;
+	uint32_t frag_number, tmp_offset;
+	/* Have we already seen this frame?
+	 * If so, look for it in the table of reassembled packets.
+	 * Note here we store in the reassembly table by the single sequence
+	 * number rather than the sequence number of the First fragment. */
+	if (pinfo->fd->visited) {
+		reass_key.frame = pinfo->num;
+		reass_key.id = id;
+		fh = (fragment_head *)g_hash_table_lookup(table->reassembled_table, &reass_key);
+		return fh;
+	}
+	/* First let's figure out where we want to add our new fragment */
+	fh = NULL;
+	if (first) {
+		frag_number = 0;
+		fh = lookup_fd_head(table, pinfo, id-frag_number, data, NULL);
+		if ((flags & REASSEMBLE_FLAGS_AGING) &&
+		    fh && ((fh->frame + max_age) < pinfo->num)) {
+			old_tvb_data = fragment_delete(table, pinfo, id-frag_number, data);
+			if (old_tvb_data)
+				tvb_free(old_tvb_data);
+			fh = NULL;
+		}
+		if (fh == NULL) {
+			/* Not found. Create list-head. */
+			fh = new_head(FD_BLOCKSEQUENCE);
+			insert_fd_head(table, fh, pinfo, id-frag_number, data);
+		}
+		/* As this is the first fragment, we might have added segments
+		 * for this reassembly to the previous one in-progress. */
+		fd = NULL;
+		for (frag_number=1; frag_number < max_frags; frag_number++) {
+			new_fh = lookup_fd_head(table, pinfo, id-frag_number, data, NULL);
+			if (new_fh != NULL) {
+				prev_fd = NULL;
+				new_fh->frame = 0;
+				for (fd=new_fh->next; fd && fd->offset < frag_number; fd=fd->next) {
+					prev_fd = fd;
+					if (new_fh->frame < fd->frame) {
+						new_fh->frame = fd->frame;
+					}
+				}
+				if (prev_fd) {
+					prev_fd->next = NULL;
+				} else {
+					new_fh->next = NULL;
+				}
+				fragment_items_removed(new_fh, prev_fd);
+				break;
+			}
+		}
+		if (fd != NULL) {
+			tmp_offset = 0;
+			for (prev_fd = fd; prev_fd; prev_fd = prev_fd->next) {
+				prev_fd->offset -= frag_number;
+				tmp_offset = prev_fd->offset;
+				if (fh->frame < prev_fd->frame) {
+					fh->frame = prev_fd->frame;
+				}
+			}
+			MERGE_FRAG(fh, fd);
+			if (new_fh != NULL) {
+				/* If we've moved a Last packet, change datalen.
+			         * Second part of this test prob. redundant? */
+				if (new_fh->flags & FD_DATALEN_SET &&
+				    new_fh->datalen >= frag_number) {
+					fh->flags |= FD_DATALEN_SET;
+					fh->datalen = new_fh->datalen - frag_number;
+					new_fh->flags &= ~FD_DATALEN_SET;
+					new_fh->datalen = 0;
+				}
+				/* If we've moved all the fragments,
+				 * delete the old head */
+				if (new_fh->next == NULL) {
+					old_tvb_data = fragment_delete(table, pinfo, id-frag_number, data);
+					if (old_tvb_data)
+						tvb_free(old_tvb_data);
+				}
+			} else {
+			/* Look forward and take off the next (this is
+			 * necessary in some edge cases where max_frags
+			 * prevented some fragments from going on the
+			 * previous First, but they can go on this one. */
+				fragment_add_seq_single_move(table, pinfo, id,
+							     data, tmp_offset);
+			}
+		}
+		frag_number = 0; /* For the rest of the function */
+	} else {
+		for (frag_number=1; frag_number < max_frags; frag_number++) {
+			fh = lookup_fd_head(table, pinfo, id-frag_number, data, NULL);
+			if ((flags & REASSEMBLE_FLAGS_AGING) &&
+			    fh && ((fh->frame + max_age) < pinfo->num)) {
+				old_tvb_data = fragment_delete(table, pinfo, id-frag_number, data);
+				if (old_tvb_data)
+					tvb_free(old_tvb_data);
+				fh = NULL;
+			}
+			if (fh != NULL) {
+				if (fh->flags & FD_DATALEN_SET &&
+				    fh->datalen < frag_number) {
+					/* This fragment is after the Last
+					 * fragment, so must go after here. */
+					fh = NULL;
+				}
+				break;
+			}
+		}
+		if (fh == NULL) { /* Didn't find location, use default */
+			frag_number = 1;
+			/* Already looked for frag_number 1, so just create */
+			fh = new_head(FD_BLOCKSEQUENCE);
+			insert_fd_head(table, fh, pinfo, id-frag_number, data);
+		}
+	}
+	if (last) {
+		/* Look for fragments past the end set by this Last fragment. */
+		prev_fd = NULL;
+		for (fd=fh->next; fd && fd->offset <= frag_number; fd=fd->next) {
+			prev_fd = fd;
+		}
+		/* fd is now all fragments offset > frag_number (the Last).
+		 * It shouldn't have a fragment with offset frag_number+1,
+		 * as that would be a First fragment not marked as such.
+		 * However, this can happen if we had unreassembled fragments
+		 * (missing, or at the start of the capture) and we've also
+		 * looped around on the sequence numbers. It can also happen
+		 * if bit errors mess up Last or First. */
+		if (fd != NULL) {
+			if (prev_fd) {
+				prev_fd->next = NULL;
+			} else {
+			    fh->next = NULL;
+			}
+			fragment_items_removed(fh, prev_fd);
+			fh->frame = 0;
+			for (prev_fd=fh->next; prev_fd; prev_fd=prev_fd->next) {
+				if (fh->frame < prev_fd->frame) {
+					fh->frame = prev_fd->frame;
+				}
+			}
+			while (fd && fd->offset == frag_number+1) {
+				/* Definitely have bad data here. Best to
+				 * delete these and leave unreassembled. */
+				fragment_item *tmp_fd;
+				tmp_fd=fd->next;
+
+				if (fd->tvb_data && !(fd->flags & FD_SUBSET_TVB))
+					tvb_free(fd->tvb_data);
+				g_slice_free(fragment_item, fd);
+				fd=tmp_fd;
+			}
+		}
+		if (fd != NULL) {
+			/* Move these onto the next frame. */
+			new_fh = lookup_fd_head(table, pinfo, id+1, data, NULL);
+			if (new_fh==NULL) {
+				/* Not found. Create list-head. */
+				new_fh = new_head(FD_BLOCKSEQUENCE);
+				insert_fd_head(table, new_fh, pinfo, id+1, data);
+			}
+			tmp_offset = 0;
+			for (prev_fd = fd; prev_fd; prev_fd = prev_fd->next) {
+				prev_fd->offset -= (frag_number+1);
+				tmp_offset = prev_fd->offset;
+				if (new_fh->frame < fd->frame) {
+					new_fh->frame = fd->frame;
+				}
+			}
+			MERGE_FRAG(new_fh, fd);
+			/* If we previously found a different Last fragment,
+			 * transfer that information to the new reassembly. */
+			if (fh->flags & FD_DATALEN_SET &&
+			    fh->datalen > frag_number) {
+				new_fh->flags |= FD_DATALEN_SET;
+				new_fh->datalen = fh->datalen - (frag_number+1);
+				fh->flags &= ~FD_DATALEN_SET;
+				fh->datalen = 0;
+			} else {
+			/* Look forward and take off the next (this is
+			 * necessary in some edge cases where max_frags
+			 * prevented some fragments from going on the
+			 * previous First, but they can go on this one. */
+				fragment_add_seq_single_move(table, pinfo, id+1,
+							     data, tmp_offset);
+			}
+		}
+	} else {
+		fragment_add_seq_single_move(table, pinfo, id-frag_number, data,
+				             frag_number+1);
+	}
+	/* Having cleaned up everything, finally ready to add our new
+	 * fragment. Note that only this will ever complete a reassembly. */
+	fh = fragment_add_seq_common(table, tvb, offset, pinfo,
+					 id-frag_number, data,
+					 frag_number, frag_data_len,
+					 !last, 0, &orig_key);
+	if (fh) {
+		/*
+		 * Reassembly is complete.
+		 *
+		 * If this is in the table of in-progress reassemblies,
+		 * remove it from that table.  (It could be that this
+		 * was the first and last fragment, so that no
+		 * reassembly was done.)
+		 */
+		if (orig_key != NULL)
+			fragment_unhash(table, orig_key);
+
+		/*
+		 * Add this item to the table of reassembled packets.
+		 */
+		fragment_reassembled_single(table, fh, pinfo, id-frag_number);
+		return fh;
+	} else {
+		/*
+		 * Reassembly isn't complete.
+		 */
+		return NULL;
+	}
+}
+
+fragment_head *
+fragment_add_seq_single(reassembly_table *table, tvbuff_t *tvb,
+			     const int offset, const packet_info *pinfo,
+		             const uint32_t id, const void* data,
+			     const uint32_t frag_data_len,
+			     const bool first, const bool last,
+			     const uint32_t max_frags)
+{
+	return fragment_add_seq_single_work(table, tvb, offset, pinfo,
+					    id, data, frag_data_len,
+					    first, last, max_frags, 0, 0);
+}
+
+fragment_head *
+fragment_add_seq_single_aging(reassembly_table *table, tvbuff_t *tvb,
+			     const int offset, const packet_info *pinfo,
+		             const uint32_t id, const void* data,
+			     const uint32_t frag_data_len,
+			     const bool first, const bool last,
+			     const uint32_t max_frags, const uint32_t max_age)
+{
+	return fragment_add_seq_single_work(table, tvb, offset, pinfo,
+					    id, data, frag_data_len,
+					    first, last, max_frags, max_age,
+					    REASSEMBLE_FLAGS_AGING);
+}
+
 void
 fragment_start_seq_check(reassembly_table *table, const packet_info *pinfo,
-			 const guint32 id, const void *data,
-			 const guint32 tot_len)
+			 const uint32_t id, const void *data,
+			 const uint32_t tot_len)
 {
 	fragment_head *fd_head;
 
 	/* Have we already seen this frame ?*/
-	if (pinfo->fd->flags.visited) {
+	if (pinfo->fd->visited) {
 		return;
 	}
 
@@ -2062,8 +2780,9 @@ fragment_start_seq_check(reassembly_table *table, const packet_info *pinfo,
 		/* Create list-head. */
 		fd_head = g_slice_new(fragment_head);
 		fd_head->next = NULL;
+		fd_head->first_gap = NULL;
+		fd_head->contiguous_len = 0;
 		fd_head->frame = 0;
-		fd_head->offset = 0;
 		fd_head->len = 0;
 		fd_head->fragment_nr_offset = 0;
 		fd_head->datalen = tot_len;
@@ -2079,18 +2798,20 @@ fragment_start_seq_check(reassembly_table *table, const packet_info *pinfo,
 
 fragment_head *
 fragment_end_seq_next(reassembly_table *table, const packet_info *pinfo,
-		      const guint32 id, const void *data)
+		      const uint32_t id, const void *data)
 {
 	reassembled_key reass_key;
 	reassembled_key *new_key;
 	fragment_head *fd_head;
-	gpointer orig_key;
+	fragment_item *fd;
+	void *orig_key;
+	uint32_t max_offset = 0;
 
 	/*
 	 * Have we already seen this frame?
 	 * If so, look for it in the table of reassembled packets.
 	 */
-	if (pinfo->fd->flags.visited) {
+	if (pinfo->fd->visited) {
 		reass_key.frame = pinfo->num;
 		reass_key.id = id;
 		return (fragment_head *)g_hash_table_lookup(table->reassembled_table, &reass_key);
@@ -2099,7 +2820,12 @@ fragment_end_seq_next(reassembly_table *table, const packet_info *pinfo,
 	fd_head = lookup_fd_head(table, pinfo, id, data, &orig_key);
 
 	if (fd_head) {
-		fd_head->datalen = fd_head->offset;
+		for (fd = fd_head->next; fd; fd = fd->next) {
+			if (fd->offset > max_offset) {
+				max_offset = fd->offset;
+			}
+		}
+		fd_head->datalen = max_offset;
 		fd_head->flags |= FD_DATALEN_SET;
 
 		fragment_defragment_and_free (fd_head, pinfo);
@@ -2118,7 +2844,7 @@ fragment_end_seq_next(reassembly_table *table, const packet_info *pinfo,
 			new_key = g_slice_new(reassembled_key);
 			new_key->frame = pinfo->num;
 			new_key->id = id;
-			g_hash_table_insert(table->reassembled_table, new_key, fd_head);
+			reassembled_table_insert(table->reassembled_table, new_key, fd_head);
 		}
 
 		return fd_head;
@@ -2135,14 +2861,15 @@ fragment_end_seq_next(reassembly_table *table, const packet_info *pinfo,
  * was reassembled, put the fragment information into the protocol
  * tree, and construct a tvbuff with the reassembled data, otherwise
  * just put a "reassembled in" item into the protocol tree.
+ * offset from start of tvb, result up to end of tvb
  */
 tvbuff_t *
 process_reassembled_data(tvbuff_t *tvb, const int offset, packet_info *pinfo,
 	const char *name, fragment_head *fd_head, const fragment_items *fit,
-	gboolean *update_col_infop, proto_tree *tree)
+	bool *update_col_infop, proto_tree *tree)
 {
 	tvbuff_t *next_tvb;
-	gboolean update_col_info;
+	bool update_col_info;
 	proto_item *frag_tree_item;
 
 	if (fd_head != NULL && pinfo->num == fd_head->reassembled_in && pinfo->curr_layer_num == fd_head->reas_in_layer_num) {
@@ -2176,11 +2903,23 @@ process_reassembled_data(tvbuff_t *tvb, const int offset, packet_info *pinfo,
 		} else {
 			/*
 			 * No.
-			 * Return a tvbuff with the payload.
+			 * Return a tvbuff with the payload, a subset of the
+			 * tvbuff passed in. (The dissector SHOULD pass in
+			 * the correct tvbuff and offset.)
 			 */
-			next_tvb = tvb_new_subset_remaining(tvb, offset);
-			pinfo->fragmented = FALSE;	/* one-fragment packet */
-			update_col_info = TRUE;
+			int len;
+			/* For FD_BLOCKSEQUENCE, len is the length in bytes,
+			 * datalen is the number of fragments.
+			 */
+			if (fd_head->flags & FD_BLOCKSEQUENCE) {
+				len = fd_head->len;
+			} else {
+				// XXX Do the non-seq functions have this optimization?
+				len = fd_head->datalen;
+			}
+			next_tvb = tvb_new_subset_length(tvb, offset, len);
+			pinfo->fragmented = false;	/* one-fragment packet */
+			update_col_info = true;
 		}
 		if (update_col_infop != NULL)
 			*update_col_infop = update_col_info;
@@ -2198,9 +2937,10 @@ process_reassembled_data(tvbuff_t *tvb, const int offset, packet_info *pinfo,
 		 * add it to the protocol tree.
 		 */
 		if (fd_head != NULL && fit->hf_reassembled_in != NULL) {
-			proto_tree_add_uint(tree,
+			proto_item *fei = proto_tree_add_uint(tree,
 				*(fit->hf_reassembled_in), tvb,
 				0, 0, fd_head->reassembled_in);
+			proto_item_set_generated(fei);
 		}
 	}
 	return next_tvb;
@@ -2212,14 +2952,14 @@ process_reassembled_data(tvbuff_t *tvb, const int offset, packet_info *pinfo,
  */
 static void
 show_fragment(fragment_item *fd, const int offset, const fragment_items *fit,
-	proto_tree *ft, proto_item *fi, const gboolean first_frag,
-	const guint32 count, tvbuff_t *tvb, packet_info *pinfo)
+	proto_tree *ft, proto_item *fi, const bool first_frag,
+	const uint32_t count, tvbuff_t *tvb, packet_info *pinfo)
 {
 	proto_item *fei=NULL;
 	int hf;
 
 	if (first_frag) {
-		gchar *name;
+		char *name;
 		if (count == 1) {
 			name = g_strdup(proto_registrar_get_name(*(fit->hf_fragment)));
 		} else {
@@ -2256,8 +2996,8 @@ show_fragment(fragment_item *fd, const int offset, const fragment_items *fit,
 			fd->len,
 			plurality(fd->len, "", "s"));
 	}
-	PROTO_ITEM_SET_GENERATED(fei);
-	mark_frame_as_depended_upon(pinfo, fd->frame);
+	proto_item_set_generated(fei);
+	mark_frame_as_depended_upon(pinfo->fd, fd->frame);
 	if (fd->flags & (FD_OVERLAP|FD_OVERLAPCONFLICT
 		|FD_MULTIPLETAILS|FD_TOOLONGFRAGMENT) ) {
 		/* this fragment has some flags set, create a subtree
@@ -2270,92 +3010,92 @@ show_fragment(fragment_item *fd, const int offset, const fragment_items *fit,
 			fei=proto_tree_add_boolean(fet,
 				*(fit->hf_fragment_overlap),
 				tvb, 0, 0,
-				TRUE);
-			PROTO_ITEM_SET_GENERATED(fei);
+				true);
+			proto_item_set_generated(fei);
 		}
 		if (fd->flags&FD_OVERLAPCONFLICT) {
 			fei=proto_tree_add_boolean(fet,
 				*(fit->hf_fragment_overlap_conflict),
 				tvb, 0, 0,
-				TRUE);
-			PROTO_ITEM_SET_GENERATED(fei);
+				true);
+			proto_item_set_generated(fei);
 		}
 		if (fd->flags&FD_MULTIPLETAILS) {
 			fei=proto_tree_add_boolean(fet,
 				*(fit->hf_fragment_multiple_tails),
 				tvb, 0, 0,
-				TRUE);
-			PROTO_ITEM_SET_GENERATED(fei);
+				true);
+			proto_item_set_generated(fei);
 		}
 		if (fd->flags&FD_TOOLONGFRAGMENT) {
 			fei=proto_tree_add_boolean(fet,
 				*(fit->hf_fragment_too_long_fragment),
 				tvb, 0, 0,
-				TRUE);
-			PROTO_ITEM_SET_GENERATED(fei);
+				true);
+			proto_item_set_generated(fei);
 		}
 	}
 }
 
-static gboolean
+static bool
 show_fragment_errs_in_col(fragment_head *fd_head, const fragment_items *fit,
 	packet_info *pinfo)
 {
 	if (fd_head->flags & (FD_OVERLAPCONFLICT
 		|FD_MULTIPLETAILS|FD_TOOLONGFRAGMENT) ) {
 		col_add_fstr(pinfo->cinfo, COL_INFO, "[Illegal %s]", fit->tag);
-		return TRUE;
+		return true;
 	}
 
-	return FALSE;
+	return false;
 }
 
 /* This function will build the fragment subtree; it's for fragments
    reassembled with "fragment_add()".
 
-   It will return TRUE if there were fragmentation errors
-   or FALSE if fragmentation was ok.
+   It will return true if there were fragmentation errors
+   or false if fragmentation was ok.
 */
-gboolean
+bool
 show_fragment_tree(fragment_head *fd_head, const fragment_items *fit,
 	proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, proto_item **fi)
 {
 	fragment_item *fd;
 	proto_tree *ft;
-	gboolean first_frag;
-	guint32 count = 0;
+	bool first_frag;
+	uint32_t count = 0;
 	/* It's not fragmented. */
-	pinfo->fragmented = FALSE;
+	pinfo->fragmented = false;
 
 	*fi = proto_tree_add_item(tree, *(fit->hf_fragments), tvb, 0, -1, ENC_NA);
-	PROTO_ITEM_SET_GENERATED(*fi);
+	proto_item_set_generated(*fi);
 
 	ft = proto_item_add_subtree(*fi, *(fit->ett_fragments));
-	first_frag = TRUE;
+	first_frag = true;
 	for (fd = fd_head->next; fd != NULL; fd = fd->next) {
 		count++;
 	}
 	for (fd = fd_head->next; fd != NULL; fd = fd->next) {
 		show_fragment(fd, fd->offset, fit, ft, *fi, first_frag, count, tvb, pinfo);
-		first_frag = FALSE;
+		first_frag = false;
 	}
 
 	if (fit->hf_fragment_count) {
 		proto_item *fli = proto_tree_add_uint(ft, *(fit->hf_fragment_count),
 						      tvb, 0, 0, count);
-		PROTO_ITEM_SET_GENERATED(fli);
+		proto_item_set_generated(fli);
 	}
 
 	if (fit->hf_reassembled_length) {
 		proto_item *fli = proto_tree_add_uint(ft, *(fit->hf_reassembled_length),
 						      tvb, 0, 0, tvb_captured_length (tvb));
-		PROTO_ITEM_SET_GENERATED(fli);
+		proto_item_set_generated(fli);
 	}
 
 	if (fit->hf_reassembled_data) {
 		proto_item *fli = proto_tree_add_item(ft, *(fit->hf_reassembled_data),
 						      tvb, 0, tvb_captured_length(tvb), ENC_NA);
-		PROTO_ITEM_SET_GENERATED(fli);
+		proto_item_set_generated(fli);
 	}
 
 	return show_fragment_errs_in_col(fd_head, fit, pinfo);
@@ -2364,29 +3104,29 @@ show_fragment_tree(fragment_head *fd_head, const fragment_items *fit,
 /* This function will build the fragment subtree; it's for fragments
    reassembled with "fragment_add_seq()" or "fragment_add_seq_check()".
 
-   It will return TRUE if there were fragmentation errors
-   or FALSE if fragmentation was ok.
+   It will return true if there were fragmentation errors
+   or false if fragmentation was ok.
 */
-gboolean
+bool
 show_fragment_seq_tree(fragment_head *fd_head, const fragment_items *fit,
 	proto_tree *tree, packet_info *pinfo, tvbuff_t *tvb, proto_item **fi)
 {
-	guint32 offset, next_offset, count = 0;
+	uint32_t offset, next_offset, count = 0;
 	fragment_item *fd, *last_fd;
 	proto_tree *ft;
-	gboolean first_frag;
+	bool first_frag;
 
 	/* It's not fragmented. */
-	pinfo->fragmented = FALSE;
+	pinfo->fragmented = false;
 
 	*fi = proto_tree_add_item(tree, *(fit->hf_fragments), tvb, 0, -1, ENC_NA);
-	PROTO_ITEM_SET_GENERATED(*fi);
+	proto_item_set_generated(*fi);
 
 	ft = proto_item_add_subtree(*fi, *(fit->ett_fragments));
 	offset = 0;
 	next_offset = 0;
 	last_fd = NULL;
-	first_frag = TRUE;
+	first_frag = true;
 	for (fd = fd_head->next; fd != NULL; fd = fd->next){
 		count++;
 	}
@@ -2397,32 +3137,445 @@ show_fragment_seq_tree(fragment_head *fd_head, const fragment_items *fit,
 		}
 		last_fd = fd;
 		show_fragment(fd, offset, fit, ft, *fi, first_frag, count, tvb, pinfo);
-		first_frag = FALSE;
+		first_frag = false;
 	}
 
 	if (fit->hf_fragment_count) {
 		proto_item *fli = proto_tree_add_uint(ft, *(fit->hf_fragment_count),
 						      tvb, 0, 0, count);
-		PROTO_ITEM_SET_GENERATED(fli);
+		proto_item_set_generated(fli);
 	}
 
 	if (fit->hf_reassembled_length) {
 		proto_item *fli = proto_tree_add_uint(ft, *(fit->hf_reassembled_length),
 						      tvb, 0, 0, tvb_captured_length (tvb));
-		PROTO_ITEM_SET_GENERATED(fli);
+		proto_item_set_generated(fli);
 	}
 
 	if (fit->hf_reassembled_data) {
 		proto_item *fli = proto_tree_add_item(ft, *(fit->hf_reassembled_data),
 						      tvb, 0, tvb_captured_length(tvb), ENC_NA);
-		PROTO_ITEM_SET_GENERATED(fli);
+		proto_item_set_generated(fli);
 	}
 
 	return show_fragment_errs_in_col(fd_head, fit, pinfo);
 }
 
+static void
+reassembly_table_init_reg_table(void *p, void *user_data _U_)
+{
+	register_reassembly_table_t* reg_table = (register_reassembly_table_t*)p;
+	reassembly_table_init(reg_table->table, reg_table->funcs);
+}
+
+static void
+reassembly_table_init_reg_tables(void)
+{
+	g_list_foreach(reassembly_table_list, reassembly_table_init_reg_table, NULL);
+}
+
+static void
+reassembly_table_cleanup_reg_table(void *p, void *user_data _U_)
+{
+	register_reassembly_table_t* reg_table = (register_reassembly_table_t*)p;
+	reassembly_table_destroy(reg_table->table);
+}
+
+static void
+reassembly_table_cleanup_reg_tables(void)
+{
+	g_list_foreach(reassembly_table_list, reassembly_table_cleanup_reg_table, NULL);
+}
+
+void reassembly_tables_init(void)
+{
+	register_init_routine(&reassembly_table_init_reg_tables);
+	register_cleanup_routine(&reassembly_table_cleanup_reg_tables);
+}
+
+static void
+reassembly_table_free(void *p, void *user_data _U_)
+{
+	register_reassembly_table_t* reg_table = (register_reassembly_table_t*)p;
+	reassembly_table_destroy(reg_table->table);
+	g_free(reg_table);
+}
+
+void
+reassembly_table_cleanup(void)
+{
+	g_list_foreach(reassembly_table_list, reassembly_table_free, NULL);
+	g_list_free(reassembly_table_list);
+}
+
+/* One instance of this structure is created for each pdu that spans across
+ * multiple segments. (MSP) */
+typedef struct _multisegment_pdu_t {
+	uint64_t first_frame;
+	uint64_t last_frame;
+	unsigned start_offset_at_first_frame;
+	unsigned end_offset_at_last_frame;
+	int length; /* length of this MSP */
+	uint32_t streaming_reassembly_id;
+	/* pointer to previous multisegment_pdu */
+	struct _multisegment_pdu_t* prev_msp;
+} multisegment_pdu_t;
+
+/* struct for keeping the reassembly information of each stream */
+struct streaming_reassembly_info_t {
+	/* This map is keyed by frame num and keeps track of all MSPs for this
+	 * stream. Different frames will point to the same MSP if they contain
+	 * part data of this MSP. If a frame contains data that
+	 * belongs to two MSPs, it will point to the second MSP. */
+	wmem_map_t* multisegment_pdus;
+	/* This map is keyed by frame num and keeps track of the frag_offset
+	 * of the first byte of frames for fragment_add() after first scan. */
+	wmem_map_t* frame_num_frag_offset_map;
+	/* how many bytes the current uncompleted MSP still needs. (only valid for first scan) */
+	int prev_deseg_len;
+	/* the current uncompleted MSP (only valid for first scan) */
+	multisegment_pdu_t* last_msp;
+};
+
+static uint32_t
+create_streaming_reassembly_id(void)
+{
+	static uint32_t global_streaming_reassembly_id = 0;
+	return ++global_streaming_reassembly_id;
+}
+
+streaming_reassembly_info_t*
+streaming_reassembly_info_new(void)
+{
+	return wmem_new0(wmem_file_scope(), streaming_reassembly_info_t);
+}
+
+/* Following is an example of ProtoA and ProtoB protocols from the declaration of this function in 'reassemble.h':
+ *
+ *                 +------------------ A Multisegment PDU of ProtoB ----------------------+
+ *                 |                                                                      |
+ * +--- ProtoA payload1 ---+   +- payload2 -+  +- Payload3 -+  +- Payload4 -+   +- ProtoA payload5 -+
+ * | EoMSP | OmNFP | BoMSP |   |    MoMSP   |  |    MoMSP   |  |    MoMSP   |   |  EoMSP  |  BoMSP  |
+ * +-------+-------+-------+   +------------+  +------------+  +------------+   +---------+---------+
+ *                 |                                                                      |
+ *                 +----------------------------------------------------------------------+
+ *
+ * For a ProtoA payload composed of EoMSP + OmNFP + BoMSP will call fragment_add() twice on EoMSP and BoMSP; and call
+ * process_reassembled_data() once for generating tvb of a MSP to which EoMSP belongs; and call subdissector twice on
+ * reassembled MSP of EoMSP and OmNFP + BoMSP. After that finds BoMSP is a beginning of a MSP at first scan.
+ *
+ * The rules are:
+ *
+ *  - If a ProtoA payload contains EoMSP, we will need call fragment_add(), process_reassembled_data() and subdissector
+ *    once on it to end a MSP. (May run twice or more times at first scan, because subdissector may only return the
+ *    head length of message by pinfo->desegment_len. We need run second time for subdissector to determine the length
+ *    of entire message).
+ *
+ * - If a ProtoA payload contains OmNFP, we will need only call subdissector once on it. The subdissector need dissect
+ *    all non-fragment PDUs in it. (no desegment_len should output)
+ *
+ *  - If a ProtoA payload contains BoMSP, we will need call subdissector once on BoMSP or OmNFP+BoMSP (because unknown
+ *    during first scan). The subdissector will output desegment_len (!= 0). Then we will call fragment_add()
+ *    with a new reassembly id on BoMSP for starting a new MSP.
+ *
+ *  - If a ProtoA payload only contains MoMSP (entire payload is part of a MSP), we will only call fragment_add() once
+ *    or twice (at first scan) on it. The subdissector will not be called.
+ *
+ * In this implementation, only multisegment PDUs are recorded in multisegment_pdus map keyed by the numbers (uint64_t)
+ * of frames belongs to MSPs. Each MSP in the map has a pointer referred to previous MSP, because we may need
+ * two MSPs to dissect a ProtoA payload that contains EoMSP + BoMSP at the same time. The multisegment_pdus map is built
+ * during first scan (pinfo->visited == false) with help of prev_deseg_len and last_msp fields of streaming_reassembly_info_t
+ * for each direction of a ProtoA STREAM. The prev_deseg_len record how many bytes of subsequent ProtoA payloads belong to
+ * previous PDU during first scan. The last_msp member of streaming_reassembly_info_t is always point to last MSP which
+ * is created during scan previous or early ProtoA payloads. Since subdissector might return only the head length of entire
+ * message (by pinfo->desegment_len) when there is not enough data to determine the message length, we need to reopen
+ * reassembly fragments for adding more bytes during scanning the next ProtoA payload. We have to use fragment_add()
+ * instead of fragment_add_check() or fragment_add_seq_next().
+ *
+ * Read more: please refer to comments of the declaration of this function in 'reassemble.h'.
+ */
+int
+reassemble_streaming_data_and_call_subdissector(
+	tvbuff_t* tvb, packet_info* pinfo, unsigned offset, int length,
+	proto_tree* segment_tree, proto_tree* reassembled_tree, reassembly_table streaming_reassembly_table,
+	streaming_reassembly_info_t* reassembly_info, uint64_t cur_frame_num,
+	dissector_handle_t subdissector_handle, proto_tree* subdissector_tree, void* subdissector_data,
+	const char* label, const fragment_items* frag_hf_items, int hf_segment_data
+)
+{
+	int orig_length = length;
+	int datalen = 0;
+	int bytes_belong_to_prev_msp = 0; /* bytes belong to previous MSP */
+	uint32_t reassembly_id = 0, frag_offset = 0;
+	fragment_head* head = NULL;
+	bool need_more = false;
+	bool found_BoMSP = false;
+	multisegment_pdu_t* cur_msp = NULL, * prev_msp = NULL;
+	uint16_t save_can_desegment;
+	int save_desegment_offset;
+	uint32_t save_desegment_len;
+	uint64_t* frame_ptr;
+
+	save_can_desegment = pinfo->can_desegment;
+	save_desegment_offset = pinfo->desegment_offset;
+	save_desegment_len = pinfo->desegment_len;
+
+	/* calculate how many bytes of this payload belongs to previous MSP (EoMSP) */
+	if (!PINFO_FD_VISITED(pinfo)) {
+		/* this is first scan */
+		if (reassembly_info->prev_deseg_len == DESEGMENT_ONE_MORE_SEGMENT) {
+			/* assuming the entire tvb belongs to the previous MSP */
+			bytes_belong_to_prev_msp = length;
+			reassembly_info->prev_deseg_len = length;
+		} else if (reassembly_info->prev_deseg_len > 0) {
+			/* part or all of current payload belong to previous MSP */
+			bytes_belong_to_prev_msp = MIN(reassembly_info->prev_deseg_len, length);
+			reassembly_info->prev_deseg_len -= bytes_belong_to_prev_msp;
+			need_more = (reassembly_info->prev_deseg_len > 0);
+		} /* else { beginning of a new PDU (might be a NFP or MSP) } */
+
+		if (bytes_belong_to_prev_msp > 0) {
+			DISSECTOR_ASSERT(reassembly_info->last_msp != NULL);
+			reassembly_id = reassembly_info->last_msp->streaming_reassembly_id;
+			frag_offset = reassembly_info->last_msp->length;
+			if (reassembly_info->frame_num_frag_offset_map == NULL) {
+				reassembly_info->frame_num_frag_offset_map = wmem_map_new(wmem_file_scope(), g_int64_hash, g_int64_equal);
+			}
+			frame_ptr = (uint64_t*)wmem_memdup(wmem_file_scope(), &cur_frame_num, sizeof(uint64_t));
+			wmem_map_insert(reassembly_info->frame_num_frag_offset_map, frame_ptr, GUINT_TO_POINTER(frag_offset));
+			/* This payload contains the data of previous msp, so we point to it. That may be overridden late. */
+			wmem_map_insert(reassembly_info->multisegment_pdus, frame_ptr, reassembly_info->last_msp);
+		}
+	} else {
+		/* not first scan, use information of multisegment_pdus built during first scan */
+		if (reassembly_info->multisegment_pdus) {
+			cur_msp = (multisegment_pdu_t*)wmem_map_lookup(reassembly_info->multisegment_pdus, &cur_frame_num);
+		}
+		if (cur_msp) {
+			if (cur_msp->first_frame == cur_frame_num) {
+				/* Current payload contains a beginning of a MSP. (BoMSP)
+				 * The cur_msp contains information about the beginning MSP.
+				 * If prev_msp is not null, that means this payload also contains
+				 * the last part of previous MSP. (EoMSP) */
+				prev_msp = cur_msp->prev_msp;
+			} else {
+				/* Current payload is not a first frame of a MSP (not include BoMSP). */
+				prev_msp = cur_msp;
+				cur_msp = NULL;
+			}
+		}
+
+		if (prev_msp && prev_msp->last_frame >= cur_frame_num) {
+			if (prev_msp->last_frame == cur_frame_num) {
+				/* this payload contains part of previous MSP (contains EoMSP) */
+				bytes_belong_to_prev_msp = prev_msp->end_offset_at_last_frame - offset;
+			} else { /* if (prev_msp->last_frame > cur_frame_num) */
+			    /* this payload all belongs to previous MSP */
+				bytes_belong_to_prev_msp = length;
+				need_more = true;
+			}
+			reassembly_id = prev_msp->streaming_reassembly_id;
+		}
+		if (reassembly_info->frame_num_frag_offset_map) {
+			frag_offset = GPOINTER_TO_UINT(wmem_map_lookup(reassembly_info->frame_num_frag_offset_map, &cur_frame_num));
+		}
+	}
+
+	/* handling EoMSP or MoMSP (entire payload being middle part of a MSP) */
+	while (bytes_belong_to_prev_msp > 0) {
+		tvbuff_t* reassembled_tvb = NULL;
+		DISSECTOR_ASSERT(reassembly_id > 0);
+		pinfo->can_desegment = 2; /* this will be decreased one while passing to subdissector */
+		pinfo->desegment_offset = 0;
+		pinfo->desegment_len = 0;
+
+		head = fragment_add(&streaming_reassembly_table, tvb, offset, pinfo, reassembly_id, NULL,
+			frag_offset, bytes_belong_to_prev_msp, need_more);
+
+		if (head) {
+			if (frag_hf_items->hf_reassembled_in) {
+				proto_item_set_generated(
+					proto_tree_add_uint(segment_tree, *(frag_hf_items->hf_reassembled_in), tvb, offset,
+						bytes_belong_to_prev_msp, head->reassembled_in)
+				);
+			}
+
+			if (!need_more) {
+				reassembled_tvb = process_reassembled_data(tvb, offset, pinfo,
+					wmem_strdup_printf(pinfo->pool, "Reassembled %s", label),
+					head, frag_hf_items, NULL, reassembled_tree);
+			}
+		}
+
+		proto_tree_add_bytes_format(segment_tree, hf_segment_data, tvb, offset,
+			bytes_belong_to_prev_msp, NULL, "%s Segment data (%u byte%s)", label,
+			bytes_belong_to_prev_msp, plurality(bytes_belong_to_prev_msp, "", "s"));
+
+		if (reassembled_tvb) {
+			/* normally, this stage will dissect one or more completed pdus */
+			/* Note, don't call_dissector_with_data because sometime the pinfo->curr_layer_num will changed
+			 * after calling that will make reassembly failed! */
+			call_dissector_only(subdissector_handle, reassembled_tvb, pinfo, subdissector_tree, subdissector_data);
+		}
+
+		if (pinfo->desegment_len) {
+			/* that must only happen during first scan the reassembly_info->prev_deseg_len might be only the
+			 * head length of entire message. */
+			DISSECTOR_ASSERT(!PINFO_FD_VISITED(pinfo));
+			DISSECTOR_ASSERT_HINT(pinfo->desegment_len != DESEGMENT_UNTIL_FIN, "Subdissector MUST NOT "
+				"set pinfo->desegment_len to DESEGMENT_UNTIL_FIN. Instead, it can set pinfo->desegment_len to "
+				" DESEGMENT_ONE_MORE_SEGMENT or the length of head if the length of entire message is not able to be determined.");
+
+			if (pinfo->desegment_offset > 0) {
+				DISSECTOR_ASSERT_HINT(pinfo->desegment_offset > reassembly_info->last_msp->length
+					&& pinfo->desegment_offset < reassembly_info->last_msp->length + bytes_belong_to_prev_msp,
+					wmem_strdup_printf(pinfo->pool,
+						"Subdissector MUST NOT set pinfo->desegment_offset(%d) in previous or next part of MSP, must between (%d, %d).",
+						pinfo->desegment_offset, reassembly_info->last_msp->length, reassembly_info->last_msp->length + bytes_belong_to_prev_msp));
+
+				/* shorten the bytes_belong_to_prev_msp and just truncate the reassembled tvb */
+				bytes_belong_to_prev_msp = pinfo->desegment_offset - reassembly_info->last_msp->length;
+				fragment_truncate(&streaming_reassembly_table, pinfo, reassembly_id, NULL, pinfo->desegment_offset);
+				found_BoMSP = true;
+			} else {
+				if (pinfo->desegment_len == DESEGMENT_ONE_MORE_SEGMENT) {
+					/* just need more bytes, all remaining bytes belongs to previous MSP (to run fragment_add again) */
+					bytes_belong_to_prev_msp = length;
+				}
+
+				/* Remove the data added by previous fragment_add(), and reopen fragments for adding more bytes. */
+				fragment_truncate(&streaming_reassembly_table, pinfo, reassembly_id, NULL, reassembly_info->last_msp->length);
+				fragment_set_partial_reassembly(&streaming_reassembly_table, pinfo, reassembly_id, NULL);
+
+				reassembly_info->prev_deseg_len = bytes_belong_to_prev_msp + pinfo->desegment_len;
+				bytes_belong_to_prev_msp = MIN(reassembly_info->prev_deseg_len, length);
+				reassembly_info->prev_deseg_len -= bytes_belong_to_prev_msp;
+				need_more = (reassembly_info->prev_deseg_len > 0);
+				continue;
+			}
+		}
+
+		if (pinfo->desegment_len == 0 || found_BoMSP) {
+			/* We will arrive here, only when the MSP is defragmented and dissected or this
+			 * payload all belongs to previous MSP (only fragment_add() with need_more=true called)
+			 * or BoMSP is parsed while pinfo->desegment_offset > 0 and pinfo->desegment_len != 0
+			 */
+			offset += bytes_belong_to_prev_msp;
+			length -= bytes_belong_to_prev_msp;
+			DISSECTOR_ASSERT(length >= 0);
+			if (!PINFO_FD_VISITED(pinfo)) {
+				reassembly_info->last_msp->length += bytes_belong_to_prev_msp;
+			}
+
+			if (!PINFO_FD_VISITED(pinfo) && reassembled_tvb) {
+				/* completed current msp */
+				reassembly_info->last_msp->last_frame = cur_frame_num;
+				reassembly_info->last_msp->end_offset_at_last_frame = offset;
+				reassembly_info->prev_deseg_len = pinfo->desegment_len;
+			}
+			bytes_belong_to_prev_msp = 0; /* break */
+		}
+	}
+
+	/* to find and handle OmNFP, and find BoMSP at first scan. */
+	if (length > 0 && !found_BoMSP) {
+		if (!PINFO_FD_VISITED(pinfo)) {
+			/* It is first scan, to dissect remaining bytes to find whether it is OmNFP only, or BoMSP only or OmNFP + BoMSP. */
+			datalen = length;
+			DISSECTOR_ASSERT(cur_msp == NULL);
+		} else {
+			/* Not first scan */
+			if (cur_msp) {
+				/* There's a BoMSP. Let's calculate the length of OmNFP between EoMSP and BoMSP */
+				datalen = cur_msp->start_offset_at_first_frame - offset; /* if result is zero that means no OmNFP */
+			} else {
+				/* This payload is not a beginning of MSP. The remaining bytes all belong to OmNFP without BoMSP */
+				datalen = length;
+			}
+		}
+		DISSECTOR_ASSERT(datalen >= 0);
+
+		/* Dissect the remaining of this payload. If (datalen == 0) means remaining only have one BoMSP without OmNFP. */
+		if (datalen > 0) {
+			/* we dissect if it is not dissected before or it is a non-fragment pdu (between two multisegment pdus) */
+			pinfo->can_desegment = 2;
+			pinfo->desegment_offset = 0;
+			pinfo->desegment_len = 0;
+
+			call_dissector_only(subdissector_handle, tvb_new_subset_length(tvb, offset, datalen),
+				pinfo, subdissector_tree, subdissector_data);
+
+			if (pinfo->desegment_len) {
+				DISSECTOR_ASSERT_HINT(pinfo->desegment_len != DESEGMENT_UNTIL_FIN, "Subdissector MUST NOT "
+					"set pinfo->desegment_len to DESEGMENT_UNTIL_FIN. Instead, it can set pinfo->desegment_len to "
+					" DESEGMENT_ONE_MORE_SEGMENT or the length of head if the length of entire message is not able to be determined.");
+				/* only happen during first scan */
+				DISSECTOR_ASSERT(!PINFO_FD_VISITED(pinfo) && datalen == length);
+				offset += pinfo->desegment_offset;
+				length -= pinfo->desegment_offset;
+			} else {
+				/* all remaining bytes are consumed by subdissector */
+				offset += datalen;
+				length -= datalen;
+			}
+			if (!PINFO_FD_VISITED(pinfo)) {
+				reassembly_info->prev_deseg_len = pinfo->desegment_len;
+			}
+		} /* else all remaining bytes (BoMSP) belong to a new MSP  */
+		DISSECTOR_ASSERT(length >= 0);
+	}
+
+	/* handling BoMSP */
+	if (length > 0) {
+		col_append_sep_fstr(pinfo->cinfo, COL_INFO, " ", "[%s segment of a reassembled PDU] ", label);
+		if (!PINFO_FD_VISITED(pinfo)) {
+			/* create a msp for current frame during first scan */
+			cur_msp = wmem_new0(wmem_file_scope(), multisegment_pdu_t);
+			cur_msp->first_frame = cur_frame_num;
+			cur_msp->last_frame = UINT64_MAX;
+			cur_msp->start_offset_at_first_frame = offset;
+			cur_msp->length = length;
+			cur_msp->streaming_reassembly_id = reassembly_id = create_streaming_reassembly_id();
+			cur_msp->prev_msp = reassembly_info->last_msp;
+			reassembly_info->last_msp = cur_msp;
+			if (reassembly_info->multisegment_pdus == NULL) {
+				reassembly_info->multisegment_pdus = wmem_map_new(wmem_file_scope(), g_int64_hash, g_int64_equal);
+			}
+			frame_ptr = (uint64_t*)wmem_memdup(wmem_file_scope(), &cur_frame_num, sizeof(uint64_t));
+			wmem_map_insert(reassembly_info->multisegment_pdus, frame_ptr, cur_msp);
+		} else {
+			DISSECTOR_ASSERT(cur_msp && cur_msp->start_offset_at_first_frame == offset);
+			reassembly_id = cur_msp->streaming_reassembly_id;
+		}
+		/* add first fragment of the new MSP to reassembly table */
+		head = fragment_add(&streaming_reassembly_table, tvb, offset, pinfo, reassembly_id,
+			NULL, 0, length, true);
+
+		if (head && frag_hf_items->hf_reassembled_in) {
+			proto_item_set_generated(
+				proto_tree_add_uint(segment_tree, *(frag_hf_items->hf_reassembled_in),
+					tvb, offset, length, head->reassembled_in)
+			);
+		}
+		proto_tree_add_bytes_format(segment_tree, hf_segment_data, tvb, offset, length,
+			NULL, "%s Segment data (%u byte%s)", label, length, plurality(length, "", "s"));
+	}
+
+	pinfo->can_desegment = save_can_desegment;
+	pinfo->desegment_offset = save_desegment_offset;
+	pinfo->desegment_len = save_desegment_len;
+
+	return orig_length;
+}
+
+int
+additional_bytes_expected_to_complete_reassembly(streaming_reassembly_info_t* reassembly_info)
+{
+	return reassembly_info->prev_deseg_len;
+}
+
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

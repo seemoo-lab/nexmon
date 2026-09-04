@@ -8,216 +8,168 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include <config.h>
+#define WS_LOG_DOMAIN  LOG_DOMAIN_MAIN
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
 #include <locale.h>
-#include <errno.h>
 
-#ifdef HAVE_GETOPT_H
-#include <getopt.h>
-#endif
+#include <wsutil/ws_getopt.h>
 
 #include <glib.h>
 
 #include <wiretap/wtap.h>
 
-#include <wsutil/crash_info.h>
+#include <wsutil/cmdarg_err.h>
 #include <wsutil/file_util.h>
 #include <wsutil/filesystem.h>
 #include <wsutil/privileges.h>
-#include <ws_version_info.h>
+#include <cli_main.h>
+#include <wsutil/version_info.h>
 
 #ifdef HAVE_PLUGINS
 #include <wsutil/plugins.h>
 #endif
 
-#include <wsutil/report_err.h>
 #include <wsutil/str_util.h>
+#include <ws_exit_codes.h>
+#include <wsutil/clopts_common.h>
+#include <wsutil/wslog.h>
 
-#ifdef _WIN32
-#include <wsutil/unicode-utils.h>
-#endif /* _WIN32 */
-
-#ifndef HAVE_GETOPT_LONG
-#include "wsutil/wsgetopt.h"
-#endif
+#include "ui/failure_message.h"
 
 static void
 print_usage(FILE *output)
 {
-  fprintf(output, "\n");
-  fprintf(output, "Usage: captype <infile> ...\n");
+    fprintf(output, "\n");
+    fprintf(output, "Usage: captype [options] <infile> ...\n");
+    fprintf(output, "\n");
+    fprintf(output, "Miscellaneous:\n");
+    fprintf(output, "  -h, --help               display this help and exit\n");
+    fprintf(output, "  -v, --version            display version info and exit\n");
 }
-
-#ifdef HAVE_PLUGINS
-/*
- *  Don't report failures to load plugins because most (non-wiretap) plugins
- *  *should* fail to load (because we're not linked against libwireshark and
- *  dissector plugins need libwireshark).
- */
-static void
-failure_message(const char *msg_format _U_, va_list ap _U_)
-{
-  return;
-}
-#endif
 
 int
 main(int argc, char *argv[])
 {
-  GString *comp_info_str;
-  GString *runtime_info_str;
-  wtap  *wth;
-  int    err;
-  gchar *err_info;
-  int    i;
-  int    opt;
-  int    overall_error_status;
-  static const struct option long_options[] = {
-      {"help", no_argument, NULL, 'h'},
-      {"version", no_argument, NULL, 'v'},
-      {0, 0, 0, 0 }
-  };
+    char  *configuration_init_error;
+    wtap  *wth;
+    int    err;
+    char *err_info;
+    int    i;
+    int    opt;
+    int    overall_error_status;
+    static const struct ws_option long_options[] = {
+        {"help", ws_no_argument, NULL, 'h'},
+        {"version", ws_no_argument, NULL, 'v'},
+        LONGOPT_WSLOG
+        {0, 0, 0, 0 }
+    };
+#define OPTSTRING "hv"
+    static const char optstring[] = OPTSTRING;
 
-#ifdef HAVE_PLUGINS
-  char  *init_progfile_dir_error;
+    /* Set the program name. */
+    g_set_prgname("captype");
+
+    /*
+     * Set the C-language locale to the native environment and set the
+     * code page to UTF-8 on Windows.
+     */
+#ifdef _WIN32
+    setlocale(LC_ALL, ".UTF-8");
+#else
+    setlocale(LC_ALL, "");
 #endif
 
-  /* Set the C-language locale to the native environment. */
-  setlocale(LC_ALL, "");
+    cmdarg_err_init(stderr_cmdarg_err, stderr_cmdarg_err_cont);
 
-  /* Get the compile-time version information string */
-  comp_info_str = get_compiled_version_info(NULL, NULL);
+    /* Initialize log handler early so we can have proper logging during startup. */
+    ws_log_init(vcmdarg_err);
 
-  /* Get the run-time version information string */
-  runtime_info_str = get_runtime_version_info(NULL);
+    /* Early logging command-line initialization. */
+    ws_log_parse_args(&argc, argv, optstring, long_options, vcmdarg_err, WS_EXIT_INVALID_OPTION);
 
-  /* Add it to the information to be reported on a crash. */
-  ws_add_crash_info("Captype (Wireshark) %s\n"
-         "\n"
-         "%s"
-         "\n"
-         "%s",
-      get_ws_vcs_version_info(), comp_info_str->str, runtime_info_str->str);
+    ws_noisy("Finished log init and parsing command line log arguments");
 
 #ifdef _WIN32
-  arg_list_utf_16to8(argc, argv);
-  create_app_running_mutex();
+    create_app_running_mutex();
 #endif /* _WIN32 */
 
-  /*
-   * Get credential information for later use.
-   */
-  init_process_policies();
-  init_open_routines();
+    /*
+     * Get credential information for later use.
+     */
+    init_process_policies();
 
-#ifdef HAVE_PLUGINS
-  if ((init_progfile_dir_error = init_progfile_dir(argv[0], main))) {
-    g_warning("captype: init_progfile_dir(): %s", init_progfile_dir_error);
-    g_free(init_progfile_dir_error);
-  } else {
-    /* Register all the plugin types we have. */
-    wtap_register_plugin_types(); /* Types known to libwiretap */
-
-    init_report_err(failure_message,NULL,NULL,NULL);
-
-    /* Scan for plugins.  This does *not* call their registration routines;
-       that's done later. */
-    scan_plugins();
-
-    /* Register all libwiretap plugin modules. */
-    register_all_wiretap_modules();
-  }
-#endif
-
-  /* Process the options */
-  while ((opt = getopt_long(argc, argv, "hv", long_options, NULL)) !=-1) {
-
-    switch (opt) {
-
-      case 'h':
-        printf("Captype (Wireshark) %s\n"
-               "Print the file types of capture files.\n"
-               "See https://www.wireshark.org for more information.\n",
-               get_ws_vcs_version_info());
-        print_usage(stdout);
-        exit(0);
-        break;
-
-      case 'v':
-        show_version("Captype (Wireshark)", comp_info_str, runtime_info_str);
-        g_string_free(comp_info_str, TRUE);
-        g_string_free(runtime_info_str, TRUE);
-        exit(0);
-        break;
-
-      case '?':              /* Bad flag - print usage message */
-        print_usage(stderr);
-        exit(1);
-        break;
+    /*
+     * Attempt to get the pathname of the directory containing the
+     * executable file.
+     */
+    configuration_init_error = configuration_init(argv[0]);
+    if (configuration_init_error != NULL) {
+        fprintf(stderr,
+                "captype: Can't get pathname of directory containing the captype program: %s.\n",
+                configuration_init_error);
+        g_free(configuration_init_error);
     }
-  }
 
-  if (argc < 2) {
-    print_usage(stderr);
-    return 1;
-  }
+    /* Initialize the version information. */
+    ws_init_version_info("Captype", NULL, NULL);
 
-  overall_error_status = 0;
+    init_report_failure_message("captype");
 
-  for (i = 1; i < argc; i++) {
-    wth = wtap_open_offline(argv[i], WTAP_TYPE_AUTO, &err, &err_info, FALSE);
+    wtap_init(true);
 
-    if(wth) {
-      printf("%s: %s\n", argv[i], wtap_file_type_subtype_short_string(wtap_file_type_subtype(wth)));
-      wtap_close(wth);
-    } else {
-      if (err == WTAP_ERR_FILE_UNKNOWN_FORMAT)
-        printf("%s: unknown\n", argv[i]);
-      else {
-        fprintf(stderr, "captype: Can't open %s: %s\n", argv[i],
-                wtap_strerror(err));
-        if (err_info != NULL) {
-          fprintf(stderr, "(%s)\n", err_info);
-          g_free(err_info);
+    /* Process the options */
+    while ((opt = ws_getopt_long(argc, argv, optstring, long_options, NULL)) !=-1) {
+
+        switch (opt) {
+
+            case 'h':
+                show_help_header("Print the file types of capture files.");
+                print_usage(stdout);
+                return EXIT_SUCCESS;
+
+            case 'v':
+                show_version();
+                return EXIT_SUCCESS;
+
+            case '?':              /* Bad flag - print usage message */
+                print_usage(stderr);
+                return EXIT_FAILURE;
         }
-        overall_error_status = 1; /* remember that an error has occurred */
-      }
     }
 
-  }
+    if (argc < 2) {
+        print_usage(stderr);
+        return 1;
+    }
 
-  return overall_error_status;
+    overall_error_status = 0;
+
+    for (i = 1; i < argc; i++) {
+        wth = wtap_open_offline(argv[i], WTAP_TYPE_AUTO, &err, &err_info, false);
+
+        if(wth) {
+            printf("%s: %s\n", argv[i], wtap_file_type_subtype_name(wtap_file_type_subtype(wth)));
+            wtap_close(wth);
+        } else {
+            if (err == WTAP_ERR_FILE_UNKNOWN_FORMAT)
+                printf("%s: unknown\n", argv[i]);
+            else {
+                cfile_open_failure_message(argv[i], err, err_info);
+                overall_error_status = 2; /* remember that an error has occurred */
+            }
+        }
+
+    }
+
+    wtap_cleanup();
+    free_progdirs();
+    return overall_error_status;
 }
-
-/*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
- *
- * Local variables:
- * c-basic-offset: 2
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * vi: set shiftwidth=2 tabstop=8 expandtab:
- * :indentSize=2:tabSize=8:noTabs=true:
- */

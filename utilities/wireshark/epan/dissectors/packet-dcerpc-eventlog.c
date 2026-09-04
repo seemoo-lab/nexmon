@@ -10,9 +10,10 @@
 
 
 #include "config.h"
-#include <glib.h>
 #include <string.h>
+#include <wsutil/array.h>
 #include <epan/packet.h>
+#include <epan/tfs.h>
 
 #include "packet-dcerpc.h"
 #include "packet-dcerpc-nt.h"
@@ -22,108 +23,108 @@ void proto_register_dcerpc_eventlog(void);
 void proto_reg_handoff_dcerpc_eventlog(void);
 
 /* Ett declarations */
-static gint ett_dcerpc_eventlog = -1;
-static gint ett_eventlog_eventlogReadFlags = -1;
-static gint ett_eventlog_eventlogEventTypes = -1;
-static gint ett_eventlog_eventlog_OpenUnknown0 = -1;
-static gint ett_eventlog_eventlog_Record = -1;
-static gint ett_eventlog_eventlog_ChangeUnknown0 = -1;
+static int ett_dcerpc_eventlog;
+static int ett_eventlog_eventlogReadFlags;
+static int ett_eventlog_eventlogEventTypes;
+static int ett_eventlog_eventlog_OpenUnknown0;
+static int ett_eventlog_eventlog_Record;
+static int ett_eventlog_eventlog_ChangeUnknown0;
 
 
 /* Header field declarations */
-static gint hf_eventlog_Record = -1;
-static gint hf_eventlog_Record_computer_name = -1;
-static gint hf_eventlog_Record_length = -1;
-static gint hf_eventlog_Record_source_name = -1;
-static gint hf_eventlog_Record_string = -1;
-static gint hf_eventlog_eventlogEventTypes_EVENTLOG_AUDIT_FAILURE = -1;
-static gint hf_eventlog_eventlogEventTypes_EVENTLOG_AUDIT_SUCCESS = -1;
-static gint hf_eventlog_eventlogEventTypes_EVENTLOG_ERROR_TYPE = -1;
-static gint hf_eventlog_eventlogEventTypes_EVENTLOG_INFORMATION_TYPE = -1;
-static gint hf_eventlog_eventlogEventTypes_EVENTLOG_WARNING_TYPE = -1;
-static gint hf_eventlog_eventlogReadFlags_EVENTLOG_BACKWARDS_READ = -1;
-static gint hf_eventlog_eventlogReadFlags_EVENTLOG_FORWARDS_READ = -1;
-static gint hf_eventlog_eventlogReadFlags_EVENTLOG_SEEK_READ = -1;
-static gint hf_eventlog_eventlogReadFlags_EVENTLOG_SEQUENTIAL_READ = -1;
-static gint hf_eventlog_eventlog_BackupEventLogW_backupfilename = -1;
-static gint hf_eventlog_eventlog_BackupEventLogW_handle = -1;
-static gint hf_eventlog_eventlog_ChangeNotify_handle = -1;
-static gint hf_eventlog_eventlog_ChangeNotify_unknown2 = -1;
-static gint hf_eventlog_eventlog_ChangeNotify_unknown3 = -1;
-static gint hf_eventlog_eventlog_ChangeUnknown0_unknown0 = -1;
-static gint hf_eventlog_eventlog_ChangeUnknown0_unknown1 = -1;
-static gint hf_eventlog_eventlog_ClearEventLogW_backupfilename = -1;
-static gint hf_eventlog_eventlog_ClearEventLogW_handle = -1;
-static gint hf_eventlog_eventlog_CloseEventLog_handle = -1;
-static gint hf_eventlog_eventlog_DeregisterEventSource_handle = -1;
-static gint hf_eventlog_eventlog_FlushEventLog_handle = -1;
-static gint hf_eventlog_eventlog_GetLogIntormation_cbBufSize = -1;
-static gint hf_eventlog_eventlog_GetLogIntormation_cbBytesNeeded = -1;
-static gint hf_eventlog_eventlog_GetLogIntormation_dwInfoLevel = -1;
-static gint hf_eventlog_eventlog_GetLogIntormation_handle = -1;
-static gint hf_eventlog_eventlog_GetLogIntormation_lpBuffer = -1;
-static gint hf_eventlog_eventlog_GetNumRecords_handle = -1;
-static gint hf_eventlog_eventlog_GetNumRecords_number = -1;
-static gint hf_eventlog_eventlog_GetOldestRecord_handle = -1;
-static gint hf_eventlog_eventlog_GetOldestRecord_oldest = -1;
-static gint hf_eventlog_eventlog_OpenBackupEventLogW_handle = -1;
-static gint hf_eventlog_eventlog_OpenBackupEventLogW_logname = -1;
-static gint hf_eventlog_eventlog_OpenBackupEventLogW_unknown0 = -1;
-static gint hf_eventlog_eventlog_OpenBackupEventLogW_unknown2 = -1;
-static gint hf_eventlog_eventlog_OpenBackupEventLogW_unknown3 = -1;
-static gint hf_eventlog_eventlog_OpenEventLogW_MajorVersion = -1;
-static gint hf_eventlog_eventlog_OpenEventLogW_MinorVersion = -1;
-static gint hf_eventlog_eventlog_OpenEventLogW_Module = -1;
-static gint hf_eventlog_eventlog_OpenEventLogW_RegModuleName = -1;
-static gint hf_eventlog_eventlog_OpenEventLogW_handle = -1;
-static gint hf_eventlog_eventlog_OpenEventLogW_unknown0 = -1;
-static gint hf_eventlog_eventlog_OpenUnknown0_unknown0 = -1;
-static gint hf_eventlog_eventlog_OpenUnknown0_unknown1 = -1;
-static gint hf_eventlog_eventlog_ReadEventLogW_data = -1;
-static gint hf_eventlog_eventlog_ReadEventLogW_flags = -1;
-static gint hf_eventlog_eventlog_ReadEventLogW_handle = -1;
-static gint hf_eventlog_eventlog_ReadEventLogW_number_of_bytes = -1;
-static gint hf_eventlog_eventlog_ReadEventLogW_offset = -1;
-static gint hf_eventlog_eventlog_ReadEventLogW_real_size = -1;
-static gint hf_eventlog_eventlog_ReadEventLogW_sent_size = -1;
-static gint hf_eventlog_eventlog_Record_closing_record_number = -1;
-static gint hf_eventlog_eventlog_Record_computer_name = -1;
-static gint hf_eventlog_eventlog_Record_data_length = -1;
-static gint hf_eventlog_eventlog_Record_data_offset = -1;
-static gint hf_eventlog_eventlog_Record_event_category = -1;
-static gint hf_eventlog_eventlog_Record_event_id = -1;
-static gint hf_eventlog_eventlog_Record_event_type = -1;
-static gint hf_eventlog_eventlog_Record_num_of_strings = -1;
-static gint hf_eventlog_eventlog_Record_raw_data = -1;
-static gint hf_eventlog_eventlog_Record_record_number = -1;
-static gint hf_eventlog_eventlog_Record_reserved = -1;
-static gint hf_eventlog_eventlog_Record_reserved_flags = -1;
-static gint hf_eventlog_eventlog_Record_sid_length = -1;
-static gint hf_eventlog_eventlog_Record_sid_offset = -1;
-static gint hf_eventlog_eventlog_Record_size = -1;
-static gint hf_eventlog_eventlog_Record_source_name = -1;
-static gint hf_eventlog_eventlog_Record_stringoffset = -1;
-static gint hf_eventlog_eventlog_Record_strings = -1;
-static gint hf_eventlog_eventlog_Record_time_generated = -1;
-static gint hf_eventlog_eventlog_Record_time_written = -1;
-static gint hf_eventlog_eventlog_RegisterEventSourceW_handle = -1;
-static gint hf_eventlog_eventlog_RegisterEventSourceW_logname = -1;
-static gint hf_eventlog_eventlog_RegisterEventSourceW_servername = -1;
-static gint hf_eventlog_eventlog_RegisterEventSourceW_unknown0 = -1;
-static gint hf_eventlog_eventlog_RegisterEventSourceW_unknown2 = -1;
-static gint hf_eventlog_eventlog_RegisterEventSourceW_unknown3 = -1;
-static gint hf_eventlog_eventlog_ReportEventW_Type = -1;
-static gint hf_eventlog_eventlog_ReportEventW_computer_name = -1;
-static gint hf_eventlog_eventlog_ReportEventW_data_length = -1;
-static gint hf_eventlog_eventlog_ReportEventW_event_category = -1;
-static gint hf_eventlog_eventlog_ReportEventW_event_id = -1;
-static gint hf_eventlog_eventlog_ReportEventW_handle = -1;
-static gint hf_eventlog_eventlog_ReportEventW_num_of_strings = -1;
-static gint hf_eventlog_eventlog_ReportEventW_time = -1;
-static gint hf_eventlog_opnum = -1;
-static gint hf_eventlog_status = -1;
+static int hf_eventlog_Record;
+static int hf_eventlog_Record_computer_name;
+static int hf_eventlog_Record_length;
+static int hf_eventlog_Record_source_name;
+static int hf_eventlog_Record_string;
+static int hf_eventlog_eventlogEventTypes_EVENTLOG_AUDIT_FAILURE;
+static int hf_eventlog_eventlogEventTypes_EVENTLOG_AUDIT_SUCCESS;
+static int hf_eventlog_eventlogEventTypes_EVENTLOG_ERROR_TYPE;
+static int hf_eventlog_eventlogEventTypes_EVENTLOG_INFORMATION_TYPE;
+static int hf_eventlog_eventlogEventTypes_EVENTLOG_WARNING_TYPE;
+static int hf_eventlog_eventlogReadFlags_EVENTLOG_BACKWARDS_READ;
+static int hf_eventlog_eventlogReadFlags_EVENTLOG_FORWARDS_READ;
+static int hf_eventlog_eventlogReadFlags_EVENTLOG_SEEK_READ;
+static int hf_eventlog_eventlogReadFlags_EVENTLOG_SEQUENTIAL_READ;
+static int hf_eventlog_eventlog_BackupEventLogW_backupfilename;
+static int hf_eventlog_eventlog_BackupEventLogW_handle;
+static int hf_eventlog_eventlog_ChangeNotify_handle;
+static int hf_eventlog_eventlog_ChangeNotify_unknown2;
+static int hf_eventlog_eventlog_ChangeNotify_unknown3;
+static int hf_eventlog_eventlog_ChangeUnknown0_unknown0;
+static int hf_eventlog_eventlog_ChangeUnknown0_unknown1;
+static int hf_eventlog_eventlog_ClearEventLogW_backupfilename;
+static int hf_eventlog_eventlog_ClearEventLogW_handle;
+static int hf_eventlog_eventlog_CloseEventLog_handle;
+static int hf_eventlog_eventlog_DeregisterEventSource_handle;
+static int hf_eventlog_eventlog_FlushEventLog_handle;
+static int hf_eventlog_eventlog_GetLogInformation_cbBufSize;
+static int hf_eventlog_eventlog_GetLogInformation_cbBytesNeeded;
+static int hf_eventlog_eventlog_GetLogInformation_dwInfoLevel;
+static int hf_eventlog_eventlog_GetLogInformation_handle;
+static int hf_eventlog_eventlog_GetLogInformation_lpBuffer;
+static int hf_eventlog_eventlog_GetNumRecords_handle;
+static int hf_eventlog_eventlog_GetNumRecords_number;
+static int hf_eventlog_eventlog_GetOldestRecord_handle;
+static int hf_eventlog_eventlog_GetOldestRecord_oldest;
+static int hf_eventlog_eventlog_OpenBackupEventLogW_handle;
+static int hf_eventlog_eventlog_OpenBackupEventLogW_logname;
+static int hf_eventlog_eventlog_OpenBackupEventLogW_unknown0;
+static int hf_eventlog_eventlog_OpenBackupEventLogW_unknown2;
+static int hf_eventlog_eventlog_OpenBackupEventLogW_unknown3;
+static int hf_eventlog_eventlog_OpenEventLogW_MajorVersion;
+static int hf_eventlog_eventlog_OpenEventLogW_MinorVersion;
+static int hf_eventlog_eventlog_OpenEventLogW_Module;
+static int hf_eventlog_eventlog_OpenEventLogW_RegModuleName;
+static int hf_eventlog_eventlog_OpenEventLogW_handle;
+static int hf_eventlog_eventlog_OpenEventLogW_unknown0;
+static int hf_eventlog_eventlog_OpenUnknown0_unknown0;
+static int hf_eventlog_eventlog_OpenUnknown0_unknown1;
+static int hf_eventlog_eventlog_ReadEventLogW_data;
+static int hf_eventlog_eventlog_ReadEventLogW_flags;
+static int hf_eventlog_eventlog_ReadEventLogW_handle;
+static int hf_eventlog_eventlog_ReadEventLogW_number_of_bytes;
+static int hf_eventlog_eventlog_ReadEventLogW_offset;
+static int hf_eventlog_eventlog_ReadEventLogW_real_size;
+static int hf_eventlog_eventlog_ReadEventLogW_sent_size;
+static int hf_eventlog_eventlog_Record_closing_record_number;
+static int hf_eventlog_eventlog_Record_computer_name;
+static int hf_eventlog_eventlog_Record_data_length;
+static int hf_eventlog_eventlog_Record_data_offset;
+static int hf_eventlog_eventlog_Record_event_category;
+static int hf_eventlog_eventlog_Record_event_id;
+static int hf_eventlog_eventlog_Record_event_type;
+static int hf_eventlog_eventlog_Record_num_of_strings;
+static int hf_eventlog_eventlog_Record_raw_data;
+static int hf_eventlog_eventlog_Record_record_number;
+static int hf_eventlog_eventlog_Record_reserved;
+static int hf_eventlog_eventlog_Record_reserved_flags;
+static int hf_eventlog_eventlog_Record_sid_length;
+static int hf_eventlog_eventlog_Record_sid_offset;
+static int hf_eventlog_eventlog_Record_size;
+static int hf_eventlog_eventlog_Record_source_name;
+static int hf_eventlog_eventlog_Record_stringoffset;
+static int hf_eventlog_eventlog_Record_strings;
+static int hf_eventlog_eventlog_Record_time_generated;
+static int hf_eventlog_eventlog_Record_time_written;
+static int hf_eventlog_eventlog_RegisterEventSourceW_handle;
+static int hf_eventlog_eventlog_RegisterEventSourceW_logname;
+static int hf_eventlog_eventlog_RegisterEventSourceW_servername;
+static int hf_eventlog_eventlog_RegisterEventSourceW_unknown0;
+static int hf_eventlog_eventlog_RegisterEventSourceW_unknown2;
+static int hf_eventlog_eventlog_RegisterEventSourceW_unknown3;
+static int hf_eventlog_eventlog_ReportEventW_Type;
+static int hf_eventlog_eventlog_ReportEventW_computer_name;
+static int hf_eventlog_eventlog_ReportEventW_data_length;
+static int hf_eventlog_eventlog_ReportEventW_event_category;
+static int hf_eventlog_eventlog_ReportEventW_event_id;
+static int hf_eventlog_eventlog_ReportEventW_handle;
+static int hf_eventlog_eventlog_ReportEventW_num_of_strings;
+static int hf_eventlog_eventlog_ReportEventW_time;
+static int hf_eventlog_opnum;
+static int hf_eventlog_status;
 
-static gint proto_dcerpc_eventlog = -1;
+static int proto_dcerpc_eventlog;
 /* Version information */
 
 
@@ -131,7 +132,7 @@ static e_guid_t uuid_dcerpc_eventlog = {
 	0x82273fdc, 0xe32a, 0x18c3,
 	{ 0x3f, 0x78, 0x82, 0x79, 0x29, 0xdc, 0x23, 0xea }
 };
-static guint16 ver_dcerpc_eventlog = 0;
+static uint16_t ver_dcerpc_eventlog = 0;
 
 static const true_false_string eventlogReadFlags_EVENTLOG_SEQUENTIAL_READ_tfs = {
    "EVENTLOG_SEQUENTIAL_READ is SET",
@@ -169,112 +170,112 @@ static const true_false_string eventlogEventTypes_EVENTLOG_AUDIT_FAILURE_tfs = {
    "EVENTLOG_AUDIT_FAILURE is SET",
    "EVENTLOG_AUDIT_FAILURE is NOT SET",
 };
-static int eventlog_dissect_element_OpenUnknown0_unknown0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_OpenUnknown0_unknown1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_Record_size(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_Record_reserved(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_Record_record_number(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_Record_time_generated(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_Record_time_written(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_Record_event_id(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_Record_event_type(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_Record_num_of_strings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_Record_event_category(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_Record_reserved_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_Record_closing_record_number(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_Record_stringoffset(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_Record_sid_length(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_Record_sid_offset(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_Record_data_length(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_Record_data_offset(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_Record_source_name(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_Record_computer_name(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_Record_strings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_Record_raw_data(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ChangeUnknown0_unknown0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ChangeUnknown0_unknown1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ClearEventLogW_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ClearEventLogW_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ClearEventLogW_backupfilename(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ClearEventLogW_backupfilename_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_BackupEventLogW_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_BackupEventLogW_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_BackupEventLogW_backupfilename(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_BackupEventLogW_backupfilename_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_CloseEventLog_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_CloseEventLog_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_DeregisterEventSource_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_DeregisterEventSource_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_GetNumRecords_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_GetNumRecords_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_GetNumRecords_number(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_GetNumRecords_number_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_GetOldestRecord_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_GetOldestRecord_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_GetOldestRecord_oldest(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_GetOldestRecord_oldest_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ChangeNotify_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ChangeNotify_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ChangeNotify_unknown2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ChangeNotify_unknown2_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ChangeNotify_unknown3(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_OpenEventLogW_unknown0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_OpenEventLogW_unknown0_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_OpenEventLogW_Module(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_OpenEventLogW_RegModuleName(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_OpenEventLogW_MajorVersion(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_OpenEventLogW_MinorVersion(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_OpenEventLogW_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_OpenEventLogW_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_RegisterEventSourceW_unknown0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_RegisterEventSourceW_unknown0_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_RegisterEventSourceW_logname(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_RegisterEventSourceW_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_RegisterEventSourceW_unknown2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_RegisterEventSourceW_unknown3(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_RegisterEventSourceW_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_RegisterEventSourceW_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_OpenBackupEventLogW_unknown0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_OpenBackupEventLogW_unknown0_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_OpenBackupEventLogW_logname(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_OpenBackupEventLogW_unknown2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_OpenBackupEventLogW_unknown3(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_OpenBackupEventLogW_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_OpenBackupEventLogW_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ReadEventLogW_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ReadEventLogW_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ReadEventLogW_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ReadEventLogW_offset(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ReadEventLogW_number_of_bytes(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ReadEventLogW_data(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ReadEventLogW_data_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ReadEventLogW_sent_size(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ReadEventLogW_sent_size_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ReadEventLogW_real_size(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ReadEventLogW_real_size_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ReportEventW_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ReportEventW_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ReportEventW_time(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ReportEventW_Type(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ReportEventW_event_category(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ReportEventW_event_id(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ReportEventW_num_of_strings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ReportEventW_data_length(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_ReportEventW_computer_name(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_GetLogIntormation_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_GetLogIntormation_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_GetLogIntormation_dwInfoLevel(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_GetLogIntormation_lpBuffer(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_GetLogIntormation_lpBuffer_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_GetLogIntormation_cbBufSize(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_GetLogIntormation_cbBytesNeeded(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_GetLogIntormation_cbBytesNeeded_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_FlushEventLog_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int eventlog_dissect_element_FlushEventLog_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
+static int eventlog_dissect_element_OpenUnknown0_unknown0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_OpenUnknown0_unknown1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_Record_size(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_Record_reserved(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_Record_record_number(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_Record_time_generated(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_Record_time_written(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_Record_event_id(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_Record_event_type(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_Record_num_of_strings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_Record_event_category(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_Record_reserved_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_Record_closing_record_number(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_Record_stringoffset(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_Record_sid_length(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_Record_sid_offset(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_Record_data_length(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_Record_data_offset(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_Record_source_name(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_Record_computer_name(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_Record_strings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_Record_raw_data(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ChangeUnknown0_unknown0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ChangeUnknown0_unknown1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ClearEventLogW_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ClearEventLogW_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ClearEventLogW_backupfilename(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ClearEventLogW_backupfilename_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_BackupEventLogW_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_BackupEventLogW_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_BackupEventLogW_backupfilename(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_BackupEventLogW_backupfilename_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_CloseEventLog_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_CloseEventLog_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_DeregisterEventSource_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_DeregisterEventSource_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_GetNumRecords_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_GetNumRecords_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_GetNumRecords_number(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_GetNumRecords_number_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_GetOldestRecord_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_GetOldestRecord_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_GetOldestRecord_oldest(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_GetOldestRecord_oldest_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ChangeNotify_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ChangeNotify_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ChangeNotify_unknown2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ChangeNotify_unknown2_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ChangeNotify_unknown3(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_OpenEventLogW_unknown0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_OpenEventLogW_unknown0_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_OpenEventLogW_Module(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_OpenEventLogW_RegModuleName(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_OpenEventLogW_MajorVersion(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_OpenEventLogW_MinorVersion(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_OpenEventLogW_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_OpenEventLogW_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_RegisterEventSourceW_unknown0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_RegisterEventSourceW_unknown0_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_RegisterEventSourceW_logname(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_RegisterEventSourceW_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_RegisterEventSourceW_unknown2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_RegisterEventSourceW_unknown3(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_RegisterEventSourceW_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_RegisterEventSourceW_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_OpenBackupEventLogW_unknown0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_OpenBackupEventLogW_unknown0_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_OpenBackupEventLogW_logname(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_OpenBackupEventLogW_unknown2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_OpenBackupEventLogW_unknown3(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_OpenBackupEventLogW_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_OpenBackupEventLogW_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ReadEventLogW_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ReadEventLogW_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ReadEventLogW_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ReadEventLogW_offset(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ReadEventLogW_number_of_bytes(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ReadEventLogW_data(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ReadEventLogW_data_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ReadEventLogW_sent_size(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ReadEventLogW_sent_size_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ReadEventLogW_real_size(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ReadEventLogW_real_size_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ReportEventW_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ReportEventW_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ReportEventW_time(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ReportEventW_Type(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ReportEventW_event_category(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ReportEventW_event_id(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ReportEventW_num_of_strings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ReportEventW_data_length(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_ReportEventW_computer_name(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_GetLogInformation_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_GetLogInformation_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_GetLogInformation_dwInfoLevel(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_GetLogInformation_lpBuffer(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_GetLogInformation_lpBuffer_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_GetLogInformation_cbBufSize(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_GetLogInformation_cbBytesNeeded(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_GetLogInformation_cbBytesNeeded_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_FlushEventLog_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int eventlog_dissect_element_FlushEventLog_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
 static int
-eventlog_dissect_element_ReadEventLogW_data_(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+eventlog_dissect_element_ReadEventLogW_data_(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	guint32 len;
+	uint32_t len;
 	tvbuff_t *record_tvb;
 	if(di->conformant_run){
 		/*just a run to handle conformant arrays, nothing to dissect */
@@ -287,75 +288,75 @@ eventlog_dissect_element_ReadEventLogW_data_(tvbuff_t *tvb, int offset, packet_i
 	 * NDR encoded at all and there are byte offsets into this buffer
 	 * encoded therein.
 	 */
-	record_tvb=tvb_new_subset(tvb, offset, MIN((gint)len, tvb_captured_length_remaining(tvb, offset)), len);
+	record_tvb=tvb_new_subset_length_caplen(tvb, offset, MIN((int)len, tvb_captured_length_remaining(tvb, offset)), len);
 	eventlog_dissect_struct_Record(record_tvb, 0, pinfo, tree, di, drep, hf_eventlog_Record, 0);
 	offset+=len;
 	return offset;
 }
 /* sid_length and sid_offset handled by manual code since this is not NDR
    and we want to dissect the sid from the data blob */
-static guint32 sid_length;
+static uint32_t sid_length;
 static int
-eventlog_dissect_element_Record_sid_length(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+eventlog_dissect_element_Record_sid_length(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
 	sid_length=0;
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_Record_sid_length,&sid_length);
 	return offset;
 }
 static int
-eventlog_dissect_element_Record_sid_offset(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+eventlog_dissect_element_Record_sid_offset(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	guint32 sid_offset=0;
+	uint32_t sid_offset=0;
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_Record_sid_offset,&sid_offset);
 	if(sid_offset && sid_length){
 		tvbuff_t *sid_tvb;
 		/* this blob contains an NT SID.
 		 * tvb starts at the beginning of the record.
 		 */
-		sid_tvb=tvb_new_subset(tvb, sid_offset, MIN((gint)sid_length, tvb_captured_length_remaining(tvb, offset)), sid_length);
-		dissect_nt_sid(sid_tvb, 0, tree, "SID", NULL, -1);
+		sid_tvb=tvb_new_subset_length_caplen(tvb, sid_offset, MIN((int)sid_length, tvb_captured_length_remaining(tvb, offset)), sid_length);
+		dissect_nt_sid(sid_tvb, pinfo, 0, tree, "SID", NULL, -1);
 	}
 	return offset;
 }
 static int
-eventlog_dissect_element_Record_source_name(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree, dcerpc_info *di _U_, guint8 *drep _U_)
+eventlog_dissect_element_Record_source_name(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree, dcerpc_info *di _U_, uint8_t *drep _U_)
 {
-	guint len;
+	unsigned len;
 	len=tvb_unicode_strsize(tvb, offset);
 	proto_tree_add_item(tree, hf_eventlog_Record_source_name, tvb, offset, len, ENC_UTF_16|ENC_LITTLE_ENDIAN);
 	offset+=len;
 	return offset;
 }
 static int
-eventlog_dissect_element_Record_computer_name(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree, dcerpc_info *di _U_, guint8 *drep _U_)
+eventlog_dissect_element_Record_computer_name(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree, dcerpc_info *di _U_, uint8_t *drep _U_)
 {
-	guint len;
+	unsigned len;
 	len=tvb_unicode_strsize(tvb, offset);
 	proto_tree_add_item(tree, hf_eventlog_Record_computer_name, tvb, offset, len, ENC_UTF_16|ENC_LITTLE_ENDIAN);
 	offset+=len;
 	return offset;
 }
-static guint16 num_of_strings;
+static uint16_t num_of_strings;
 static int
-eventlog_dissect_element_Record_num_of_strings(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+eventlog_dissect_element_Record_num_of_strings(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
 	num_of_strings=0;
 	offset = dissect_ndr_uint16(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_Record_num_of_strings,&num_of_strings);
 	return offset;
 }
-static guint32 string_offset;
+static uint32_t string_offset;
 static int
-eventlog_dissect_element_Record_stringoffset(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+eventlog_dissect_element_Record_stringoffset(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
 	string_offset=0;
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_Record_stringoffset,&string_offset);
 	return offset;
 }
 static int
-eventlog_dissect_element_Record_strings(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree, dcerpc_info *di _U_, guint8 *drep _U_)
+eventlog_dissect_element_Record_strings(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree, dcerpc_info *di _U_, uint8_t *drep _U_)
 {
 	while(string_offset && num_of_strings){
-		guint len;
+		unsigned len;
 		len=tvb_unicode_strsize(tvb, string_offset);
 		proto_tree_add_item(tree, hf_eventlog_Record_string, tvb, string_offset, len, ENC_UTF_16|ENC_LITTLE_ENDIAN);
 		string_offset+=len;
@@ -366,24 +367,24 @@ eventlog_dissect_element_Record_strings(tvbuff_t *tvb, int offset, packet_info *
 
 
 /* IDL: bitmap { */
-/* IDL: 	EVENTLOG_SEQUENTIAL_READ =  0x0001 , */
-/* IDL: 	EVENTLOG_SEEK_READ =  0x0002 , */
-/* IDL: 	EVENTLOG_FORWARDS_READ =  0x0004 , */
-/* IDL: 	EVENTLOG_BACKWARDS_READ =  0x0008 , */
+/* IDL: 	EVENTLOG_SEQUENTIAL_READ =  0x00000001 , */
+/* IDL: 	EVENTLOG_SEEK_READ =  0x00000002 , */
+/* IDL: 	EVENTLOG_FORWARDS_READ =  0x00000004 , */
+/* IDL: 	EVENTLOG_BACKWARDS_READ =  0x00000008 , */
 /* IDL: } */
 
 int
-eventlog_dissect_bitmap_eventlogReadFlags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+eventlog_dissect_bitmap_eventlogReadFlags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item;
-	static const int * eventlog_eventlogReadFlags_fields[] = {
+	static int * const eventlog_eventlogReadFlags_fields[] = {
 		&hf_eventlog_eventlogReadFlags_EVENTLOG_SEQUENTIAL_READ,
 		&hf_eventlog_eventlogReadFlags_EVENTLOG_SEEK_READ,
 		&hf_eventlog_eventlogReadFlags_EVENTLOG_FORWARDS_READ,
 		&hf_eventlog_eventlogReadFlags_EVENTLOG_BACKWARDS_READ,
 		NULL
 	};
-	guint32 flags;
+	uint32_t flags;
 	ALIGN_TO_4_BYTES;
 
 	item = proto_tree_add_bitmask_with_flags(parent_tree, tvb, offset, hf_index,
@@ -404,19 +405,19 @@ eventlog_dissect_bitmap_eventlogReadFlags(tvbuff_t *tvb _U_, int offset _U_, pac
 
 
 /* IDL: bitmap { */
-/* IDL: 	EVENTLOG_SUCCESS =  0x0000 , */
-/* IDL: 	EVENTLOG_ERROR_TYPE =  0x0001 , */
-/* IDL: 	EVENTLOG_WARNING_TYPE =  0x0002 , */
-/* IDL: 	EVENTLOG_INFORMATION_TYPE =  0x0004 , */
-/* IDL: 	EVENTLOG_AUDIT_SUCCESS =  0x0008 , */
-/* IDL: 	EVENTLOG_AUDIT_FAILURE =  0x0010 , */
+/* IDL: 	EVENTLOG_SUCCESS =  0x00000000 , */
+/* IDL: 	EVENTLOG_ERROR_TYPE =  0x00000001 , */
+/* IDL: 	EVENTLOG_WARNING_TYPE =  0x00000002 , */
+/* IDL: 	EVENTLOG_INFORMATION_TYPE =  0x00000004 , */
+/* IDL: 	EVENTLOG_AUDIT_SUCCESS =  0x00000008 , */
+/* IDL: 	EVENTLOG_AUDIT_FAILURE =  0x00000010 , */
 /* IDL: } */
 
 int
-eventlog_dissect_bitmap_eventlogEventTypes(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+eventlog_dissect_bitmap_eventlogEventTypes(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item;
-	static const int * eventlog_eventlogEventTypes_fields[] = {
+	static int * const eventlog_eventlogEventTypes_fields[] = {
 		&hf_eventlog_eventlogEventTypes_EVENTLOG_ERROR_TYPE,
 		&hf_eventlog_eventlogEventTypes_EVENTLOG_WARNING_TYPE,
 		&hf_eventlog_eventlogEventTypes_EVENTLOG_INFORMATION_TYPE,
@@ -424,7 +425,7 @@ eventlog_dissect_bitmap_eventlogEventTypes(tvbuff_t *tvb _U_, int offset _U_, pa
 		&hf_eventlog_eventlogEventTypes_EVENTLOG_AUDIT_FAILURE,
 		NULL
 	};
-	guint32 flags;
+	uint32_t flags;
 	ALIGN_TO_4_BYTES;
 
 	item = proto_tree_add_bitmask_with_flags(parent_tree, tvb, offset, hf_index,
@@ -450,7 +451,7 @@ eventlog_dissect_bitmap_eventlogEventTypes(tvbuff_t *tvb _U_, int offset _U_, pa
 /* IDL: } */
 
 static int
-eventlog_dissect_element_OpenUnknown0_unknown0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_OpenUnknown0_unknown0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint16(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_OpenUnknown0_unknown0, 0);
 
@@ -458,7 +459,7 @@ eventlog_dissect_element_OpenUnknown0_unknown0(tvbuff_t *tvb _U_, int offset _U_
 }
 
 static int
-eventlog_dissect_element_OpenUnknown0_unknown1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_OpenUnknown0_unknown1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint16(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_OpenUnknown0_unknown1, 0);
 
@@ -466,7 +467,7 @@ eventlog_dissect_element_OpenUnknown0_unknown1(tvbuff_t *tvb _U_, int offset _U_
 }
 
 int
-eventlog_dissect_struct_OpenUnknown0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+eventlog_dissect_struct_OpenUnknown0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -521,7 +522,7 @@ eventlog_dissect_struct_OpenUnknown0(tvbuff_t *tvb _U_, int offset _U_, packet_i
 /* IDL: } */
 
 static int
-eventlog_dissect_element_Record_size(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_Record_size(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_Record_size, 0);
 
@@ -529,7 +530,7 @@ eventlog_dissect_element_Record_size(tvbuff_t *tvb _U_, int offset _U_, packet_i
 }
 
 static int
-eventlog_dissect_element_Record_reserved(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_Record_reserved(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_Record_reserved, 0);
 
@@ -537,7 +538,7 @@ eventlog_dissect_element_Record_reserved(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-eventlog_dissect_element_Record_record_number(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_Record_record_number(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_Record_record_number, 0);
 
@@ -545,7 +546,7 @@ eventlog_dissect_element_Record_record_number(tvbuff_t *tvb _U_, int offset _U_,
 }
 
 static int
-eventlog_dissect_element_Record_time_generated(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_Record_time_generated(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_Record_time_generated, 0);
 
@@ -553,7 +554,7 @@ eventlog_dissect_element_Record_time_generated(tvbuff_t *tvb _U_, int offset _U_
 }
 
 static int
-eventlog_dissect_element_Record_time_written(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_Record_time_written(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_Record_time_written, 0);
 
@@ -561,7 +562,7 @@ eventlog_dissect_element_Record_time_written(tvbuff_t *tvb _U_, int offset _U_, 
 }
 
 static int
-eventlog_dissect_element_Record_event_id(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_Record_event_id(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_Record_event_id, 0);
 
@@ -569,7 +570,7 @@ eventlog_dissect_element_Record_event_id(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-eventlog_dissect_element_Record_event_type(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_Record_event_type(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint16(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_Record_event_type, 0);
 
@@ -577,7 +578,7 @@ eventlog_dissect_element_Record_event_type(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-eventlog_dissect_element_Record_event_category(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_Record_event_category(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint16(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_Record_event_category, 0);
 
@@ -585,7 +586,7 @@ eventlog_dissect_element_Record_event_category(tvbuff_t *tvb _U_, int offset _U_
 }
 
 static int
-eventlog_dissect_element_Record_reserved_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_Record_reserved_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint16(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_Record_reserved_flags, 0);
 
@@ -593,7 +594,7 @@ eventlog_dissect_element_Record_reserved_flags(tvbuff_t *tvb _U_, int offset _U_
 }
 
 static int
-eventlog_dissect_element_Record_closing_record_number(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_Record_closing_record_number(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_Record_closing_record_number, 0);
 
@@ -601,7 +602,7 @@ eventlog_dissect_element_Record_closing_record_number(tvbuff_t *tvb _U_, int off
 }
 
 static int
-eventlog_dissect_element_Record_data_length(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_Record_data_length(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_Record_data_length, 0);
 
@@ -609,7 +610,7 @@ eventlog_dissect_element_Record_data_length(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-eventlog_dissect_element_Record_data_offset(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_Record_data_offset(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_Record_data_offset, 0);
 
@@ -617,7 +618,7 @@ eventlog_dissect_element_Record_data_offset(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-eventlog_dissect_element_Record_raw_data(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_Record_raw_data(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_null_term_string(tvb, offset, pinfo, tree, drep, hf_eventlog_eventlog_Record_raw_data , 0);
 
@@ -625,7 +626,7 @@ eventlog_dissect_element_Record_raw_data(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 int
-eventlog_dissect_struct_Record(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+eventlog_dissect_struct_Record(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -698,7 +699,7 @@ eventlog_dissect_struct_Record(tvbuff_t *tvb _U_, int offset _U_, packet_info *p
 /* IDL: } */
 
 static int
-eventlog_dissect_element_ChangeUnknown0_unknown0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ChangeUnknown0_unknown0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_ChangeUnknown0_unknown0, 0);
 
@@ -706,7 +707,7 @@ eventlog_dissect_element_ChangeUnknown0_unknown0(tvbuff_t *tvb _U_, int offset _
 }
 
 static int
-eventlog_dissect_element_ChangeUnknown0_unknown1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ChangeUnknown0_unknown1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_ChangeUnknown0_unknown1, 0);
 
@@ -714,7 +715,7 @@ eventlog_dissect_element_ChangeUnknown0_unknown1(tvbuff_t *tvb _U_, int offset _
 }
 
 int
-eventlog_dissect_struct_ChangeUnknown0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+eventlog_dissect_struct_ChangeUnknown0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -745,7 +746,7 @@ eventlog_dissect_struct_ChangeUnknown0(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-eventlog_dissect_element_ClearEventLogW_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ClearEventLogW_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_ClearEventLogW_handle_, NDR_POINTER_REF, "Pointer to Handle (policy_handle)",hf_eventlog_eventlog_ClearEventLogW_handle);
 
@@ -753,7 +754,7 @@ eventlog_dissect_element_ClearEventLogW_handle(tvbuff_t *tvb _U_, int offset _U_
 }
 
 static int
-eventlog_dissect_element_ClearEventLogW_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ClearEventLogW_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_policy_hnd(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_ClearEventLogW_handle, 0);
 
@@ -761,7 +762,7 @@ eventlog_dissect_element_ClearEventLogW_handle_(tvbuff_t *tvb _U_, int offset _U
 }
 
 static int
-eventlog_dissect_element_ClearEventLogW_backupfilename(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ClearEventLogW_backupfilename(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_ClearEventLogW_backupfilename_, NDR_POINTER_UNIQUE, "Pointer to Backupfilename (lsa_String)",hf_eventlog_eventlog_ClearEventLogW_backupfilename);
 
@@ -769,7 +770,7 @@ eventlog_dissect_element_ClearEventLogW_backupfilename(tvbuff_t *tvb _U_, int of
 }
 
 static int
-eventlog_dissect_element_ClearEventLogW_backupfilename_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ClearEventLogW_backupfilename_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset=dissect_ndr_counted_string(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_ClearEventLogW_backupfilename, 0);
 
@@ -782,21 +783,21 @@ eventlog_dissect_element_ClearEventLogW_backupfilename_(tvbuff_t *tvb _U_, int o
 /* IDL: ); */
 
 static int
-eventlog_dissect_ClearEventLogW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_ClearEventLogW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ClearEventLogW";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
 
 static int
-eventlog_dissect_ClearEventLogW_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_ClearEventLogW_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="ClearEventLogW";
 	offset = eventlog_dissect_element_ClearEventLogW_handle(tvb, offset, pinfo, tree, di, drep);
@@ -807,7 +808,7 @@ eventlog_dissect_ClearEventLogW_request(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-eventlog_dissect_element_BackupEventLogW_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_BackupEventLogW_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_BackupEventLogW_handle_, NDR_POINTER_REF, "Pointer to Handle (policy_handle)",hf_eventlog_eventlog_BackupEventLogW_handle);
 
@@ -815,7 +816,7 @@ eventlog_dissect_element_BackupEventLogW_handle(tvbuff_t *tvb _U_, int offset _U
 }
 
 static int
-eventlog_dissect_element_BackupEventLogW_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_BackupEventLogW_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_policy_hnd(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_BackupEventLogW_handle, 0);
 
@@ -823,7 +824,7 @@ eventlog_dissect_element_BackupEventLogW_handle_(tvbuff_t *tvb _U_, int offset _
 }
 
 static int
-eventlog_dissect_element_BackupEventLogW_backupfilename(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_BackupEventLogW_backupfilename(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_BackupEventLogW_backupfilename_, NDR_POINTER_UNIQUE, "Pointer to Backupfilename (lsa_String)",hf_eventlog_eventlog_BackupEventLogW_backupfilename);
 
@@ -831,7 +832,7 @@ eventlog_dissect_element_BackupEventLogW_backupfilename(tvbuff_t *tvb _U_, int o
 }
 
 static int
-eventlog_dissect_element_BackupEventLogW_backupfilename_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_BackupEventLogW_backupfilename_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset=dissect_ndr_counted_string(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_BackupEventLogW_backupfilename, 0);
 
@@ -844,21 +845,21 @@ eventlog_dissect_element_BackupEventLogW_backupfilename_(tvbuff_t *tvb _U_, int 
 /* IDL: ); */
 
 static int
-eventlog_dissect_BackupEventLogW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_BackupEventLogW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="BackupEventLogW";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
 
 static int
-eventlog_dissect_BackupEventLogW_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_BackupEventLogW_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="BackupEventLogW";
 	offset = eventlog_dissect_element_BackupEventLogW_handle(tvb, offset, pinfo, tree, di, drep);
@@ -869,7 +870,7 @@ eventlog_dissect_BackupEventLogW_request(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-eventlog_dissect_element_CloseEventLog_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_CloseEventLog_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_CloseEventLog_handle_, NDR_POINTER_REF, "Pointer to Handle (policy_handle)",hf_eventlog_eventlog_CloseEventLog_handle);
 
@@ -877,7 +878,7 @@ eventlog_dissect_element_CloseEventLog_handle(tvbuff_t *tvb _U_, int offset _U_,
 }
 
 static int
-eventlog_dissect_element_CloseEventLog_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_CloseEventLog_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_policy_hnd(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_CloseEventLog_handle, PIDL_POLHND_CLOSE);
 
@@ -889,9 +890,9 @@ eventlog_dissect_element_CloseEventLog_handle_(tvbuff_t *tvb _U_, int offset _U_
 /* IDL: ); */
 
 static int
-eventlog_dissect_CloseEventLog_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_CloseEventLog_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="CloseEventLog";
 	offset = eventlog_dissect_element_CloseEventLog_handle(tvb, offset, pinfo, tree, di, drep);
@@ -900,13 +901,13 @@ eventlog_dissect_CloseEventLog_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
 
 static int
-eventlog_dissect_CloseEventLog_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_CloseEventLog_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="CloseEventLog";
 	offset = eventlog_dissect_element_CloseEventLog_handle(tvb, offset, pinfo, tree, di, drep);
@@ -915,7 +916,7 @@ eventlog_dissect_CloseEventLog_request(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-eventlog_dissect_element_DeregisterEventSource_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_DeregisterEventSource_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_DeregisterEventSource_handle_, NDR_POINTER_REF, "Pointer to Handle (policy_handle)",hf_eventlog_eventlog_DeregisterEventSource_handle);
 
@@ -923,7 +924,7 @@ eventlog_dissect_element_DeregisterEventSource_handle(tvbuff_t *tvb _U_, int off
 }
 
 static int
-eventlog_dissect_element_DeregisterEventSource_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_DeregisterEventSource_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_policy_hnd(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_DeregisterEventSource_handle, 0);
 
@@ -935,9 +936,9 @@ eventlog_dissect_element_DeregisterEventSource_handle_(tvbuff_t *tvb _U_, int of
 /* IDL: ); */
 
 static int
-eventlog_dissect_DeregisterEventSource_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_DeregisterEventSource_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DeregisterEventSource";
 	offset = eventlog_dissect_element_DeregisterEventSource_handle(tvb, offset, pinfo, tree, di, drep);
@@ -946,13 +947,13 @@ eventlog_dissect_DeregisterEventSource_response(tvbuff_t *tvb _U_, int offset _U
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
 
 static int
-eventlog_dissect_DeregisterEventSource_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_DeregisterEventSource_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="DeregisterEventSource";
 	offset = eventlog_dissect_element_DeregisterEventSource_handle(tvb, offset, pinfo, tree, di, drep);
@@ -961,7 +962,7 @@ eventlog_dissect_DeregisterEventSource_request(tvbuff_t *tvb _U_, int offset _U_
 }
 
 static int
-eventlog_dissect_element_GetNumRecords_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_GetNumRecords_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_GetNumRecords_handle_, NDR_POINTER_REF, "Pointer to Handle (policy_handle)",hf_eventlog_eventlog_GetNumRecords_handle);
 
@@ -969,7 +970,7 @@ eventlog_dissect_element_GetNumRecords_handle(tvbuff_t *tvb _U_, int offset _U_,
 }
 
 static int
-eventlog_dissect_element_GetNumRecords_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_GetNumRecords_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_policy_hnd(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_GetNumRecords_handle, 0);
 
@@ -977,7 +978,7 @@ eventlog_dissect_element_GetNumRecords_handle_(tvbuff_t *tvb _U_, int offset _U_
 }
 
 static int
-eventlog_dissect_element_GetNumRecords_number(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_GetNumRecords_number(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_GetNumRecords_number_, NDR_POINTER_REF, "Pointer to Number (uint32)",hf_eventlog_eventlog_GetNumRecords_number);
 
@@ -985,7 +986,7 @@ eventlog_dissect_element_GetNumRecords_number(tvbuff_t *tvb _U_, int offset _U_,
 }
 
 static int
-eventlog_dissect_element_GetNumRecords_number_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_GetNumRecords_number_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_GetNumRecords_number, 0);
 
@@ -998,9 +999,9 @@ eventlog_dissect_element_GetNumRecords_number_(tvbuff_t *tvb _U_, int offset _U_
 /* IDL: ); */
 
 static int
-eventlog_dissect_GetNumRecords_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_GetNumRecords_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetNumRecords";
 	offset = eventlog_dissect_element_GetNumRecords_number(tvb, offset, pinfo, tree, di, drep);
@@ -1009,13 +1010,13 @@ eventlog_dissect_GetNumRecords_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
 
 static int
-eventlog_dissect_GetNumRecords_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_GetNumRecords_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="GetNumRecords";
 	offset = eventlog_dissect_element_GetNumRecords_handle(tvb, offset, pinfo, tree, di, drep);
@@ -1024,7 +1025,7 @@ eventlog_dissect_GetNumRecords_request(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-eventlog_dissect_element_GetOldestRecord_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_GetOldestRecord_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_GetOldestRecord_handle_, NDR_POINTER_REF, "Pointer to Handle (policy_handle)",hf_eventlog_eventlog_GetOldestRecord_handle);
 
@@ -1032,7 +1033,7 @@ eventlog_dissect_element_GetOldestRecord_handle(tvbuff_t *tvb _U_, int offset _U
 }
 
 static int
-eventlog_dissect_element_GetOldestRecord_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_GetOldestRecord_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_policy_hnd(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_GetOldestRecord_handle, 0);
 
@@ -1040,7 +1041,7 @@ eventlog_dissect_element_GetOldestRecord_handle_(tvbuff_t *tvb _U_, int offset _
 }
 
 static int
-eventlog_dissect_element_GetOldestRecord_oldest(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_GetOldestRecord_oldest(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_GetOldestRecord_oldest_, NDR_POINTER_REF, "Pointer to Oldest (uint32)",hf_eventlog_eventlog_GetOldestRecord_oldest);
 
@@ -1048,7 +1049,7 @@ eventlog_dissect_element_GetOldestRecord_oldest(tvbuff_t *tvb _U_, int offset _U
 }
 
 static int
-eventlog_dissect_element_GetOldestRecord_oldest_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_GetOldestRecord_oldest_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_GetOldestRecord_oldest, 0);
 
@@ -1061,9 +1062,9 @@ eventlog_dissect_element_GetOldestRecord_oldest_(tvbuff_t *tvb _U_, int offset _
 /* IDL: ); */
 
 static int
-eventlog_dissect_GetOldestRecord_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_GetOldestRecord_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="GetOldestRecord";
 	offset = eventlog_dissect_element_GetOldestRecord_oldest(tvb, offset, pinfo, tree, di, drep);
@@ -1072,13 +1073,13 @@ eventlog_dissect_GetOldestRecord_response(tvbuff_t *tvb _U_, int offset _U_, pac
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
 
 static int
-eventlog_dissect_GetOldestRecord_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_GetOldestRecord_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="GetOldestRecord";
 	offset = eventlog_dissect_element_GetOldestRecord_handle(tvb, offset, pinfo, tree, di, drep);
@@ -1087,7 +1088,7 @@ eventlog_dissect_GetOldestRecord_request(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-eventlog_dissect_element_ChangeNotify_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ChangeNotify_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_ChangeNotify_handle_, NDR_POINTER_REF, "Pointer to Handle (policy_handle)",hf_eventlog_eventlog_ChangeNotify_handle);
 
@@ -1095,7 +1096,7 @@ eventlog_dissect_element_ChangeNotify_handle(tvbuff_t *tvb _U_, int offset _U_, 
 }
 
 static int
-eventlog_dissect_element_ChangeNotify_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ChangeNotify_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_policy_hnd(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_ChangeNotify_handle, 0);
 
@@ -1103,7 +1104,7 @@ eventlog_dissect_element_ChangeNotify_handle_(tvbuff_t *tvb _U_, int offset _U_,
 }
 
 static int
-eventlog_dissect_element_ChangeNotify_unknown2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ChangeNotify_unknown2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_ChangeNotify_unknown2_, NDR_POINTER_REF, "Pointer to Unknown2 (eventlog_ChangeUnknown0)",hf_eventlog_eventlog_ChangeNotify_unknown2);
 
@@ -1111,7 +1112,7 @@ eventlog_dissect_element_ChangeNotify_unknown2(tvbuff_t *tvb _U_, int offset _U_
 }
 
 static int
-eventlog_dissect_element_ChangeNotify_unknown2_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ChangeNotify_unknown2_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = eventlog_dissect_struct_ChangeUnknown0(tvb,offset,pinfo,tree,di,drep,hf_eventlog_eventlog_ChangeNotify_unknown2,0);
 
@@ -1119,7 +1120,7 @@ eventlog_dissect_element_ChangeNotify_unknown2_(tvbuff_t *tvb _U_, int offset _U
 }
 
 static int
-eventlog_dissect_element_ChangeNotify_unknown3(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ChangeNotify_unknown3(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_ChangeNotify_unknown3, 0);
 
@@ -1133,21 +1134,21 @@ eventlog_dissect_element_ChangeNotify_unknown3(tvbuff_t *tvb _U_, int offset _U_
 /* IDL: ); */
 
 static int
-eventlog_dissect_ChangeNotify_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_ChangeNotify_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ChangeNotify";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
 
 static int
-eventlog_dissect_ChangeNotify_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_ChangeNotify_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="ChangeNotify";
 	offset = eventlog_dissect_element_ChangeNotify_handle(tvb, offset, pinfo, tree, di, drep);
@@ -1160,7 +1161,7 @@ eventlog_dissect_ChangeNotify_request(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-eventlog_dissect_element_OpenEventLogW_unknown0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_OpenEventLogW_unknown0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_OpenEventLogW_unknown0_, NDR_POINTER_UNIQUE, "Pointer to Unknown0 (eventlog_OpenUnknown0)",hf_eventlog_eventlog_OpenEventLogW_unknown0);
 
@@ -1168,7 +1169,7 @@ eventlog_dissect_element_OpenEventLogW_unknown0(tvbuff_t *tvb _U_, int offset _U
 }
 
 static int
-eventlog_dissect_element_OpenEventLogW_unknown0_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_OpenEventLogW_unknown0_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = eventlog_dissect_struct_OpenUnknown0(tvb,offset,pinfo,tree,di,drep,hf_eventlog_eventlog_OpenEventLogW_unknown0,0);
 
@@ -1176,7 +1177,7 @@ eventlog_dissect_element_OpenEventLogW_unknown0_(tvbuff_t *tvb _U_, int offset _
 }
 
 static int
-eventlog_dissect_element_OpenEventLogW_Module(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_OpenEventLogW_Module(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset=dissect_ndr_counted_string(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_OpenEventLogW_Module, 0);
 
@@ -1184,7 +1185,7 @@ eventlog_dissect_element_OpenEventLogW_Module(tvbuff_t *tvb _U_, int offset _U_,
 }
 
 static int
-eventlog_dissect_element_OpenEventLogW_RegModuleName(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_OpenEventLogW_RegModuleName(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset=dissect_ndr_counted_string(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_OpenEventLogW_RegModuleName, 0);
 
@@ -1192,7 +1193,7 @@ eventlog_dissect_element_OpenEventLogW_RegModuleName(tvbuff_t *tvb _U_, int offs
 }
 
 static int
-eventlog_dissect_element_OpenEventLogW_MajorVersion(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_OpenEventLogW_MajorVersion(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_OpenEventLogW_MajorVersion, 0);
 
@@ -1200,7 +1201,7 @@ eventlog_dissect_element_OpenEventLogW_MajorVersion(tvbuff_t *tvb _U_, int offse
 }
 
 static int
-eventlog_dissect_element_OpenEventLogW_MinorVersion(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_OpenEventLogW_MinorVersion(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_OpenEventLogW_MinorVersion, 0);
 
@@ -1208,7 +1209,7 @@ eventlog_dissect_element_OpenEventLogW_MinorVersion(tvbuff_t *tvb _U_, int offse
 }
 
 static int
-eventlog_dissect_element_OpenEventLogW_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_OpenEventLogW_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_OpenEventLogW_handle_, NDR_POINTER_REF, "Pointer to Handle (policy_handle)",hf_eventlog_eventlog_OpenEventLogW_handle);
 
@@ -1216,7 +1217,7 @@ eventlog_dissect_element_OpenEventLogW_handle(tvbuff_t *tvb _U_, int offset _U_,
 }
 
 static int
-eventlog_dissect_element_OpenEventLogW_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_OpenEventLogW_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_policy_hnd(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_OpenEventLogW_handle, PIDL_POLHND_OPEN);
 
@@ -1233,9 +1234,9 @@ eventlog_dissect_element_OpenEventLogW_handle_(tvbuff_t *tvb _U_, int offset _U_
 /* IDL: ); */
 
 static int
-eventlog_dissect_OpenEventLogW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_OpenEventLogW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="OpenEventLogW";
 	offset = eventlog_dissect_element_OpenEventLogW_handle(tvb, offset, pinfo, tree, di, drep);
@@ -1244,13 +1245,13 @@ eventlog_dissect_OpenEventLogW_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
 
 static int
-eventlog_dissect_OpenEventLogW_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_OpenEventLogW_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="OpenEventLogW";
 	offset = eventlog_dissect_element_OpenEventLogW_unknown0(tvb, offset, pinfo, tree, di, drep);
@@ -1267,7 +1268,7 @@ eventlog_dissect_OpenEventLogW_request(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-eventlog_dissect_element_RegisterEventSourceW_unknown0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_RegisterEventSourceW_unknown0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_RegisterEventSourceW_unknown0_, NDR_POINTER_UNIQUE, "Pointer to Unknown0 (eventlog_OpenUnknown0)",hf_eventlog_eventlog_RegisterEventSourceW_unknown0);
 
@@ -1275,7 +1276,7 @@ eventlog_dissect_element_RegisterEventSourceW_unknown0(tvbuff_t *tvb _U_, int of
 }
 
 static int
-eventlog_dissect_element_RegisterEventSourceW_unknown0_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_RegisterEventSourceW_unknown0_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = eventlog_dissect_struct_OpenUnknown0(tvb,offset,pinfo,tree,di,drep,hf_eventlog_eventlog_RegisterEventSourceW_unknown0,0);
 
@@ -1283,7 +1284,7 @@ eventlog_dissect_element_RegisterEventSourceW_unknown0_(tvbuff_t *tvb _U_, int o
 }
 
 static int
-eventlog_dissect_element_RegisterEventSourceW_logname(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_RegisterEventSourceW_logname(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset=dissect_ndr_counted_string(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_RegisterEventSourceW_logname, 0);
 
@@ -1291,7 +1292,7 @@ eventlog_dissect_element_RegisterEventSourceW_logname(tvbuff_t *tvb _U_, int off
 }
 
 static int
-eventlog_dissect_element_RegisterEventSourceW_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_RegisterEventSourceW_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset=dissect_ndr_counted_string(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_RegisterEventSourceW_servername, 0);
 
@@ -1299,7 +1300,7 @@ eventlog_dissect_element_RegisterEventSourceW_servername(tvbuff_t *tvb _U_, int 
 }
 
 static int
-eventlog_dissect_element_RegisterEventSourceW_unknown2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_RegisterEventSourceW_unknown2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_RegisterEventSourceW_unknown2, 0);
 
@@ -1307,7 +1308,7 @@ eventlog_dissect_element_RegisterEventSourceW_unknown2(tvbuff_t *tvb _U_, int of
 }
 
 static int
-eventlog_dissect_element_RegisterEventSourceW_unknown3(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_RegisterEventSourceW_unknown3(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_RegisterEventSourceW_unknown3, 0);
 
@@ -1315,7 +1316,7 @@ eventlog_dissect_element_RegisterEventSourceW_unknown3(tvbuff_t *tvb _U_, int of
 }
 
 static int
-eventlog_dissect_element_RegisterEventSourceW_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_RegisterEventSourceW_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_RegisterEventSourceW_handle_, NDR_POINTER_REF, "Pointer to Handle (policy_handle)",hf_eventlog_eventlog_RegisterEventSourceW_handle);
 
@@ -1323,7 +1324,7 @@ eventlog_dissect_element_RegisterEventSourceW_handle(tvbuff_t *tvb _U_, int offs
 }
 
 static int
-eventlog_dissect_element_RegisterEventSourceW_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_RegisterEventSourceW_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_policy_hnd(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_RegisterEventSourceW_handle, 0);
 
@@ -1340,9 +1341,9 @@ eventlog_dissect_element_RegisterEventSourceW_handle_(tvbuff_t *tvb _U_, int off
 /* IDL: ); */
 
 static int
-eventlog_dissect_RegisterEventSourceW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_RegisterEventSourceW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="RegisterEventSourceW";
 	offset = eventlog_dissect_element_RegisterEventSourceW_handle(tvb, offset, pinfo, tree, di, drep);
@@ -1351,13 +1352,13 @@ eventlog_dissect_RegisterEventSourceW_response(tvbuff_t *tvb _U_, int offset _U_
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
 
 static int
-eventlog_dissect_RegisterEventSourceW_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_RegisterEventSourceW_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="RegisterEventSourceW";
 	offset = eventlog_dissect_element_RegisterEventSourceW_unknown0(tvb, offset, pinfo, tree, di, drep);
@@ -1374,7 +1375,7 @@ eventlog_dissect_RegisterEventSourceW_request(tvbuff_t *tvb _U_, int offset _U_,
 }
 
 static int
-eventlog_dissect_element_OpenBackupEventLogW_unknown0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_OpenBackupEventLogW_unknown0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_OpenBackupEventLogW_unknown0_, NDR_POINTER_UNIQUE, "Pointer to Unknown0 (eventlog_OpenUnknown0)",hf_eventlog_eventlog_OpenBackupEventLogW_unknown0);
 
@@ -1382,7 +1383,7 @@ eventlog_dissect_element_OpenBackupEventLogW_unknown0(tvbuff_t *tvb _U_, int off
 }
 
 static int
-eventlog_dissect_element_OpenBackupEventLogW_unknown0_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_OpenBackupEventLogW_unknown0_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = eventlog_dissect_struct_OpenUnknown0(tvb,offset,pinfo,tree,di,drep,hf_eventlog_eventlog_OpenBackupEventLogW_unknown0,0);
 
@@ -1390,7 +1391,7 @@ eventlog_dissect_element_OpenBackupEventLogW_unknown0_(tvbuff_t *tvb _U_, int of
 }
 
 static int
-eventlog_dissect_element_OpenBackupEventLogW_logname(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_OpenBackupEventLogW_logname(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset=dissect_ndr_counted_string(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_OpenBackupEventLogW_logname, 0);
 
@@ -1398,7 +1399,7 @@ eventlog_dissect_element_OpenBackupEventLogW_logname(tvbuff_t *tvb _U_, int offs
 }
 
 static int
-eventlog_dissect_element_OpenBackupEventLogW_unknown2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_OpenBackupEventLogW_unknown2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_OpenBackupEventLogW_unknown2, 0);
 
@@ -1406,7 +1407,7 @@ eventlog_dissect_element_OpenBackupEventLogW_unknown2(tvbuff_t *tvb _U_, int off
 }
 
 static int
-eventlog_dissect_element_OpenBackupEventLogW_unknown3(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_OpenBackupEventLogW_unknown3(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_OpenBackupEventLogW_unknown3, 0);
 
@@ -1414,7 +1415,7 @@ eventlog_dissect_element_OpenBackupEventLogW_unknown3(tvbuff_t *tvb _U_, int off
 }
 
 static int
-eventlog_dissect_element_OpenBackupEventLogW_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_OpenBackupEventLogW_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_OpenBackupEventLogW_handle_, NDR_POINTER_REF, "Pointer to Handle (policy_handle)",hf_eventlog_eventlog_OpenBackupEventLogW_handle);
 
@@ -1422,7 +1423,7 @@ eventlog_dissect_element_OpenBackupEventLogW_handle(tvbuff_t *tvb _U_, int offse
 }
 
 static int
-eventlog_dissect_element_OpenBackupEventLogW_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_OpenBackupEventLogW_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_policy_hnd(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_OpenBackupEventLogW_handle, PIDL_POLHND_OPEN);
 
@@ -1438,9 +1439,9 @@ eventlog_dissect_element_OpenBackupEventLogW_handle_(tvbuff_t *tvb _U_, int offs
 /* IDL: ); */
 
 static int
-eventlog_dissect_OpenBackupEventLogW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_OpenBackupEventLogW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="OpenBackupEventLogW";
 	offset = eventlog_dissect_element_OpenBackupEventLogW_handle(tvb, offset, pinfo, tree, di, drep);
@@ -1449,13 +1450,13 @@ eventlog_dissect_OpenBackupEventLogW_response(tvbuff_t *tvb _U_, int offset _U_,
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
 
 static int
-eventlog_dissect_OpenBackupEventLogW_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_OpenBackupEventLogW_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="OpenBackupEventLogW";
 	offset = eventlog_dissect_element_OpenBackupEventLogW_unknown0(tvb, offset, pinfo, tree, di, drep);
@@ -1470,7 +1471,7 @@ eventlog_dissect_OpenBackupEventLogW_request(tvbuff_t *tvb _U_, int offset _U_, 
 }
 
 static int
-eventlog_dissect_element_ReadEventLogW_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ReadEventLogW_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_ReadEventLogW_handle_, NDR_POINTER_REF, "Pointer to Handle (policy_handle)",hf_eventlog_eventlog_ReadEventLogW_handle);
 
@@ -1478,7 +1479,7 @@ eventlog_dissect_element_ReadEventLogW_handle(tvbuff_t *tvb _U_, int offset _U_,
 }
 
 static int
-eventlog_dissect_element_ReadEventLogW_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ReadEventLogW_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_policy_hnd(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_ReadEventLogW_handle, 0);
 
@@ -1486,7 +1487,7 @@ eventlog_dissect_element_ReadEventLogW_handle_(tvbuff_t *tvb _U_, int offset _U_
 }
 
 static int
-eventlog_dissect_element_ReadEventLogW_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ReadEventLogW_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = eventlog_dissect_bitmap_eventlogReadFlags(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_ReadEventLogW_flags, 0);
 
@@ -1494,7 +1495,7 @@ eventlog_dissect_element_ReadEventLogW_flags(tvbuff_t *tvb _U_, int offset _U_, 
 }
 
 static int
-eventlog_dissect_element_ReadEventLogW_offset(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ReadEventLogW_offset(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_ReadEventLogW_offset, 0);
 
@@ -1502,7 +1503,7 @@ eventlog_dissect_element_ReadEventLogW_offset(tvbuff_t *tvb _U_, int offset _U_,
 }
 
 static int
-eventlog_dissect_element_ReadEventLogW_number_of_bytes(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ReadEventLogW_number_of_bytes(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_ReadEventLogW_number_of_bytes, 0);
 
@@ -1510,7 +1511,7 @@ eventlog_dissect_element_ReadEventLogW_number_of_bytes(tvbuff_t *tvb _U_, int of
 }
 
 static int
-eventlog_dissect_element_ReadEventLogW_data(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ReadEventLogW_data(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_ReadEventLogW_data_, NDR_POINTER_REF, "Pointer to Data (uint8)",hf_eventlog_eventlog_ReadEventLogW_data);
 
@@ -1518,7 +1519,7 @@ eventlog_dissect_element_ReadEventLogW_data(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-eventlog_dissect_element_ReadEventLogW_sent_size(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ReadEventLogW_sent_size(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_ReadEventLogW_sent_size_, NDR_POINTER_REF, "Pointer to Sent Size (uint32)",hf_eventlog_eventlog_ReadEventLogW_sent_size);
 
@@ -1526,7 +1527,7 @@ eventlog_dissect_element_ReadEventLogW_sent_size(tvbuff_t *tvb _U_, int offset _
 }
 
 static int
-eventlog_dissect_element_ReadEventLogW_sent_size_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ReadEventLogW_sent_size_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_ReadEventLogW_sent_size, 0);
 
@@ -1534,7 +1535,7 @@ eventlog_dissect_element_ReadEventLogW_sent_size_(tvbuff_t *tvb _U_, int offset 
 }
 
 static int
-eventlog_dissect_element_ReadEventLogW_real_size(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ReadEventLogW_real_size(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_ReadEventLogW_real_size_, NDR_POINTER_REF, "Pointer to Real Size (uint32)",hf_eventlog_eventlog_ReadEventLogW_real_size);
 
@@ -1542,7 +1543,7 @@ eventlog_dissect_element_ReadEventLogW_real_size(tvbuff_t *tvb _U_, int offset _
 }
 
 static int
-eventlog_dissect_element_ReadEventLogW_real_size_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ReadEventLogW_real_size_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_ReadEventLogW_real_size, 0);
 
@@ -1560,9 +1561,9 @@ eventlog_dissect_element_ReadEventLogW_real_size_(tvbuff_t *tvb _U_, int offset 
 /* IDL: ); */
 
 static int
-eventlog_dissect_ReadEventLogW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_ReadEventLogW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ReadEventLogW";
 	offset = eventlog_dissect_element_ReadEventLogW_data(tvb, offset, pinfo, tree, di, drep);
@@ -1577,13 +1578,13 @@ eventlog_dissect_ReadEventLogW_response(tvbuff_t *tvb _U_, int offset _U_, packe
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
 
 static int
-eventlog_dissect_ReadEventLogW_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_ReadEventLogW_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="ReadEventLogW";
 	offset = eventlog_dissect_element_ReadEventLogW_handle(tvb, offset, pinfo, tree, di, drep);
@@ -1598,7 +1599,7 @@ eventlog_dissect_ReadEventLogW_request(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-eventlog_dissect_element_ReportEventW_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ReportEventW_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_ReportEventW_handle_, NDR_POINTER_REF, "Pointer to Handle (policy_handle)",hf_eventlog_eventlog_ReportEventW_handle);
 
@@ -1606,7 +1607,7 @@ eventlog_dissect_element_ReportEventW_handle(tvbuff_t *tvb _U_, int offset _U_, 
 }
 
 static int
-eventlog_dissect_element_ReportEventW_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ReportEventW_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_policy_hnd(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_ReportEventW_handle, 0);
 
@@ -1614,7 +1615,7 @@ eventlog_dissect_element_ReportEventW_handle_(tvbuff_t *tvb _U_, int offset _U_,
 }
 
 static int
-eventlog_dissect_element_ReportEventW_time(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ReportEventW_time(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_ReportEventW_time, 0);
 
@@ -1622,7 +1623,7 @@ eventlog_dissect_element_ReportEventW_time(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-eventlog_dissect_element_ReportEventW_Type(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ReportEventW_Type(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = eventlog_dissect_bitmap_eventlogEventTypes(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_ReportEventW_Type, 0);
 
@@ -1630,7 +1631,7 @@ eventlog_dissect_element_ReportEventW_Type(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-eventlog_dissect_element_ReportEventW_event_category(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ReportEventW_event_category(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint16(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_ReportEventW_event_category, 0);
 
@@ -1638,7 +1639,7 @@ eventlog_dissect_element_ReportEventW_event_category(tvbuff_t *tvb _U_, int offs
 }
 
 static int
-eventlog_dissect_element_ReportEventW_event_id(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ReportEventW_event_id(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_ReportEventW_event_id, 0);
 
@@ -1646,7 +1647,7 @@ eventlog_dissect_element_ReportEventW_event_id(tvbuff_t *tvb _U_, int offset _U_
 }
 
 static int
-eventlog_dissect_element_ReportEventW_num_of_strings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ReportEventW_num_of_strings(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint16(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_ReportEventW_num_of_strings, 0);
 
@@ -1654,7 +1655,7 @@ eventlog_dissect_element_ReportEventW_num_of_strings(tvbuff_t *tvb _U_, int offs
 }
 
 static int
-eventlog_dissect_element_ReportEventW_data_length(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ReportEventW_data_length(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_ReportEventW_data_length, 0);
 
@@ -1662,7 +1663,7 @@ eventlog_dissect_element_ReportEventW_data_length(tvbuff_t *tvb _U_, int offset 
 }
 
 static int
-eventlog_dissect_element_ReportEventW_computer_name(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_ReportEventW_computer_name(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset=dissect_ndr_counted_string(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_ReportEventW_computer_name, 0);
 
@@ -1681,21 +1682,21 @@ eventlog_dissect_element_ReportEventW_computer_name(tvbuff_t *tvb _U_, int offse
 /* IDL: ); */
 
 static int
-eventlog_dissect_ReportEventW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_ReportEventW_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ReportEventW";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
 
 static int
-eventlog_dissect_ReportEventW_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_ReportEventW_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="ReportEventW";
 	offset = eventlog_dissect_element_ReportEventW_handle(tvb, offset, pinfo, tree, di, drep);
@@ -1722,21 +1723,21 @@ eventlog_dissect_ReportEventW_request(tvbuff_t *tvb _U_, int offset _U_, packet_
 /* IDL: ); */
 
 static int
-eventlog_dissect_ClearEventLogA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_ClearEventLogA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ClearEventLogA";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
 
 static int
-eventlog_dissect_ClearEventLogA_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_ClearEventLogA_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="ClearEventLogA";
 	return offset;
@@ -1747,21 +1748,21 @@ eventlog_dissect_ClearEventLogA_request(tvbuff_t *tvb _U_, int offset _U_, packe
 /* IDL: ); */
 
 static int
-eventlog_dissect_BackupEventLogA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_BackupEventLogA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="BackupEventLogA";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
 
 static int
-eventlog_dissect_BackupEventLogA_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_BackupEventLogA_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="BackupEventLogA";
 	return offset;
@@ -1772,21 +1773,21 @@ eventlog_dissect_BackupEventLogA_request(tvbuff_t *tvb _U_, int offset _U_, pack
 /* IDL: ); */
 
 static int
-eventlog_dissect_OpenEventLogA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_OpenEventLogA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="OpenEventLogA";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
 
 static int
-eventlog_dissect_OpenEventLogA_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_OpenEventLogA_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="OpenEventLogA";
 	return offset;
@@ -1797,21 +1798,21 @@ eventlog_dissect_OpenEventLogA_request(tvbuff_t *tvb _U_, int offset _U_, packet
 /* IDL: ); */
 
 static int
-eventlog_dissect_RegisterEventSourceA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_RegisterEventSourceA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="RegisterEventSourceA";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
 
 static int
-eventlog_dissect_RegisterEventSourceA_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_RegisterEventSourceA_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="RegisterEventSourceA";
 	return offset;
@@ -1822,21 +1823,21 @@ eventlog_dissect_RegisterEventSourceA_request(tvbuff_t *tvb _U_, int offset _U_,
 /* IDL: ); */
 
 static int
-eventlog_dissect_OpenBackupEventLogA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_OpenBackupEventLogA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="OpenBackupEventLogA";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
 
 static int
-eventlog_dissect_OpenBackupEventLogA_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_OpenBackupEventLogA_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="OpenBackupEventLogA";
 	return offset;
@@ -1847,21 +1848,21 @@ eventlog_dissect_OpenBackupEventLogA_request(tvbuff_t *tvb _U_, int offset _U_, 
 /* IDL: ); */
 
 static int
-eventlog_dissect_ReadEventLogA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_ReadEventLogA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ReadEventLogA";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
 
 static int
-eventlog_dissect_ReadEventLogA_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_ReadEventLogA_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="ReadEventLogA";
 	return offset;
@@ -1872,21 +1873,21 @@ eventlog_dissect_ReadEventLogA_request(tvbuff_t *tvb _U_, int offset _U_, packet
 /* IDL: ); */
 
 static int
-eventlog_dissect_ReportEventA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_ReportEventA_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="ReportEventA";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
 
 static int
-eventlog_dissect_ReportEventA_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_ReportEventA_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="ReportEventA";
 	return offset;
@@ -1897,21 +1898,21 @@ eventlog_dissect_ReportEventA_request(tvbuff_t *tvb _U_, int offset _U_, packet_
 /* IDL: ); */
 
 static int
-eventlog_dissect_RegisterClusterSvc_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_RegisterClusterSvc_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="RegisterClusterSvc";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
 
 static int
-eventlog_dissect_RegisterClusterSvc_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_RegisterClusterSvc_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="RegisterClusterSvc";
 	return offset;
@@ -1922,21 +1923,21 @@ eventlog_dissect_RegisterClusterSvc_request(tvbuff_t *tvb _U_, int offset _U_, p
 /* IDL: ); */
 
 static int
-eventlog_dissect_DeregisterClusterSvc_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_DeregisterClusterSvc_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="DeregisterClusterSvc";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
 
 static int
-eventlog_dissect_DeregisterClusterSvc_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_DeregisterClusterSvc_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="DeregisterClusterSvc";
 	return offset;
@@ -1947,91 +1948,91 @@ eventlog_dissect_DeregisterClusterSvc_request(tvbuff_t *tvb _U_, int offset _U_,
 /* IDL: ); */
 
 static int
-eventlog_dissect_WriteClusterEvents_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_WriteClusterEvents_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="WriteClusterEvents";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
 
 static int
-eventlog_dissect_WriteClusterEvents_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_WriteClusterEvents_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="WriteClusterEvents";
 	return offset;
 }
 
 static int
-eventlog_dissect_element_GetLogIntormation_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_GetLogInformation_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_GetLogIntormation_handle_, NDR_POINTER_REF, "Pointer to Handle (policy_handle)",hf_eventlog_eventlog_GetLogIntormation_handle);
+	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_GetLogInformation_handle_, NDR_POINTER_REF, "Pointer to Handle (policy_handle)",hf_eventlog_eventlog_GetLogInformation_handle);
 
 	return offset;
 }
 
 static int
-eventlog_dissect_element_GetLogIntormation_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_GetLogInformation_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = PIDL_dissect_policy_hnd(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_GetLogIntormation_handle, 0);
+	offset = PIDL_dissect_policy_hnd(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_GetLogInformation_handle, 0);
 
 	return offset;
 }
 
 static int
-eventlog_dissect_element_GetLogIntormation_dwInfoLevel(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_GetLogInformation_dwInfoLevel(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_GetLogIntormation_dwInfoLevel, 0);
+	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_GetLogInformation_dwInfoLevel, 0);
 
 	return offset;
 }
 
 static int
-eventlog_dissect_element_GetLogIntormation_lpBuffer(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_GetLogInformation_lpBuffer(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_GetLogIntormation_lpBuffer_);
+	offset = dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_GetLogInformation_lpBuffer_);
 
 	return offset;
 }
 
 static int
-eventlog_dissect_element_GetLogIntormation_lpBuffer_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_GetLogInformation_lpBuffer_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = PIDL_dissect_uint8(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_GetLogIntormation_lpBuffer, 0);
+	offset = PIDL_dissect_uint8(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_GetLogInformation_lpBuffer, 0);
 
 	return offset;
 }
 
 static int
-eventlog_dissect_element_GetLogIntormation_cbBufSize(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_GetLogInformation_cbBufSize(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_GetLogIntormation_cbBufSize, 0);
+	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_GetLogInformation_cbBufSize, 0);
 
 	return offset;
 }
 
 static int
-eventlog_dissect_element_GetLogIntormation_cbBytesNeeded(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_GetLogInformation_cbBytesNeeded(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_GetLogIntormation_cbBytesNeeded_, NDR_POINTER_REF, "Pointer to Cbbytesneeded (int32)",hf_eventlog_eventlog_GetLogIntormation_cbBytesNeeded);
+	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_GetLogInformation_cbBytesNeeded_, NDR_POINTER_REF, "Pointer to CbBytesNeeded (int32)",hf_eventlog_eventlog_GetLogInformation_cbBytesNeeded);
 
 	return offset;
 }
 
 static int
-eventlog_dissect_element_GetLogIntormation_cbBytesNeeded_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_GetLogInformation_cbBytesNeeded_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_GetLogIntormation_cbBytesNeeded, 0);
+	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_GetLogInformation_cbBytesNeeded, 0);
 
 	return offset;
 }
 
-/* IDL: NTSTATUS eventlog_GetLogIntormation( */
+/* IDL: NTSTATUS eventlog_GetLogInformation( */
 /* IDL: [in] [ref] policy_handle *handle, */
 /* IDL: [in] uint32 dwInfoLevel, */
 /* IDL: [out] [size_is(cbBufSize)] uint8 lpBuffer[*], */
@@ -2040,40 +2041,40 @@ eventlog_dissect_element_GetLogIntormation_cbBytesNeeded_(tvbuff_t *tvb _U_, int
 /* IDL: ); */
 
 static int
-eventlog_dissect_GetLogIntormation_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_GetLogInformation_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
-	di->dcerpc_procedure_name="GetLogIntormation";
-	offset = eventlog_dissect_element_GetLogIntormation_lpBuffer(tvb, offset, pinfo, tree, di, drep);
+	di->dcerpc_procedure_name="GetLogInformation";
+	offset = eventlog_dissect_element_GetLogInformation_lpBuffer(tvb, offset, pinfo, tree, di, drep);
 	offset = dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
 
-	offset = eventlog_dissect_element_GetLogIntormation_cbBytesNeeded(tvb, offset, pinfo, tree, di, drep);
+	offset = eventlog_dissect_element_GetLogInformation_cbBytesNeeded(tvb, offset, pinfo, tree, di, drep);
 	offset = dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
 
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
 
 static int
-eventlog_dissect_GetLogIntormation_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_GetLogInformation_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	di->dcerpc_procedure_name="GetLogIntormation";
-	offset = eventlog_dissect_element_GetLogIntormation_handle(tvb, offset, pinfo, tree, di, drep);
+	di->dcerpc_procedure_name="GetLogInformation";
+	offset = eventlog_dissect_element_GetLogInformation_handle(tvb, offset, pinfo, tree, di, drep);
 	offset = dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
-	offset = eventlog_dissect_element_GetLogIntormation_dwInfoLevel(tvb, offset, pinfo, tree, di, drep);
+	offset = eventlog_dissect_element_GetLogInformation_dwInfoLevel(tvb, offset, pinfo, tree, di, drep);
 	offset = dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
-	offset = eventlog_dissect_element_GetLogIntormation_cbBufSize(tvb, offset, pinfo, tree, di, drep);
+	offset = eventlog_dissect_element_GetLogInformation_cbBufSize(tvb, offset, pinfo, tree, di, drep);
 	offset = dissect_deferred_pointers(pinfo, tvb, offset, di, drep);
 	return offset;
 }
 
 static int
-eventlog_dissect_element_FlushEventLog_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_FlushEventLog_handle(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, eventlog_dissect_element_FlushEventLog_handle_, NDR_POINTER_REF, "Pointer to Handle (policy_handle)",hf_eventlog_eventlog_FlushEventLog_handle);
 
@@ -2081,7 +2082,7 @@ eventlog_dissect_element_FlushEventLog_handle(tvbuff_t *tvb _U_, int offset _U_,
 }
 
 static int
-eventlog_dissect_element_FlushEventLog_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_element_FlushEventLog_handle_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_policy_hnd(tvb, offset, pinfo, tree, di, drep, hf_eventlog_eventlog_FlushEventLog_handle, 0);
 
@@ -2093,21 +2094,21 @@ eventlog_dissect_element_FlushEventLog_handle_(tvbuff_t *tvb _U_, int offset _U_
 /* IDL: ); */
 
 static int
-eventlog_dissect_FlushEventLog_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_FlushEventLog_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="FlushEventLog";
 	offset = dissect_ntstatus(tvb, offset, pinfo, tree, di, drep, hf_eventlog_status, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, NT_errors, "Unknown NT status 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &NT_errors_ext, "Unknown NT status 0x%08x"));
 
 	return offset;
 }
 
 static int
-eventlog_dissect_FlushEventLog_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+eventlog_dissect_FlushEventLog_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="FlushEventLog";
 	offset = eventlog_dissect_element_FlushEventLog_handle(tvb, offset, pinfo, tree, di, drep);
@@ -2116,7 +2117,7 @@ eventlog_dissect_FlushEventLog_request(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 
-static dcerpc_sub_dissector eventlog_dissectors[] = {
+static const dcerpc_sub_dissector eventlog_dissectors[] = {
 	{ 0, "ClearEventLogW",
 	   eventlog_dissect_ClearEventLogW_request, eventlog_dissect_ClearEventLogW_response},
 	{ 1, "BackupEventLogW",
@@ -2161,8 +2162,8 @@ static dcerpc_sub_dissector eventlog_dissectors[] = {
 	   eventlog_dissect_DeregisterClusterSvc_request, eventlog_dissect_DeregisterClusterSvc_response},
 	{ 21, "WriteClusterEvents",
 	   eventlog_dissect_WriteClusterEvents_request, eventlog_dissect_WriteClusterEvents_response},
-	{ 22, "GetLogIntormation",
-	   eventlog_dissect_GetLogIntormation_request, eventlog_dissect_GetLogIntormation_response},
+	{ 22, "GetLogInformation",
+	   eventlog_dissect_GetLogInformation_request, eventlog_dissect_GetLogInformation_response},
 	{ 23, "FlushEventLog",
 	   eventlog_dissect_FlushEventLog_request, eventlog_dissect_FlushEventLog_response},
 	{ 0, NULL, NULL, NULL }
@@ -2172,191 +2173,191 @@ void proto_register_dcerpc_eventlog(void)
 {
 	static hf_register_info hf[] = {
 	{ &hf_eventlog_Record,
-		{ "Record", "eventlog.Record", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Record", "eventlog.Record", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_Record_computer_name,
-		{ "Computer Name", "eventlog.Record.computer_name", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Computer Name", "eventlog.Record.computer_name", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_Record_length,
-		{ "Record Length", "eventlog.Record.length", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Record Length", "eventlog.Record.length", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_Record_source_name,
-		{ "Source Name", "eventlog.Record.source_name", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Source Name", "eventlog.Record.source_name", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_Record_string,
-		{ "string", "eventlog.Record.string", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "string", "eventlog.Record.string", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlogEventTypes_EVENTLOG_AUDIT_FAILURE,
-		{ "Eventlog Audit Failure", "eventlog.eventlogEventTypes.EVENTLOG_AUDIT_FAILURE", FT_BOOLEAN, 32, TFS(&eventlogEventTypes_EVENTLOG_AUDIT_FAILURE_tfs), ( 0x0010 ), NULL, HFILL }},
+	  { "EVENTLOG AUDIT FAILURE", "eventlog.eventlogEventTypes.EVENTLOG_AUDIT_FAILURE", FT_BOOLEAN, 32, TFS(&eventlogEventTypes_EVENTLOG_AUDIT_FAILURE_tfs), ( 0x00000010 ), NULL, HFILL }},
 	{ &hf_eventlog_eventlogEventTypes_EVENTLOG_AUDIT_SUCCESS,
-		{ "Eventlog Audit Success", "eventlog.eventlogEventTypes.EVENTLOG_AUDIT_SUCCESS", FT_BOOLEAN, 32, TFS(&eventlogEventTypes_EVENTLOG_AUDIT_SUCCESS_tfs), ( 0x0008 ), NULL, HFILL }},
+	  { "EVENTLOG AUDIT SUCCESS", "eventlog.eventlogEventTypes.EVENTLOG_AUDIT_SUCCESS", FT_BOOLEAN, 32, TFS(&eventlogEventTypes_EVENTLOG_AUDIT_SUCCESS_tfs), ( 0x00000008 ), NULL, HFILL }},
 	{ &hf_eventlog_eventlogEventTypes_EVENTLOG_ERROR_TYPE,
-		{ "Eventlog Error Type", "eventlog.eventlogEventTypes.EVENTLOG_ERROR_TYPE", FT_BOOLEAN, 32, TFS(&eventlogEventTypes_EVENTLOG_ERROR_TYPE_tfs), ( 0x0001 ), NULL, HFILL }},
+	  { "EVENTLOG ERROR TYPE", "eventlog.eventlogEventTypes.EVENTLOG_ERROR_TYPE", FT_BOOLEAN, 32, TFS(&eventlogEventTypes_EVENTLOG_ERROR_TYPE_tfs), ( 0x00000001 ), NULL, HFILL }},
 	{ &hf_eventlog_eventlogEventTypes_EVENTLOG_INFORMATION_TYPE,
-		{ "Eventlog Information Type", "eventlog.eventlogEventTypes.EVENTLOG_INFORMATION_TYPE", FT_BOOLEAN, 32, TFS(&eventlogEventTypes_EVENTLOG_INFORMATION_TYPE_tfs), ( 0x0004 ), NULL, HFILL }},
+	  { "EVENTLOG INFORMATION TYPE", "eventlog.eventlogEventTypes.EVENTLOG_INFORMATION_TYPE", FT_BOOLEAN, 32, TFS(&eventlogEventTypes_EVENTLOG_INFORMATION_TYPE_tfs), ( 0x00000004 ), NULL, HFILL }},
 	{ &hf_eventlog_eventlogEventTypes_EVENTLOG_WARNING_TYPE,
-		{ "Eventlog Warning Type", "eventlog.eventlogEventTypes.EVENTLOG_WARNING_TYPE", FT_BOOLEAN, 32, TFS(&eventlogEventTypes_EVENTLOG_WARNING_TYPE_tfs), ( 0x0002 ), NULL, HFILL }},
+	  { "EVENTLOG WARNING TYPE", "eventlog.eventlogEventTypes.EVENTLOG_WARNING_TYPE", FT_BOOLEAN, 32, TFS(&eventlogEventTypes_EVENTLOG_WARNING_TYPE_tfs), ( 0x00000002 ), NULL, HFILL }},
 	{ &hf_eventlog_eventlogReadFlags_EVENTLOG_BACKWARDS_READ,
-		{ "Eventlog Backwards Read", "eventlog.eventlogReadFlags.EVENTLOG_BACKWARDS_READ", FT_BOOLEAN, 32, TFS(&eventlogReadFlags_EVENTLOG_BACKWARDS_READ_tfs), ( 0x0008 ), NULL, HFILL }},
+	  { "EVENTLOG BACKWARDS READ", "eventlog.eventlogReadFlags.EVENTLOG_BACKWARDS_READ", FT_BOOLEAN, 32, TFS(&eventlogReadFlags_EVENTLOG_BACKWARDS_READ_tfs), ( 0x00000008 ), NULL, HFILL }},
 	{ &hf_eventlog_eventlogReadFlags_EVENTLOG_FORWARDS_READ,
-		{ "Eventlog Forwards Read", "eventlog.eventlogReadFlags.EVENTLOG_FORWARDS_READ", FT_BOOLEAN, 32, TFS(&eventlogReadFlags_EVENTLOG_FORWARDS_READ_tfs), ( 0x0004 ), NULL, HFILL }},
+	  { "EVENTLOG FORWARDS READ", "eventlog.eventlogReadFlags.EVENTLOG_FORWARDS_READ", FT_BOOLEAN, 32, TFS(&eventlogReadFlags_EVENTLOG_FORWARDS_READ_tfs), ( 0x00000004 ), NULL, HFILL }},
 	{ &hf_eventlog_eventlogReadFlags_EVENTLOG_SEEK_READ,
-		{ "Eventlog Seek Read", "eventlog.eventlogReadFlags.EVENTLOG_SEEK_READ", FT_BOOLEAN, 32, TFS(&eventlogReadFlags_EVENTLOG_SEEK_READ_tfs), ( 0x0002 ), NULL, HFILL }},
+	  { "EVENTLOG SEEK READ", "eventlog.eventlogReadFlags.EVENTLOG_SEEK_READ", FT_BOOLEAN, 32, TFS(&eventlogReadFlags_EVENTLOG_SEEK_READ_tfs), ( 0x00000002 ), NULL, HFILL }},
 	{ &hf_eventlog_eventlogReadFlags_EVENTLOG_SEQUENTIAL_READ,
-		{ "Eventlog Sequential Read", "eventlog.eventlogReadFlags.EVENTLOG_SEQUENTIAL_READ", FT_BOOLEAN, 32, TFS(&eventlogReadFlags_EVENTLOG_SEQUENTIAL_READ_tfs), ( 0x0001 ), NULL, HFILL }},
+	  { "EVENTLOG SEQUENTIAL READ", "eventlog.eventlogReadFlags.EVENTLOG_SEQUENTIAL_READ", FT_BOOLEAN, 32, TFS(&eventlogReadFlags_EVENTLOG_SEQUENTIAL_READ_tfs), ( 0x00000001 ), NULL, HFILL }},
 	{ &hf_eventlog_eventlog_BackupEventLogW_backupfilename,
-		{ "Backupfilename", "eventlog.eventlog_BackupEventLogW.backupfilename", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Backupfilename", "eventlog.eventlog_BackupEventLogW.backupfilename", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_BackupEventLogW_handle,
-		{ "Handle", "eventlog.eventlog_BackupEventLogW.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Handle", "eventlog.eventlog_BackupEventLogW.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_ChangeNotify_handle,
-		{ "Handle", "eventlog.eventlog_ChangeNotify.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Handle", "eventlog.eventlog_ChangeNotify.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_ChangeNotify_unknown2,
-		{ "Unknown2", "eventlog.eventlog_ChangeNotify.unknown2", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Unknown2", "eventlog.eventlog_ChangeNotify.unknown2", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_ChangeNotify_unknown3,
-		{ "Unknown3", "eventlog.eventlog_ChangeNotify.unknown3", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Unknown3", "eventlog.eventlog_ChangeNotify.unknown3", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_ChangeUnknown0_unknown0,
-		{ "Unknown0", "eventlog.eventlog_ChangeUnknown0.unknown0", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Unknown0", "eventlog.eventlog_ChangeUnknown0.unknown0", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_ChangeUnknown0_unknown1,
-		{ "Unknown1", "eventlog.eventlog_ChangeUnknown0.unknown1", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Unknown1", "eventlog.eventlog_ChangeUnknown0.unknown1", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_ClearEventLogW_backupfilename,
-		{ "Backupfilename", "eventlog.eventlog_ClearEventLogW.backupfilename", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Backupfilename", "eventlog.eventlog_ClearEventLogW.backupfilename", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_ClearEventLogW_handle,
-		{ "Handle", "eventlog.eventlog_ClearEventLogW.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Handle", "eventlog.eventlog_ClearEventLogW.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_CloseEventLog_handle,
-		{ "Handle", "eventlog.eventlog_CloseEventLog.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Handle", "eventlog.eventlog_CloseEventLog.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_DeregisterEventSource_handle,
-		{ "Handle", "eventlog.eventlog_DeregisterEventSource.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Handle", "eventlog.eventlog_DeregisterEventSource.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_FlushEventLog_handle,
-		{ "Handle", "eventlog.eventlog_FlushEventLog.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
-	{ &hf_eventlog_eventlog_GetLogIntormation_cbBufSize,
-		{ "Cbbufsize", "eventlog.eventlog_GetLogIntormation.cbBufSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
-	{ &hf_eventlog_eventlog_GetLogIntormation_cbBytesNeeded,
-		{ "Cbbytesneeded", "eventlog.eventlog_GetLogIntormation.cbBytesNeeded", FT_INT32, BASE_DEC, NULL, 0, NULL, HFILL }},
-	{ &hf_eventlog_eventlog_GetLogIntormation_dwInfoLevel,
-		{ "Dwinfolevel", "eventlog.eventlog_GetLogIntormation.dwInfoLevel", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
-	{ &hf_eventlog_eventlog_GetLogIntormation_handle,
-		{ "Handle", "eventlog.eventlog_GetLogIntormation.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
-	{ &hf_eventlog_eventlog_GetLogIntormation_lpBuffer,
-		{ "Lpbuffer", "eventlog.eventlog_GetLogIntormation.lpBuffer", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Handle", "eventlog.eventlog_FlushEventLog.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
+	{ &hf_eventlog_eventlog_GetLogInformation_cbBufSize,
+	  { "CbBufSize", "eventlog.eventlog_GetLogInformation.cbBufSize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	{ &hf_eventlog_eventlog_GetLogInformation_cbBytesNeeded,
+	  { "CbBytesNeeded", "eventlog.eventlog_GetLogInformation.cbBytesNeeded", FT_INT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	{ &hf_eventlog_eventlog_GetLogInformation_dwInfoLevel,
+	  { "DwInfoLevel", "eventlog.eventlog_GetLogInformation.dwInfoLevel", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	{ &hf_eventlog_eventlog_GetLogInformation_handle,
+	  { "Handle", "eventlog.eventlog_GetLogInformation.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
+	{ &hf_eventlog_eventlog_GetLogInformation_lpBuffer,
+	  { "LpBuffer", "eventlog.eventlog_GetLogInformation.lpBuffer", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_GetNumRecords_handle,
-		{ "Handle", "eventlog.eventlog_GetNumRecords.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Handle", "eventlog.eventlog_GetNumRecords.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_GetNumRecords_number,
-		{ "Number", "eventlog.eventlog_GetNumRecords.number", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Number", "eventlog.eventlog_GetNumRecords.number", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_GetOldestRecord_handle,
-		{ "Handle", "eventlog.eventlog_GetOldestRecord.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Handle", "eventlog.eventlog_GetOldestRecord.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_GetOldestRecord_oldest,
-		{ "Oldest", "eventlog.eventlog_GetOldestRecord.oldest", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Oldest", "eventlog.eventlog_GetOldestRecord.oldest", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_OpenBackupEventLogW_handle,
-		{ "Handle", "eventlog.eventlog_OpenBackupEventLogW.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Handle", "eventlog.eventlog_OpenBackupEventLogW.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_OpenBackupEventLogW_logname,
-		{ "Logname", "eventlog.eventlog_OpenBackupEventLogW.logname", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Logname", "eventlog.eventlog_OpenBackupEventLogW.logname", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_OpenBackupEventLogW_unknown0,
-		{ "Unknown0", "eventlog.eventlog_OpenBackupEventLogW.unknown0", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Unknown0", "eventlog.eventlog_OpenBackupEventLogW.unknown0", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_OpenBackupEventLogW_unknown2,
-		{ "Unknown2", "eventlog.eventlog_OpenBackupEventLogW.unknown2", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Unknown2", "eventlog.eventlog_OpenBackupEventLogW.unknown2", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_OpenBackupEventLogW_unknown3,
-		{ "Unknown3", "eventlog.eventlog_OpenBackupEventLogW.unknown3", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Unknown3", "eventlog.eventlog_OpenBackupEventLogW.unknown3", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_OpenEventLogW_MajorVersion,
-		{ "Majorversion", "eventlog.eventlog_OpenEventLogW.MajorVersion", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "MajorVersion", "eventlog.eventlog_OpenEventLogW.MajorVersion", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_OpenEventLogW_MinorVersion,
-		{ "Minorversion", "eventlog.eventlog_OpenEventLogW.MinorVersion", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "MinorVersion", "eventlog.eventlog_OpenEventLogW.MinorVersion", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_OpenEventLogW_Module,
-		{ "Module", "eventlog.eventlog_OpenEventLogW.Module", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Module", "eventlog.eventlog_OpenEventLogW.Module", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_OpenEventLogW_RegModuleName,
-		{ "Regmodulename", "eventlog.eventlog_OpenEventLogW.RegModuleName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "RegModuleName", "eventlog.eventlog_OpenEventLogW.RegModuleName", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_OpenEventLogW_handle,
-		{ "Handle", "eventlog.eventlog_OpenEventLogW.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Handle", "eventlog.eventlog_OpenEventLogW.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_OpenEventLogW_unknown0,
-		{ "Unknown0", "eventlog.eventlog_OpenEventLogW.unknown0", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Unknown0", "eventlog.eventlog_OpenEventLogW.unknown0", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_OpenUnknown0_unknown0,
-		{ "Unknown0", "eventlog.eventlog_OpenUnknown0.unknown0", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Unknown0", "eventlog.eventlog_OpenUnknown0.unknown0", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_OpenUnknown0_unknown1,
-		{ "Unknown1", "eventlog.eventlog_OpenUnknown0.unknown1", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Unknown1", "eventlog.eventlog_OpenUnknown0.unknown1", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_ReadEventLogW_data,
-		{ "Data", "eventlog.eventlog_ReadEventLogW.data", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Data", "eventlog.eventlog_ReadEventLogW.data", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_ReadEventLogW_flags,
-		{ "Flags", "eventlog.eventlog_ReadEventLogW.flags", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
+	  { "Flags", "eventlog.eventlog_ReadEventLogW.flags", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_ReadEventLogW_handle,
-		{ "Handle", "eventlog.eventlog_ReadEventLogW.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Handle", "eventlog.eventlog_ReadEventLogW.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_ReadEventLogW_number_of_bytes,
-		{ "Number Of Bytes", "eventlog.eventlog_ReadEventLogW.number_of_bytes", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Number Of Bytes", "eventlog.eventlog_ReadEventLogW.number_of_bytes", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_ReadEventLogW_offset,
-		{ "Offset", "eventlog.eventlog_ReadEventLogW.offset", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Offset", "eventlog.eventlog_ReadEventLogW.offset", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_ReadEventLogW_real_size,
-		{ "Real Size", "eventlog.eventlog_ReadEventLogW.real_size", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Real Size", "eventlog.eventlog_ReadEventLogW.real_size", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_ReadEventLogW_sent_size,
-		{ "Sent Size", "eventlog.eventlog_ReadEventLogW.sent_size", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Sent Size", "eventlog.eventlog_ReadEventLogW.sent_size", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_Record_closing_record_number,
-		{ "Closing Record Number", "eventlog.eventlog_Record.closing_record_number", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Closing Record Number", "eventlog.eventlog_Record.closing_record_number", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_Record_computer_name,
-		{ "Computer Name", "eventlog.eventlog_Record.computer_name", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Computer Name", "eventlog.eventlog_Record.computer_name", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_Record_data_length,
-		{ "Data Length", "eventlog.eventlog_Record.data_length", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Data Length", "eventlog.eventlog_Record.data_length", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_Record_data_offset,
-		{ "Data Offset", "eventlog.eventlog_Record.data_offset", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Data Offset", "eventlog.eventlog_Record.data_offset", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_Record_event_category,
-		{ "Event Category", "eventlog.eventlog_Record.event_category", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Event Category", "eventlog.eventlog_Record.event_category", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_Record_event_id,
-		{ "Event Id", "eventlog.eventlog_Record.event_id", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Event Id", "eventlog.eventlog_Record.event_id", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_Record_event_type,
-		{ "Event Type", "eventlog.eventlog_Record.event_type", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Event Type", "eventlog.eventlog_Record.event_type", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_Record_num_of_strings,
-		{ "Num Of Strings", "eventlog.eventlog_Record.num_of_strings", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Num Of Strings", "eventlog.eventlog_Record.num_of_strings", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_Record_raw_data,
-		{ "Raw Data", "eventlog.eventlog_Record.raw_data", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Raw Data", "eventlog.eventlog_Record.raw_data", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_Record_record_number,
-		{ "Record Number", "eventlog.eventlog_Record.record_number", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Record Number", "eventlog.eventlog_Record.record_number", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_Record_reserved,
-		{ "Reserved", "eventlog.eventlog_Record.reserved", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Reserved", "eventlog.eventlog_Record.reserved", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_Record_reserved_flags,
-		{ "Reserved Flags", "eventlog.eventlog_Record.reserved_flags", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Reserved Flags", "eventlog.eventlog_Record.reserved_flags", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_Record_sid_length,
-		{ "Sid Length", "eventlog.eventlog_Record.sid_length", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Sid Length", "eventlog.eventlog_Record.sid_length", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_Record_sid_offset,
-		{ "Sid Offset", "eventlog.eventlog_Record.sid_offset", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Sid Offset", "eventlog.eventlog_Record.sid_offset", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_Record_size,
-		{ "Size", "eventlog.eventlog_Record.size", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Size", "eventlog.eventlog_Record.size", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_Record_source_name,
-		{ "Source Name", "eventlog.eventlog_Record.source_name", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Source Name", "eventlog.eventlog_Record.source_name", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_Record_stringoffset,
-		{ "Stringoffset", "eventlog.eventlog_Record.stringoffset", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Stringoffset", "eventlog.eventlog_Record.stringoffset", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_Record_strings,
-		{ "Strings", "eventlog.eventlog_Record.strings", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Strings", "eventlog.eventlog_Record.strings", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_Record_time_generated,
-		{ "Time Generated", "eventlog.eventlog_Record.time_generated", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Time Generated", "eventlog.eventlog_Record.time_generated", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_Record_time_written,
-		{ "Time Written", "eventlog.eventlog_Record.time_written", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Time Written", "eventlog.eventlog_Record.time_written", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_RegisterEventSourceW_handle,
-		{ "Handle", "eventlog.eventlog_RegisterEventSourceW.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Handle", "eventlog.eventlog_RegisterEventSourceW.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_RegisterEventSourceW_logname,
-		{ "Logname", "eventlog.eventlog_RegisterEventSourceW.logname", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Logname", "eventlog.eventlog_RegisterEventSourceW.logname", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_RegisterEventSourceW_servername,
-		{ "Servername", "eventlog.eventlog_RegisterEventSourceW.servername", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Servername", "eventlog.eventlog_RegisterEventSourceW.servername", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_RegisterEventSourceW_unknown0,
-		{ "Unknown0", "eventlog.eventlog_RegisterEventSourceW.unknown0", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Unknown0", "eventlog.eventlog_RegisterEventSourceW.unknown0", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_RegisterEventSourceW_unknown2,
-		{ "Unknown2", "eventlog.eventlog_RegisterEventSourceW.unknown2", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Unknown2", "eventlog.eventlog_RegisterEventSourceW.unknown2", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_RegisterEventSourceW_unknown3,
-		{ "Unknown3", "eventlog.eventlog_RegisterEventSourceW.unknown3", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Unknown3", "eventlog.eventlog_RegisterEventSourceW.unknown3", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_ReportEventW_Type,
-		{ "Type", "eventlog.eventlog_ReportEventW.Type", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
+	  { "Type", "eventlog.eventlog_ReportEventW.Type", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_ReportEventW_computer_name,
-		{ "Computer Name", "eventlog.eventlog_ReportEventW.computer_name", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Computer Name", "eventlog.eventlog_ReportEventW.computer_name", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_ReportEventW_data_length,
-		{ "Data Length", "eventlog.eventlog_ReportEventW.data_length", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Data Length", "eventlog.eventlog_ReportEventW.data_length", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_ReportEventW_event_category,
-		{ "Event Category", "eventlog.eventlog_ReportEventW.event_category", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Event Category", "eventlog.eventlog_ReportEventW.event_category", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_ReportEventW_event_id,
-		{ "Event Id", "eventlog.eventlog_ReportEventW.event_id", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Event Id", "eventlog.eventlog_ReportEventW.event_id", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_ReportEventW_handle,
-		{ "Handle", "eventlog.eventlog_ReportEventW.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Handle", "eventlog.eventlog_ReportEventW.handle", FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_ReportEventW_num_of_strings,
-		{ "Num Of Strings", "eventlog.eventlog_ReportEventW.num_of_strings", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Num Of Strings", "eventlog.eventlog_ReportEventW.num_of_strings", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_eventlog_ReportEventW_time,
-		{ "Time", "eventlog.eventlog_ReportEventW.time", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Time", "eventlog.eventlog_ReportEventW.time", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_opnum,
-		{ "Operation", "eventlog.opnum", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Operation", "eventlog.opnum", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_eventlog_status,
-		{ "NT Error", "eventlog.status", FT_UINT32, BASE_HEX, VALS(NT_errors), 0, NULL, HFILL }},
+	  { "NT Error", "eventlog.status", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &NT_errors_ext, 0, NULL, HFILL }},
 	};
 
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_dcerpc_eventlog,
 		&ett_eventlog_eventlogReadFlags,
 		&ett_eventlog_eventlogEventTypes,

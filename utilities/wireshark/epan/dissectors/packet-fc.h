@@ -6,25 +6,14 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __PACKET_FC_H_
 #define __PACKET_FC_H_
 
 #include <epan/conversation.h>
+#include <epan/etypes.h>
 #include "ws_symbol_export.h"
 
 /* R_CTL upper bits creates a classification tree */
@@ -129,8 +118,8 @@ WS_DLL_PUBLIC const value_string fc_fc4_val[];
 
 
 typedef struct _fc_exchange_t {
-    guint32 first_exchange_frame;
-    guint32 last_exchange_frame;
+    uint32_t first_exchange_frame;
+    uint32_t last_exchange_frame;
     nstime_t fc_time;
 } fc_exchange_t;
 
@@ -138,16 +127,16 @@ typedef struct _fc_exchange_t {
 typedef struct _fc_hdr {
     address s_id;
     address d_id;
-    guint32 fctl;
-    guint8 type;
-    guint16 seqcnt;
-    guint16 oxid;
-    guint16 rxid;
-    guint8 r_ctl;
-    guint8 cs_ctl;
-    guint16 lun;
+    uint32_t fctl;
+    uint8_t type;
+    uint16_t seqcnt;
+    uint16_t oxid;
+    uint16_t rxid;
+    uint8_t r_ctl;
+    uint8_t cs_ctl;
+    uint16_t lun;
     fc_exchange_t* fc_ex;
-    guint32 relative_offset;
+    uint32_t relative_offset;
 } fc_hdr;
 
 #define FC_DATA_SOF_FIRST_FRAME   0x1
@@ -157,8 +146,8 @@ typedef struct _fc_hdr {
 
 /* Data structure to pass into FC dissector */
 typedef struct _fc_data {
-    guint   ethertype;
-    guint8  sof_eof;              /**< FC's SOF/EOF encoding passed to FC decoder
+    unsigned   ethertype;
+    uint8_t sof_eof;              /**< FC's SOF/EOF encoding passed to FC decoder
                                  * Bit 7 set if Last frame in sequence
                                  * Bit 6 set if invalid frame content
                                  * Bit 2 set if SOFf

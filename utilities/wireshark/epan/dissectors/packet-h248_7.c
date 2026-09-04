@@ -9,19 +9,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -34,34 +22,34 @@ void proto_register_h248_7(void);
 #define PSNAME "H248AN"
 #define PFNAME "h248.an"
 
-static int proto_h248_an = -1;
+static int proto_h248_an;
 
-static int hf_h248_an_apf = -1;
-static int hf_h248_an_apf_an = -1;
-static int hf_h248_an_apf_noc = -1;
-static int hf_h248_an_apf_av = -1;
-static int hf_h248_an_apf_di = -1;
+static int hf_h248_an_apf;
+static int hf_h248_an_apf_an;
+static int hf_h248_an_apf_noc;
+static int hf_h248_an_apf_av;
+static int hf_h248_an_apf_di;
 
-static int hf_h248_an_apv = -1;
-static int hf_h248_an_apv_an = -1;
-static int hf_h248_an_apv_noc = -1;
-static int hf_h248_an_apv_av = -1;
-static int hf_h248_an_apv_num = -1;
-static int hf_h248_an_apv_spi = -1;
-static int hf_h248_an_apv_sp = -1;
-static int hf_h248_an_apv_di = -1;
+static int hf_h248_an_apv;
+static int hf_h248_an_apv_an;
+static int hf_h248_an_apv_noc;
+static int hf_h248_an_apv_av;
+static int hf_h248_an_apv_num;
+static int hf_h248_an_apv_spi;
+static int hf_h248_an_apv_sp;
+static int hf_h248_an_apv_di;
 
-static gint ett_h248_an = -1;
-static gint ett_h248_an_apf = -1;
-static gint ett_h248_an_apv = -1;
+static int ett_h248_an;
+static int ett_h248_an_apf;
+static int ett_h248_an_apv;
 
 static const value_string h248_an_prop_vals[] = {
-	{ 0, "Generic Announcment Package (an) (H.248.7)" },
+	{ 0, "Generic Announcement Package (an) (H.248.7)" },
 	{ 0, NULL }
 };
 
 static const value_string  h248_an_signals_vals[] = {
-	{ 0x0001, "Annoumcement Play Fixed (apf)"},
+	{ 0x0001, "Announcement Play Fixed (apf)"},
 	{ 0x0002, "Announcement Play Variable (apv)"},
 	{0,NULL}
 };
@@ -159,7 +147,7 @@ void proto_register_h248_7(void) {
 
 		};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_h248_an,
 		&ett_h248_an_apf,
 		&ett_h248_an_apv
@@ -175,7 +163,7 @@ void proto_register_h248_7(void) {
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

@@ -3,10 +3,11 @@ Type=PortableApps.comFormat
 Version=3.0
 
 [Details]
-Name=Wireshark Portable
-AppID=WiresharkPortable
+Name=Wireshark Portable (@PORTABLEAPPS_BITS@-bit)
+AppID=@PORTABLEAPPS_NAME@
 Publisher=Wireshark.org
 Homepage=https://www.wireshark.org/
+Donate=https://wiresharkfoundation.org/donate/
 Category=Internet
 Description=Wireshark is one of the world's foremost network protocol analyzers.
 Language=Multilingual
@@ -20,8 +21,8 @@ CommercialUse=true
 
 [Version]
 PackageVersion=@PORTABLEAPPS_PACKAGE_VERSION@
-DisplayVersion=@VERSION@
+DisplayVersion=@PROJECT_VERSION@
 
 [Control]
 Icons=1
-Start=WiresharkPortable.exe
+Start=@PORTABLEAPPS_NAME@.exe

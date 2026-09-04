@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -36,97 +24,100 @@ void proto_register_pppoes(void);
 void proto_register_pppoe(void);
 void proto_reg_handoff_pppoes(void);
 
-static int proto_pppoed = -1;
+static dissector_handle_t pppoed_handle;
+static dissector_handle_t pppoes_handle;
+
+static int proto_pppoed;
 
 /* Common to session and discovery protocols */
-static gint hf_pppoe_version = -1;
-static gint hf_pppoe_type = -1;
-static gint hf_pppoe_code = -1;
-static gint hf_pppoe_session_id = -1;
-static gint hf_pppoe_payload_length = -1;
+static int hf_pppoe_version;
+static int hf_pppoe_type;
+static int hf_pppoe_code;
+static int hf_pppoe_session_id;
+static int hf_pppoe_payload_length;
 
 /* Discovery protocol fields */
-static gint hf_pppoed_tags = -1;
-static gint hf_pppoed_tag = -1;
-static gint hf_pppoed_tag_length = -1;
-static gint hf_pppoed_tag_length_8 = -1;
-static gint hf_pppoed_tag_unknown_data = -1;
-static gint hf_pppoed_tag_service_name = -1;
-static gint hf_pppoed_tag_ac_name = -1;
-static gint hf_pppoed_tag_host_uniq = -1;
-static gint hf_pppoed_tag_ac_cookie = -1;
-static gint hf_pppoed_tag_vendor_id = -1;
-static gint hf_pppoed_tag_vendor_unspecified = -1;
-static gint hf_pppoed_tag_vspec_tags = -1;
-static gint hf_pppoed_tag_vspec_tag = -1;
-static gint hf_pppoed_tag_vspec_circuit_id = -1;
-static gint hf_pppoed_tag_vspec_remote_id = -1;
-static gint hf_pppoed_tag_vspec_act_data_rate_up = -1;
-static gint hf_pppoed_tag_vspec_act_data_rate_down = -1;
-static gint hf_pppoed_tag_vspec_min_data_rate_up = -1;
-static gint hf_pppoed_tag_vspec_min_data_rate_down = -1;
-static gint hf_pppoed_tag_vspec_attainable_data_rate_up = -1;
-static gint hf_pppoed_tag_vspec_attainable_data_rate_down = -1;
-static gint hf_pppoed_tag_vspec_max_data_rate_up = -1;
-static gint hf_pppoed_tag_vspec_max_data_rate_down = -1;
-static gint hf_pppoed_tag_vspec_min_data_rate_up_lp = -1;
-static gint hf_pppoed_tag_vspec_min_data_rate_down_lp = -1;
-static gint hf_pppoed_tag_vspec_max_int_delay_up = -1;
-static gint hf_pppoed_tag_vspec_act_int_delay_up = -1;
-static gint hf_pppoed_tag_vspec_max_int_delay_down = -1;
-static gint hf_pppoed_tag_vspec_act_int_delay_down = -1;
-static gint hf_pppoed_tag_vspec_access_loop_encapsulation = -1;
-static gint hf_pppoed_tag_vspec_access_loop_encap_data_link = -1;
-static gint hf_pppoed_tag_vspec_access_loop_encap_encap_1 = -1;
-static gint hf_pppoed_tag_vspec_access_loop_encap_encap_2 = -1;
-static gint hf_pppoed_tag_credits = -1;
-static gint hf_pppoed_tag_credits_fcn = -1;
-static gint hf_pppoed_tag_credits_bcn = -1;
-static gint hf_pppoed_tag_metrics = -1;
-static gint hf_pppoed_tag_metrics_r = -1;
-static gint hf_pppoed_tag_metrics_rlq = -1;
-static gint hf_pppoed_tag_metrics_resource = -1;
-static gint hf_pppoed_tag_metrics_latency = -1;
-static gint hf_pppoed_tag_metrics_curr_drate = -1;
-static gint hf_pppoed_tag_metrics_max_drate = -1;
-static gint hf_pppoed_tag_mdr_units = -1;
-static gint hf_pppoed_tag_cdr_units = -1;
-static gint hf_pppoed_tag_seq_num = -1;
-static gint hf_pppoed_tag_cred_scale = -1;
-static gint hf_pppoed_tag_relay_session_id = -1;
-static gint hf_pppoed_tag_hurl = -1;
-static gint hf_pppoed_tag_motm = -1;
-static gint hf_pppoed_tag_max_payload = -1;
-static gint hf_pppoed_tag_ip_route_add = -1;
-static gint hf_pppoed_tag_service_name_error = -1;
-static gint hf_pppoed_tag_ac_system_error = -1;
-static gint hf_pppoed_tag_generic_error = -1;
+static int hf_pppoed_tags;
+static int hf_pppoed_tag;
+static int hf_pppoed_tag_length;
+static int hf_pppoed_tag_length_8;
+static int hf_pppoed_tag_unknown_data;
+static int hf_pppoed_tag_service_name;
+static int hf_pppoed_tag_ac_name;
+static int hf_pppoed_tag_host_uniq;
+static int hf_pppoed_tag_ac_cookie;
+static int hf_pppoed_tag_vendor_id;
+static int hf_pppoed_tag_vendor_unspecified;
+static int hf_pppoed_tag_vspec_tags;
+static int hf_pppoed_tag_vspec_tag;
+static int hf_pppoed_tag_vspec_circuit_id;
+static int hf_pppoed_tag_vspec_remote_id;
+static int hf_pppoed_tag_vspec_act_data_rate_up;
+static int hf_pppoed_tag_vspec_act_data_rate_down;
+static int hf_pppoed_tag_vspec_min_data_rate_up;
+static int hf_pppoed_tag_vspec_min_data_rate_down;
+static int hf_pppoed_tag_vspec_attainable_data_rate_up;
+static int hf_pppoed_tag_vspec_attainable_data_rate_down;
+static int hf_pppoed_tag_vspec_max_data_rate_up;
+static int hf_pppoed_tag_vspec_max_data_rate_down;
+static int hf_pppoed_tag_vspec_min_data_rate_up_lp;
+static int hf_pppoed_tag_vspec_min_data_rate_down_lp;
+static int hf_pppoed_tag_vspec_max_int_delay_up;
+static int hf_pppoed_tag_vspec_act_int_delay_up;
+static int hf_pppoed_tag_vspec_max_int_delay_down;
+static int hf_pppoed_tag_vspec_act_int_delay_down;
+static int hf_pppoed_tag_vspec_access_loop_encapsulation;
+static int hf_pppoed_tag_vspec_access_loop_encap_data_link;
+static int hf_pppoed_tag_vspec_access_loop_encap_encap_1;
+static int hf_pppoed_tag_vspec_access_loop_encap_encap_2;
+static int hf_pppoed_tag_credits;
+static int hf_pppoed_tag_credits_fcn;
+static int hf_pppoed_tag_credits_bcn;
+static int hf_pppoed_tag_metrics;
+static int hf_pppoed_tag_metrics_r;
+static int hf_pppoed_tag_metrics_rlq;
+static int hf_pppoed_tag_metrics_resource;
+static int hf_pppoed_tag_metrics_latency;
+static int hf_pppoed_tag_metrics_curr_drate;
+static int hf_pppoed_tag_metrics_max_drate;
+static int hf_pppoed_tag_mdr_units;
+static int hf_pppoed_tag_cdr_units;
+static int hf_pppoed_tag_seq_num;
+static int hf_pppoed_tag_cred_scale;
+static int hf_pppoed_tag_relay_session_id;
+static int hf_pppoed_tag_hurl;
+static int hf_pppoed_tag_motm;
+static int hf_pppoed_tag_max_payload;
+static int hf_pppoed_tag_ip_route_add;
+static int hf_pppoed_tag_service_name_error;
+static int hf_pppoed_tag_ac_system_error;
+static int hf_pppoed_tag_generic_error;
 
 /* Session protocol fields */
-static gint hf_pppoes_tags = -1;
-/* static gint hf_pppoes_tag = -1; */
-/* static gint hf_pppoes_tag_credits = -1; */
-static gint hf_pppoes_tag_credits_fcn = -1;
-static gint hf_pppoes_tag_credits_bcn = -1;
+static int hf_pppoes_tags;
+/* static int hf_pppoes_tag; */
+/* static int hf_pppoes_tag_credits; */
+static int hf_pppoes_tag_credits_fcn;
+static int hf_pppoes_tag_credits_bcn;
 
 /* Session protocol fields */
 
-static gint ett_pppoed = -1;
-static gint ett_pppoed_tags = -1;
-static gint ett_pppoed_tag_vspec_dslf_access_loop_encaps = -1;
+static int ett_pppoed;
+static int ett_pppoed_tags;
+static int ett_pppoed_tag_vspec_dslf_access_loop_encaps;
 
-static int proto_pppoes = -1;
+static int proto_pppoes;
 
-static gint ett_pppoes = -1;
-static gint ett_pppoes_tags = -1;
+static int ett_pppoes;
+static int ett_pppoes_tags;
 
-static expert_field ei_pppoe_payload_length = EI_INIT;
-static expert_field ei_pppoe_tag_length = EI_INIT;
+static expert_field ei_pppoe_payload_length;
+static expert_field ei_pppoe_tag_length;
 
 /* PPPoE parent fields */
 
-static int proto_pppoe = -1;
-static gint ett_pppoe = -1;
+static int proto_pppoe;
+static int ett_pppoe;
 
 
 /* Handle for calling for ppp dissector to handle session data */
@@ -134,7 +125,7 @@ static dissector_handle_t ppp_handle;
 
 
 /* Preference for showing discovery tag values and lengths */
-static gboolean global_pppoe_show_tags_and_lengths = FALSE;
+static bool global_pppoe_show_tags_and_lengths;
 
 
 #define PPPOE_CODE_SESSION    0x00
@@ -191,9 +182,10 @@ static gboolean global_pppoe_show_tags_and_lengths = FALSE;
 #define PPPOE_TAG_VSPEC_DSLF_ACCESS_LOOP_ENCAP_DATA_LINK_ATM 0x00
 #define PPPOE_TAG_VSPEC_DSLF_ACCESS_LOOP_ENCAP_DATA_LINK_ETH 0x01
 
-#define PPPOE_TAG_VSPEC_DSLF_ACCESS_LOOP_ENCAP_ENCAPS_1_NA               0x00
-#define PPPOE_TAG_VSPEC_DSLF_ACCESS_LOOP_ENCAP_ENCAPS_1_UNTAGGED_ETH     0x01
-#define PPPOE_TAG_VSPEC_DSLF_ACCESS_LOOP_ENCAP_ENCAPS_1_SINLE_TAGGED_ETH 0x02
+#define PPPOE_TAG_VSPEC_DSLF_ACCESS_LOOP_ENCAP_ENCAPS_1_NA                0x00
+#define PPPOE_TAG_VSPEC_DSLF_ACCESS_LOOP_ENCAP_ENCAPS_1_UNTAGGED_ETH      0x01
+#define PPPOE_TAG_VSPEC_DSLF_ACCESS_LOOP_ENCAP_ENCAPS_1_SINGLE_TAGGED_ETH 0x02
+#define PPPOE_TAG_VSPEC_DSLF_ACCESS_LOOP_ENCAP_ENCAPS_1_DOUBLE_TAGGED_ETH 0x03
 
 #define PPPOE_TAG_VSPEC_DSLF_ACCESS_LOOP_ENCAP_ENCAPS_2_NA                             0x00
 #define PPPOE_TAG_VSPEC_DSLF_ACCESS_LOOP_ENCAP_ENCAPS_2_PPPOA_LLC                      0x01
@@ -205,9 +197,9 @@ static gboolean global_pppoe_show_tags_and_lengths = FALSE;
 #define PPPOE_TAG_VSPEC_DSLF_ACCESS_LOOP_ENCAP_ENCAPS_2_ETH_OVER_AAL5_NULL_WITH_FCS    0x07
 #define PPPOE_TAG_VSPEC_DSLF_ACCESS_LOOP_ENCAP_ENCAPS_2_ETH_OVER_AAL5_NULL_WITHOUT_FCS 0x08
 
-#define PPPOE_CDR_MASK        0x06
-#define PPPOE_MDR_MASK        0x18
-#define PPPOE_RCV_ONLY_MASK   0x01
+#define PPPOE_CDR_MASK        0x0006
+#define PPPOE_MDR_MASK        0x0018
+#define PPPOE_RCV_ONLY_MASK   0x0001
 
 #define PPPOE_SCALE_KBPS      0x00
 #define PPPOE_SCALE_MBPS      0x01
@@ -281,10 +273,11 @@ static const value_string vspec_tag_dslf_access_loop_encap_data_link_vals[] = {
 };
 
 static const value_string vspec_tag_dslf_access_loop_encap_encap_1_vals[] = {
-	{PPPOE_TAG_VSPEC_DSLF_ACCESS_LOOP_ENCAP_ENCAPS_1_NA,               "NA"                    },
-	{PPPOE_TAG_VSPEC_DSLF_ACCESS_LOOP_ENCAP_ENCAPS_1_UNTAGGED_ETH,     "Untagged Ethernet"     },
-	{PPPOE_TAG_VSPEC_DSLF_ACCESS_LOOP_ENCAP_ENCAPS_1_SINLE_TAGGED_ETH, "Single-tagged Ethernet"},
-	{0,                                                     NULL                               }
+	{PPPOE_TAG_VSPEC_DSLF_ACCESS_LOOP_ENCAP_ENCAPS_1_NA,                "NA"                    },
+	{PPPOE_TAG_VSPEC_DSLF_ACCESS_LOOP_ENCAP_ENCAPS_1_UNTAGGED_ETH,      "Untagged Ethernet"     },
+	{PPPOE_TAG_VSPEC_DSLF_ACCESS_LOOP_ENCAP_ENCAPS_1_SINGLE_TAGGED_ETH, "Single-tagged Ethernet"},
+	{PPPOE_TAG_VSPEC_DSLF_ACCESS_LOOP_ENCAP_ENCAPS_1_DOUBLE_TAGGED_ETH, "Double-tagged Ethernet"},
+	{0,                                                     NULL                                }
 };
 
 static const value_string vspec_tag_dslf_access_loop_encap_encap_2_vals[] = {
@@ -336,8 +329,8 @@ static void
 dissect_pppoe_subtags_dslf(tvbuff_t *tvb, packet_info *pinfo _U_, int offset, proto_tree *tree,
 			   int payload_length)
 {
-	guint8 poe_tag;
-	guint8 poe_tag_length;
+	uint8_t poe_tag;
+	uint8_t poe_tag_length;
 	int tagstart;
 
 	proto_tree  *pppoe_tree, *ti, *encaps_tree;
@@ -354,8 +347,8 @@ dissect_pppoe_subtags_dslf(tvbuff_t *tvb, packet_info *pinfo _U_, int offset, pr
 		/* Loop until all data seen or End-Of-List tag found */
 		while (tagstart <= offset + payload_length-2)
 		{
-			poe_tag = tvb_get_guint8(tvb, tagstart);
-			poe_tag_length = tvb_get_guint8(tvb, tagstart + 1);
+			poe_tag = tvb_get_uint8(tvb, tagstart);
+			poe_tag_length = tvb_get_uint8(tvb, tagstart + 1);
 
 			/* Tag value and data length */
 			if (global_pppoe_show_tags_and_lengths)
@@ -425,7 +418,7 @@ dissect_pppoe_subtags_dslf(tvbuff_t *tvb, packet_info *pinfo _U_, int offset, pr
 							proto_tree_add_item(pppoe_tree, hf_pppoed_tag_length_8, tvb, tagstart+1, 1, ENC_BIG_ENDIAN);
 						}
 						proto_tree_add_item(pppoe_tree, hf_pppoed_tag_unknown_data, tvb,
-								tagstart+1, poe_tag_length, ENC_NA);
+								tagstart+2, poe_tag_length, ENC_NA);
 					}
 			}
 
@@ -440,10 +433,10 @@ static void
 dissect_pppoe_tags(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree *tree,
 		   int payload_length)
 {
-	guint16 poe_tag;
-	guint16 poe_tag_length;
+	uint16_t poe_tag;
+	uint16_t poe_tag_length;
 	int tagstart;
-	guint16 poe_rsv = 0;
+	uint16_t poe_rsv = 0;
 
 	proto_tree  *pppoe_tree;
 	proto_item  *ti;
@@ -479,14 +472,14 @@ dissect_pppoe_tags(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree *tr
 					if (poe_tag_length > 0)
 					{
 						proto_tree_add_item(pppoe_tree, hf_pppoed_tag_service_name, tvb,
-						                    tagstart+4, poe_tag_length, ENC_ASCII|ENC_NA);
+						                    tagstart+4, poe_tag_length, ENC_ASCII);
 					}
 					break;
 				case PPPOE_TAG_AC_NAME:
 					{
-					const guint8* str;
+					const uint8_t* str;
 					proto_tree_add_item_ret_string(pppoe_tree, hf_pppoed_tag_ac_name, tvb,
-					                    tagstart+4, poe_tag_length, ENC_ASCII|ENC_NA, wmem_packet_scope(), &str);
+					                    tagstart+4, poe_tag_length, ENC_ASCII|ENC_NA, pinfo->pool, &str);
 					/* Show AC-Name in info column */
 					col_append_fstr(pinfo->cinfo, COL_INFO, " AC-Name='%s'", str);
 					}
@@ -507,7 +500,7 @@ dissect_pppoe_tags(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree *tr
 					}
 					if (poe_tag_length > 4)
 					{
-						guint32 vendor_id = tvb_get_ntohl(tvb, tagstart+4);
+						uint32_t vendor_id = tvb_get_ntohl(tvb, tagstart+4);
 						switch (vendor_id)
 						{
 							case PPPOE_VENDOR_ID_DSLF:
@@ -645,15 +638,15 @@ dissect_pppoe_tags(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree *tr
 				   strings. */
 				case PPPOE_TAG_SVC_ERR:
 					proto_tree_add_item(pppoe_tree, hf_pppoed_tag_service_name_error, tvb,
-					                    tagstart+4, poe_tag_length, ENC_ASCII|ENC_NA);
+					                    tagstart+4, poe_tag_length, ENC_ASCII);
 					break;
 				case PPPOE_TAG_AC_ERR:
 					proto_tree_add_item(pppoe_tree, hf_pppoed_tag_ac_system_error, tvb,
-					                    tagstart+4, poe_tag_length, ENC_ASCII|ENC_NA);
+					                    tagstart+4, poe_tag_length, ENC_ASCII);
 					break;
 				case PPPOE_TAG_GENERIC_ERR:
 					proto_tree_add_item(pppoe_tree, hf_pppoed_tag_generic_error, tvb,
-					                    tagstart+4, poe_tag_length, ENC_ASCII|ENC_NA);
+					                    tagstart+4, poe_tag_length, ENC_ASCII);
 					break;
 
 				/* Get out if see end-of-list tag */
@@ -685,8 +678,8 @@ dissect_pppoe_tags(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree *tr
 /* Discovery protocol, i.e. PPP session not yet established */
 static int dissect_pppoed(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	guint8  pppoe_code;
-	guint16 reported_payload_length;
+	uint8_t pppoe_code;
+	uint16_t reported_payload_length;
 
 	proto_tree  *pppoe_tree = NULL;
 	proto_item  *ti;
@@ -695,7 +688,7 @@ static int dissect_pppoed(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, v
 	col_clear(pinfo->cinfo, COL_INFO);
 
 	/* Start Decoding Here. */
-	pppoe_code = tvb_get_guint8(tvb, 1);
+	pppoe_code = tvb_get_uint8(tvb, 1);
 
 	col_append_str(pinfo->cinfo, COL_INFO, val_to_str_const(pppoe_code, code_vals, "Unknown"));
 
@@ -755,12 +748,12 @@ void proto_register_pppoed(void)
 			}
 		},
 		{ &hf_pppoed_tag_service_name,
-			{ "Service-Name", "pppoed.tags.service_name", FT_STRING, STR_ASCII,
+			{ "Service-Name", "pppoed.tags.service_name", FT_STRING, BASE_NONE,
 				 NULL, 0x0, NULL, HFILL
 			}
 		},
 		{ &hf_pppoed_tag_ac_name,
-			{ "AC-Name", "pppoed.tags.ac_name", FT_STRING, STR_ASCII,
+			{ "AC-Name", "pppoed.tags.ac_name", FT_STRING, BASE_NONE,
 				 NULL, 0x0, NULL, HFILL
 			}
 		},
@@ -795,12 +788,12 @@ void proto_register_pppoed(void)
 			}
 		},
 		{ &hf_pppoed_tag_vspec_circuit_id,
-		        { "Circuit ID", "pppoed.tags.circuit_id", FT_STRING, STR_ASCII,
+		        { "Circuit ID", "pppoed.tags.circuit_id", FT_STRING, BASE_NONE,
 		                 NULL, 0x0, NULL, HFILL
 		        }
 		},
 		{ &hf_pppoed_tag_vspec_remote_id,
-		        { "Remote ID", "pppoed.tags.remote_id", FT_STRING, STR_ASCII,
+		        { "Remote ID", "pppoed.tags.remote_id", FT_STRING, BASE_NONE,
 		                 NULL, 0x0, NULL, HFILL
 		        }
 		},
@@ -890,7 +883,7 @@ void proto_register_pppoed(void)
 			}
 		},
 		{ &hf_pppoed_tag_vspec_access_loop_encap_encap_2,
-			{ "Encaps 1", "pppoed.tags.access_loop_encap.encap_2", FT_UINT8, BASE_HEX,
+			{ "Encaps 2", "pppoed.tags.access_loop_encap.encap_2", FT_UINT8, BASE_HEX,
 				 VALS(vspec_tag_dslf_access_loop_encap_encap_2_vals), 0x0, NULL, HFILL
 			}
 		},
@@ -990,23 +983,23 @@ void proto_register_pppoed(void)
 			}
 		},
 		{ &hf_pppoed_tag_service_name_error,
-			{ "Service-Name-Error", "pppoed.tags.service_name_error", FT_STRING, STR_ASCII,
+			{ "Service-Name-Error", "pppoed.tags.service_name_error", FT_STRING, BASE_NONE,
 				 NULL, 0x0, NULL, HFILL
 			}
 		},
 		{ &hf_pppoed_tag_ac_system_error,
-			{ "AC-System-Error", "pppoed.tags.ac_system_error", FT_STRING, STR_ASCII,
+			{ "AC-System-Error", "pppoed.tags.ac_system_error", FT_STRING, BASE_NONE,
 				 NULL, 0x0, NULL, HFILL
 			}
 		},
 		{ &hf_pppoed_tag_generic_error,
-			{ "Generic-Error", "pppoed.tags.generic_error", FT_STRING, STR_ASCII,
+			{ "Generic-Error", "pppoed.tags.generic_error", FT_STRING, BASE_NONE,
 				 NULL, 0x0, NULL, HFILL
 			}
 		}
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_pppoed,
 		&ett_pppoed_tags,
 		&ett_pppoed_tag_vspec_dslf_access_loop_encaps
@@ -1020,6 +1013,9 @@ void proto_register_pppoed(void)
 	proto_register_subtree_array(ett, array_length(ett));
 	proto_register_field_array(proto_pppoed, hf, array_length(hf));
 
+	/* Register dissector handle */
+	pppoed_handle = register_dissector("pppoed", dissect_pppoed, proto_pppoed);
+
 	/* Preference setting */
 	pppoed_module = prefs_register_protocol(proto_pppoed, NULL);
 	prefs_register_bool_preference(pppoed_module, "show_tags_and_lengths",
@@ -1030,9 +1026,6 @@ void proto_register_pppoed(void)
 
 void proto_reg_handoff_pppoed(void)
 {
-	dissector_handle_t pppoed_handle;
-
-	pppoed_handle = create_dissector_handle(dissect_pppoed, proto_pppoed);
 	dissector_add_uint("ethertype", ETHERTYPE_PPPOED, pppoed_handle);
 }
 
@@ -1040,13 +1033,13 @@ void proto_reg_handoff_pppoed(void)
 /* Session protocol, i.e. PPP session established */
 static int dissect_pppoes(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	guint8  pppoe_code;
-	guint16 reported_payload_length;
-	guint16 poe_tag_length;
-	gint    actual_payload_length;
-	gint    length, reported_length;
-	gint    credit_offset = 0, tagstart = 0;
-	guint16 cp_code;
+	uint8_t pppoe_code;
+	uint16_t reported_payload_length;
+	uint16_t poe_tag_length;
+	int     actual_payload_length;
+	int     length, reported_length;
+	int     credit_offset = 0, tagstart = 0;
+	uint16_t cp_code;
 
 	proto_tree  *pppoe_tree;
 	proto_item  *ti = NULL;
@@ -1056,7 +1049,7 @@ static int dissect_pppoes(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, v
 	col_clear(pinfo->cinfo, COL_INFO);
 
 	/* Start Decoding Here. */
-	pppoe_code = tvb_get_guint8(tvb, 1);
+	pppoe_code = tvb_get_uint8(tvb, 1);
 
 	col_set_str(pinfo->cinfo, COL_INFO,
 		             val_to_str_const(pppoe_code, code_vals, "Unknown"));
@@ -1158,9 +1151,9 @@ static int dissect_pppoes(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, v
 		cp_code = tvb_get_ntohs(tvb, 6);
 		/*
 		 * The session payload length expressly does not include pad bytes
-		 *  when LCP or IPCP are present, so avoid the spurious error message
+		 * when LCP or IPCP or IPv6CP are present, so avoid the spurious error message
 		 */
-		if ((cp_code != PPP_LCP) && (cp_code != PPP_IPCP) &&
+		if ((cp_code != PPP_LCP) && (cp_code != PPP_IPCP) && (cp_code != PPP_IPV6CP) &&
 			(reported_payload_length != actual_payload_length) &&
 			((reported_payload_length + 4) != actual_payload_length)) {
 			proto_item_append_text(ti, " [incorrect, should be %u]",
@@ -1178,11 +1171,11 @@ static int dissect_pppoes(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, v
 	DISSECTOR_ASSERT(reported_length >= 0);
 	if (length > reported_length)
 		length = reported_length;
-	if ((guint)length > reported_payload_length)
+	if ((unsigned)length > reported_payload_length)
 		length = reported_payload_length;
-	if ((guint)reported_length > reported_payload_length)
+	if ((unsigned)reported_length > reported_payload_length)
 		reported_length = reported_payload_length;
-	next_tvb = tvb_new_subset(tvb,(6 + credit_offset),
+	next_tvb = tvb_new_subset_length_caplen(tvb,(6 + credit_offset),
 				(length - credit_offset),
 				(reported_length - credit_offset));
 	call_dissector(ppp_handle,next_tvb,pinfo,tree);
@@ -1225,7 +1218,7 @@ void proto_register_pppoes(void)
 		}
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_pppoes,
 		&ett_pppoes_tags
 	};
@@ -1235,6 +1228,8 @@ void proto_register_pppoes(void)
 
 	proto_register_subtree_array(ett, array_length(ett));
 	proto_register_field_array(proto_pppoes, hf, array_length(hf));
+
+	pppoes_handle = register_dissector("pppoes", dissect_pppoes, proto_pppoes);
 }
 
 void proto_register_pppoe(void)
@@ -1269,7 +1264,7 @@ void proto_register_pppoe(void)
 		}
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_pppoe
 	};
 
@@ -1292,8 +1287,6 @@ void proto_register_pppoe(void)
 
 void proto_reg_handoff_pppoes(void)
 {
-	dissector_handle_t pppoes_handle  =
-	    create_dissector_handle(dissect_pppoes, proto_pppoes);
 	dissector_add_uint("ethertype", ETHERTYPE_PPPOES, pppoes_handle);
 	dissector_add_uint("wtap_encap", WTAP_ENCAP_PPP_ETHER, pppoes_handle);
 
@@ -1302,7 +1295,7 @@ void proto_reg_handoff_pppoes(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

@@ -4,19 +4,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __PACKET_BTSDP_H__
@@ -172,31 +160,31 @@
  * dynamically assigned server channels and PSM's, respectively.
  */
 typedef struct _btsdp_data_t {
-    guint32    interface_id;
-    guint32    adapter_id;
-    guint32    chandle;
-    guint32    frame_number;
-    guint32    service;    /* service UUID, see below */
-    guint32    channel;    /* rfcomm server channel or PSM */
-    guint16    protocol;   /* either rfcomm or l2cap UUID */
-    guint16    flags;      /* indicate if the service is local or remote
+    uint32_t   interface_id;
+    uint32_t   adapter_id;
+    uint32_t   chandle;
+    uint32_t   frame_number;
+    uint32_t   service;    /* service UUID, see below */
+    uint32_t   channel;    /* rfcomm server channel or PSM */
+    uint16_t   protocol;   /* either rfcomm or l2cap UUID */
+    uint16_t   flags;      /* indicate if the service is local or remote
                               peer device) and/or a secondary PSM */
 } btsdp_data_t;
 
 
 typedef struct _service_info_t {
-    guint32  interface_id;
-    guint32  adapter_id;
-    guint32  sdp_psm;
-    guint32  direction;
-    guint32  bd_addr_oui;
-    guint32  bd_addr_id;
-    guint32  type;
-    guint32  channel;
+    uint32_t interface_id;
+    uint32_t adapter_id;
+    uint32_t sdp_psm;
+    uint32_t direction;
+    uint32_t bd_addr_oui;
+    uint32_t bd_addr_id;
+    uint32_t type;
+    uint32_t channel;
 
     bluetooth_uuid_t uuid;
-    gint     protocol_order; /* main service protocol has 0, goep -1, additional protocol 1, 2... */
-    gint     protocol;
+    int      protocol_order; /* main service protocol has 0, goep -1, additional protocol 1, 2... */
+    int      protocol;
 
     void    *data;        /* Used to transfer service record data to profiles */
 
@@ -210,7 +198,7 @@ extern service_info_t* btsdp_get_service_info(wmem_tree_key_t* key);
 #endif
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

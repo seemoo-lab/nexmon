@@ -4,83 +4,255 @@
 # By Gerald Combs <gerald@wireshark.org>
 # Copyright 1998 Gerald Combs
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# SPDX-License-Identifier: GPL-2.0-or-later
 #
 
-include(UseABICheck)
+# CMake says that these paths should be relative to the install prefix
+# https://cmake.org/cmake/help/latest/module/GNUInstallDirs.html
+# Things generally work if they're not, but it becomes impossible
+# to relocate paths. Work around that, and just don't try to support
+# relocation.
+file(TO_NATIVE_PATH "${CMAKE_INSTALL_PREFIX}" PATH_INSTALL_PREFIX)
+string(REPLACE "\\" "\\\\" PATH_INSTALL_PREFIX "${PATH_INSTALL_PREFIX}")
+file(TO_NATIVE_PATH "${CMAKE_INSTALL_DATADIR}" PATH_DATA_DIR)
+string(REPLACE "\\" "\\\\" PATH_DATA_DIR "${PATH_DATA_DIR}")
+file(TO_NATIVE_PATH "${CMAKE_INSTALL_DOCDIR}" PATH_DOC_DIR)
+string(REPLACE "\\" "\\\\" PATH_DOC_DIR "${PATH_DOC_DIR}")
+file(TO_NATIVE_PATH "${PLUGIN_INSTALL_LIBDIR}" PATH_PLUGIN_DIR)
+string(REPLACE "\\" "\\\\" PATH_PLUGIN_DIR "${PATH_PLUGIN_DIR}")
+file(TO_NATIVE_PATH "${EXTCAP_INSTALL_LIBDIR}" PATH_EXTCAP_DIR)
+string(REPLACE "\\" "\\\\" PATH_EXTCAP_DIR "${PATH_EXTCAP_DIR}")
+file(TO_NATIVE_PATH "${STRATOSHARK_EXTCAP_INSTALL_LIBDIR}" PATH_STRATOSHARK_EXTCAP_DIR)
+string(REPLACE "\\" "\\\\" PATH_STRATOSHARK_EXTCAP_DIR "${PATH_STRATOSHARK_EXTCAP_DIR}")
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/path_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/path_config.h)
+
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+
+set(WMEM_PUBLIC_HEADERS
+	wmem/wmem.h
+	wmem/wmem_array.h
+	wmem/wmem_core.h
+	wmem/wmem_list.h
+	wmem/wmem_map.h
+	wmem/wmem_miscutl.h
+	wmem/wmem_multimap.h
+	wmem/wmem_queue.h
+	wmem/wmem_stack.h
+	wmem/wmem_strbuf.h
+	wmem/wmem_strutl.h
+	wmem/wmem_tree.h
+	wmem/wmem_interval_tree.h
+	wmem/wmem_user_cb.h
+)
+
+set(WMEM_HEADER_FILES
+	${WMEM_PUBLIC_HEADERS}
+	wmem/wmem_allocator.h
+	wmem/wmem_allocator_block.h
+	wmem/wmem_allocator_block_fast.h
+	wmem/wmem_allocator_simple.h
+	wmem/wmem_allocator_strict.h
+	wmem/wmem_interval_tree.h
+	wmem/wmem_map_int.h
+	wmem/wmem_tree-int.h
+	wmem/wmem_user_cb_int.h
+)
+
+set(WMEM_FILES
+	wmem/wmem_array.c
+	wmem/wmem_core.c
+	wmem/wmem_allocator_block.c
+	wmem/wmem_allocator_block_fast.c
+	wmem/wmem_allocator_simple.c
+	wmem/wmem_allocator_strict.c
+	wmem/wmem_interval_tree.c
+	wmem/wmem_list.c
+	wmem/wmem_map.c
+	wmem/wmem_miscutl.c
+	wmem/wmem_multimap.c
+	wmem/wmem_stack.c
+	wmem/wmem_strbuf.c
+	wmem/wmem_strutl.c
+	wmem/wmem_tree.c
+	wmem/wmem_user_cb.c
+)
+
+set(WSUTIL_PUBLIC_HEADERS
+	802_11-utils.h
+	adler32.h
+	application_flavor.h
+	array.h
+	base32.h
+	bits_count_ones.h
+	bits_ctz.h
+	bitswap.h
+	buffer.h
+	clopts_common.h
+	cmdarg_err.h
+	codecs.h
+	color.h
+	cpu_info.h
+	crash_info.h
+	crc5.h
+	crc6.h
+	crc7.h
+	crc8.h
+	crc10.h
+	crc11.h
+	crc16.h
+	crc16-plain.h
+	crc32.h
+	curve25519.h
+	dtoa.h
+	eax.h
+	epochs.h
+	exported_pdu_tlvs.h
+	failure_message_simple.h
+	feature_list.h
+	file_util.h
+	filesystem.h
+	g711.h
+	inet_addr.h
+	inet_cidr.h
+	interface.h
+	introspection.h
+	jsmn.h
+	json_dumper.h
+	mpeg-audio.h
+	nstime.h
+	os_version_info.h
+	pint.h
+	please_report_bug.h
+	plugins.h
+	pow2.h
+	privileges.h
+	processes.h
+	regex.h
+	report_message.h
+	sign_ext.h
+	sober128.h
+	socket.h
+	str_util.h
+	strnatcmp.h
+	strtoi.h
+	tempfile.h
+	time_util.h
+	to_str.h
+	type_util.h
+	unicode-utils.h
+	utf8_entities.h
+	value_string.h
+	version_info.h
+	ws_assert.h
+	ws_cpuid.h
+	glib-compat.h
+	ws_getopt.h
+	ws_mempbrk.h
+	ws_mempbrk_int.h
+	ws_padding_to.h
+	ws_pipe.h
+	ws_roundup.h
+	ws_strptime.h
+	wsgcrypt.h
+	wsjson.h
+	wslog.h
+	xtea.h
+	zlib_compat.h
+)
 
 set(WSUTIL_COMMON_FILES
+	802_11-utils.c
 	adler32.c
-	aes.c
-	airpdcap_wep.c
-	base64.c
+	application_flavor.c
+	base32.c
 	bitswap.c
 	buffer.c
 	clopts_common.c
 	cmdarg_err.c
-	copyright_info.c
+	codecs.c
 	crash_info.c
 	crc10.c
 	crc16.c
 	crc16-plain.c
 	crc32.c
+	crc5.c
 	crc6.c
 	crc7.c
 	crc8.c
 	crc11.c
-	des.c
+	curve25519.c
+	dot11decrypt_wep.c
+	dtoa.c
 	eax.c
+	failure_message_simple.c
+	feature_list.c
 	filesystem.c
-	frequency-utils.c
+	filter_files.c
 	g711.c
 	inet_addr.c
+	inet_cidr.c
 	interface.c
+	introspection.c
 	jsmn.c
-	md4.c
-	md5.c
+	json_dumper.c
 	mpeg-audio.c
 	nstime.c
+	cpu_info.c
 	os_version_info.c
-	plugins.c
+	please_report_bug.c
 	privileges.c
-	sha1.c
-	sha2.c
+	regex.c
+	rsa.c
 	sober128.c
+	socket.c
 	strnatcmp.c
 	str_util.c
-	rc4.c
-	report_err.c
+	strtoi.c
+	report_message.c
 	tempfile.c
 	time_util.c
+	to_str.c
 	type_util.c
 	unicode-utils.c
+	value_string.c
+	version_info.c
+	ws_getopt.c
 	ws_mempbrk.c
+	ws_pipe.c
+	ws_strptime.c
+	wsgcrypt.c
+	wsjson.c
+	wslog.c
+	xtea.c
 )
 
-set(WSUTIL_FILES ${WSUTIL_COMMON_FILES})
+if(WIN32)
+	list(APPEND WSUTIL_COMMON_FILES
+		console_win32.c
+	)
+endif()
+
+if(ENABLE_PLUGINS)
+	list(APPEND WSUTIL_COMMON_FILES
+		plugins.c
+	)
+endif()
+
+set(WSUTIL_FILES
+	${WMEM_FILES}
+	${WSUTIL_COMMON_FILES}
+)
+
 if(WIN32)
 	list(APPEND WSUTIL_FILES
 		file_util.c
-		inet_ntop.c
-		inet_pton.c
 		win32-utils.c
 	)
-ENDIF(WIN32)
+endif(WIN32)
 
 
-if(HAVE_OS_X_FRAMEWORKS)
+if(HAVE_MACOS_FRAMEWORKS)
 	list(APPEND WSUTIL_FILES cfutils.c)
 endif()
 
@@ -96,18 +268,25 @@ endif()
 if(CMAKE_C_COMPILER_ID MATCHES "MSVC")
 	set(COMPILER_CAN_HANDLE_SSE4_2 TRUE)
 	set(SSE4_2_FLAG "")
-else()
-	message(STATUS "Checking for c-compiler flag: -msse4.2")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "i686|x86|x86_64|AMD64")
 	check_c_compiler_flag(-msse4.2 COMPILER_CAN_HANDLE_SSE4_2)
 	if(COMPILER_CAN_HANDLE_SSE4_2)
 		set(SSE4_2_FLAG "-msse4.2")
 	else()
-		message(STATUS "Checking for c-compiler flag: -xarch=sse4_2")
 		check_c_compiler_flag(-xarch=sse4_2 COMPILER_CAN_HANDLE_SSE4_2)
 		if(COMPILER_CAN_HANDLE_SSE4_2)
 			set(SSE4_2_FLAG "-xarch=sse4_2")
 		endif()
 	endif()
+else()
+	set(COMPILE_CAN_HANDLE_SSE4_2 FALSE)
+	set(SSE4_2_FLAG "")
+endif()
+
+if(SSE4_2_FLAG)
+	message(STATUS "SSE4.2 compiler flag: ${SSE4_2_FLAG}")
+else()
+	message(STATUS "No SSE4.2 compiler flag enabled")
 endif()
 if(COMPILER_CAN_HANDLE_SSE4_2)
 	#
@@ -146,132 +325,215 @@ if(HAVE_SSE4_2)
 	list(APPEND WSUTIL_FILES ws_mempbrk_sse42.c)
 endif()
 
-if(NOT HAVE_GETOPT_LONG)
-	list(APPEND WSUTIL_FILES getopt_long.c)
-endif()
-
-if(NOT HAVE_INET_ATON)
-	list(APPEND WSUTIL_FILES inet_aton.c)
-endif()
-
-if(NOT HAVE_POPCOUNT)
-	list(APPEND WSUTIL_FILES popcount.c)
-endif()
-
-if(NOT HAVE_STRPTIME)
-	list(APPEND WSUTIL_FILES strptime.c)
-endif()
-
 if(APPLE)
 	#
-	# We assume that APPLE means OS X so that we have the OS X
+	# We assume that APPLE means macOS so that we have the macOS
 	# frameworks.
 	#
 	FIND_LIBRARY (APPLE_CORE_FOUNDATION_LIBRARY CoreFoundation)
 endif()
 
-set(wsutil_LIBS
-	${CMAKE_DL_LIBS}
-	${APPLE_CORE_FOUNDATION_LIBRARY}
-	${GMODULE2_LIBRARIES}
-	${GLIB2_LIBRARIES}
-	${GCRYPT_LIBRARIES}
-	${ZLIB_LIBRARIES}
-	${WIN_WSOCK32_LIBRARY}
-)
-IF(WIN32)
-	set(wsutil_LIBS ${wsutil_LIBS} "ws2_32.lib")
-ENDIF(WIN32)
-
-set(CLEAN_FILES
+set_source_files_properties(
 	${WSUTIL_FILES}
+	PROPERTIES
+	COMPILE_FLAGS "${WERROR_COMMON_FLAGS}"
 )
 
-if (WERROR_COMMON_FLAGS)
+if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
+	# The optimizer in GCC 12.2 (at least) gets confused about "ulpmask"
+	# being used uninitialized.  Silence it.
 	set_source_files_properties(
-		${CLEAN_FILES}
+		dtoa.c
 		PROPERTIES
-		COMPILE_FLAGS ${WERROR_COMMON_FLAGS}
+		COMPILE_FLAGS "${WERROR_COMMON_FLAGS} -Wno-maybe-uninitialized"
 	)
-else()
-	#
-	# Set the property to an empty string, so that if we try
-	# to get it below, it succeeds.
-	#
-	set_source_files_properties(
-		${CLEAN_FILES}
-		PROPERTIES
-		COMPILE_FLAGS ""
-	)
+	# Make GCC follow the C standard with regards to excess precision to
+	# avoid floating point instability on x86 processors without SSE
+	# (using the x87 FPU and 80-bit floating point intermediates.)
+	# GCC supports -fexcess-precision=standard for C starting with 4.5.
+	# (Wireshark requires C11, so not clear the project can be compiled
+	# with an older version anyway so don't bother testing for the flag.)
+	set_property(SOURCE
+		str_util.c
+		APPEND
+		PROPERTY
+		COMPILE_OPTIONS
+		-fexcess-precision=standard)
 endif()
+
 if (HAVE_SSE4_2)
-	get_source_file_property(
-		WS_MEMPBRK_SSE42_COMPILE_FLAGS
-		ws_mempbrk_sse42.c
-		COMPILE_FLAGS
-	)
+	# TODO with CMake 2.8.12, we could use COMPILE_OPTIONS and just append
+	# instead of this COMPILE_FLAGS duplication...
 	set_source_files_properties(
 		ws_mempbrk_sse42.c
 		PROPERTIES
-		COMPILE_FLAGS "${WS_MEMPBRK_SSE42_COMPILE_FLAGS} ${SSE4_2_FLAG}"
+		COMPILE_FLAGS "${WERROR_COMMON_FLAGS} ${SSE4_2_FLAG}"
 	)
 endif()
 
-add_library(wsutil ${LINK_MODE_LIB}
+if (ENABLE_APPLICATION_BUNDLE)
+	set_source_files_properties(
+		filesystem.c
+		PROPERTIES
+		COMPILE_FLAGS "${WERROR_COMMON_FLAGS} -DENABLE_APPLICATION_BUNDLE"
+	)
+endif()
+
+add_library(wsutil
 	${WSUTIL_FILES}
-	${CMAKE_BINARY_DIR}/image/libwsutil.rc
+	${CMAKE_BINARY_DIR}/resources/libwsutil.rc
 )
 
-set(FULL_SO_VERSION "7.0.0")
+if(NOT VCSVERSION_OVERRIDE)
+	add_dependencies(wsutil vcs_version)
+endif()
+
+target_compile_definitions(wsutil PRIVATE
+	WS_BUILD_DLL
+	BUILD_WSUTIL
+)
 
 set_target_properties(wsutil PROPERTIES
 	PREFIX "lib"
-	COMPILE_DEFINITIONS "WS_BUILD_DLL"
 	LINK_FLAGS "${WS_LINK_FLAGS}"
-	VERSION ${FULL_SO_VERSION} SOVERSION 7
-	FOLDER "DLLs")
-
-if(ENABLE_APPLICATION_BUNDLE)
-	set_target_properties(wsutil PROPERTIES
-		LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/run/Wireshark.app/Contents/Frameworks
-	)
+	VERSION "17.0.0" SOVERSION 17
+	FOLDER "DLLs"
+	INSTALL_RPATH "${LIBRARY_INSTALL_RPATH}"
+)
+if(MSVC)
+	set_target_properties(wsutil PROPERTIES LINK_FLAGS_DEBUG "${WS_MSVC_DEBUG_LINK_FLAGS}")
 endif()
 
-ABICHECK(libwsutil)
+target_link_libraries(wsutil
+	PUBLIC
+		${GLIB2_LIBRARIES}
+	PRIVATE
+		${GMODULE2_LIBRARIES}
+		${APPLE_CORE_FOUNDATION_LIBRARY}
+		${CMAKE_DL_LIBS}
+		${GCRYPT_LIBRARIES}
+		${GNUTLS_LIBRARIES}
+		${M_LIBRARIES}
+		${ZLIB_LIBRARIES}
+		${ZLIBNG_LIBRARIES}
+		${XXHASH_LIBRARIES}
+		$<IF:$<CONFIG:Debug>,${PCRE2_DEBUG_LIBRARIES},${PCRE2_LIBRARIES}>
+		${WIN_IPHLPAPI_LIBRARY}
+		${WIN_WS2_32_LIBRARY}
+)
 
-add_custom_command(OUTPUT libwsutil.abi.tar.gz
-	COMMAND ${CMAKE_COMMAND} -E remove_directory ${ABICHECK_TMPDIR}
-	COMMAND ${CMAKE_COMMAND} -E make_directory ${ABICHECK_TMPDIR}
-	COMMAND ${ABI_COPY_COMMAND} ../config.h ${ABICHECK_TMPDIR}/ ${ABI_COPY_FLAGS}
-	COMMAND ${ABI_COPY_COMMAND} ${ABICHECK_HEADERS} ${ABICHECK_TMPDIR}/ ${ABI_COPY_FLAGS}
-	COMMAND ${ABICHECK_COMMAND}
-	COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/abi_dumps/libwsutil/libwsutil_* ${CMAKE_CURRENT_BINARY_DIR}/libwsutil.abi.tar.gz
-	COMMAND rm -rf ${ABICHECK_TMPDIR} ${CMAKE_CURRENT_BINARY_DIR}/abi_dumps
-	DEPENDS ${HEADERS} wsutil)
+target_include_directories(wsutil SYSTEM
+	PUBLIC
+		${GLIB2_INCLUDE_DIRS}
+		${GCRYPT_INCLUDE_DIRS}
+		${GNUTLS_INCLUDE_DIRS}
+		${XXHASH_INCLUDE_DIRS}
+	PRIVATE
+		${GMODULE2_INCLUDE_DIRS}
+		${ZLIB_INCLUDE_DIRS}
+		${ZLIBNG_INCLUDE_DIRS}
+		${PCRE2_INCLUDE_DIRS}
+)
 
-target_link_libraries(wsutil ${wsutil_LIBS})
+install(TARGETS wsutil
+	EXPORT WiresharkTargets
+	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+	ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
 
-if(NOT ${ENABLE_STATIC})
-	install(TARGETS wsutil
-		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-		RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}
-		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-	)
+install(FILES ${WMEM_PUBLIC_HEADERS}
+	DESTINATION "${PROJECT_INSTALL_INCLUDEDIR}/wsutil/wmem"
+	COMPONENT "Development"
+	EXCLUDE_FROM_ALL
+)
+
+install(FILES ${WSUTIL_PUBLIC_HEADERS}
+	DESTINATION "${PROJECT_INSTALL_INCLUDEDIR}/wsutil"
+	COMPONENT "Development"
+	EXCLUDE_FROM_ALL
+)
+
+add_library(wsutil_static STATIC
+	${WSUTIL_FILES}
+)
+
+target_compile_definitions(wsutil_static PRIVATE
+	ENABLE_STATIC
+	BUILD_WSUTIL
+)
+
+target_link_libraries(wsutil_static
+	PUBLIC
+		${GLIB2_LIBRARIES}
+	PRIVATE
+		${GMODULE2_LIBRARIES}
+		${APPLE_CORE_FOUNDATION_LIBRARY}
+		${CMAKE_DL_LIBS}
+		${GCRYPT_LIBRARIES}
+		${GNUTLS_LIBRARIES}
+		${M_LIBRARIES}
+		${XXHASH_LIBRARIES}
+		${ZLIB_LIBRARIES}
+		${ZLIBNG_LIBRARIES}
+		$<IF:$<CONFIG:Debug>,${PCRE2_DEBUG_LIBRARIES},${PCRE2_LIBRARIES}>
+		${WIN_IPHLPAPI_LIBRARY}
+		${WIN_WS2_32_LIBRARY}
+)
+
+target_include_directories(wsutil_static SYSTEM
+	PUBLIC
+		${GLIB2_INCLUDE_DIRS}
+		${GCRYPT_INCLUDE_DIRS}
+		${GNUTLS_INCLUDE_DIRS}
+	PRIVATE
+		${GMODULE2_INCLUDE_DIRS}
+		${XXHASH_INCLUDE_DIRS}
+		${ZLIB_INCLUDE_DIRS}
+		${ZLIBNG_INCLUDE_DIRS}
+		${PCRE2_INCLUDE_DIRS}
+)
+
+if(NOT VCSVERSION_OVERRIDE)
+	add_dependencies(wsutil_static vcs_version)
 endif()
 
-add_definitions( -DTOP_SRCDIR=\"${CMAKE_SOURCE_DIR}\" )
+add_executable(wmem_test EXCLUDE_FROM_ALL wmem/wmem_test.c)
+
+target_link_libraries(wmem_test wsutil_static)
+
+set_target_properties(wmem_test PROPERTIES
+	FOLDER "Tests"
+	EXCLUDE_FROM_DEFAULT_BUILD True
+	COMPILE_DEFINITIONS "ENABLE_STATIC"
+	COMPILE_FLAGS "${WERROR_COMMON_FLAGS}"
+)
+
+add_executable(test_wsutil EXCLUDE_FROM_ALL
+	test_wsutil.c
+)
+
+target_link_libraries(test_wsutil ${M_LIBRARIES} ${GLIB2_LIBRARIES} wsutil)
+
+set_target_properties(test_wsutil PROPERTIES
+	FOLDER "Tests"
+	EXCLUDE_FROM_DEFAULT_BUILD True
+	COMPILE_FLAGS "${WERROR_COMMON_FLAGS}"
+)
 
 CHECKAPI(
 	NAME
 	  wsutil
 	SWITCHES
-	  -g termoutput -build
 	SOURCES
+	  ${WMEM_FILES}
 	  ${WSUTIL_COMMON_FILES}
 )
 
+set_source_files_properties(jsmn.c PROPERTIES COMPILE_DEFINITIONS "JSMN_STRICT")
+
 #
-# Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+# Editor modelines  -  https://www.wireshark.org/tools/modelines.html
 #
 # Local variables:
 # c-basic-offset: 8

@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* see packet-dcom.c for details about DCOM */
@@ -26,6 +14,7 @@
 
 
 #include <epan/packet.h>
+#include <epan/tfs.h>
 #include "packet-dcerpc.h"
 #include "packet-dcom.h"
 #include "packet-dcom-dispatch.h"
@@ -33,64 +22,70 @@
 void proto_register_dcom_dispatch(void);
 void proto_reg_handoff_dcom_dispatch(void);
 
-static int hf_dispatch_opnum = -1;
+static int hf_dispatch_opnum;
 
-static int hf_dispatch_riid = -1;
-static int hf_dispatch_name = -1;
-static int hf_dispatch_names = -1;
-static int hf_dispatch_lcid = -1;
-static int hf_dispatch_id = -1;
+static int hf_dispatch_riid;
+static int hf_dispatch_name;
+static int hf_dispatch_names;
+static int hf_dispatch_lcid;
+static int hf_dispatch_id;
 
-static int hf_dispatch_arg = -1;
-static int hf_dispatch_args = -1;
-static int hf_dispatch_named_args = -1;
-static int hf_dispatch_varref = -1;
-static int hf_dispatch_varrefidx = -1;
-static int hf_dispatch_varrefarg = -1;
+static int hf_dispatch_arg;
+static int hf_dispatch_args;
+static int hf_dispatch_named_args;
+static int hf_dispatch_varref;
+static int hf_dispatch_varrefidx;
+static int hf_dispatch_varrefarg;
 
-static int hf_dispatch_varresult = -1;
-static int hf_dispatch_code = -1;
-static int hf_dispatch_reserved16 = -1;
-static int hf_dispatch_source = -1;
-static int hf_dispatch_description = -1;
-static int hf_dispatch_help_file = -1;
-static int hf_dispatch_help_context = -1;
-static int hf_dispatch_reserved32 = -1;
-static int hf_dispatch_deferred_fill_in = -1;
-static int hf_dispatch_arg_err = -1;
+static int hf_dispatch_varresult;
+static int hf_dispatch_code;
+static int hf_dispatch_reserved16;
+static int hf_dispatch_source;
+static int hf_dispatch_description;
+static int hf_dispatch_help_file;
+static int hf_dispatch_help_context;
+static int hf_dispatch_reserved32;
+static int hf_dispatch_deferred_fill_in;
+static int hf_dispatch_arg_err;
 
-static int hf_dispatch_tinfo = -1;
-static int hf_dispatch_itinfo = -1;
-static int hf_dispatch_dispparams = -1;
-static int hf_dispatch_excepinfo = -1;
-static int hf_dispatch_scode = -1;
+static int hf_dispatch_tinfo;
+static int hf_dispatch_itinfo;
+static int hf_dispatch_dispparams;
+static int hf_dispatch_excepinfo;
+static int hf_dispatch_scode;
 
 
-static int hf_dispatch_flags = -1;
-static int hf_dispatch_flags_method = -1;
-static int hf_dispatch_flags_propget = -1;
-static int hf_dispatch_flags_propput = -1;
-static int hf_dispatch_flags_propputref = -1;
+static int hf_dispatch_flags;
+static int hf_dispatch_flags_method;
+static int hf_dispatch_flags_propget;
+static int hf_dispatch_flags_propput;
+static int hf_dispatch_flags_propputref;
 
 #define DISPATCH_FLAGS_METHOD           1
 #define DISPATCH_FLAGS_PROPGET          2
 #define DISPATCH_FLAGS_PROPPUT          4
 #define DISPATCH_FLAGS_PROPPUTREF       8
 
-static gint ett_dispatch_flags = -1;
-static gint ett_dispatch_params = -1;
-static gint ett_dispatch_excepinfo = -1;
+static int ett_dispatch_flags;
+static int ett_dispatch_params;
+static int ett_dispatch_excepinfo;
 
 static e_guid_t uuid_dispatch = { 0x00020400, 0x0000, 0x0000, { 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46 } };
-static guint16  ver_dispatch = 0;
-static gint ett_dispatch = -1;
-static int proto_dispatch = -1;
+static uint16_t ver_dispatch;
+static int ett_dispatch;
+static int proto_dispatch;
 
 
-/* from MSDN "Locale Identifiers" */
-/* see: http://msdn.microsoft.com/library/default.asp?url=/library/en-us/intl/nls_8sj7.asp */
-/* values from cygwin's winnls.h and: */
-/* http://msdn.microsoft.com/library/default.asp?url=/library/en-us/intl/nls_238z.asp */
+/*
+ * See:
+ *
+ *    https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-lcid/a9eac961-e77d-41a6-90a5-ce1a8b0cdb9c
+ *    https://docs.microsoft.com/en-us/windows/win32/intl/locale-user-default
+ *    https://docs.microsoft.com/en-us/windows/win32/intl/locale-system-default
+ *    https://docs.microsoft.com/en-us/previous-versions/commerce-server/ee796949(v%3Dcs.20)
+ *
+ * and values from cygwin's winnls.h
+ */
 static const value_string dcom_lcid_vals[] = {
     { 0x0000, "Language neutral" },
     { 0x0400, "LOCALE_USER_DEFAULT" },
@@ -103,10 +98,10 @@ static const value_string dcom_lcid_vals[] = {
 
 int
 dissect_IDispatch_GetTypeInfoCount_resp(tvbuff_t *tvb, int offset,
-                                        packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+                                        packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 u32TInfo;
-    guint32 u32HResult;
+    uint32_t u32TInfo;
+    uint32_t u32HResult;
 
 
     offset = dissect_dcom_that(tvb, offset, pinfo, tree, di, drep);
@@ -119,17 +114,17 @@ dissect_IDispatch_GetTypeInfoCount_resp(tvbuff_t *tvb, int offset,
                                   &u32HResult);
 
     col_append_fstr(pinfo->cinfo, COL_INFO, " -> %s",
-                    val_to_str(u32HResult, dcom_hresult_vals, "Unknown (0x%08x)") );
+                    val_to_str(pinfo->pool, u32HResult, dcom_hresult_vals, "Unknown (0x%08x)") );
 
     return offset;
 }
 
 int
 dissect_IDispatch_GetTypeInfo_rqst(tvbuff_t *tvb, int offset,
-                                   packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+                                   packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 u32TInfo;
-    guint32 u32Lcid;
+    uint32_t u32TInfo;
+    uint32_t u32Lcid;
 
     offset = dissect_dcom_this(tvb, offset, pinfo, tree, di, drep);
 
@@ -144,10 +139,10 @@ dissect_IDispatch_GetTypeInfo_rqst(tvbuff_t *tvb, int offset,
 
 int
 dissect_IDispatch_GetTypeInfo_resp(tvbuff_t *tvb, int offset,
-                                   packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+                                   packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 u32HResult;
-    guint32 u32Pointer;
+    uint32_t u32HResult;
+    uint32_t u32Pointer;
 
 
     offset = dissect_dcom_that(tvb, offset, pinfo, tree, di, drep);
@@ -163,7 +158,7 @@ dissect_IDispatch_GetTypeInfo_resp(tvbuff_t *tvb, int offset,
                                   &u32HResult);
 
     col_append_fstr(pinfo->cinfo, COL_INFO, " -> %s",
-                    val_to_str(u32HResult, dcom_hresult_vals, "Unknown (0x%08x)") );
+                    val_to_str(pinfo->pool, u32HResult, dcom_hresult_vals, "Unknown (0x%08x)") );
 
     return offset;
 }
@@ -171,16 +166,16 @@ dissect_IDispatch_GetTypeInfo_resp(tvbuff_t *tvb, int offset,
 
 int
 dissect_IDispatch_GetIDsOfNames_rqst(tvbuff_t *tvb, int offset,
-                                     packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+                                     packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     e_guid_t riid;
-    guint32  u32Lcid;
-    gchar    szName[1000] = { 0 };
-    guint32  u32Names;
-    guint32  u32ArraySize;
-    guint32  u32Pointer;
-    guint32  u32Tmp;
-    guint32  u32VariableOffset;
+    uint32_t u32Lcid;
+    char     szName[1000] = { 0 };
+    uint32_t u32Names;
+    uint32_t u32ArraySize;
+    uint32_t u32Pointer;
+    uint32_t u32Tmp;
+    uint32_t u32VariableOffset;
 
 
     offset = dissect_dcom_this(tvb, offset, pinfo, tree, di, drep);
@@ -219,12 +214,12 @@ dissect_IDispatch_GetIDsOfNames_rqst(tvbuff_t *tvb, int offset,
 
 int
 dissect_IDispatch_GetIDsOfNames_resp(tvbuff_t *tvb, int offset,
-                                     packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+                                     packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 u32DispId;
-    guint32 u32ArraySize;
-    guint32 u32Tmp;
-    guint32 u32HResult;
+    uint32_t u32DispId;
+    uint32_t u32ArraySize;
+    uint32_t u32Tmp;
+    uint32_t u32HResult;
 
 
     offset = dissect_dcom_that(tvb, offset, pinfo, tree, di, drep);
@@ -244,7 +239,7 @@ dissect_IDispatch_GetIDsOfNames_resp(tvbuff_t *tvb, int offset,
                                   &u32HResult);
 
     col_append_fstr(pinfo->cinfo, COL_INFO, " -> %s",
-                    val_to_str(u32HResult, dcom_hresult_vals, "Unknown (0x%08x)") );
+                    val_to_str(pinfo->pool, u32HResult, dcom_hresult_vals, "Unknown (0x%08x)") );
 
     return offset;
 }
@@ -253,26 +248,26 @@ dissect_IDispatch_GetIDsOfNames_resp(tvbuff_t *tvb, int offset,
 
 int
 dissect_IDispatch_Invoke_rqst(tvbuff_t *tvb, int offset,
-                              packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+                              packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 u32DispIdMember;
+    uint32_t u32DispIdMember;
     e_guid_t riid;
-    guint32 u32Lcid;
-    guint32 u32Flags;
-    guint32 u32Args;
-    guint32 u32NamedArgs;
-    guint32 u32Pointer;
-    guint32 u32Pointer2;
-    guint32 u32ArraySize;
-    guint32 u32VariableOffset;
-    guint32 u32VarRef;
-    guint32 u32VarRefIdx;
-    guint32 u32TmpOffset;
-    guint32 u32SubStart;
+    uint32_t u32Lcid;
+    uint32_t u32Flags;
+    uint32_t u32Args;
+    uint32_t u32NamedArgs;
+    uint32_t u32Pointer;
+    uint32_t u32Pointer2;
+    uint32_t u32ArraySize;
+    uint32_t u32VariableOffset;
+    uint32_t u32VarRef;
+    uint32_t u32VarRefIdx;
+    uint32_t u32TmpOffset;
+    uint32_t u32SubStart;
 
     proto_item *dispparams_item;
     proto_tree *dispparams_tree;
-    static const int * flags[] = {
+    static int * const flags[] = {
         &hf_dispatch_flags_propputref,
         &hf_dispatch_flags_propput,
         &hf_dispatch_flags_propget,
@@ -342,7 +337,7 @@ dissect_IDispatch_Invoke_rqst(tvbuff_t *tvb, int offset,
                 u32VariableOffset = dissect_dcom_VARIANT(tvb, u32VariableOffset, pinfo, dispparams_tree, di, drep, hf_dispatch_arg);
             }
         }
-        offset = u32VariableOffset;
+        /*offset = u32VariableOffset;*/
     }
 
     /* DISPID rgdispidNamedArgs[u32NamedArgs] */
@@ -392,24 +387,24 @@ dissect_IDispatch_Invoke_rqst(tvbuff_t *tvb, int offset,
 
 int
 dissect_IDispatch_Invoke_resp(tvbuff_t *tvb, int offset,
-                              packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+                              packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32 u32Pointer;
-    guint32 u32Pointer2;
-    guint32 u32Pointer3;
-    guint32 u32VariableOffset;
-    guint32 u32ArraySize;
-    guint32 u32SubStart;
-    guint16 u16Code;
-    guint16 u16Reserved;
-    guint32 u32HelpContext;
-    guint32 u32Reserved;
-    guint32 u32DeferredFillIn;
-    guint32 u32ArgErr;
-    guint32 u32HResult;
-    guint32 u32SCode;
-    guint32 u32VarRef;
-    gchar       szName[1000] = { 0 };
+    uint32_t u32Pointer;
+    uint32_t u32Pointer2;
+    uint32_t u32Pointer3;
+    uint32_t u32VariableOffset;
+    uint32_t u32ArraySize;
+    uint32_t u32SubStart;
+    uint16_t u16Code;
+    uint16_t u16Reserved;
+    uint32_t u32HelpContext;
+    uint32_t u32Reserved;
+    uint32_t u32DeferredFillIn;
+    uint32_t u32ArgErr;
+    uint32_t u32HResult;
+    uint32_t u32SCode;
+    uint32_t u32VarRef;
+    char        szName[1000] = { 0 };
     proto_item *excepinfo_item;
     proto_tree *excepinfo_tree;
 
@@ -460,7 +455,7 @@ dissect_IDispatch_Invoke_resp(tvbuff_t *tvb, int offset,
     }
 
     proto_item_append_text(excepinfo_item, ", SCode: %s",
-                           val_to_str(u32SCode, dcom_hresult_vals, "Unknown (0x%08x)"));
+                           val_to_str(pinfo->pool, u32SCode, dcom_hresult_vals, "Unknown (0x%08x)"));
     proto_item_set_len(excepinfo_item, offset - u32SubStart);
     /* end of ExcepInfo */
 
@@ -486,9 +481,9 @@ dissect_IDispatch_Invoke_resp(tvbuff_t *tvb, int offset,
                                   &u32HResult);
 
     col_append_fstr(pinfo->cinfo, COL_INFO, " SCode=%s VarRef=%u -> %s",
-                    val_to_str(u32SCode, dcom_hresult_vals, "Unknown (0x%08x)"),
+                    val_to_str(pinfo->pool, u32SCode, dcom_hresult_vals, "Unknown (0x%08x)"),
                     u32VarRef,
-                    val_to_str(u32HResult, dcom_hresult_vals, "Unknown (0x%08x)") );
+                    val_to_str(pinfo->pool, u32HResult, dcom_hresult_vals, "Unknown (0x%08x)") );
 
     return offset;
 }
@@ -496,7 +491,7 @@ dissect_IDispatch_Invoke_resp(tvbuff_t *tvb, int offset,
 
 
 /* sub dissector table of IDispatch interface */
-static dcerpc_sub_dissector dispatch_dissectors[] = {
+static const dcerpc_sub_dissector dispatch_dissectors[] = {
     { 0, "QueryInterface", NULL, NULL },
     { 1, "AddRef", NULL, NULL },
     { 2, "Release", NULL, NULL },
@@ -585,7 +580,7 @@ proto_register_dcom_dispatch(void)
           { "SCode", "dispatch.scode", FT_UINT32, BASE_HEX, VALS(dcom_hresult_vals), 0x0, NULL, HFILL }}
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_dispatch,
         &ett_dispatch_flags,
         &ett_dispatch_params,
@@ -610,7 +605,7 @@ proto_reg_handoff_dcom_dispatch(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

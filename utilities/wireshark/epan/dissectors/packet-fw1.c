@@ -1,13 +1,15 @@
 /* packet-fw1.c
  * Routines for Ethernet header disassembly of FW1 "monitor" files
  * Copyright 2002,2003, Alfred Koebler <ako@icon.de>
+ * Copyright 2018, Alfred Koebler <Alfred.Koebler2002ATgmx.de>
  *
  * Wireshark - Network traffic analyzer
  * By Alfred Koebler <ako@icon.de>
- * Copyright 2002,2003 Alfred Koebler
+ * By Alfred Koebler <Alfred.Koebler2002ATgmx.de>
+ * Copyright 2002,2003,2018 Alfred Koebler
  *
  * To use this dissector use the command line option
- * -o eth.interpret_as_fw1_monitor:TRUE
+ * -o eth.interpret_as_fw1_monitor:true
  *
  * At the moment the way with the option is the best one.
  * A automatic way is not possible, because the file format isn't different
@@ -21,6 +23,8 @@
  *   I  incoming after the firewall
  *   o  outcoming before the firewall
  *   O  outcoming after the firewall
+ *   e  before VPN encryption
+ *   E  after VPN encryption
  * - the name of the interface
  *
  * What's the problem ?
@@ -62,22 +66,13 @@
  * Additional interpretation of field Chain Position.
  * Show the chain position in the interface list.
  * Support for new format of fw monitor file
- * writen by option -u | -s for UUID/SUUID.
+ * written by option -u | -s for UUID/SUUID.
  * NOTICE: First paket will have UUID == 0 !
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * 30.5.2018
+ * added inspection points "e" and "E"
  */
 
 #include "config.h"
@@ -91,28 +86,28 @@ void proto_register_fw1(void);
 void proto_reg_handoff_fw1(void);
 
 /* Place FW1 summary in proto tree */
-static gboolean fw1_summary_in_tree = TRUE;
-static gboolean fw1_with_uuid = FALSE;
-static gboolean fw1_iflist_with_chain = FALSE;
+static bool fw1_summary_in_tree = true;
+static bool fw1_with_uuid;
+static bool fw1_iflist_with_chain;
 
 static dissector_handle_t ethertype_handle;
 
 /* Initialize the protocol and registered fields */
-static int proto_fw1 = -1;
-static int hf_fw1_direction = -1;
-static int hf_fw1_chain = -1;
-static int hf_fw1_interface = -1;
-static int hf_fw1_uuid = -1;
-static int hf_fw1_type = -1;
-static int hf_fw1_trailer = -1;
+static int proto_fw1;
+static int hf_fw1_direction;
+static int hf_fw1_chain;
+static int hf_fw1_interface;
+static int hf_fw1_uuid;
+static int hf_fw1_type;
+static int hf_fw1_trailer;
 
 /* Initialize the subtree pointers */
-static gint ett_fw1 = -1;
+static int ett_fw1;
 
 #define ETH_HEADER_SIZE 14
 
 #define MAX_INTERFACES  20
-static gchar    *p_interfaces[MAX_INTERFACES];
+static char     *p_interfaces[MAX_INTERFACES];
 static int      interface_anzahl=0;
 
 static void
@@ -130,41 +125,38 @@ dissect_fw1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
   char          direction;
   char  chain;
   char          *interface_name;
-  guint32       iface_len = 10;
+  uint32_t      iface_len = 10;
   wmem_strbuf_t *header;
   int           i;
-  gboolean      found;
+  bool          found;
   static const char     fw1_header[] = "FW1 Monitor";
   ethertype_data_t ethertype_data;
 
-  header = wmem_strbuf_new_label(wmem_epan_scope());
+  header = wmem_strbuf_create(pinfo->pool);
   wmem_strbuf_append(header, fw1_header);
 
   /* Make entries in Protocol column and Info column on summary display */
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "FW1");
   col_clear(pinfo->cinfo, COL_INFO);
 
-
-  /* g_snprintf(header, sizeof(header), fw1_header); */
-
   /* fetch info to local variable */
-  direction = tvb_get_guint8(tvb, 0);
+  direction = tvb_get_uint8(tvb, 0);
 
   if (!fw1_iflist_with_chain)
     chain = ' ';
   else
-    chain = tvb_get_guint8(tvb, 1);
+    chain = tvb_get_uint8(tvb, 1);
 
   if (fw1_with_uuid)
     iface_len = 6;
 
-  interface_name=tvb_get_stringzpad(wmem_packet_scope(), tvb, 2, iface_len, ENC_ASCII|ENC_NA);
+  interface_name=tvb_get_stringzpad(pinfo->pool, tvb, 2, iface_len, ENC_ASCII|ENC_NA);
 
   /* Known interface name - if not, remember it */
-  found=FALSE;
+  found=false;
   for (i=0; i<interface_anzahl; i++) {
     if ( strcmp(p_interfaces[i], interface_name) == 0 ) {
-      found=TRUE;
+      found=true;
       break;
     }
   }
@@ -177,11 +169,11 @@ dissect_fw1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
   for (i=0; i<interface_anzahl; i++) {
     if ( strcmp(p_interfaces[i], interface_name) == 0 ) {
       wmem_strbuf_append_printf(header, "  %c%c %s %c%c",
-                                direction == 'i' ? 'i' : (direction == 'O' ? 'O' : ' '),
-                                (direction == 'i' || direction == 'O') ? chain : ' ',
+                                direction == 'i' ? 'i' : (direction == 'O' ? 'O' : (direction == 'E' ? 'E' :  ' ') ),
+                                (direction == 'i' || direction == 'O' || direction == 'E') ? chain : ' ',
                                 p_interfaces[i],
-                                direction == 'I' ? 'I' : (direction == 'o' ? 'o' : ' '),
-                                (direction == 'I' || direction == 'o') ? chain : ' '
+                                direction == 'I' ? 'I' : (direction == 'o' ? 'o' : (direction == 'e' ? 'e' :  ' ') ),
+                                (direction == 'I' || direction == 'o' || direction == 'e') ? chain : ' '
         );
     } else {
       wmem_strbuf_append_printf(header, "    %s  ", p_interfaces[i]);
@@ -200,21 +192,22 @@ dissect_fw1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
     /* create display subtree for the protocol */
     fh_tree = proto_item_add_subtree(ti, ett_fw1);
 
-    proto_tree_add_item(fh_tree, hf_fw1_direction, tvb, 0, 1, ENC_ASCII|ENC_NA);
+    proto_tree_add_item(fh_tree, hf_fw1_direction, tvb, 0, 1, ENC_ASCII);
 
     if (fw1_iflist_with_chain)
-      proto_tree_add_item(fh_tree, hf_fw1_chain, tvb, 1, 1, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(fh_tree, hf_fw1_chain, tvb, 1, 1, ENC_ASCII);
 
-    proto_tree_add_item(fh_tree, hf_fw1_interface, tvb, 2, iface_len, ENC_ASCII|ENC_NA);
+    proto_tree_add_item(fh_tree, hf_fw1_interface, tvb, 2, iface_len, ENC_ASCII);
 
     if (fw1_with_uuid)
       proto_tree_add_item(fh_tree, hf_fw1_uuid, tvb, 8, 4, ENC_BIG_ENDIAN);
   }
 
   ethertype_data.etype = tvb_get_ntohs(tvb, 12);
-  ethertype_data.offset_after_ethertype = ETH_HEADER_SIZE;
+  proto_tree_add_uint(fh_tree, hf_fw1_type, tvb, 12, 2, ethertype_data.etype);
+
+  ethertype_data.payload_offset = ETH_HEADER_SIZE;
   ethertype_data.fh_tree = fh_tree;
-  ethertype_data.etype_id = hf_fw1_type;
   ethertype_data.trailer_id = hf_fw1_trailer;
   ethertype_data.fcs_len = 0;
 
@@ -253,7 +246,7 @@ proto_register_fw1(void)
     }
   };
   /* Setup protocol subtree array */
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_fw1,
   };
   module_t *fw1_module;
@@ -295,7 +288,7 @@ proto_reg_handoff_fw1(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

@@ -16,7 +16,7 @@
      <item>
       <layout class="QVBoxLayout" name="verticalLayout">
        <item>
-        <widget class="PacketFormatGroupBox" name="formatGroupBox">
+        <widget class="PacketFormatTextGroupBox" name="formatGroupBox">
          <property name="title">
           <string>Packet Format</string>
          </property>
@@ -32,6 +32,19 @@
         <widget class="QCheckBox" name="formFeedCheckBox">
          <property name="text">
           <string>Print each packet on a new page</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="bannerCheckBox">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Print capture file information on each page&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="text">
+          <string>Capture information header</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -95,7 +108,7 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>PacketFormatGroupBox</class>
+   <class>PacketFormatTextGroupBox</class>
    <extends>QGroupBox</extends>
    <header>packet_format_group_box.h</header>
    <container>1</container>

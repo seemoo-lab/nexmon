@@ -9,12 +9,14 @@
 #
 
 find_program(POWERSHELL_EXECUTABLE
-  NAMES powershell
+  NAMES
+    powershell
+    pwsh
   DOC "PowerShell command"
 )
 
 INCLUDE(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(POWERSHELL DEFAULT_MSG POWERSHELL_EXECUTABLE)
+find_package_handle_standard_args(PowerShell DEFAULT_MSG POWERSHELL_EXECUTABLE)
 
 set(_powershell_command "POWERSHELL_COMMAND-NOTFOUND")
 if(POWERSHELL_FOUND)

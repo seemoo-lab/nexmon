@@ -14,11 +14,21 @@ ALIGNED
 Message
 #.END
 
+#.FIELD_RENAME
+DescriptorRejection/descriptorID descriptorRejection_descriptorID
+UpdateInformation/descriptorInfo/descriptorID updateInformation_descriptorID
+DescriptorInfo/descriptorID descriptorInfo_descriptorID
+#.FIELD_ATTR
+DescriptorRejection/descriptorID               ABBREV=descriptorRejection_descriptorID
+UpdateInformation/descriptorInfo/descriptorID  ABBREV=updateInformation_descriptorID
+DescriptorInfo/descriptorID                    ABBREV=descriptorInfo_descriptorID
+
+
 #.FN_PARS MessageBody
   VAL_PTR = &msg_type
 #.FN_HDR
-  gint32 msg_type = -1;
-  const gchar *p = NULL;
+  int32_t msg_type = -1;
+  const char *p = NULL;
 #.FN_FTR
   p = try_val_to_str(msg_type, VALS(h501_MessageBody_vals));
   if (p )

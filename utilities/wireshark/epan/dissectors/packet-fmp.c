@@ -5,128 +5,117 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
 #include <epan/prefs.h>
+#include <epan/tfs.h>
 #include "packet-fmp.h"
 #include "packet-rpc.h"
 
 void proto_register_fmp(void);
 void proto_reg_handoff_fmp(void);
 
-static int hf_fmp_procedure = -1;
-static int hf_fmp_fsID = -1;
-static int hf_fmp_fsBlkSz = -1;
-static int hf_fmp_sessionHandle = -1;
-static int hf_fmp_fmpFHandle = -1;
-static int hf_fmp_msgNum = -1;
-static int hf_fmp_fileSize = -1;
-static int hf_fmp_cookie = -1;
-static int hf_fmp_firstLogBlk = -1;
-static int hf_fmp_numBlksReq = -1;
+static int hf_fmp_procedure;
+static int hf_fmp_fsID;
+static int hf_fmp_fsBlkSz;
+static int hf_fmp_sessionHandle;
+static int hf_fmp_fmpFHandle;
+static int hf_fmp_msgNum;
+static int hf_fmp_fileSize;
+static int hf_fmp_cookie;
+static int hf_fmp_firstLogBlk;
+static int hf_fmp_numBlksReq;
 
-static int proto_fmp = -1;
-static int hf_fmp_hostID = -1;
-static int hf_fmp_status = -1;
-static int hf_fmp_btime = -1;
-static int hf_fmp_time_sec = -1;
-static int hf_fmp_time_nsec = -1;
-static int hf_fmp_notifyPort = -1;
-static int hf_fmp_minBlks = -1;
-static int hf_fmp_eof = -1;
-static int hf_fmp_path = -1;
-static int hf_fmp_plugInID = -1;
-static int hf_fmp_plugInBuf = -1;
-static int hf_fmp_nfsFHandle = -1;
-static int hf_fmp_extentList_len = -1;
-static int hf_fmp_extent_state = -1;
-static int hf_fmp_numBlks = -1;
-static int hf_fmp_volID = -1;
-static int hf_fmp_startOffset = -1;
-static int hf_fmp_volHandle = -1;
-static int hf_fmp_devSignature = -1;
-static int hf_fmp_dskSigEnt_val = -1;
-static int hf_fmp_mount_path = -1;
-static int hf_fmp_sig_offset = -1;
-static int hf_fmp_os_major = -1;
-static int hf_fmp_os_minor = -1;
-static int hf_fmp_os_name = -1;
-static int hf_fmp_os_patch = -1;
-static int hf_fmp_os_build = -1;
-static int hf_fmp_server_version_string = -1;
-static int hf_fmp_description = -1;
-static int hf_fmp_nfsv3Attr_type = -1;
-static int hf_fmp_nfsv3Attr_mode = -1;
-static int hf_fmp_nfsv3Attr_nlink = -1;
-static int hf_fmp_nfsv3Attr_uid = -1;
-static int hf_fmp_nfsv3Attr_gid = -1;
-static int hf_fmp_nfsv3Attr_used = -1;
-static int hf_fmp_nfsv3Attr_rdev = -1;
-static int hf_fmp_nfsv3Attr_fsid = -1;
-static int hf_fmp_nfsv3Attr_fileid = -1;
-static int hf_fmp_cmd = -1;
-static int hf_fmp_topVolumeId = -1;
-static int hf_fmp_cursor = -1;
-static int hf_fmp_offset64 = -1;
-static int hf_fmp_start_offset64 = -1;
-static int hf_fmp_slice_size = -1;
-static int hf_fmp_volume = -1;
-static int hf_fmp_stripeSize = -1;
-static int hf_fmp_firstLogBlk64 =-1;
-static int hf_fmp_native_protocol = -1;
-static int hf_fmp_encoding_mode = -1;
-static int hf_fmp_capability = -1;
-static int hf_fmp_devSerial_query_cmd = -1;
-static int hf_fmp_volume_desc = -1;
-static int hf_fmp_disk_identifier = -1;
-static int hf_fmp_volume_mgmt_type = -1;
-static int hf_fmp_notify_protocol = -1;
-static int hf_fmp_client_error_number = -1;
+static int proto_fmp;
+static int hf_fmp_hostID;
+static int hf_fmp_status;
+static int hf_fmp_btime;
+static int hf_fmp_time_sec;
+static int hf_fmp_time_nsec;
+static int hf_fmp_notifyPort;
+static int hf_fmp_minBlks;
+static int hf_fmp_eof;
+static int hf_fmp_path;
+static int hf_fmp_plugInID;
+static int hf_fmp_plugInBuf;
+static int hf_fmp_nfsFHandle;
+static int hf_fmp_extentList_len;
+static int hf_fmp_extent_state;
+static int hf_fmp_numBlks;
+static int hf_fmp_volID;
+static int hf_fmp_startOffset;
+static int hf_fmp_volHandle;
+static int hf_fmp_devSignature;
+static int hf_fmp_dskSigEnt_val;
+static int hf_fmp_mount_path;
+static int hf_fmp_sig_offset;
+static int hf_fmp_os_major;
+static int hf_fmp_os_minor;
+static int hf_fmp_os_name;
+static int hf_fmp_os_patch;
+static int hf_fmp_os_build;
+static int hf_fmp_server_version_string;
+static int hf_fmp_description;
+static int hf_fmp_nfsv3Attr_type;
+static int hf_fmp_nfsv3Attr_mode;
+static int hf_fmp_nfsv3Attr_nlink;
+static int hf_fmp_nfsv3Attr_uid;
+static int hf_fmp_nfsv3Attr_gid;
+static int hf_fmp_nfsv3Attr_used;
+static int hf_fmp_nfsv3Attr_rdev;
+static int hf_fmp_nfsv3Attr_fsid;
+static int hf_fmp_nfsv3Attr_fileid;
+static int hf_fmp_cmd;
+static int hf_fmp_topVolumeId;
+static int hf_fmp_cursor;
+static int hf_fmp_offset64;
+static int hf_fmp_start_offset64;
+static int hf_fmp_slice_size;
+static int hf_fmp_volume;
+static int hf_fmp_stripeSize;
+static int hf_fmp_firstLogBlk64;
+static int hf_fmp_native_protocol;
+static int hf_fmp_encoding_mode;
+static int hf_fmp_capability;
+static int hf_fmp_devSerial_query_cmd;
+static int hf_fmp_volume_desc;
+static int hf_fmp_disk_identifier;
+static int hf_fmp_volume_mgmt_type;
+static int hf_fmp_notify_protocol;
+static int hf_fmp_client_error_number;
 /* Generated from convert_proto_tree_add_text.pl */
-static int hf_fmp_cap = -1;
-static int hf_fmp_cap_revoke_handle_list = -1;
-static int hf_fmp_length_of_volume_list = -1;
-static int hf_fmp_cap_unc_names = -1;
-static int hf_fmp_length_of_list = -1;
-static int hf_fmp_sigoffset = -1;
-static int hf_fmp_uid = -1;
-static int hf_fmp_fid = -1;
-static int hf_fmp_fsid = -1;
-static int hf_fmp_tid = -1;
-static int hf_fmp_cifsport = -1;
-static int hf_fmp_blockindex = -1;
-static int hf_fmp_number_of_disk = -1;
-static int hf_fmp_cap_cifsv2 = -1;
-static int hf_fmp_mtime = -1;
-static int hf_fmp_atime = -1;
-static int hf_fmp_ctime = -1;
-static int hf_fmp_heartbeat_interval = -1;
-static int hf_fmp_volindex = -1;
+static int hf_fmp_cap;
+static int hf_fmp_cap_revoke_handle_list;
+static int hf_fmp_length_of_volume_list;
+static int hf_fmp_cap_unc_names;
+static int hf_fmp_length_of_list;
+static int hf_fmp_sigoffset;
+static int hf_fmp_uid;
+static int hf_fmp_fid;
+static int hf_fmp_fsid;
+static int hf_fmp_tid;
+static int hf_fmp_cifsport;
+static int hf_fmp_blockindex;
+static int hf_fmp_number_of_disk;
+static int hf_fmp_cap_cifsv2;
+static int hf_fmp_mtime;
+static int hf_fmp_atime;
+static int hf_fmp_ctime;
+static int hf_fmp_heartbeat_interval;
+static int hf_fmp_volindex;
 
-static gint ett_fmp = -1;
-static gint ett_fmp_timeval = -1;
-static gint ett_fmp_extList = -1;
-static gint ett_fmp_ext = -1;
-static gint ett_fmp_fileHandle = -1;
-static gint ett_capabilities = -1;
-static gint ett_HierVolumeDescription = -1;
-static gint ett_attrs = -1;
+static int ett_fmp;
+static int ett_fmp_timeval;
+static int ett_fmp_extList;
+static int ett_fmp_ext;
+static int ett_fmp_fileHandle;
+static int ett_capabilities;
+static int ett_HierVolumeDescription;
+static int ett_attrs;
 
 static const value_string fmp_encoding_mode_vals[] = {
     {FMP_ASCII, "ASCII"},
@@ -135,10 +124,10 @@ static const value_string fmp_encoding_mode_vals[] = {
     {0,NULL}
 };
 
-static gboolean fmp_fhandle_reqrep_matching = FALSE;
+static bool fmp_fhandle_reqrep_matching;
 
 static int
-dissect_fmp_genString(tvbuff_t *tvb, int offset, proto_tree *tree)
+dissect_fmp_genString(tvbuff_t *tvb, packet_info* pinfo, int offset, proto_tree *tree)
 {
     proto_tree_add_item(tree, hf_fmp_encoding_mode, tvb, offset, 4, ENC_BIG_ENDIAN);
     offset += 4;
@@ -146,7 +135,7 @@ dissect_fmp_genString(tvbuff_t *tvb, int offset, proto_tree *tree)
     if (try_val_to_str(tvb_get_ntohl(tvb, offset), fmp_encoding_mode_vals) == NULL)
         return offset;
 
-    offset = dissect_rpc_string(tvb, tree, hf_fmp_path,
+    offset = dissect_rpc_string(tvb, pinfo, tree, hf_fmp_path,
                                 offset, NULL);
 
     return offset;
@@ -190,7 +179,7 @@ get_fileHandleSrc_size(tvbuff_t *tvb, int offset)
 }
 
 static int
-dissect_fmp_fileHandleSrc(tvbuff_t *tvb, int offset, packet_info *pinfo _U_,
+dissect_fmp_fileHandleSrc(tvbuff_t *tvb, int offset, packet_info *pinfo,
                           proto_tree *tree)
 {
     nativeProtocol      np;
@@ -209,12 +198,12 @@ dissect_fmp_fileHandleSrc(tvbuff_t *tvb, int offset, packet_info *pinfo _U_,
 
     switch (np) {
     case FMP_PATH:
-        offset = dissect_rpc_string(tvb, fileHandleTree,
+        offset = dissect_rpc_string(tvb, pinfo, fileHandleTree,
                                     hf_fmp_mount_path, offset, NULL);
         break;
 
     case FMP_NFS:
-        offset = dissect_rpc_data(tvb, fileHandleTree,
+        offset = dissect_rpc_data(tvb, pinfo, fileHandleTree,
                                   hf_fmp_nfsFHandle, offset);
         break;
 
@@ -230,7 +219,7 @@ dissect_fmp_fileHandleSrc(tvbuff_t *tvb, int offset, packet_info *pinfo _U_,
         break;
 
     case FMP_FMP:
-        offset = dissect_rpc_string(tvb, fileHandleTree,
+        offset = dissect_rpc_string(tvb, pinfo, fileHandleTree,
                                     hf_fmp_fmpFHandle, offset, NULL);
         break;
 
@@ -240,11 +229,11 @@ dissect_fmp_fileHandleSrc(tvbuff_t *tvb, int offset, packet_info *pinfo _U_,
         break;
 
     case FMP_SHARE:
-        offset = dissect_fmp_genString(tvb, offset, fileHandleTree);
+        offset = dissect_fmp_genString(tvb, pinfo, offset, fileHandleTree);
         break;
 
     case FMP_MOUNT:
-        offset = dissect_fmp_genString(tvb, offset, fileHandleTree);
+        offset = dissect_fmp_genString(tvb, pinfo, offset, fileHandleTree);
         break;
 
     case FMP_CIFSV2:
@@ -261,7 +250,7 @@ dissect_fmp_fileHandleSrc(tvbuff_t *tvb, int offset, packet_info *pinfo _U_,
         offset += 2;
         break;
     case FMP_UNC:
-        offset = dissect_fmp_genString(tvb, offset, fileHandleTree);
+        offset = dissect_fmp_genString(tvb, pinfo, offset, fileHandleTree);
         break;
 
     default:
@@ -281,12 +270,12 @@ dissect_fmp_extentState(tvbuff_t *tvb, int offset, proto_tree *tree)
 }
 
 static int
-dissect_fmp_extent(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree, guint32 ext_num)
+dissect_fmp_extent(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree, uint32_t ext_num)
 {
     proto_tree *extTree;
 
     extTree = proto_tree_add_subtree_format(tree, tvb, offset, 20 ,
-                                  ett_fmp_ext, NULL, "Extent (%u)", (guint32) ext_num);
+                                  ett_fmp_ext, NULL, "Extent (%u)", (uint32_t) ext_num);
 
     offset = dissect_rpc_uint32(tvb,  extTree, hf_fmp_firstLogBlk,
                                 offset);
@@ -304,10 +293,10 @@ static int
 dissect_fmp_extentList(tvbuff_t *tvb, int offset, packet_info *pinfo,
                        proto_tree *tree)
 {
-    guint32     numExtents;
-    guint32     totalLength;
+    uint32_t    numExtents;
+    uint32_t    totalLength;
     proto_tree *extListTree;
-    guint32     i;
+    uint32_t    i;
 
     numExtents = tvb_get_ntohl(tvb, offset);
     totalLength = 4 + (20 * numExtents);
@@ -330,9 +319,9 @@ static int
 dissect_fmp_extentListEx(tvbuff_t *tvb, int offset, packet_info *pinfo _U_,
                          proto_tree *tree)
 {
-    guint32     numExtents;
+    uint32_t    numExtents;
     proto_tree *extListTree;
-    guint32     i;
+    uint32_t    i;
 
     numExtents = tvb_get_ntohl(tvb, offset);
 
@@ -374,9 +363,9 @@ dissect_plugInID(tvbuff_t *tvb, int offset, proto_tree *tree)
 static int
 dissect_fmp_flushCmd(tvbuff_t *tvb, int offset,  proto_tree *tree)
 {
-    guint32 cmd;
+    uint32_t cmd;
     char    msg[MAX_MSG_SIZE];
-    guint32 bitValue;
+    uint32_t bitValue;
     int     i;
 
     if (tree) {
@@ -387,30 +376,30 @@ dissect_fmp_flushCmd(tvbuff_t *tvb, int offset,  proto_tree *tree)
 
         for (i = 0; cmd != 0 && i < 32; i++) {
 
-            bitValue = 1 << i;
+            bitValue = 1U << i;
 
             if (cmd & bitValue) {
                 switch (bitValue) {
                 case FMP_COMMIT_SPECIFIED:
-                    g_strlcat(msg, "COMMIT_SPECIFIED", MAX_MSG_SIZE);
+                    (void) g_strlcat(msg, "COMMIT_SPECIFIED", MAX_MSG_SIZE);
                     break;
                 case FMP_RELEASE_SPECIFIED:
-                    g_strlcat(msg, "RELEASE_SPECIFIED", MAX_MSG_SIZE);
+                    (void) g_strlcat(msg, "RELEASE_SPECIFIED", MAX_MSG_SIZE);
                     break;
                 case FMP_RELEASE_ALL:
-                    g_strlcat(msg, "RELEASE_ALL", MAX_MSG_SIZE);
+                    (void) g_strlcat(msg, "RELEASE_ALL", MAX_MSG_SIZE);
                     break;
                 case FMP_CLOSE_FILE:
-                    g_strlcat(msg, "CLOSE_FILE", MAX_MSG_SIZE);
+                    (void) g_strlcat(msg, "CLOSE_FILE", MAX_MSG_SIZE);
                     break;
                 case FMP_UPDATE_TIME:
-                    g_strlcat(msg, "UPDATE_TIME", MAX_MSG_SIZE);
+                    (void) g_strlcat(msg, "UPDATE_TIME", MAX_MSG_SIZE);
                     break;
                 case FMP_ACCESS_TIME:
-                    g_strlcat(msg, "ACCESS_TIME", MAX_MSG_SIZE);
+                    (void) g_strlcat(msg, "ACCESS_TIME", MAX_MSG_SIZE);
                     break;
                 default:
-                    g_strlcat(msg, "UNKNOWN", MAX_MSG_SIZE);
+                    (void) g_strlcat(msg, "UNKNOWN", MAX_MSG_SIZE);
                     break;
                 }
 
@@ -419,13 +408,13 @@ dissect_fmp_flushCmd(tvbuff_t *tvb, int offset,  proto_tree *tree)
 
                 /* add a "bitwise inclusive OR" symbol between cmds */
                 if (cmd) {
-                    g_strlcat(msg, " | ", MAX_MSG_SIZE);
+                    (void) g_strlcat(msg, " | ", MAX_MSG_SIZE);
                 }
             }
         }
 
         if (strlen(msg) == 0) {
-            g_strlcpy(msg, "No command specified", MAX_MSG_SIZE);
+            (void) g_strlcpy(msg, "No command specified", MAX_MSG_SIZE);
         }
 
         proto_tree_add_uint_format_value(tree, hf_fmp_cmd, tvb, offset, 4, cmd, "%s", msg);
@@ -435,7 +424,7 @@ dissect_fmp_flushCmd(tvbuff_t *tvb, int offset,  proto_tree *tree)
 }
 
 static int
-dissect_InterpretVolMgtStuff(tvbuff_t *tvb, int offset, proto_tree *tree)
+dissect_InterpretVolMgtStuff(tvbuff_t *tvb, packet_info* pinfo, int offset, proto_tree *tree)
 {
     int length, numdisks, i, j;
 
@@ -444,7 +433,7 @@ dissect_InterpretVolMgtStuff(tvbuff_t *tvb, int offset, proto_tree *tree)
     offset += 4;
 
     for (i=0; i<numdisks; i++) {
-        offset = dissect_rpc_uint64(tvb, tree, hf_fmp_sig_offset,  offset);
+        offset = dissect_rpc_uint64(tvb, tree, hf_fmp_sig_offset, offset);
         length = tvb_get_ntohl(tvb, offset);
         proto_tree_add_item(tree, hf_fmp_length_of_list, tvb, offset, 4, ENC_BIG_ENDIAN);
         offset += 4;
@@ -452,7 +441,7 @@ dissect_InterpretVolMgtStuff(tvbuff_t *tvb, int offset, proto_tree *tree)
         for (j=0; j<length; j++) {
             proto_tree_add_item(tree, hf_fmp_sigoffset, tvb, offset, 4, ENC_BIG_ENDIAN);
             offset += 4;
-            offset = dissect_rpc_string(tvb, tree, hf_fmp_dskSigEnt_val,
+            offset = dissect_rpc_string(tvb, pinfo, tree, hf_fmp_dskSigEnt_val,
                                         offset, NULL);
 
         }
@@ -489,7 +478,7 @@ dissect_fmp_timeval(tvbuff_t *tvb, int offset, packet_info *pinfo _U_,
         time_tree = proto_item_add_subtree(time_item, ett_fmp_timeval);
 
         proto_tree_add_uint(time_tree, hf_time_sec, tvb, offset, 4,
-                            (guint32) ts.secs);
+                            (uint32_t) ts.secs);
         proto_tree_add_uint(time_tree, hf_time_nsec, tvb, offset+4, 4,
                             ts.nsecs);
     }
@@ -577,7 +566,7 @@ dissect_fmp_status(tvbuff_t *tvb, int offset, proto_tree *tree, int *rval)
 }
 
 static int
-dissect_fmp_devSerial(tvbuff_t *tvb, int offset, packet_info *pinfo _U_,
+dissect_fmp_devSerial(tvbuff_t *tvb, int offset, packet_info *pinfo,
                       proto_tree *tree)
 {
     proto_tree_add_item(tree, hf_fmp_devSerial_query_cmd, tvb, offset, 4, ENC_BIG_ENDIAN);
@@ -586,13 +575,13 @@ dissect_fmp_devSerial(tvbuff_t *tvb, int offset, packet_info *pinfo _U_,
     proto_tree_add_item(tree, hf_fmp_sigoffset, tvb, offset, 4, ENC_BIG_ENDIAN);
     offset += 4;
 
-    offset = dissect_rpc_string(tvb, tree, hf_fmp_devSignature,
+    offset = dissect_rpc_string(tvb, pinfo, tree, hf_fmp_devSignature,
                                 offset, NULL);
     return offset;
 }
 
 static int
-dissect_fmp_VolumeDescription(tvbuff_t *tvb, int offset, proto_tree * tree)
+dissect_fmp_VolumeDescription(tvbuff_t *tvb, packet_info* pinfo, int offset, proto_tree * tree)
 {
     int                    i,length;
     proto_tree            *Hietree;
@@ -624,7 +613,7 @@ dissect_fmp_VolumeDescription(tvbuff_t *tvb, int offset, proto_tree * tree)
             for (i=0; i<length; i++) {
                 proto_tree_add_item(Hietree, hf_fmp_sigoffset, tvb, offset, 4, ENC_BIG_ENDIAN);
                 offset += 4;
-                offset = dissect_rpc_string(tvb, Hietree, hf_fmp_dskSigEnt_val,  offset, NULL);
+                offset = dissect_rpc_string(tvb, pinfo, Hietree, hf_fmp_dskSigEnt_val,  offset, NULL);
 
 
             }
@@ -679,7 +668,7 @@ dissect_fmp_VolumeDescription(tvbuff_t *tvb, int offset, proto_tree * tree)
 
 
 static int
-dissect_fmp_Hiervolume(tvbuff_t *tvb, int offset, proto_tree * tree)
+dissect_fmp_Hiervolume(tvbuff_t *tvb, packet_info* pinfo, int offset, proto_tree * tree)
 {
 
     int vollength;
@@ -689,7 +678,7 @@ dissect_fmp_Hiervolume(tvbuff_t *tvb, int offset, proto_tree * tree)
     offset = dissect_rpc_uint32(tvb, tree, hf_fmp_cookie, offset);
 
     /* hierarchical description of volume.  Each volume describes a
-       piece of the entire hierarchy and is guarenteed to only refer to
+       piece of the entire hierarchy and is guaranteed to only refer to
        volumes that have already been described by the data structure up
        to this point in time.  In some extreme cases, the number of
        volumes and their descriptions may be to large to fit in a single
@@ -710,7 +699,7 @@ dissect_fmp_Hiervolume(tvbuff_t *tvb, int offset, proto_tree * tree)
     proto_tree_add_item(tree, hf_fmp_length_of_volume_list, tvb, offset, 4, ENC_BIG_ENDIAN);
     offset += 4;
     while (vollength) {
-        offset =  dissect_fmp_VolumeDescription(tvb, offset, tree);
+        offset =  dissect_fmp_VolumeDescription(tvb, pinfo, offset, tree);
         vollength--;
     }
 
@@ -725,7 +714,7 @@ dissect_fmp_vmInfo(tvbuff_t *tvb, int offset, packet_info *pinfo,
                    proto_tree *tree)
 {
     int     vmType;
-    guint32 phyVolList_len;
+    uint32_t phyVolList_len;
 
     vmType = tvb_get_ntohl(tvb, offset);
     proto_tree_add_item(tree, hf_fmp_volume_mgmt_type, tvb, offset, 4, ENC_BIG_ENDIAN);
@@ -751,12 +740,12 @@ dissect_fmp_vmInfo(tvbuff_t *tvb, int offset, packet_info *pinfo,
         break;
 
     case FMP_THIRD_PARTY:
-        offset = dissect_rpc_string(tvb, tree, hf_fmp_volHandle,
+        offset = dissect_rpc_string(tvb, pinfo, tree, hf_fmp_volHandle,
                                     offset, NULL);
         break;
 
     case FMP_CLIENT_BASED_DART:
-        offset = dissect_rpc_string(tvb,  tree, hf_fmp_volHandle,
+        offset = dissect_rpc_string(tvb, pinfo, tree, hf_fmp_volHandle,
                                     offset, NULL);
         break;
 
@@ -771,11 +760,11 @@ dissect_fmp_vmInfo(tvbuff_t *tvb, int offset, packet_info *pinfo,
         break;
 
     case FMP_DISK_SIGNATURE:
-        offset = dissect_InterpretVolMgtStuff(tvb, offset, tree);
+        offset = dissect_InterpretVolMgtStuff(tvb, pinfo, offset, tree);
         break;
 
     case FMP_HIERARCHICAL_VOLUME:
-        dissect_fmp_Hiervolume(tvb, offset, tree);
+        dissect_fmp_Hiervolume(tvb, pinfo, offset, tree);
         break;
 
     default:
@@ -796,7 +785,7 @@ dissect_fmp_notifyProtocol(tvbuff_t *tvb, int offset, proto_tree *tree)
 static int
 dissect_fmp_capabilities(tvbuff_t *tvb, int offset, proto_tree *tree)
 {
-    static const int *capabilities[] = {
+    static int * const capabilities[] = {
         &hf_fmp_cap_revoke_handle_list,
         &hf_fmp_cap_unc_names,
         &hf_fmp_cap_cifsv2,
@@ -857,7 +846,7 @@ dissect_FMP_SessionCreate_request(tvbuff_t *tvb, packet_info *pinfo,
                                   proto_tree *tree, void* data _U_)
 {
     int offset = 0;
-    offset = dissect_rpc_string(tvb, tree, hf_fmp_hostID,
+    offset = dissect_rpc_string(tvb, pinfo, tree, hf_fmp_hostID,
                                 offset, NULL);
     offset = dissect_fmp_timeval(tvb, offset, pinfo, tree, hf_fmp_btime,
                                  hf_fmp_time_sec, hf_fmp_time_nsec);
@@ -875,9 +864,9 @@ dissect_FMP_SessionCreate_reply(tvbuff_t *tvb, packet_info *pinfo,
 
     offset = dissect_fmp_status(tvb, offset,tree, &rval);
     if (rval == 0) {
-        offset = dissect_rpc_data(tvb, tree,
+        offset = dissect_rpc_data(tvb, pinfo, tree,
                                   hf_fmp_sessionHandle, offset);
-        offset = dissect_rpc_string(tvb,  tree, hf_fmp_hostID,
+        offset = dissect_rpc_string(tvb, pinfo, tree, hf_fmp_hostID,
                                     offset, NULL);
         offset = dissect_fmp_timeval(tvb, offset, pinfo, tree,
                                      hf_fmp_btime, hf_fmp_time_sec,
@@ -889,10 +878,10 @@ dissect_FMP_SessionCreate_reply(tvbuff_t *tvb, packet_info *pinfo,
 }
 
 static int
-dissect_FMP_HeartBeat_request(tvbuff_t *tvb, packet_info *pinfo _U_,
+dissect_FMP_HeartBeat_request(tvbuff_t *tvb, packet_info *pinfo,
                               proto_tree *tree, void* data _U_)
 {
-    return dissect_rpc_data(tvb, tree, hf_fmp_sessionHandle, 0);
+    return dissect_rpc_data(tvb, pinfo, tree, hf_fmp_sessionHandle, 0);
 }
 
 static int
@@ -909,7 +898,7 @@ dissect_FMP_Mount_request(tvbuff_t *tvb, packet_info *pinfo,
                           proto_tree *tree, void* data _U_)
 {
     int offset = 0;
-    offset = dissect_rpc_data(tvb,  tree, hf_fmp_sessionHandle,
+    offset = dissect_rpc_data(tvb, pinfo, tree, hf_fmp_sessionHandle,
                               offset);
     offset = dissect_fmp_capability(tvb, offset, tree);
     offset = dissect_fmp_fileHandleSrc(tvb, offset, pinfo, tree);
@@ -940,7 +929,7 @@ dissect_FMP_Open_request(tvbuff_t *tvb, packet_info *pinfo,
                          proto_tree *tree, void* data _U_)
 {
     int offset = 0;
-    offset = dissect_rpc_data(tvb, tree, hf_fmp_sessionHandle,
+    offset = dissect_rpc_data(tvb, pinfo, tree, hf_fmp_sessionHandle,
                               offset);
     offset = dissect_fmp_fileHandleSrc(tvb, offset, pinfo, tree);
     return offset;
@@ -955,7 +944,7 @@ dissect_FMP_Open_reply(tvbuff_t *tvb, packet_info *pinfo _U_,
 
     offset = dissect_fmp_status(tvb, offset,tree, &rval);
     if (rval == 0) {
-        offset = dissect_rpc_data(tvb, tree, hf_fmp_fmpFHandle,
+        offset = dissect_rpc_data(tvb, pinfo, tree, hf_fmp_fmpFHandle,
                                   offset);
         offset = dissect_rpc_uint32(tvb,  tree, hf_fmp_msgNum,
                                     offset);
@@ -969,12 +958,12 @@ dissect_FMP_Open_reply(tvbuff_t *tvb, packet_info *pinfo _U_,
 }
 
 static int
-dissect_FMP_Close_request(tvbuff_t *tvb, packet_info *pinfo _U_,
+dissect_FMP_Close_request(tvbuff_t *tvb, packet_info *pinfo,
                           proto_tree *tree, void* data _U_)
 {
     int offset = 0;
 
-    offset = dissect_rpc_data(tvb, tree, hf_fmp_fmpFHandle, offset);
+    offset = dissect_rpc_data(tvb, pinfo, tree, hf_fmp_fmpFHandle, offset);
     offset = dissect_rpc_uint32(tvb, tree, hf_fmp_msgNum, offset);
     return offset;
 }
@@ -999,7 +988,7 @@ static int
 dissect_FMP_OpenGetMap_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
     int offset = 0;
-    offset = dissect_rpc_data(tvb, tree, hf_fmp_sessionHandle,
+    offset = dissect_rpc_data(tvb, pinfo, tree, hf_fmp_sessionHandle,
                               offset);
 
     offset = dissect_fmp_fileHandleSrc(tvb, offset, pinfo, tree);
@@ -1020,7 +1009,7 @@ dissect_FMP_OpenGetMap_reply(tvbuff_t *tvb, packet_info *pinfo,
 
     offset = dissect_fmp_status(tvb, offset,tree, &rval);
     if (rval == 0) {
-        offset = dissect_rpc_data(tvb, tree, hf_fmp_fmpFHandle,
+        offset = dissect_rpc_data(tvb, pinfo, tree, hf_fmp_fmpFHandle,
                                   offset);
         offset = dissect_rpc_uint32(tvb,  tree, hf_fmp_msgNum,
                                     offset);
@@ -1040,7 +1029,7 @@ static int
 dissect_FMP_OpenAllocSpace_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
     int offset = 0;
-    offset = dissect_rpc_data(tvb, tree, hf_fmp_sessionHandle, offset);
+    offset = dissect_rpc_data(tvb, pinfo, tree, hf_fmp_sessionHandle, offset);
     offset = dissect_fmp_fileHandleSrc(tvb, offset, pinfo, tree);
     offset = dissect_rpc_uint32(tvb,  tree, hf_fmp_firstLogBlk, offset);
     offset = dissect_rpc_uint32(tvb,  tree, hf_fmp_numBlksReq, offset);
@@ -1057,7 +1046,7 @@ dissect_FMP_OpenAllocSpace_reply(tvbuff_t *tvb, packet_info *pinfo,
 
     offset = dissect_fmp_status(tvb, offset,tree, &rval);
     if (rval == 0) {
-        offset = dissect_rpc_data(tvb, tree, hf_fmp_fmpFHandle,
+        offset = dissect_rpc_data(tvb, pinfo, tree, hf_fmp_fmpFHandle,
                                   offset);
         offset = dissect_rpc_uint32(tvb,  tree, hf_fmp_msgNum,
                                     offset);
@@ -1073,11 +1062,11 @@ dissect_FMP_OpenAllocSpace_reply(tvbuff_t *tvb, packet_info *pinfo,
 }
 
 static int
-dissect_FMP_GetMap_request(tvbuff_t *tvb, packet_info *pinfo _U_,
+dissect_FMP_GetMap_request(tvbuff_t *tvb, packet_info *pinfo,
                            proto_tree *tree, void* data _U_)
 {
     int offset = 0;
-    offset = dissect_rpc_data(tvb, tree, hf_fmp_fmpFHandle, offset);
+    offset = dissect_rpc_data(tvb, pinfo, tree, hf_fmp_fmpFHandle, offset);
     offset = dissect_rpc_uint32(tvb,  tree, hf_fmp_msgNum, offset);
     offset = dissect_rpc_uint32(tvb,  tree, hf_fmp_firstLogBlk,
                                 offset);
@@ -1109,11 +1098,11 @@ dissect_FMP_GetMap_reply(tvbuff_t *tvb, packet_info *pinfo,
 }
 
 static int
-dissect_FMP_AllocSpace_request(tvbuff_t *tvb, packet_info *pinfo _U_,
+dissect_FMP_AllocSpace_request(tvbuff_t *tvb, packet_info *pinfo,
                                proto_tree *tree, void* data _U_)
 {
     int offset = 0;
-    offset = dissect_rpc_data(tvb,  tree, hf_fmp_fmpFHandle, offset);
+    offset = dissect_rpc_data(tvb, pinfo, tree, hf_fmp_fmpFHandle, offset);
     offset = dissect_rpc_uint32(tvb, tree, hf_fmp_msgNum, offset);
     offset = dissect_rpc_uint32(tvb, tree, hf_fmp_firstLogBlk,
                                 offset);
@@ -1149,7 +1138,7 @@ dissect_FMP_Flush_request(tvbuff_t *tvb, packet_info *pinfo,
                           proto_tree *tree, void* data _U_)
 {
     int offset = 0;
-    offset = dissect_rpc_data(tvb, tree, hf_fmp_fmpFHandle, offset);
+    offset = dissect_rpc_data(tvb, pinfo, tree, hf_fmp_fmpFHandle, offset);
     offset = dissect_rpc_uint32(tvb, tree, hf_fmp_msgNum, offset);
     offset = dissect_fmp_flushCmd(tvb, offset, tree);
     offset = dissect_rpc_uint64(tvb,tree, hf_fmp_eof, offset);
@@ -1173,11 +1162,11 @@ dissect_FMP_Flush_reply(tvbuff_t *tvb, packet_info *pinfo _U_,
 }
 
 static int
-dissect_FMP_CancelReq_request(tvbuff_t *tvb, packet_info *pinfo _U_,
+dissect_FMP_CancelReq_request(tvbuff_t *tvb, packet_info *pinfo,
                               proto_tree *tree, void* data _U_)
 {
     int offset = 0;
-    offset = dissect_rpc_data(tvb, tree, hf_fmp_fmpFHandle, offset);
+    offset = dissect_rpc_data(tvb, pinfo, tree, hf_fmp_fmpFHandle, offset);
     offset = dissect_rpc_uint32(tvb, tree, hf_fmp_msgNum, offset);
     offset = dissect_rpc_uint32(tvb, tree, hf_fmp_cookie, offset);
     return offset;
@@ -1199,17 +1188,17 @@ dissect_FMP_CancelReq_reply(tvbuff_t *tvb, packet_info *pinfo _U_,
 }
 
 static int
-dissect_FMP_PlugIn_request(tvbuff_t *tvb, packet_info *pinfo _U_,
+dissect_FMP_PlugIn_request(tvbuff_t *tvb, packet_info *pinfo,
                            proto_tree *tree, void* data _U_)
 {
     int offset = 0;
     offset = dissect_plugInID(tvb, offset, tree);
-    offset = dissect_rpc_data(tvb, tree, hf_fmp_plugInBuf, offset);
+    offset = dissect_rpc_data(tvb, pinfo, tree, hf_fmp_plugInBuf, offset);
     return offset;
 }
 
 static int
-dissect_FMP_PlugIn_reply(tvbuff_t *tvb, packet_info *pinfo _U_,
+dissect_FMP_PlugIn_reply(tvbuff_t *tvb, packet_info *pinfo,
                          proto_tree *tree, void* data _U_)
 {
     int rval;
@@ -1217,16 +1206,16 @@ dissect_FMP_PlugIn_reply(tvbuff_t *tvb, packet_info *pinfo _U_,
 
     offset = dissect_fmp_status(tvb, offset,tree, &rval);
     if (rval == 0) {
-        offset = dissect_rpc_data(tvb,  tree, hf_fmp_plugInBuf,
+        offset = dissect_rpc_data(tvb, pinfo, tree, hf_fmp_plugInBuf,
                                   offset);
     }
     return offset;
 }
 
 static int
-dissect_FMP_SessionTerminate_request(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_FMP_SessionTerminate_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-    return dissect_rpc_data(tvb,  tree, hf_fmp_sessionHandle, 0);
+    return dissect_rpc_data(tvb, pinfo, tree, hf_fmp_sessionHandle, 0);
 }
 
 static int
@@ -1238,11 +1227,11 @@ dissect_FMP_SessionTerminate_reply(tvbuff_t *tvb, packet_info *pinfo _U_, proto_
 }
 
 static int
-dissect_FMP_SessionCreateEx_request(tvbuff_t *tvb, packet_info *pinfo,  proto_tree *tree, void* data _U_)
+dissect_FMP_SessionCreateEx_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
     int offset = 0;
 
-    offset = dissect_rpc_string(tvb, tree, hf_fmp_hostID,
+    offset = dissect_rpc_string(tvb, pinfo, tree, hf_fmp_hostID,
                                 offset, NULL);
     offset = dissect_fmp_timeval(tvb, offset, pinfo ,tree, hf_fmp_btime,
                                  hf_fmp_time_sec, hf_fmp_time_nsec);
@@ -1255,7 +1244,7 @@ dissect_FMP_SessionCreateEx_request(tvbuff_t *tvb, packet_info *pinfo,  proto_tr
     offset = dissect_rpc_uint32(tvb, tree, hf_fmp_os_minor,
                                 offset);
 
-    offset = dissect_rpc_string(tvb, tree, hf_fmp_os_name,
+    offset = dissect_rpc_string(tvb, pinfo, tree, hf_fmp_os_name,
                                 offset, NULL);
 
     offset = dissect_rpc_uint32(tvb, tree, hf_fmp_os_patch,
@@ -1278,9 +1267,9 @@ dissect_FMP_SessionCreateEx_reply(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
 
     offset = dissect_fmp_status(tvb, offset, tree, &rval);
     if (rval == 0) {
-        offset = dissect_rpc_data(tvb, tree,
+        offset = dissect_rpc_data(tvb, pinfo, tree,
                                   hf_fmp_sessionHandle, offset);
-        offset = dissect_rpc_string(tvb,  tree, hf_fmp_hostID,
+        offset = dissect_rpc_string(tvb, pinfo, tree, hf_fmp_hostID,
                                     offset, NULL);
         offset = dissect_fmp_timeval(tvb, offset, pinfo ,tree,
                                      hf_fmp_btime, hf_fmp_time_sec,
@@ -1293,7 +1282,7 @@ dissect_FMP_SessionCreateEx_reply(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
         offset = dissect_rpc_uint32(tvb, tree, hf_fmp_os_minor,
                                     offset);
 
-        offset = dissect_rpc_string(tvb, tree, hf_fmp_server_version_string,
+        offset = dissect_rpc_string(tvb, pinfo, tree, hf_fmp_server_version_string,
                                     offset, NULL);
 
         offset = dissect_rpc_uint32(tvb, tree, hf_fmp_os_patch,
@@ -1310,10 +1299,10 @@ dissect_FMP_SessionCreateEx_reply(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
 
 
 static int
-dissect_FMP_ReportClientError_request(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_FMP_ReportClientError_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
     int offset = 0;
-    offset = dissect_rpc_string(tvb, tree, hf_fmp_description,
+    offset = dissect_rpc_string(tvb, pinfo, tree, hf_fmp_description,
                                 offset, NULL);
 
     offset = dissect_fmp_cerrInfo(tvb, offset, tree);
@@ -1331,10 +1320,10 @@ dissect_FMP_ReportClientError_reply(tvbuff_t *tvb, packet_info *pinfo _U_, proto
 }
 
 static int
-dissect_FMP_GetAttr_request(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_FMP_GetAttr_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
     int offset = 0;
-    offset = dissect_rpc_data(tvb, tree, hf_fmp_fmpFHandle, offset);
+    offset = dissect_rpc_data(tvb, pinfo, tree, hf_fmp_fmpFHandle, offset);
 
     offset = dissect_rpc_uint32(tvb, tree, hf_fmp_msgNum, offset);
 
@@ -1362,7 +1351,7 @@ dissect_FMP_OpenGetAttr_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
 {
     int offset = 0;
 
-    offset = dissect_rpc_data(tvb,  tree, hf_fmp_sessionHandle,
+    offset = dissect_rpc_data(tvb, pinfo, tree, hf_fmp_sessionHandle,
                               offset);
 
     offset = dissect_fmp_fileHandleSrc(tvb, offset, pinfo, tree);
@@ -1372,7 +1361,7 @@ dissect_FMP_OpenGetAttr_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
 
 
 static int
-dissect_FMP_OpenGetAttr_reply(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_FMP_OpenGetAttr_reply(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
     int rval;
     int offset = 0;
@@ -1380,7 +1369,7 @@ dissect_FMP_OpenGetAttr_reply(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree 
     offset = dissect_fmp_status(tvb, offset, tree, &rval);
 
     if (rval == 0) {
-        offset = dissect_rpc_data(tvb, tree, hf_fmp_fmpFHandle, offset);
+        offset = dissect_rpc_data(tvb, pinfo, tree, hf_fmp_fmpFHandle, offset);
         offset = dissect_rpc_uint32(tvb, tree, hf_fmp_msgNum, offset);
         offset = dissect_rpc_uint64(tvb, tree, hf_fmp_fileSize, offset);
         offset = dissect_rpc_uint32(tvb,  tree, hf_fmp_fsID, offset);
@@ -1440,7 +1429,7 @@ dissect_FMP_GetVolumeInfo_request(tvbuff_t *tvb, packet_info *pinfo _U_, proto_t
 
 
 static int
-dissect_FMP_GetVolumeInfo_reply(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_FMP_GetVolumeInfo_reply(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
     int rval;
     int offset = 0;
@@ -1448,7 +1437,7 @@ dissect_FMP_GetVolumeInfo_reply(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tre
     offset = dissect_fmp_status(tvb, offset,tree, &rval);
     if (rval == 0) {
         /* FIXME: I don't know size of this volumes */
-        offset = dissect_fmp_Hiervolume(tvb,offset, tree);
+        offset = dissect_fmp_Hiervolume(tvb, pinfo, offset, tree);
     }
     return offset;
 
@@ -1458,7 +1447,7 @@ static int
 dissect_FMP_OpenGetMapEx_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
     int offset = 0;
-    offset = dissect_rpc_data(tvb, tree, hf_fmp_sessionHandle,
+    offset = dissect_rpc_data(tvb, pinfo, tree, hf_fmp_sessionHandle,
                               offset);
     offset = dissect_fmp_fileHandleSrc(tvb, offset, pinfo, tree);
     offset = dissect_rpc_uint64(tvb, tree, hf_fmp_firstLogBlk64,  offset);
@@ -1477,7 +1466,7 @@ dissect_FMP_OpenGetMapEx_reply(tvbuff_t *tvb, packet_info *pinfo,
     int offset = 0;
     offset = dissect_fmp_status(tvb, offset,tree, &rval);
     if (rval == 0) {
-        offset = dissect_rpc_data(tvb, tree, hf_fmp_fmpFHandle,
+        offset = dissect_rpc_data(tvb, pinfo, tree, hf_fmp_fmpFHandle,
                                   offset);
         offset = dissect_rpc_uint32(tvb,  tree, hf_fmp_msgNum,
                                     offset);
@@ -1499,7 +1488,7 @@ dissect_FMP_OpenAllocSpaceEx_request(tvbuff_t *tvb,
                                      packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
     int offset = 0;
-    offset = dissect_rpc_data(tvb , tree, hf_fmp_sessionHandle,
+    offset = dissect_rpc_data(tvb , pinfo, tree, hf_fmp_sessionHandle,
                               offset);
     offset = dissect_fmp_fileHandleSrc(tvb, offset, pinfo, tree);
     offset = dissect_rpc_uint64(tvb, tree, hf_fmp_firstLogBlk64,  offset);
@@ -1519,7 +1508,7 @@ dissect_FMP_OpenAllocSpaceEx_reply(tvbuff_t *tvb, packet_info *pinfo,
 
     offset = dissect_fmp_status(tvb, offset,tree, &rval);
     if (rval == 0) {
-        offset = dissect_rpc_data(tvb, tree, hf_fmp_fmpFHandle,
+        offset = dissect_rpc_data(tvb, pinfo, tree, hf_fmp_fmpFHandle,
                                   offset);
         offset = dissect_rpc_uint32(tvb,  tree, hf_fmp_msgNum,
                                     offset);
@@ -1535,11 +1524,11 @@ dissect_FMP_OpenAllocSpaceEx_reply(tvbuff_t *tvb, packet_info *pinfo,
 }
 
 static int
-dissect_FMP_GetMapEx_request(tvbuff_t *tvb, packet_info *pinfo _U_,
+dissect_FMP_GetMapEx_request(tvbuff_t *tvb, packet_info *pinfo,
                              proto_tree *tree, void* data _U_)
 {
     int offset = 0;
-    offset = dissect_rpc_data(tvb, tree, hf_fmp_fmpFHandle, offset);
+    offset = dissect_rpc_data(tvb, pinfo, tree, hf_fmp_fmpFHandle, offset);
     offset = dissect_rpc_uint32(tvb,  tree, hf_fmp_msgNum, offset);
     offset = dissect_rpc_uint64(tvb, tree, hf_fmp_firstLogBlk64,  offset);
     offset = dissect_rpc_uint32(tvb,  tree, hf_fmp_numBlksReq,
@@ -1572,11 +1561,11 @@ dissect_FMP_GetMapEx_reply(tvbuff_t *tvb, packet_info *pinfo,
 
 
 static int
-dissect_FMP_AllocSpaceEx_request(tvbuff_t *tvb, packet_info *pinfo _U_,
+dissect_FMP_AllocSpaceEx_request(tvbuff_t *tvb, packet_info *pinfo,
                                  proto_tree *tree, void* data _U_)
 {
     int offset = 0;
-    offset = dissect_rpc_data(tvb,  tree, hf_fmp_fmpFHandle, offset);
+    offset = dissect_rpc_data(tvb, pinfo, tree, hf_fmp_fmpFHandle, offset);
     offset = dissect_rpc_uint32(tvb, tree, hf_fmp_msgNum, offset);
     offset = dissect_rpc_uint64(tvb, tree, hf_fmp_firstLogBlk64,  offset);
     offset = dissect_rpc_uint32(tvb, tree, hf_fmp_numBlksReq,
@@ -1612,7 +1601,7 @@ dissect_FMP_FlushEx_request(tvbuff_t *tvb, packet_info *pinfo,
                             proto_tree *tree, void* data _U_)
 {
     int offset = 0;
-    offset = dissect_rpc_data(tvb, tree, hf_fmp_fmpFHandle, offset);
+    offset = dissect_rpc_data(tvb, pinfo, tree, hf_fmp_fmpFHandle, offset);
     offset = dissect_rpc_uint32(tvb, tree, hf_fmp_msgNum, offset);
     offset = dissect_fmp_flushCmd(tvb, offset, tree);
     offset = dissect_rpc_uint64(tvb,tree, hf_fmp_eof, offset);
@@ -2270,7 +2259,7 @@ proto_register_fmp(void)
       { &hf_fmp_volindex, { "volIndex", "fmp.volindex", FT_UINT32, BASE_HEX, NULL, 0x0, NULL, HFILL }},
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_fmp,
         &ett_fmp_timeval,
         &ett_fmp_extList,
@@ -2306,7 +2295,7 @@ proto_reg_handoff_fmp(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

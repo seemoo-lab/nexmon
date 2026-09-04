@@ -1,28 +1,15 @@
-/* netscaler.h
+/** @file
  *
  * Wiretap Library
  * Copyright (c) 2006 by Ravi Kondamuru <Ravi.Kondamuru@citrix.com>
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef _NETSCALER_H
 #define _NETSCALER_H
 
-#include <glib.h>
-#include <wiretap/wtap.h>
+#include "wtap.h"
 
 /* Physical Device full packet trace */
 #define	NSPR_PDPKTRACEFULLTX_V10	0x0310	/* Transmitted */
@@ -119,13 +106,6 @@
 #define NSPR_HEADER_VERSION300 0x30
 #define NSPR_HEADER_VERSION350 0x35
 
-wtap_open_return_val nstrace_open(wtap *wth, int *err, gchar **err_info);
-int nstrace_10_dump_can_write_encap(int encap);
-int nstrace_20_dump_can_write_encap(int encap);
-int nstrace_30_dump_can_write_encap(int encap);
-int nstrace_35_dump_can_write_encap(int encap);
-
-gboolean nstrace_dump_open(wtap_dumper *wdh, int *err);
-
+wtap_open_return_val nstrace_open(wtap *wth, int *err, char **err_info);
 
 #endif /* _NETSCALER_H */

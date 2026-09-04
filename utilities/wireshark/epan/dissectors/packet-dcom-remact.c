@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* see packet-dcom.c for details about DCOM */
@@ -33,43 +21,43 @@
 void proto_register_remact(void);
 void proto_reg_handoff_remact(void);
 
-static int hf_remact_opnum = -1;
+static int hf_remact_opnum;
 
-static int hf_remact_requested_protseqs = -1;
-static int hf_remact_protseqs = -1;
-static int hf_remact_interfaces = -1;
-static int hf_remact_mode = -1;
-static int hf_remact_client_impl_level = -1;
-static int hf_remact_object_name = -1;
-static int hf_remact_object_storage = -1;
-static int hf_remact_interface_data = -1;
+static int hf_remact_requested_protseqs;
+static int hf_remact_protseqs;
+static int hf_remact_interfaces;
+static int hf_remact_mode;
+static int hf_remact_client_impl_level;
+static int hf_remact_object_name;
+static int hf_remact_object_storage;
+static int hf_remact_interface_data;
 
-static int hf_remact_oxid_bindings = -1;
-static int hf_remact_authn_hint = -1;
+static int hf_remact_oxid_bindings;
+static int hf_remact_authn_hint;
 
 
-static int proto_remact = -1;
-static gint ett_remact = -1;
+static int proto_remact;
+static int ett_remact;
 static e_guid_t uuid_remact = { 0x4d9f4ab8, 0x7d1c, 0x11cf, { 0x86, 0x1e, 0x00, 0x20, 0xaf, 0x6e, 0x7c, 0x57 } };
-static guint16  ver_remact = 0;
+static uint16_t ver_remact;
 
 
 static int
 dissect_remact_remote_activation_rqst(tvbuff_t *tvb, int offset,
-				      packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+				      packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	guint32 u32ClientImpLevel;
-	guint32 u32Mode;
-	guint32 u32Interfaces;
-	guint32 u32Pointer;
-	guint32 u32ArraySize;
-	guint32 u32ItemIdx;
-	guint16 u16ProtSeqs;
+	uint32_t u32ClientImpLevel;
+	uint32_t u32Mode;
+	uint32_t u32Interfaces;
+	uint32_t u32Pointer;
+	uint32_t u32ArraySize;
+	uint32_t u32ItemIdx;
+	uint16_t u16ProtSeqs;
 	e_guid_t clsid;
 	e_guid_t iid;
 
-	gchar 	szObjName[1000] = { 0 };
-	guint32 u32ObjNameLen = sizeof(szObjName);
+	char 	szObjName[1000] = { 0 };
+	uint32_t u32ObjNameLen = sizeof(szObjName);
 
 	offset = dissect_dcom_this(tvb, offset, pinfo, tree, di, drep);
 
@@ -126,17 +114,17 @@ dissect_remact_remote_activation_rqst(tvbuff_t *tvb, int offset,
 
 static int
 dissect_remact_remote_activation_resp(tvbuff_t *tvb, int offset,
-				      packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+				      packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-	guint32	u32Pointer;
+	uint32_t	u32Pointer;
 	e_guid_t ipid;
-	guint32	u32AuthnHint;
-	guint16	u16VersionMajor;
-	guint16	u16VersionMinor;
-	guint32	u32HResult;
-	guint32 u32ArraySize;
-	guint32 u32Idx;
-	guint32	u32VariableOffset;
+	uint32_t	u32AuthnHint;
+	uint16_t	u16VersionMajor;
+	uint16_t	u16VersionMinor;
+	uint32_t	u32HResult;
+	uint32_t u32ArraySize;
+	uint32_t u32Idx;
+	uint32_t	u32VariableOffset;
 
 
 	offset = dissect_dcom_that(tvb, offset, pinfo, tree, di, drep);
@@ -183,7 +171,7 @@ dissect_remact_remote_activation_resp(tvbuff_t *tvb, int offset,
 						      &u32HResult, u32Idx);
 		/* update column info now */
 		col_append_fstr(pinfo->cinfo, COL_INFO, " %s[%u]",
-				val_to_str(u32HResult, dcom_hresult_vals, "Unknown (0x%08x)"),
+				val_to_str(pinfo->pool, u32HResult, dcom_hresult_vals, "Unknown (0x%08x)"),
 				u32Idx);
 		u32Idx++;
 	}
@@ -193,13 +181,13 @@ dissect_remact_remote_activation_resp(tvbuff_t *tvb, int offset,
 
 	/* update column info now */
 	col_append_fstr(pinfo->cinfo, COL_INFO, " -> %s",
-			val_to_str(u32HResult, dcom_hresult_vals, "Unknown (0x%08x)"));
+			val_to_str(pinfo->pool, u32HResult, dcom_hresult_vals, "Unknown (0x%08x)"));
 
 	return offset;
 }
 
 
-static dcerpc_sub_dissector remact_dissectors[] = {
+static const dcerpc_sub_dissector remact_dissectors[] = {
 	{ 0, "RemoteActivation", dissect_remact_remote_activation_rqst, dissect_remact_remote_activation_resp },
 	{ 0, NULL, NULL, NULL },
 };
@@ -235,7 +223,7 @@ proto_register_remact (void)
 		  { "AuthnHint", "remact.authn_hint", FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }},
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_remact
 	};
 
@@ -252,7 +240,7 @@ proto_reg_handoff_remact (void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

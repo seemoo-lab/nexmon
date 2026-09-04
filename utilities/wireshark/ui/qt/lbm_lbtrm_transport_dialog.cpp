@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "lbm_lbtrm_transport_dialog.h"
@@ -26,8 +14,8 @@
 
 #include "file.h"
 
-#include "qt_ui_utils.h"
-#include "wireshark_application.h"
+#include <ui/qt/utils/qt_ui_utils.h>
+#include "main_application.h"
 
 #include <QClipboard>
 #include <QMenu>
@@ -81,7 +69,7 @@ namespace
     static const double OneGigabit = OneMegabit * OneKilobit;
 }
 
-static QString format_rate(const nstime_t & elapsed, guint64 bytes)
+static QString format_rate(const nstime_t & elapsed, uint64_t bytes)
 {
     QString result;
     double elapsed_sec;
@@ -89,7 +77,7 @@ static QString format_rate(const nstime_t & elapsed, guint64 bytes)
 
     if (((elapsed.secs == 0) && (elapsed.nsecs == 0)) || (bytes == 0))
     {
-        return (QString("0"));
+        return (QStringLiteral("0"));
     }
 
     elapsed_sec = elapsed.secs + (((double)elapsed.nsecs) / 1000000000.0);
@@ -99,21 +87,21 @@ static QString format_rate(const nstime_t & elapsed, guint64 bytes)
     if (rate >= OneGigabit)
     {
         rate /= OneGigabit;
-        result = QString("%1G").arg(rate, 0, 'f', 2);
+        result = QStringLiteral("%1G").arg(rate, 0, 'f', 2);
     }
     else if (rate >= OneMegabit)
     {
         rate /= OneMegabit;
-        result = QString("%1M").arg(rate, 0, 'f', 2);
+        result = QStringLiteral("%1M").arg(rate, 0, 'f', 2);
     }
     else if (rate >= OneKilobit)
     {
         rate /= OneKilobit;
-        result = QString("%1K").arg(rate, 0, 'f', 2);
+        result = QStringLiteral("%1K").arg(rate, 0, 'f', 2);
     }
     else
     {
-        result = QString("%1").arg(rate, 0, 'f', 2);
+        result = QStringLiteral("%1").arg(rate, 0, 'f', 2);
     }
     return (result);
 }
@@ -155,64 +143,64 @@ static QString format_rate(const nstime_t & elapsed, guint64 bytes)
 class LBMLBTRMFrameEntry : public QTreeWidgetItem
 {
     public:
-        LBMLBTRMFrameEntry(guint32 frame);
+        LBMLBTRMFrameEntry(uint32_t frame);
         virtual ~LBMLBTRMFrameEntry(void) { }
-        guint32 getFrame(void) { return (m_frame); }
+        uint32_t getFrame(void) { return (m_frame); }
 
     private:
-        guint32 m_frame;
+        uint32_t m_frame;
 };
 
-LBMLBTRMFrameEntry::LBMLBTRMFrameEntry(guint32 frame) :
+LBMLBTRMFrameEntry::LBMLBTRMFrameEntry(uint32_t frame) :
     QTreeWidgetItem(),
     m_frame(frame)
 {
-    setText(Detail_SQN_Column, QString(" "));
-    setText(Detail_Count_Column, QString(" "));
-    setText(Detail_Frame_Column, QString("%1").arg(m_frame));
+    setText(Detail_SQN_Column, QStringLiteral(" "));
+    setText(Detail_Count_Column, QStringLiteral(" "));
+    setText(Detail_Frame_Column, QStringLiteral("%1").arg(m_frame));
 }
 
-typedef QMap<guint32, LBMLBTRMFrameEntry *> LBMLBTRMFrameMap;
-typedef QMap<guint32, LBMLBTRMFrameEntry *>::iterator LBMLBTRMFrameMapIterator;
+typedef QMap<uint32_t, LBMLBTRMFrameEntry *> LBMLBTRMFrameMap;
+typedef QMap<uint32_t, LBMLBTRMFrameEntry *>::iterator LBMLBTRMFrameMapIterator;
 
 // A SQN (SeQuence Number) entry
 class LBMLBTRMSQNEntry : public QTreeWidgetItem
 {
     public:
-        LBMLBTRMSQNEntry(guint32 sqn);
+        LBMLBTRMSQNEntry(uint32_t sqn);
         virtual ~LBMLBTRMSQNEntry(void);
-        void processFrame(guint32 frame);
+        void processFrame(uint32_t frame);
 
     private:
         LBMLBTRMSQNEntry(void);
-        guint32 m_sqn;
-        guint32 m_count;
+        uint32_t m_sqn;
+        uint32_t m_count;
         LBMLBTRMFrameMap m_frames;
 };
 
-LBMLBTRMSQNEntry::LBMLBTRMSQNEntry(guint32 sqn) :
+LBMLBTRMSQNEntry::LBMLBTRMSQNEntry(uint32_t sqn) :
     QTreeWidgetItem(),
     m_sqn(sqn),
     m_count(0),
     m_frames()
 {
-    setText(Detail_SQN_Column, QString("%1").arg(m_sqn));
+    setText(Detail_SQN_Column, QStringLiteral("%1").arg(m_sqn));
     setTextAlignment(Detail_SQN_Column, Qt::AlignRight);
-    setText(Detail_Count_Column, QString("%1").arg(m_count));
+    setText(Detail_Count_Column, QStringLiteral("%1").arg(m_count));
     setTextAlignment(Detail_Count_Column, Qt::AlignRight);
-    setText(Detail_Frame_Column, QString(" "));
+    setText(Detail_Frame_Column, QStringLiteral(" "));
 }
 
 LBMLBTRMSQNEntry::~LBMLBTRMSQNEntry(void)
 {
-    for (LBMLBTRMFrameMapIterator it = m_frames.begin(); it != m_frames.end(); it++)
+    for (LBMLBTRMFrameMapIterator it = m_frames.begin(); it != m_frames.end(); ++it)
     {
         delete *it;
     }
     m_frames.clear();
 }
 
-void LBMLBTRMSQNEntry::processFrame(guint32 frame)
+void LBMLBTRMSQNEntry::processFrame(uint32_t frame)
 {
     LBMLBTRMFrameMapIterator it;
 
@@ -225,7 +213,7 @@ void LBMLBTRMSQNEntry::processFrame(guint32 frame)
         sortChildren(Detail_Frame_Column, Qt::AscendingOrder);
     }
     m_count++;
-    setText(Detail_Count_Column, QString("%1").arg(m_count));
+    setText(Detail_Count_Column, QStringLiteral("%1").arg(m_count));
     setTextAlignment(Detail_Count_Column, Qt::AlignRight);
 }
 
@@ -233,19 +221,19 @@ void LBMLBTRMSQNEntry::processFrame(guint32 frame)
 class LBMLBTRMNCFReasonEntry : public QTreeWidgetItem
 {
     public:
-        LBMLBTRMNCFReasonEntry(guint8 reason);
+        LBMLBTRMNCFReasonEntry(uint8_t reason);
         virtual ~LBMLBTRMNCFReasonEntry(void);
-        void processFrame(guint32 frame);
+        void processFrame(uint32_t frame);
 
     private:
         LBMLBTRMNCFReasonEntry(void);
-        guint8 m_reason;
+        uint8_t m_reason;
         QString m_reason_string;
-        guint32 m_count;
+        uint32_t m_count;
         LBMLBTRMFrameMap m_frames;
 };
 
-LBMLBTRMNCFReasonEntry::LBMLBTRMNCFReasonEntry(guint8 reason) :
+LBMLBTRMNCFReasonEntry::LBMLBTRMNCFReasonEntry(uint8_t reason) :
     QTreeWidgetItem(),
     m_reason(reason),
     m_reason_string(),
@@ -267,25 +255,25 @@ LBMLBTRMNCFReasonEntry::LBMLBTRMNCFReasonEntry(guint8 reason) :
             m_reason_string = "Shed";
             break;
         default:
-            m_reason_string = QString("Unknown (%1)").arg(m_reason);
+            m_reason_string = QStringLiteral("Unknown (%1)").arg(m_reason);
             break;
     }
     setText(Detail_SQN_Column, m_reason_string);
-    setText(Detail_Count_Column, QString("%1").arg(m_count));
+    setText(Detail_Count_Column, QStringLiteral("%1").arg(m_count));
     setTextAlignment(Detail_Count_Column, Qt::AlignRight);
-    setText(Detail_Frame_Column, QString(" "));
+    setText(Detail_Frame_Column, QStringLiteral(" "));
 }
 
 LBMLBTRMNCFReasonEntry::~LBMLBTRMNCFReasonEntry(void)
 {
-    for (LBMLBTRMFrameMapIterator it = m_frames.begin(); it != m_frames.end(); it++)
+    for (LBMLBTRMFrameMapIterator it = m_frames.begin(); it != m_frames.end(); ++it)
     {
         delete *it;
     }
     m_frames.clear();
 }
 
-void LBMLBTRMNCFReasonEntry::processFrame(guint32 frame)
+void LBMLBTRMNCFReasonEntry::processFrame(uint32_t frame)
 {
     LBMLBTRMFrameMapIterator it;
 
@@ -298,51 +286,51 @@ void LBMLBTRMNCFReasonEntry::processFrame(guint32 frame)
         sortChildren(Detail_Frame_Column, Qt::AscendingOrder);
     }
     m_count++;
-    setText(Detail_Count_Column, QString("%1").arg(m_count));
+    setText(Detail_Count_Column, QStringLiteral("%1").arg(m_count));
     setTextAlignment(Detail_Count_Column, Qt::AlignRight);
 }
 
-typedef QMap<guint32, LBMLBTRMNCFReasonEntry *> LBMLBTRMNCFReasonMap;
-typedef QMap<guint32, LBMLBTRMNCFReasonEntry *>::iterator LBMLBTRMNCFReasonMapIterator;
+typedef QMap<uint32_t, LBMLBTRMNCFReasonEntry *> LBMLBTRMNCFReasonMap;
+typedef QMap<uint32_t, LBMLBTRMNCFReasonEntry *>::iterator LBMLBTRMNCFReasonMapIterator;
 
 // An NCF SQN entry
 class LBMLBTRMNCFSQNEntry : public QTreeWidgetItem
 {
     public:
-        LBMLBTRMNCFSQNEntry(guint32 sqn);
+        LBMLBTRMNCFSQNEntry(uint32_t sqn);
         virtual ~LBMLBTRMNCFSQNEntry(void);
-        void processFrame(guint8 reason, guint32 frame);
+        void processFrame(uint8_t reason, uint32_t frame);
 
     private:
         LBMLBTRMNCFSQNEntry(void);
-        guint32 m_sqn;
-        guint32 m_count;
+        uint32_t m_sqn;
+        uint32_t m_count;
         LBMLBTRMNCFReasonMap m_reasons;
 };
 
-LBMLBTRMNCFSQNEntry::LBMLBTRMNCFSQNEntry(guint32 sqn) :
+LBMLBTRMNCFSQNEntry::LBMLBTRMNCFSQNEntry(uint32_t sqn) :
     QTreeWidgetItem(),
     m_sqn(sqn),
     m_count(0),
     m_reasons()
 {
-    setText(Detail_SQN_Column, QString("%1").arg(m_sqn));
+    setText(Detail_SQN_Column, QStringLiteral("%1").arg(m_sqn));
     setTextAlignment(Detail_SQN_Column, Qt::AlignRight);
-    setText(Detail_Count_Column, QString("%1").arg(m_count));
+    setText(Detail_Count_Column, QStringLiteral("%1").arg(m_count));
     setTextAlignment(Detail_Count_Column, Qt::AlignRight);
-    setText(Detail_Frame_Column, QString(" "));
+    setText(Detail_Frame_Column, QStringLiteral(" "));
 }
 
 LBMLBTRMNCFSQNEntry::~LBMLBTRMNCFSQNEntry(void)
 {
-    for (LBMLBTRMNCFReasonMapIterator it = m_reasons.begin(); it != m_reasons.end(); it++)
+    for (LBMLBTRMNCFReasonMapIterator it = m_reasons.begin(); it != m_reasons.end(); ++it)
     {
         delete *it;
     }
     m_reasons.clear();
 }
 
-void LBMLBTRMNCFSQNEntry::processFrame(guint8 reason, guint32 frame)
+void LBMLBTRMNCFSQNEntry::processFrame(uint8_t reason, uint32_t frame)
 {
     LBMLBTRMNCFReasonMapIterator it;
     LBMLBTRMNCFReasonEntry * entry = NULL;
@@ -360,15 +348,15 @@ void LBMLBTRMNCFSQNEntry::processFrame(guint8 reason, guint32 frame)
         entry = it.value();
     }
     m_count++;
-    setText(Detail_Count_Column, QString("%1").arg(m_count));
+    setText(Detail_Count_Column, QStringLiteral("%1").arg(m_count));
     setTextAlignment(Detail_Count_Column, Qt::AlignRight);
     entry->processFrame(frame);
 }
 
-typedef QMap<guint32, LBMLBTRMSQNEntry *> LBMLBTRMSQNMap;
-typedef QMap<guint32, LBMLBTRMSQNEntry *>::iterator LBMLBTRMSQNMapIterator;
-typedef QMap<guint32, LBMLBTRMNCFSQNEntry *> LBMLBTRMNCFSQNMap;
-typedef QMap<guint32, LBMLBTRMNCFSQNEntry *>::iterator LBMLBTRMNCFSQNMapIterator;
+typedef QMap<uint32_t, LBMLBTRMSQNEntry *> LBMLBTRMSQNMap;
+typedef QMap<uint32_t, LBMLBTRMSQNEntry *>::iterator LBMLBTRMSQNMapIterator;
+typedef QMap<uint32_t, LBMLBTRMNCFSQNEntry *> LBMLBTRMNCFSQNMap;
+typedef QMap<uint32_t, LBMLBTRMNCFSQNEntry *>::iterator LBMLBTRMNCFSQNMapIterator;
 
 // A source transport entry
 class LBMLBTRMSourceTransportEntry : public QTreeWidgetItem
@@ -385,15 +373,15 @@ class LBMLBTRMSourceTransportEntry : public QTreeWidgetItem
 
     private:
         void fillItem(void);
-        guint64 m_data_frames;
-        guint64 m_data_bytes;
-        guint64 m_rx_data_frames;
-        guint64 m_rx_data_bytes;
-        guint64 m_ncf_frames;
-        guint64 m_ncf_count;
-        guint64 m_ncf_bytes;
-        guint64 m_sm_frames;
-        guint64 m_sm_bytes;
+        uint64_t m_data_frames;
+        uint64_t m_data_bytes;
+        uint64_t m_rx_data_frames;
+        uint64_t m_rx_data_bytes;
+        uint64_t m_ncf_frames;
+        uint64_t m_ncf_count;
+        uint64_t m_ncf_bytes;
+        uint64_t m_sm_frames;
+        uint64_t m_sm_bytes;
         nstime_t m_first_frame_timestamp;
         bool m_first_frame_timestamp_valid;
         nstime_t m_last_frame_timestamp;
@@ -514,13 +502,13 @@ void LBMLBTRMSourceTransportEntry::processPacket(const packet_info * pinfo, cons
     }
     else if (tap_info->type == LBTRM_PACKET_TYPE_NCF)
     {
-        guint16 idx;
+        uint16_t idx;
         LBMLBTRMNCFSQNMapIterator it;
         LBMLBTRMNCFSQNEntry * sqn = NULL;
 
         m_ncf_frames++;
         m_ncf_bytes += pinfo->fd->pkt_len;
-        m_ncf_count += (guint64)tap_info->num_sqns;
+        m_ncf_count += (uint64_t)tap_info->num_sqns;
         for (idx = 0; idx < tap_info->num_sqns; idx++)
         {
             it = m_ncf_sqns.find(tap_info->sqns[idx]);
@@ -567,43 +555,43 @@ void LBMLBTRMSourceTransportEntry::fillItem(void)
     nstime_t delta;
 
     nstime_delta(&delta, &m_last_frame_timestamp, &m_first_frame_timestamp);
-    setText(Source_DataFrames_Column, QString("%1").arg(m_data_frames));
+    setText(Source_DataFrames_Column, QStringLiteral("%1").arg(m_data_frames));
     setTextAlignment(Source_DataFrames_Column, Qt::AlignRight);
-    setText(Source_DataBytes_Column, QString("%1").arg(m_data_bytes));
+    setText(Source_DataBytes_Column, QStringLiteral("%1").arg(m_data_bytes));
     setTextAlignment(Source_DataBytes_Column, Qt::AlignRight);
-    setText(Source_DataFramesBytes_Column, QString("%1/%2").arg(m_data_frames).arg(m_data_bytes));
+    setText(Source_DataFramesBytes_Column, QStringLiteral("%1/%2").arg(m_data_frames).arg(m_data_bytes));
     setTextAlignment(Source_DataFramesBytes_Column, Qt::AlignHCenter);
     setText(Source_DataRate_Column, format_rate(delta, m_data_bytes));
     setTextAlignment(Source_DataRate_Column, Qt::AlignRight);
-    setText(Source_RXDataFrames_Column, QString("%1").arg(m_rx_data_frames));
+    setText(Source_RXDataFrames_Column, QStringLiteral("%1").arg(m_rx_data_frames));
     setTextAlignment(Source_RXDataFrames_Column, Qt::AlignRight);
-    setText(Source_RXDataBytes_Column, QString("%1").arg(m_rx_data_bytes));
+    setText(Source_RXDataBytes_Column, QStringLiteral("%1").arg(m_rx_data_bytes));
     setTextAlignment(Source_RXDataBytes_Column, Qt::AlignRight);
-    setText(Source_RXDataFramesBytes_Column, QString("%1/%2").arg(m_rx_data_frames).arg(m_rx_data_bytes));
+    setText(Source_RXDataFramesBytes_Column, QStringLiteral("%1/%2").arg(m_rx_data_frames).arg(m_rx_data_bytes));
     setTextAlignment(Source_RXDataFramesBytes_Column, Qt::AlignHCenter);
     setText(Source_RXDataRate_Column, format_rate(delta, m_rx_data_bytes));
     setTextAlignment(Source_RXDataRate_Column, Qt::AlignRight);
-    setText(Source_NCFFrames_Column, QString("%1").arg(m_ncf_frames));
+    setText(Source_NCFFrames_Column, QStringLiteral("%1").arg(m_ncf_frames));
     setTextAlignment(Source_NCFFrames_Column, Qt::AlignRight);
-    setText(Source_NCFCount_Column, QString("%1").arg(m_ncf_count));
+    setText(Source_NCFCount_Column, QStringLiteral("%1").arg(m_ncf_count));
     setTextAlignment(Source_NCFCount_Column, Qt::AlignRight);
-    setText(Source_NCFBytes_Column, QString("%1").arg(m_ncf_bytes));
+    setText(Source_NCFBytes_Column, QStringLiteral("%1").arg(m_ncf_bytes));
     setTextAlignment(Source_NCFBytes_Column, Qt::AlignRight);
-    setText(Source_NCFFramesBytes_Column, QString("%1/%2").arg(m_ncf_frames).arg(m_ncf_bytes));
+    setText(Source_NCFFramesBytes_Column, QStringLiteral("%1/%2").arg(m_ncf_frames).arg(m_ncf_bytes));
     setTextAlignment(Source_NCFFramesBytes_Column, Qt::AlignHCenter);
-    setText(Source_NCFCountBytes_Column, QString("%1/%2").arg(m_ncf_count).arg(m_ncf_bytes));
+    setText(Source_NCFCountBytes_Column, QStringLiteral("%1/%2").arg(m_ncf_count).arg(m_ncf_bytes));
     setTextAlignment(Source_NCFCountBytes_Column, Qt::AlignHCenter);
-    setText(Source_NCFFramesCount_Column, QString("%1/%2").arg(m_ncf_count).arg(m_ncf_count));
+    setText(Source_NCFFramesCount_Column, QStringLiteral("%1/%2").arg(m_ncf_count).arg(m_ncf_count));
     setTextAlignment(Source_NCFFramesCount_Column, Qt::AlignHCenter);
-    setText(Source_NCFFramesCountBytes_Column, QString("%1/%2/%3").arg(m_ncf_frames).arg(m_ncf_count).arg(m_ncf_bytes));
+    setText(Source_NCFFramesCountBytes_Column, QStringLiteral("%1/%2/%3").arg(m_ncf_frames).arg(m_ncf_count).arg(m_ncf_bytes));
     setTextAlignment(Source_NCFFramesCountBytes_Column, Qt::AlignHCenter);
     setText(Source_NCFRate_Column, format_rate(delta, m_ncf_bytes));
     setTextAlignment(Source_NCFRate_Column, Qt::AlignRight);
-    setText(Source_SMFrames_Column, QString("%1").arg(m_sm_frames));
+    setText(Source_SMFrames_Column, QStringLiteral("%1").arg(m_sm_frames));
     setTextAlignment(Source_SMFrames_Column, Qt::AlignRight);
-    setText(Source_SMBytes_Column, QString("%1").arg(m_sm_bytes));
+    setText(Source_SMBytes_Column, QStringLiteral("%1").arg(m_sm_bytes));
     setTextAlignment(Source_SMBytes_Column, Qt::AlignRight);
-    setText(Source_SMFramesBytes_Column, QString("%1/%2").arg(m_sm_frames).arg(m_sm_bytes));
+    setText(Source_SMFramesBytes_Column, QStringLiteral("%1/%2").arg(m_sm_frames).arg(m_sm_bytes));
     setTextAlignment(Source_SMFramesBytes_Column, Qt::AlignHCenter);
     setText(Source_SMRate_Column, format_rate(delta, m_sm_bytes));
     setTextAlignment(Source_SMRate_Column, Qt::AlignRight);
@@ -624,15 +612,15 @@ class LBMLBTRMSourceEntry : public QTreeWidgetItem
         void fillItem(void);
         QString m_address;
         QString m_transport;
-        guint64 m_data_frames;
-        guint64 m_data_bytes;
-        guint64 m_rx_data_frames;
-        guint64 m_rx_data_bytes;
-        guint64 m_ncf_frames;
-        guint64 m_ncf_count;
-        guint64 m_ncf_bytes;
-        guint64 m_sm_frames;
-        guint64 m_sm_bytes;
+        uint64_t m_data_frames;
+        uint64_t m_data_bytes;
+        uint64_t m_rx_data_frames;
+        uint64_t m_rx_data_bytes;
+        uint64_t m_ncf_frames;
+        uint64_t m_ncf_count;
+        uint64_t m_ncf_bytes;
+        uint64_t m_sm_frames;
+        uint64_t m_sm_bytes;
         nstime_t m_first_frame_timestamp;
         bool m_first_frame_timestamp_valid;
         nstime_t m_last_frame_timestamp;
@@ -737,43 +725,43 @@ void LBMLBTRMSourceEntry::fillItem(void)
     nstime_t delta;
 
     nstime_delta(&delta, &m_last_frame_timestamp, &m_first_frame_timestamp);
-    setText(Source_DataFrames_Column, QString("%1").arg(m_data_frames));
+    setText(Source_DataFrames_Column, QStringLiteral("%1").arg(m_data_frames));
     setTextAlignment(Source_DataFrames_Column, Qt::AlignRight);
-    setText(Source_DataBytes_Column, QString("%1").arg(m_data_bytes));
+    setText(Source_DataBytes_Column, QStringLiteral("%1").arg(m_data_bytes));
     setTextAlignment(Source_DataBytes_Column, Qt::AlignRight);
-    setText(Source_DataFramesBytes_Column, QString("%1/%2").arg(m_data_frames).arg(m_data_bytes));
+    setText(Source_DataFramesBytes_Column, QStringLiteral("%1/%2").arg(m_data_frames).arg(m_data_bytes));
     setTextAlignment(Source_DataFramesBytes_Column, Qt::AlignHCenter);
     setText(Source_DataRate_Column, format_rate(delta, m_data_bytes));
     setTextAlignment(Source_DataRate_Column, Qt::AlignRight);
-    setText(Source_RXDataFrames_Column, QString("%1").arg(m_rx_data_frames));
+    setText(Source_RXDataFrames_Column, QStringLiteral("%1").arg(m_rx_data_frames));
     setTextAlignment(Source_RXDataFrames_Column, Qt::AlignRight);
-    setText(Source_RXDataBytes_Column, QString("%1").arg(m_rx_data_bytes));
+    setText(Source_RXDataBytes_Column, QStringLiteral("%1").arg(m_rx_data_bytes));
     setTextAlignment(Source_RXDataBytes_Column, Qt::AlignRight);
-    setText(Source_RXDataFramesBytes_Column, QString("%1/%2").arg(m_rx_data_frames).arg(m_rx_data_bytes));
+    setText(Source_RXDataFramesBytes_Column, QStringLiteral("%1/%2").arg(m_rx_data_frames).arg(m_rx_data_bytes));
     setTextAlignment(Source_RXDataFramesBytes_Column, Qt::AlignHCenter);
     setText(Source_RXDataRate_Column, format_rate(delta, m_rx_data_bytes));
     setTextAlignment(Source_RXDataRate_Column, Qt::AlignRight);
-    setText(Source_NCFFrames_Column, QString("%1").arg(m_ncf_frames));
+    setText(Source_NCFFrames_Column, QStringLiteral("%1").arg(m_ncf_frames));
     setTextAlignment(Source_NCFFrames_Column, Qt::AlignRight);
-    setText(Source_NCFCount_Column, QString("%1").arg(m_ncf_count));
+    setText(Source_NCFCount_Column, QStringLiteral("%1").arg(m_ncf_count));
     setTextAlignment(Source_NCFCount_Column, Qt::AlignRight);
-    setText(Source_NCFBytes_Column, QString("%1").arg(m_ncf_bytes));
+    setText(Source_NCFBytes_Column, QStringLiteral("%1").arg(m_ncf_bytes));
     setTextAlignment(Source_NCFBytes_Column, Qt::AlignRight);
-    setText(Source_NCFFramesBytes_Column, QString("%1/%2").arg(m_ncf_frames).arg(m_ncf_bytes));
+    setText(Source_NCFFramesBytes_Column, QStringLiteral("%1/%2").arg(m_ncf_frames).arg(m_ncf_bytes));
     setTextAlignment(Source_NCFFramesBytes_Column, Qt::AlignHCenter);
-    setText(Source_NCFCountBytes_Column, QString("%1/%2").arg(m_ncf_count).arg(m_ncf_bytes));
+    setText(Source_NCFCountBytes_Column, QStringLiteral("%1/%2").arg(m_ncf_count).arg(m_ncf_bytes));
     setTextAlignment(Source_NCFCountBytes_Column, Qt::AlignHCenter);
-    setText(Source_NCFFramesCount_Column, QString("%1/%2").arg(m_ncf_frames).arg(m_ncf_count));
+    setText(Source_NCFFramesCount_Column, QStringLiteral("%1/%2").arg(m_ncf_frames).arg(m_ncf_count));
     setTextAlignment(Source_NCFFramesCount_Column, Qt::AlignHCenter);
-    setText(Source_NCFFramesCountBytes_Column, QString("%1/%2/%3").arg(m_ncf_frames).arg(m_ncf_count).arg(m_ncf_bytes));
+    setText(Source_NCFFramesCountBytes_Column, QStringLiteral("%1/%2/%3").arg(m_ncf_frames).arg(m_ncf_count).arg(m_ncf_bytes));
     setTextAlignment(Source_NCFFramesCountBytes_Column, Qt::AlignHCenter);
     setText(Source_NCFRate_Column, format_rate(delta, m_ncf_bytes));
     setTextAlignment(Source_NCFRate_Column, Qt::AlignRight);
-    setText(Source_SMFrames_Column, QString("%1").arg(m_sm_frames));
+    setText(Source_SMFrames_Column, QStringLiteral("%1").arg(m_sm_frames));
     setTextAlignment(Source_SMFrames_Column, Qt::AlignRight);
-    setText(Source_SMBytes_Column, QString("%1").arg(m_sm_bytes));
+    setText(Source_SMBytes_Column, QStringLiteral("%1").arg(m_sm_bytes));
     setTextAlignment(Source_SMBytes_Column, Qt::AlignRight);
-    setText(Source_SMFramesBytes_Column, QString("%1/%2").arg(m_sm_frames).arg(m_sm_bytes));
+    setText(Source_SMFramesBytes_Column, QStringLiteral("%1/%2").arg(m_sm_frames).arg(m_sm_bytes));
     setTextAlignment(Source_SMFramesBytes_Column, Qt::AlignRight);
     setText(Source_SMRate_Column, format_rate(delta, m_sm_bytes));
     setTextAlignment(Source_SMRate_Column, Qt::AlignRight);
@@ -795,9 +783,9 @@ class LBMLBTRMReceiverTransportEntry : public QTreeWidgetItem
     private:
         void fillItem(void);
         QString m_transport;
-        guint64 m_nak_frames;
-        guint64 m_nak_count;
-        guint64 m_nak_bytes;
+        uint64_t m_nak_frames;
+        uint64_t m_nak_count;
+        uint64_t m_nak_bytes;
         nstime_t m_first_frame_timestamp;
         bool m_first_frame_timestamp_valid;
         nstime_t m_last_frame_timestamp;
@@ -851,7 +839,7 @@ void LBMLBTRMReceiverTransportEntry::processPacket(const packet_info * pinfo, co
     }
     if (tap_info->type == LBTRM_PACKET_TYPE_NAK)
     {
-        guint16 idx;
+        uint16_t idx;
         LBMLBTRMSQNEntry * sqn = NULL;
         LBMLBTRMSQNMapIterator it;
 
@@ -885,11 +873,11 @@ void LBMLBTRMReceiverTransportEntry::fillItem(void)
     nstime_t delta;
 
     nstime_delta(&delta, &m_last_frame_timestamp, &m_first_frame_timestamp);
-    setText(Receiver_NAKFrames_Column, QString("%1").arg(m_nak_frames));
+    setText(Receiver_NAKFrames_Column, QStringLiteral("%1").arg(m_nak_frames));
     setTextAlignment(Receiver_NAKFrames_Column, Qt::AlignRight);
-    setText(Receiver_NAKCount_Column, QString("%1").arg(m_nak_count));
+    setText(Receiver_NAKCount_Column, QStringLiteral("%1").arg(m_nak_count));
     setTextAlignment(Receiver_NAKCount_Column, Qt::AlignRight);
-    setText(Receiver_NAKBytes_Column, QString("%1").arg(m_nak_bytes));
+    setText(Receiver_NAKBytes_Column, QStringLiteral("%1").arg(m_nak_bytes));
     setTextAlignment(Receiver_NAKBytes_Column, Qt::AlignRight);
     setText(Receiver_NAKRate_Column, format_rate(delta, m_nak_bytes));
     setTextAlignment(Receiver_NAKRate_Column, Qt::AlignRight);
@@ -911,9 +899,9 @@ class LBMLBTRMReceiverEntry : public QTreeWidgetItem
         void fillItem(void);
         QString m_address;
         QString m_transport;
-        guint64 m_nak_frames;
-        guint64 m_nak_count;
-        guint64 m_nak_bytes;
+        uint64_t m_nak_frames;
+        uint64_t m_nak_count;
+        uint64_t m_nak_bytes;
         nstime_t m_first_frame_timestamp;
         bool m_first_frame_timestamp_valid;
         nstime_t m_last_frame_timestamp;
@@ -994,11 +982,11 @@ void LBMLBTRMReceiverEntry::fillItem(void)
     nstime_t delta;
 
     nstime_delta(&delta, &m_last_frame_timestamp, &m_first_frame_timestamp);
-    setText(Receiver_NAKFrames_Column, QString("%1").arg(m_nak_frames));
+    setText(Receiver_NAKFrames_Column, QStringLiteral("%1").arg(m_nak_frames));
     setTextAlignment(Receiver_NAKFrames_Column, Qt::AlignRight);
-    setText(Receiver_NAKCount_Column, QString("%1").arg(m_nak_count));
+    setText(Receiver_NAKCount_Column, QStringLiteral("%1").arg(m_nak_count));
     setTextAlignment(Receiver_NAKCount_Column, Qt::AlignRight);
-    setText(Receiver_NAKBytes_Column, QString("%1").arg(m_nak_bytes));
+    setText(Receiver_NAKBytes_Column, QStringLiteral("%1").arg(m_nak_bytes));
     setTextAlignment(Receiver_NAKBytes_Column, Qt::AlignRight);
     setText(Receiver_NAKRate_Column, format_rate(delta, m_nak_bytes));
     setTextAlignment(Receiver_NAKRate_Column, Qt::AlignRight);
@@ -1140,8 +1128,8 @@ LBMLBTRMTransportDialog::LBMLBTRMTransportDialog(QWidget * parent, capture_file 
 
     m_ui->tabWidget->setCurrentIndex(0);
     m_ui->sources_detail_ComboBox->setCurrentIndex(0);
-    m_ui->sources_detail_transport_Label->setText(QString(" "));
-    m_ui->receivers_detail_transport_Label->setText(QString(" "));
+    m_ui->sources_detail_transport_Label->setText(QStringLiteral(" "));
+    m_ui->receivers_detail_transport_Label->setText(QStringLiteral(" "));
     m_ui->stackedWidget->setCurrentIndex(0);
 
     m_source_header = m_ui->sources_TreeWidget->header();
@@ -1226,8 +1214,7 @@ LBMLBTRMTransportDialog::LBMLBTRMTransportDialog(QWidget * parent, capture_file 
     m_ui->sources_TreeWidget->setColumnHidden(Source_NCFFramesCountBytes_Column, true);
     m_ui->sources_TreeWidget->setColumnHidden(Source_SMFramesBytes_Column, true);
 
-    connect(this, SIGNAL(accepted()), this, SLOT(closeDialog()));
-    connect(this, SIGNAL(rejected()), this, SLOT(closeDialog()));
+    setAttribute(Qt::WA_DeleteOnClose, true);
     fillTree();
 }
 
@@ -1277,7 +1264,7 @@ void LBMLBTRMTransportDialog::resetSourcesDetail(void)
     {}
     while (m_ui->sources_detail_ncf_sqn_TreeWidget->takeTopLevelItem(0) != NULL)
     {}
-    m_ui->sources_detail_transport_Label->setText(QString(" "));
+    m_ui->sources_detail_transport_Label->setText(QStringLiteral(" "));
     m_current_source_transport = NULL;
 }
 
@@ -1285,7 +1272,7 @@ void LBMLBTRMTransportDialog::resetReceiversDetail(void)
 {
     while (m_ui->receivers_detail_TreeWidget->takeTopLevelItem(0) != NULL)
     {}
-    m_ui->receivers_detail_transport_Label->setText(QString(" "));
+    m_ui->receivers_detail_transport_Label->setText(QStringLiteral(" "));
     m_current_receiver_transport = NULL;
 }
 
@@ -1305,7 +1292,8 @@ void LBMLBTRMTransportDialog::fillTree(void)
         TL_REQUIRES_COLUMNS,
         resetTap,
         tapPacket,
-        drawTreeItems);
+        drawTreeItems,
+        NULL);
     if (error_string)
     {
         QMessageBox::critical(this, tr("LBT-RM Statistics failed to attach to tap"),
@@ -1334,16 +1322,16 @@ void LBMLBTRMTransportDialog::resetTap(void * tap_data)
     info->clearMaps();
 }
 
-gboolean LBMLBTRMTransportDialog::tapPacket(void * tap_data, packet_info * pinfo, epan_dissect_t *, const void * tap_info)
+tap_packet_status LBMLBTRMTransportDialog::tapPacket(void * tap_data, packet_info * pinfo, epan_dissect_t *, const void * tap_info, tap_flags_t)
 {
-    if (pinfo->fd->flags.passed_dfilter == 1)
+    if (pinfo->fd->passed_dfilter == 1)
     {
         const lbm_lbtrm_tap_info_t * tapinfo = (const lbm_lbtrm_tap_info_t *)tap_info;
         LBMLBTRMTransportDialogInfo * info = (LBMLBTRMTransportDialogInfo *)tap_data;
 
         info->processPacket(pinfo, tapinfo);
     }
-    return (TRUE);
+    return (TAP_PACKET_REDRAW);
 }
 
 void LBMLBTRMTransportDialog::drawTreeItems(void *)
@@ -1353,11 +1341,6 @@ void LBMLBTRMTransportDialog::drawTreeItems(void *)
 void LBMLBTRMTransportDialog::on_applyFilterButton_clicked(void)
 {
     fillTree();
-}
-
-void LBMLBTRMTransportDialog::closeDialog(void)
-{
-    delete this;
 }
 
 void LBMLBTRMTransportDialog::sourcesDetailCurrentChanged(int index)
@@ -1498,7 +1481,7 @@ void LBMLBTRMTransportDialog::receiversDetailItemDoubleClicked(QTreeWidgetItem *
 
 void LBMLBTRMTransportDialog::custom_source_context_menuRequested(const QPoint & pos)
 {
-    m_source_context_menu->exec(m_source_header->mapToGlobal(pos));
+    m_source_context_menu->popup(m_source_header->mapToGlobal(pos));
 }
 
 void LBMLBTRMTransportDialog::actionSourceDataFrames_triggered(bool checked)
@@ -1625,16 +1608,3 @@ void LBMLBTRMTransportDialog::actionSourceAutoResizeColumns_triggered(void)
     m_ui->sources_TreeWidget->resizeColumnToContents(Source_SMFramesBytes_Column);
     m_ui->sources_TreeWidget->resizeColumnToContents(Source_SMRate_Column);
 }
-
-/*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
- *
- * Local variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * vi: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* This dissector supports the CI+ Content and Service Protection Gateway
@@ -32,24 +20,26 @@
 void proto_register_oipf(void);
 void proto_reg_handoff_oipf(void);
 
-static int proto_oipf_ciplus = -1;
+static dissector_handle_t oipf_ciplus_handle;
 
-static gint ett_oipf_ciplus = -1;
+static int proto_oipf_ciplus;
 
-static int hf_oipf_ciplus_cmd_id = -1;
-static int hf_oipf_ciplus_ca_sys_id = -1;
-static int hf_oipf_ciplus_trx_id = -1;
-static int hf_oipf_ciplus_send_datatype_nbr = -1;
-static int hf_oipf_ciplus_dat_id = -1;
-static int hf_oipf_ciplus_dat_len = -1;
-static int hf_oipf_ciplus_data = -1;
+static int ett_oipf_ciplus;
+
+static int hf_oipf_ciplus_cmd_id;
+static int hf_oipf_ciplus_ca_sys_id;
+static int hf_oipf_ciplus_trx_id;
+static int hf_oipf_ciplus_send_datatype_nbr;
+static int hf_oipf_ciplus_dat_id;
+static int hf_oipf_ciplus_dat_len;
+static int hf_oipf_ciplus_data;
 
 /* the application id for this protocol in the CI+ SAS resource
    this is actually a 64bit hex number, we can't use a 64bit number as a key
    for the dissector table directly, we have to process it as a string
    (the string must not be a local variable as glib stores a pointer to
    it in the hash table) */
-static const gchar sas_app_id_str_oipf[] = "0x0108113101190000";
+static const char sas_app_id_str_oipf[] = "0x0108113101190000";
 
 static const value_string oipf_ciplus_cmd_id[] = {
     { 0x01, "send_msg" },
@@ -76,11 +66,11 @@ static const value_string oipf_ciplus_dat_id[] = {
 static int
 dissect_oipf_ciplus(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data _U_)
 {
-    gint        msg_len;
+    int         msg_len;
     proto_tree *oipf_ciplus_tree;
-    guint       offset           = 0;
-    guint8      i, send_datatype_nbr;
-    guint16     dat_len;
+    unsigned    offset           = 0;
+    uint8_t     i, send_datatype_nbr;
+    uint16_t    dat_len;
 
     /* an OIPF CI+ message minimally contains command_id (1 byte),
        ca sys id (2 bytes), transaction id (4 bytes) and
@@ -101,7 +91,7 @@ dissect_oipf_ciplus(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, voi
             tvb, offset, 4, ENC_BIG_ENDIAN);
     offset += 4;
 
-    send_datatype_nbr = tvb_get_guint8(tvb, offset);
+    send_datatype_nbr = tvb_get_uint8(tvb, offset);
     proto_tree_add_item(oipf_ciplus_tree, hf_oipf_ciplus_send_datatype_nbr,
             tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
@@ -127,7 +117,7 @@ dissect_oipf_ciplus(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, voi
 void
 proto_register_oipf(void)
 {
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_oipf_ciplus
     };
 
@@ -155,28 +145,22 @@ proto_register_oipf(void)
                 NULL, 0, NULL, HFILL } }
     };
 
-    proto_oipf_ciplus = proto_register_protocol(
-            "Open IPTV Forum CSPG-CI+", "OIPF CI+", "oipf.ciplus");
+    proto_oipf_ciplus = proto_register_protocol("Open IPTV Forum CSPG-CI+", "OIPF CI+", "oipf.ciplus");
     proto_register_field_array(proto_oipf_ciplus, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
 
+    oipf_ciplus_handle = register_dissector("oipf.ciplus", dissect_oipf_ciplus, proto_oipf_ciplus);
 }
-
 
 void
 proto_reg_handoff_oipf(void)
 {
-    dissector_handle_t oipf_ciplus_handle;
-
-    oipf_ciplus_handle =
-        create_dissector_handle(dissect_oipf_ciplus, proto_oipf_ciplus);
-
     dissector_add_string("dvb-ci.sas.app_id_str",
             sas_app_id_str_oipf, oipf_ciplus_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4
