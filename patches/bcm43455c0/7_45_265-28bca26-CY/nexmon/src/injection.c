@@ -119,7 +119,9 @@ wl_send_hook(struct hndrte_dev *src, struct hndrte_dev *dev, struct sk_buff *p)
      * as a radiotap frame - which is both correct for a non-injected frame and
      * keeps a malformed header from reaching skb_pull()/wlc_sendctl().
      */
-    if (wlc->monitor && p != 0 && p->data != 0 && ((short *) p->data)[0] == 0) {
+    if (wlc->monitor && p != 0 && p->data != 0 &&
+        p->len >= sizeof(struct ieee80211_radiotap_header) &&
+        ((short *) p->data)[0] == 0) {
         int rtap_len = rtap_len_of(p);
 
         if (rtap_len >= (int) sizeof(struct ieee80211_radiotap_header) &&
