@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<doc xmlns:xi="http://www.w3.org/2003/XInclude" xml:base="one/two">
+<elem xml:base="http://example.org/one/two">
+        http://example.org/one/two
+    </elem><elem xml:base="../../ents/one/two2">
+        ents/one/two2
+    </elem><elem xml:base="../../ents/one2/two">
+        ents/one2/two
+    </elem><elem xml:base="two/three/four">
+        docs/one/two/three/four
+    </elem>
+</doc>

@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlCharEncodingAlias" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlCharEncodingAlias</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlCharEncodingAlias_1a8f8f80d37794cde9472343e4487ba3eb" prot="public" static="no" mutable="no">
+        <type>const char *</type>
+        <definition>const char* name</definition>
+        <argsstring></argsstring>
+        <name>name</name>
+        <qualifiedname>_xmlCharEncodingAlias::name</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="59" column="16" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="59" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlCharEncodingAlias_1aae877041546563a319dff9e25bc3aaf7" prot="public" static="no" mutable="no">
+        <type>const char *</type>
+        <definition>const char* alias</definition>
+        <argsstring></argsstring>
+        <name>alias</name>
+        <qualifiedname>_xmlCharEncodingAlias::alias</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="60" column="16" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="60" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/encoding.c" line="58" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="58" bodyend="61"/>
+    <listofallmembers>
+      <member refid="struct__xmlCharEncodingAlias_1aae877041546563a319dff9e25bc3aaf7" prot="public" virt="non-virtual"><scope>_xmlCharEncodingAlias</scope><name>alias</name></member>
+      <member refid="struct__xmlCharEncodingAlias_1a8f8f80d37794cde9472343e4487ba3eb" prot="public" virt="non-virtual"><scope>_xmlCharEncodingAlias</scope><name>name</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

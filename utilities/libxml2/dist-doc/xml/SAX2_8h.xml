@@ -1,0 +1,2014 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="SAX2_8h" kind="file" language="C++">
+    <compoundname>SAX2.h</compoundname>
+    <includes refid="xmlversion_8h" local="no">libxml/xmlversion.h</includes>
+    <includes refid="parser_8h" local="no">libxml/parser.h</includes>
+    <includedby refid="SAX2_8c" local="no">/builds/GNOME/libxml2/SAX2.c</includedby>
+    <includedby refid="globals_8c" local="no">/builds/GNOME/libxml2/globals.c</includedby>
+    <includedby refid="parser_8c" local="no">/builds/GNOME/libxml2/parser.c</includedby>
+    <includedby refid="xmlwriter_8c" local="no">/builds/GNOME/libxml2/xmlwriter.c</includedby>
+    <includedby refid="parser_8h" local="no">parser.h</includedby>
+    <includedby refid="parserInternals_8h" local="no">parserInternals.h</includedby>
+    <incdepgraph>
+      <node id="1">
+        <label>SAX2.h</label>
+        <link refid="SAX2_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+      </node>
+      <node id="12">
+        <label>libxml/dict.h</label>
+        <link refid="dict_8h"/>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="20">
+        <label>libxml/encoding.h</label>
+        <link refid="encoding_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+      </node>
+      <node id="19">
+        <label>libxml/entities.h</label>
+        <link refid="entities_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="14">
+        <label>libxml/hash.h</label>
+        <link refid="hash_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="17">
+        <label>libxml/list.h</label>
+        <link refid="list_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>libxml/parser.h</label>
+        <link refid="parser_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="21" relation="include">
+        </childnode>
+        <childnode refid="1" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+      </node>
+      <node id="22">
+        <label>libxml/threads.h</label>
+        <link refid="threads_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="15">
+        <label>libxml/valid.h</label>
+        <link refid="valid_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="21">
+        <label>libxml/xmlIO.h</label>
+        <link refid="xmlIO_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="18">
+        <label>libxml/xmlautomata.h</label>
+        <link refid="xmlautomata_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="16">
+        <label>libxml/xmlerror.h</label>
+        <link refid="xmlerror_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="11">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="8">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="7">
+        <label>limits.h</label>
+      </node>
+      <node id="9">
+        <label>stdarg.h</label>
+      </node>
+      <node id="13">
+        <label>stddef.h</label>
+      </node>
+      <node id="6">
+        <label>stdio.h</label>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="3">
+        <label>HTMLparser.h</label>
+        <link refid="HTMLparser_8h"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>HTMLtree.h</label>
+        <link refid="HTMLtree_8h"/>
+      </node>
+      <node id="1">
+        <label>SAX2.h</label>
+        <link refid="SAX2_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>parser.h</label>
+        <link refid="parser_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="1" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>parserInternals.h</label>
+        <link refid="parserInternals_8h"/>
+      </node>
+      <node id="6">
+        <label>relaxng.h</label>
+        <link refid="relaxng_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="8">
+        <label>xinclude.h</label>
+        <link refid="xinclude_8h"/>
+      </node>
+      <node id="7">
+        <label>xmlreader.h</label>
+        <link refid="xmlreader_8h"/>
+      </node>
+      <node id="9">
+        <label>xmlschemas.h</label>
+        <link refid="xmlschemas_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>xmlschemastypes.h</label>
+        <link refid="xmlschemastypes_8h"/>
+      </node>
+    </invincdepgraph>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="SAX2_8h_1a4204a6b06727433c9c0e00d2cb7faa5e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar * xmlSAX2GetPublicId</definition>
+        <argsstring>(void *ctx)</argsstring>
+        <name>xmlSAX2GetPublicId</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+<para>Provides the public ID e.g. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>&quot;-//SGMLSOURCE//DTD DEMO//EN&quot;</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> * </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="25" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="140" bodyend="144" declfile="SAX2.h" declline="25" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1a8a71838765d131940f5990bf31039dc7" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar * xmlSAX2GetSystemId</definition>
+        <argsstring>(void *ctx)</argsstring>
+        <name>xmlSAX2GetSystemId</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+<para>Provides the system ID, basically URL or filename e.g. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><ulink url="http://www.sgmlsource.com/dtds/memo.dtd">http://www.sgmlsource.com/dtds/memo.dtd</ulink></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> * </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="27" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="154" bodyend="159" declfile="SAX2.h" declline="27" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1a78e204a815691fbc8b1f5354653af165" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSAX2SetDocumentLocator</definition>
+        <argsstring>(void *ctx, xmlSAXLocator *loc)</argsstring>
+        <name>xmlSAX2SetDocumentLocator</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1a7ccc6335b7872be745350a8386cbd63c" kindref="member">xmlSAXLocator</ref> *</type>
+          <declname>loc</declname>
+        </param>
+        <briefdescription>
+<para>Receive the document locator at startup, actually xmlDefaultSAXLocator Everything is available on the context, so this is useless in our case. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>loc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>A SAX Locator </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="29" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="782" bodyend="784" declfile="SAX2.h" declline="29" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1a0f19376498a08a8b3b3a8349682e0cf1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSAX2GetLineNumber</definition>
+        <argsstring>(void *ctx)</argsstring>
+        <name>xmlSAX2GetLineNumber</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+<para>Provide the line number of the current parsing point. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>an int </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="33" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="168" bodyend="173" declfile="SAX2.h" declline="33" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1a9d69af6d60f361218858f007f96d4350" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSAX2GetColumnNumber</definition>
+        <argsstring>(void *ctx)</argsstring>
+        <name>xmlSAX2GetColumnNumber</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+<para>Provide the column number of the current parsing point. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>an int </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="35" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="182" bodyend="187" declfile="SAX2.h" declline="35" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1afd5d59d8038d019cda78252ac8686760" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSAX2IsStandalone</definition>
+        <argsstring>(void *ctx)</argsstring>
+        <name>xmlSAX2IsStandalone</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+<para>Is this document tagged standalone ? </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 if true </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="38" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="196" bodyend="201" declfile="SAX2.h" declline="38" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1a0334fea735d91022d09c9b5610aef0e0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSAX2HasInternalSubset</definition>
+        <argsstring>(void *ctx)</argsstring>
+        <name>xmlSAX2HasInternalSubset</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+<para>Does this document has an internal subset. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 if true </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="40" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="210" bodyend="215" declfile="SAX2.h" declline="40" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1a7850f7aa6aaefdb47583c862ef32e0ce" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSAX2HasExternalSubset</definition>
+        <argsstring>(void *ctx)</argsstring>
+        <name>xmlSAX2HasExternalSubset</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+<para>Does this document has an external subset. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 if true </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="42" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="224" bodyend="229" declfile="SAX2.h" declline="42" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1a426bdedf05a2e7172c8d22ef54f74351" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSAX2InternalSubset</definition>
+        <argsstring>(void *ctx, const xmlChar *name, const xmlChar *publicId, const xmlChar *systemId)</argsstring>
+        <name>xmlSAX2InternalSubset</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>publicId</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>systemId</declname>
+        </param>
+        <briefdescription>
+<para>Callback on internal subset declaration. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the root element name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>publicId</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>public identifier of the DTD (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>systemId</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>system identifier (URL) of the DTD </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="45" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="240" bodyend="261" declfile="SAX2.h" declline="45" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1aa148deef43d5a64e4a4da973744b6877" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSAX2ExternalSubset</definition>
+        <argsstring>(void *ctx, const xmlChar *name, const xmlChar *publicId, const xmlChar *systemId)</argsstring>
+        <name>xmlSAX2ExternalSubset</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>publicId</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>systemId</declname>
+        </param>
+        <briefdescription>
+<para>Callback on external subset declaration. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the root element name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>publicId</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>public identifier of the DTD (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>systemId</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>system identifier (URL) of the DTD </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="50" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="272" bodyend="382" declfile="SAX2.h" declline="50" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1af1626793d18ab3cae69601432b71b299" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1a084cd84a8cefc3c95c7eaf95b2e652ce" kindref="member">xmlEntity</ref> *</type>
+        <definition>xmlEntity * xmlSAX2GetEntity</definition>
+        <argsstring>(void *ctx, const xmlChar *name)</argsstring>
+        <name>xmlSAX2GetEntity</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <briefdescription>
+<para>Get an entity by name. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The entity name </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the <ref refid="tree_8h_1a084cd84a8cefc3c95c7eaf95b2e652ce" kindref="member">xmlEntity</ref> if found. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="55" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="453" bodyend="487" declfile="SAX2.h" declline="55" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1ac2d6d7d22114152f8324ce804c8bfbdc" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1a084cd84a8cefc3c95c7eaf95b2e652ce" kindref="member">xmlEntity</ref> *</type>
+        <definition>xmlEntity * xmlSAX2GetParameterEntity</definition>
+        <argsstring>(void *ctx, const xmlChar *name)</argsstring>
+        <name>xmlSAX2GetParameterEntity</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <briefdescription>
+<para>Get a parameter entity by name. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The entity name </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the <ref refid="tree_8h_1a084cd84a8cefc3c95c7eaf95b2e652ce" kindref="member">xmlEntity</ref> if found. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="58" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="497" bodyend="506" declfile="SAX2.h" declline="58" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1a39ee75d1e91110a715cca933d6275062" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1aa05e6cbf6c68ec5a2e33ddabddf58b7d" kindref="member">xmlParserInput</ref> *</type>
+        <definition>xmlParserInput * xmlSAX2ResolveEntity</definition>
+        <argsstring>(void *ctx, const xmlChar *publicId, const xmlChar *systemId)</argsstring>
+        <name>xmlSAX2ResolveEntity</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>publicId</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>systemId</declname>
+        </param>
+        <briefdescription>
+<para>This is only used to load DTDs. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The preferred way to install custom resolvers is <ref refid="parser_8h_1a5e0c3103a2d3b1e9003760479e1e8704" kindref="member">xmlCtxtSetResourceLoader</ref>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>publicId</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The public ID of the entity </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>systemId</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The system ID (URL) of the entity </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a parser input. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="61" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="394" bodyend="443" declfile="SAX2.h" declline="61" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1a6da9ac24b3fce0c47b26b3c222f81e8b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSAX2EntityDecl</definition>
+        <argsstring>(void *ctx, const xmlChar *name, int type, const xmlChar *publicId, const xmlChar *systemId, xmlChar *content)</argsstring>
+        <name>xmlSAX2EntityDecl</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>publicId</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>systemId</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>content</declname>
+        </param>
+        <briefdescription>
+<para>An entity definition has been parsed. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the entity name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>type</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the entity type </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>publicId</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The public ID of the entity </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>systemId</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The system ID of the entity </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>content</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the entity value (without processing). </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="66" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="520" bodyend="600" declfile="SAX2.h" declline="66" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1afcef9ed7f0505156002296d877b5ca4e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSAX2AttributeDecl</definition>
+        <argsstring>(void *ctx, const xmlChar *elem, const xmlChar *fullname, int type, int def, const xmlChar *defaultValue, xmlEnumeration *tree)</argsstring>
+        <name>xmlSAX2AttributeDecl</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>elem</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>fullname</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>def</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>defaultValue</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1acfc4ea75665f49d9af693257ea1178e8" kindref="member">xmlEnumeration</ref> *</type>
+          <declname>tree</declname>
+        </param>
+        <briefdescription>
+<para>An attribute definition has been parsed. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>elem</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the name of the element </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>fullname</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the attribute name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>type</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the attribute type </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>def</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the type of default value </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>defaultValue</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the attribute default value </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>tree</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the tree of enumerated value set </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="73" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="614" bodyend="664" declfile="SAX2.h" declline="73" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1a4f53045e8f24c774968ea1f2bbaa1de7" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSAX2ElementDecl</definition>
+        <argsstring>(void *ctx, const xmlChar *name, int type, xmlElementContent *content)</argsstring>
+        <name>xmlSAX2ElementDecl</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1a43d7c30835afce6963189de976e668e4" kindref="member">xmlElementContent</ref> *</type>
+          <declname>content</declname>
+        </param>
+        <briefdescription>
+<para>An element definition has been parsed. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the element name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>type</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the element type </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>content</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the element value tree </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="81" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="675" bodyend="707" declfile="SAX2.h" declline="81" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1a1d226aee003f29263a795784c11f1926" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSAX2NotationDecl</definition>
+        <argsstring>(void *ctx, const xmlChar *name, const xmlChar *publicId, const xmlChar *systemId)</argsstring>
+        <name>xmlSAX2NotationDecl</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>publicId</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>systemId</declname>
+        </param>
+        <briefdescription>
+<para>What to do when a notation declaration has been parsed. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The name of the notation </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>publicId</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The public ID of the entity </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>systemId</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The system ID of the entity </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="86" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="718" bodyend="754" declfile="SAX2.h" declline="86" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1a3d97e40115afbd8d14c1c0d23c7bc15c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSAX2UnparsedEntityDecl</definition>
+        <argsstring>(void *ctx, const xmlChar *name, const xmlChar *publicId, const xmlChar *systemId, const xmlChar *notationName)</argsstring>
+        <name>xmlSAX2UnparsedEntityDecl</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>publicId</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>systemId</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>notationName</declname>
+        </param>
+        <briefdescription>
+<para>What to do when an unparsed entity declaration is parsed. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The name of the entity </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>publicId</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The public ID of the entity </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>systemId</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The system ID of the entity </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>notationName</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the name of the notation </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="91" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="766" bodyend="772" declfile="SAX2.h" declline="91" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1ad42789af7558eeeac6143700fb23c2ea" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSAX2StartDocument</definition>
+        <argsstring>(void *ctx)</argsstring>
+        <name>xmlSAX2StartDocument</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+<para>called when the document start being processed. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="98" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="792" bodyend="834" declfile="SAX2.h" declline="98" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1a4ee870a7124e9c68f197f1573eece0e1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSAX2EndDocument</definition>
+        <argsstring>(void *ctx)</argsstring>
+        <name>xmlSAX2EndDocument</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+<para>called when the document end has been detected. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="100" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="842" bodyend="892" declfile="SAX2.h" declline="100" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1a60f2f18a22c3e372bf0bda848d46f594" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSAX2StartElement</definition>
+        <argsstring>(void *ctx, const xmlChar *fullname, const xmlChar **atts)</argsstring>
+        <name>xmlSAX2StartElement</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>fullname</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+          <declname>atts</declname>
+        </param>
+        <briefdescription>
+<para>Called when an opening tag has been processed. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000293"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Don&apos;t call this function directly.</para>
+</xrefdescription></xrefsect></para>
+<para>Used for HTML and SAX1.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>fullname</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The element name, including namespace prefix </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>atts</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>An array of name/value attributes pairs, NULL terminated </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="103" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="1713" bodyend="1734" declfile="SAX2.h" declline="103" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1a30410bbe46884abd0ab2a639c3c8cebf" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSAX2EndElement</definition>
+        <argsstring>(void *ctx, const xmlChar *name)</argsstring>
+        <name>xmlSAX2EndElement</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <briefdescription>
+<para>called when the end of an element has been detected. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000294"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Don&apos;t call this function directly.</para>
+</xrefdescription></xrefsect></para>
+<para>Used for HTML and SAX1.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The element name </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="108" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="1747" bodyend="1769" declfile="SAX2.h" declline="108" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1ac82d585a99d55cbffde0a43abe06ed5e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSAX2StartElementNs</definition>
+        <argsstring>(void *ctx, const xmlChar *localname, const xmlChar *prefix, const xmlChar *URI, int nb_namespaces, const xmlChar **namespaces, int nb_attributes, int nb_defaulted, const xmlChar **attributes)</argsstring>
+        <name>xmlSAX2StartElementNs</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>localname</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>prefix</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>URI</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>nb_namespaces</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+          <declname>namespaces</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>nb_attributes</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>nb_defaulted</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+          <declname>attributes</declname>
+        </param>
+        <briefdescription>
+<para>SAX2 callback when an element start has been detected by the parser. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>It provides the namespace information for the element, as well as the new namespace declarations on the element.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>localname</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the local name of the element </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>prefix</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the element namespace prefix if available </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>URI</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the element namespace name if available </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>nb_namespaces</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>number of namespace definitions on that node </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>namespaces</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the array of prefix/URI pairs namespace definitions </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>nb_attributes</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the number of attributes on that node </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>nb_defaulted</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the number of defaulted attributes. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>attributes</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the array of (localname/prefix/URI/value/end) attribute values. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="111" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="2146" bodyend="2405" declfile="SAX2.h" declline="111" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1a85a3ecb7236febd34526e63896376ce5" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSAX2EndElementNs</definition>
+        <argsstring>(void *ctx, const xmlChar *localname, const xmlChar *prefix, const xmlChar *URI)</argsstring>
+        <name>xmlSAX2EndElementNs</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>localname</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>prefix</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>URI</declname>
+        </param>
+        <briefdescription>
+<para>SAX2 callback when an element end has been detected by the parser. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>It provides the namespace information for the element.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>localname</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the local name of the element </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>prefix</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the element namespace prefix if available </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>URI</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the element namespace name if available </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="121" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="2417" bodyend="2438" declfile="SAX2.h" declline="121" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1af8883fe2352083b7ae494e28caf73d49" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSAX2Reference</definition>
+        <argsstring>(void *ctx, const xmlChar *name)</argsstring>
+        <name>xmlSAX2Reference</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <briefdescription>
+<para>called when an entity <ref refid="SAX2_8h_1af8883fe2352083b7ae494e28caf73d49" kindref="member">xmlSAX2Reference</ref> is detected. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The entity name </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="126" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="2447" bodyend="2460" declfile="SAX2.h" declline="126" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1ae839b53ec40a61bf06b8cdb7170cfea1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSAX2Characters</definition>
+        <argsstring>(void *ctx, const xmlChar *ch, int len)</argsstring>
+        <name>xmlSAX2Characters</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>ch</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>len</declname>
+        </param>
+        <briefdescription>
+<para>receiving some chars from the parser. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ch</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> string </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>len</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the number of <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="129" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="2605" bodyend="2608" declfile="SAX2.h" declline="129" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1acac0ff5add43904a85cc199238441f7e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSAX2IgnorableWhitespace</definition>
+        <argsstring>(void *ctx, const xmlChar *ch, int len)</argsstring>
+        <name>xmlSAX2IgnorableWhitespace</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>ch</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>len</declname>
+        </param>
+        <briefdescription>
+<para>receiving some ignorable whitespaces from the parser. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>UNUSED: by default the DOM building will use <ref refid="SAX2_8h_1ae839b53ec40a61bf06b8cdb7170cfea1" kindref="member">xmlSAX2Characters</ref></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ch</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> string </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>len</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the number of <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="133" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="2619" bodyend="2621" declfile="SAX2.h" declline="133" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1afacf4b3ed76ce570a75ce04a1fe23c3a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSAX2ProcessingInstruction</definition>
+        <argsstring>(void *ctx, const xmlChar *target, const xmlChar *data)</argsstring>
+        <name>xmlSAX2ProcessingInstruction</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>target</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>data</declname>
+        </param>
+        <briefdescription>
+<para>A processing instruction has been parsed. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>target</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the target name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the PI data&apos;s </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="137" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="2631" bodyend="2646" declfile="SAX2.h" declline="137" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1a6eb09427fd179926c358a8ad306c22b7" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSAX2Comment</definition>
+        <argsstring>(void *ctx, const xmlChar *value)</argsstring>
+        <name>xmlSAX2Comment</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>value</declname>
+        </param>
+        <briefdescription>
+<para>A <ref refid="SAX2_8h_1a6eb09427fd179926c358a8ad306c22b7" kindref="member">xmlSAX2Comment</ref> has been parsed. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>value</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <ref refid="SAX2_8h_1a6eb09427fd179926c358a8ad306c22b7" kindref="member">xmlSAX2Comment</ref> content </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="141" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="2655" bodyend="2669" declfile="SAX2.h" declline="141" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1a776ea05888e1a26f3f87245320541eb5" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSAX2CDataBlock</definition>
+        <argsstring>(void *ctx, const xmlChar *value, int len)</argsstring>
+        <name>xmlSAX2CDataBlock</name>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>value</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>len</declname>
+        </param>
+        <briefdescription>
+<para>called when a pcdata block has been parsed </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the user data (XML parser context) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>value</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The pcdata content </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>len</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the block length </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="144" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="2679" bodyend="2682" declfile="SAX2.h" declline="144" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1a3e18ca82d0c6024d9db314bcda81d219" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSAXDefaultVersion</definition>
+        <argsstring>(int version)</argsstring>
+        <name>xmlSAXDefaultVersion</name>
+        <param>
+          <type>int</type>
+          <declname>version</declname>
+        </param>
+        <briefdescription>
+<para>Has no effect. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000295"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use parser option XML_PARSE_SAX1.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>version</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the version, must be 2 </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>2 in case of success and -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="151" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="2694" bodyend="2699" declfile="SAX2.h" declline="151" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1a0dd42c23154dc87a47a26e7416e2c0e3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSAXVersion</definition>
+        <argsstring>(xmlSAXHandler *hdlr, int version)</argsstring>
+        <name>xmlSAXVersion</name>
+        <param>
+          <type><ref refid="tree_8h_1a45238c4ba896d6577bb4986e98122e03" kindref="member">xmlSAXHandler</ref> *</type>
+          <declname>hdlr</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>version</declname>
+        </param>
+        <briefdescription>
+<para>Initialize the default XML SAX handler according to the version. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hdlr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the SAX handler </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>version</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the version, 1 or 2 </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 in case of success and -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="155" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="2710" bodyend="2758" declfile="SAX2.h" declline="155" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1a384efa8a7cc7dadf670eb74952835553" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSAX2InitDefaultSAXHandler</definition>
+        <argsstring>(xmlSAXHandler *hdlr, int warning)</argsstring>
+        <name>xmlSAX2InitDefaultSAXHandler</name>
+        <param>
+          <type><ref refid="tree_8h_1a45238c4ba896d6577bb4986e98122e03" kindref="member">xmlSAXHandler</ref> *</type>
+          <declname>hdlr</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>warning</declname>
+        </param>
+        <briefdescription>
+<para>Initialize the default XML SAX2 handler. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hdlr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the SAX handler </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>warning</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>flag if non-zero sets the handler warning procedure </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="158" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="2767" bodyend="2775" declfile="SAX2.h" declline="158" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1abecb42d3520c19c4d6ceda8db1d8d7df" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSAX2InitHtmlDefaultSAXHandler</definition>
+        <argsstring>(xmlSAXHandler *hdlr)</argsstring>
+        <name>xmlSAX2InitHtmlDefaultSAXHandler</name>
+        <param>
+          <type><ref refid="tree_8h_1a45238c4ba896d6577bb4986e98122e03" kindref="member">xmlSAXHandler</ref> *</type>
+          <declname>hdlr</declname>
+        </param>
+        <briefdescription>
+<para>Initialize the default HTML SAX2 handler. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hdlr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the SAX handler </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="162" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="2797" bodyend="2831" declfile="SAX2.h" declline="162" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1a2613fc19c3fe8f8e59dd22f0b0231798" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void htmlDefaultSAXHandlerInit</definition>
+        <argsstring>(void)</argsstring>
+        <name>htmlDefaultSAXHandlerInit</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000297"><xreftitle>Deprecated</xreftitle><xrefdescription><para>This function is a no-op. Call <ref refid="parser_8h_1a642085a16c74b8352e92a89c348cc9c4" kindref="member">xmlInitParser</ref> to initialize the library. </para>
+</xrefdescription></xrefsect></para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="165" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="2838" bodyend="2840" declfile="SAX2.h" declline="165" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="SAX2_8h_1a955bb01c16aa31b0e16e31baf6d54f20" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlDefaultSAXHandlerInit</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlDefaultSAXHandlerInit</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Initialize the default SAX2 handler. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000296"><xreftitle>Deprecated</xreftitle><xrefdescription><para>This function is a no-op. Call <ref refid="parser_8h_1a642085a16c74b8352e92a89c348cc9c4" kindref="member">xmlInitParser</ref> to initialize the library.</para>
+</xrefdescription></xrefsect></para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="SAX2.h" line="169" column="1" bodyfile="/builds/GNOME/libxml2/SAX2.c" bodystart="2785" bodyend="2787" declfile="SAX2.h" declline="169" declcolumn="1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>SAX2 parser interface used to build the DOM tree. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>those are the default SAX2 interfaces used by the library when building DOM tree.</para>
+<para><simplesect kind="copyright"><para>See Copyright for the status of this software.</para>
+</simplesect>
+<simplesect kind="author"><para>Daniel Veillard </para>
+</simplesect>
+</para>
+    </detaileddescription>
+    <location file="SAX2.h"/>
+  </compounddef>
+</doxygen>

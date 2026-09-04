@@ -1,0 +1,197 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlRelaxNGStates" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlRelaxNGStates</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlRelaxNGStates_1a79b55c134b3e1de4837ae2f4f4e609b5" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nbState</definition>
+        <argsstring></argsstring>
+        <name>nbState</name>
+        <qualifiedname>_xmlRelaxNGStates::nbState</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/relaxng.c" line="300" column="9" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="300" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRelaxNGStates_1a9f7e61185f91ed7bb7b42975ed3c9324" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int maxState</definition>
+        <argsstring></argsstring>
+        <name>maxState</name>
+        <qualifiedname>_xmlRelaxNGStates::maxState</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/relaxng.c" line="301" column="9" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="301" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRelaxNGStates_1ac7917685db6c4d322c5a1a2cad368ce5" prot="public" static="no" mutable="no">
+        <type>xmlRelaxNGValidStatePtr *</type>
+        <definition>xmlRelaxNGValidStatePtr* tabState</definition>
+        <argsstring></argsstring>
+        <name>tabState</name>
+        <qualifiedname>_xmlRelaxNGStates::tabState</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/relaxng.c" line="302" column="29" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="302" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="9">
+        <label>_xmlAttr</label>
+        <link refid="struct__xmlAttr"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>ns</edgelabel>
+        </childnode>
+        <childnode refid="10" relation="usage">
+          <edgelabel>id</edgelabel>
+        </childnode>
+      </node>
+      <node id="7">
+        <label>_xmlDict</label>
+        <childnode refid="8" relation="usage">
+          <edgelabel>strings</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>subdict</edgelabel>
+        </childnode>
+      </node>
+      <node id="8">
+        <label>_xmlDictStrings</label>
+        <childnode refid="8" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlDoc</label>
+        <link refid="struct__xmlDoc"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>extSubset</edgelabel>
+          <edgelabel>intSubset</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>oldNs</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="5">
+        <label>_xmlDtd</label>
+        <link refid="struct__xmlDtd"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>doc</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+      </node>
+      <node id="10">
+        <label>_xmlID</label>
+        <link refid="struct__xmlID"/>
+        <childnode refid="10" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>attr</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>_xmlNode</label>
+        <link refid="struct__xmlNode"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>ns</edgelabel>
+          <edgelabel>nsDef</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>properties</edgelabel>
+        </childnode>
+      </node>
+      <node id="6">
+        <label>_xmlNs</label>
+        <link refid="struct__xmlNs"/>
+        <childnode refid="6" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>context</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlRelaxNGStates</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>tabState</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>_xmlRelaxNGValidState</label>
+        <childnode refid="3" relation="usage">
+          <edgelabel>node</edgelabel>
+          <edgelabel>seq</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>attrs</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/relaxng.c" line="299" column="1" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="299" bodyend="303"/>
+    <listofallmembers>
+      <member refid="struct__xmlRelaxNGStates_1a9f7e61185f91ed7bb7b42975ed3c9324" prot="public" virt="non-virtual"><scope>_xmlRelaxNGStates</scope><name>maxState</name></member>
+      <member refid="struct__xmlRelaxNGStates_1a79b55c134b3e1de4837ae2f4f4e609b5" prot="public" virt="non-virtual"><scope>_xmlRelaxNGStates</scope><name>nbState</name></member>
+      <member refid="struct__xmlRelaxNGStates_1ac7917685db6c4d322c5a1a2cad368ce5" prot="public" virt="non-virtual"><scope>_xmlRelaxNGStates</scope><name>tabState</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

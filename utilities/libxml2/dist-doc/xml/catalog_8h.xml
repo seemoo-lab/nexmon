@@ -1,0 +1,1455 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="catalog_8h" kind="file" language="C++">
+    <compoundname>catalog.h</compoundname>
+    <includes local="no">stdio.h</includes>
+    <includes refid="xmlversion_8h" local="no">libxml/xmlversion.h</includes>
+    <includes refid="xmlstring_8h" local="no">libxml/xmlstring.h</includes>
+    <includes refid="tree_8h" local="no">libxml/tree.h</includes>
+    <includedby refid="catalog_8c" local="no">/builds/GNOME/libxml2/catalog.c</includedby>
+    <includedby refid="parser_8c" local="no">/builds/GNOME/libxml2/parser.c</includedby>
+    <includedby refid="parserInternals_8c" local="no">/builds/GNOME/libxml2/parserInternals.c</includedby>
+    <includedby refid="threads_8c" local="no">/builds/GNOME/libxml2/threads.c</includedby>
+    <includedby refid="xmlIO_8c" local="no">/builds/GNOME/libxml2/xmlIO.c</includedby>
+    <includedby refid="xmlcatalog_8c" local="no">/builds/GNOME/libxml2/xmlcatalog.c</includedby>
+    <incdepgraph>
+      <node id="1">
+        <label>catalog.h</label>
+        <link refid="catalog_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="7">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="9">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="8">
+        <label>limits.h</label>
+      </node>
+      <node id="6">
+        <label>stdarg.h</label>
+      </node>
+      <node id="2">
+        <label>stdio.h</label>
+      </node>
+    </incdepgraph>
+    <sectiondef kind="define">
+      <memberdef kind="define" id="catalog_8h_1ac63d8e30081c27282a25c03daa9d76b7" prot="public" static="no">
+        <name>XML_CATALOGS_NAMESPACE</name>
+        <initializer>    (const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *) &quot;urn:oasis:names:tc:entity:xmlns:xml:catalog&quot;</initializer>
+        <briefdescription>
+<para>The namespace for the XML Catalogs elements. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="38" column="9" bodyfile="catalog.h" bodystart="38" bodyend="39"/>
+      </memberdef>
+      <memberdef kind="define" id="catalog_8h_1a4578c6848cb083d3dd64d17f63919476" prot="public" static="no">
+        <name>XML_CATALOG_PI</name>
+        <initializer>    (const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *) &quot;oasis-xml-catalog&quot;</initializer>
+        <briefdescription>
+<para>The specific XML Catalog Processing Instruction name. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="43" column="9" bodyfile="catalog.h" bodystart="43" bodyend="44"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="catalog_8h_1aa3ccaec875fffaa151ce8a4042112725" prot="public" static="no">
+        <type>struct _xmlCatalog</type>
+        <definition>typedef struct _xmlCatalog xmlCatalog</definition>
+        <argsstring></argsstring>
+        <name>xmlCatalog</name>
+        <briefdescription>
+<para>XML catalog. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="67" column="26" bodyfile="catalog.h" bodystart="67" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="catalog_8h_1a44df78cedbd62c7c0bb19416959fa16e" prot="public" static="no">
+        <type><ref refid="catalog_8h_1aa3ccaec875fffaa151ce8a4042112725" kindref="member">xmlCatalog</ref> *</type>
+        <definition>typedef xmlCatalog* xmlCatalogPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlCatalogPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="68" column="20" bodyfile="catalog.h" bodystart="68" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="catalog_8h_1afa3c47c58f6df9e6b94ac6ffca3709b7" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="catalog_8h_1aa3ccaec875fffaa151ce8a4042112725" kindref="member">xmlCatalog</ref> *</type>
+        <definition>xmlCatalog * xmlNewCatalog</definition>
+        <argsstring>(int sgml)</argsstring>
+        <name>xmlNewCatalog</name>
+        <param>
+          <type>int</type>
+          <declname>sgml</declname>
+        </param>
+        <briefdescription>
+<para>create a new Catalog. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000096"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>sgml</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>should this create an SGML catalog </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the <ref refid="catalog_8h_1aa3ccaec875fffaa151ce8a4042112725" kindref="member">xmlCatalog</ref> or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="75" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3141" bodyend="3159" declfile="catalog.h" declline="75" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1a7a2f7b4b74cc467b5ed43048cc2204cf" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="catalog_8h_1aa3ccaec875fffaa151ce8a4042112725" kindref="member">xmlCatalog</ref> *</type>
+        <definition>xmlCatalog * xmlLoadACatalog</definition>
+        <argsstring>(const char *filename)</argsstring>
+        <name>xmlLoadACatalog</name>
+        <param>
+          <type>const char *</type>
+          <declname>filename</declname>
+        </param>
+        <briefdescription>
+<para>Load the catalog and build the associated data structures. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This can be either an XML Catalog or an SGML Catalog It will recurse in SGML CATALOG entries. On the other hand XML Catalogs are not handled recursively.</para>
+<para><xrefsect id="deprecated_1_deprecated000088"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>filename</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a file path </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the catalog parsed or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="78" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="2768" bodyend="2814" declfile="catalog.h" declline="78" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1a19736045503a44008e89bd0cf6e40b55" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="catalog_8h_1aa3ccaec875fffaa151ce8a4042112725" kindref="member">xmlCatalog</ref> *</type>
+        <definition>xmlCatalog * xmlLoadSGMLSuperCatalog</definition>
+        <argsstring>(const char *filename)</argsstring>
+        <name>xmlLoadSGMLSuperCatalog</name>
+        <param>
+          <type>const char *</type>
+          <declname>filename</declname>
+        </param>
+        <briefdescription>
+<para>Load an SGML super catalog. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>It won&apos;t expand CATALOG or DELEGATE references. This is only needed for manipulating SGML Super Catalogs like adding and removing CATALOG or DELEGATE entries.</para>
+<para><xrefsect id="deprecated_1_deprecated000087"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>filename</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a file path </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the catalog parsed or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="82" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="2730" bodyend="2753" declfile="catalog.h" declline="82" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1ab515aaa7cda29238cd3a58639f700ea9" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlConvertSGMLCatalog</definition>
+        <argsstring>(xmlCatalog *catal)</argsstring>
+        <name>xmlConvertSGMLCatalog</name>
+        <param>
+          <type><ref refid="catalog_8h_1aa3ccaec875fffaa151ce8a4042112725" kindref="member">xmlCatalog</ref> *</type>
+          <declname>catal</declname>
+        </param>
+        <briefdescription>
+<para>Convert all the SGML catalog entries as XML ones. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000085"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>catal</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the catalog </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the number of entries converted if successful, -1 otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="85" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="849" bodyend="860" declfile="catalog.h" declline="85" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1a3c80e68ac6038176b36a86e972f94294" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlACatalogAdd</definition>
+        <argsstring>(xmlCatalog *catal, const xmlChar *type, const xmlChar *orig, const xmlChar *replace)</argsstring>
+        <name>xmlACatalogAdd</name>
+        <param>
+          <type><ref refid="catalog_8h_1aa3ccaec875fffaa151ce8a4042112725" kindref="member">xmlCatalog</ref> *</type>
+          <declname>catal</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>orig</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>replace</declname>
+        </param>
+        <briefdescription>
+<para>Add an entry in the catalog, it may overwrite existing but different entries. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000094"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>catal</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a Catalog </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>type</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the type of record to add to the catalog </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>orig</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the system, public or prefix to match </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>replace</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the replacement value for the match </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if successful, -1 otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="89" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3071" bodyend="3101" declfile="catalog.h" declline="89" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1a747e4b6b4f9552a277e15c2ba0062380" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlACatalogRemove</definition>
+        <argsstring>(xmlCatalog *catal, const xmlChar *value)</argsstring>
+        <name>xmlACatalogRemove</name>
+        <param>
+          <type><ref refid="catalog_8h_1aa3ccaec875fffaa151ce8a4042112725" kindref="member">xmlCatalog</ref> *</type>
+          <declname>catal</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>value</declname>
+        </param>
+        <briefdescription>
+<para>Remove an entry from the catalog. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000095"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>catal</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a Catalog </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>value</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the value to remove </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the number of entries removed if successful, -1 otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="95" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3113" bodyend="3130" declfile="catalog.h" declline="95" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1a768df5b68e9c549292c81db6d8b9b58c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar * xmlACatalogResolve</definition>
+        <argsstring>(xmlCatalog *catal, const xmlChar *pubID, const xmlChar *sysID)</argsstring>
+        <name>xmlACatalogResolve</name>
+        <param>
+          <type><ref refid="catalog_8h_1aa3ccaec875fffaa151ce8a4042112725" kindref="member">xmlCatalog</ref> *</type>
+          <declname>catal</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>pubID</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>sysID</declname>
+        </param>
+        <briefdescription>
+<para>Do a complete resolution lookup of an External Identifier. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000091"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>catal</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a Catalog </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>pubID</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the public ID string </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>sysID</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the system ID string </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the URI of the resource or NULL if not found, it must be freed by the caller. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="99" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="2957" bodyend="2993" declfile="catalog.h" declline="99" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1a0d6dbea69afba49838aa293b5178b8b8" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar * xmlACatalogResolveSystem</definition>
+        <argsstring>(xmlCatalog *catal, const xmlChar *sysID)</argsstring>
+        <name>xmlACatalogResolveSystem</name>
+        <param>
+          <type><ref refid="catalog_8h_1aa3ccaec875fffaa151ce8a4042112725" kindref="member">xmlCatalog</ref> *</type>
+          <declname>catal</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>sysID</declname>
+        </param>
+        <briefdescription>
+<para>Try to lookup the catalog resource for a system ID. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000089"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>catal</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a Catalog </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>sysID</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the system ID string </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the resource if found or NULL otherwise, the value returned must be freed by the caller. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="104" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="2880" bodyend="2905" declfile="catalog.h" declline="104" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1a3102e7cd5d28f7470a9f6f187b37ac56" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar * xmlACatalogResolvePublic</definition>
+        <argsstring>(xmlCatalog *catal, const xmlChar *pubID)</argsstring>
+        <name>xmlACatalogResolvePublic</name>
+        <param>
+          <type><ref refid="catalog_8h_1aa3ccaec875fffaa151ce8a4042112725" kindref="member">xmlCatalog</ref> *</type>
+          <declname>catal</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>pubID</declname>
+        </param>
+        <briefdescription>
+<para>Try to lookup the catalog local reference associated to a public ID in that catalog. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000090"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>catal</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a Catalog </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>pubID</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the public ID string </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the local resource if found or NULL otherwise, the value returned must be freed by the caller. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="108" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="2918" bodyend="2943" declfile="catalog.h" declline="108" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1a883b8d2b5bc790bfe97ec6b46fd95534" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar * xmlACatalogResolveURI</definition>
+        <argsstring>(xmlCatalog *catal, const xmlChar *URI)</argsstring>
+        <name>xmlACatalogResolveURI</name>
+        <param>
+          <type><ref refid="catalog_8h_1aa3ccaec875fffaa151ce8a4042112725" kindref="member">xmlCatalog</ref> *</type>
+          <declname>catal</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>URI</declname>
+        </param>
+        <briefdescription>
+<para>Do a complete resolution lookup of an URI. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000092"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>catal</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a Catalog </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>URI</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the URI </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the URI of the resource or NULL if not found, it must be freed by the caller. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="112" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3006" bodyend="3031" declfile="catalog.h" declline="112" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1a1b0e0f6095e18c9f43b12ae00507a5ed" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlACatalogDump</definition>
+        <argsstring>(xmlCatalog *catal, FILE *out)</argsstring>
+        <name>xmlACatalogDump</name>
+        <param>
+          <type><ref refid="catalog_8h_1aa3ccaec875fffaa151ce8a4042112725" kindref="member">xmlCatalog</ref> *</type>
+          <declname>catal</declname>
+        </param>
+        <param>
+          <type>FILE *</type>
+          <declname>out</declname>
+        </param>
+        <briefdescription>
+<para>Dump the given catalog to the given file. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000093"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>catal</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a Catalog </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>out</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the file. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="117" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3043" bodyend="3055" declfile="catalog.h" declline="117" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1a45928e822a6ff074ad0a3458af27826f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlFreeCatalog</definition>
+        <argsstring>(xmlCatalog *catal)</argsstring>
+        <name>xmlFreeCatalog</name>
+        <param>
+          <type><ref refid="catalog_8h_1aa3ccaec875fffaa151ce8a4042112725" kindref="member">xmlCatalog</ref> *</type>
+          <declname>catal</declname>
+        </param>
+        <briefdescription>
+<para>Free the memory allocated to a Catalog. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000084"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>catal</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a Catalog </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="122" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="486" bodyend="496" declfile="catalog.h" declline="122" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1ad4608cb50b9b9787a6f63e996134f8f4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlCatalogIsEmpty</definition>
+        <argsstring>(xmlCatalog *catal)</argsstring>
+        <name>xmlCatalogIsEmpty</name>
+        <param>
+          <type><ref refid="catalog_8h_1aa3ccaec875fffaa151ce8a4042112725" kindref="member">xmlCatalog</ref> *</type>
+          <declname>catal</declname>
+        </param>
+        <briefdescription>
+<para>Check is a catalog is empty. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000097"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>catal</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>should this create an SGML catalog </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 if the catalog is empty, 0 if not, amd -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="125" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3170" bodyend="3198" declfile="catalog.h" declline="125" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1af1b6622538d7f4540cc8e0ca30d0ce99" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlInitializeCatalog</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlInitializeCatalog</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Load the default system catalog. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="131" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3221" bodyend="3271" declfile="catalog.h" declline="131" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1a1d70d9d7080c5362e737895a000deeb6" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlLoadCatalog</definition>
+        <argsstring>(const char *filename)</argsstring>
+        <name>xmlLoadCatalog</name>
+        <param>
+          <type>const char *</type>
+          <declname>filename</declname>
+        </param>
+        <briefdescription>
+<para>Load the catalog and makes its definitions effective for the default external entity loader. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>It will recurse in SGML CATALOG entries. this function is not thread safe, catalog initialization should preferably be done once at startup</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>filename</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a file path </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 in case of success -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="133" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3284" bodyend="3309" declfile="catalog.h" declline="133" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1aa63041f61aa5623017ea31aaaaa59fa3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlLoadCatalogs</definition>
+        <argsstring>(const char *paths)</argsstring>
+        <name>xmlLoadCatalogs</name>
+        <param>
+          <type>const char *</type>
+          <declname>paths</declname>
+          <defname>pathss</defname>
+        </param>
+        <briefdescription>
+<para>Load the catalogs and makes their definitions effective for the default external entity loader. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>this function is not thread safe, catalog initialization should preferably be done once at startup</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>pathss</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a list of directories separated by a colon or a space. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="135" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3320" bodyend="3355" declfile="catalog.h" declline="135" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1a29d92da35757a1fc1f79c1786d0e40b0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlCatalogCleanup</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlCatalogCleanup</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Free up all the memory associated with catalogs. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="137" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3361" bodyend="3376" declfile="catalog.h" declline="137" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1afac63a89f0799789836fe803be907331" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlCatalogDump</definition>
+        <argsstring>(FILE *out)</argsstring>
+        <name>xmlCatalogDump</name>
+        <param>
+          <type>FILE *</type>
+          <declname>out</declname>
+        </param>
+        <briefdescription>
+<para>Dump all the global catalog content to the given file. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>out</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the file. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="140" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3466" bodyend="3474" declfile="catalog.h" declline="140" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1a5473c4890dd64f48241f68e29c5c11c0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xmlDocPtr</type>
+        <definition>xmlDocPtr xmlCatalogDumpDoc</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlCatalogDumpDoc</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Dump all the global catalog content as a <ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> This function is just for testing/debugging purposes. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="return"><para>The catalog as <ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> or NULL if failed, it must be freed by the caller. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="142" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3483" bodyend="3488" declfile="catalog.h" declline="142" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1af4025a6e7beb50f07b1c53c2dbfab6f4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar * xmlCatalogResolve</definition>
+        <argsstring>(const xmlChar *pubID, const xmlChar *sysID)</argsstring>
+        <name>xmlCatalogResolve</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>pubID</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>sysID</declname>
+        </param>
+        <briefdescription>
+<para>Do a complete resolution lookup of an External Identifier. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>pubID</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the public ID string </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>sysID</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the system ID string </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the URI of the resource or NULL if not found, it must be freed by the caller. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="145" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3431" bodyend="3439" declfile="catalog.h" declline="145" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1a1e5a9f085a86565bc311de418eafacf4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar * xmlCatalogResolveSystem</definition>
+        <argsstring>(const xmlChar *sysID)</argsstring>
+        <name>xmlCatalogResolveSystem</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>sysID</declname>
+        </param>
+        <briefdescription>
+<para>Try to lookup the catalog resource for a system ID. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>sysID</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the system ID string </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the resource if found or NULL otherwise, the value returned must be freed by the caller. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="148" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3394" bodyend="3402" declfile="catalog.h" declline="148" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1a18edb9fa5bb56ef793aba5167635c812" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar * xmlCatalogResolvePublic</definition>
+        <argsstring>(const xmlChar *pubID)</argsstring>
+        <name>xmlCatalogResolvePublic</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>pubID</declname>
+        </param>
+        <briefdescription>
+<para>Try to lookup the catalog reference associated to a public ID. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>pubID</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the public ID string </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the resource if found or NULL otherwise, the value returned must be freed by the caller. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="150" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3412" bodyend="3420" declfile="catalog.h" declline="150" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1a5600244c5c49b540e82d0b076717a28e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar * xmlCatalogResolveURI</definition>
+        <argsstring>(const xmlChar *URI)</argsstring>
+        <name>xmlCatalogResolveURI</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>URI</declname>
+        </param>
+        <briefdescription>
+<para>Do a complete resolution lookup of an URI. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>URI</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the URI </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the URI of the resource or NULL if not found, it must be freed by the caller. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="152" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3449" bodyend="3457" declfile="catalog.h" declline="152" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1a33e62d64238b23b763ac46e8c34fa535" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlCatalogAdd</definition>
+        <argsstring>(const xmlChar *type, const xmlChar *orig, const xmlChar *replace)</argsstring>
+        <name>xmlCatalogAdd</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>type</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>orig</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>replace</declname>
+        </param>
+        <briefdescription>
+<para>Add an entry in the catalog, it may overwrite existing but different entries. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If called before any other catalog routine, allows to override the default shared catalog put in place by <ref refid="catalog_8h_1af1b6622538d7f4540cc8e0ca30d0ce99" kindref="member">xmlInitializeCatalog</ref>;</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>type</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the type of record to add to the catalog </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>orig</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the system, public or prefix to match </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>replace</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the replacement value for the match </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if successful, -1 otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="154" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3503" bodyend="3529" declfile="catalog.h" declline="154" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1abf571cd2cf730be2e899e6405a20a276" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlCatalogRemove</definition>
+        <argsstring>(const xmlChar *value)</argsstring>
+        <name>xmlCatalogRemove</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>value</declname>
+        </param>
+        <briefdescription>
+<para>Remove an entry from the catalog. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>value</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the value to remove </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the number of entries removed if successful, -1 otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="158" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3538" bodyend="3548" declfile="catalog.h" declline="158" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1a0815fdfeb44005edf5f8bedbecc7658b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+        <definition>xmlDoc * xmlParseCatalogFile</definition>
+        <argsstring>(const char *filename)</argsstring>
+        <name>xmlParseCatalogFile</name>
+        <param>
+          <type>const char *</type>
+          <declname>filename</declname>
+        </param>
+        <briefdescription>
+<para>parse an XML file and build a tree. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>It&apos;s like <ref refid="parser_8h_1a60cc171f8a0f6e13ead2c28a13360a50" kindref="member">xmlParseFile</ref> except it bypass all catalog lookups.</para>
+<para><xrefsect id="deprecated_1_deprecated000086"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>filename</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the filename </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the resulting document tree or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="161" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="944" bodyend="997" declfile="catalog.h" declline="161" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1a3aa2a30e6647343b4242298e037db098" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlCatalogConvert</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlCatalogConvert</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Convert all the SGML catalog entries as XML ones. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="return"><para>the number of entries converted if successful, -1 otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="165" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3557" bodyend="3567" declfile="catalog.h" declline="165" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1ab473f60a58841c578359e82e009ad677" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlCatalogFreeLocal</definition>
+        <argsstring>(void *catalogs)</argsstring>
+        <name>xmlCatalogFreeLocal</name>
+        <param>
+          <type>void *</type>
+          <declname>catalogs</declname>
+        </param>
+        <briefdescription>
+<para>Free up the memory associated to the catalog list. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>catalogs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a document&apos;s list of catalogs </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="173" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3689" bodyend="3695" declfile="catalog.h" declline="173" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1a5d8a0a4fd53989e3a6ea660c77502cfb" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void *</type>
+        <definition>void * xmlCatalogAddLocal</definition>
+        <argsstring>(void *catalogs, const xmlChar *URL)</argsstring>
+        <name>xmlCatalogAddLocal</name>
+        <param>
+          <type>void *</type>
+          <declname>catalogs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>URL</declname>
+        </param>
+        <briefdescription>
+<para>Add the new entry to the catalog list. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>catalogs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a document&apos;s list of catalogs </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>URL</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the URL to a new local catalog </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the updated list </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="175" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3706" bodyend="3731" declfile="catalog.h" declline="175" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1a27127b6393f0c94cada0cff9633b1aab" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar * xmlCatalogLocalResolve</definition>
+        <argsstring>(void *catalogs, const xmlChar *pubID, const xmlChar *sysID)</argsstring>
+        <name>xmlCatalogLocalResolve</name>
+        <param>
+          <type>void *</type>
+          <declname>catalogs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>pubID</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>sysID</declname>
+        </param>
+        <briefdescription>
+<para>Do a complete resolution lookup of an External Identifier using a document&apos;s private catalog list. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>catalogs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a document&apos;s list of catalogs </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>pubID</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the public ID string </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>sysID</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the system ID string </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the URI of the resource or NULL if not found, it must be freed by the caller. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="178" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3744" bodyend="3772" declfile="catalog.h" declline="178" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1ad1e8d7353ff8524bf545925a0b414fc3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar * xmlCatalogLocalResolveURI</definition>
+        <argsstring>(void *catalogs, const xmlChar *URI)</argsstring>
+        <name>xmlCatalogLocalResolveURI</name>
+        <param>
+          <type>void *</type>
+          <declname>catalogs</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>URI</declname>
+        </param>
+        <briefdescription>
+<para>Do a complete resolution lookup of an URI using a document&apos;s private catalog list. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>catalogs</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a document&apos;s list of catalogs </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>URI</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the URI </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the URI of the resource or NULL if not found, it must be freed by the caller. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="182" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3784" bodyend="3802" declfile="catalog.h" declline="182" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1ab6227debb7282c5c1618aa14d59321b5" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlCatalogSetDebug</definition>
+        <argsstring>(int level)</argsstring>
+        <name>xmlCatalogSetDebug</name>
+        <param>
+          <type>int</type>
+          <declname>level</declname>
+        </param>
+        <briefdescription>
+<para>Used to set the debug level for catalog operation, 0 disable debugging, 1 enable it. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>level</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the debug level of catalogs required </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the previous value of the catalog debugging level </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="188" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3667" bodyend="3675" declfile="catalog.h" declline="188" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1aaf7e3b9033eec2dee0736c1253809062" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xmlCatalogPrefer</type>
+        <definition>xmlCatalogPrefer xmlCatalogSetDefaultPrefer</definition>
+        <argsstring>(xmlCatalogPrefer prefer)</argsstring>
+        <name>xmlCatalogSetDefaultPrefer</name>
+        <param>
+          <type>xmlCatalogPrefer</type>
+          <declname>prefer</declname>
+        </param>
+        <briefdescription>
+<para>Allows to set the preference between public and system for deletion in XML Catalog resolution. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>C.f. section 4.1.1 of the spec Values accepted are XML_CATA_PREFER_PUBLIC or XML_CATA_PREFER_SYSTEM</para>
+<para><xrefsect id="deprecated_1_deprecated000100"><xreftitle>Deprecated</xreftitle><xrefdescription><para>This setting is global and not thread-safe.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>prefer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the default preference for delegation </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the previous value of the default preference for delegation </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="191" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3635" bodyend="3657" declfile="catalog.h" declline="191" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1a31cf4271859a85eb9a0d86f6259a990b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlCatalogSetDefaults</definition>
+        <argsstring>(xmlCatalogAllow allow)</argsstring>
+        <name>xmlCatalogSetDefaults</name>
+        <param>
+          <type>xmlCatalogAllow</type>
+          <declname>allow</declname>
+        </param>
+        <briefdescription>
+<para>Used to set the user preference w.r.t. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>to what catalogs should be accepted</para>
+<para><xrefsect id="deprecated_1_deprecated000099"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use XML_PARSE_NO_SYS_CATALOG and XML_PARSE_CATALOG_PI.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>allow</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>what catalogs should be accepted </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="193" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3600" bodyend="3622" declfile="catalog.h" declline="193" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1ac7a6a9d398aa93037fed4b08b0f15c19" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xmlCatalogAllow</type>
+        <definition>xmlCatalogAllow xmlCatalogGetDefaults</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlCatalogGetDefaults</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Used to get the user preference w.r.t. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>to what catalogs should be accepted</para>
+<para><xrefsect id="deprecated_1_deprecated000098"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use XML_PARSE_NO_SYS_CATALOG and XML_PARSE_CATALOG_PI.</para>
+</xrefdescription></xrefsect></para>
+<para><simplesect kind="return"><para>the current xmlCatalogAllow value </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="195" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3586" bodyend="3588" declfile="catalog.h" declline="195" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1a71947032167b68af7e6b993f01087ba4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar * xmlCatalogGetSystem</definition>
+        <argsstring>(const xmlChar *sysID)</argsstring>
+        <name>xmlCatalogGetSystem</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>sysID</declname>
+        </param>
+        <briefdescription>
+<para>Try to lookup the catalog reference associated to a system ID. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000101"><xreftitle>Deprecated</xreftitle><xrefdescription><para>use <ref refid="catalog_8h_1a1e5a9f085a86565bc311de418eafacf4" kindref="member">xmlCatalogResolveSystem</ref></para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>sysID</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the system ID string </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the resource if found or NULL otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="201" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3818" bodyend="3852" declfile="catalog.h" declline="201" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="catalog_8h_1ae2eb59768f3a163b738c59923e4d94f2" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar * xmlCatalogGetPublic</definition>
+        <argsstring>(const xmlChar *pubID)</argsstring>
+        <name>xmlCatalogGetPublic</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>pubID</declname>
+        </param>
+        <briefdescription>
+<para>Try to lookup the catalog reference associated to a public ID. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000102"><xreftitle>Deprecated</xreftitle><xrefdescription><para>use <ref refid="catalog_8h_1a18edb9fa5bb56ef793aba5167635c812" kindref="member">xmlCatalogResolvePublic</ref></para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>pubID</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the public ID string </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the resource if found or NULL otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="catalog.h" line="204" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="3863" bodyend="3897" declfile="catalog.h" declline="204" declcolumn="1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>interfaces to the Catalog handling system </para>
+    </briefdescription>
+    <detaileddescription>
+<para>the catalog module implements the support for XML Catalogs and SGML catalogs</para>
+<para>SGML Open Technical Resolution TR9401:1997. <ulink url="http://www.jclark.com/sp/catalog.htm">http://www.jclark.com/sp/catalog.htm</ulink></para>
+<para>XML Catalogs Working Draft 06 August 2001 <ulink url="http://www.oasis-open.org/committees/entity/spec-2001-08-06.html">http://www.oasis-open.org/committees/entity/spec-2001-08-06.html</ulink></para>
+<para><simplesect kind="copyright"><para>See Copyright for the status of this software.</para>
+</simplesect>
+<simplesect kind="author"><para>Daniel Veillard </para>
+</simplesect>
+</para>
+    </detaileddescription>
+    <location file="catalog.h"/>
+  </compounddef>
+</doxygen>

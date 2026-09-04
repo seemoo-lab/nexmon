@@ -1,0 +1,3 @@
+test/valid/dtds/pe-in-text-decl.dtd:1: parser error : parsing XML declaration: '?>' expected
+<?xml version="1.0" %ent;?>
+                    ^

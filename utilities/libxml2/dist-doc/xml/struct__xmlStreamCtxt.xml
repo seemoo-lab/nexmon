@@ -1,0 +1,173 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlStreamCtxt" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlStreamCtxt</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlStreamCtxt_1aaa4e7972ff783338b5b812be8ca7426d" prot="public" static="no" mutable="no">
+        <type>struct _xmlStreamCtxt *</type>
+        <definition>struct _xmlStreamCtxt* next</definition>
+        <argsstring></argsstring>
+        <name>next</name>
+        <qualifiedname>_xmlStreamCtxt::next</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="109" column="25" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="109" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlStreamCtxt_1a04b839383197dbe198ebbd33c41531f7" prot="public" static="no" mutable="no">
+        <type>xmlStreamCompPtr</type>
+        <definition>xmlStreamCompPtr comp</definition>
+        <argsstring></argsstring>
+        <name>comp</name>
+        <qualifiedname>_xmlStreamCtxt::comp</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="110" column="22" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="110" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlStreamCtxt_1a79b55c134b3e1de4837ae2f4f4e609b5" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nbState</definition>
+        <argsstring></argsstring>
+        <name>nbState</name>
+        <qualifiedname>_xmlStreamCtxt::nbState</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="111" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="111" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlStreamCtxt_1a9f7e61185f91ed7bb7b42975ed3c9324" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int maxState</definition>
+        <argsstring></argsstring>
+        <name>maxState</name>
+        <qualifiedname>_xmlStreamCtxt::maxState</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="112" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="112" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlStreamCtxt_1acf4d33ee4cff36f69b924471174dcb11" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int level</definition>
+        <argsstring></argsstring>
+        <name>level</name>
+        <qualifiedname>_xmlStreamCtxt::level</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="113" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="113" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlStreamCtxt_1ad31c171e47f491d01942fc4b1e54e204" prot="public" static="no" mutable="no">
+        <type>int *</type>
+        <definition>int* states</definition>
+        <argsstring></argsstring>
+        <name>states</name>
+        <qualifiedname>_xmlStreamCtxt::states</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="114" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="114" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlStreamCtxt_1ac8bf36fe0577cba66bccda3a6f7e80a4" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int flags</definition>
+        <argsstring></argsstring>
+        <name>flags</name>
+        <qualifiedname>_xmlStreamCtxt::flags</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="115" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="115" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlStreamCtxt_1ad3ccc36bae56b349dbb4d4de4e2b1103" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int blockLevel</definition>
+        <argsstring></argsstring>
+        <name>blockLevel</name>
+        <qualifiedname>_xmlStreamCtxt::blockLevel</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="116" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="116" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="3">
+        <label>_xmlDict</label>
+        <childnode refid="4" relation="usage">
+          <edgelabel>strings</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>subdict</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlDictStrings</label>
+        <childnode refid="4" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>_xmlStreamComp</label>
+        <childnode refid="3" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>steps</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlStreamCtxt</label>
+        <childnode refid="1" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>comp</edgelabel>
+        </childnode>
+      </node>
+      <node id="5">
+        <label>_xmlStreamStep</label>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/pattern.c" line="108" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="108" bodyend="117"/>
+    <listofallmembers>
+      <member refid="struct__xmlStreamCtxt_1ad3ccc36bae56b349dbb4d4de4e2b1103" prot="public" virt="non-virtual"><scope>_xmlStreamCtxt</scope><name>blockLevel</name></member>
+      <member refid="struct__xmlStreamCtxt_1a04b839383197dbe198ebbd33c41531f7" prot="public" virt="non-virtual"><scope>_xmlStreamCtxt</scope><name>comp</name></member>
+      <member refid="struct__xmlStreamCtxt_1ac8bf36fe0577cba66bccda3a6f7e80a4" prot="public" virt="non-virtual"><scope>_xmlStreamCtxt</scope><name>flags</name></member>
+      <member refid="struct__xmlStreamCtxt_1acf4d33ee4cff36f69b924471174dcb11" prot="public" virt="non-virtual"><scope>_xmlStreamCtxt</scope><name>level</name></member>
+      <member refid="struct__xmlStreamCtxt_1a9f7e61185f91ed7bb7b42975ed3c9324" prot="public" virt="non-virtual"><scope>_xmlStreamCtxt</scope><name>maxState</name></member>
+      <member refid="struct__xmlStreamCtxt_1a79b55c134b3e1de4837ae2f4f4e609b5" prot="public" virt="non-virtual"><scope>_xmlStreamCtxt</scope><name>nbState</name></member>
+      <member refid="struct__xmlStreamCtxt_1aaa4e7972ff783338b5b812be8ca7426d" prot="public" virt="non-virtual"><scope>_xmlStreamCtxt</scope><name>next</name></member>
+      <member refid="struct__xmlStreamCtxt_1ad31c171e47f491d01942fc4b1e54e204" prot="public" virt="non-virtual"><scope>_xmlStreamCtxt</scope><name>states</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

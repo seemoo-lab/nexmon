@@ -1,0 +1,2 @@
+./test/schematron/zvon6_0.xml:1: element AAA: schematron error : /AAA line 1: O.K.
+./test/schematron/zvon6_0.xml fails to validate

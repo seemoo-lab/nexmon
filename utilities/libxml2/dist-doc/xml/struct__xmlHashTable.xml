@@ -1,0 +1,119 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlHashTable" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlHashTable</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlHashTable_1a744c9b58cc8b0707b45541eff52efe82" prot="public" static="no" mutable="no">
+        <type>xmlHashEntry *</type>
+        <definition>xmlHashEntry* table</definition>
+        <argsstring></argsstring>
+        <name>table</name>
+        <qualifiedname>_xmlHashTable::table</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="49" column="18" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="49" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlHashTable_1a245260f6f74972558f61b85227df5aae" prot="public" static="no" mutable="no">
+        <type>unsigned</type>
+        <definition>unsigned size</definition>
+        <argsstring></argsstring>
+        <name>size</name>
+        <qualifiedname>_xmlHashTable::size</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="50" column="14" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="50" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlHashTable_1a3846897677369b2f127c93270b2d7364" prot="public" static="no" mutable="no">
+        <type>unsigned</type>
+        <definition>unsigned nbElems</definition>
+        <argsstring></argsstring>
+        <name>nbElems</name>
+        <qualifiedname>_xmlHashTable::nbElems</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="51" column="14" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="51" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlHashTable_1a2f89a426c195c2ad019b65e822791a21" prot="public" static="no" mutable="no">
+        <type>xmlDictPtr</type>
+        <definition>xmlDictPtr dict</definition>
+        <argsstring></argsstring>
+        <name>dict</name>
+        <qualifiedname>_xmlHashTable::dict</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="52" column="16" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="52" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlHashTable_1aa4068f188088a735ebc24250dc394812" prot="public" static="no" mutable="no">
+        <type>unsigned</type>
+        <definition>unsigned randomSeed</definition>
+        <argsstring></argsstring>
+        <name>randomSeed</name>
+        <qualifiedname>_xmlHashTable::randomSeed</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="53" column="14" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="53" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="3">
+        <label>_xmlDict</label>
+        <childnode refid="4" relation="usage">
+          <edgelabel>strings</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>subdict</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlDictStrings</label>
+        <childnode refid="4" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlHashTable</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>table</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>xmlHashEntry</label>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/hash.c" line="48" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="48" bodyend="54"/>
+    <listofallmembers>
+      <member refid="struct__xmlHashTable_1a2f89a426c195c2ad019b65e822791a21" prot="public" virt="non-virtual"><scope>_xmlHashTable</scope><name>dict</name></member>
+      <member refid="struct__xmlHashTable_1a3846897677369b2f127c93270b2d7364" prot="public" virt="non-virtual"><scope>_xmlHashTable</scope><name>nbElems</name></member>
+      <member refid="struct__xmlHashTable_1aa4068f188088a735ebc24250dc394812" prot="public" virt="non-virtual"><scope>_xmlHashTable</scope><name>randomSeed</name></member>
+      <member refid="struct__xmlHashTable_1a245260f6f74972558f61b85227df5aae" prot="public" virt="non-virtual"><scope>_xmlHashTable</scope><name>size</name></member>
+      <member refid="struct__xmlHashTable_1a744c9b58cc8b0707b45541eff52efe82" prot="public" virt="non-virtual"><scope>_xmlHashTable</scope><name>table</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

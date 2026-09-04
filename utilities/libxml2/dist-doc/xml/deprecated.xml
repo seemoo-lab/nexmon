@@ -1,0 +1,1290 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="deprecated" kind="page">
+    <compoundname>deprecated</compoundname>
+    <title>Deprecated List</title>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+<para><variablelist>
+<varlistentry><term>Global <ref refid="xmlIO_8h_1a441e1c289918a75a3e50bd3fef11d52b" kindref="member">__xmlParserInputBufferCreateFilename</ref>  (const char *URI, <ref refid="encoding_8h_1a662791d23b3d1e0a37244d35c57a02e5" kindref="member">xmlCharEncoding</ref> enc)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000366"/>Use <ref refid="parser_8h_1a07aefa97e2d3a6e3735accb899f1a154" kindref="member">xmlNewInputFromUrl</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlBuffer_1a26031fb504d7c8616a5b161b0fbc8c62" kindref="member">_xmlBuffer::content</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000066"/>Use <ref refid="tree_8h_1a0f19f56a45ed97079b579cdf1171abca" kindref="member">xmlBufferContent</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlBuffer_1a22e8c9b2dec99402b0615755a7cd0e43" kindref="member">_xmlBuffer::use</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000067"/>Use <ref refid="tree_8h_1afdaf9cd81ba6bbfd4ff47370e5d71817" kindref="member">xmlBufferLength</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1a1cb76d737bf6f5b53e6c970073cba051" kindref="member">_xmlParserCtxt::_private</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000043"/>Use <ref refid="parser_8h_1a416b57ce9df30de4eb36507648b3987b" kindref="member">xmlCtxtGetPrivate()</ref> and <ref refid="parser_8h_1adf8a364b2fbcee2f78d6d47483f040a2" kindref="member">xmlCtxtSetPrivate()</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1ad03012e15a5a13d83a58047e808cdc8f" kindref="member">_xmlParserCtxt::catalogs</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000045"/>Use <ref refid="parser_8h_1a649621391f9d03f0de610a0082d81e58" kindref="member">xmlCtxtGetCatalogs()</ref> and <ref refid="parser_8h_1a72e4bdaa2e1278821b849c7abc3b818b" kindref="member">xmlCtxtSetCatalogs()</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1ae6cb4bd5bd5a5f50be4c5edc678877a1" kindref="member">_xmlParserCtxt::dict</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000047"/>Use <ref refid="parser_8h_1ac5d476cd48aed48ba8bdc316704f91c0" kindref="member">xmlCtxtGetDict()</ref> and <ref refid="parser_8h_1aab51622c52892838c58083227bc0cead" kindref="member">xmlCtxtSetDict()</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1a47d490aadcaaa4007eed1e7f1c5868de" kindref="member">_xmlParserCtxt::dictNames</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000050"/>Use inverted <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> XML_PARSE_NODICT </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1a8eadc6730ef4fbdae87a20414b789faf" kindref="member">_xmlParserCtxt::directory</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000035"/>Don&apos;t use </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1aa7539038718937ce7752345836ae2a6d" kindref="member">_xmlParserCtxt::disableSAX</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000037"/>Use <ref refid="parser_8h_1a42c2fb7c292c2b60900aeddbe412a194" kindref="member">xmlCtxtIsStopped()</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1a3c934269709c5e7333c58e6f7d6c142d" kindref="member">_xmlParserCtxt::encoding</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000027"/>Use <ref refid="parser_8h_1a94d9434a8bdcc2348feca88552f95a0b" kindref="member">xmlCtxtGetDeclaredEncoding()</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1a1e9f18db46820d6e92e1cbbd0353d99e" kindref="member">_xmlParserCtxt::errNo</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000031"/>Use <ref refid="xmlerror_8h_1a5a94b4438df18110def1bcb42e642410" kindref="member">xmlCtxtGetLastError()</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1ad17b163b9053abf907a0a0db8dac4971" kindref="member">_xmlParserCtxt::extSubSystem</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000041"/>Use the <computeroutput>publicId</computeroutput> argument of the <computeroutput>internalSubset</computeroutput> SAX callback or <ref refid="parser_8h_1ac457f016ceaa7cea92f3bf823a09c362" kindref="member">xmlCtxtGetDocTypeDecl</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1a5325b513ce2f7be5cd7d2c9604567b27" kindref="member">_xmlParserCtxt::extSubURI</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000040"/>Use the <computeroutput>systemId</computeroutput> argument of the <computeroutput>internalSubset</computeroutput> SAX callback or <ref refid="parser_8h_1ac457f016ceaa7cea92f3bf823a09c362" kindref="member">xmlCtxtGetDocTypeDecl</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1a82fd893df0b570f805cf80d5baf0dc47" kindref="member">_xmlParserCtxt::html</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000029"/>Use <ref refid="parser_8h_1a92077b375fcf9e241c9751c3c91f65ca" kindref="member">xmlCtxtIsHtml()</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1a56c00b6e6966960ab7059e6fbf5043c3" kindref="member">_xmlParserCtxt::inSubset</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000038"/>Use xmlCtxtIsInSubset </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1a21d8a7346f98bb2fa0641a417f27ec6c" kindref="member">_xmlParserCtxt::intSubName</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000039"/>Use the <computeroutput>name</computeroutput> argument of the <computeroutput>internalSubset</computeroutput> SAX callback or <ref refid="parser_8h_1ac457f016ceaa7cea92f3bf823a09c362" kindref="member">xmlCtxtGetDocTypeDecl</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1a6e2103e40ed808ecb7eec83d847636a6" kindref="member">_xmlParserCtxt::keepBlanks</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000036"/>Use inverted <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> XML_PARSE_NOBLANKS </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1a31b3046c62759a76aca8ead53a0f4754" kindref="member">_xmlParserCtxt::lastError</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000051"/>Use <ref refid="xmlerror_8h_1a5a94b4438df18110def1bcb42e642410" kindref="member">xmlCtxtGetLastError()</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1a04c9a9945d43d9cd5b3e232ec01cb248" kindref="member">_xmlParserCtxt::loadsubset</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000044"/>Use <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> XML_PARSE_DTDLOAD, XML_PARSE_DTDATTR or XML_PARSE_SKIP_IDS. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1a86e3769eb2d000bb026aff4f2b38d5c2" kindref="member">_xmlParserCtxt::myDoc</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000023"/>Use <ref refid="parser_8h_1a298011fdad3362493ce7afcb0abdd572" kindref="member">xmlCtxtGetDocument()</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1a8bedaa23f1809c00fd1a1dbaadd3df7c" kindref="member">_xmlParserCtxt::node</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000030"/>Use <ref refid="parser_8h_1ae847f35d4d290e3a76f93b99afb3636e" kindref="member">xmlCtxtGetNode</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1a9a8a001ccdd5313cc0e95e63f5e06a63" kindref="member">_xmlParserCtxt::nsWellFormed</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000048"/>Use <ref refid="parser_8h_1af2c13485b4f93dac83e915cc21b2122c" kindref="member">xmlCtxtGetStatus()</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1a849fa981f121eb25a67e4e14392840ba" kindref="member">_xmlParserCtxt::options</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000049"/>Use <ref refid="parser_8h_1a539694793176574f4318fadc71468165" kindref="member">xmlCtxtGetOptions()</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1af26e25032f46caaa1ead40bbb43f7ec0" kindref="member">_xmlParserCtxt::pedantic</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000042"/>Use <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> XML_PARSE_PEDANTIC </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1a77bfbfc2650fbef505fee9d8d8aeabfe" kindref="member">_xmlParserCtxt::recovery</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000046"/>Use <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> XML_PARSE_RECOVER run in recovery mode  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1a0677bf88ef0f007d2a1f1edde8537c6e" kindref="member">_xmlParserCtxt::replaceEntities</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000025"/>Use <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> XML_PARSE_NOENT </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1a0a831e13ad9f85f9d5b80333cfd15d9b" kindref="member">_xmlParserCtxt::sax</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000021"/>Use <ref refid="parser_8h_1acbb3e2b891672b5351aed8162d974b44" kindref="member">xmlCtxtGetSaxHandler()</ref> and <ref refid="parser_8h_1ade34cc9274ed0c3336545e48564e66ef" kindref="member">xmlCtxtSetSaxHandler()</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1a368b793347ffa762c10a94d75ca7c38c" kindref="member">_xmlParserCtxt::standalone</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000028"/>Use <ref refid="parser_8h_1a5b83afa81d9c7870731039fe2b277910" kindref="member">xmlCtxtGetStandalone()</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1a2e294dd14122c554baa0665072b4ca7a" kindref="member">_xmlParserCtxt::userData</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000022"/>Use <ref refid="parser_8h_1abd7ac198c80839e8808f233d29e02fc1" kindref="member">xmlCtxtGetUserData</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1ac63b1f168765a53e565a8ba27f5469d1" kindref="member">_xmlParserCtxt::valid</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000032"/>Use <ref refid="parser_8h_1af2c13485b4f93dac83e915cc21b2122c" kindref="member">xmlCtxtGetStatus()</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1a8d391f3cd6e23f6d46b9a3e7f2baabf2" kindref="member">_xmlParserCtxt::validate</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000033"/>Use <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> XML_PARSE_DTDVALID </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1a0527715680b7e211a63b5e361f949024" kindref="member">_xmlParserCtxt::vctxt</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000034"/>Use <ref refid="parser_8h_1aaacf2733f3e40fc30dab089ee1355ebc" kindref="member">xmlCtxtGetValidCtxt()</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1a65011b3d522f9a64f8aedf1dde4a6964" kindref="member">_xmlParserCtxt::version</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000026"/>Use <ref refid="parser_8h_1aeb4d40a990cc73c7dfc15cc7d9f7d2aa" kindref="member">xmlCtxtGetVersion()</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserCtxt_1a74539821abc9bdbe4613df62a1bfb811" kindref="member">_xmlParserCtxt::wellFormed</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000024"/>Use <ref refid="parser_8h_1af2c13485b4f93dac83e915cc21b2122c" kindref="member">xmlCtxtGetStatus()</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserInput_1afb52e720f5f0c483db5861f9e42e924e" kindref="member">_xmlParserInput::col</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000019"/>Use <ref refid="parser_8h_1ad28619d7a08511e570dc279dd38bf0fc" kindref="member">xmlCtxtGetInputPosition</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserInput_1a4dcd402de9cf9b02e64841a56a78cd58" kindref="member">_xmlParserInput::consumed</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000020"/>Use <ref refid="parser_8h_1ad28619d7a08511e570dc279dd38bf0fc" kindref="member">xmlCtxtGetInputPosition</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserInput_1a31f01a37499663df3797227bda0636c3" kindref="member">_xmlParserInput::cur</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000017"/>Use <ref refid="parser_8h_1aaed78db63b3868f3e682ca0a72cbc22d" kindref="member">xmlCtxtGetInputWindow</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserInput_1a7efa5e9c7494c7d4586359300221aa5d" kindref="member">_xmlParserInput::filename</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000016"/>Use <ref refid="parser_8h_1ad28619d7a08511e570dc279dd38bf0fc" kindref="member">xmlCtxtGetInputPosition</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="struct__xmlParserInput_1a41ebd28ef1d7c6ade45642cb6acc1039" kindref="member">_xmlParserInput::line</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000018"/>Use <ref refid="parser_8h_1ad28619d7a08511e570dc279dd38bf0fc" kindref="member">xmlCtxtGetInputPosition</ref> </para>
+</listitem>
+<varlistentry><term>Struct <ref refid="struct__xmlSAXHandlerV1" kindref="compound">_xmlSAXHandlerV1</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000005"/>Use version 2 handlers.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a58ea5c070c26c3bb385152ef8f731e77" kindref="member">attributeSAXFunc</ref>  )(void *ctx, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *name, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *value)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000003"/>This typedef is unused. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="HTMLparser_8h_1addbb31bb0ec279768f456212de747708" kindref="member">htmlAttrAllowed</ref>  (const htmlElemDesc *, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *, int)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000179"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="HTMLparser_8h_1a1554945ef0f9d1775a35c699cb25fc37" kindref="member">htmlAutoCloseTag</ref>  (<ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *name, <ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *elem)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000161"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="HTMLparser_8h_1a4309ede5d90c5c83c237d3ead207d66d" kindref="member">htmlCreateFileParserCtxt</ref>  (const char *filename, const char *encoding)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000174"/>Use <ref refid="HTMLparser_8h_1a951f666dbf44e6184e58024631a2fefd" kindref="member">htmlNewParserCtxt</ref> and <ref refid="HTMLparser_8h_1a430f103da6c143db4aceb47e6930f452" kindref="member">htmlCtxtReadFile</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="HTMLparser_8h_1a19dec2d74a2f2974ba4403192c6845af" kindref="member">htmlCreateMemoryParserCtxt</ref>  (const char *buffer, int size)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000171"/>Use <ref refid="HTMLparser_8h_1a951f666dbf44e6184e58024631a2fefd" kindref="member">htmlNewParserCtxt</ref> and <ref refid="HTMLparser_8h_1ace0473af24ab42e75e01b61c2fe06798" kindref="member">htmlCtxtReadMemory</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="HTMLparser_8h_1a704c275082cb61c6b35cabab333e5ea9" kindref="member">htmlCtxtUseOptions</ref>  (<ref refid="HTMLparser_8h_1a7da3aab7a3a152aebfea651c29fe29fd" kindref="member">htmlParserCtxt</ref> *ctxt, int options)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000181"/>Use <ref refid="HTMLparser_8h_1aacb5d309a35c751ad5f652bab347ce95" kindref="member">htmlCtxtSetOptions</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="SAX2_8h_1a2613fc19c3fe8f8e59dd22f0b0231798" kindref="member">htmlDefaultSAXHandlerInit</ref>  (void)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000297"/>This function is a no-op. Call <ref refid="parser_8h_1a642085a16c74b8352e92a89c348cc9c4" kindref="member">xmlInitParser</ref> to initialize the library.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="HTMLparser_8h_1a89a170dc46aa82d78b5161f988dc6298" kindref="member">htmlElementAllowedHere</ref>  (const htmlElemDesc *, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000177"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="HTMLparser_8h_1a0ea4c9f2abf92f0b3ebc81a15e7df06b" kindref="member">htmlElementStatusHere</ref>  (const htmlElemDesc *, const htmlElemDesc *)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000178"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="HTMLparser_8h_1a221e4ca469169e81ce27b6fd6d63ae62" kindref="member">htmlEncodeEntities</ref>  (unsigned char *out, int *outlen, const unsigned char *in, int *inlen, int quoteChar)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000167"/>Only supports HTML 4. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="HTMLparser_8h_1adb263ee6885a8193aba8bff26ffe345d" kindref="member">htmlEntityLookup</ref>  (const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *name)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000164"/>Only supports HTML 4. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="HTMLparser_8h_1aeec73b769f462919487c355f13ec10ae" kindref="member">htmlEntityValueLookup</ref>  (unsigned int value)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000165"/>Only supports HTML 4. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="HTMLparser_8h_1a5f798e61a4eae7914180db4009aaf569" kindref="member">htmlHandleOmittedElem</ref>  (int val)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000176"/>Use HTML_PARSE_NOIMPLIED </para>
+</listitem>
+<varlistentry><term>Global <ref refid="HTMLparser_8h_1a45200bac2c12417f70ec2f4e36560844" kindref="member">htmlInitAutoClose</ref>  (void)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000159"/>This is a no-op.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="HTMLparser_8h_1a857c8be63f608a356ed3f73cce79f394" kindref="member">htmlIsAutoClosed</ref>  (<ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc, <ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *elem)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000162"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="HTMLtree_8h_1aa12b1ce2661108e8ecffda563a2e766b" kindref="member">htmlIsBooleanAttr</ref>  (const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *name)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000182"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="HTMLparser_8h_1a222be2b10d6e54ded8de81a18e279c1c" kindref="member">htmlIsScriptAttribute</ref>  (const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *name)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000163"/>Only supports HTML 4. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="HTMLparser_8h_1a84eeb255719af0df680da2758c47aedf" kindref="member">htmlNodeStatus</ref>  (<ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *, int)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000180"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="HTMLparser_8h_1ab3d5850bc97c09606d3f725c2e7fe810" kindref="member">htmlParseCharRef</ref>  (<ref refid="HTMLparser_8h_1a7da3aab7a3a152aebfea651c29fe29fd" kindref="member">htmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000169"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="HTMLparser_8h_1ac57c4ab8026b3f40da459b6bb094ae75" kindref="member">htmlParseDoc</ref>  (const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *cur, const char *encoding)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000173"/>Use <ref refid="HTMLparser_8h_1a842a285bb09c1386db8bf36cc50e5868" kindref="member">htmlReadDoc</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="HTMLparser_8h_1a68bcd47ad9f207b387cce313743a673e" kindref="member">htmlParseElement</ref>  (<ref refid="HTMLparser_8h_1a7da3aab7a3a152aebfea651c29fe29fd" kindref="member">htmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000170"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="HTMLparser_8h_1a6611f148105d04ba9b11fee7bf3f2546" kindref="member">htmlParseEntityRef</ref>  (<ref refid="HTMLparser_8h_1a7da3aab7a3a152aebfea651c29fe29fd" kindref="member">htmlParserCtxt</ref> *ctxt, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **str)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000168"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="HTMLparser_8h_1a9118eff186b9131519f772028488096d" kindref="member">htmlSAXParseDoc</ref>  (const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *cur, const char *encoding, <ref refid="HTMLparser_8h_1a4b14b551885f4613ba46fe1394141555" kindref="member">htmlSAXHandler</ref> *sax, void *userData)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000172"/>Use <ref refid="HTMLparser_8h_1ac1e41ad44c7fc5a68f312b0165088fc5" kindref="member">htmlNewSAXParserCtxt</ref> and <ref refid="HTMLparser_8h_1af53063a6aa56789fce452027e49e0a2a" kindref="member">htmlCtxtReadDoc</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="HTMLparser_8h_1a051e70ce4a56dea3136bcd53e3b3a9c2" kindref="member">htmlSAXParseFile</ref>  (const char *filename, const char *encoding, <ref refid="HTMLparser_8h_1a4b14b551885f4613ba46fe1394141555" kindref="member">htmlSAXHandler</ref> *sax, void *userData)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000175"/>Use <ref refid="HTMLparser_8h_1ac1e41ad44c7fc5a68f312b0165088fc5" kindref="member">htmlNewSAXParserCtxt</ref> and <ref refid="HTMLparser_8h_1a430f103da6c143db4aceb47e6930f452" kindref="member">htmlCtxtReadFile</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="HTMLparser_8h_1a6306414b4ee5fc1b30bd4390b217b4a3" kindref="member">htmlTagLookup</ref>  (const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *tag)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000160"/>Only supports HTML 4. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="HTMLparser_8h_1acc1ff76760665c4acd8fcfacf61f09d8" kindref="member">htmlUTF8ToHtml</ref>  (unsigned char *out, int *outlen, const unsigned char *in, int *inlen)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000166"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlerror_8h_1ac6a7c78211297facf6ccbe1d506b590c" kindref="member">initGenericErrorDefaultFunc</ref>  (h)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000068"/>Use <ref refid="xmlerror_8h_1ab1b127a183bcaaf7de7f08928dd5994a" kindref="member">xmlSetGenericErrorFunc</ref>  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1ae7946f896b393d77e9c76aaf285272a7" kindref="member">inputPop</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000065"/>Use <ref refid="parserInternals_8h_1a07961183f6121bda5b6b78cfcb957dd7" kindref="member">xmlCtxtPushInput</ref>  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1adb949d953aad726d62f07c8e8089e6a8" kindref="member">inputPush</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000064"/>Use <ref refid="parserInternals_8h_1a07961183f6121bda5b6b78cfcb957dd7" kindref="member">xmlCtxtPushInput</ref>  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xpathInternals_8h_1a88b3765f26bdf769d38b6570a9604426" kindref="member">valuePop</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000077"/>Use <ref refid="xpathInternals_8h_1adf1d3c6bf25bedd7c2e432319cbeed4f" kindref="member">xmlXPathValuePop</ref>  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xpathInternals_8h_1a151ac23c459691e7b3f69eec66464c8d" kindref="member">valuePush</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000076"/>Use <ref refid="xpathInternals_8h_1a00dc939985e3c53b22049aa5224d96c5" kindref="member">xmlXPathValuePush</ref>  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xlink_8h_1a8c61a5c2fe05b1edf19e96f9d63127f4" kindref="member">xlinkGetDefaultDetect</ref>  (void)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000356"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xlink_8h_1a57b489319e3fccb2ee99df55becd2196" kindref="member">xlinkGetDefaultHandler</ref>  (void)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000354"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xlink_8h_1a192c579bae8a37c3dec9d2535904ff85" kindref="member">xlinkIsLink</ref>  (<ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc, <ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *node)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000358"/>The XLink code was never finished. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xlink_8h_1a951f8c4cb78b6e1d1808669fbc59ce2e" kindref="member">xlinkSetDefaultDetect</ref>  (<ref refid="xlink_8h_1a194352c8d21984eee0cf2028263f7278" kindref="member">xlinkNodeDetectFunc</ref> func)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000357"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xlink_8h_1aaea55802a5a635e3cdb6e06c104a6ac3" kindref="member">xlinkSetDefaultHandler</ref>  (xlinkHandler *handler)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000355"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442caadc53b738160d8a013c8e8b547c530d4" kindref="member">XML_PARSE_OLD10</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000053"/>This option will be removed in a future version.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442cabc7c5766c3a21d59f4dcabb93df514d0" kindref="member">XML_PARSE_OLDSAX</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000054"/>This option will be removed in a future version.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442ca0722d56711d820beddfd5ede8c132c13" kindref="member">XML_PARSE_SAX1</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000052"/>This option will be removed in a future version.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1ab7ca5b67bda0c933c151e8fdb4aaaf78a92e31f8ff3e5ebb476e722a11686c8a8" kindref="member">XML_WITH_AUTOMATA</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000059"/>Same as XML_WITH_REGEXP  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1ab7ca5b67bda0c933c151e8fdb4aaaf78a1cc914713ceb076b337d0b4f31453637" kindref="member">XML_WITH_DEBUG_MEM</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000061"/>Removed  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1ab7ca5b67bda0c933c151e8fdb4aaaf78a21e9fea1810811ea443cf1e6166332ff" kindref="member">XML_WITH_DEBUG_RUN</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000062"/>Removed  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1ab7ca5b67bda0c933c151e8fdb4aaaf78a4a1f5c17e3fa78da037134ca408248fb" kindref="member">XML_WITH_EXPR</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000060"/>Removed  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1ab7ca5b67bda0c933c151e8fdb4aaaf78abb36769500bebd9d3c5a5ebc921eb2b9" kindref="member">XML_WITH_FTP</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000056"/>FTP support was removed  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1ab7ca5b67bda0c933c151e8fdb4aaaf78abd00e51b0e2cdebfef9412977ee6e7d0" kindref="member">XML_WITH_HTTP</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000057"/>HTTP support was removed  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1ab7ca5b67bda0c933c151e8fdb4aaaf78a8c1dbb462e2fd648158cc8acc08a8dde" kindref="member">XML_WITH_LZMA</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000063"/>LZMA support was removed  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1ab7ca5b67bda0c933c151e8fdb4aaaf78a0c594734f637b360b6d8169519f0c2c2" kindref="member">XML_WITH_TREE</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000055"/>Always available  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1ab7ca5b67bda0c933c151e8fdb4aaaf78a7c5468bb939d2759f95bed17520dd201" kindref="member">XML_WITH_UNICODE</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000058"/>Removed  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="catalog_8h_1a3c80e68ac6038176b36a86e972f94294" kindref="member">xmlACatalogAdd</ref>  (<ref refid="catalog_8h_1aa3ccaec875fffaa151ce8a4042112725" kindref="member">xmlCatalog</ref> *catal, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *type, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *orig, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *replace)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000094"/>Internal function, don&apos;t use </para>
+</listitem>
+<varlistentry><term>Global <ref refid="catalog_8h_1a1b0e0f6095e18c9f43b12ae00507a5ed" kindref="member">xmlACatalogDump</ref>  (<ref refid="catalog_8h_1aa3ccaec875fffaa151ce8a4042112725" kindref="member">xmlCatalog</ref> *catal, FILE *out)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000093"/>Internal function, don&apos;t use </para>
+</listitem>
+<varlistentry><term>Global <ref refid="catalog_8h_1a747e4b6b4f9552a277e15c2ba0062380" kindref="member">xmlACatalogRemove</ref>  (<ref refid="catalog_8h_1aa3ccaec875fffaa151ce8a4042112725" kindref="member">xmlCatalog</ref> *catal, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *value)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000095"/>Internal function, don&apos;t use </para>
+</listitem>
+<varlistentry><term>Global <ref refid="catalog_8h_1a768df5b68e9c549292c81db6d8b9b58c" kindref="member">xmlACatalogResolve</ref>  (<ref refid="catalog_8h_1aa3ccaec875fffaa151ce8a4042112725" kindref="member">xmlCatalog</ref> *catal, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *pubID, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *sysID)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000091"/>Internal function, don&apos;t use </para>
+</listitem>
+<varlistentry><term>Global <ref refid="catalog_8h_1a3102e7cd5d28f7470a9f6f187b37ac56" kindref="member">xmlACatalogResolvePublic</ref>  (<ref refid="catalog_8h_1aa3ccaec875fffaa151ce8a4042112725" kindref="member">xmlCatalog</ref> *catal, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *pubID)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000090"/>Internal function, don&apos;t use </para>
+</listitem>
+<varlistentry><term>Global <ref refid="catalog_8h_1a0d6dbea69afba49838aa293b5178b8b8" kindref="member">xmlACatalogResolveSystem</ref>  (<ref refid="catalog_8h_1aa3ccaec875fffaa151ce8a4042112725" kindref="member">xmlCatalog</ref> *catal, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *sysID)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000089"/>Internal function, don&apos;t use </para>
+</listitem>
+<varlistentry><term>Global <ref refid="catalog_8h_1a883b8d2b5bc790bfe97ec6b46fd95534" kindref="member">xmlACatalogResolveURI</ref>  (<ref refid="catalog_8h_1aa3ccaec875fffaa151ce8a4042112725" kindref="member">xmlCatalog</ref> *catal, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *URI)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000092"/>Internal function, don&apos;t use </para>
+</listitem>
+<varlistentry><term>Global <ref refid="encoding_8h_1ab4adfd7611d30d063e17e6e16ff371d0" kindref="member">xmlAddEncodingAlias</ref>  (const char *name, const char *alias)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000115"/>This function modifies global state and is not thread-safe. See <ref refid="parser_8h_1ac734aadfdb03544bbcb81778778ecc9b" kindref="member">xmlCtxtSetCharEncConvImpl</ref> for an alternative. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a66e48de4751bd8fa74aaf6f34f93fa57" kindref="member">xmlAddRef</ref>  (xmlValidCtxt *ctxt, <ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *value, <ref refid="tree_8h_1a94c0908950e8e798cf7eb5ed524da0af" kindref="member">xmlAttr</ref> *attr)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000330"/>Don&apos;t use. This function will be removed from the public API. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlIO_8h_1a6a67882f88f54233581a9c147540011d" kindref="member">xmlAllocParserInputBuffer</ref>  (<ref refid="encoding_8h_1a662791d23b3d1e0a37244d35c57a02e5" kindref="member">xmlCharEncoding</ref> enc)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000365"/>Use xmlNewInputFrom*. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlautomata_8h_1aecbffa32eb826f0b8559db90c0f5fd8f" kindref="member">xmlAutomataCompile</ref>  (<ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *am)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000424"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlautomata_8h_1ae0d15cfdf0a3cc974e0852b0e2c6d35b" kindref="member">xmlAutomataGetInitState</ref>  (<ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *am)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000409"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlautomata_8h_1ac978b1ae4049005ad1a4b872e84efbd0" kindref="member">xmlAutomataIsDeterminist</ref>  (<ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *am)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000425"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlautomata_8h_1ac4f9205265a6bbc643eb4e097a52136a" kindref="member">xmlAutomataNewAllTrans</ref>  (<ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *am, <ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *from, <ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *to, int lax)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000420"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlautomata_8h_1a3cf399ff33dca2669765d9c1819b6067" kindref="member">xmlAutomataNewCountedTrans</ref>  (<ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *am, <ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *from, <ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *to, int counter)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000422"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlautomata_8h_1a8477677722e413a10d1a1496650c33e0" kindref="member">xmlAutomataNewCounter</ref>  (<ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *am, int min, int max)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000421"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlautomata_8h_1a7011873a2f63782074a2cb9070aea7bb" kindref="member">xmlAutomataNewCounterTrans</ref>  (<ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *am, <ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *from, <ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *to, int counter)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000423"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlautomata_8h_1adb32d2d0271ba76652f3edb98092746e" kindref="member">xmlAutomataNewCountTrans</ref>  (<ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *am, <ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *from, <ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *to, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *token, int min, int max, void *data)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000415"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlautomata_8h_1ab07f7a3e318e98597074ed6ed1d8b01a" kindref="member">xmlAutomataNewCountTrans2</ref>  (<ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *am, <ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *from, <ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *to, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *token, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *token2, int min, int max, void *data)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000414"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlautomata_8h_1afdc625539abc6af168075a0d528375ad" kindref="member">xmlAutomataNewEpsilon</ref>  (<ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *am, <ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *from, <ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *to)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000419"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlautomata_8h_1a6e0ea2fee40a99150c703b36f6b06b39" kindref="member">xmlAutomataNewNegTrans</ref>  (<ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *am, <ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *from, <ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *to, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *token, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *token2, void *data)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000413"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlautomata_8h_1a1130c6b3e5d39cb0944bea5a1ee82892" kindref="member">xmlAutomataNewOnceTrans</ref>  (<ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *am, <ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *from, <ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *to, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *token, int min, int max, void *data)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000417"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlautomata_8h_1a4fbb9c6938a3afec71b1bbbd0c0a9fb0" kindref="member">xmlAutomataNewOnceTrans2</ref>  (<ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *am, <ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *from, <ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *to, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *token, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *token2, int min, int max, void *data)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000416"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlautomata_8h_1aefef086e6f1d5a901db7e3c075b95e3d" kindref="member">xmlAutomataNewState</ref>  (<ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *am)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000418"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlautomata_8h_1af7c76b1b3f0efca56806a53a56226038" kindref="member">xmlAutomataNewTransition</ref>  (<ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *am, <ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *from, <ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *to, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *token, void *data)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000411"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlautomata_8h_1acb4e88ae8d370ddb10495add597b4d93" kindref="member">xmlAutomataNewTransition2</ref>  (<ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *am, <ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *from, <ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *to, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *token, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *token2, void *data)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000412"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlautomata_8h_1a0776046f7367c47dca8e4df14b264e4b" kindref="member">xmlAutomataSetFinalState</ref>  (<ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *am, <ref refid="xmlautomata_8h_1aff9466f70634c12f2e4f4beda6329ff5" kindref="member">xmlAutomataState</ref> *state)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000410"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="tree_8h_1a964be2938a2472b2fa24b97a016a5daf" kindref="member">xmlBufferGrow</ref>  (<ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *buf, unsigned int len)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000082"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="tree_8h_1a13383ad97a45f4f635f9ffd43817746a" kindref="member">xmlBufferResize</ref>  (<ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *buf, unsigned int size)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000083"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="tree_8h_1a3eb65e1a38df1d53b75383efcaa415d2" kindref="member">xmlBufferShrink</ref>  (<ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *buf, unsigned int len)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000081"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="tree_8h_1a6ee0e2287610933479e8027c6ab77a7f" kindref="member">xmlBufShrink</ref>  (<ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> *buf, size_t len)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000078"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a760f4b7aa4d2f83108648b92f981afb9" kindref="member">xmlByteConsumed</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000123"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="catalog_8h_1ac7a6a9d398aa93037fed4b08b0f15c19" kindref="member">xmlCatalogGetDefaults</ref>  (void)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000098"/>Use XML_PARSE_NO_SYS_CATALOG and XML_PARSE_CATALOG_PI. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="catalog_8h_1ae2eb59768f3a163b738c59923e4d94f2" kindref="member">xmlCatalogGetPublic</ref>  (const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *pubID)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000102"/>use <ref refid="catalog_8h_1a18edb9fa5bb56ef793aba5167635c812" kindref="member">xmlCatalogResolvePublic</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="catalog_8h_1a71947032167b68af7e6b993f01087ba4" kindref="member">xmlCatalogGetSystem</ref>  (const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *sysID)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000101"/>use <ref refid="catalog_8h_1a1e5a9f085a86565bc311de418eafacf4" kindref="member">xmlCatalogResolveSystem</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="catalog_8h_1ad4608cb50b9b9787a6f63e996134f8f4" kindref="member">xmlCatalogIsEmpty</ref>  (<ref refid="catalog_8h_1aa3ccaec875fffaa151ce8a4042112725" kindref="member">xmlCatalog</ref> *catal)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000097"/>Internal function, don&apos;t use </para>
+</listitem>
+<varlistentry><term>Global <ref refid="catalog_8h_1aaf7e3b9033eec2dee0736c1253809062" kindref="member">xmlCatalogSetDefaultPrefer</ref>  (xmlCatalogPrefer prefer)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000100"/>This setting is global and not thread-safe. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="catalog_8h_1a31cf4271859a85eb9a0d86f6259a990b" kindref="member">xmlCatalogSetDefaults</ref>  (xmlCatalogAllow allow)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000099"/>Use XML_PARSE_NO_SYS_CATALOG and XML_PARSE_CATALOG_PI. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlIO_8h_1a799919ae29cabed030b7826a543d0e7b" kindref="member">xmlCheckFilename</ref>  (const char *path)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000360"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlIO_8h_1a531d8c786064f5e43557d6731b040ba7" kindref="member">xmlCheckHTTPInput</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt, <ref refid="tree_8h_1aa05e6cbf6c68ec5a2e33ddabddf58b7d" kindref="member">xmlParserInput</ref> *ret)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000274"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1ad71fb1ba67d4363dbba8b72777e64d78" kindref="member">xmlCheckLanguageID</ref>  (const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *lang)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000183"/>Internal function, do not use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="encoding_8h_1ac5e85e586873364aba7828e98009620f" kindref="member">xmlCleanupCharEncodingHandlers</ref>  (void)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000119"/>This function will be made private. Call <ref refid="parser_8h_1a7eb4447bac68a016b428f51cc402369f" kindref="member">xmlCleanupParser</ref> to free global state but see the warnings there. <ref refid="parser_8h_1a7eb4447bac68a016b428f51cc402369f" kindref="member">xmlCleanupParser</ref> should be only called once at program exit. In most cases, you don&apos;t have call cleanup functions at all. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="encoding_8h_1ab5e20da0f542d63dfe5c45654302c049" kindref="member">xmlCleanupEncodingAliases</ref>  (void)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000113"/>This function modifies global state and is not thread-safe. See <ref refid="parser_8h_1ac734aadfdb03544bbcb81778778ecc9b" kindref="member">xmlCtxtSetCharEncConvImpl</ref> for an alternative. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a82f973212972dfea97a84d0964f754a8" kindref="member">xmlCleanupGlobals</ref>  (void)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000141"/>This function is a no-op. Call <ref refid="parser_8h_1a7eb4447bac68a016b428f51cc402369f" kindref="member">xmlCleanupParser</ref> to free global state but see the warnings there. <ref refid="parser_8h_1a7eb4447bac68a016b428f51cc402369f" kindref="member">xmlCleanupParser</ref> should be only called once at program exit. In most cases, you don&apos;t have call cleanup functions at all.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlmemory_8h_1a6fad15dbecad624ee430cd7102eda760" kindref="member">xmlCleanupMemory</ref>  (void)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000389"/>This function is a no-op. Call <ref refid="parser_8h_1a7eb4447bac68a016b428f51cc402369f" kindref="member">xmlCleanupParser</ref> to free global state but see the warnings there. <ref refid="parser_8h_1a7eb4447bac68a016b428f51cc402369f" kindref="member">xmlCleanupParser</ref> should be only called once at program exit. In most cases, you don&apos;t have call cleanup functions at all.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="threads_8h_1af00894c063aa11a482b16d39ea8f6bbc" kindref="member">xmlCleanupThreads</ref>  (void)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000299"/>This function is a no-op. Call <ref refid="parser_8h_1a7eb4447bac68a016b428f51cc402369f" kindref="member">xmlCleanupParser</ref> to free global state but see the warnings there. <ref refid="parser_8h_1a7eb4447bac68a016b428f51cc402369f" kindref="member">xmlCleanupParser</ref> should be only called once at program exit. In most cases, you don&apos;t have call cleanup functions at all.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1ab7dbc56de3c39559171d2bccaf609030" kindref="member">xmlClearNodeInfoSeq</ref>  (xmlParserNodeInfoSeq *seq)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000283"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1aef6ab3a68e206bf96da3a613ee2f8cce" kindref="member">xmlClearParserCtxt</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000280"/>Use <ref refid="parser_8h_1a85c2b1914d05bd33c0b8f905d1f63982" kindref="member">xmlCtxtReset</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="catalog_8h_1ab515aaa7cda29238cd3a58639f700ea9" kindref="member">xmlConvertSGMLCatalog</ref>  (<ref refid="catalog_8h_1aa3ccaec875fffaa151ce8a4042112725" kindref="member">xmlCatalog</ref> *catal)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000085"/>Internal function, don&apos;t use </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a9a03938c0a47f11f827f640dd504b16f" kindref="member">xmlCopyAttributeTable</ref>  (xmlAttributeTable *table)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000323"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a4ea1fa643a3a34af05a7e30f4beeed49" kindref="member">xmlCopyChar</ref>  (int len, <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *out, int val)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000269"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a1300d25f4b5a2a8bcf9dc44766a51311" kindref="member">xmlCopyCharMultiByte</ref>  (<ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *out, int val)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000268"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a3cc7b740349d3366ef7ae5a0078456c5" kindref="member">xmlCopyDocElementContent</ref>  (<ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc, <ref refid="tree_8h_1a43d7c30835afce6963189de976e668e4" kindref="member">xmlElementContent</ref> *content)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000310"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a5e6584c265c304a8056e8d0564fd1956" kindref="member">xmlCopyElementContent</ref>  (<ref refid="tree_8h_1a43d7c30835afce6963189de976e668e4" kindref="member">xmlElementContent</ref> *content)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000311"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1aeecc82ff635239da6bfbf4fa1c66fa27" kindref="member">xmlCopyElementTable</ref>  (xmlElementTable *table)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000317"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="entities_8h_1a229644c65f3d5f752aa63da6bd8da322" kindref="member">xmlCopyEntitiesTable</ref>  (xmlEntitiesTable *table)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000126"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a76488c1bb90edfbffd744c288764d6fe" kindref="member">xmlCopyEnumeration</ref>  (<ref refid="tree_8h_1acfc4ea75665f49d9af693257ea1178e8" kindref="member">xmlEnumeration</ref> *cur)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000321"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a0b8e4b48fe21aacdfd38e44dfd57359d" kindref="member">xmlCopyNotationTable</ref>  (xmlNotationTable *table)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000327"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="entities_8h_1acecff49b8c2ba6328acb642c4d21552f" kindref="member">xmlCreateEntitiesTable</ref>  (void)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000124"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a677f733f0eceb7dc8577c91f27813582" kindref="member">xmlCreateEntityParserCtxt</ref>  (const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *URL, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *ID, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *base)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000243"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1aa218eaadb7e22cb06b6c8e48e35b24fd" kindref="member">xmlCreateEnumeration</ref>  (const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *name)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000320"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1ab87bc2a3add29053728e6e6cc3a5797b" kindref="member">xmlCreateFileParserCtxt</ref>  (const char *filename)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000245"/>Use <ref refid="parser_8h_1ab730009088cf3642152ff832fa5e79dc" kindref="member">xmlNewParserCtxt</ref> and <ref refid="parser_8h_1a0cd872bfb02c708cc137fb5877cd25e1" kindref="member">xmlCtxtReadFile</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a93e684b5457875ae5ebdf9c032936f02" kindref="member">xmlCreateURLParserCtxt</ref>  (const char *filename, int options)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000244"/>Use <ref refid="parser_8h_1ab730009088cf3642152ff832fa5e79dc" kindref="member">xmlNewParserCtxt</ref> and <ref refid="parser_8h_1a0cd872bfb02c708cc137fb5877cd25e1" kindref="member">xmlCtxtReadFile</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1ae47f76b45b93114d3fc9d6f627f061ef" kindref="member">xmlCtxtUseOptions</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt, int options)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000260"/>Use <ref refid="parser_8h_1a0e34a099a124079abeeac709a2445279" kindref="member">xmlCtxtSetOptions</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a0e00d86aefe659e1f1579ddafc782a1f" kindref="member">xmlCurrentChar</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt, int *len)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000266"/>Internal function, do not use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="SAX2_8h_1a955bb01c16aa31b0e16e31baf6d54f20" kindref="member">xmlDefaultSAXHandlerInit</ref>  (void)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000296"/>This function is a no-op. Call <ref refid="parser_8h_1a642085a16c74b8352e92a89c348cc9c4" kindref="member">xmlInitParser</ref> to initialize the library. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="encoding_8h_1aa9df146c5232d5749d1649a029f0033f" kindref="member">xmlDelEncodingAlias</ref>  (const char *alias)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000116"/>This function modifies global state and is not thread-safe. See <ref refid="parser_8h_1ac734aadfdb03544bbcb81778778ecc9b" kindref="member">xmlCtxtSetCharEncConvImpl</ref> for an alternative. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="tree_8h_1ac337445071b41061a558b5f7bceed3fe" kindref="member">xmlDeregisterNodeDefault</ref>  (<ref refid="tree_8h_1aa242184c4aae31aa9c34f690f2e8b00f" kindref="member">xmlDeregisterNodeFunc</ref> func)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000306"/>don&apos;t use </para>
+</listitem>
+<varlistentry><term>Global <ref refid="dict_8h_1a7091aefc9ceb5f1313515480c4b62026" kindref="member">xmlDictCleanup</ref>  (void)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000112"/>This function is a no-op. Call <ref refid="parser_8h_1a7eb4447bac68a016b428f51cc402369f" kindref="member">xmlCleanupParser</ref> to free global state but see the warnings there. <ref refid="parser_8h_1a7eb4447bac68a016b428f51cc402369f" kindref="member">xmlCleanupParser</ref> should be only called once at program exit. In most cases, you don&apos;t have call cleanup functions at all.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a32bdf6bf26e21b4f64fff9bbfd2596e4" kindref="member">xmlDoValidityCheckingDefaultValue</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000006"/>Use the parser option XML_PARSE_DTDVALID.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1ac8e3d71c9a5969ff88320845f05c92bb" kindref="member">xmlDumpAttributeDecl</ref>  (<ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *buf, <ref refid="tree_8h_1a5c4851befecec9ecc3a394282d6d2e37" kindref="member">xmlAttribute</ref> *attr)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000324"/>Use <ref refid="xmlsave_8h_1a943b061206fde27ec1dc696d066e02e2" kindref="member">xmlSaveTree</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a8e8f3dc9963feb632813fd3dcdac05a3" kindref="member">xmlDumpAttributeTable</ref>  (<ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *buf, xmlAttributeTable *table)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000325"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1ab6ac2df5e30cc14b01c6bf7ce07331fc" kindref="member">xmlDumpElementDecl</ref>  (<ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *buf, <ref refid="tree_8h_1aadd1c7b634b876bfd26a20183fa88032" kindref="member">xmlElement</ref> *elem)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000318"/>Use <ref refid="xmlsave_8h_1a943b061206fde27ec1dc696d066e02e2" kindref="member">xmlSaveTree</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a1406deb04e531475337201edfd1f8f13" kindref="member">xmlDumpElementTable</ref>  (<ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *buf, xmlElementTable *table)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000319"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="entities_8h_1a7bc59a18fda9d1c2e7a9980aa48a24ba" kindref="member">xmlDumpEntitiesTable</ref>  (<ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *buf, xmlEntitiesTable *table)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000128"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="entities_8h_1a634e88fc46e883310abc44b9a32a4cb0" kindref="member">xmlDumpEntityDecl</ref>  (<ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *buf, <ref refid="tree_8h_1a084cd84a8cefc3c95c7eaf95b2e652ce" kindref="member">xmlEntity</ref> *ent)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000127"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1af043f067682e36375521ab4401c38cc4" kindref="member">xmlDumpNotationDecl</ref>  (<ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *buf, <ref refid="tree_8h_1ab5edcaca20bf051640b2dfb0149653ab" kindref="member">xmlNotation</ref> *nota)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000328"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1ae96bd02cc1f12a06d6a74559c21f516b" kindref="member">xmlDumpNotationTable</ref>  (<ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *buf, xmlNotationTable *table)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000329"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlIO_8h_1a1cfb6c5bfe9b23e802183941bf86792e" kindref="member">xmlFileClose</ref>  (void *context)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000364"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlIO_8h_1ad2164075e849bb82813537262b802245" kindref="member">xmlFileMatch</ref>  (const char *filename)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000361"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlIO_8h_1a9be5c5d7abaaec054a47105213a8c048" kindref="member">xmlFileOpen</ref>  (const char *filename)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000362"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlIO_8h_1a664d85839b88a89b773d9b578d97a6cd" kindref="member">xmlFileRead</ref>  (void *context, char *buffer, int len)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000363"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="encoding_8h_1a6f4e57d8e4ff597fc1319abf59686aab" kindref="member">xmlFindCharEncodingHandler</ref>  (const char *name)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000122"/>Use <ref refid="encoding_8h_1a91556ecf36fe2ba7f225a250011132f4" kindref="member">xmlOpenCharEncodingHandler</ref> which has better error reporting. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1ab14316ddeb5fc842dd33df4f87131a67" kindref="member">xmlFreeAttributeTable</ref>  (xmlAttributeTable *table)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000322"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlautomata_8h_1a3f820610481205fad68711a6ef8736c7" kindref="member">xmlFreeAutomata</ref>  (<ref refid="xmlautomata_8h_1aa37a0a8958564d4bf06fe724751017e2" kindref="member">xmlAutomata</ref> *am)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000407"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="catalog_8h_1a45928e822a6ff074ad0a3458af27826f" kindref="member">xmlFreeCatalog</ref>  (<ref refid="catalog_8h_1aa3ccaec875fffaa151ce8a4042112725" kindref="member">xmlCatalog</ref> *catal)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000084"/>Internal function, don&apos;t use </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1ac772e692b6f5dad8aa9ddaf279498aba" kindref="member">xmlFreeDocElementContent</ref>  (<ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc, <ref refid="tree_8h_1a43d7c30835afce6963189de976e668e4" kindref="member">xmlElementContent</ref> *cur)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000312"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a448d2860f6e43ce2748fc9ce2d7d477d" kindref="member">xmlFreeElementContent</ref>  (<ref refid="tree_8h_1a43d7c30835afce6963189de976e668e4" kindref="member">xmlElementContent</ref> *cur)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000313"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1ab0b046d75b9e7df801044f2a9ea698fa" kindref="member">xmlFreeElementTable</ref>  (xmlElementTable *table)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000316"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="entities_8h_1a8b8af1a6881107f0a85f81fde8ad2c87" kindref="member">xmlFreeEntitiesTable</ref>  (xmlEntitiesTable *table)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000125"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a7b43724414495071f630726f0488bbcc" kindref="member">xmlFreeNotationTable</ref>  (xmlNotationTable *table)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000326"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a8d574257542072133bd752672d033687" kindref="member">xmlFreeRefTable</ref>  (xmlRefTable *table)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000331"/>Don&apos;t use. This function will be removed from the public API. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlmemory_8h_1ab9137826044b477c8d35f845bb246d24" kindref="member">xmlGcMemGet</ref>  (<ref refid="xmlmemory_8h_1a8f7e901df83e1a867e3c157963dee331" kindref="member">xmlFreeFunc</ref> *freeFunc, <ref refid="xmlmemory_8h_1a2f682977675c213576c096d4921498b0" kindref="member">xmlMallocFunc</ref> *mallocFunc, <ref refid="xmlmemory_8h_1a2f682977675c213576c096d4921498b0" kindref="member">xmlMallocFunc</ref> *mallocAtomicFunc, <ref refid="xmlmemory_8h_1a0dd26c9e178d6a1c19459a4d50e1cc65" kindref="member">xmlReallocFunc</ref> *reallocFunc, <ref refid="xmlmemory_8h_1a5dce41163312ec2fa3c4ac57cc4b795e" kindref="member">xmlStrdupFunc</ref> *strdupFunc)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000391"/>Use <ref refid="xmlmemory_8h_1abb6175f1a50a973d1b49f4cf3017113d" kindref="member">xmlMemGet</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlmemory_8h_1a638989e93a33e0515cae68bf82c3ca22" kindref="member">xmlGcMemSetup</ref>  (<ref refid="xmlmemory_8h_1a8f7e901df83e1a867e3c157963dee331" kindref="member">xmlFreeFunc</ref> freeFunc, <ref refid="xmlmemory_8h_1a2f682977675c213576c096d4921498b0" kindref="member">xmlMallocFunc</ref> mallocFunc, <ref refid="xmlmemory_8h_1a2f682977675c213576c096d4921498b0" kindref="member">xmlMallocFunc</ref> mallocAtomicFunc, <ref refid="xmlmemory_8h_1a0dd26c9e178d6a1c19459a4d50e1cc65" kindref="member">xmlReallocFunc</ref> reallocFunc, <ref refid="xmlmemory_8h_1a5dce41163312ec2fa3c4ac57cc4b795e" kindref="member">xmlStrdupFunc</ref> strdupFunc)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000390"/>Use <ref refid="xmlmemory_8h_1aaf5fda31eb649128f58f61e8e022f196" kindref="member">xmlMemSetup</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlerror_8h_1ab04d6f3e0e142e1f0392c3afb26f76cf" kindref="member">xmlGenericError</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000071"/>See <ref refid="xmlerror_8h_1a45950b585823204441216f768579b5f4" kindref="member">xmlSetStructuredErrorFunc()</ref>.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlerror_8h_1a4093b5ec98e6f53579af643d8f1e09db" kindref="member">xmlGenericErrorContext</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000072"/>See <ref refid="xmlerror_8h_1a45950b585823204441216f768579b5f4" kindref="member">xmlSetStructuredErrorFunc()</ref>.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlerror_8h_1a948f54e6b568efec2ff8250406c9a3a6" kindref="member">xmlGenericErrorFunc</ref>  )(void *ctx, const char *msg,...)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000069"/>in favor of structured errors.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="tree_8h_1a16f6a54279156a98888e6f0ddc332971" kindref="member">xmlGetBufferAllocationScheme</ref>  (void)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000080"/>Allocation schemes were removed. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="encoding_8h_1ad1c55c14ba9fc94c69a2a39d7d8fb94e" kindref="member">xmlGetCharEncodingHandler</ref>  (<ref refid="encoding_8h_1a662791d23b3d1e0a37244d35c57a02e5" kindref="member">xmlCharEncoding</ref> enc)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000121"/>Use <ref refid="encoding_8h_1aa562a04aafc51696623af161b6972a85" kindref="member">xmlLookupCharEncodingHandler</ref> which has better error reporting. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="tree_8h_1ac138fe5e98047100a7766c756c60ee8c" kindref="member">xmlGetCompressMode</ref>  (void)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000303"/>Use <ref refid="tree_8h_1aaa2e4539f87f524d8d7b12f435dd84ad" kindref="member">xmlGetDocCompressMode</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="encoding_8h_1a8835da4a90445edc5f22a6b662249638" kindref="member">xmlGetEncodingAlias</ref>  (const char *alias)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000114"/>This function is not thread-safe. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1aa90c77a86e7a68726649967aa7a16d07" kindref="member">xmlGetExternalEntityLoader</ref>  (void)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000278"/>See <ref refid="parser_8h_1a3e0a3ea3ee3338c9c5ff6b98903dbd9c" kindref="member">xmlSetExternalEntityLoader</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1ad7c8dbd9f6acb7e8087cf570d9cdd870" kindref="member">xmlGetRefs</ref>  (<ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *ID)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000334"/>Don&apos;t use. This function will be removed from the public API. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a92fd54c6fe6f8a52801ca71b995257a3" kindref="member">xmlGetWarningsDefaultValue</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000007"/>Use the parser option XML_PARSE_NOWARNING.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="hash_8h_1a2faa0961e137c5491fad8718a12324ce" kindref="member">xmlHashCopy</ref>  (<ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *hash, <ref refid="hash_8h_1a5a00b63e081c86908cd65a6297cd10f9" kindref="member">xmlHashCopier</ref> copy)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000158"/>Leaks memory in error case. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1ab6c67c077808d3b3eaad8b8e5bd11110" kindref="member">xmlIndentTreeOutput</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000013"/>Use the <ref refid="xmlsave_8h" kindref="compound">xmlsave.h</ref> API with option XML_SAVE_NO_INDENT.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="encoding_8h_1a0a5ccf5d8910103cc83f1f1ec782a2c5" kindref="member">xmlInitCharEncodingHandlers</ref>  (void)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000118"/>Alias for <ref refid="parser_8h_1a642085a16c74b8352e92a89c348cc9c4" kindref="member">xmlInitParser</ref>.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a78825cacd25f23ce04a5298e25a12df0" kindref="member">xmlInitGlobals</ref>  (void)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000140"/>Alias for <ref refid="parser_8h_1a642085a16c74b8352e92a89c348cc9c4" kindref="member">xmlInitParser</ref>.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="dict_8h_1ac8b65dba9c4e1e779a033cfad543f637" kindref="member">xmlInitializeDict</ref>  (void)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000111"/>Alias for <ref refid="parser_8h_1a642085a16c74b8352e92a89c348cc9c4" kindref="member">xmlInitParser</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlmemory_8h_1ad7abed47851c8c33c9f840c0ecfc70f4" kindref="member">xmlInitMemory</ref>  (void)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000388"/>Alias for <ref refid="parser_8h_1a642085a16c74b8352e92a89c348cc9c4" kindref="member">xmlInitParser</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1adf45d26e222cba480fa3ad80cc19da9d" kindref="member">xmlInitNodeInfoSeq</ref>  (xmlParserNodeInfoSeq *seq)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000282"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a794f128082e06388857039a20921c84e" kindref="member">xmlInitParserCtxt</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000279"/>Internal function which will be made private in a future version. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="threads_8h_1a842b046703f93ae2523dcc27ae03a13a" kindref="member">xmlInitThreads</ref>  (void)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000298"/>Alias for <ref refid="parser_8h_1a642085a16c74b8352e92a89c348cc9c4" kindref="member">xmlInitParser</ref>.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a9ce418ac9417f048700417af1af8a8e1" kindref="member">xmlIOParseDTD</ref>  (<ref refid="tree_8h_1a45238c4ba896d6577bb4986e98122e03" kindref="member">xmlSAXHandler</ref> *sax, <ref refid="tree_8h_1a7a0ca7c6b30d7a9103b28626f820cab9" kindref="member">xmlParserInputBuffer</ref> *input, <ref refid="encoding_8h_1a662791d23b3d1e0a37244d35c57a02e5" kindref="member">xmlCharEncoding</ref> enc)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000238"/>Use <ref refid="parser_8h_1ab2fea6618db56eec2054ffa7a3a96484" kindref="member">xmlCtxtParseDtd</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="chvalid_8h_1a8dc20da6ee999c3c823ca1aca833d4ef" kindref="member">xmlIsBaseChar</ref>  (unsigned int ch)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000103"/>Use <ref refid="chvalid_8h_1a8ce6e3da39da24cb484c117095feebb3" kindref="member">xmlIsBaseChar_ch</ref> or <ref refid="chvalid_8h_1af2ce611cd9b7e3720040e96045bcff0f" kindref="member">xmlIsBaseCharQ</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="chvalid_8h_1a2864e2737aa8f120f308e7587eb06d53" kindref="member">xmlIsBlank</ref>  (unsigned int ch)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000104"/>Use <ref refid="chvalid_8h_1a3002adb8fb25d38080a039e18a2f24f7" kindref="member">xmlIsBlank_ch</ref> or <ref refid="chvalid_8h_1a6b880732c84c5cc74f9e77f409e92f5d" kindref="member">xmlIsBlankQ</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="chvalid_8h_1a1da8bfda051cdbb51f3726f4c694fe60" kindref="member">xmlIsChar</ref>  (unsigned int ch)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000105"/>Use <ref refid="chvalid_8h_1a358cee546e99f74fb798ee0cfaea1268" kindref="member">xmlIsChar_ch</ref> or <ref refid="chvalid_8h_1adbd3c61cc3ba18e726e2da314a8dea60" kindref="member">xmlIsCharQ</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="chvalid_8h_1a00cc2d0ead00c6b2ead36615a0a9c9fe" kindref="member">xmlIsCombining</ref>  (unsigned int ch)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000106"/>Use <ref refid="chvalid_8h_1a153bf94156595f808fe9de1e2ff1ed3d" kindref="member">xmlIsCombiningQ</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="chvalid_8h_1a68d72280183a8908f55c6cba0396a776" kindref="member">xmlIsDigit</ref>  (unsigned int ch)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000107"/>Use <ref refid="chvalid_8h_1a7ca753c2b90c52779c0aaf9545c67bee" kindref="member">xmlIsDigit_ch</ref> or <ref refid="chvalid_8h_1a5e849b87b1fa259d0981c5e1803dc707" kindref="member">xmlIsDigitQ</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="chvalid_8h_1a37dd3e110c23fe39340d2897a1626e5e" kindref="member">xmlIsExtender</ref>  (unsigned int ch)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000108"/>Use <ref refid="chvalid_8h_1af90bd7cb53b78ce19322c20a050ab62f" kindref="member">xmlIsExtender_ch</ref> or <ref refid="chvalid_8h_1a7aca692afe988a9d51827c6215d7fdf8" kindref="member">xmlIsExtenderQ</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="chvalid_8h_1a4b4b8bbfaa4fcd8d2b2095d043795376" kindref="member">xmlIsIdeographic</ref>  (unsigned int ch)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000109"/>Use <ref refid="chvalid_8h_1a5ecbdde1fbac665994a2729bc62ad72e" kindref="member">xmlIsIdeographicQ</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1ad235ecb2bf3f44b24805f3fc2245df02" kindref="member">xmlIsLetter</ref>  (int c)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000261"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a75e1e3bd3db23b73bf0c9ac65c3fa673" kindref="member">xmlIsMixedElement</ref>  (<ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *name)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000336"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="chvalid_8h_1a09a7c96ad4a0a2e084a3be68919e9292" kindref="member">xmlIsPubidChar</ref>  (unsigned int ch)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000110"/>Use <ref refid="chvalid_8h_1a06f584f95554a0f1b8c52ab47f9819ce" kindref="member">xmlIsPubidChar_ch</ref> or <ref refid="chvalid_8h_1af9cda6cbab7ed704566b22f336d1d6a7" kindref="member">xmlIsPubidCharQ</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a275181508e9a5f6ae145174462181e2f" kindref="member">xmlIsRef</ref>  (<ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc, <ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *elem, <ref refid="tree_8h_1a94c0908950e8e798cf7eb5ed524da0af" kindref="member">xmlAttr</ref> *attr)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000332"/>Don&apos;t use. This function will be removed from the public API. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a4dac6ea02c12e14236d983a585a621f8" kindref="member">xmlKeepBlanksDefault</ref>  (int val)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000289"/>Use the modern options API with XML_PARSE_NOBLANKS. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a31b13928a2ff14fed056c14c14968dc6" kindref="member">xmlKeepBlanksDefaultValue</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000008"/>Use the parser option XML_PARSE_NOBLANKS.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlerror_8h_1aeab850f08f980b2f0714231e1390d3ba" kindref="member">xmlLastError</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000070"/>Use <ref refid="xmlerror_8h_1a71773096ad55a1eddf199f1662c2ba6c" kindref="member">xmlGetLastError()</ref>.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1ae04283f4733c035b7cac5bb3841aa60a" kindref="member">xmlLineNumbersDefault</ref>  (int val)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000287"/>Line numbers are always enabled. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a6ef6b5c034fb76b5091cd1cbe95f3029" kindref="member">xmlLineNumbersDefaultValue</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000009"/>Shouldn&apos;t be needed when using parser options.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="list_8h_1abfdd7e91ad4832b583a06f8b74b3da89" kindref="member">xmlLink</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000001"/>Don&apos;t use in new code.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="list_8h_1a3683aecc49d6366840e76e29c98649d9" kindref="member">xmlList</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000002"/>Don&apos;t use in new code.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="catalog_8h_1a7a2f7b4b74cc467b5ed43048cc2204cf" kindref="member">xmlLoadACatalog</ref>  (const char *filename)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000088"/>Internal function, don&apos;t use </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a92f0327523b8b21c855491cf43c6279d" kindref="member">xmlLoadExtDtdDefaultValue</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000010"/>Use the parser option XML_PARSE_DTDLOAD.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="catalog_8h_1a19736045503a44008e89bd0cf6e40b55" kindref="member">xmlLoadSGMLSuperCatalog</ref>  (const char *filename)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000087"/>Internal function, don&apos;t use </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlmemory_8h_1adb21f3d07c5ab24dc5afcd57cad59355" kindref="member">xmlMallocAtomic</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000075"/>Use <ref refid="xmlmemory_8h_1a8eb58ce50121b43ad8a451a9228c55ae" kindref="member">xmlMalloc</ref>  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlmemory_8h_1a03cb0419c97e2e8ae7adc2c4d785adb4" kindref="member">xmlMallocAtomicLoc</ref>  (size_t size, const char *file, int line)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000381"/>don&apos;t use </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlmemory_8h_1a72d318a0d63660bae5261d6b3405f354" kindref="member">xmlMallocLoc</ref>  (size_t size, const char *file, int line)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000380"/>don&apos;t use </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlmemory_8h_1aee74a50dfb53ebbfd3cfe231bc4cb2a5" kindref="member">xmlMemDisplay</ref>  (FILE *fp)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000385"/>This feature was removed.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlmemory_8h_1a666fcaf51328ba4e5acf4704468f0d92" kindref="member">xmlMemDisplayLast</ref>  (FILE *fp, long nbBytes)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000384"/>This feature was removed.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlmemory_8h_1af28bfd5f3477b8068b50b75cdb120202" kindref="member">xmlMemoryDump</ref>  (void)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000387"/>This feature was removed.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlmemory_8h_1adf8542adeac423db5c440119fe3d3cba" kindref="member">xmlMemShow</ref>  (FILE *fp, int nr)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000386"/>This feature was removed.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlmemory_8h_1aa82b9c711bd6e2b45643d51387d8f05a" kindref="member">xmlMemStrdupLoc</ref>  (const char *str, const char *file, int line)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000383"/>don&apos;t use </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlmodule_8h_1a9e84822abde464ae8e3671b66c0e5848" kindref="member">xmlModuleClose</ref>  (<ref refid="xmlmodule_8h_1a55930515424d24517ec43731a4955a69" kindref="member">xmlModule</ref> *module)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000394"/>Will be removed. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlmodule_8h_1a67dc559ae72da88b9e769a712bde1a48" kindref="member">xmlModuleFree</ref>  (<ref refid="xmlmodule_8h_1a55930515424d24517ec43731a4955a69" kindref="member">xmlModule</ref> *module)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000395"/>Will be removed. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlmodule_8h_1ad1060e845e7984a1af144789b3ca2b67" kindref="member">xmlModuleOpen</ref>  (const char *filename, int options)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000392"/>Will be removed. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlmodule_8h_1a907ca4f0afc57ba6a595bb45644372d5" kindref="member">xmlModuleSymbol</ref>  (<ref refid="xmlmodule_8h_1a55930515424d24517ec43731a4955a69" kindref="member">xmlModule</ref> *module, const char *name, void **result)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000393"/>Will be removed. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlautomata_8h_1a4364abd34feea889a2ade7829ac93766" kindref="member">xmlNewAutomata</ref>  (void)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000406"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="catalog_8h_1afa3c47c58f6df9e6b94ac6ffca3709b7" kindref="member">xmlNewCatalog</ref>  (int sgml)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000096"/>Internal function, don&apos;t use </para>
+</listitem>
+<varlistentry><term>Global <ref refid="encoding_8h_1a5bc4bf171af5605c008bdd0dfbfe848b" kindref="member">xmlNewCharEncodingHandler</ref>  (const char *name, <ref refid="encoding_8h_1ad3c1740abcc2cbbaa74bc5936c5b4840" kindref="member">xmlCharEncodingInputFunc</ref> input, <ref refid="encoding_8h_1a167ac51fa3e644243494671248c56b67" kindref="member">xmlCharEncodingOutputFunc</ref> output)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000117"/>This function modifies global state and is not thread-safe. See <ref refid="parser_8h_1ac734aadfdb03544bbcb81778778ecc9b" kindref="member">xmlCtxtSetCharEncConvImpl</ref> for an alternative. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a7e28bc7784c6d3a1a1b726ddff87ded6" kindref="member">xmlNewDocElementContent</ref>  (<ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *name, <ref refid="tree_8h_1adeb8f7de0529e7177a243c86434b081b" kindref="member">xmlElementContentType</ref> type)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000308"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a281e7c4dd6c92ded4445ff8d35426f33" kindref="member">xmlNewElementContent</ref>  (const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *name, <ref refid="tree_8h_1adeb8f7de0529e7177a243c86434b081b" kindref="member">xmlElementContentType</ref> type)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000309"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a207ea92f0b5c24f9301359e78a8f45a2" kindref="member">xmlNewEntityInputStream</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt, <ref refid="tree_8h_1a084cd84a8cefc3c95c7eaf95b2e652ce" kindref="member">xmlEntity</ref> *entity)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000272"/>Internal function, do not use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a051c955af7e0888d216a3520d237f885" kindref="member">xmlNewInputFromFile</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt, const char *filename)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000275"/>Use <ref refid="parser_8h_1a07aefa97e2d3a6e3735accb899f1a154" kindref="member">xmlNewInputFromUrl</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a9aa05338751dfd094764372014213d2f" kindref="member">xmlNewInputStream</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000271"/>Use <ref refid="parser_8h_1a07aefa97e2d3a6e3735accb899f1a154" kindref="member">xmlNewInputFromUrl</ref> or similar functions. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1ad1ab324dc14ce5a515e1d24341aae271" kindref="member">xmlNewStringInputStream</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *buffer)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000273"/>Use <ref refid="parser_8h_1a0a4d6fd6fa0bca9a7cc3249b4730e67b" kindref="member">xmlNewInputFromString</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1ac604226f3919b9dc3971c7e1162d7ae2" kindref="member">xmlNextChar</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000265"/>Internal function, do not use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlIO_8h_1ac8f64f9f90bb622b18f49ffae3ad89b9" kindref="member">xmlNoNetExternalEntityLoader</ref>  (const char *URL, const char *ID, <ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000276"/>Use XML_PARSE_NONET. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlIO_8h_1a6ba6c23fb1be3238dc7a868423571545" kindref="member">xmlNormalizeWindowsPath</ref>  (const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *path)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000359"/>This never really worked. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a0e5978e23f67fe45e83b333fe83339ca" kindref="member">xmlParseAttribute</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt, <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **value)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000225"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a36abcdaa6a26768ead26201dd1ee0460" kindref="member">xmlParseAttributeListDecl</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000213"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a9e4d4784d5ca4fe382c4d9762095f8ea" kindref="member">xmlParseAttributeType</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt, <ref refid="tree_8h_1acfc4ea75665f49d9af693257ea1178e8" kindref="member">xmlEnumeration</ref> **tree)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000212"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a113da76c866822c0d8eeb904ecd07879" kindref="member">xmlParseAttValue</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000198"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="catalog_8h_1a0815fdfeb44005edf5f8bedbecc7658b" kindref="member">xmlParseCatalogFile</ref>  (const char *filename)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000086"/>Internal function, don&apos;t use </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a2ba9053cb6fee6e2f987df6c6d26be26" kindref="member">xmlParseCDSect</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000228"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a8d82c35c0b9a708439d22a2cec469869" kindref="member">xmlParseCharData</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt, int cdata)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000201"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a4a88eaf11996c2f3ede51ac7c4c1096f" kindref="member">xmlParseCharRef</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000190"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1aff6284ec3eb6a4ae1324b6763cb0e2cb" kindref="member">xmlParseComment</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000203"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a9ef72842014e646758c63893b450ad28" kindref="member">xmlParseDefaultDecl</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt, <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **value)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000208"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a3cdaa768c05e5d18072f9ddbf7bab666" kindref="member">xmlParseDoc</ref>  (const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *cur)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000259"/>Use <ref refid="parser_8h_1abafd139b6651421e3c8b2a7f2525e183" kindref="member">xmlReadDoc</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1aa9550d3e801b23ccee8d2589bc89068c" kindref="member">xmlParseDocTypeDecl</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000224"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a240422524ccb3fe68049095b4393c542" kindref="member">xmlParseElement</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000229"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a811b1c03b691c4e2ce03fdf9dbb46e64" kindref="member">xmlParseElementChildrenContentDecl</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt, int inputchk)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000215"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1ab2d24c55433683e79e5bacdc0e096899" kindref="member">xmlParseElementContentDecl</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *name, <ref refid="tree_8h_1a43d7c30835afce6963189de976e668e4" kindref="member">xmlElementContent</ref> **result)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000216"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a1fbe1c4a2c0df6f3532579da0ce36e1c" kindref="member">xmlParseElementDecl</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000217"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a6c63e453b471eae3342ea102bffc7f5e" kindref="member">xmlParseElementMixedContentDecl</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt, int inputchk)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000214"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1ac0c11ec1b39b0a5c7b7db9769ceb38c8" kindref="member">xmlParseEncName</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000232"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a1c16987945067e7bd8bbcf0c4add92d0" kindref="member">xmlParseEncodingDecl</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000233"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a5466ca7b20345c86cd7d24f61cacf3f9" kindref="member">xmlParseEndTag</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000227"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a02d0860cff17ad4eba809a5f5125b1b5" kindref="member">xmlParseEntity</ref>  (const char *filename)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000242"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a22727ebf379767be066b9bb615dd3144" kindref="member">xmlParseEntityDecl</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000207"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a8798f47b3168d1310749e5a6e0dfa7fc" kindref="member">xmlParseEntityRef</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000222"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a8665f1906c0aa10997a5bd9b6fbe68bc" kindref="member">xmlParseEntityValue</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt, <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **orig)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000197"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1ac4c2da852dcc69d4a73e6b144928cdd0" kindref="member">xmlParseEnumeratedType</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt, <ref refid="tree_8h_1acfc4ea75665f49d9af693257ea1178e8" kindref="member">xmlEnumeration</ref> **tree)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000211"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a22736908df364314fdb9f99eee9e1ade" kindref="member">xmlParseEnumerationType</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000210"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a3582384112e3c98c95a4c002546f61b9" kindref="member">xmlParseExternalEntity</ref>  (<ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc, <ref refid="tree_8h_1a45238c4ba896d6577bb4986e98122e03" kindref="member">xmlSAXHandler</ref> *sax, void *user_data, int depth, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *URL, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *ID, <ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> **lst)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000240"/>Use <ref refid="parser_8h_1a882b085ddf37b967bfeb055f33d366a0" kindref="member">xmlParseCtxtExternalEntity</ref>.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1ad429738ee3feb013aa8702cc3a0b490f" kindref="member">xmlParseExternalID</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt, <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **publicId, int strict)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000202"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1aff10a036cd8393b6efb8d2d4261da491" kindref="member">xmlParseExternalSubset</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *publicId, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *systemId)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000220"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a44e0f2d4959c20b2ea1451313877a083" kindref="member">xmlParseExtParsedEnt</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000237"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a60cc171f8a0f6e13ead2c28a13360a50" kindref="member">xmlParseFile</ref>  (const char *filename)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000249"/>Use <ref refid="parser_8h_1a1f86eefcbde10975fcf8d5cec5b0cae7" kindref="member">xmlReadFile</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a9776b8d5fca0bef6896d697fd481558b" kindref="member">xmlParseMarkupDecl</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000218"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a1e5cd56788b6ebb7a527be0eb725b775" kindref="member">xmlParseMemory</ref>  (const char *buffer, int size)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000255"/>Use <ref refid="parser_8h_1a783c647cf82b51f93a5cd27faf5fbe2f" kindref="member">xmlReadMemory</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a0db98df0598c0943243e45b32db03437" kindref="member">xmlParseMisc</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000236"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a696026fecdefd0686855ca1ecf33f9d4" kindref="member">xmlParseName</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000195"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a3c291536caea8ab68da77090bc1d215b" kindref="member">xmlParseNmtoken</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000196"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a631fa7691d66b885ec1ea5c5107798ad" kindref="member">xmlParseNotationDecl</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000206"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a95858e3ddfda8a03aaad6159949f7280" kindref="member">xmlParseNotationType</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000209"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a935e2988ee7a5c382f51dc1fc00c05f5" kindref="member">xmlParsePEReference</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000223"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a211d6c9a8e9822e6482ab88ff71bd636" kindref="member">xmlParsePI</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000205"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a0a2a62aad5c659822d392e036bd21dc1" kindref="member">xmlParsePITarget</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000204"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a54613fb6abb15bf10742ab35108c3068" kindref="member">xmlParsePubidLiteral</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000200"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1aa31bf49d0534d8c8e02bdd4e65193406" kindref="member">xmlParserAddNodeInfo</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt, xmlParserNodeInfo *info)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000285"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a62c102b6a87fac9a7a8fffae85fe16d9" kindref="member">xmlParseReference</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000221"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlerror_8h_1aae147cdcd7fe91e04d4267816c8d438a" kindref="member">xmlParserError</ref>  (void *ctx, const char *msg,...)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000133"/>Do not call directly. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a77bf456113b1b0b8102e7398af94d49c" kindref="member">xmlParserFindNodeInfo</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt, <ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *node)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000281"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a3b4a41cab9cf503570f2352b16498858" kindref="member">xmlParserFindNodeInfoIndex</ref>  (xmlParserNodeInfoSeq *seq, <ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *node)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000284"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a93a38df31ca2aaed815e95b634083210" kindref="member">xmlParserHandlePEReference</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000191"/>Internal function, do not use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlIO_8h_1a844d34a448e3533f1b926a20d0b964ca" kindref="member">xmlParserInputBufferCreateFd</ref>  (int fd, <ref refid="encoding_8h_1a662791d23b3d1e0a37244d35c57a02e5" kindref="member">xmlCharEncoding</ref> enc)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000369"/>Use <ref refid="parser_8h_1aea9e0f1f05e24e2ca58099b64f98b707" kindref="member">xmlNewInputFromFd</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlIO_8h_1afd9b29a128986d15ceebb9c6a18973d5" kindref="member">xmlParserInputBufferCreateFile</ref>  (FILE *file, <ref refid="encoding_8h_1a662791d23b3d1e0a37244d35c57a02e5" kindref="member">xmlCharEncoding</ref> enc)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000368"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlIO_8h_1aa552b89955f4e12102bf6c8682eb6e94" kindref="member">xmlParserInputBufferCreateFilename</ref>  (const char *URI, <ref refid="encoding_8h_1a662791d23b3d1e0a37244d35c57a02e5" kindref="member">xmlCharEncoding</ref> enc)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000367"/>Use <ref refid="parser_8h_1a07aefa97e2d3a6e3735accb899f1a154" kindref="member">xmlNewInputFromUrl</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlIO_8h_1a69305091df0800559923f17822353d9c" kindref="member">xmlParserInputBufferCreateFilenameDefault</ref>  (<ref refid="xmlIO_8h_1a3d74afc4eb6b1aa8b5521b2690459714" kindref="member">xmlParserInputBufferCreateFilenameFunc</ref> func)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000374"/>Use <ref refid="parser_8h_1a5e0c3103a2d3b1e9003760479e1e8704" kindref="member">xmlCtxtSetResourceLoader</ref> or similar functions. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlIO_8h_1ad2a30b3f97f0138b93a3c5a85a61022a" kindref="member">xmlParserInputBufferCreateIO</ref>  (<ref refid="xmlIO_8h_1a8b061791258369d9e2c6624158e018e4" kindref="member">xmlInputReadCallback</ref> ioread, <ref refid="xmlIO_8h_1a9c0f6d110f2f87b9c3600328505f32ab" kindref="member">xmlInputCloseCallback</ref> ioclose, void *ioctx, <ref refid="encoding_8h_1a662791d23b3d1e0a37244d35c57a02e5" kindref="member">xmlCharEncoding</ref> enc)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000373"/>Use <ref refid="parser_8h_1af8d60f677d2d414378569046a4e1c9b9" kindref="member">xmlNewInputFromIO</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlIO_8h_1a263adb1cfd43b3a27bd35412b1ccd511" kindref="member">xmlParserInputBufferCreateMem</ref>  (const char *mem, int size, <ref refid="encoding_8h_1a662791d23b3d1e0a37244d35c57a02e5" kindref="member">xmlCharEncoding</ref> enc)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000370"/>Use <ref refid="parser_8h_1a8ec1d739fb500cffed62c06ac139678b" kindref="member">xmlNewInputFromMemory</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlIO_8h_1a22d52dea00d0edd647dd4c674b3bbfde" kindref="member">xmlParserInputBufferCreateStatic</ref>  (const char *mem, int size, <ref refid="encoding_8h_1a662791d23b3d1e0a37244d35c57a02e5" kindref="member">xmlCharEncoding</ref> enc)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000371"/>Use <ref refid="parser_8h_1a8ec1d739fb500cffed62c06ac139678b" kindref="member">xmlNewInputFromMemory</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlIO_8h_1aff2ee36f13f2191588555057e31a03c3" kindref="member">xmlParserInputBufferGrow</ref>  (<ref refid="tree_8h_1a7a0ca7c6b30d7a9103b28626f820cab9" kindref="member">xmlParserInputBuffer</ref> *in, int len)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000376"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlIO_8h_1a484e4435606e6c682f3447482408e4fa" kindref="member">xmlParserInputBufferPush</ref>  (<ref refid="tree_8h_1a7a0ca7c6b30d7a9103b28626f820cab9" kindref="member">xmlParserInputBuffer</ref> *in, int len, const char *buf)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000375"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlIO_8h_1a1996ddfe116906ce8c7b6af306f508ed" kindref="member">xmlParserInputBufferRead</ref>  (<ref refid="tree_8h_1a7a0ca7c6b30d7a9103b28626f820cab9" kindref="member">xmlParserInputBuffer</ref> *in, int len)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000377"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a1f96020da8017d1eb6bc203685fef58b" kindref="member">xmlParserInputGrow</ref>  (<ref refid="tree_8h_1aa05e6cbf6c68ec5a2e33ddabddf58b7d" kindref="member">xmlParserInput</ref> *in, int len)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000263"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1ad479ee83f15aefc875d075998f5a1c72" kindref="member">xmlParserInputRead</ref>  (<ref refid="tree_8h_1aa05e6cbf6c68ec5a2e33ddabddf58b7d" kindref="member">xmlParserInput</ref> *in, int len)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000262"/>This function was internal and is deprecated. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1ad93a96de5af50bda1122a4b9290690d7" kindref="member">xmlParserInputShrink</ref>  (<ref refid="tree_8h_1aa05e6cbf6c68ec5a2e33ddabddf58b7d" kindref="member">xmlParserInput</ref> *in)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000264"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlerror_8h_1a47bc7a12167669aee6b1989133154c4f" kindref="member">xmlParserPrintFileContext</ref>  (struct <ref refid="struct__xmlParserInput" kindref="compound">_xmlParserInput</ref> *input)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000132"/>Use <ref refid="xmlerror_8h_1a5941264be0066259e1bb8ebca9837fe1" kindref="member">xmlFormatError</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlerror_8h_1a4c835caa1ac445d4f8b1c73638ba85c9" kindref="member">xmlParserPrintFileInfo</ref>  (struct <ref refid="struct__xmlParserInput" kindref="compound">_xmlParserInput</ref> *input)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000131"/>Use <ref refid="xmlerror_8h_1a5941264be0066259e1bb8ebca9837fe1" kindref="member">xmlFormatError</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlerror_8h_1a4871dd90907de06048499857eb00383f" kindref="member">xmlParserValidityError</ref>  (void *ctx, const char *msg,...)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000135"/>Do not call directly. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlerror_8h_1a090360e73f17c032faf53786c1dc2cc4" kindref="member">xmlParserValidityWarning</ref>  (void *ctx, const char *msg,...)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000136"/>Do not call directly. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlerror_8h_1abad0bdb03736ce72902b303ec8525e6e" kindref="member">xmlParserWarning</ref>  (void *ctx, const char *msg,...)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000134"/>Do not call directly. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a84c5e8622ff68f42cbddbfc23f639da5" kindref="member">xmlParseSDDecl</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000234"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1accecac577901df7f6c599bb6c771d223" kindref="member">xmlParseStartTag</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000226"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a79126728fb3d057c5684e6901f2ec887" kindref="member">xmlParseSystemLiteral</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000199"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1ad8eccb1639a0f6dc363ceb98af78f5a9" kindref="member">xmlParseTextDecl</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000219"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1aaaca1aa2b74c34eed201cb4cc125408d" kindref="member">xmlParseVersionInfo</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000231"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a670797843631a84ebac39cf046700fb4" kindref="member">xmlParseVersionNum</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000230"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a097e1b2fcd4ec9aaa525018ecc509f71" kindref="member">xmlParseXMLDecl</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000235"/>Internal function, don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1aafb28d9ba022b6d851d224cabe0ff512" kindref="member">xmlPedanticParserDefault</ref>  (int val)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000286"/>Use the modern options API with XML_PARSE_PEDANTIC. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1aafba40529bb47af002dbf12a4c511c05" kindref="member">xmlPedanticParserDefaultValue</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000011"/>Use the parser option XML_PARSE_PEDANTIC.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1ab1e6cdaaee3a5f97a63116832ae4be1a" kindref="member">xmlPopInput</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000188"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1acc386ce9b623700973abed94d9e0e395" kindref="member">xmlPushInput</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt, <ref refid="tree_8h_1aa05e6cbf6c68ec5a2e33ddabddf58b7d" kindref="member">xmlParserInput</ref> *input)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000189"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlmemory_8h_1addd0442f8bb0806fd852fbe2ca34b1f7" kindref="member">xmlReallocLoc</ref>  (void *ptr, size_t size, const char *file, int line)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000382"/>don&apos;t use </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a96c51daa43cb979147d4b59a7df5539f" kindref="member">xmlRecoverDoc</ref>  (const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *cur)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000248"/>Use <ref refid="parser_8h_1abafd139b6651421e3c8b2a7f2525e183" kindref="member">xmlReadDoc</ref> with XML_PARSE_RECOVER. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a0a29dbed6b9b6c37bba110af0fe3c8cd" kindref="member">xmlRecoverFile</ref>  (const char *filename)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000250"/>Use <ref refid="parser_8h_1a1f86eefcbde10975fcf8d5cec5b0cae7" kindref="member">xmlReadFile</ref> with XML_PARSE_RECOVER. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1aca94dcb236daaa298bf1cf7dc347d568" kindref="member">xmlRecoverMemory</ref>  (const char *buffer, int size)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000256"/>Use <ref refid="parser_8h_1a783c647cf82b51f93a5cd27faf5fbe2f" kindref="member">xmlReadMemory</ref> with XML_PARSE_RECOVER. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlregexp_8h_1a525c4e91e0b3318f191ded4edce4a888" kindref="member">xmlRegExecErrInfo</ref>  (<ref refid="xmlregexp_8h_1a7cb5c3cf63762a6f1a597d31db016278" kindref="member">xmlRegExecCtxt</ref> *exec, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **string, int *nbval, int *nbneg, <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **values, int *terminal)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000403"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlregexp_8h_1ace04ce949ad8be60b51a3b507688af7a" kindref="member">xmlRegExecNextValues</ref>  (<ref refid="xmlregexp_8h_1a7cb5c3cf63762a6f1a597d31db016278" kindref="member">xmlRegExecCtxt</ref> *exec, int *nbval, int *nbneg, <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **values, int *terminal)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000402"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlregexp_8h_1a32f09398adfba57d35b00153711e4f39" kindref="member">xmlRegExecPushString</ref>  (<ref refid="xmlregexp_8h_1a7cb5c3cf63762a6f1a597d31db016278" kindref="member">xmlRegExecCtxt</ref> *exec, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *value, void *data)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000400"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlregexp_8h_1ab4ef3d51c07c4067b2e6b5f816499c1f" kindref="member">xmlRegExecPushString2</ref>  (<ref refid="xmlregexp_8h_1a7cb5c3cf63762a6f1a597d31db016278" kindref="member">xmlRegExecCtxt</ref> *exec, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *value, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *value2, void *data)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000401"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlregexp_8h_1aefb205d1f1d6a9cfc19216057a092adf" kindref="member">xmlRegexpIsDeterminist</ref>  (<ref refid="xmlregexp_8h_1a6f2ef8e1a2f1312bc7dce8bae30d22a5" kindref="member">xmlRegexp</ref> *comp)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000405"/>: Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlregexp_8h_1a8aadb15b7eeccd9bee96c10443542168" kindref="member">xmlRegexpPrint</ref>  (FILE *output, <ref refid="xmlregexp_8h_1a6f2ef8e1a2f1312bc7dce8bae30d22a5" kindref="member">xmlRegexp</ref> *regexp)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000404"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlregexp_8h_1aa23396f612f65ff669d96fa8bac005e9" kindref="member">xmlRegFreeExecCtxt</ref>  (<ref refid="xmlregexp_8h_1a7cb5c3cf63762a6f1a597d31db016278" kindref="member">xmlRegExecCtxt</ref> *exec)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000399"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="encoding_8h_1a57efb79496bb85f5215355266600cc50" kindref="member">xmlRegisterCharEncodingHandler</ref>  (<ref refid="encoding_8h_1ab7a2ebb635d1329533900e404576e1f3" kindref="member">xmlCharEncodingHandler</ref> *handler)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000120"/>This function modifies global state and is not thread-safe. See <ref refid="parser_8h_1ac734aadfdb03544bbcb81778778ecc9b" kindref="member">xmlCtxtSetCharEncConvImpl</ref> for an alternative. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlIO_8h_1ab6b38e75f9858b2872ae51a06909fbdc" kindref="member">xmlRegisterInputCallbacks</ref>  (<ref refid="xmlIO_8h_1a3a8cabd3e9b31b64ca167af7c2eeef4e" kindref="member">xmlInputMatchCallback</ref> matchFunc, <ref refid="xmlIO_8h_1a043e89ab49ba926ef27f60b3e2d4e4a9" kindref="member">xmlInputOpenCallback</ref> openFunc, <ref refid="xmlIO_8h_1a8b061791258369d9e2c6624158e018e4" kindref="member">xmlInputReadCallback</ref> readFunc, <ref refid="xmlIO_8h_1a9c0f6d110f2f87b9c3600328505f32ab" kindref="member">xmlInputCloseCallback</ref> closeFunc)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000379"/>Use <ref refid="parser_8h_1a5e0c3103a2d3b1e9003760479e1e8704" kindref="member">xmlCtxtSetResourceLoader</ref> or similar functions. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="tree_8h_1a01070188bceb05066c6c77f8d4f4f988" kindref="member">xmlRegisterNodeDefault</ref>  (<ref refid="tree_8h_1a6fc959a53aad61a058f9039b313d8622" kindref="member">xmlRegisterNodeFunc</ref> func)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000305"/>don&apos;t use </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlregexp_8h_1a80d66451d4743bef56e3775f54e2ec98" kindref="member">xmlRegNewExecCtxt</ref>  (<ref refid="xmlregexp_8h_1a6f2ef8e1a2f1312bc7dce8bae30d22a5" kindref="member">xmlRegexp</ref> *comp, <ref refid="xmlregexp_8h_1a8a452ec511955cd54394c30a2188ac24" kindref="member">xmlRegExecCallbacks</ref> callback, void *data)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000398"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="relaxng_8h_1a454897b4be0e4260f5f46b29748085c4" kindref="member">xmlRelaxNGCleanupTypes</ref>  (void)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000290"/>This function will be made private. Call <ref refid="parser_8h_1a7eb4447bac68a016b428f51cc402369f" kindref="member">xmlCleanupParser</ref> to free global state but see the warnings there. <ref refid="parser_8h_1a7eb4447bac68a016b428f51cc402369f" kindref="member">xmlCleanupParser</ref> should be only called once at program exit. In most cases, you don&apos;t have call cleanup functions at all. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="relaxng_8h_1ab5a0ad9aedbbed5f8adcd7d7f6628a1d" kindref="member">xmlRelaxNGSetParserErrors</ref>  (<ref refid="relaxng_8h_1a6dcfcd5afd279768cdadf44605694c33" kindref="member">xmlRelaxNGParserCtxt</ref> *ctxt, <ref refid="relaxng_8h_1a2f9c0f7741e83f942b6c98ed4e0ba69c" kindref="member">xmlRelaxNGValidityErrorFunc</ref> err, <ref refid="relaxng_8h_1ade2d403c9c2a4a5b08e8342e68a9a34b" kindref="member">xmlRelaxNGValidityWarningFunc</ref> warn, void *ctx)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000291"/>Use <ref refid="relaxng_8h_1a994aac8ce0fa8ac1c97090858395a8d6" kindref="member">xmlRelaxNGSetParserStructuredErrors</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="relaxng_8h_1a66db9c7079a79db835ccb4d43daa4f17" kindref="member">xmlRelaxNGSetValidErrors</ref>  (<ref refid="relaxng_8h_1aa0cfd86a02bd0e0c4228fe214bd7b118" kindref="member">xmlRelaxNGValidCtxt</ref> *ctxt, <ref refid="relaxng_8h_1a2f9c0f7741e83f942b6c98ed4e0ba69c" kindref="member">xmlRelaxNGValidityErrorFunc</ref> err, <ref refid="relaxng_8h_1ade2d403c9c2a4a5b08e8342e68a9a34b" kindref="member">xmlRelaxNGValidityWarningFunc</ref> warn, void *ctx)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000292"/>Use <ref refid="relaxng_8h_1a54b060a45d314de14c2f79f5cfcd0fee" kindref="member">xmlRelaxNGSetValidStructuredErrors</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1aa4dec35d5199c68ace267b08491f74ef" kindref="member">xmlRemoveRef</ref>  (<ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc, <ref refid="tree_8h_1a94c0908950e8e798cf7eb5ed524da0af" kindref="member">xmlAttr</ref> *attr)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000333"/>Don&apos;t use. This function will be removed from the public API. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a9985b275faf4c9a4c73167271a57178b" kindref="member">xmlSaveNoEmptyTags</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000015"/>Use the <ref refid="xmlsave_8h" kindref="compound">xmlsave.h</ref> API with option XML_SAVE_NO_EMPTY.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlsave_8h_1a5514f755d9404a1bb42d8ae6ab0a862d" kindref="member">xmlSaveSetAttrEscape</ref>  (<ref refid="xmlsave_8h_1a4fff479c5425a129d2ed27b293ff3122" kindref="member">xmlSaveCtxt</ref> *ctxt, <ref refid="encoding_8h_1a167ac51fa3e644243494671248c56b67" kindref="member">xmlCharEncodingOutputFunc</ref> escape)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000427"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlsave_8h_1a6d500dd505af69195bbcb8a4eab86fa6" kindref="member">xmlSaveSetEscape</ref>  (<ref refid="xmlsave_8h_1a4fff479c5425a129d2ed27b293ff3122" kindref="member">xmlSaveCtxt</ref> *ctxt, <ref refid="encoding_8h_1a167ac51fa3e644243494671248c56b67" kindref="member">xmlCharEncodingOutputFunc</ref> escape)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000426"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="SAX2_8h_1a30410bbe46884abd0ab2a639c3c8cebf" kindref="member">xmlSAX2EndElement</ref>  (void *ctx, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *name)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000294"/>Don&apos;t call this function directly. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="SAX2_8h_1a60f2f18a22c3e372bf0bda848d46f594" kindref="member">xmlSAX2StartElement</ref>  (void *ctx, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *fullname, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **atts)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000293"/>Don&apos;t call this function directly. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="SAX2_8h_1a3e18ca82d0c6024d9db314bcda81d219" kindref="member">xmlSAXDefaultVersion</ref>  (int version)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000295"/>Use parser option XML_PARSE_SAX1. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a7127f39ff5d23f7a6620ceabaf24dacd" kindref="member">xmlSAXHandlerV1</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000004"/>Use version 2 handlers.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1ac20b6ea78cc873dc87755631d02c38b9" kindref="member">xmlSAXParseDoc</ref>  (<ref refid="tree_8h_1a45238c4ba896d6577bb4986e98122e03" kindref="member">xmlSAXHandler</ref> *sax, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *cur, int recovery)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000258"/>Use <ref refid="parser_8h_1a036f5369ee016ac90287ec7012f9cb25" kindref="member">xmlNewSAXParserCtxt</ref> and <ref refid="parser_8h_1a75b5ec9558b29e6371557c491fb888c0" kindref="member">xmlCtxtReadDoc</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a7b05a96c8a3d1a5250134ba201997831" kindref="member">xmlSAXParseDTD</ref>  (<ref refid="tree_8h_1a45238c4ba896d6577bb4986e98122e03" kindref="member">xmlSAXHandler</ref> *sax, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *publicId, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *systemId)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000239"/>Use <ref refid="parser_8h_1ab2fea6618db56eec2054ffa7a3a96484" kindref="member">xmlCtxtParseDtd</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1ac750de15aae13432df21102d0502038f" kindref="member">xmlSAXParseEntity</ref>  (<ref refid="tree_8h_1a45238c4ba896d6577bb4986e98122e03" kindref="member">xmlSAXHandler</ref> *sax, const char *filename)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000241"/>Don&apos;t use.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1aff4f6a873195e22bb8a7a428be4e26a3" kindref="member">xmlSAXParseFile</ref>  (<ref refid="tree_8h_1a45238c4ba896d6577bb4986e98122e03" kindref="member">xmlSAXHandler</ref> *sax, const char *filename, int recovery)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000247"/>Use <ref refid="parser_8h_1a036f5369ee016ac90287ec7012f9cb25" kindref="member">xmlNewSAXParserCtxt</ref> and <ref refid="parser_8h_1a0cd872bfb02c708cc137fb5877cd25e1" kindref="member">xmlCtxtReadFile</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1af8557c82ccb023f8f2fd1a13df63ba6f" kindref="member">xmlSAXParseFileWithData</ref>  (<ref refid="tree_8h_1a45238c4ba896d6577bb4986e98122e03" kindref="member">xmlSAXHandler</ref> *sax, const char *filename, int recovery, void *data)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000246"/>Use <ref refid="parser_8h_1a036f5369ee016ac90287ec7012f9cb25" kindref="member">xmlNewSAXParserCtxt</ref> and <ref refid="parser_8h_1a0cd872bfb02c708cc137fb5877cd25e1" kindref="member">xmlCtxtReadFile</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1ad617a1cf77ce670322fcf3d2a6a5166b" kindref="member">xmlSAXParseMemory</ref>  (<ref refid="tree_8h_1a45238c4ba896d6577bb4986e98122e03" kindref="member">xmlSAXHandler</ref> *sax, const char *buffer, int size, int recovery)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000254"/>Use <ref refid="parser_8h_1a036f5369ee016ac90287ec7012f9cb25" kindref="member">xmlNewSAXParserCtxt</ref> and <ref refid="parser_8h_1aa02be1c2cbed349fd725aa920f1a65a1" kindref="member">xmlCtxtReadMemory</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a922a3ab00ea5be53abf48fd4db1946f6" kindref="member">xmlSAXParseMemoryWithData</ref>  (<ref refid="tree_8h_1a45238c4ba896d6577bb4986e98122e03" kindref="member">xmlSAXHandler</ref> *sax, const char *buffer, int size, int recovery, void *data)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000253"/>Use <ref refid="parser_8h_1a036f5369ee016ac90287ec7012f9cb25" kindref="member">xmlNewSAXParserCtxt</ref> and <ref refid="parser_8h_1aa02be1c2cbed349fd725aa920f1a65a1" kindref="member">xmlCtxtReadMemory</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a137fee3c89112868c8868d1c30638fa7" kindref="member">xmlSAXUserParseFile</ref>  (<ref refid="tree_8h_1a45238c4ba896d6577bb4986e98122e03" kindref="member">xmlSAXHandler</ref> *sax, void *user_data, const char *filename)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000252"/>Use <ref refid="parser_8h_1a036f5369ee016ac90287ec7012f9cb25" kindref="member">xmlNewSAXParserCtxt</ref> and <ref refid="parser_8h_1a0cd872bfb02c708cc137fb5877cd25e1" kindref="member">xmlCtxtReadFile</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a45831bf156ea6a5bfb2c0c89fd1d016c" kindref="member">xmlSAXUserParseMemory</ref>  (<ref refid="tree_8h_1a45238c4ba896d6577bb4986e98122e03" kindref="member">xmlSAXHandler</ref> *sax, void *user_data, const char *buffer, int size)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000257"/>Use <ref refid="parser_8h_1a036f5369ee016ac90287ec7012f9cb25" kindref="member">xmlNewSAXParserCtxt</ref> and <ref refid="parser_8h_1aa02be1c2cbed349fd725aa920f1a65a1" kindref="member">xmlCtxtReadMemory</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlschemastypes_8h_1a72d8b81113d4cc0eb340b894854272cc" kindref="member">xmlSchemaCleanupTypes</ref>  (void)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000430"/>This function will be made private. Call <ref refid="parser_8h_1a7eb4447bac68a016b428f51cc402369f" kindref="member">xmlCleanupParser</ref> to free global state but see the warnings there. <ref refid="parser_8h_1a7eb4447bac68a016b428f51cc402369f" kindref="member">xmlCleanupParser</ref> should be only called once at program exit. In most cases, you don&apos;t have to call cleanup functions at all. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlschemas_8h_1a7cb3b1bca9f3c19d717a48f1d8f4cf7e" kindref="member">xmlSchemaSetParserErrors</ref>  (<ref refid="xmlschemas_8h_1aba7ee46aa7d7b70214fc87532530607f" kindref="member">xmlSchemaParserCtxt</ref> *ctxt, <ref refid="xmlschemas_8h_1a7c0ef1385252b0c2263a6ccd7c4e50c7" kindref="member">xmlSchemaValidityErrorFunc</ref> err, <ref refid="xmlschemas_8h_1aa53ac51b0d2b3a1b2d2ce9f2c6667f46" kindref="member">xmlSchemaValidityWarningFunc</ref> warn, void *ctx)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000428"/>Use xmlSchemaSetParserStructuredErrors. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlschemas_8h_1a63c75b2e7e4d5d15a3716e9b053a28ab" kindref="member">xmlSchemaSetValidErrors</ref>  (<ref refid="xmlschemas_8h_1a6d448163e5fdcdcaa76fae4e99347c22" kindref="member">xmlSchemaValidCtxt</ref> *ctxt, <ref refid="xmlschemas_8h_1a7c0ef1385252b0c2263a6ccd7c4e50c7" kindref="member">xmlSchemaValidityErrorFunc</ref> err, <ref refid="xmlschemas_8h_1aa53ac51b0d2b3a1b2d2ce9f2c6667f46" kindref="member">xmlSchemaValidityWarningFunc</ref> warn, void *ctx)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000429"/>Use xmlSchemaSetValidStructuredErrors. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="tree_8h_1a0fc2fca0daacef8ca684cf1e81185ab8" kindref="member">xmlSetBufferAllocationScheme</ref>  (<ref refid="tree_8h_1a97b35ae4cd8dc514398f48f6785ec760" kindref="member">xmlBufferAllocationScheme</ref> scheme)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000079"/>No-op, allocation schemes were removed. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="tree_8h_1a8e1c2de917f01f58f32ac9bfb88ba5f0" kindref="member">xmlSetCompressMode</ref>  (int mode)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000304"/>Use <ref refid="tree_8h_1a8869a892d2d9672bcd1d4ed7516acb8e" kindref="member">xmlSetDocCompressMode</ref> </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a3e0a3ea3ee3338c9c5ff6b98903dbd9c" kindref="member">xmlSetExternalEntityLoader</ref>  (<ref refid="parser_8h_1a6bbf92ce0c6b32b1cd373193d0f5f5f1" kindref="member">xmlExternalEntityLoader</ref> f)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000277"/>This is a global setting and not thread-safe. Use <ref refid="parser_8h_1a5e0c3103a2d3b1e9003760479e1e8704" kindref="member">xmlCtxtSetResourceLoader</ref> or similar functions. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlerror_8h_1ab1b127a183bcaaf7de7f08928dd5994a" kindref="member">xmlSetGenericErrorFunc</ref>  (void *ctx, <ref refid="xmlerror_8h_1a948f54e6b568efec2ff8250406c9a3a6" kindref="member">xmlGenericErrorFunc</ref> handler)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000129"/>See <ref refid="xmlerror_8h_1a45950b585823204441216f768579b5f4" kindref="member">xmlSetStructuredErrorFunc</ref> for alternatives. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlerror_8h_1a45950b585823204441216f768579b5f4" kindref="member">xmlSetStructuredErrorFunc</ref>  (void *ctx, <ref refid="xmlerror_8h_1a43ce1e8b08b983fe847fdf074b021127" kindref="member">xmlStructuredErrorFunc</ref> handler)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000130"/>Use a per-context error handler. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1af788b0aaeeb86dedd818380908fb754a" kindref="member">xmlSetupParserForBuffer</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *buffer, const char *filename)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000251"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a72465e56811f83b1bf546cadfdea7c69" kindref="member">xmlSkipBlankChars</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000187"/>Internal function, do not use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a79c53237c2004339c0ce9f29863ba509" kindref="member">xmlSnprintfElementContent</ref>  (char *buf, int size, <ref refid="tree_8h_1a43d7c30835afce6963189de976e668e4" kindref="member">xmlElementContent</ref> *content, int englob)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000315"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1ada650aab577bd102f050d14caa0a1ee1" kindref="member">xmlSplitQName</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *name, <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **prefix)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000194"/>Don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="tree_8h_1a26c5b1886fcf167303fd348bd60ad244" kindref="member">xmlSplitQName2</ref>  (const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *name, <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **prefix)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000300"/>This function doesn&apos;t report malloc failures.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a0035ada94867a1be216e861ed7362e30" kindref="member">xmlSprintfElementContent</ref>  (char *buf, <ref refid="tree_8h_1a43d7c30835afce6963189de976e668e4" kindref="member">xmlElementContent</ref> *content, int englob)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000314"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1a0ce0d0667b687571e31e56d19a7b74b2" kindref="member">xmlStringCurrentChar</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *cur, int *len)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000267"/>Internal function, do not use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1abd1f838f7aefd25d61420f6d63b3f504" kindref="member">xmlStringDecodeEntities</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *str, int what, <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> end, <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> end2, <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> end3)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000193"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="tree_8h_1abc3b05312fae4bcbe225542367cd2533" kindref="member">xmlStringGetNodeList</ref>  (const <ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *value)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000302"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1ae736cf9a2ac5fa5b9c1148b431d11f8e" kindref="member">xmlStringLenDecodeEntities</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *str, int len, int what, <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> end, <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> end2, <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> end3)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000192"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="tree_8h_1aceaf71d08df6e673e1b5580830d36f74" kindref="member">xmlStringLenGetNodeList</ref>  (const <ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *value, int len)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000301"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlerror_8h_1a87400bae8841aaeac49caa562f1b3534" kindref="member">xmlStructuredError</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000073"/>See <ref refid="xmlerror_8h_1a45950b585823204441216f768579b5f4" kindref="member">xmlSetStructuredErrorFunc()</ref>.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlerror_8h_1a793c284b80e65fd32bb313096bc2e36a" kindref="member">xmlStructuredErrorContext</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000074"/>See <ref refid="xmlerror_8h_1a45950b585823204441216f768579b5f4" kindref="member">xmlSetStructuredErrorFunc()</ref>.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1acf14c9a79459dbc52c8c986cffba536f" kindref="member">xmlSubstituteEntitiesDefault</ref>  (int val)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000288"/>Use the modern options API with XML_PARSE_NOENT. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a0341e53d997e7bd46083b6bc780a8933" kindref="member">xmlSubstituteEntitiesDefaultValue</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000012"/>Use the parser option XML_PARSE_NOENT.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parserInternals_8h_1af1a3176247927790cb6459632a138263" kindref="member">xmlSwitchInputEncoding</ref>  (<ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *ctxt, <ref refid="tree_8h_1aa05e6cbf6c68ec5a2e33ddabddf58b7d" kindref="member">xmlParserInput</ref> *input, <ref refid="encoding_8h_1ab7a2ebb635d1329533900e404576e1f3" kindref="member">xmlCharEncodingHandler</ref> *handler)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000270"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlreader_8h_1aaaaf31e6bc5ebeaa9284db9b9b387825" kindref="member">xmlTextReaderByteConsumed</ref>  (<ref refid="xmlreader_8h_1a54aef13f339efa1c3bb886a22041eaf1" kindref="member">xmlTextReader</ref> *reader)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000397"/>The returned value is mostly random and useless. It reflects the parser reading ahead and is in no way related to the current node. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlreader_8h_1a5f5aa18d12d08d75fbafe67d06692e3b" kindref="member">xmlTextReaderSetErrorHandler</ref>  (<ref refid="xmlreader_8h_1a54aef13f339efa1c3bb886a22041eaf1" kindref="member">xmlTextReader</ref> *reader, <ref refid="xmlreader_8h_1acc89e8d074dba5fce3875fce8fc695ce" kindref="member">xmlTextReaderErrorFunc</ref> f, void *arg)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000396"/>Use <ref refid="xmlreader_8h_1a45c194b6a20004bb560871eee5151ae2" kindref="member">xmlTextReaderSetStructuredErrorHandler</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="tree_8h_1a98a27bbe75784e827cf49105d044d290" kindref="member">xmlThrDefDeregisterNodeDefault</ref>  (<ref refid="tree_8h_1aa242184c4aae31aa9c34f690f2e8b00f" kindref="member">xmlDeregisterNodeFunc</ref> func)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000155"/>This feature will be removed. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a245dd5654f2c6538e305a1fb99766365" kindref="member">xmlThrDefDoValidityCheckingDefaultValue</ref>  (int v)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000144"/>Use <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> XML_PARSE_DTDVALID. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a7d47fb3082b2f1078c677ce728c8bd8b" kindref="member">xmlThrDefGetWarningsDefaultValue</ref>  (int v)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000145"/>Use <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> XML_PARSE_NOWARNING. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlsave_8h_1ac810f502e07784d0aaf4cd720b601685" kindref="member">xmlThrDefIndentTreeOutput</ref>  (int v)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000146"/>Indenting is enabled by default. Use the <ref refid="xmlsave_8h" kindref="compound">xmlsave.h</ref> API and <ref refid="xmlsave_8h_1aad8ce95f34cf7d44adf8f69cdbc7d1b0" kindref="member">xmlSaveOption</ref> XML_SAVE_NO_INDENT to disable indenting. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a0a1df3e4c96db656f4b97d8a5b63bc95" kindref="member">xmlThrDefKeepBlanksDefaultValue</ref>  (int v)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000149"/>Whitespace is kept by default. Use <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> XML_PARSE_NOBLANKS to remove whitespace. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1aa9008805db392e631bc73865ee71e4f2" kindref="member">xmlThrDefLineNumbersDefaultValue</ref>  (int v)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000150"/>Has no effect. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a55b6f562caa0000ed8132a29206e98db" kindref="member">xmlThrDefLoadExtDtdDefaultValue</ref>  (int v)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000151"/>Use <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> XML_PARSE_DTDLOAD. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlIO_8h_1a6249b3398ae8b3cf33ac338f25bdb4cc" kindref="member">xmlThrDefOutputBufferCreateFilenameDefault</ref>  (<ref refid="xmlIO_8h_1ae825903725daafb3ea508546f13ae0dc" kindref="member">xmlOutputBufferCreateFilenameFunc</ref> func)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000157"/>Call <ref refid="xmlIO_8h_1a7c0abd74c8c0b2ca8459cb81b7f030ab" kindref="member">xmlOutputBufferCreateFilenameDefault</ref> in each thread. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlIO_8h_1a76b82f56c1f44b0eb1f78dca6799be7c" kindref="member">xmlThrDefParserInputBufferCreateFilenameDefault</ref>  (<ref refid="xmlIO_8h_1a3d74afc4eb6b1aa8b5521b2690459714" kindref="member">xmlParserInputBufferCreateFilenameFunc</ref> func)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000156"/>Call <ref refid="xmlIO_8h_1a69305091df0800559923f17822353d9c" kindref="member">xmlParserInputBufferCreateFilenameDefault</ref> in each thread. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a488e4b86741fc86f96c909de67bde87d" kindref="member">xmlThrDefPedanticParserDefaultValue</ref>  (int v)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000152"/>Use <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> XML_PARSE_PEDANTIC. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="tree_8h_1a8d6667a403165df0275b7a27e7b1a060" kindref="member">xmlThrDefRegisterNodeDefault</ref>  (<ref refid="tree_8h_1a6fc959a53aad61a058f9039b313d8622" kindref="member">xmlRegisterNodeFunc</ref> func)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000154"/>This feature will be removed. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlsave_8h_1a335cbce6a63ac0c054e50a67f30694c3" kindref="member">xmlThrDefSaveNoEmptyTags</ref>  (int v)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000148"/>Use the <ref refid="xmlsave_8h" kindref="compound">xmlsave.h</ref> API and <ref refid="xmlsave_8h_1aad8ce95f34cf7d44adf8f69cdbc7d1b0" kindref="member">xmlSaveOption</ref> XML_SAVE_NO_EMPTY. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlerror_8h_1a51e487c25e90d402e187bab7e84a1f1d" kindref="member">xmlThrDefSetGenericErrorFunc</ref>  (void *ctx, <ref refid="xmlerror_8h_1a948f54e6b568efec2ff8250406c9a3a6" kindref="member">xmlGenericErrorFunc</ref> handler)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000142"/>Call <ref refid="xmlerror_8h_1ab1b127a183bcaaf7de7f08928dd5994a" kindref="member">xmlSetGenericErrorFunc</ref> in each thread. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlerror_8h_1a803d46e8d2daf65eaee032a0a88beb2c" kindref="member">xmlThrDefSetStructuredErrorFunc</ref>  (void *ctx, <ref refid="xmlerror_8h_1a43ce1e8b08b983fe847fdf074b021127" kindref="member">xmlStructuredErrorFunc</ref> handler)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000143"/>Call <ref refid="xmlerror_8h_1a45950b585823204441216f768579b5f4" kindref="member">xmlSetStructuredErrorFunc</ref> in each thread. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1ae2e7b0e5f8db606038c38eae63c13663" kindref="member">xmlThrDefSubstituteEntitiesDefaultValue</ref>  (int v)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000153"/>Use <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> XML_PARSE_NOENT. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xmlsave_8h_1a5cdac7cc9c7562aaebbff1c6b395b6b5" kindref="member">xmlThrDefTreeIndentString</ref>  (const char *v)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000147"/>Use the <ref refid="xmlsave_8h" kindref="compound">xmlsave.h</ref> API and <ref refid="xmlsave_8h_1a770239ed982d5bf2d232bd4b20da2bbd" kindref="member">xmlSaveSetIndentString</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="parser_8h_1a8a97142196d9cb943f72370c3c72a36d" kindref="member">xmlTreeIndentString</ref>  </term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000014"/>Use the <ref refid="xmlsave_8h" kindref="compound">xmlsave.h</ref> API and <ref refid="xmlsave_8h_1a770239ed982d5bf2d232bd4b20da2bbd" kindref="member">xmlSaveSetIndentString()</ref>.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a8b11da80c11151c00b4eaa6bc75ac296" kindref="member">xmlValidateAttributeDecl</ref>  (xmlValidCtxt *ctxt, <ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc, <ref refid="tree_8h_1a5c4851befecec9ecc3a394282d6d2e37" kindref="member">xmlAttribute</ref> *attr)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000341"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1ac43985bb8501949b696d320626603305" kindref="member">xmlValidateAttributeValue</ref>  (<ref refid="tree_8h_1a15d41fdf14ad151384161e32b0e4d30f" kindref="member">xmlAttributeType</ref> type, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *value)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000338"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a8d744c751b6f7acafca60dcec1ecc41b" kindref="member">xmlValidateDocument</ref>  (xmlValidCtxt *ctxt, <ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000352"/>This function can&apos;t report malloc or other failures. Use <ref refid="parser_8h_1a78f8254d62233d6bdff644747111d1f6" kindref="member">xmlCtxtValidateDocument</ref>. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1ae9061272cbd26764c749ad62f88009cd" kindref="member">xmlValidateDocumentFinal</ref>  (xmlValidCtxt *ctxt, <ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000350"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a87dc991581fe3e4b067a4165b98ca882" kindref="member">xmlValidateDtdFinal</ref>  (xmlValidCtxt *ctxt, <ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000351"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a5085174cbae0c1c5743ad5af7ac595c6" kindref="member">xmlValidateElementDecl</ref>  (xmlValidCtxt *ctxt, <ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc, <ref refid="tree_8h_1aadd1c7b634b876bfd26a20183fa88032" kindref="member">xmlElement</ref> *elem)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000342"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a49615ac4bcfe231c10dbf7381c30a3a6" kindref="member">xmlValidateNotationDecl</ref>  (xmlValidCtxt *ctxt, <ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc, <ref refid="tree_8h_1ab5edcaca20bf051640b2dfb0149653ab" kindref="member">xmlNotation</ref> *nota)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000337"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a78e3bb3ad6f2eb69502ee3aaedeeee20" kindref="member">xmlValidateNotationUse</ref>  (xmlValidCtxt *ctxt, <ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *notationName)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000335"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a54395bf4208897fc68bb20ae7bb52f99" kindref="member">xmlValidateOneAttribute</ref>  (xmlValidCtxt *ctxt, <ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc, <ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *elem, <ref refid="tree_8h_1a94c0908950e8e798cf7eb5ed524da0af" kindref="member">xmlAttr</ref> *attr, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *value)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000343"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a2c7f71c4131dce7df533ddb9d4e27080" kindref="member">xmlValidateOneElement</ref>  (xmlValidCtxt *ctxt, <ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc, <ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *elem)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000348"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1ad7d74c8ea3b15f8e3907626ea783b285" kindref="member">xmlValidateOneNamespace</ref>  (xmlValidCtxt *ctxt, <ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc, <ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *elem, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *prefix, <ref refid="tree_8h_1a79683a004465ef75a960604fada53ab3" kindref="member">xmlNs</ref> *ns, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *value)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000344"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a4caef0481f03d75538927c097a771553" kindref="member">xmlValidatePopElement</ref>  (xmlValidCtxt *ctxt, <ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc, <ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *elem, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *qname)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000347"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a6b98ab8ec58d964e2566103b2990875b" kindref="member">xmlValidatePushCData</ref>  (xmlValidCtxt *ctxt, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *data, int len)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000346"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1aa72ee20780eb71ae4aa9bb84dce37445" kindref="member">xmlValidatePushElement</ref>  (xmlValidCtxt *ctxt, <ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc, <ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *elem, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *qname)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000345"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a5ea04828b0aa521660f5a8d5cc9d5419" kindref="member">xmlValidateRoot</ref>  (xmlValidCtxt *ctxt, <ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000349"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1ace78ab468e4017dbf623e6f9c1060769" kindref="member">xmlValidBuildContentModel</ref>  (xmlValidCtxt *ctxt, <ref refid="tree_8h_1aadd1c7b634b876bfd26a20183fa88032" kindref="member">xmlElement</ref> *elem)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000307"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1ab35944c6483c0070e6c72a5c49783ac2" kindref="member">xmlValidCtxtNormalizeAttributeValue</ref>  (xmlValidCtxt *ctxt, <ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc, <ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *elem, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *name, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *value)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000339"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a7336f28e72c1ba307ae5ad300e581db3" kindref="member">xmlValidGetValidElements</ref>  (<ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *prev, <ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *next, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **names, int max)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000353"/>This feature will be removed. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="valid_8h_1a2a27f96fdd63a5fd6045d0b6e8679f99" kindref="member">xmlValidNormalizeAttributeValue</ref>  (<ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc, <ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *elem, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *name, const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *value)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000340"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xpathInternals_8h_1ac58a8d2661c872ce90c2a89f1ac356cb" kindref="member">xmlXPathEvalExpr</ref>  (<ref refid="xpath_8h_1a7288215d1b5913fa6c3ba96456da35fc" kindref="member">xmlXPathParserContext</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000432"/>Internal function, don&apos;t use. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xpath_8h_1aa3dd5fdeed383cc536e83223264175bb" kindref="member">xmlXPathInit</ref>  (void)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000431"/>Alias for <ref refid="parser_8h_1a642085a16c74b8352e92a89c348cc9c4" kindref="member">xmlInitParser</ref>.  </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xpathInternals_8h_1af5be2e0d6473a86efac79e9761a31f69" kindref="member">xmlXPathRegisterAllFunctions</ref>  (<ref refid="xpath_8h_1a61100c9bec26c0de1d0329962c85c091" kindref="member">xmlXPathContext</ref> *ctxt)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000433"/>No-op since 2.14.0. </para>
+</listitem>
+<varlistentry><term>Global <ref refid="xpointer_8h_1ad266411e3b0eb3176b33ea279b67ed40" kindref="member">xmlXPtrNewContext</ref>  (<ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *doc, <ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *here, <ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *origin)</term></varlistentry>
+<listitem><para><anchor id="deprecated_1_deprecated000434"/>Same as xmlXPathNewContext.</para>
+</listitem>
+</variablelist>
+</para>
+    </detaileddescription>
+    <location file="deprecated"/>
+  </compounddef>
+</doxygen>

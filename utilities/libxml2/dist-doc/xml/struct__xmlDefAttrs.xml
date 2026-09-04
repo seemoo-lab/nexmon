@@ -1,0 +1,71 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlDefAttrs" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlDefAttrs</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlDefAttrs_1a7634f061044083291b4877328fb631ff" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nbAttrs</definition>
+        <argsstring></argsstring>
+        <name>nbAttrs</name>
+        <qualifiedname>_xmlDefAttrs::nbAttrs</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="962" column="9" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="962" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlDefAttrs_1a05b1281d84d121f1aa56a32948621e51" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int maxAttrs</definition>
+        <argsstring></argsstring>
+        <name>maxAttrs</name>
+        <qualifiedname>_xmlDefAttrs::maxAttrs</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="963" column="9" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="963" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlDefAttrs_1ab60be2ffd6f0438c4fb7dceb66d44dc9" prot="public" static="no" mutable="no">
+        <type>xmlDefAttr</type>
+        <definition>xmlDefAttr attrs[1]</definition>
+        <argsstring>[1]</argsstring>
+        <name>attrs</name>
+        <qualifiedname>_xmlDefAttrs::attrs</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="968" column="16" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="968" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="1">
+        <label>_xmlDefAttrs</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>attrs</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>xmlDefAttr</label>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/parser.c" line="961" column="1" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="961" bodyend="970"/>
+    <listofallmembers>
+      <member refid="struct__xmlDefAttrs_1ab60be2ffd6f0438c4fb7dceb66d44dc9" prot="public" virt="non-virtual"><scope>_xmlDefAttrs</scope><name>attrs</name></member>
+      <member refid="struct__xmlDefAttrs_1a05b1281d84d121f1aa56a32948621e51" prot="public" virt="non-virtual"><scope>_xmlDefAttrs</scope><name>maxAttrs</name></member>
+      <member refid="struct__xmlDefAttrs_1a7634f061044083291b4877328fb631ff" prot="public" virt="non-virtual"><scope>_xmlDefAttrs</scope><name>nbAttrs</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

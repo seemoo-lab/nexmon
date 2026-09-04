@@ -1,0 +1,417 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlXPathParserContext" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlXPathParserContext</compoundname>
+    <includes local="no">xpath.h</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlXPathParserContext_1a31f01a37499663df3797227bda0636c3" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* cur</definition>
+        <argsstring></argsstring>
+        <name>cur</name>
+        <qualifiedname>_xmlXPathParserContext::cur</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xpath.h" line="371" column="19" bodyfile="xpath.h" bodystart="371" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXPathParserContext_1a6d129c555de9187158cc02420b457cf0" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* base</definition>
+        <argsstring></argsstring>
+        <name>base</name>
+        <qualifiedname>_xmlXPathParserContext::base</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xpath.h" line="373" column="19" bodyfile="xpath.h" bodystart="373" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXPathParserContext_1a11614f44ef4d939bdd984953346a7572" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int error</definition>
+        <argsstring></argsstring>
+        <name>error</name>
+        <qualifiedname>_xmlXPathParserContext::error</qualifiedname>
+        <briefdescription>
+<para>error code </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xpath.h" line="376" column="9" bodyfile="xpath.h" bodystart="376" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXPathParserContext_1a5982b171ef9d78b3250069d39de3530d" prot="public" static="no" mutable="no">
+        <type><ref refid="xpath_8h_1a61100c9bec26c0de1d0329962c85c091" kindref="member">xmlXPathContext</ref> *</type>
+        <definition>xmlXPathContext* context</definition>
+        <argsstring></argsstring>
+        <name>context</name>
+        <qualifiedname>_xmlXPathParserContext::context</qualifiedname>
+        <briefdescription>
+<para>the evaluation context </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xpath.h" line="379" column="24" bodyfile="xpath.h" bodystart="379" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXPathParserContext_1af3683dc94811e9e3bfbed305d1b7395c" prot="public" static="no" mutable="no">
+        <type><ref refid="xpath_8h_1a60f7ba568242d9876ac3b78d1c9b2893" kindref="member">xmlXPathObject</ref> *</type>
+        <definition>xmlXPathObject* value</definition>
+        <argsstring></argsstring>
+        <name>value</name>
+        <qualifiedname>_xmlXPathParserContext::value</qualifiedname>
+        <briefdescription>
+<para>the current value </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xpath.h" line="381" column="26" bodyfile="xpath.h" bodystart="381" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXPathParserContext_1a9f7d265ba6890a57c0f35445db3fc2b0" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int valueNr</definition>
+        <argsstring></argsstring>
+        <name>valueNr</name>
+        <qualifiedname>_xmlXPathParserContext::valueNr</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xpath.h" line="383" column="25" bodyfile="xpath.h" bodystart="383" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXPathParserContext_1a8a63f6cd13a4c396703fd4dffeece6b7" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int valueMax</definition>
+        <argsstring></argsstring>
+        <name>valueMax</name>
+        <qualifiedname>_xmlXPathParserContext::valueMax</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xpath.h" line="385" column="24" bodyfile="xpath.h" bodystart="385" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXPathParserContext_1aa803995934cb6cca4f03dbb051bbcbe5" prot="public" static="no" mutable="no">
+        <type><ref refid="xpath_8h_1a60f7ba568242d9876ac3b78d1c9b2893" kindref="member">xmlXPathObject</ref> **</type>
+        <definition>xmlXPathObject** valueTab</definition>
+        <argsstring></argsstring>
+        <name>valueTab</name>
+        <qualifiedname>_xmlXPathParserContext::valueTab</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xpath.h" line="387" column="20" bodyfile="xpath.h" bodystart="387" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXPathParserContext_1a9a1581c293b8ac151a72f8b3c4dc5f68" prot="public" static="no" mutable="no">
+        <type><ref refid="xpath_8h_1ae35edb5539f59b16b27c7bb75f637ac8" kindref="member">xmlXPathCompExpr</ref> *</type>
+        <definition>xmlXPathCompExpr* comp</definition>
+        <argsstring></argsstring>
+        <name>comp</name>
+        <qualifiedname>_xmlXPathParserContext::comp</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xpath.h" line="390" column="22" bodyfile="xpath.h" bodystart="390" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXPathParserContext_1aec9b0acf1923f1a5cd0358d665aceaef" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int xptr</definition>
+        <argsstring></argsstring>
+        <name>xptr</name>
+        <qualifiedname>_xmlXPathParserContext::xptr</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xpath.h" line="392" column="9" bodyfile="xpath.h" bodystart="392" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXPathParserContext_1a617f59398eb0a13ac43832c9a71c0653" prot="public" static="no" mutable="no">
+        <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+        <definition>xmlNode* ancestor</definition>
+        <argsstring></argsstring>
+        <name>ancestor</name>
+        <qualifiedname>_xmlXPathParserContext::ancestor</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xpath.h" line="394" column="23" bodyfile="xpath.h" bodystart="394" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXPathParserContext_1aecaba8b510106e5f6abaecc0024e4710" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int valueFrame</definition>
+        <argsstring></argsstring>
+        <name>valueFrame</name>
+        <qualifiedname>_xmlXPathParserContext::valueFrame</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xpath.h" line="397" column="22" bodyfile="xpath.h" bodystart="397" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>An XPath parser context. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>It contains pure parsing information, an <ref refid="xpath_8h_1a61100c9bec26c0de1d0329962c85c091" kindref="member">xmlXPathContext</ref>, and the stack of objects.</para>
+<para>This struct is used for evaluation as well and misnamed. </para>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="6">
+        <label>_xmlAttr</label>
+        <link refid="struct__xmlAttr"/>
+        <childnode refid="4" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>ns</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>id</edgelabel>
+        </childnode>
+      </node>
+      <node id="9">
+        <label>_xmlDict</label>
+        <childnode refid="10" relation="usage">
+          <edgelabel>strings</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>subdict</edgelabel>
+        </childnode>
+      </node>
+      <node id="10">
+        <label>_xmlDictStrings</label>
+        <childnode refid="10" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>_xmlDoc</label>
+        <link refid="struct__xmlDoc"/>
+        <childnode refid="4" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>extSubset</edgelabel>
+          <edgelabel>intSubset</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>oldNs</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="8">
+        <label>_xmlDtd</label>
+        <link refid="struct__xmlDtd"/>
+        <childnode refid="4" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+      </node>
+      <node id="15">
+        <label>_xmlError</label>
+        <link refid="struct__xmlError"/>
+      </node>
+      <node id="11">
+        <label>_xmlHashTable</label>
+        <childnode refid="12" relation="usage">
+          <edgelabel>table</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="7">
+        <label>_xmlID</label>
+        <link refid="struct__xmlID"/>
+        <childnode refid="7" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>attr</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlNode</label>
+        <link refid="struct__xmlNode"/>
+        <childnode refid="4" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>ns</edgelabel>
+          <edgelabel>nsDef</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>properties</edgelabel>
+        </childnode>
+      </node>
+      <node id="14">
+        <label>_xmlNodeSet</label>
+        <link refid="struct__xmlNodeSet"/>
+        <childnode refid="4" relation="usage">
+          <edgelabel>nodeTab</edgelabel>
+        </childnode>
+      </node>
+      <node id="5">
+        <label>_xmlNs</label>
+        <link refid="struct__xmlNs"/>
+        <childnode refid="5" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>context</edgelabel>
+        </childnode>
+      </node>
+      <node id="16">
+        <label>_xmlXPathCompExpr</label>
+        <childnode refid="17" relation="usage">
+          <edgelabel>steps</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>_xmlXPathContext</label>
+        <link refid="struct__xmlXPathContext"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>debugNode</edgelabel>
+          <edgelabel>here</edgelabel>
+          <edgelabel>node</edgelabel>
+          <edgelabel>origin</edgelabel>
+        </childnode>
+        <childnode refid="11" relation="usage">
+          <edgelabel>funcHash</edgelabel>
+          <edgelabel>nsHash</edgelabel>
+          <edgelabel>varHash</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>namespaces</edgelabel>
+          <edgelabel>tmpNsList</edgelabel>
+        </childnode>
+        <childnode refid="13" relation="usage">
+          <edgelabel>varLookupFunc</edgelabel>
+        </childnode>
+        <childnode refid="15" relation="usage">
+          <edgelabel>error</edgelabel>
+          <edgelabel>lastError</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="13">
+        <label>_xmlXPathObject</label>
+        <link refid="struct__xmlXPathObject"/>
+        <childnode refid="14" relation="usage">
+          <edgelabel>nodesetval</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlXPathParserContext</label>
+        <link refid="struct__xmlXPathParserContext"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>context</edgelabel>
+        </childnode>
+        <childnode refid="13" relation="usage">
+          <edgelabel>value</edgelabel>
+          <edgelabel>valueTab</edgelabel>
+        </childnode>
+        <childnode refid="16" relation="usage">
+          <edgelabel>comp</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>ancestor</edgelabel>
+        </childnode>
+      </node>
+      <node id="17">
+        <label>_xmlXPathStepOp</label>
+        <childnode refid="1" relation="usage">
+          <edgelabel>cache</edgelabel>
+        </childnode>
+      </node>
+      <node id="12">
+        <label>xmlHashEntry</label>
+      </node>
+    </collaborationgraph>
+    <location file="xpath.h" line="369" column="1" bodyfile="xpath.h" bodystart="369" bodyend="398"/>
+    <listofallmembers>
+      <member refid="struct__xmlXPathParserContext_1a617f59398eb0a13ac43832c9a71c0653" prot="public" virt="non-virtual"><scope>_xmlXPathParserContext</scope><name>ancestor</name></member>
+      <member refid="struct__xmlXPathParserContext_1a6d129c555de9187158cc02420b457cf0" prot="public" virt="non-virtual"><scope>_xmlXPathParserContext</scope><name>base</name></member>
+      <member refid="struct__xmlXPathParserContext_1a9a1581c293b8ac151a72f8b3c4dc5f68" prot="public" virt="non-virtual"><scope>_xmlXPathParserContext</scope><name>comp</name></member>
+      <member refid="struct__xmlXPathParserContext_1a5982b171ef9d78b3250069d39de3530d" prot="public" virt="non-virtual"><scope>_xmlXPathParserContext</scope><name>context</name></member>
+      <member refid="struct__xmlXPathParserContext_1a31f01a37499663df3797227bda0636c3" prot="public" virt="non-virtual"><scope>_xmlXPathParserContext</scope><name>cur</name></member>
+      <member refid="struct__xmlXPathParserContext_1a11614f44ef4d939bdd984953346a7572" prot="public" virt="non-virtual"><scope>_xmlXPathParserContext</scope><name>error</name></member>
+      <member refid="struct__xmlXPathParserContext_1af3683dc94811e9e3bfbed305d1b7395c" prot="public" virt="non-virtual"><scope>_xmlXPathParserContext</scope><name>value</name></member>
+      <member refid="struct__xmlXPathParserContext_1aecaba8b510106e5f6abaecc0024e4710" prot="public" virt="non-virtual"><scope>_xmlXPathParserContext</scope><name>valueFrame</name></member>
+      <member refid="struct__xmlXPathParserContext_1a8a63f6cd13a4c396703fd4dffeece6b7" prot="public" virt="non-virtual"><scope>_xmlXPathParserContext</scope><name>valueMax</name></member>
+      <member refid="struct__xmlXPathParserContext_1a9f7d265ba6890a57c0f35445db3fc2b0" prot="public" virt="non-virtual"><scope>_xmlXPathParserContext</scope><name>valueNr</name></member>
+      <member refid="struct__xmlXPathParserContext_1aa803995934cb6cca4f03dbb051bbcbe5" prot="public" virt="non-virtual"><scope>_xmlXPathParserContext</scope><name>valueTab</name></member>
+      <member refid="struct__xmlXPathParserContext_1aec9b0acf1923f1a5cd0358d665aceaef" prot="public" virt="non-virtual"><scope>_xmlXPathParserContext</scope><name>xptr</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

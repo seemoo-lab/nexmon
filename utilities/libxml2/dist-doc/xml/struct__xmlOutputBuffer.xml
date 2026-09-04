@@ -1,0 +1,157 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlOutputBuffer" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlOutputBuffer</compoundname>
+    <includes local="no">xmlIO.h</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlOutputBuffer_1ae376f130b17d169ee51be68077a89ed0" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* context</definition>
+        <argsstring></argsstring>
+        <name>context</name>
+        <qualifiedname>_xmlOutputBuffer::context</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlIO.h" line="151" column="28" bodyfile="xmlIO.h" bodystart="151" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlOutputBuffer_1af78a1bb1ca5981801fcd3d93cbdafa96" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlIO_8h_1a77e13204f2024d8643f29f98ec6f2f2b" kindref="member">xmlOutputWriteCallback</ref></type>
+        <definition>xmlOutputWriteCallback writecallback</definition>
+        <argsstring></argsstring>
+        <name>writecallback</name>
+        <qualifiedname>_xmlOutputBuffer::writecallback</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlIO.h" line="152" column="29" bodyfile="xmlIO.h" bodystart="152" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlOutputBuffer_1a76eb9bbead7fb9ca3856518e0371dc83" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlIO_8h_1a1b78d8c2e0fa02f8aa1a2fd4dc9f6f57" kindref="member">xmlOutputCloseCallback</ref></type>
+        <definition>xmlOutputCloseCallback closecallback</definition>
+        <argsstring></argsstring>
+        <name>closecallback</name>
+        <qualifiedname>_xmlOutputBuffer::closecallback</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlIO.h" line="153" column="29" bodyfile="xmlIO.h" bodystart="153" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlOutputBuffer_1a6eeaf4027f9a85abfc0dec98195bfc4a" prot="public" static="no" mutable="no">
+        <type><ref refid="encoding_8h_1ab7a2ebb635d1329533900e404576e1f3" kindref="member">xmlCharEncodingHandler</ref> *</type>
+        <definition>xmlCharEncodingHandler* encoder</definition>
+        <argsstring></argsstring>
+        <name>encoder</name>
+        <qualifiedname>_xmlOutputBuffer::encoder</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlIO.h" line="156" column="28" bodyfile="xmlIO.h" bodystart="156" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlOutputBuffer_1a600384c79adf113b709944ece5f34f51" prot="public" static="no" mutable="no">
+        <type><ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> *</type>
+        <definition>xmlBuf* buffer</definition>
+        <argsstring></argsstring>
+        <name>buffer</name>
+        <qualifiedname>_xmlOutputBuffer::buffer</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlIO.h" line="159" column="12" bodyfile="xmlIO.h" bodystart="159" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlOutputBuffer_1a664bf93a81eb663c6924c2ed126dc792" prot="public" static="no" mutable="no">
+        <type><ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> *</type>
+        <definition>xmlBuf* conv</definition>
+        <argsstring></argsstring>
+        <name>conv</name>
+        <qualifiedname>_xmlOutputBuffer::conv</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlIO.h" line="161" column="12" bodyfile="xmlIO.h" bodystart="161" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlOutputBuffer_1a4a7b4551bf991d139eee1ec23b78b2c0" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int written</definition>
+        <argsstring></argsstring>
+        <name>written</name>
+        <qualifiedname>_xmlOutputBuffer::written</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlIO.h" line="163" column="9" bodyfile="xmlIO.h" bodystart="163" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlOutputBuffer_1a11614f44ef4d939bdd984953346a7572" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int error</definition>
+        <argsstring></argsstring>
+        <name>error</name>
+        <qualifiedname>_xmlOutputBuffer::error</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlIO.h" line="164" column="9" bodyfile="xmlIO.h" bodystart="164" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Output buffer. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="3">
+        <label>_xmlBuf</label>
+      </node>
+      <node id="2">
+        <label>_xmlCharEncodingHandler</label>
+        <link refid="struct__xmlCharEncodingHandler"/>
+      </node>
+      <node id="1">
+        <label>_xmlOutputBuffer</label>
+        <link refid="struct__xmlOutputBuffer"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>encoder</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>buffer</edgelabel>
+          <edgelabel>conv</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="xmlIO.h" line="150" column="1" bodyfile="xmlIO.h" bodystart="150" bodyend="165"/>
+    <listofallmembers>
+      <member refid="struct__xmlOutputBuffer_1a600384c79adf113b709944ece5f34f51" prot="public" virt="non-virtual"><scope>_xmlOutputBuffer</scope><name>buffer</name></member>
+      <member refid="struct__xmlOutputBuffer_1a76eb9bbead7fb9ca3856518e0371dc83" prot="public" virt="non-virtual"><scope>_xmlOutputBuffer</scope><name>closecallback</name></member>
+      <member refid="struct__xmlOutputBuffer_1ae376f130b17d169ee51be68077a89ed0" prot="public" virt="non-virtual"><scope>_xmlOutputBuffer</scope><name>context</name></member>
+      <member refid="struct__xmlOutputBuffer_1a664bf93a81eb663c6924c2ed126dc792" prot="public" virt="non-virtual"><scope>_xmlOutputBuffer</scope><name>conv</name></member>
+      <member refid="struct__xmlOutputBuffer_1a6eeaf4027f9a85abfc0dec98195bfc4a" prot="public" virt="non-virtual"><scope>_xmlOutputBuffer</scope><name>encoder</name></member>
+      <member refid="struct__xmlOutputBuffer_1a11614f44ef4d939bdd984953346a7572" prot="public" virt="non-virtual"><scope>_xmlOutputBuffer</scope><name>error</name></member>
+      <member refid="struct__xmlOutputBuffer_1af78a1bb1ca5981801fcd3d93cbdafa96" prot="public" virt="non-virtual"><scope>_xmlOutputBuffer</scope><name>writecallback</name></member>
+      <member refid="struct__xmlOutputBuffer_1a4a7b4551bf991d139eee1ec23b78b2c0" prot="public" virt="non-virtual"><scope>_xmlOutputBuffer</scope><name>written</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

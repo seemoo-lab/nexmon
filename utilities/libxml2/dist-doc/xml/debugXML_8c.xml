@@ -1,0 +1,1808 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="debugXML_8c" kind="file" language="C++">
+    <compoundname>debugXML.c</compoundname>
+    <includes local="yes">libxml.h</includes>
+    <includes local="no">string.h</includes>
+    <includes local="no">stdlib.h</includes>
+    <includes refid="debugXML_8h" local="no">libxml/debugXML.h</includes>
+    <includes refid="xmlmemory_8h" local="no">libxml/xmlmemory.h</includes>
+    <includes refid="tree_8h" local="no">libxml/tree.h</includes>
+    <includes refid="parser_8h" local="no">libxml/parser.h</includes>
+    <includes refid="parserInternals_8h" local="no">libxml/parserInternals.h</includes>
+    <includes refid="HTMLtree_8h" local="no">libxml/HTMLtree.h</includes>
+    <includes refid="HTMLparser_8h" local="no">libxml/HTMLparser.h</includes>
+    <includes refid="xmlerror_8h" local="no">libxml/xmlerror.h</includes>
+    <includes local="yes">private/error.h</includes>
+    <incdepgraph>
+      <node id="1">
+        <label>/builds/GNOME/libxml2/debugXML.c</label>
+        <link refid="debugXML_8c"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="29" relation="include">
+        </childnode>
+        <childnode refid="32" relation="include">
+        </childnode>
+        <childnode refid="30" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="33" relation="include">
+        </childnode>
+      </node>
+      <node id="30">
+        <label>libxml/HTMLparser.h</label>
+        <link refid="HTMLparser_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+      </node>
+      <node id="32">
+        <label>libxml/HTMLtree.h</label>
+        <link refid="HTMLtree_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="30" relation="include">
+        </childnode>
+      </node>
+      <node id="27">
+        <label>libxml/SAX2.h</label>
+        <link refid="SAX2_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+      </node>
+      <node id="31">
+        <label>libxml/chvalid.h</label>
+        <link refid="chvalid_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>libxml/debugXML.h</label>
+        <link refid="debugXML_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+      </node>
+      <node id="18">
+        <label>libxml/dict.h</label>
+        <link refid="dict_8h"/>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="25">
+        <label>libxml/encoding.h</label>
+        <link refid="encoding_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+      </node>
+      <node id="24">
+        <label>libxml/entities.h</label>
+        <link refid="entities_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="17">
+        <label>libxml/hash.h</label>
+        <link refid="hash_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="22">
+        <label>libxml/list.h</label>
+        <link refid="list_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="20">
+        <label>libxml/parser.h</label>
+        <link refid="parser_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="21" relation="include">
+        </childnode>
+        <childnode refid="24" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="25" relation="include">
+        </childnode>
+        <childnode refid="26" relation="include">
+        </childnode>
+        <childnode refid="27" relation="include">
+        </childnode>
+        <childnode refid="28" relation="include">
+        </childnode>
+      </node>
+      <node id="29">
+        <label>libxml/parserInternals.h</label>
+        <link refid="parserInternals_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="30" relation="include">
+        </childnode>
+        <childnode refid="31" relation="include">
+        </childnode>
+        <childnode refid="27" relation="include">
+        </childnode>
+      </node>
+      <node id="28">
+        <label>libxml/threads.h</label>
+        <link refid="threads_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="9">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+      </node>
+      <node id="21">
+        <label>libxml/valid.h</label>
+        <link refid="valid_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+        <childnode refid="23" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+      </node>
+      <node id="26">
+        <label>libxml/xmlIO.h</label>
+        <link refid="xmlIO_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="25" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="23">
+        <label>libxml/xmlautomata.h</label>
+        <link refid="xmlautomata_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="16">
+        <label>libxml/xmlerror.h</label>
+        <link refid="xmlerror_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="13">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="14">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="11">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="15">
+        <label>libxml/xpath.h</label>
+        <link refid="xpath_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+      </node>
+      <node id="7">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>libxml.h</label>
+      </node>
+      <node id="8">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="10">
+        <label>limits.h</label>
+      </node>
+      <node id="33">
+        <label>private/error.h</label>
+      </node>
+      <node id="12">
+        <label>stdarg.h</label>
+      </node>
+      <node id="19">
+        <label>stddef.h</label>
+      </node>
+      <node id="6">
+        <label>stdio.h</label>
+      </node>
+      <node id="4">
+        <label>stdlib.h</label>
+      </node>
+      <node id="3">
+        <label>string.h</label>
+      </node>
+    </incdepgraph>
+    <innerclass refid="struct__xmlDebugCtxt" prot="public">_xmlDebugCtxt</innerclass>
+    <sectiondef kind="define">
+      <memberdef kind="define" id="debugXML_8c_1a2e0dfa3e1bcca0ce16dfbe14da3a27be" prot="public" static="no">
+        <name>IN_LIBXML</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="10" column="9" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="10" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="debugXML_8c_1a3b571d17246eeec93b0bac305743dcb7" prot="public" static="no">
+        <name>DUMP_TEXT_TYPE</name>
+        <initializer>1</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="28" column="9" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="28" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="debugXML_8c_1ab98df1119eccdb3d5dcc15076328c7a5" prot="public" static="no">
+        <type>struct _xmlDebugCtxt</type>
+        <definition>typedef struct _xmlDebugCtxt xmlDebugCtxt</definition>
+        <argsstring></argsstring>
+        <name>xmlDebugCtxt</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="30" column="28" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="30" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="debugXML_8c_1adf7c3304aae19dc66d8231e25eaab0fb" prot="public" static="no">
+        <type>xmlDebugCtxt *</type>
+        <definition>typedef xmlDebugCtxt* xmlDebugCtxtPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlDebugCtxtPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="31" column="22" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="31" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="debugXML_8c_1a8323c6726c8dc7a6dfcacdd7ba3caf26" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCtxtDumpNodeList</definition>
+        <argsstring>(xmlDebugCtxtPtr ctxt, xmlNodePtr node)</argsstring>
+        <name>xmlCtxtDumpNodeList</name>
+        <param>
+          <type>xmlDebugCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>node</declname>
+        </param>
+        <briefdescription>
+<para>Dumps debug information for the list of element node, it is recursive. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the debug context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the node list </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="1038" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="1038" bodyend="1044" declfile="/builds/GNOME/libxml2/debugXML.c" declline="45" declcolumn="13"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1a5dd66ef504c02db454f79e198c351277" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCtxtDumpInitCtxt</definition>
+        <argsstring>(xmlDebugCtxtPtr ctxt)</argsstring>
+        <name>xmlCtxtDumpInitCtxt</name>
+        <param>
+          <type>xmlDebugCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="48" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="48" bodyend="64"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1a7f208f65a6ae516e57eb0dfbc0116f5a" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCtxtDumpCleanCtxt</definition>
+        <argsstring>(xmlDebugCtxtPtr ctxt)</argsstring>
+        <name>xmlCtxtDumpCleanCtxt</name>
+        <param>
+          <type>xmlDebugCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="67" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="67" bodyend="70"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1a4bad1b85578a2167330ca632e2451bdd" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlNsCheckScope</definition>
+        <argsstring>(xmlNodePtr node, xmlNsPtr ns)</argsstring>
+        <name>xmlNsCheckScope</name>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>node</declname>
+        </param>
+        <param>
+          <type>xmlNsPtr</type>
+          <declname>ns</declname>
+        </param>
+        <briefdescription>
+<para>Check that a given namespace is in scope on a node. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the node </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ns</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the namespace node </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 if in scope, -1 in case of argument error, -2 if the namespace is not in scope, and -3 if not on an ancestor node. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="82" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="82" bodyend="124"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1a90ac8a10f63f80b49398431e5baf2174" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCtxtDumpSpaces</definition>
+        <argsstring>(xmlDebugCtxtPtr ctxt)</argsstring>
+        <name>xmlCtxtDumpSpaces</name>
+        <param>
+          <type>xmlDebugCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="127" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="127" bodyend="137"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1a9855abd24089f9a6a2a19664bc7105bc" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlDebugErr</definition>
+        <argsstring>(xmlDebugCtxtPtr ctxt, int error, const char *msg)</argsstring>
+        <name>xmlDebugErr</name>
+        <param>
+          <type>xmlDebugCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>error</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>msg</declname>
+        </param>
+        <briefdescription>
+<para>Handle a debug error. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a debug context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>error</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the error code </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>msg</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the error message </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="147" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="147" bodyend="151"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1a11658d4907510ab6c03d1e5dfc1f2e77" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlDebugErr2</definition>
+        <argsstring>(xmlDebugCtxtPtr ctxt, int error, const char *msg, int extra)</argsstring>
+        <name>xmlDebugErr2</name>
+        <param>
+          <type>xmlDebugCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>error</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>msg</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>extra</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="153" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="153" bodyend="158"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1a48aca3dfcd908a23c0858c40f6b77ecf" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlDebugErr3</definition>
+        <argsstring>(xmlDebugCtxtPtr ctxt, int error, const char *msg, const char *extra)</argsstring>
+        <name>xmlDebugErr3</name>
+        <param>
+          <type>xmlDebugCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>error</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>msg</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>extra</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="160" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="160" bodyend="165"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1a449a3c901d6152be90ba4413ef8f0b0a" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCtxtNsCheckScope</definition>
+        <argsstring>(xmlDebugCtxtPtr ctxt, xmlNodePtr node, xmlNsPtr ns)</argsstring>
+        <name>xmlCtxtNsCheckScope</name>
+        <param>
+          <type>xmlDebugCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>node</declname>
+        </param>
+        <param>
+          <type>xmlNsPtr</type>
+          <declname>ns</declname>
+        </param>
+        <briefdescription>
+<para>Report if a given namespace is is not in scope. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the debugging context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the node </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ns</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the namespace node </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="175" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="175" bodyend="198"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1aa260e7c6fe8ecc8bdac7c3e8b7300f53" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCtxtCheckString</definition>
+        <argsstring>(xmlDebugCtxtPtr ctxt, const xmlChar *str)</argsstring>
+        <name>xmlCtxtCheckString</name>
+        <param>
+          <type>xmlDebugCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+<para>Do debugging on the string, currently it just checks the UTF-8 content. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the debug context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the string </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="207" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="207" bodyend="216"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1abe1aa91493abda690af213dab25c9ca2" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCtxtCheckName</definition>
+        <argsstring>(xmlDebugCtxtPtr ctxt, const xmlChar *name)</argsstring>
+        <name>xmlCtxtCheckName</name>
+        <param>
+          <type>xmlDebugCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <briefdescription>
+<para>Do debugging on the name, for example the dictionary status and conformance to the Name production. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the debug context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the name </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="226" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="226" bodyend="246"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1a2af0131c4da7441c710982ed92e9875b" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCtxtGenericNodeCheck</definition>
+        <argsstring>(xmlDebugCtxtPtr ctxt, xmlNodePtr node)</argsstring>
+        <name>xmlCtxtGenericNodeCheck</name>
+        <param>
+          <type>xmlDebugCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>node</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="249" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="249" bodyend="378"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1a8966018a0884e71fd3ea585561523e38" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCtxtDumpString</definition>
+        <argsstring>(xmlDebugCtxtPtr ctxt, const xmlChar *str)</argsstring>
+        <name>xmlCtxtDumpString</name>
+        <param>
+          <type>xmlDebugCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="381" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="381" bodyend="403"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1aa693bf9d4f8b07bdff90e51fd9921d4e" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCtxtDumpDtdNode</definition>
+        <argsstring>(xmlDebugCtxtPtr ctxt, xmlDtdPtr dtd)</argsstring>
+        <name>xmlCtxtDumpDtdNode</name>
+        <param>
+          <type>xmlDebugCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlDtdPtr</type>
+          <declname>dtd</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="406" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="406" bodyend="436"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1aed9651da41396efa0f25d345275a6f24" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCtxtDumpAttrDecl</definition>
+        <argsstring>(xmlDebugCtxtPtr ctxt, xmlAttributePtr attr)</argsstring>
+        <name>xmlCtxtDumpAttrDecl</name>
+        <param>
+          <type>xmlDebugCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlAttributePtr</type>
+          <declname>attr</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="439" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="439" bodyend="541"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1a1f533cf6ed9824107c02ed5615e4f803" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCtxtDumpElemDecl</definition>
+        <argsstring>(xmlDebugCtxtPtr ctxt, xmlElementPtr elem)</argsstring>
+        <name>xmlCtxtDumpElemDecl</name>
+        <param>
+          <type>xmlDebugCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlElementPtr</type>
+          <declname>elem</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="544" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="544" bodyend="600"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1a0714ad612a34dc623f523a2c4adb0c8a" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCtxtDumpEntityDecl</definition>
+        <argsstring>(xmlDebugCtxtPtr ctxt, xmlEntityPtr ent)</argsstring>
+        <name>xmlCtxtDumpEntityDecl</name>
+        <param>
+          <type>xmlDebugCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlEntityPtr</type>
+          <declname>ent</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="603" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="603" bodyend="673"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1a8c82b2f59a252e8031fb7e646e391f63" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCtxtDumpNamespace</definition>
+        <argsstring>(xmlDebugCtxtPtr ctxt, xmlNsPtr ns)</argsstring>
+        <name>xmlCtxtDumpNamespace</name>
+        <param>
+          <type>xmlDebugCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlNsPtr</type>
+          <declname>ns</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="676" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="676" bodyend="710"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1a295485b25edafa7a57c3faea616bed81" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCtxtDumpNamespaceList</definition>
+        <argsstring>(xmlDebugCtxtPtr ctxt, xmlNsPtr ns)</argsstring>
+        <name>xmlCtxtDumpNamespaceList</name>
+        <param>
+          <type>xmlDebugCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlNsPtr</type>
+          <declname>ns</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="713" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="713" bodyend="719"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1a3ab69ddd35b5df670ca7645638ab4a67" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCtxtDumpEntity</definition>
+        <argsstring>(xmlDebugCtxtPtr ctxt, xmlEntityPtr ent)</argsstring>
+        <name>xmlCtxtDumpEntity</name>
+        <param>
+          <type>xmlDebugCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlEntityPtr</type>
+          <declname>ent</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="722" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="722" bodyend="772"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1ab7c6b23b74d755136c2ca875874851e8" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCtxtDumpAttr</definition>
+        <argsstring>(xmlDebugCtxtPtr ctxt, xmlAttrPtr attr)</argsstring>
+        <name>xmlCtxtDumpAttr</name>
+        <param>
+          <type>xmlDebugCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlAttrPtr</type>
+          <declname>attr</declname>
+        </param>
+        <briefdescription>
+<para>Dumps debug information for the attribute. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the debug context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>attr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the attribute </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="781" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="781" bodyend="808"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1af4843a252985a03bf866e72ab692a4a6" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCtxtDumpAttrList</definition>
+        <argsstring>(xmlDebugCtxtPtr ctxt, xmlAttrPtr attr)</argsstring>
+        <name>xmlCtxtDumpAttrList</name>
+        <param>
+          <type>xmlDebugCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlAttrPtr</type>
+          <declname>attr</declname>
+        </param>
+        <briefdescription>
+<para>Dumps debug information for the attribute list. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the debug context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>attr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the attribute list </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="817" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="817" bodyend="823"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1afad44e49e0c5ddd2e1011b3025d34488" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCtxtDumpOneNode</definition>
+        <argsstring>(xmlDebugCtxtPtr ctxt, xmlNodePtr node)</argsstring>
+        <name>xmlCtxtDumpOneNode</name>
+        <param>
+          <type>xmlDebugCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>node</declname>
+        </param>
+        <briefdescription>
+<para>Dumps debug information for the element node, it is not recursive/. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the debug context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the node </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="832" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="832" bodyend="1004"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1a08c2343d21831a25fec68fa17dd2f769" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCtxtDumpNode</definition>
+        <argsstring>(xmlDebugCtxtPtr ctxt, xmlNodePtr node)</argsstring>
+        <name>xmlCtxtDumpNode</name>
+        <param>
+          <type>xmlDebugCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>node</declname>
+        </param>
+        <briefdescription>
+<para>Dumps debug information for the element node, it is recursive. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the debug context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the node </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="1013" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="1013" bodyend="1029"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1aeb9b42c94ef298e7758ce0aeb8e57ca3" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCtxtDumpDocHead</definition>
+        <argsstring>(xmlDebugCtxtPtr ctxt, xmlDocPtr doc)</argsstring>
+        <name>xmlCtxtDumpDocHead</name>
+        <param>
+          <type>xmlDebugCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlDocPtr</type>
+          <declname>doc</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="1047" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="1047" bodyend="1113"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1a3f1bd2b4d5195c89417c2c4589c808ad" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCtxtDumpDocumentHead</definition>
+        <argsstring>(xmlDebugCtxtPtr ctxt, xmlDocPtr doc)</argsstring>
+        <name>xmlCtxtDumpDocumentHead</name>
+        <param>
+          <type>xmlDebugCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlDocPtr</type>
+          <declname>doc</declname>
+        </param>
+        <briefdescription>
+<para>Dumps debug information concerning the document, not recursive. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the debug context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="1122" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="1122" bodyend="1152"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1ac9c8ca4743191ed9d2d48dc2f3c3a3ed" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCtxtDumpDocument</definition>
+        <argsstring>(xmlDebugCtxtPtr ctxt, xmlDocPtr doc)</argsstring>
+        <name>xmlCtxtDumpDocument</name>
+        <param>
+          <type>xmlDebugCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlDocPtr</type>
+          <declname>doc</declname>
+        </param>
+        <briefdescription>
+<para>Dumps debug information for the document, it&apos;s recursive. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the debug context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="1161" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="1161" bodyend="1176"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1a9d84b1fb04bea2145bdfbaa918d994ef" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCtxtDumpEntityCallback</definition>
+        <argsstring>(void *payload, void *data, const xmlChar *name)</argsstring>
+        <name>xmlCtxtDumpEntityCallback</name>
+        <param>
+          <type>void *</type>
+          <declname>payload</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>data</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="1179" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="1179" bodyend="1222"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1af148b11dcd0235b12601f734c5009dc3" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCtxtDumpEntities</definition>
+        <argsstring>(xmlDebugCtxtPtr ctxt, xmlDocPtr doc)</argsstring>
+        <name>xmlCtxtDumpEntities</name>
+        <param>
+          <type>xmlDebugCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlDocPtr</type>
+          <declname>doc</declname>
+        </param>
+        <briefdescription>
+<para>Dumps debug information for all the entities in use by the document. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the debug context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="1231" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="1231" bodyend="1253"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1af9b91bac4b9f08a8a79b549ed0cef74c" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlCtxtDumpDTD</definition>
+        <argsstring>(xmlDebugCtxtPtr ctxt, xmlDtdPtr dtd)</argsstring>
+        <name>xmlCtxtDumpDTD</name>
+        <param>
+          <type>xmlDebugCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlDtdPtr</type>
+          <declname>dtd</declname>
+        </param>
+        <briefdescription>
+<para>Dumps debug information for the DTD. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the debug context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>dtd</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the DTD </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="1262" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="1262" bodyend="1277"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1a3a66a64e74f147b7bdd6796f1171f598" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlDebugDumpString</definition>
+        <argsstring>(FILE *output, const xmlChar *str)</argsstring>
+        <name>xmlDebugDumpString</name>
+        <param>
+          <type>FILE *</type>
+          <declname>output</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+<para>Dumps information about the string, shorten it if necessary. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>output</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the FILE * for the output </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the string </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="1292" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="1292" bodyend="1312"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1aa327d71cfc0b41806c21a05fa19bc7e7" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlDebugDumpAttr</definition>
+        <argsstring>(FILE *output, xmlAttr *attr, int depth)</argsstring>
+        <name>xmlDebugDumpAttr</name>
+        <param>
+          <type>FILE *</type>
+          <declname>output</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1a94c0908950e8e798cf7eb5ed524da0af" kindref="member">xmlAttr</ref> *</type>
+          <declname>attr</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>depth</declname>
+        </param>
+        <briefdescription>
+<para>Dumps debug information for the attribute. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>output</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the FILE * for the output </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>attr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the attribute </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>depth</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the indentation level. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="1322" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="1322" bodyend="1331"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1a9b31fd25bd7e86a0db77b845e905789e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlDebugDumpEntities</definition>
+        <argsstring>(FILE *output, xmlDoc *doc)</argsstring>
+        <name>xmlDebugDumpEntities</name>
+        <param>
+          <type>FILE *</type>
+          <declname>output</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <briefdescription>
+<para>Dumps debug information for all the entities in use by the document. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>output</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the FILE * for the output </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="1341" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="1341" bodyend="1350"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1a84ee73725d4254bc7b2f01fb9e1be195" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlDebugDumpAttrList</definition>
+        <argsstring>(FILE *output, xmlAttr *attr, int depth)</argsstring>
+        <name>xmlDebugDumpAttrList</name>
+        <param>
+          <type>FILE *</type>
+          <declname>output</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1a94c0908950e8e798cf7eb5ed524da0af" kindref="member">xmlAttr</ref> *</type>
+          <declname>attr</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>depth</declname>
+        </param>
+        <briefdescription>
+<para>Dumps debug information for the attribute list. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>output</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the FILE * for the output </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>attr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the attribute list </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>depth</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the indentation level. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="1360" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="1360" bodyend="1370"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1af1b3bfc6dcabab400a4a00f6eaf72c84" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlDebugDumpOneNode</definition>
+        <argsstring>(FILE *output, xmlNode *node, int depth)</argsstring>
+        <name>xmlDebugDumpOneNode</name>
+        <param>
+          <type>FILE *</type>
+          <declname>output</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>node</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>depth</declname>
+        </param>
+        <briefdescription>
+<para>Dumps debug information for the element node, it is not recursive. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>output</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the FILE * for the output </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the node </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>depth</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the indentation level. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="1380" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="1380" bodyend="1390"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1a051e61907be02f43a2c9b398f71407e7" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlDebugDumpNode</definition>
+        <argsstring>(FILE *output, xmlNode *node, int depth)</argsstring>
+        <name>xmlDebugDumpNode</name>
+        <param>
+          <type>FILE *</type>
+          <declname>output</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>node</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>depth</declname>
+        </param>
+        <briefdescription>
+<para>Dumps debug information for the element node, it is recursive. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>output</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the FILE * for the output </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the node </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>depth</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the indentation level. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="1400" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="1400" bodyend="1411"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1a3f30060f0e3d9a17bcfc603ebd24c5e6" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlDebugDumpNodeList</definition>
+        <argsstring>(FILE *output, xmlNode *node, int depth)</argsstring>
+        <name>xmlDebugDumpNodeList</name>
+        <param>
+          <type>FILE *</type>
+          <declname>output</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>node</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>depth</declname>
+        </param>
+        <briefdescription>
+<para>Dumps debug information for the list of element node, it is recursive. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>output</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the FILE * for the output </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the node list </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>depth</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the indentation level. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="1421" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="1421" bodyend="1432"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1aaf0f36c91ddfc2de7c15057f6f0094e4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlDebugDumpDocumentHead</definition>
+        <argsstring>(FILE *output, xmlDoc *doc)</argsstring>
+        <name>xmlDebugDumpDocumentHead</name>
+        <param>
+          <type>FILE *</type>
+          <declname>output</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <briefdescription>
+<para>Dumps debug information concerning the document, not recursive. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>output</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the FILE * for the output </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="1441" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="1441" bodyend="1452"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1ae34a23e1278f2186b9cafcf133a148af" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlDebugDumpDocument</definition>
+        <argsstring>(FILE *output, xmlDoc *doc)</argsstring>
+        <name>xmlDebugDumpDocument</name>
+        <param>
+          <type>FILE *</type>
+          <declname>output</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <briefdescription>
+<para>Dumps debug information for the document, it&apos;s recursive. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>output</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the FILE * for the output </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="1461" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="1461" bodyend="1472"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1a26870b572be7e4f8da1f15e965f7a793" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlDebugDumpDTD</definition>
+        <argsstring>(FILE *output, xmlDtd *dtd)</argsstring>
+        <name>xmlDebugDumpDTD</name>
+        <param>
+          <type>FILE *</type>
+          <declname>output</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1af3e371049fefe3bc6aa9d3caaa651a0d" kindref="member">xmlDtd</ref> *</type>
+          <declname>dtd</declname>
+        </param>
+        <briefdescription>
+<para>Dumps debug information for the DTD. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>output</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the FILE * for the output </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>dtd</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the DTD </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="1481" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="1481" bodyend="1492"/>
+      </memberdef>
+      <memberdef kind="function" id="debugXML_8c_1a654a3fb4f6fadbbe75c4d600ddeb28d2" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlDebugCheckDocument</definition>
+        <argsstring>(FILE *output, xmlDoc *doc)</argsstring>
+        <name>xmlDebugCheckDocument</name>
+        <param>
+          <type>FILE *</type>
+          <declname>output</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <briefdescription>
+<para>Check the document for potential content problems, and output the errors to <computeroutput>output</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>output</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the FILE * for the output </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the number of errors found </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="1509" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="1509" bodyend="1521"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/debugXML.c"/>
+  </compounddef>
+</doxygen>

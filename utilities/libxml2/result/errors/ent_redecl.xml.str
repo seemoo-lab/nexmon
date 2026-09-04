@@ -1,0 +1,3 @@
+./test/errors/ent_redecl.xml:2: parser warning : Invalid redeclaration of predefined entity 'lt'
+    <!ENTITY lt '<'>
+                   ^

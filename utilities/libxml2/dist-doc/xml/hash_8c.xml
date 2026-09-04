@@ -1,0 +1,2504 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="hash_8c" kind="file" language="C++">
+    <compoundname>hash.c</compoundname>
+    <includes local="yes">libxml.h</includes>
+    <includes local="no">string.h</includes>
+    <includes local="no">limits.h</includes>
+    <includes refid="parser_8h" local="no">libxml/parser.h</includes>
+    <includes refid="hash_8h" local="no">libxml/hash.h</includes>
+    <includes refid="dict_8h" local="no">libxml/dict.h</includes>
+    <includes refid="xmlmemory_8h" local="no">libxml/xmlmemory.h</includes>
+    <includes refid="xmlstring_8h" local="no">libxml/xmlstring.h</includes>
+    <includes local="yes">private/dict.h</includes>
+    <incdepgraph>
+      <node id="1">
+        <label>/builds/GNOME/libxml2/hash.c</label>
+        <link refid="hash_8c"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="26" relation="include">
+        </childnode>
+      </node>
+      <node id="24">
+        <label>libxml/SAX2.h</label>
+        <link refid="SAX2_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="14">
+        <label>libxml/dict.h</label>
+        <link refid="dict_8h"/>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="22">
+        <label>libxml/encoding.h</label>
+        <link refid="encoding_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+      </node>
+      <node id="21">
+        <label>libxml/entities.h</label>
+        <link refid="entities_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="16">
+        <label>libxml/hash.h</label>
+        <link refid="hash_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="19">
+        <label>libxml/list.h</label>
+        <link refid="list_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>libxml/parser.h</label>
+        <link refid="parser_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="21" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+        <childnode refid="23" relation="include">
+        </childnode>
+        <childnode refid="24" relation="include">
+        </childnode>
+        <childnode refid="25" relation="include">
+        </childnode>
+      </node>
+      <node id="25">
+        <label>libxml/threads.h</label>
+        <link refid="threads_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="8">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+      </node>
+      <node id="17">
+        <label>libxml/valid.h</label>
+        <link refid="valid_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+      </node>
+      <node id="23">
+        <label>libxml/xmlIO.h</label>
+        <link refid="xmlIO_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="20">
+        <label>libxml/xmlautomata.h</label>
+        <link refid="xmlautomata_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="18">
+        <label>libxml/xmlerror.h</label>
+        <link refid="xmlerror_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="12">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="13">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="6">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>libxml.h</label>
+      </node>
+      <node id="7">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="4">
+        <label>limits.h</label>
+      </node>
+      <node id="26">
+        <label>private/dict.h</label>
+      </node>
+      <node id="11">
+        <label>stdarg.h</label>
+      </node>
+      <node id="15">
+        <label>stddef.h</label>
+      </node>
+      <node id="9">
+        <label>stdio.h</label>
+      </node>
+      <node id="3">
+        <label>string.h</label>
+      </node>
+    </incdepgraph>
+    <innerclass refid="structxmlHashEntry" prot="public">xmlHashEntry</innerclass>
+    <innerclass refid="struct__xmlHashTable" prot="public">_xmlHashTable</innerclass>
+    <innerclass refid="structstubData" prot="public">stubData</innerclass>
+    <sectiondef kind="define">
+      <memberdef kind="define" id="hash_8c_1a2e0dfa3e1bcca0ce16dfbe14da3a27be" prot="public" static="no">
+        <name>IN_LIBXML</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="10" column="9" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="10" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="hash_8c_1a3c75bb398badb69c7577b21486f9963f" prot="public" static="no">
+        <name>SIZE_MAX</name>
+        <initializer>((size_t) -1)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="25" column="11" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="25" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="hash_8c_1afb0faaeade82cf30238af9728b029e7c" prot="public" static="no">
+        <name>MAX_FILL_NUM</name>
+        <initializer>7</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="28" column="9" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="28" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="hash_8c_1a89c6ae53ecaaa3016685dc3775109bef" prot="public" static="no">
+        <name>MAX_FILL_DENOM</name>
+        <initializer>8</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="29" column="9" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="29" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="hash_8c_1a47e02d2a245933d9ccb2b84b6e5b8bee" prot="public" static="no">
+        <name>MIN_HASH_SIZE</name>
+        <initializer>8</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="30" column="9" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="30" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="hash_8c_1ae45ebbc1b8ae629cb8880d87ba77cf59" prot="public" static="no">
+        <name>MAX_HASH_SIZE</name>
+        <initializer>(1u &lt;&lt; 31)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="31" column="9" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="31" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="hash_8c_1a6584199f972052a0b6bcd7baad5e2a00" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlHashGrow</definition>
+        <argsstring>(xmlHashTablePtr hash, unsigned size)</argsstring>
+        <name>xmlHashGrow</name>
+        <param>
+          <type>xmlHashTablePtr</type>
+          <declname>hash</declname>
+        </param>
+        <param>
+          <type>unsigned</type>
+          <declname>size</declname>
+        </param>
+        <briefdescription>
+<para>Resize the hash table. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>new size of the hash table </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 in case of success, -1 if a memory allocation failed. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="345" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="345" bodyend="400" declfile="/builds/GNOME/libxml2/hash.c" declline="57" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1a0ea6df6f322132076d2a3e02fef6de88" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>unsigned</type>
+        <definition>static unsigned xmlHashValue</definition>
+        <argsstring>(unsigned seed, const xmlChar *key, const xmlChar *key2, const xmlChar *key3, size_t *lengths)</argsstring>
+        <name>xmlHashValue</name>
+        <param>
+          <type>unsigned</type>
+          <declname>seed</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key2</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key3</declname>
+        </param>
+        <param>
+          <type>size_t *</type>
+          <declname>lengths</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="61" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="61" bodyend="97"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1a7e0bde8937c86cacf2c77f0759a4fc85" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>unsigned</type>
+        <definition>static unsigned xmlHashQNameValue</definition>
+        <argsstring>(unsigned seed, const xmlChar *prefix, const xmlChar *name, const xmlChar *prefix2, const xmlChar *name2, const xmlChar *prefix3, const xmlChar *name3)</argsstring>
+        <name>xmlHashQNameValue</name>
+        <param>
+          <type>unsigned</type>
+          <declname>seed</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>prefix</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>prefix2</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name2</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>prefix3</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name3</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="101" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="101" bodyend="148"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1a1c640bbf7f2442bb37e37eca88068493" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+        <definition>xmlHashTable * xmlHashCreate</definition>
+        <argsstring>(int size)</argsstring>
+        <name>xmlHashCreate</name>
+        <param>
+          <type>int</type>
+          <declname>size</declname>
+        </param>
+        <briefdescription>
+<para>Create a new hash table. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Set size to zero if the number of entries can&apos;t be estimated.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>initial size of the hash table </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the newly created object, or NULL if a memory allocation failed. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="158" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="158" bodyend="193"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1a791d58fda1eebfc6d222e6d1b4f7ff1b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+        <definition>xmlHashTable * xmlHashCreateDict</definition>
+        <argsstring>(int size, xmlDict *dict)</argsstring>
+        <name>xmlHashCreateDict</name>
+        <param>
+          <type>int</type>
+          <declname>size</declname>
+        </param>
+        <param>
+          <type><ref refid="dict_8h_1a72d327232a49f4337b4357e6417cdad3" kindref="member">xmlDict</ref> *</type>
+          <declname>dict</declname>
+        </param>
+        <briefdescription>
+<para>Create a new hash table backed by a dictionary. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This can reduce resource usage considerably if most keys passed to API functions originate from this dictionary.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the size of the hash table </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>dict</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a dictionary to use for the hash </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the newly created object, or NULL if a memory allocation failed. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="205" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="205" bodyend="214"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1afb6dfcaa7ad14b8949df9cacbf4e41be" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlHashFree</definition>
+        <argsstring>(xmlHashTable *hash, xmlHashDeallocator dealloc)</argsstring>
+        <name>xmlHashFree</name>
+        <param>
+          <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+          <declname>hash</declname>
+        </param>
+        <param>
+          <type><ref refid="hash_8h_1a2bdd2d3ede3e00cb896741fbc77821b2" kindref="member">xmlHashDeallocator</ref></type>
+          <declname>dealloc</declname>
+        </param>
+        <briefdescription>
+<para>Free the hash and its contents. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The payload is deallocated with <computeroutput>dealloc</computeroutput> if provided.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>dealloc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>deallocator function or NULL </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="224" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="224" bodyend="254"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1a482467b4e5edc1256d3c75c9dc689d89" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlFastStrEqual</definition>
+        <argsstring>(const xmlChar *s1, const xmlChar *s2)</argsstring>
+        <name>xmlFastStrEqual</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>s1</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>s2</declname>
+        </param>
+        <briefdescription>
+<para>Compare two strings for equality, allowing NULL values. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>s1</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>string </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>s2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>string </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="263" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="263" bodyend="269"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1a44abb27b320955605bacdd6fbbe84f43" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xmlHashEntry *</type>
+        <definition>static xmlHashEntry * xmlHashFindEntry</definition>
+        <argsstring>(const xmlHashTable *hash, const xmlChar *key, const xmlChar *key2, const xmlChar *key3, unsigned hashValue, int *pfound)</argsstring>
+        <name>xmlHashFindEntry</name>
+        <param>
+          <type>const <ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+          <declname>hash</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key2</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key3</declname>
+        </param>
+        <param>
+          <type>unsigned</type>
+          <declname>hashValue</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>pfound</declname>
+        </param>
+        <briefdescription>
+<para>Try to find a matching hash table entry. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If an entry was found, set <computeroutput>found</computeroutput> to 1 and return the entry. Otherwise, set <computeroutput>found</computeroutput> to 0 and return the location where a new entry should be inserted.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table, non-NULL, size &gt; 0 </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>first string key, non-NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>second string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key3</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>third string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>hashValue</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>valid hash value of keys </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>pfound</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>result of search </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="285" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="285" bodyend="335"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1a5de5a14fa9556c2cf6916369fc1624b0" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlHashUpdateInternal</definition>
+        <argsstring>(xmlHashTable *hash, const xmlChar *key, const xmlChar *key2, const xmlChar *key3, void *payload, xmlHashDeallocator dealloc, int update)</argsstring>
+        <name>xmlHashUpdateInternal</name>
+        <param>
+          <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+          <declname>hash</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key2</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key3</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>payload</declname>
+        </param>
+        <param>
+          <type><ref refid="hash_8h_1a2bdd2d3ede3e00cb896741fbc77821b2" kindref="member">xmlHashDeallocator</ref></type>
+          <declname>dealloc</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>update</declname>
+        </param>
+        <briefdescription>
+<para>Internal function to add or update hash entries. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>first string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>second string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key3</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>third string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>payload</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the payload </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>dealloc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>deallocator function for replaced item or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>update</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>whether existing entries should be updated </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="415" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="415" bodyend="583"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1a5024edc57777a989aca0e57f3c0bf65a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlHashDefaultDeallocator</definition>
+        <argsstring>(void *entry, const xmlChar *key)</argsstring>
+        <name>xmlHashDefaultDeallocator</name>
+        <param>
+          <type>void *</type>
+          <declname>entry</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key</declname>
+        </param>
+        <briefdescription>
+<para>Free a hash table entry with xmlFree. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>entry</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table entry </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the entry&apos;s string key </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="592" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="592" bodyend="594"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1a11cf15a4ed94447c07e9678120e88271" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlHashAdd</definition>
+        <argsstring>(xmlHashTable *hash, const xmlChar *key, void *payload)</argsstring>
+        <name>xmlHashAdd</name>
+        <param>
+          <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+          <declname>hash</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>payload</declname>
+        </param>
+        <briefdescription>
+<para>Add a hash table entry. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If an entry with this key already exists, payload will not be updated and 0 is returned. This return value can&apos;t be distinguished from out-of-memory errors, so this function should be used with care.</para>
+<para><simplesect kind="since"><para>2.13.0</para>
+</simplesect>
+<parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>payload</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the payload </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 on success, 0 if an entry exists and -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="610" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="610" bodyend="612"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1aac47cdb9ea953c8e65f84bd99d176911" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlHashAdd2</definition>
+        <argsstring>(xmlHashTable *hash, const xmlChar *key, const xmlChar *key2, void *payload)</argsstring>
+        <name>xmlHashAdd2</name>
+        <param>
+          <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+          <declname>hash</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key2</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>payload</declname>
+        </param>
+        <briefdescription>
+<para>Add a hash table entry with two strings as key. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>See <ref refid="hash_8h_1a0f94b19866fd0190e3233358d221093b" kindref="member">xmlHashAdd</ref>.</para>
+<para><simplesect kind="since"><para>2.13.0</para>
+</simplesect>
+<parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>first string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>second string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>payload</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the payload </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 on success, 0 if an entry exists and -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="628" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="628" bodyend="631"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1a1167a579f53ce4812173d7e11d1042ee" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlHashAdd3</definition>
+        <argsstring>(xmlHashTable *hash, const xmlChar *key, const xmlChar *key2, const xmlChar *key3, void *payload)</argsstring>
+        <name>xmlHashAdd3</name>
+        <param>
+          <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+          <declname>hash</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key2</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key3</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>payload</declname>
+        </param>
+        <briefdescription>
+<para>Add a hash table entry with three strings as key. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>See <ref refid="hash_8h_1a0f94b19866fd0190e3233358d221093b" kindref="member">xmlHashAdd</ref>.</para>
+<para><simplesect kind="since"><para>2.13.0</para>
+</simplesect>
+<parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>first string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>second string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key3</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>third string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>payload</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the payload </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 on success, 0 if an entry exists and -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="648" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="648" bodyend="652"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1ac6830d54c0a4755c8636cca5431f6b45" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlHashAddEntry</definition>
+        <argsstring>(xmlHashTable *hash, const xmlChar *key, void *payload)</argsstring>
+        <name>xmlHashAddEntry</name>
+        <param>
+          <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+          <declname>hash</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>payload</declname>
+        </param>
+        <briefdescription>
+<para>Add a hash table entry. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If an entry with this key already exists, payload will not be updated and -1 is returned. This return value can&apos;t be distinguished from out-of-memory errors, so this function should be used with care.</para>
+<para>NOTE: This function doesn&apos;t allow to distinguish malloc failures from existing entries. Use <ref refid="hash_8h_1a0f94b19866fd0190e3233358d221093b" kindref="member">xmlHashAdd</ref> instead.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>payload</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the payload </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success and -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="669" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="669" bodyend="678"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1a94bcf71a1fe3ec0ac50c7d2a8008454f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlHashAddEntry2</definition>
+        <argsstring>(xmlHashTable *hash, const xmlChar *key, const xmlChar *key2, void *payload)</argsstring>
+        <name>xmlHashAddEntry2</name>
+        <param>
+          <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+          <declname>hash</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key2</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>payload</declname>
+        </param>
+        <briefdescription>
+<para>Add a hash table entry with two strings as key. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>See <ref refid="hash_8h_1af016fca8f6c785a19206f103b4aa5cfe" kindref="member">xmlHashAddEntry</ref>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>first string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>second string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>payload</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the payload </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success and -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="692" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="692" bodyend="702"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1a9a41f14eb1f27c17584792ee44d71c27" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlHashAddEntry3</definition>
+        <argsstring>(xmlHashTable *hash, const xmlChar *key, const xmlChar *key2, const xmlChar *key3, void *payload)</argsstring>
+        <name>xmlHashAddEntry3</name>
+        <param>
+          <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+          <declname>hash</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key2</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key3</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>payload</declname>
+        </param>
+        <briefdescription>
+<para>Add a hash table entry with three strings as key. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>See <ref refid="hash_8h_1af016fca8f6c785a19206f103b4aa5cfe" kindref="member">xmlHashAddEntry</ref>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>first string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>second string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key3</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>third string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>payload</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the payload </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success and -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="717" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="717" bodyend="728"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1a34e756a0ed7a87d93c4161d1068d0c21" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlHashUpdateEntry</definition>
+        <argsstring>(xmlHashTable *hash, const xmlChar *key, void *payload, xmlHashDeallocator dealloc)</argsstring>
+        <name>xmlHashUpdateEntry</name>
+        <param>
+          <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+          <declname>hash</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>payload</declname>
+        </param>
+        <param>
+          <type><ref refid="hash_8h_1a2bdd2d3ede3e00cb896741fbc77821b2" kindref="member">xmlHashDeallocator</ref></type>
+          <declname>dealloc</declname>
+        </param>
+        <briefdescription>
+<para>Add a hash table entry. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If an entry with this key already exists, the old payload will be freed and updated with the new value.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>payload</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the payload </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>dealloc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>deallocator function for replaced item or NULL </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 in case of success, -1 if a memory allocation failed. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="741" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="741" bodyend="750"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1a9942fb0554aa08ff324d8cc7d0ccbdca" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlHashUpdateEntry2</definition>
+        <argsstring>(xmlHashTable *hash, const xmlChar *key, const xmlChar *key2, void *payload, xmlHashDeallocator dealloc)</argsstring>
+        <name>xmlHashUpdateEntry2</name>
+        <param>
+          <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+          <declname>hash</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key2</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>payload</declname>
+        </param>
+        <param>
+          <type><ref refid="hash_8h_1a2bdd2d3ede3e00cb896741fbc77821b2" kindref="member">xmlHashDeallocator</ref></type>
+          <declname>dealloc</declname>
+        </param>
+        <briefdescription>
+<para>Add a hash table entry with two strings as key. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>See <ref refid="hash_8h_1ae89d7c6a953173c54d289538b8d1b9d0" kindref="member">xmlHashUpdateEntry</ref>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>first string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>second string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>payload</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the payload </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>dealloc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>deallocator function for replaced item or NULL </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success and -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="765" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="765" bodyend="775"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1aea36d57ff72df3cf833428aeeb4bc190" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlHashUpdateEntry3</definition>
+        <argsstring>(xmlHashTable *hash, const xmlChar *key, const xmlChar *key2, const xmlChar *key3, void *payload, xmlHashDeallocator dealloc)</argsstring>
+        <name>xmlHashUpdateEntry3</name>
+        <param>
+          <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+          <declname>hash</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key2</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key3</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>payload</declname>
+        </param>
+        <param>
+          <type><ref refid="hash_8h_1a2bdd2d3ede3e00cb896741fbc77821b2" kindref="member">xmlHashDeallocator</ref></type>
+          <declname>dealloc</declname>
+        </param>
+        <briefdescription>
+<para>Add a hash table entry with three strings as key. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>See <ref refid="hash_8h_1ae89d7c6a953173c54d289538b8d1b9d0" kindref="member">xmlHashUpdateEntry</ref>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>first string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>second string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key3</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>third string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>payload</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the payload </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>dealloc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>deallocator function for replaced item or NULL </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success and -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="791" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="791" bodyend="801"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1a706ec86d746bd8b684693109ff86c3c0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void *</type>
+        <definition>void * xmlHashLookup</definition>
+        <argsstring>(xmlHashTable *hash, const xmlChar *key)</argsstring>
+        <name>xmlHashLookup</name>
+        <param>
+          <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+          <declname>hash</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key</declname>
+        </param>
+        <briefdescription>
+<para>Find the entry specified by <computeroutput>key</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>string key </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a pointer to the payload or NULL if no entry was found. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="811" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="811" bodyend="813"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1a75ff9a732a3bb1bfa00f3bea13b0f820" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void *</type>
+        <definition>void * xmlHashLookup2</definition>
+        <argsstring>(xmlHashTable *hash, const xmlChar *key, const xmlChar *key2)</argsstring>
+        <name>xmlHashLookup2</name>
+        <param>
+          <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+          <declname>hash</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key2</declname>
+        </param>
+        <briefdescription>
+<para>Find the payload specified by the (<computeroutput>key</computeroutput>, <computeroutput>key2</computeroutput>) tuple. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>first string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>second string key </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a pointer to the payload or NULL if no entry was found. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="824" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="824" bodyend="827"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1ae6b41d26f514ab4877f4470c94b4fdd3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void *</type>
+        <definition>void * xmlHashQLookup</definition>
+        <argsstring>(xmlHashTable *hash, const xmlChar *prefix, const xmlChar *name)</argsstring>
+        <name>xmlHashQLookup</name>
+        <param>
+          <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+          <declname>hash</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>prefix</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <briefdescription>
+<para>Find the payload specified by the QName <computeroutput>prefix:name</computeroutput> or <computeroutput>name</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>prefix</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>prefix of the string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>local name of the string key </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a pointer to the payload or NULL if no entry was found. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="838" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="838" bodyend="841"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1a1e457c467fe5b9431128a1fcf64b9b01" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void *</type>
+        <definition>void * xmlHashQLookup2</definition>
+        <argsstring>(xmlHashTable *hash, const xmlChar *prefix, const xmlChar *name, const xmlChar *prefix2, const xmlChar *name2)</argsstring>
+        <name>xmlHashQLookup2</name>
+        <param>
+          <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+          <declname>hash</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>prefix</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>prefix2</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name2</declname>
+        </param>
+        <briefdescription>
+<para>Find the payload specified by the QNames tuple. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>prefix</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>first prefix </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>first local name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>prefix2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>second prefix </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>second local name </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a pointer to the payload or NULL if no entry was found. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="854" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="854" bodyend="858"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1ae2d39407d25b3bf4e6127d0c526f7a26" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void *</type>
+        <definition>void * xmlHashLookup3</definition>
+        <argsstring>(xmlHashTable *hash, const xmlChar *key, const xmlChar *key2, const xmlChar *key3)</argsstring>
+        <name>xmlHashLookup3</name>
+        <param>
+          <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+          <declname>hash</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key2</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key3</declname>
+        </param>
+        <briefdescription>
+<para>Find the payload specified by the (<computeroutput>key</computeroutput>, <computeroutput>key2</computeroutput>, <computeroutput>key3</computeroutput>) tuple. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>first string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>second string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key3</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>third string key </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a pointer to the payload or NULL if no entry was found. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="870" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="870" bodyend="883"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1a6e97e2378778c1374e0ec06d1d22a001" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void *</type>
+        <definition>void * xmlHashQLookup3</definition>
+        <argsstring>(xmlHashTable *hash, const xmlChar *prefix, const xmlChar *name, const xmlChar *prefix2, const xmlChar *name2, const xmlChar *prefix3, const xmlChar *name3)</argsstring>
+        <name>xmlHashQLookup3</name>
+        <param>
+          <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+          <declname>hash</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>prefix</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>prefix2</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name2</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>prefix3</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name3</declname>
+        </param>
+        <briefdescription>
+<para>Find the payload specified by the QNames tuple. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>prefix</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>first prefix </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>first local name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>prefix2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>second prefix </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>second local name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>prefix3</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>third prefix </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name3</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>third local name </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a pointer to the payload or NULL if no entry was found. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="899" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="899" bodyend="936"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1afc1f5d4e37f7ac82d91fdacc41ef12c0" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void stubHashScannerFull</definition>
+        <argsstring>(void *payload, void *data, const xmlChar *key, const xmlChar *key2, const xmlChar *key3)</argsstring>
+        <name>stubHashScannerFull</name>
+        <param>
+          <type>void *</type>
+          <declname>payload</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>data</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key2</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key3</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="944" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="944" bodyend="949"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1a98bbf5e7412b9bb7e73c4004020daa1e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlHashScan</definition>
+        <argsstring>(xmlHashTable *hash, xmlHashScanner scan, void *data)</argsstring>
+        <name>xmlHashScan</name>
+        <param>
+          <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+          <declname>hash</declname>
+        </param>
+        <param>
+          <type><ref refid="hash_8h_1a6927639bfa78af7adb85a63b2eac148b" kindref="member">xmlHashScanner</ref></type>
+          <declname>scan</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>data</declname>
+        </param>
+        <briefdescription>
+<para>Scan the hash <computeroutput>table</computeroutput> and apply <computeroutput>scan</computeroutput> to each value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>scan</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>scanner function for items in the hash </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra data passed to <computeroutput>scan</computeroutput> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="959" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="959" bodyend="964"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1a32a5f38703bb1459ef085e8f2a816a6d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlHashScanFull</definition>
+        <argsstring>(xmlHashTable *hash, xmlHashScannerFull scan, void *data)</argsstring>
+        <name>xmlHashScanFull</name>
+        <param>
+          <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+          <declname>hash</declname>
+        </param>
+        <param>
+          <type><ref refid="hash_8h_1ad4e48f572152ae133beae2d82a7a4a19" kindref="member">xmlHashScannerFull</ref></type>
+          <declname>scan</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>data</declname>
+        </param>
+        <briefdescription>
+<para>Scan the hash <computeroutput>table</computeroutput> and apply <computeroutput>scan</computeroutput> to each value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>scan</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>scanner function for items in the hash </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra data passed to <computeroutput>scan</computeroutput> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="974" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="974" bodyend="1013"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1a044f4135a34e74abeb03d1fc627a8b94" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlHashScan3</definition>
+        <argsstring>(xmlHashTable *hash, const xmlChar *key, const xmlChar *key2, const xmlChar *key3, xmlHashScanner scan, void *data)</argsstring>
+        <name>xmlHashScan3</name>
+        <param>
+          <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+          <declname>hash</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key2</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key3</declname>
+        </param>
+        <param>
+          <type><ref refid="hash_8h_1a6927639bfa78af7adb85a63b2eac148b" kindref="member">xmlHashScanner</ref></type>
+          <declname>scan</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>data</declname>
+        </param>
+        <briefdescription>
+<para>Scan the hash <computeroutput>table</computeroutput> and apply <computeroutput>scan</computeroutput> to each value matching (<computeroutput>key</computeroutput>, <computeroutput>key2</computeroutput>, <computeroutput>key3</computeroutput>) tuple. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If one of the keys is null, the comparison is considered to match.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>first string key or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>second string key or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key3</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>third string key or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>scan</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>scanner function for items in the hash </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra data passed to <computeroutput>scan</computeroutput> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="1028" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="1028" bodyend="1035"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1a1e832b9681588648df8c1a24eb4de8ba" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlHashScanFull3</definition>
+        <argsstring>(xmlHashTable *hash, const xmlChar *key, const xmlChar *key2, const xmlChar *key3, xmlHashScannerFull scan, void *data)</argsstring>
+        <name>xmlHashScanFull3</name>
+        <param>
+          <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+          <declname>hash</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key2</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key3</declname>
+        </param>
+        <param>
+          <type><ref refid="hash_8h_1ad4e48f572152ae133beae2d82a7a4a19" kindref="member">xmlHashScannerFull</ref></type>
+          <declname>scan</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>data</declname>
+        </param>
+        <briefdescription>
+<para>Scan the hash <computeroutput>table</computeroutput> and apply <computeroutput>scan</computeroutput> to each value matching (<computeroutput>key</computeroutput>, <computeroutput>key2</computeroutput>, <computeroutput>key3</computeroutput>) tuple. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If one of the keys is null, the comparison is considered to match.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>first string key or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>second string key or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key3</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>third string key or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>scan</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>scanner function for items in the hash </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra data passed to <computeroutput>scan</computeroutput> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="1050" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="1050" bodyend="1096"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1ab9f751311f75f6f21f626056ed22894f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+        <definition>xmlHashTable * xmlHashCopySafe</definition>
+        <argsstring>(xmlHashTable *hash, xmlHashCopier copyFunc, xmlHashDeallocator deallocFunc)</argsstring>
+        <name>xmlHashCopySafe</name>
+        <param>
+          <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+          <declname>hash</declname>
+        </param>
+        <param>
+          <type><ref refid="hash_8h_1a5a00b63e081c86908cd65a6297cd10f9" kindref="member">xmlHashCopier</ref></type>
+          <declname>copyFunc</declname>
+        </param>
+        <param>
+          <type><ref refid="hash_8h_1a2bdd2d3ede3e00cb896741fbc77821b2" kindref="member">xmlHashDeallocator</ref></type>
+          <declname>deallocFunc</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>copyFunc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>copier function for items in the hash </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>deallocFunc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>deallocation function in case of errors</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+Copy the hash table using <computeroutput>copyFunc</computeroutput> to copy payloads.</para>
+<para><simplesect kind="since"><para>2.13.0</para>
+</simplesect>
+<simplesect kind="return"><para>the new table or NULL if a memory allocation failed. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="1110" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="1110" bodyend="1148"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1a2faa0961e137c5491fad8718a12324ce" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+        <definition>xmlHashTable * xmlHashCopy</definition>
+        <argsstring>(xmlHashTable *hash, xmlHashCopier copy)</argsstring>
+        <name>xmlHashCopy</name>
+        <param>
+          <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+          <declname>hash</declname>
+        </param>
+        <param>
+          <type><ref refid="hash_8h_1a5a00b63e081c86908cd65a6297cd10f9" kindref="member">xmlHashCopier</ref></type>
+          <declname>copy</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>copy</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>copier function for items in the hash</para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<xrefsect id="deprecated_1_deprecated000158"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Leaks memory in error case.</para>
+</xrefdescription></xrefsect></para>
+<para>Copy the hash table using <computeroutput>copy</computeroutput> to copy payloads.</para>
+<para><simplesect kind="return"><para>the new table or NULL if a memory allocation failed. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="1161" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="1161" bodyend="1163"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1a1c69642fcc6335cd61d328877f51e4c6" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlHashSize</definition>
+        <argsstring>(xmlHashTable *hash)</argsstring>
+        <name>xmlHashSize</name>
+        <param>
+          <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+          <declname>hash</declname>
+        </param>
+        <briefdescription>
+<para>Query the number of elements in the hash table. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the number of elements in the hash table or -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="1173" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="1173" bodyend="1177"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1ae77fc1f4ab2020a19c851074cf01922d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlHashRemoveEntry</definition>
+        <argsstring>(xmlHashTable *hash, const xmlChar *key, xmlHashDeallocator dealloc)</argsstring>
+        <name>xmlHashRemoveEntry</name>
+        <param>
+          <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+          <declname>hash</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key</declname>
+        </param>
+        <param>
+          <type><ref refid="hash_8h_1a2bdd2d3ede3e00cb896741fbc77821b2" kindref="member">xmlHashDeallocator</ref></type>
+          <declname>dealloc</declname>
+        </param>
+        <briefdescription>
+<para>Find the entry specified by the <computeroutput>key</computeroutput> and remove it from the hash table. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Payload will be freed with <computeroutput>dealloc</computeroutput>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>dealloc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>deallocator function for removed item or NULL </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success and -1 if no entry was found. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="1188" column="5" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="1188" bodyend="1191"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1a8708ed355b11b3b438861ef1a11eb87e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlHashRemoveEntry2</definition>
+        <argsstring>(xmlHashTable *hash, const xmlChar *key, const xmlChar *key2, xmlHashDeallocator dealloc)</argsstring>
+        <name>xmlHashRemoveEntry2</name>
+        <param>
+          <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+          <declname>hash</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key2</declname>
+        </param>
+        <param>
+          <type><ref refid="hash_8h_1a2bdd2d3ede3e00cb896741fbc77821b2" kindref="member">xmlHashDeallocator</ref></type>
+          <declname>dealloc</declname>
+        </param>
+        <briefdescription>
+<para>Remove an entry with two strings as key. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>See <ref refid="hash_8h_1a0ea7cc65cea2525368594f53cfbab740" kindref="member">xmlHashRemoveEntry</ref>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>first string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>second string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>dealloc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>deallocator function for removed item or NULL </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success and -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="1205" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="1205" bodyend="1208"/>
+      </memberdef>
+      <memberdef kind="function" id="hash_8c_1ab041ed3fd2f8302b51c8b95c72a5462c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlHashRemoveEntry3</definition>
+        <argsstring>(xmlHashTable *hash, const xmlChar *key, const xmlChar *key2, const xmlChar *key3, xmlHashDeallocator dealloc)</argsstring>
+        <name>xmlHashRemoveEntry3</name>
+        <param>
+          <type><ref refid="hash_8h_1aefb691a6db4810b3b963e8834656bf92" kindref="member">xmlHashTable</ref> *</type>
+          <declname>hash</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key2</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>key3</declname>
+        </param>
+        <param>
+          <type><ref refid="hash_8h_1a2bdd2d3ede3e00cb896741fbc77821b2" kindref="member">xmlHashDeallocator</ref></type>
+          <declname>dealloc</declname>
+        </param>
+        <briefdescription>
+<para>Remove an entry with three strings as key. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>See <ref refid="hash_8h_1a0ea7cc65cea2525368594f53cfbab740" kindref="member">xmlHashRemoveEntry</ref>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>hash</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>hash table </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>first string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key2</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>second string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>key3</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>third string key </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>dealloc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>deallocator function for removed item or NULL </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success and -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="1224" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="1224" bodyend="1296"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/hash.c"/>
+  </compounddef>
+</doxygen>

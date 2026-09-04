@@ -1,0 +1,191 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlCatalogEntry" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlCatalogEntry</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlCatalogEntry_1a3669dec49617480fca07c1ca7cb7f0bd" prot="public" static="no" mutable="no">
+        <type>struct _xmlCatalogEntry *</type>
+        <definition>struct _xmlCatalogEntry* next</definition>
+        <argsstring></argsstring>
+        <name>next</name>
+        <qualifiedname>_xmlCatalogEntry::next</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/catalog.c" line="111" column="27" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="111" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlCatalogEntry_1a3f5404f5ec9f8ea5d1a3dd5f95f84360" prot="public" static="no" mutable="no">
+        <type>struct _xmlCatalogEntry *</type>
+        <definition>struct _xmlCatalogEntry* parent</definition>
+        <argsstring></argsstring>
+        <name>parent</name>
+        <qualifiedname>_xmlCatalogEntry::parent</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/catalog.c" line="112" column="27" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="112" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlCatalogEntry_1a6e49bdb57129f409affdfaa3b68731f1" prot="public" static="no" mutable="no">
+        <type>struct _xmlCatalogEntry *</type>
+        <definition>struct _xmlCatalogEntry* children</definition>
+        <argsstring></argsstring>
+        <name>children</name>
+        <qualifiedname>_xmlCatalogEntry::children</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/catalog.c" line="113" column="27" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="113" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlCatalogEntry_1a20ab4aedaead755053cfbe8937779cc9" prot="public" static="no" mutable="no">
+        <type>xmlCatalogEntryType</type>
+        <definition>xmlCatalogEntryType type</definition>
+        <argsstring></argsstring>
+        <name>type</name>
+        <qualifiedname>_xmlCatalogEntry::type</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/catalog.c" line="114" column="25" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="114" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlCatalogEntry_1a1ed8962c3c52bc7d9b3f10a3c48aec7e" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* name</definition>
+        <argsstring></argsstring>
+        <name>name</name>
+        <qualifiedname>_xmlCatalogEntry::name</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/catalog.c" line="115" column="13" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="115" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlCatalogEntry_1a050d5251f022144a70e35e06ccc3665f" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* value</definition>
+        <argsstring></argsstring>
+        <name>value</name>
+        <qualifiedname>_xmlCatalogEntry::value</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/catalog.c" line="116" column="13" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="116" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlCatalogEntry_1a27574c2b7af9a5806ee7c87b75604d0d" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* URL</definition>
+        <argsstring></argsstring>
+        <name>URL</name>
+        <qualifiedname>_xmlCatalogEntry::URL</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/catalog.c" line="117" column="13" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="117" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlCatalogEntry_1a1222e44bc209abd8df444bd392daf80f" prot="public" static="no" mutable="no">
+        <type>xmlCatalogPrefer</type>
+        <definition>xmlCatalogPrefer prefer</definition>
+        <argsstring></argsstring>
+        <name>prefer</name>
+        <qualifiedname>_xmlCatalogEntry::prefer</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/catalog.c" line="118" column="22" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="118" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlCatalogEntry_1a76184015a988f1d7cc9b199ff0ab8a69" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int dealloc</definition>
+        <argsstring></argsstring>
+        <name>dealloc</name>
+        <qualifiedname>_xmlCatalogEntry::dealloc</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/catalog.c" line="119" column="9" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="119" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlCatalogEntry_1acb5ba97551079e0b072c62c21d784ac5" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int depth</definition>
+        <argsstring></argsstring>
+        <name>depth</name>
+        <qualifiedname>_xmlCatalogEntry::depth</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/catalog.c" line="120" column="9" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="120" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlCatalogEntry_1a671683c415321d155151b3fb2f3b2f75" prot="public" static="no" mutable="no">
+        <type>struct _xmlCatalogEntry *</type>
+        <definition>struct _xmlCatalogEntry* group</definition>
+        <argsstring></argsstring>
+        <name>group</name>
+        <qualifiedname>_xmlCatalogEntry::group</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/catalog.c" line="121" column="27" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="121" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="1">
+        <label>_xmlCatalogEntry</label>
+        <childnode refid="1" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>group</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/catalog.c" line="110" column="1" bodyfile="/builds/GNOME/libxml2/catalog.c" bodystart="110" bodyend="122"/>
+    <listofallmembers>
+      <member refid="struct__xmlCatalogEntry_1a6e49bdb57129f409affdfaa3b68731f1" prot="public" virt="non-virtual"><scope>_xmlCatalogEntry</scope><name>children</name></member>
+      <member refid="struct__xmlCatalogEntry_1a76184015a988f1d7cc9b199ff0ab8a69" prot="public" virt="non-virtual"><scope>_xmlCatalogEntry</scope><name>dealloc</name></member>
+      <member refid="struct__xmlCatalogEntry_1acb5ba97551079e0b072c62c21d784ac5" prot="public" virt="non-virtual"><scope>_xmlCatalogEntry</scope><name>depth</name></member>
+      <member refid="struct__xmlCatalogEntry_1a671683c415321d155151b3fb2f3b2f75" prot="public" virt="non-virtual"><scope>_xmlCatalogEntry</scope><name>group</name></member>
+      <member refid="struct__xmlCatalogEntry_1a1ed8962c3c52bc7d9b3f10a3c48aec7e" prot="public" virt="non-virtual"><scope>_xmlCatalogEntry</scope><name>name</name></member>
+      <member refid="struct__xmlCatalogEntry_1a3669dec49617480fca07c1ca7cb7f0bd" prot="public" virt="non-virtual"><scope>_xmlCatalogEntry</scope><name>next</name></member>
+      <member refid="struct__xmlCatalogEntry_1a3f5404f5ec9f8ea5d1a3dd5f95f84360" prot="public" virt="non-virtual"><scope>_xmlCatalogEntry</scope><name>parent</name></member>
+      <member refid="struct__xmlCatalogEntry_1a1222e44bc209abd8df444bd392daf80f" prot="public" virt="non-virtual"><scope>_xmlCatalogEntry</scope><name>prefer</name></member>
+      <member refid="struct__xmlCatalogEntry_1a20ab4aedaead755053cfbe8937779cc9" prot="public" virt="non-virtual"><scope>_xmlCatalogEntry</scope><name>type</name></member>
+      <member refid="struct__xmlCatalogEntry_1a27574c2b7af9a5806ee7c87b75604d0d" prot="public" virt="non-virtual"><scope>_xmlCatalogEntry</scope><name>URL</name></member>
+      <member refid="struct__xmlCatalogEntry_1a050d5251f022144a70e35e06ccc3665f" prot="public" virt="non-virtual"><scope>_xmlCatalogEntry</scope><name>value</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

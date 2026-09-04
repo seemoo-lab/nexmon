@@ -1,0 +1,2 @@
+./test/schemas/any5_3.xml:4: Schemas validity error : Element '{urn:test:foo}foo': Missing child element(s).
+./test/schemas/any5_3.xml fails to validate

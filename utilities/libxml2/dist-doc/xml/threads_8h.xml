@@ -1,0 +1,478 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="threads_8h" kind="file" language="C++">
+    <compoundname>threads.h</compoundname>
+    <includes refid="xmlversion_8h" local="no">libxml/xmlversion.h</includes>
+    <includedby refid="catalog_8c" local="no">/builds/GNOME/libxml2/catalog.c</includedby>
+    <includedby refid="globals_8c" local="no">/builds/GNOME/libxml2/globals.c</includedby>
+    <includedby refid="threads_8c" local="no">/builds/GNOME/libxml2/threads.c</includedby>
+    <includedby refid="xmlmemory_8c" local="no">/builds/GNOME/libxml2/xmlmemory.c</includedby>
+    <includedby refid="xpath_8c" local="no">/builds/GNOME/libxml2/xpath.c</includedby>
+    <includedby refid="parser_8h" local="no">parser.h</includedby>
+    <incdepgraph>
+      <node id="1">
+        <label>threads.h</label>
+        <link refid="threads_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>libxml/xmlexports.h</label>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="3">
+        <label>HTMLparser.h</label>
+        <link refid="HTMLparser_8h"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>HTMLtree.h</label>
+        <link refid="HTMLtree_8h"/>
+      </node>
+      <node id="6">
+        <label>SAX2.h</label>
+        <link refid="SAX2_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>parser.h</label>
+        <link refid="parser_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>parserInternals.h</label>
+        <link refid="parserInternals_8h"/>
+      </node>
+      <node id="7">
+        <label>relaxng.h</label>
+        <link refid="relaxng_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>threads.h</label>
+        <link refid="threads_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="9">
+        <label>xinclude.h</label>
+        <link refid="xinclude_8h"/>
+      </node>
+      <node id="8">
+        <label>xmlreader.h</label>
+        <link refid="xmlreader_8h"/>
+      </node>
+      <node id="10">
+        <label>xmlschemas.h</label>
+        <link refid="xmlschemas_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="11">
+        <label>xmlschemastypes.h</label>
+        <link refid="xmlschemastypes_8h"/>
+      </node>
+    </invincdepgraph>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="threads_8h_1a65cb9dc91b670770a3725773fd5a4df7" prot="public" static="no">
+        <type>struct _xmlMutex</type>
+        <definition>typedef struct _xmlMutex xmlMutex</definition>
+        <argsstring></argsstring>
+        <name>xmlMutex</name>
+        <briefdescription>
+<para>Mutual exclusion object. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="threads.h" line="24" column="24" bodyfile="threads.h" bodystart="24" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="threads_8h_1a5231fc8784fca0a856c027dcc2d57440" prot="public" static="no">
+        <type><ref refid="threads_8h_1a65cb9dc91b670770a3725773fd5a4df7" kindref="member">xmlMutex</ref> *</type>
+        <definition>typedef xmlMutex* xmlMutexPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlMutexPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="threads.h" line="25" column="18" bodyfile="threads.h" bodystart="25" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="threads_8h_1a17ed28471a390e28ba6d00fd2d44028b" prot="public" static="no">
+        <type>struct _xmlRMutex</type>
+        <definition>typedef struct _xmlRMutex xmlRMutex</definition>
+        <argsstring></argsstring>
+        <name>xmlRMutex</name>
+        <briefdescription>
+<para>Reentrant mutual exclusion object. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="threads.h" line="28" column="25" bodyfile="threads.h" bodystart="28" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="threads_8h_1aa6d0044cccfb5c3e1f982061fe875565" prot="public" static="no">
+        <type><ref refid="threads_8h_1a17ed28471a390e28ba6d00fd2d44028b" kindref="member">xmlRMutex</ref> *</type>
+        <definition>typedef xmlRMutex* xmlRMutexPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlRMutexPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="threads.h" line="29" column="19" bodyfile="threads.h" bodystart="29" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="threads_8h_1a30866a3a9af1aa5fc49f206d301d8f35" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlCheckThreadLocalStorage</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlCheckThreadLocalStorage</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Check whether thread-local storage could be allocated. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>In cross-platform code running in multithreaded environments, this function should be called once in each thread before calling other library functions to make sure that thread-local storage was allocated properly.</para>
+<para><simplesect kind="since"><para>2.12.0 </para>
+</simplesect>
+<simplesect kind="return"><para>0 on success or -1 if a memory allocation failed. A failed allocation signals a typically fatal and irrecoverable out-of-memory situation. Don&apos;t call any library functions in this case. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="threads.h" line="32" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="773" bodyend="779" declfile="threads.h" declline="32" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="threads_8h_1a574fd273d73e6cd30305b3bfdc717f1e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="threads_8h_1a65cb9dc91b670770a3725773fd5a4df7" kindref="member">xmlMutex</ref> *</type>
+        <definition>xmlMutex * xmlNewMutex</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlNewMutex</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para><ref refid="threads_8h_1a574fd273d73e6cd30305b3bfdc717f1e" kindref="member">xmlNewMutex</ref> is used to allocate a libxml2 token struct for use in synchronizing access to data. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="return"><para>a new simple mutex pointer or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="threads.h" line="35" column="1" bodyfile="/builds/GNOME/libxml2/threads.c" bodystart="74" bodyend="83" declfile="threads.h" declline="35" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="threads_8h_1ae9119e93165b3b574c33f2b7d19b15a0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlMutexLock</definition>
+        <argsstring>(xmlMutex *tok)</argsstring>
+        <name>xmlMutexLock</name>
+        <param>
+          <type><ref refid="threads_8h_1a65cb9dc91b670770a3725773fd5a4df7" kindref="member">xmlMutex</ref> *</type>
+          <declname>tok</declname>
+        </param>
+        <briefdescription>
+<para><ref refid="threads_8h_1ae9119e93165b3b574c33f2b7d19b15a0" kindref="member">xmlMutexLock</ref> is used to lock a libxml2 token. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>tok</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the simple mutex </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="threads.h" line="37" column="1" bodyfile="/builds/GNOME/libxml2/threads.c" bodystart="123" bodyend="137" declfile="threads.h" declline="37" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="threads_8h_1a5cf2600ab8ca90435a40caae91915f13" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlMutexUnlock</definition>
+        <argsstring>(xmlMutex *tok)</argsstring>
+        <name>xmlMutexUnlock</name>
+        <param>
+          <type><ref refid="threads_8h_1a65cb9dc91b670770a3725773fd5a4df7" kindref="member">xmlMutex</ref> *</type>
+          <declname>tok</declname>
+        </param>
+        <briefdescription>
+<para><ref refid="threads_8h_1a5cf2600ab8ca90435a40caae91915f13" kindref="member">xmlMutexUnlock</ref> is used to unlock a libxml2 token. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>tok</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the simple mutex </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="threads.h" line="39" column="1" bodyfile="/builds/GNOME/libxml2/threads.c" bodystart="145" bodyend="154" declfile="threads.h" declline="39" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="threads_8h_1af2f4d4ab4d564cd7634f7743e364e981" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlFreeMutex</definition>
+        <argsstring>(xmlMutex *tok)</argsstring>
+        <name>xmlFreeMutex</name>
+        <param>
+          <type><ref refid="threads_8h_1a65cb9dc91b670770a3725773fd5a4df7" kindref="member">xmlMutex</ref> *</type>
+          <declname>tok</declname>
+        </param>
+        <briefdescription>
+<para>Free a mutex. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>tok</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the simple mutex </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="threads.h" line="41" column="1" bodyfile="/builds/GNOME/libxml2/threads.c" bodystart="108" bodyend="115" declfile="threads.h" declline="41" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="threads_8h_1a2c92260f0be7c243860fcf27d8091517" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="threads_8h_1a17ed28471a390e28ba6d00fd2d44028b" kindref="member">xmlRMutex</ref> *</type>
+        <definition>xmlRMutex * xmlNewRMutex</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlNewRMutex</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Used to allocate a reentrant mutex for use in synchronizing access to data. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>token_r is a re-entrant lock and thus useful for synchronizing access to data structures that may be manipulated in a recursive fashion.</para>
+<para><simplesect kind="return"><para>the new reentrant mutex pointer or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="threads.h" line="44" column="1" bodyfile="/builds/GNOME/libxml2/threads.c" bodystart="184" bodyend="193" declfile="threads.h" declline="44" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="threads_8h_1a1e3c8a56f1e6099a06ff25f2312bb3fa" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlRMutexLock</definition>
+        <argsstring>(xmlRMutex *tok)</argsstring>
+        <name>xmlRMutexLock</name>
+        <param>
+          <type><ref refid="threads_8h_1a17ed28471a390e28ba6d00fd2d44028b" kindref="member">xmlRMutex</ref> *</type>
+          <declname>tok</declname>
+        </param>
+        <briefdescription>
+<para><ref refid="threads_8h_1a1e3c8a56f1e6099a06ff25f2312bb3fa" kindref="member">xmlRMutexLock</ref> is used to lock a libxml2 token_r. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>tok</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the reentrant mutex </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="threads.h" line="46" column="1" bodyfile="/builds/GNOME/libxml2/threads.c" bodystart="233" bodyend="257" declfile="threads.h" declline="46" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="threads_8h_1ae220b43a869130b74b25bfdf1c51713a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlRMutexUnlock</definition>
+        <argsstring>(xmlRMutex *tok)</argsstring>
+        <name>xmlRMutexUnlock</name>
+        <param>
+          <type><ref refid="threads_8h_1a17ed28471a390e28ba6d00fd2d44028b" kindref="member">xmlRMutex</ref> *</type>
+          <declname>tok</declname>
+        </param>
+        <briefdescription>
+<para><ref refid="threads_8h_1ae220b43a869130b74b25bfdf1c51713a" kindref="member">xmlRMutexUnlock</ref> is used to unlock a libxml2 token_r. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>tok</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the reentrant mutex </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="threads.h" line="48" column="1" bodyfile="/builds/GNOME/libxml2/threads.c" bodystart="265" bodyend="281" declfile="threads.h" declline="48" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="threads_8h_1a80b60556ea62f01feb11083afcb9e4c6" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlFreeRMutex</definition>
+        <argsstring>(xmlRMutex *tok)</argsstring>
+        <name>xmlFreeRMutex</name>
+        <param>
+          <type><ref refid="threads_8h_1a17ed28471a390e28ba6d00fd2d44028b" kindref="member">xmlRMutex</ref> *</type>
+          <declname>tok</declname>
+        </param>
+        <briefdescription>
+<para>Used to reclaim resources associated with a reentrant mutex. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>tok</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the reentrant mutex </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="threads.h" line="50" column="1" bodyfile="/builds/GNOME/libxml2/threads.c" bodystart="219" bodyend="225" declfile="threads.h" declline="50" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="threads_8h_1a842b046703f93ae2523dcc27ae03a13a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlInitThreads</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlInitThreads</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000298"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Alias for <ref refid="parser_8h_1a642085a16c74b8352e92a89c348cc9c4" kindref="member">xmlInitParser</ref>. </para>
+</xrefdescription></xrefsect></para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="threads.h" line="57" column="1" bodyfile="/builds/GNOME/libxml2/threads.c" bodystart="313" bodyend="316" declfile="threads.h" declline="57" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="threads_8h_1a437aecc8c142721c08025f8f1e0865d3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlLockLibrary</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlLockLibrary</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para><ref refid="threads_8h_1a437aecc8c142721c08025f8f1e0865d3" kindref="member">xmlLockLibrary</ref> is used to take out a re-entrant lock on the libxml2 library. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="threads.h" line="59" column="1" bodyfile="/builds/GNOME/libxml2/threads.c" bodystart="294" bodyend="297" declfile="threads.h" declline="59" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="threads_8h_1a8bd64fe6a411318bf3e8443786f88fd1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlUnlockLibrary</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlUnlockLibrary</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para><ref refid="threads_8h_1a8bd64fe6a411318bf3e8443786f88fd1" kindref="member">xmlUnlockLibrary</ref> is used to release a re-entrant lock on the libxml2 library. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="threads.h" line="61" column="1" bodyfile="/builds/GNOME/libxml2/threads.c" bodystart="304" bodyend="307" declfile="threads.h" declline="61" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="threads_8h_1af00894c063aa11a482b16d39ea8f6bbc" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlCleanupThreads</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlCleanupThreads</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000299"><xreftitle>Deprecated</xreftitle><xrefdescription><para>This function is a no-op. Call <ref refid="parser_8h_1a7eb4447bac68a016b428f51cc402369f" kindref="member">xmlCleanupParser</ref> to free global state but see the warnings there. <ref refid="parser_8h_1a7eb4447bac68a016b428f51cc402369f" kindref="member">xmlCleanupParser</ref> should be only called once at program exit. In most cases, you don&apos;t have call cleanup functions at all. </para>
+</xrefdescription></xrefsect></para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="threads.h" line="64" column="1" bodyfile="/builds/GNOME/libxml2/threads.c" bodystart="325" bodyend="327" declfile="threads.h" declline="64" declcolumn="1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>interfaces for thread handling </para>
+    </briefdescription>
+    <detaileddescription>
+<para>set of generic threading related routines should work with pthreads, Windows native or TLS threads</para>
+<para><simplesect kind="copyright"><para>See Copyright for the status of this software.</para>
+</simplesect>
+<simplesect kind="author"><para>Daniel Veillard </para>
+</simplesect>
+</para>
+    </detaileddescription>
+    <location file="threads.h"/>
+  </compounddef>
+</doxygen>

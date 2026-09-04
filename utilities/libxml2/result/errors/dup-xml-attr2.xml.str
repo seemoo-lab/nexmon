@@ -1,0 +1,10 @@
+./test/errors/dup-xml-attr2.xml:2: namespace error : Namespaced Attribute a in 'urn:a' redefined
+    <elem a:a="" b:a="" b:a=""/>
+                              ^
+./test/errors/dup-xml-attr2.xml:2: namespace error : Namespaced Attribute a in 'urn:a' redefined
+    <elem a:a="" b:a="" b:a=""/>
+                              ^
+./test/errors/dup-xml-attr2.xml:2: parser error : Attribute b:a redefined
+    <elem a:a="" b:a="" b:a=""/>
+                              ^
+./test/errors/dup-xml-attr2.xml : failed to parse

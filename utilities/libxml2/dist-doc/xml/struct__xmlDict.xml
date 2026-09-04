@@ -1,0 +1,152 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlDict" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlDict</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlDict_1a5e93b6ff1241a8ea952f207d5fbc5eba" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int ref_counter</definition>
+        <argsstring></argsstring>
+        <name>ref_counter</name>
+        <qualifiedname>_xmlDict::ref_counter</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="63" column="9" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="63" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlDict_1aaa0dbb7c8c0580490c85ea92d6dc6046" prot="public" static="no" mutable="no">
+        <type>xmlDictEntry *</type>
+        <definition>xmlDictEntry* table</definition>
+        <argsstring></argsstring>
+        <name>table</name>
+        <qualifiedname>_xmlDict::table</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="65" column="18" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="65" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlDict_1a854352f53b148adc24983a58a1866d66" prot="public" static="no" mutable="no">
+        <type>size_t</type>
+        <definition>size_t size</definition>
+        <argsstring></argsstring>
+        <name>size</name>
+        <qualifiedname>_xmlDict::size</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="66" column="12" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="66" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlDict_1a6171bedb3a729fac1bbcd26fd0d903e8" prot="public" static="no" mutable="no">
+        <type>unsigned int</type>
+        <definition>unsigned int nbElems</definition>
+        <argsstring></argsstring>
+        <name>nbElems</name>
+        <qualifiedname>_xmlDict::nbElems</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="67" column="18" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="67" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlDict_1ae1d9b005c3c016cd246d799995d46bef" prot="public" static="no" mutable="no">
+        <type>xmlDictStringsPtr</type>
+        <definition>xmlDictStringsPtr strings</definition>
+        <argsstring></argsstring>
+        <name>strings</name>
+        <qualifiedname>_xmlDict::strings</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="68" column="23" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="68" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlDict_1a24cda9ad6d3c9eab6a6ac80c94eb1c72" prot="public" static="no" mutable="no">
+        <type>struct _xmlDict *</type>
+        <definition>struct _xmlDict* subdict</definition>
+        <argsstring></argsstring>
+        <name>subdict</name>
+        <qualifiedname>_xmlDict::subdict</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="70" column="19" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="70" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlDict_1abb3c5a016eb55b340002c5da33a16714" prot="public" static="no" mutable="no">
+        <type>unsigned</type>
+        <definition>unsigned seed</definition>
+        <argsstring></argsstring>
+        <name>seed</name>
+        <qualifiedname>_xmlDict::seed</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="72" column="14" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="72" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlDict_1abccf68b7cb494f01c3b32705841ec989" prot="public" static="no" mutable="no">
+        <type>size_t</type>
+        <definition>size_t limit</definition>
+        <argsstring></argsstring>
+        <name>limit</name>
+        <qualifiedname>_xmlDict::limit</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/dict.c" line="74" column="12" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="74" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="1">
+        <label>_xmlDict</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>strings</edgelabel>
+        </childnode>
+        <childnode refid="1" relation="usage">
+          <edgelabel>subdict</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>_xmlDictStrings</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/dict.c" line="62" column="1" bodyfile="/builds/GNOME/libxml2/dict.c" bodystart="62" bodyend="75"/>
+    <listofallmembers>
+      <member refid="struct__xmlDict_1abccf68b7cb494f01c3b32705841ec989" prot="public" virt="non-virtual"><scope>_xmlDict</scope><name>limit</name></member>
+      <member refid="struct__xmlDict_1a6171bedb3a729fac1bbcd26fd0d903e8" prot="public" virt="non-virtual"><scope>_xmlDict</scope><name>nbElems</name></member>
+      <member refid="struct__xmlDict_1a5e93b6ff1241a8ea952f207d5fbc5eba" prot="public" virt="non-virtual"><scope>_xmlDict</scope><name>ref_counter</name></member>
+      <member refid="struct__xmlDict_1abb3c5a016eb55b340002c5da33a16714" prot="public" virt="non-virtual"><scope>_xmlDict</scope><name>seed</name></member>
+      <member refid="struct__xmlDict_1a854352f53b148adc24983a58a1866d66" prot="public" virt="non-virtual"><scope>_xmlDict</scope><name>size</name></member>
+      <member refid="struct__xmlDict_1ae1d9b005c3c016cd246d799995d46bef" prot="public" virt="non-virtual"><scope>_xmlDict</scope><name>strings</name></member>
+      <member refid="struct__xmlDict_1a24cda9ad6d3c9eab6a6ac80c94eb1c72" prot="public" virt="non-virtual"><scope>_xmlDict</scope><name>subdict</name></member>
+      <member refid="struct__xmlDict_1aaa0dbb7c8c0580490c85ea92d6dc6046" prot="public" virt="non-virtual"><scope>_xmlDict</scope><name>table</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

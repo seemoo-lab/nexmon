@@ -1,0 +1,3107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generated with https://github.com/ceztko/XMP-RNG-Schema, DO NOT EDIT! -->
+<!-- SPDX-FileCopyrightText: (C) 2014 ISO <copyright@iso.org> -->
+<!-- SPDX-FileCopyrightText: (C) 2025 Francesco Pretto <ceztko@gmail.com> -->
+<!-- SPDX-License-Identifier: MIT OR LicenseRef-ISO16684_2-2014-schema -->
+<rng:grammar xmlns:rng="http://relaxng.org/ns/structure/1.0" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:ui="http://ns.iso.org/iso-16684-2/xmp-schema-ui-info/1.0" xmlns:x="adobe:ns:meta/" datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes" xmlns:xmpidq="http://ns.adobe.com/xmp/Identifier/qual/1.0/" xmlns:stRef="http://ns.adobe.com/xap/1.0/sType/ResourceRef#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:xmp="http://ns.adobe.com/xap/1.0/" xmlns:xapGImg="http://ns.adobe.com/xap/1.0/g/img/" xmlns:xmpRights="http://ns.adobe.com/xap/1.0/rights/" xmlns:xmpMM="http://ns.adobe.com/xap/1.0/mm/" xmlns:stVer="http://ns.adobe.com/xap/1.0/sType/Version#" xmlns:stEvt="http://ns.adobe.com/xap/1.0/sType/ResourceEvent#" xmlns:xmpBJ="http://ns.adobe.com/xap/1.0/bj/" xmlns:stJob="http://ns.adobe.com/xap/1.0/sType/Job#" xmlns:xapG="http://ns.adobe.com/xap/1.0/g/" xmlns:xmpTPg="http://ns.adobe.com/xap/1.0/t/pg/" xmlns:stFnt="http://ns.adobe.com/xap/1.0/sType/Font#" xmlns:stDim="http://ns.adobe.com/xap/1.0/sType/Dimensions#" xmlns:xmpDM="http://ns.adobe.com/xmp/1.0/DynamicMedia/" xmlns:pdf="http://ns.adobe.com/pdf/1.3/" xmlns:photoshop="http://ns.adobe.com/photoshop/1.0/" xmlns:tiff="http://ns.adobe.com/tiff/1.0/" xmlns:crs="http://ns.adobe.com/camera-rawsettings/1.0/" xmlns:exif="http://ns.adobe.com/exif/1.0/" xmlns:aux="http://ns.adobe.com/exif/1.0/aux/" xmlns:exifEX="http://cipa.jp/exif/1.0/" xmlns:pdfaid="http://www.aiim.org/pdfa/ns/id/" xmlns:pdfaExtension="http://www.aiim.org/pdfa/ns/extension/" xmlns:pdfaSchema="http://www.aiim.org/pdfa/ns/schema#" xmlns:pdfaProperty="http://www.aiim.org/pdfa/ns/property#" xmlns:pdfaType="http://www.aiim.org/pdfa/ns/type#" xmlns:pdfaField="http://www.aiim.org/pdfa/ns/field#">
+  <rng:start>
+    <rng:element name="x:xmpmeta">
+      <rng:element name="rdf:RDF">
+        <rng:element name="rdf:Description">
+          <rng:attribute name="rdf:about" />
+          <rng:zeroOrMore>
+            <rng:choice>
+              <rng:ref name="dc.contributor" />
+              <rng:ref name="dc.coverage" />
+              <rng:ref name="dc.creator" />
+              <rng:ref name="dc.date" />
+              <rng:ref name="dc.description" />
+              <rng:ref name="dc.format" />
+              <rng:ref name="dc.identifier" />
+              <rng:ref name="dc.language" />
+              <rng:ref name="dc.publisher" />
+              <rng:ref name="dc.relation" />
+              <rng:ref name="dc.rights" />
+              <rng:ref name="dc.source" />
+              <rng:ref name="dc.subject" />
+              <rng:ref name="dc.title" />
+              <rng:ref name="dc.type" />
+              <rng:ref name="xmp.Advisory" />
+              <rng:ref name="xmp.CreateDate" />
+              <rng:ref name="xmp.CreatorTool" />
+              <rng:ref name="xmp.Identifier" />
+              <rng:ref name="xmp.MetadataDate" />
+              <rng:ref name="xmp.ModifyDate" />
+              <rng:ref name="xmp.Nickname" />
+              <rng:ref name="xmp.Thumbnails" />
+              <rng:ref name="xmpRights.Certificate" />
+              <rng:ref name="xmpRights.Marked" />
+              <rng:ref name="xmpRights.Owner" />
+              <rng:ref name="xmpRights.UsageTerms" />
+              <rng:ref name="xmpRights.WebStatement" />
+              <rng:ref name="xmpMM.DerivedFrom" />
+              <rng:ref name="xmpMM.DocumentID" />
+              <rng:ref name="xmpMM.History" />
+              <rng:ref name="xmpMM.ManagedFrom" />
+              <rng:ref name="xmpMM.Manager" />
+              <rng:ref name="xmpMM.ManageTo" />
+              <rng:ref name="xmpMM.ManageUI" />
+              <rng:ref name="xmpMM.ManagerVariant" />
+              <rng:ref name="xmpMM.RenditionClass" />
+              <rng:ref name="xmpMM.RenditionParams" />
+              <rng:ref name="xmpMM.VersionID" />
+              <rng:ref name="xmpMM.Versions" />
+              <rng:ref name="xmpMM.LastURL" />
+              <rng:ref name="xmpMM.RenditionOf" />
+              <rng:ref name="xmpMM.SaveID" />
+              <rng:ref name="xmpBJ.JobRef" />
+              <rng:ref name="xmpTPg.MaxPageSize" />
+              <rng:ref name="xmpTPg.NPages" />
+              <rng:ref name="pdf.Keywords" />
+              <rng:ref name="pdf.PDFVersion" />
+              <rng:ref name="pdf.Producer" />
+              <rng:ref name="photoshop.AuthorsPosition" />
+              <rng:ref name="photoshop.CaptionWriter" />
+              <rng:ref name="photoshop.Category" />
+              <rng:ref name="photoshop.City" />
+              <rng:ref name="photoshop.Country" />
+              <rng:ref name="photoshop.Credit" />
+              <rng:ref name="photoshop.DateCreated" />
+              <rng:ref name="photoshop.Headline" />
+              <rng:ref name="photoshop.Instructions" />
+              <rng:ref name="photoshop.Source" />
+              <rng:ref name="photoshop.State" />
+              <rng:ref name="photoshop.SupplementalCategories" />
+              <rng:ref name="photoshop.TransmissionReference" />
+              <rng:ref name="photoshop.Urgency" />
+              <rng:ref name="tiff.Artist" />
+              <rng:ref name="tiff.BitsPerSample" />
+              <rng:ref name="tiff.Compression" />
+              <rng:ref name="tiff.Copyright" />
+              <rng:ref name="tiff.DateTime" />
+              <rng:ref name="tiff.ImageDescription" />
+              <rng:ref name="tiff.ImageLength" />
+              <rng:ref name="tiff.ImageWidth" />
+              <rng:ref name="tiff.Make" />
+              <rng:ref name="tiff.Model" />
+              <rng:ref name="tiff.Orientation" />
+              <rng:ref name="tiff.PhotometricInterpretation" />
+              <rng:ref name="tiff.PlanarConfiguration" />
+              <rng:ref name="tiff.PrimaryChromaticities" />
+              <rng:ref name="tiff.ReferenceBlackWhite" />
+              <rng:ref name="tiff.ResolutionUnit" />
+              <rng:ref name="tiff.SamplesPerPixel" />
+              <rng:ref name="tiff.Software" />
+              <rng:ref name="tiff.TransferFunction" />
+              <rng:ref name="tiff.WhitePoint" />
+              <rng:ref name="tiff.XResolution" />
+              <rng:ref name="tiff.YCbCrCoefficients" />
+              <rng:ref name="tiff.YCbCrPositioning" />
+              <rng:ref name="tiff.YCbCrSubSampling" />
+              <rng:ref name="tiff.YResolution" />
+              <rng:ref name="exif.ExifVersion" />
+              <rng:ref name="exif.FlashpixVersion" />
+              <rng:ref name="exif.ColorSpace" />
+              <rng:ref name="exif.ComponentsConfiguration" />
+              <rng:ref name="exif.CompressedBitsPerPixel" />
+              <rng:ref name="exif.PixelXDimension" />
+              <rng:ref name="exif.PixelYDimension" />
+              <rng:ref name="exif.MakerNote" />
+              <rng:ref name="exif.UserComment" />
+              <rng:ref name="exif.RelatedSoundFile" />
+              <rng:ref name="exif.DateTimeOriginal" />
+              <rng:ref name="exif.DateTimeDigitized" />
+              <rng:ref name="exif.ExposureTime" />
+              <rng:ref name="exif.FNumber" />
+              <rng:ref name="exif.ExposureProgram" />
+              <rng:ref name="exif.SpectralSensitivity" />
+              <rng:ref name="exif.ISOSpeedRatings" />
+              <rng:ref name="exif.OECF" />
+              <rng:ref name="exif.ShutterSpeedValue" />
+              <rng:ref name="exif.ApertureValue" />
+              <rng:ref name="exif.BrightnessValue" />
+              <rng:ref name="exif.ExposureBiasValue" />
+              <rng:ref name="exif.MaxApertureValue" />
+              <rng:ref name="exif.SubjectDistance" />
+              <rng:ref name="exif.MeteringMode" />
+              <rng:ref name="exif.LightSource" />
+              <rng:ref name="exif.Flash" />
+              <rng:ref name="exif.FocalLength" />
+              <rng:ref name="exif.SubjectArea" />
+              <rng:ref name="exif.FlashEnergy" />
+              <rng:ref name="exif.SpatialFrequencyResponse" />
+              <rng:ref name="exif.FocalPlaneXResolution" />
+              <rng:ref name="exif.FocalPlaneYResolution" />
+              <rng:ref name="exif.FocalPlaneResolutionUnit" />
+              <rng:ref name="exif.SubjectLocation" />
+              <rng:ref name="exif.ExposureIndex" />
+              <rng:ref name="exif.SensingMethod" />
+              <rng:ref name="exif.FileSource" />
+              <rng:ref name="exif.SceneType" />
+              <rng:ref name="exif.CFAPattern" />
+              <rng:ref name="exif.CustomRendered" />
+              <rng:ref name="exif.ExposureMode" />
+              <rng:ref name="exif.WhiteBalance" />
+              <rng:ref name="exif.DigitalZoomRatio" />
+              <rng:ref name="exif.FocalLengthIn35mmFilm" />
+              <rng:ref name="exif.SceneCaptureType" />
+              <rng:ref name="exif.GainControl" />
+              <rng:ref name="exif.Contrast" />
+              <rng:ref name="exif.Saturation" />
+              <rng:ref name="exif.Sharpness" />
+              <rng:ref name="exif.DeviceSettingDescription" />
+              <rng:ref name="exif.SubjectDistanceRange" />
+              <rng:ref name="exif.ImageUniqueID" />
+              <rng:ref name="exif.GPSVersionID" />
+              <rng:ref name="exif.GPSLatitude" />
+              <rng:ref name="exif.GPSLongitude" />
+              <rng:ref name="exif.GPSAltitudeRef" />
+              <rng:ref name="exif.GPSAltitude" />
+              <rng:ref name="exif.GPSTimeStamp" />
+              <rng:ref name="exif.GPSSatellites" />
+              <rng:ref name="exif.GPSStatus" />
+              <rng:ref name="exif.GPSMeasureMode" />
+              <rng:ref name="exif.GPSDOP" />
+              <rng:ref name="exif.GPSSpeedRef" />
+              <rng:ref name="exif.GPSSpeed" />
+              <rng:ref name="exif.GPSTrackRef" />
+              <rng:ref name="exif.GPSTrack" />
+              <rng:ref name="exif.GPSImgDirectionRef" />
+              <rng:ref name="exif.GPSImgDirection" />
+              <rng:ref name="exif.GPSMapDatum" />
+              <rng:ref name="exif.GPSDestLatitude" />
+              <rng:ref name="exif.GPSDestLongitude" />
+              <rng:ref name="exif.GPSDestBearingRef" />
+              <rng:ref name="exif.GPSDestBearing" />
+              <rng:ref name="exif.GPSDestDistanceRef" />
+              <rng:ref name="exif.GPSDestDistance" />
+              <rng:ref name="exif.GPSProcessingMethod" />
+              <rng:ref name="exif.GPSAreaInformation" />
+              <rng:ref name="exif.GPSDifferential" />
+              <rng:ref name="pdfaid.part" />
+              <rng:ref name="pdfaid.conformance" />
+              <rng:ref name="pdfaid.amd" />
+              <rng:ref name="pdfaExtension.schemas" />
+            </rng:choice>
+          </rng:zeroOrMore>
+        </rng:element>
+      </rng:element>
+    </rng:element>
+  </rng:start>
+  <rng:define name="ISO16684-1.Types.Qualifier.xml-lang" combine="choice">
+    <rng:attribute name="xml:lang">
+      <rng:data type="string">
+        <rng:param name="pattern">x-default|([a-zA-Z]+(-[azA-Z0-9]+)*)</rng:param>
+      </rng:data>
+    </rng:attribute>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.Qualifier.xmpidq-Scheme" combine="choice">
+    <rng:element name="xmpidq:Scheme">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.QValue.Text" combine="choice">
+    <rng:choice>
+      <rng:ref name="ISO16684-1.Types.Base.Text" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="ISO16684-1.Types.Base.Text" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.Base.Text" combine="choice">
+    <rng:text />
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.QValue.Boolean" combine="choice">
+    <rng:choice>
+      <rng:ref name="ISO16684-1.Types.Base.Boolean" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="ISO16684-1.Types.Base.Boolean" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.Base.Boolean" combine="choice">
+    <rng:data type="string">
+      <rng:param name="pattern">True|False</rng:param>
+    </rng:data>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.QValue.Date" combine="choice">
+    <rng:choice>
+      <rng:ref name="ISO16684-1.Types.Base.Date" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="ISO16684-1.Types.Base.Date" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.Base.Date" combine="choice">
+    <rng:data type="string">
+      <rng:param name="pattern">(\d{4}((-)?(0[1-9]|1[0-2])((-)?(0[1-9]|[1-2][0-9]|3[0-1])(T(24:00(:00(\.[0]+)?)?|(([0-1][0-9]|2[0-3])(:)[0-5][0-9])((:)[0-5][0-9](\.[\d]+)?)?)((\+|-)(14:00|(0[0-9]|1[0-3])(:)[0-5][0-9])|Z)?)?)?)?)</rng:param>
+    </rng:data>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.QValue.Integer" combine="choice">
+    <rng:choice>
+      <rng:ref name="ISO16684-1.Types.Base.Integer" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="ISO16684-1.Types.Base.Integer" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.Base.Integer" combine="choice">
+    <rng:data type="integer" />
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.QValue.Real" combine="choice">
+    <rng:choice>
+      <rng:ref name="ISO16684-1.Types.Base.Real" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="ISO16684-1.Types.Base.Real" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.Base.Real" combine="choice">
+    <rng:data type="double" />
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.QValue.Rational" combine="choice">
+    <rng:choice>
+      <rng:ref name="ISO16684-1.Types.Base.Rational" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="ISO16684-1.Types.Base.Rational" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.Base.Rational" combine="choice">
+    <rng:data type="string">
+      <rng:param name="pattern">\d+/[1-9]\d*</rng:param>
+    </rng:data>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.QValue.AgentName" combine="choice">
+    <rng:choice>
+      <rng:ref name="ISO16684-1.Types.Base.AgentName" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="ISO16684-1.Types.Base.AgentName" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.Base.AgentName" combine="choice">
+    <rng:text />
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.QValue.Locale" combine="choice">
+    <rng:choice>
+      <rng:ref name="ISO16684-1.Types.Base.Locale" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="ISO16684-1.Types.Base.Locale" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.Base.Locale" combine="choice">
+    <rng:data type="string">
+      <rng:param name="pattern">[a-zA-Z]+(-[a-zA-Z0-9]+)*</rng:param>
+    </rng:data>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.QValue.MIMEType" combine="choice">
+    <rng:choice>
+      <rng:ref name="ISO16684-1.Types.Base.MIMEType" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="ISO16684-1.Types.Base.MIMEType" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.Base.MIMEType" combine="choice">
+    <rng:data type="string">
+      <rng:param name="pattern">(application|audio|example|image|message|model|multipart|text|video)/[a-zA-Z0-9]+([+\-.][a-zA-Z0-9]+)*</rng:param>
+    </rng:data>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.QValue.ProperName" combine="choice">
+    <rng:choice>
+      <rng:ref name="ISO16684-1.Types.Base.ProperName" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="ISO16684-1.Types.Base.ProperName" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.Base.ProperName" combine="choice">
+    <rng:text />
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.QValue.RenditionClass" combine="choice">
+    <rng:choice>
+      <rng:ref name="ISO16684-1.Types.Base.RenditionClass" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="ISO16684-1.Types.Base.RenditionClass" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.Base.RenditionClass" combine="choice">
+    <rng:text />
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.QValue.URI" combine="choice">
+    <rng:choice>
+      <rng:ref name="ISO16684-1.Types.Base.URI" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="ISO16684-1.Types.Base.URI" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.Base.URI" combine="choice">
+    <rng:text />
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.QValue.URL" combine="choice">
+    <rng:choice>
+      <rng:ref name="ISO16684-1.Types.Base.URL" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="ISO16684-1.Types.Base.URL" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.Base.URL" combine="choice">
+    <rng:text />
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.QValue.UnorderedArray.Text" combine="choice">
+    <rng:choice>
+      <rng:ref name="ISO16684-1.Types.Base.UnorderedArray.Text" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="ISO16684-1.Types.Base.UnorderedArray.Text" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.Base.UnorderedArray.Text" combine="choice">
+    <rng:element name="rdf:Bag">
+      <rng:zeroOrMore>
+        <rng:element name="rdf:li">
+          <rng:ref name="ISO16684-1.Types.QValue.Text" />
+        </rng:element>
+      </rng:zeroOrMore>
+    </rng:element>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.QValue.OrderedArray.Text" combine="choice">
+    <rng:choice>
+      <rng:ref name="ISO16684-1.Types.Base.OrderedArray.Text" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="ISO16684-1.Types.Base.OrderedArray.Text" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.Base.OrderedArray.Text" combine="choice">
+    <rng:element name="rdf:Seq">
+      <rng:zeroOrMore>
+        <rng:element name="rdf:li">
+          <rng:ref name="ISO16684-1.Types.QValue.Text" />
+        </rng:element>
+      </rng:zeroOrMore>
+    </rng:element>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.QValue.OrderedArray.Boolean" combine="choice">
+    <rng:choice>
+      <rng:ref name="ISO16684-1.Types.Base.OrderedArray.Boolean" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="ISO16684-1.Types.Base.OrderedArray.Boolean" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.Base.OrderedArray.Boolean" combine="choice">
+    <rng:element name="rdf:Seq">
+      <rng:zeroOrMore>
+        <rng:element name="rdf:li">
+          <rng:ref name="ISO16684-1.Types.QValue.Boolean" />
+        </rng:element>
+      </rng:zeroOrMore>
+    </rng:element>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.QValue.OrderedArray.Date" combine="choice">
+    <rng:choice>
+      <rng:ref name="ISO16684-1.Types.Base.OrderedArray.Date" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="ISO16684-1.Types.Base.OrderedArray.Date" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.Base.OrderedArray.Date" combine="choice">
+    <rng:element name="rdf:Seq">
+      <rng:zeroOrMore>
+        <rng:element name="rdf:li">
+          <rng:ref name="ISO16684-1.Types.QValue.Date" />
+        </rng:element>
+      </rng:zeroOrMore>
+    </rng:element>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.QValue.OrderedArray.Integer" combine="choice">
+    <rng:choice>
+      <rng:ref name="ISO16684-1.Types.Base.OrderedArray.Integer" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="ISO16684-1.Types.Base.OrderedArray.Integer" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.Base.OrderedArray.Integer" combine="choice">
+    <rng:element name="rdf:Seq">
+      <rng:zeroOrMore>
+        <rng:element name="rdf:li">
+          <rng:ref name="ISO16684-1.Types.QValue.Integer" />
+        </rng:element>
+      </rng:zeroOrMore>
+    </rng:element>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.QValue.OrderedArray.Rational" combine="choice">
+    <rng:choice>
+      <rng:ref name="ISO16684-1.Types.Base.OrderedArray.Rational" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="ISO16684-1.Types.Base.OrderedArray.Rational" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.Base.OrderedArray.Rational" combine="choice">
+    <rng:element name="rdf:Seq">
+      <rng:zeroOrMore>
+        <rng:element name="rdf:li">
+          <rng:ref name="ISO16684-1.Types.QValue.Rational" />
+        </rng:element>
+      </rng:zeroOrMore>
+    </rng:element>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.QValue.LanguageAlternative" combine="choice">
+    <rng:choice>
+      <rng:ref name="ISO16684-1.Types.Base.LanguageAlternative" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="ISO16684-1.Types.Base.LanguageAlternative" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.Base.LanguageAlternative" combine="choice">
+    <rng:element name="rdf:Alt">
+      <rng:zeroOrMore>
+        <rng:element name="rdf:li">
+          <rng:ref name="ISO16684-1.Types.Qualifier.xml-lang" />
+          <rng:ref name="ISO16684-1.Types.QValue.Text" />
+        </rng:element>
+      </rng:zeroOrMore>
+    </rng:element>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.QValue.UnorderedArray.Locale" combine="choice">
+    <rng:choice>
+      <rng:ref name="ISO16684-1.Types.Base.UnorderedArray.Locale" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="ISO16684-1.Types.Base.UnorderedArray.Locale" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.Base.UnorderedArray.Locale" combine="choice">
+    <rng:element name="rdf:Bag">
+      <rng:zeroOrMore>
+        <rng:element name="rdf:li">
+          <rng:ref name="ISO16684-1.Types.QValue.Locale" />
+        </rng:element>
+      </rng:zeroOrMore>
+    </rng:element>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.QValue.UnorderedArray.ProperName" combine="choice">
+    <rng:choice>
+      <rng:ref name="ISO16684-1.Types.Base.UnorderedArray.ProperName" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="ISO16684-1.Types.Base.UnorderedArray.ProperName" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.Base.UnorderedArray.ProperName" combine="choice">
+    <rng:element name="rdf:Bag">
+      <rng:zeroOrMore>
+        <rng:element name="rdf:li">
+          <rng:ref name="ISO16684-1.Types.QValue.ProperName" />
+        </rng:element>
+      </rng:zeroOrMore>
+    </rng:element>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.QValue.OrderedArray.ProperName" combine="choice">
+    <rng:choice>
+      <rng:ref name="ISO16684-1.Types.Base.OrderedArray.ProperName" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="ISO16684-1.Types.Base.OrderedArray.ProperName" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.Base.OrderedArray.ProperName" combine="choice">
+    <rng:element name="rdf:Seq">
+      <rng:zeroOrMore>
+        <rng:element name="rdf:li">
+          <rng:ref name="ISO16684-1.Types.QValue.ProperName" />
+        </rng:element>
+      </rng:zeroOrMore>
+    </rng:element>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.QValue.ResourceRef" combine="choice">
+    <rng:choice>
+      <rng:ref name="ISO16684-1.Types.Base.ResourceRef" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="ISO16684-1.Types.Base.ResourceRef" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="ISO16684-1.Types.Base.ResourceRef" combine="choice">
+    <rng:element name="rdf:Description">
+      <rng:interleave>
+        <rng:optional>
+          <rng:ref name="stRef.documentID" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="stRef.filePath" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="stRef.instanceID" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="stRef.manager" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="stRef.manageTo" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="stRef.manageUI" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="stRef.renditionClass" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="stRef.renditionParams" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="stRef.versionID" />
+        </rng:optional>
+      </rng:interleave>
+    </rng:element>
+  </rng:define>
+  <rng:define name="stRef.documentID" combine="choice">
+    <rng:element name="stRef:documentID">
+      <rng:ref name="ISO16684-1.Types.QValue.URI" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="stRef.filePath" combine="choice">
+    <rng:element name="stRef:filePath">
+      <rng:ref name="ISO16684-1.Types.QValue.URI" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="stRef.instanceID" combine="choice">
+    <rng:element name="stRef:instanceID">
+      <rng:ref name="ISO16684-1.Types.QValue.URI" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="stRef.manager" combine="choice">
+    <rng:element name="stRef:manager">
+      <rng:ref name="ISO16684-1.Types.QValue.AgentName" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="stRef.manageTo" combine="choice">
+    <rng:element name="stRef:manageTo">
+      <rng:ref name="ISO16684-1.Types.QValue.URI" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="stRef.manageUI" combine="choice">
+    <rng:element name="stRef:manageUI">
+      <rng:ref name="ISO16684-1.Types.QValue.URI" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="stRef.renditionClass" combine="choice">
+    <rng:element name="stRef:renditionClass">
+      <rng:ref name="ISO16684-1.Types.QValue.RenditionClass" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="stRef.renditionParams" combine="choice">
+    <rng:element name="stRef:renditionParams">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="stRef.versionID" combine="choice">
+    <rng:element name="stRef:versionID">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="dc.contributor" combine="choice">
+    <rng:element name="dc:contributor">
+      <rng:ref name="ISO16684-1.Types.QValue.UnorderedArray.ProperName" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="dc.coverage" combine="choice">
+    <rng:element name="dc:coverage">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="dc.creator" combine="choice">
+    <rng:element name="dc:creator">
+      <rng:ref name="ISO16684-1.Types.QValue.OrderedArray.ProperName" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="dc.date" combine="choice">
+    <rng:element name="dc:date">
+      <rng:ref name="ISO16684-1.Types.QValue.OrderedArray.Date" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="dc.description" combine="choice">
+    <rng:element name="dc:description">
+      <rng:ref name="ISO16684-1.Types.QValue.LanguageAlternative" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="dc.format" combine="choice">
+    <rng:element name="dc:format">
+      <rng:ref name="ISO16684-1.Types.QValue.MIMEType" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="dc.identifier" combine="choice">
+    <rng:element name="dc:identifier">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="dc.language" combine="choice">
+    <rng:element name="dc:language">
+      <rng:ref name="ISO16684-1.Types.QValue.UnorderedArray.Locale" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="dc.publisher" combine="choice">
+    <rng:element name="dc:publisher">
+      <rng:ref name="ISO16684-1.Types.QValue.UnorderedArray.ProperName" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="dc.relation" combine="choice">
+    <rng:element name="dc:relation">
+      <rng:ref name="ISO16684-1.Types.QValue.UnorderedArray.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="dc.rights" combine="choice">
+    <rng:element name="dc:rights">
+      <rng:ref name="ISO16684-1.Types.QValue.LanguageAlternative" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="dc.source" combine="choice">
+    <rng:element name="dc:source">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="dc.subject" combine="choice">
+    <rng:element name="dc:subject">
+      <rng:ref name="ISO16684-1.Types.QValue.UnorderedArray.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="dc.title" combine="choice">
+    <rng:element name="dc:title">
+      <rng:ref name="ISO16684-1.Types.QValue.LanguageAlternative" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="dc.type" combine="choice">
+    <rng:element name="dc:type">
+      <rng:ref name="ISO16684-1.Types.QValue.UnorderedArray.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmp.Advisory" combine="choice">
+    <rng:element name="xmp:Advisory">
+      <rng:ref name="ISO16684-1.Types.QValue.UnorderedArray.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmp.CreateDate" combine="choice">
+    <rng:element name="xmp:CreateDate">
+      <rng:ref name="ISO16684-1.Types.QValue.Date" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmp.CreatorTool" combine="choice">
+    <rng:element name="xmp:CreatorTool">
+      <rng:ref name="ISO16684-1.Types.QValue.AgentName" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmp.Identifier" combine="choice">
+    <rng:element name="xmp:Identifier">
+      <rng:ref name="xmp.IdentifierArray.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmp.MetadataDate" combine="choice">
+    <rng:element name="xmp:MetadataDate">
+      <rng:ref name="ISO16684-1.Types.QValue.Date" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmp.ModifyDate" combine="choice">
+    <rng:element name="xmp:ModifyDate">
+      <rng:ref name="ISO16684-1.Types.QValue.Date" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmp.Nickname" combine="choice">
+    <rng:element name="xmp:Nickname">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmp.Thumbnails" combine="choice">
+    <rng:element name="xmp:Thumbnails">
+      <rng:ref name="xmp.Thumbnails.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmp.IdentifierArray.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="xmp.IdentifierArray.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="xmp.IdentifierArray.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="xmp.IdentifierArray.Base" combine="choice">
+    <rng:element name="rdf:Bag">
+      <rng:zeroOrMore>
+        <rng:element name="rdf:li">
+          <rng:ref name="xmp.IdentifierItem.QValue" />
+        </rng:element>
+      </rng:zeroOrMore>
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmp.IdentifierItem.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="ISO16684-1.Types.Base.Text" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="ISO16684-1.Types.Base.Text" />
+        </rng:element>
+        <rng:ref name="ISO16684-1.Types.Qualifier.xmpidq-Scheme" />
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="xmp.Thumbnails.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="xmp.Thumbnails.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="xmp.Thumbnails.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="xmp.Thumbnails.Base" combine="choice">
+    <rng:element name="rdf:Description">
+      <rng:element name="rdf:Alt">
+        <rng:zeroOrMore>
+          <rng:element name="rdf:li">
+            <rng:ref name="xmp.Thumbnail.QValue" />
+          </rng:element>
+        </rng:zeroOrMore>
+      </rng:element>
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmp.Thumbnail.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="xmp.Thumbnail.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="xmp.Thumbnail.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="xmp.Thumbnail.Base" combine="choice">
+    <rng:element name="rdf:Description">
+      <rng:interleave>
+        <rng:optional>
+          <rng:ref name="xmp.Thumbnail.height" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="xmp.Thumbnail.width" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="xmp.Thumbnail.format" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="xmp.Thumbnail.image" />
+        </rng:optional>
+      </rng:interleave>
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmp.Thumbnail.height" combine="choice">
+    <rng:element name="xapGImg:height">
+      <rng:ref name="ISO16684-1.Types.QValue.Integer" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmp.Thumbnail.width" combine="choice">
+    <rng:element name="xapGImg:width">
+      <rng:ref name="ISO16684-1.Types.QValue.Integer" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmp.Thumbnail.format" combine="choice">
+    <rng:element name="xapGImg:format">
+      <rng:ref name="xmp.Thumbnail.format.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmp.Thumbnail.image" combine="choice">
+    <rng:element name="xapGImg:image">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmp.Thumbnail.format.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="xmp.Thumbnail.format.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="xmp.Thumbnail.format.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="xmp.Thumbnail.format.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="string">JPEG</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="xmpRights.Certificate" combine="choice">
+    <rng:element name="xmpRights:Certificate">
+      <rng:ref name="ISO16684-1.Types.QValue.URL" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpRights.Marked" combine="choice">
+    <rng:element name="xmpRights:Marked">
+      <rng:ref name="ISO16684-1.Types.QValue.Boolean" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpRights.Owner" combine="choice">
+    <rng:element name="xmpRights:Owner">
+      <rng:ref name="ISO16684-1.Types.QValue.UnorderedArray.ProperName" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpRights.UsageTerms" combine="choice">
+    <rng:element name="xmpRights:UsageTerms">
+      <rng:ref name="ISO16684-1.Types.QValue.LanguageAlternative" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpRights.WebStatement" combine="choice">
+    <rng:element name="xmpRights:WebStatement">
+      <rng:ref name="ISO16684-1.Types.QValue.URL" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.DerivedFrom" combine="choice">
+    <rng:element name="xmpMM:DerivedFrom">
+      <rng:ref name="ISO16684-1.Types.QValue.ResourceRef" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.DocumentID" combine="choice">
+    <rng:element name="xmpMM:DocumentID">
+      <rng:ref name="ISO16684-1.Types.Base.URI" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.History" combine="choice">
+    <rng:element name="xmpMM:History">
+      <rng:ref name="xmpMM.History.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.ManagedFrom" combine="choice">
+    <rng:element name="xmpMM:ManagedFrom">
+      <rng:ref name="ISO16684-1.Types.QValue.ResourceRef" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.Manager" combine="choice">
+    <rng:element name="xmpMM:Manager">
+      <rng:ref name="ISO16684-1.Types.QValue.AgentName" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.ManageTo" combine="choice">
+    <rng:element name="xmpMM:ManageTo">
+      <rng:ref name="ISO16684-1.Types.QValue.URI" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.ManageUI" combine="choice">
+    <rng:element name="xmpMM:ManageUI">
+      <rng:ref name="ISO16684-1.Types.QValue.URI" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.ManagerVariant" combine="choice">
+    <rng:element name="xmpMM:ManagerVariant">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.RenditionClass" combine="choice">
+    <rng:element name="xmpMM:RenditionClass">
+      <rng:ref name="ISO16684-1.Types.QValue.RenditionClass" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.RenditionParams" combine="choice">
+    <rng:element name="xmpMM:RenditionParams">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.VersionID" combine="choice">
+    <rng:element name="xmpMM:VersionID">
+      <rng:ref name="xmpMM.Version.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.Versions" combine="choice">
+    <rng:element name="xmpMM:Versions">
+      <rng:ref name="xmpMM.Versions.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.LastURL" combine="choice">
+    <rng:element name="xmpMM:LastURL">
+      <rng:ref name="ISO16684-1.Types.QValue.URL" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.RenditionOf" combine="choice">
+    <rng:element name="xmpMM:RenditionOf">
+      <rng:ref name="ISO16684-1.Types.QValue.ResourceRef" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.SaveID" combine="choice">
+    <rng:element name="xmpMM:SaveID">
+      <rng:ref name="ISO16684-1.Types.QValue.Integer" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.History.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="xmpMM.History.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="xmpMM.History.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="xmpMM.History.Base" combine="choice">
+    <rng:element name="rdf:Description">
+      <rng:element name="rdf:Seq">
+        <rng:zeroOrMore>
+          <rng:element name="rdf:li">
+            <rng:ref name="xmpMM.ResourceEvent.QValue" />
+          </rng:element>
+        </rng:zeroOrMore>
+      </rng:element>
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.Versions.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="xmpMM.Versions.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="xmpMM.Versions.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="xmpMM.Versions.Base" combine="choice">
+    <rng:element name="rdf:Description">
+      <rng:element name="rdf:Seq">
+        <rng:zeroOrMore>
+          <rng:element name="rdf:li">
+            <rng:ref name="xmpMM.Version.QValue" />
+          </rng:element>
+        </rng:zeroOrMore>
+      </rng:element>
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.Version.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="xmpMM.Version.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="xmpMM.Version.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="xmpMM.Version.Base" combine="choice">
+    <rng:element name="rdf:Description">
+      <rng:interleave>
+        <rng:optional>
+          <rng:ref name="xmpMM.Version.comments" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="xmpMM.Version.event" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="xmpMM.Version.modifyDate" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="xmpMM.Version.modifier" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="xmpMM.Version.version" />
+        </rng:optional>
+      </rng:interleave>
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.Version.comments" combine="choice">
+    <rng:element name="stVer:comments">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.Version.event" combine="choice">
+    <rng:element name="stVer:event">
+      <rng:ref name="xmpMM.ResourceEvent.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.Version.modifyDate" combine="choice">
+    <rng:element name="stVer:modifyDate">
+      <rng:ref name="ISO16684-1.Types.QValue.Date" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.Version.modifier" combine="choice">
+    <rng:element name="stVer:modifier">
+      <rng:ref name="ISO16684-1.Types.QValue.ProperName" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.Version.version" combine="choice">
+    <rng:element name="stVer:version">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.ResourceEvent.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="xmpMM.ResourceEvent.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="xmpMM.ResourceEvent.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="xmpMM.ResourceEvent.Base" combine="choice">
+    <rng:element name="rdf:Description">
+      <rng:interleave>
+        <rng:optional>
+          <rng:ref name="xmpMM.ResourceEvent.action" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="xmpMM.ResourceEvent.instanceID" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="xmpMM.ResourceEvent.parameters" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="xmpMM.ResourceEvent.softwareAgent" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="xmpMM.ResourceEvent.when" />
+        </rng:optional>
+      </rng:interleave>
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.ResourceEvent.action" combine="choice">
+    <rng:element name="stEvt:action">
+      <rng:ref name="xmpMM.ResourceEvent.action.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.ResourceEvent.instanceID" combine="choice">
+    <rng:element name="stEvt:instanceID">
+      <rng:ref name="ISO16684-1.Types.QValue.URI" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.ResourceEvent.parameters" combine="choice">
+    <rng:element name="stEvt:parameters">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.ResourceEvent.softwareAgent" combine="choice">
+    <rng:element name="stEvt:softwareAgent">
+      <rng:ref name="ISO16684-1.Types.QValue.AgentName" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.ResourceEvent.when" combine="choice">
+    <rng:element name="stEvt:when">
+      <rng:ref name="ISO16684-1.Types.QValue.Date" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpMM.ResourceEvent.action.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="xmpMM.ResourceEvent.action.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="xmpMM.ResourceEvent.action.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="xmpMM.ResourceEvent.action.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="string">converted</rng:value>
+      <rng:value type="string">copied</rng:value>
+      <rng:value type="string">created</rng:value>
+      <rng:value type="string">cropped</rng:value>
+      <rng:value type="string">edited</rng:value>
+      <rng:value type="string">filtered</rng:value>
+      <rng:value type="string">formatted</rng:value>
+      <rng:value type="string">version_updated</rng:value>
+      <rng:value type="string">printed</rng:value>
+      <rng:value type="string">published</rng:value>
+      <rng:value type="string">managed</rng:value>
+      <rng:value type="string">produced</rng:value>
+      <rng:value type="string">resized</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="xmpBJ.JobRef" combine="choice">
+    <rng:element name="xmpBJ:JobRef">
+      <rng:ref name="xmpBJ.JobRef.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpBJ.JobRef.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="xmpBJ.JobRef.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="xmpBJ.JobRef.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="xmpBJ.JobRef.Base" combine="choice">
+    <rng:element name="rdf:Description">
+      <rng:element name="rdf:Bag">
+        <rng:zeroOrMore>
+          <rng:element name="rdf:li">
+            <rng:ref name="xmpBJ.Job.QValue" />
+          </rng:element>
+        </rng:zeroOrMore>
+      </rng:element>
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpBJ.Job.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="xmpBJ.Job.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="xmpBJ.Job.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="xmpBJ.Job.Base" combine="choice">
+    <rng:element name="rdf:Description">
+      <rng:interleave>
+        <rng:optional>
+          <rng:ref name="xmpBJ.Job.name" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="xmpBJ.Job.id" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="xmpBJ.Job.url" />
+        </rng:optional>
+      </rng:interleave>
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpBJ.Job.name" combine="choice">
+    <rng:element name="stJob:name">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpBJ.Job.id" combine="choice">
+    <rng:element name="stJob:id">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpBJ.Job.url" combine="choice">
+    <rng:element name="stJob:url">
+      <rng:ref name="ISO16684-1.Types.QValue.URL" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="cmn.Dimensions.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="cmn.Dimensions.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="cmn.Dimensions.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="cmn.Dimensions.Base" combine="choice">
+    <rng:element name="rdf:Description">
+      <rng:interleave>
+        <rng:optional>
+          <rng:ref name="cmn.Dimensions.w" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="cmn.Dimensions.h" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="cmn.Dimensions.unit" />
+        </rng:optional>
+      </rng:interleave>
+    </rng:element>
+  </rng:define>
+  <rng:define name="cmn.Dimensions.w" combine="choice">
+    <rng:element name="stDim:w">
+      <rng:ref name="ISO16684-1.Types.QValue.Real" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="cmn.Dimensions.h" combine="choice">
+    <rng:element name="stDim:h">
+      <rng:ref name="ISO16684-1.Types.QValue.Real" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="cmn.Dimensions.unit" combine="choice">
+    <rng:element name="stDim:unit">
+      <rng:ref name="cmn.Dimensions.unit.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="cmn.Dimensions.unit.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="cmn.Dimensions.unit.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="cmn.Dimensions.unit.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="cmn.Dimensions.unit.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="string">inch</rng:value>
+      <rng:value type="string">mm</rng:value>
+      <rng:value type="string">pixel</rng:value>
+      <rng:value type="string">pica</rng:value>
+      <rng:value type="string">point</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="xmpTPg.MaxPageSize" combine="choice">
+    <rng:element name="xmpTPg:MaxPageSize">
+      <rng:ref name="cmn.Dimensions.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="xmpTPg.NPages" combine="choice">
+    <rng:element name="xmpTPg:NPages">
+      <rng:ref name="ISO16684-1.Types.QValue.Integer" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdf.Keywords" combine="choice">
+    <rng:element name="pdf:Keywords">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdf.PDFVersion" combine="choice">
+    <rng:element name="pdf:PDFVersion">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdf.Producer" combine="choice">
+    <rng:element name="pdf:Producer">
+      <rng:ref name="ISO16684-1.Types.QValue.AgentName" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="photoshop.AuthorsPosition" combine="choice">
+    <rng:element name="photoshop:AuthorsPosition">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="photoshop.CaptionWriter" combine="choice">
+    <rng:element name="photoshop:CaptionWriter">
+      <rng:ref name="ISO16684-1.Types.QValue.ProperName" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="photoshop.Category" combine="choice">
+    <rng:element name="photoshop:Category">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="photoshop.City" combine="choice">
+    <rng:element name="photoshop:City">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="photoshop.Country" combine="choice">
+    <rng:element name="photoshop:Country">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="photoshop.Credit" combine="choice">
+    <rng:element name="photoshop:Credit">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="photoshop.DateCreated" combine="choice">
+    <rng:element name="photoshop:DateCreated">
+      <rng:ref name="ISO16684-1.Types.QValue.Date" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="photoshop.Headline" combine="choice">
+    <rng:element name="photoshop:Headline">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="photoshop.Instructions" combine="choice">
+    <rng:element name="photoshop:Instructions">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="photoshop.Source" combine="choice">
+    <rng:element name="photoshop:Source">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="photoshop.State" combine="choice">
+    <rng:element name="photoshop:State">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="photoshop.SupplementalCategories" combine="choice">
+    <rng:element name="photoshop:SupplementalCategories">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="photoshop.TransmissionReference" combine="choice">
+    <rng:element name="photoshop:TransmissionReference">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="photoshop.Urgency" combine="choice">
+    <rng:element name="photoshop:Urgency">
+      <rng:ref name="photoshop.Urgency.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="photoshop.Urgency.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="photoshop.Urgency.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="photoshop.Urgency.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="photoshop.Urgency.Base" combine="choice">
+    <rng:data type="integer">
+      <rng:param name="minInclusive">1</rng:param>
+      <rng:param name="maxInclusive">8</rng:param>
+    </rng:data>
+  </rng:define>
+  <rng:define name="tiff.Artist" combine="choice">
+    <rng:element name="tiff:Artist">
+      <rng:ref name="ISO16684-1.Types.QValue.ProperName" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="tiff.BitsPerSample" combine="choice">
+    <rng:element name="tiff:BitsPerSample">
+      <rng:ref name="ISO16684-1.Types.QValue.OrderedArray.Integer" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="tiff.Compression" combine="choice">
+    <rng:element name="tiff:Compression">
+      <rng:ref name="tiff.Compression.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="tiff.Copyright" combine="choice">
+    <rng:element name="tiff:Copyright">
+      <rng:ref name="ISO16684-1.Types.QValue.LanguageAlternative" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="tiff.DateTime" combine="choice">
+    <rng:element name="tiff:DateTime">
+      <rng:ref name="ISO16684-1.Types.QValue.Date" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="tiff.ImageDescription" combine="choice">
+    <rng:element name="tiff:ImageDescription">
+      <rng:ref name="ISO16684-1.Types.QValue.LanguageAlternative" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="tiff.ImageLength" combine="choice">
+    <rng:element name="tiff:ImageLength">
+      <rng:ref name="ISO16684-1.Types.QValue.Integer" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="tiff.ImageWidth" combine="choice">
+    <rng:element name="tiff:ImageWidth">
+      <rng:ref name="ISO16684-1.Types.QValue.Integer" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="tiff.Make" combine="choice">
+    <rng:element name="tiff:Make">
+      <rng:ref name="ISO16684-1.Types.QValue.ProperName" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="tiff.Model" combine="choice">
+    <rng:element name="tiff:Model">
+      <rng:ref name="ISO16684-1.Types.QValue.ProperName" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="tiff.Orientation" combine="choice">
+    <rng:element name="tiff:Orientation">
+      <rng:ref name="tiff.Orientation.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="tiff.PhotometricInterpretation" combine="choice">
+    <rng:element name="tiff:PhotometricInterpretation">
+      <rng:ref name="tiff.PhotometricInterpretation.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="tiff.PlanarConfiguration" combine="choice">
+    <rng:element name="tiff:PlanarConfiguration">
+      <rng:ref name="tiff.PlanarConfiguration.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="tiff.PrimaryChromaticities" combine="choice">
+    <rng:element name="tiff:PrimaryChromaticities">
+      <rng:ref name="ISO16684-1.Types.QValue.OrderedArray.Rational" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="tiff.ReferenceBlackWhite" combine="choice">
+    <rng:element name="tiff:ReferenceBlackWhite">
+      <rng:ref name="ISO16684-1.Types.QValue.OrderedArray.Rational" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="tiff.ResolutionUnit" combine="choice">
+    <rng:element name="tiff:ResolutionUnit">
+      <rng:ref name="tiff.ResolutionUnit.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="tiff.SamplesPerPixel" combine="choice">
+    <rng:element name="tiff:SamplesPerPixel">
+      <rng:ref name="ISO16684-1.Types.QValue.Integer" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="tiff.Software" combine="choice">
+    <rng:element name="tiff:Software">
+      <rng:ref name="ISO16684-1.Types.QValue.AgentName" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="tiff.TransferFunction" combine="choice">
+    <rng:element name="tiff:TransferFunction">
+      <rng:ref name="ISO16684-1.Types.QValue.OrderedArray.Integer" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="tiff.WhitePoint" combine="choice">
+    <rng:element name="tiff:WhitePoint">
+      <rng:ref name="ISO16684-1.Types.QValue.OrderedArray.Rational" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="tiff.XResolution" combine="choice">
+    <rng:element name="tiff:XResolution">
+      <rng:ref name="ISO16684-1.Types.QValue.Rational" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="tiff.YCbCrCoefficients" combine="choice">
+    <rng:element name="tiff:YCbCrCoefficients">
+      <rng:ref name="ISO16684-1.Types.QValue.OrderedArray.Rational" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="tiff.YCbCrPositioning" combine="choice">
+    <rng:element name="tiff:YCbCrPositioning">
+      <rng:ref name="tiff.YCbCrPositioning.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="tiff.YCbCrSubSampling" combine="choice">
+    <rng:element name="tiff:YCbCrSubSampling">
+      <rng:ref name="tiff.YCbCrSubSampling.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="tiff.YResolution" combine="choice">
+    <rng:element name="tiff:YResolution">
+      <rng:ref name="ISO16684-1.Types.QValue.Rational" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="tiff.Compression.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="tiff.Compression.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="tiff.Compression.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="tiff.Compression.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="integer">1</rng:value>
+      <rng:value type="integer">6</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="tiff.Orientation.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="tiff.Orientation.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="tiff.Orientation.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="tiff.Orientation.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="integer">1</rng:value>
+      <rng:value type="integer">2</rng:value>
+      <rng:value type="integer">3</rng:value>
+      <rng:value type="integer">4</rng:value>
+      <rng:value type="integer">5</rng:value>
+      <rng:value type="integer">6</rng:value>
+      <rng:value type="integer">7</rng:value>
+      <rng:value type="integer">8</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="tiff.PhotometricInterpretation.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="tiff.PhotometricInterpretation.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="tiff.PhotometricInterpretation.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="tiff.PhotometricInterpretation.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="integer">2</rng:value>
+      <rng:value type="integer">6</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="tiff.PlanarConfiguration.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="tiff.PlanarConfiguration.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="tiff.PlanarConfiguration.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="tiff.PlanarConfiguration.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="integer">1</rng:value>
+      <rng:value type="integer">2</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="tiff.ResolutionUnit.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="tiff.ResolutionUnit.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="tiff.ResolutionUnit.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="tiff.ResolutionUnit.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="integer">2</rng:value>
+      <rng:value type="integer">3</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="tiff.YCbCrPositioning.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="tiff.YCbCrPositioning.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="tiff.YCbCrPositioning.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="tiff.YCbCrPositioning.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="integer">1</rng:value>
+      <rng:value type="integer">2</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="tiff.YCbCrSubSampling.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="tiff.YCbCrSubSampling.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="tiff.YCbCrSubSampling.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="tiff.YCbCrSubSampling.Base" combine="choice">
+    <rng:choice>
+      <rng:element name="rdf:Seq">
+        <rng:element name="rdf:li">
+          <rng:value type="integer">2</rng:value>
+        </rng:element>
+        <rng:element name="rdf:li">
+          <rng:value type="integer">1</rng:value>
+        </rng:element>
+      </rng:element>
+      <rng:element name="rdf:Seq">
+        <rng:element name="rdf:li">
+          <rng:value type="integer">2</rng:value>
+        </rng:element>
+        <rng:element name="rdf:li">
+          <rng:value type="integer">2</rng:value>
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.ExifVersion" combine="choice">
+    <rng:element name="exif:ExifVersion">
+      <rng:ref name="exif.ExifVersion.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.FlashpixVersion" combine="choice">
+    <rng:element name="exif:FlashpixVersion">
+      <rng:ref name="exif.FlashpixVersion.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.ColorSpace" combine="choice">
+    <rng:element name="exif:ColorSpace">
+      <rng:ref name="exif.ColorSpace.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.ComponentsConfiguration" combine="choice">
+    <rng:element name="exif:ComponentsConfiguration">
+      <rng:ref name="ISO16684-1.Types.QValue.OrderedArray.Integer" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.CompressedBitsPerPixel" combine="choice">
+    <rng:element name="exif:CompressedBitsPerPixel">
+      <rng:ref name="ISO16684-1.Types.QValue.Rational" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.PixelXDimension" combine="choice">
+    <rng:element name="exif:PixelXDimension">
+      <rng:ref name="ISO16684-1.Types.QValue.Integer" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.PixelYDimension" combine="choice">
+    <rng:element name="exif:PixelYDimension">
+      <rng:ref name="ISO16684-1.Types.QValue.Integer" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.MakerNote" combine="choice">
+    <rng:element name="exif:MakerNote">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.UserComment" combine="choice">
+    <rng:element name="exif:UserComment">
+      <rng:ref name="ISO16684-1.Types.QValue.LanguageAlternative" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.RelatedSoundFile" combine="choice">
+    <rng:element name="exif:RelatedSoundFile">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.DateTimeOriginal" combine="choice">
+    <rng:element name="exif:DateTimeOriginal">
+      <rng:ref name="ISO16684-1.Types.QValue.Date" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.DateTimeDigitized" combine="choice">
+    <rng:element name="exif:DateTimeDigitized">
+      <rng:ref name="ISO16684-1.Types.QValue.Date" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.ExposureTime" combine="choice">
+    <rng:element name="exif:ExposureTime">
+      <rng:ref name="ISO16684-1.Types.QValue.Rational" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.FNumber" combine="choice">
+    <rng:element name="exif:FNumber">
+      <rng:ref name="ISO16684-1.Types.QValue.Rational" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.ExposureProgram" combine="choice">
+    <rng:element name="exif:ExposureProgram">
+      <rng:ref name="exif.ExposureProgram.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.SpectralSensitivity" combine="choice">
+    <rng:element name="exif:SpectralSensitivity">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.ISOSpeedRatings" combine="choice">
+    <rng:element name="exif:ISOSpeedRatings">
+      <rng:ref name="ISO16684-1.Types.QValue.OrderedArray.Integer" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.OECF" combine="choice">
+    <rng:element name="exif:OECF">
+      <rng:ref name="exif.OECF_SFR.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.ShutterSpeedValue" combine="choice">
+    <rng:element name="exif:ShutterSpeedValue">
+      <rng:ref name="ISO16684-1.Types.QValue.Rational" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.ApertureValue" combine="choice">
+    <rng:element name="exif:ApertureValue">
+      <rng:ref name="ISO16684-1.Types.QValue.Rational" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.BrightnessValue" combine="choice">
+    <rng:element name="exif:BrightnessValue">
+      <rng:ref name="ISO16684-1.Types.QValue.Rational" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.ExposureBiasValue" combine="choice">
+    <rng:element name="exif:ExposureBiasValue">
+      <rng:ref name="ISO16684-1.Types.QValue.Rational" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.MaxApertureValue" combine="choice">
+    <rng:element name="exif:MaxApertureValue">
+      <rng:ref name="ISO16684-1.Types.QValue.Rational" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.SubjectDistance" combine="choice">
+    <rng:element name="exif:SubjectDistance">
+      <rng:ref name="ISO16684-1.Types.QValue.Rational" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.MeteringMode" combine="choice">
+    <rng:element name="exif:MeteringMode">
+      <rng:ref name="exif.MeteringMode.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.LightSource" combine="choice">
+    <rng:element name="exif:LightSource">
+      <rng:ref name="exif.LightSource.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.Flash" combine="choice">
+    <rng:element name="exif:Flash">
+      <rng:ref name="exif.Flash.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.FocalLength" combine="choice">
+    <rng:element name="exif:FocalLength">
+      <rng:ref name="ISO16684-1.Types.QValue.Rational" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.SubjectArea" combine="choice">
+    <rng:element name="exif:SubjectArea">
+      <rng:ref name="ISO16684-1.Types.QValue.OrderedArray.Integer" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.FlashEnergy" combine="choice">
+    <rng:element name="exif:FlashEnergy">
+      <rng:ref name="ISO16684-1.Types.QValue.Rational" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.SpatialFrequencyResponse" combine="choice">
+    <rng:element name="exif:SpatialFrequencyResponse">
+      <rng:ref name="exif.OECF_SFR.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.FocalPlaneXResolution" combine="choice">
+    <rng:element name="exif:FocalPlaneXResolution">
+      <rng:ref name="ISO16684-1.Types.QValue.Rational" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.FocalPlaneYResolution" combine="choice">
+    <rng:element name="exif:FocalPlaneYResolution">
+      <rng:ref name="ISO16684-1.Types.QValue.Rational" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.FocalPlaneResolutionUnit" combine="choice">
+    <rng:element name="exif:FocalPlaneResolutionUnit">
+      <rng:ref name="exif.FocalPlaneResolutionUnit.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.SubjectLocation" combine="choice">
+    <rng:element name="exif:SubjectLocation">
+      <rng:ref name="ISO16684-1.Types.QValue.OrderedArray.Integer" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.ExposureIndex" combine="choice">
+    <rng:element name="exif:ExposureIndex">
+      <rng:ref name="ISO16684-1.Types.QValue.Rational" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.SensingMethod" combine="choice">
+    <rng:element name="exif:SensingMethod">
+      <rng:ref name="exif.SensingMethod.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.FileSource" combine="choice">
+    <rng:element name="exif:FileSource">
+      <rng:ref name="exif.FileSource.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.SceneType" combine="choice">
+    <rng:element name="exif:SceneType">
+      <rng:ref name="exif.SceneType.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.CFAPattern" combine="choice">
+    <rng:element name="exif:CFAPattern">
+      <rng:ref name="exif.CFAPattern.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.CustomRendered" combine="choice">
+    <rng:element name="exif:CustomRendered">
+      <rng:ref name="exif.CustomRendered.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.ExposureMode" combine="choice">
+    <rng:element name="exif:ExposureMode">
+      <rng:ref name="exif.ExposureMode.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.WhiteBalance" combine="choice">
+    <rng:element name="exif:WhiteBalance">
+      <rng:ref name="exif.WhiteBalance.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.DigitalZoomRatio" combine="choice">
+    <rng:element name="exif:DigitalZoomRatio">
+      <rng:ref name="ISO16684-1.Types.QValue.Rational" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.FocalLengthIn35mmFilm" combine="choice">
+    <rng:element name="exif:FocalLengthIn35mmFilm">
+      <rng:ref name="ISO16684-1.Types.QValue.Integer" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.SceneCaptureType" combine="choice">
+    <rng:element name="exif:SceneCaptureType">
+      <rng:ref name="exif.SceneCaptureType.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.GainControl" combine="choice">
+    <rng:element name="exif:GainControl">
+      <rng:ref name="exif.GainControl.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.Contrast" combine="choice">
+    <rng:element name="exif:Contrast">
+      <rng:ref name="exif.Contrast.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.Saturation" combine="choice">
+    <rng:element name="exif:Saturation">
+      <rng:ref name="exif.Saturation.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.Sharpness" combine="choice">
+    <rng:element name="exif:Sharpness">
+      <rng:ref name="exif.Sharpness.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.DeviceSettingDescription" combine="choice">
+    <rng:element name="exif:DeviceSettingDescription">
+      <rng:ref name="exif.DeviceSettings.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.SubjectDistanceRange" combine="choice">
+    <rng:element name="exif:SubjectDistanceRange">
+      <rng:ref name="exif.SubjectDistanceRange.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.ImageUniqueID" combine="choice">
+    <rng:element name="exif:ImageUniqueID">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.GPSVersionID" combine="choice">
+    <rng:element name="exif:GPSVersionID">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.GPSLatitude" combine="choice">
+    <rng:element name="exif:GPSLatitude">
+      <rng:ref name="exif.GPSCoordinate.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.GPSLongitude" combine="choice">
+    <rng:element name="exif:GPSLongitude">
+      <rng:ref name="exif.GPSCoordinate.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.GPSAltitudeRef" combine="choice">
+    <rng:element name="exif:GPSAltitudeRef">
+      <rng:ref name="exif.GPSAltitudeRef.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.GPSAltitude" combine="choice">
+    <rng:element name="exif:GPSAltitude">
+      <rng:ref name="ISO16684-1.Types.QValue.Rational" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.GPSTimeStamp" combine="choice">
+    <rng:element name="exif:GPSTimeStamp">
+      <rng:ref name="ISO16684-1.Types.QValue.Date" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.GPSSatellites" combine="choice">
+    <rng:element name="exif:GPSSatellites">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.GPSStatus" combine="choice">
+    <rng:element name="exif:GPSStatus">
+      <rng:ref name="exif.GPSStatus.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.GPSMeasureMode" combine="choice">
+    <rng:element name="exif:GPSMeasureMode">
+      <rng:ref name="exif.GPSMeasureMode.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.GPSDOP" combine="choice">
+    <rng:element name="exif:GPSDOP">
+      <rng:ref name="ISO16684-1.Types.QValue.Rational" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.GPSSpeedRef" combine="choice">
+    <rng:element name="exif:GPSSpeedRef">
+      <rng:ref name="exif.GPSSpeedRef.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.GPSSpeed" combine="choice">
+    <rng:element name="exif:GPSSpeed">
+      <rng:ref name="ISO16684-1.Types.QValue.Rational" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.GPSTrackRef" combine="choice">
+    <rng:element name="exif:GPSTrackRef">
+      <rng:ref name="exif.GPSTrackRef.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.GPSTrack" combine="choice">
+    <rng:element name="exif:GPSTrack">
+      <rng:ref name="ISO16684-1.Types.QValue.Rational" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.GPSImgDirectionRef" combine="choice">
+    <rng:element name="exif:GPSImgDirectionRef">
+      <rng:ref name="exif.GPSImgDirectionRef.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.GPSImgDirection" combine="choice">
+    <rng:element name="exif:GPSImgDirection">
+      <rng:ref name="ISO16684-1.Types.QValue.Rational" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.GPSMapDatum" combine="choice">
+    <rng:element name="exif:GPSMapDatum">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.GPSDestLatitude" combine="choice">
+    <rng:element name="exif:GPSDestLatitude">
+      <rng:ref name="exif.GPSCoordinate.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.GPSDestLongitude" combine="choice">
+    <rng:element name="exif:GPSDestLongitude">
+      <rng:ref name="exif.GPSCoordinate.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.GPSDestBearingRef" combine="choice">
+    <rng:element name="exif:GPSDestBearingRef">
+      <rng:ref name="exif.GPSDestBearingRef.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.GPSDestBearing" combine="choice">
+    <rng:element name="exif:GPSDestBearing">
+      <rng:ref name="ISO16684-1.Types.QValue.Rational" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.GPSDestDistanceRef" combine="choice">
+    <rng:element name="exif:GPSDestDistanceRef">
+      <rng:ref name="exif.GPSDestDistanceRef.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.GPSDestDistance" combine="choice">
+    <rng:element name="exif:GPSDestDistance">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.GPSProcessingMethod" combine="choice">
+    <rng:element name="exif:GPSProcessingMethod">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.GPSAreaInformation" combine="choice">
+    <rng:element name="exif:GPSAreaInformation">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.GPSDifferential" combine="choice">
+    <rng:element name="exif:GPSDifferential">
+      <rng:ref name="exif.GPSDifferential.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.ExifVersion.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.ExifVersion.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.ExifVersion.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.ExifVersion.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="string">0210</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.FlashpixVersion.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.FlashpixVersion.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.FlashpixVersion.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.FlashpixVersion.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="string">0100</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.ColorSpace.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.ColorSpace.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.ColorSpace.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.ColorSpace.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="integer">1</rng:value>
+      <rng:value type="integer">-32786</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.ExposureProgram.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.ExposureProgram.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.ExposureProgram.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.ExposureProgram.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="integer">0</rng:value>
+      <rng:value type="integer">1</rng:value>
+      <rng:value type="integer">2</rng:value>
+      <rng:value type="integer">3</rng:value>
+      <rng:value type="integer">4</rng:value>
+      <rng:value type="integer">5</rng:value>
+      <rng:value type="integer">6</rng:value>
+      <rng:value type="integer">7</rng:value>
+      <rng:value type="integer">8</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.MeteringMode.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.MeteringMode.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.MeteringMode.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.MeteringMode.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="integer">0</rng:value>
+      <rng:value type="integer">1</rng:value>
+      <rng:value type="integer">2</rng:value>
+      <rng:value type="integer">3</rng:value>
+      <rng:value type="integer">4</rng:value>
+      <rng:value type="integer">5</rng:value>
+      <rng:value type="integer">6</rng:value>
+      <rng:value type="integer">255</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.LightSource.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.LightSource.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.LightSource.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.LightSource.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="integer">0</rng:value>
+      <rng:value type="integer">1</rng:value>
+      <rng:value type="integer">2</rng:value>
+      <rng:value type="integer">3</rng:value>
+      <rng:value type="integer">17</rng:value>
+      <rng:value type="integer">18</rng:value>
+      <rng:value type="integer">19</rng:value>
+      <rng:value type="integer">20</rng:value>
+      <rng:value type="integer">21</rng:value>
+      <rng:value type="integer">22</rng:value>
+      <rng:value type="integer">255</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.FocalPlaneResolutionUnit.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.FocalPlaneResolutionUnit.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.FocalPlaneResolutionUnit.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.FocalPlaneResolutionUnit.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="integer">2</rng:value>
+      <rng:value type="integer">3</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.SensingMethod.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.SensingMethod.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.SensingMethod.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.SensingMethod.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="integer">1</rng:value>
+      <rng:value type="integer">2</rng:value>
+      <rng:value type="integer">3</rng:value>
+      <rng:value type="integer">4</rng:value>
+      <rng:value type="integer">5</rng:value>
+      <rng:value type="integer">6</rng:value>
+      <rng:value type="integer">7</rng:value>
+      <rng:value type="integer">8</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.FileSource.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.FileSource.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.FileSource.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.FileSource.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="integer">3</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.SceneType.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.SceneType.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.SceneType.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.SceneType.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="integer">1</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.CustomRendered.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.CustomRendered.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.CustomRendered.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.CustomRendered.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="integer">0</rng:value>
+      <rng:value type="integer">1</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.ExposureMode.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.ExposureMode.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.ExposureMode.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.ExposureMode.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="integer">0</rng:value>
+      <rng:value type="integer">1</rng:value>
+      <rng:value type="integer">2</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.WhiteBalance.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.WhiteBalance.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.WhiteBalance.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.WhiteBalance.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="integer">0</rng:value>
+      <rng:value type="integer">1</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.SceneCaptureType.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.SceneCaptureType.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.SceneCaptureType.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.SceneCaptureType.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="integer">0</rng:value>
+      <rng:value type="integer">1</rng:value>
+      <rng:value type="integer">2</rng:value>
+      <rng:value type="integer">3</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.GainControl.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.GainControl.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.GainControl.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.GainControl.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="integer">0</rng:value>
+      <rng:value type="integer">1</rng:value>
+      <rng:value type="integer">2</rng:value>
+      <rng:value type="integer">3</rng:value>
+      <rng:value type="integer">4</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.Contrast.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.Contrast.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.Contrast.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.Contrast.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="integer">0</rng:value>
+      <rng:value type="integer">1</rng:value>
+      <rng:value type="integer">2</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.Saturation.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.Saturation.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.Saturation.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.Saturation.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="integer">0</rng:value>
+      <rng:value type="integer">1</rng:value>
+      <rng:value type="integer">2</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.Sharpness.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.Sharpness.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.Sharpness.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.Sharpness.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="integer">0</rng:value>
+      <rng:value type="integer">1</rng:value>
+      <rng:value type="integer">2</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.SubjectDistanceRange.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.SubjectDistanceRange.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.SubjectDistanceRange.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.SubjectDistanceRange.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="integer">0</rng:value>
+      <rng:value type="integer">1</rng:value>
+      <rng:value type="integer">2</rng:value>
+      <rng:value type="integer">3</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.GPSAltitudeRef.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.GPSAltitudeRef.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.GPSAltitudeRef.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.GPSAltitudeRef.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="integer">0</rng:value>
+      <rng:value type="integer">1</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.GPSStatus.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.GPSStatus.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.GPSStatus.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.GPSStatus.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="string">A</rng:value>
+      <rng:value type="string">V</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.GPSMeasureMode.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.GPSMeasureMode.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.GPSMeasureMode.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.GPSMeasureMode.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="integer">2</rng:value>
+      <rng:value type="integer">3</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.GPSSpeedRef.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.GPSSpeedRef.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.GPSSpeedRef.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.GPSSpeedRef.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="string">K</rng:value>
+      <rng:value type="string">M</rng:value>
+      <rng:value type="string">N</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.GPSTrackRef.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.GPSTrackRef.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.GPSTrackRef.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.GPSTrackRef.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="string">T</rng:value>
+      <rng:value type="string">M</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.GPSImgDirectionRef.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.GPSImgDirectionRef.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.GPSImgDirectionRef.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.GPSImgDirectionRef.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="string">T</rng:value>
+      <rng:value type="string">M</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.GPSDestBearingRef.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.GPSDestBearingRef.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.GPSDestBearingRef.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.GPSDestBearingRef.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="string">T</rng:value>
+      <rng:value type="string">M</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.GPSDestDistanceRef.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.GPSDestDistanceRef.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.GPSDestDistanceRef.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.GPSDestDistanceRef.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="string">K</rng:value>
+      <rng:value type="string">M</rng:value>
+      <rng:value type="string">N</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.GPSDifferential.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.GPSDifferential.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.GPSDifferential.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.GPSDifferential.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="integer">0</rng:value>
+      <rng:value type="integer">1</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.GPSCoordinate.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.GPSCoordinate.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.GPSCoordinate.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.GPSCoordinate.Base" combine="choice">
+    <rng:data type="string">
+      <rng:param name="pattern">(\d{1,3},\d{1,2},\d{1,2}[NSEW])|(\d{1,3},\d{1,2}\.\d+[NSEW])</rng:param>
+    </rng:data>
+  </rng:define>
+  <rng:define name="exif.Flash.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.Flash.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.Flash.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.Flash.Base" combine="choice">
+    <rng:element name="rdf:Description">
+      <rng:interleave>
+        <rng:optional>
+          <rng:ref name="exif.Flash.Fired" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="exif.Flash.Return" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="exif.Flash.Mode" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="exif.Flash.Function" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="exif.Flash.RedEyeMode" />
+        </rng:optional>
+      </rng:interleave>
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.Flash.Fired" combine="choice">
+    <rng:element name="exif:Fired">
+      <rng:ref name="ISO16684-1.Types.QValue.Boolean" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.Flash.Return" combine="choice">
+    <rng:element name="exif:Return">
+      <rng:ref name="exif.Flash.Return.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.Flash.Mode" combine="choice">
+    <rng:element name="exif:Mode">
+      <rng:ref name="exif.Flash.Mode.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.Flash.Function" combine="choice">
+    <rng:element name="exif:Function">
+      <rng:ref name="ISO16684-1.Types.QValue.OrderedArray.Boolean" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.Flash.RedEyeMode" combine="choice">
+    <rng:element name="exif:RedEyeMode">
+      <rng:ref name="ISO16684-1.Types.QValue.OrderedArray.Boolean" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.Flash.Return.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.Flash.Return.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.Flash.Return.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.Flash.Return.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="integer">0</rng:value>
+      <rng:value type="integer">1</rng:value>
+      <rng:value type="integer">2</rng:value>
+      <rng:value type="integer">3</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.Flash.Mode.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.Flash.Mode.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.Flash.Mode.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.Flash.Mode.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="integer">0</rng:value>
+      <rng:value type="integer">1</rng:value>
+      <rng:value type="integer">2</rng:value>
+      <rng:value type="integer">3</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.OECF_SFR.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.OECF_SFR.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.OECF_SFR.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.OECF_SFR.Base" combine="choice">
+    <rng:element name="rdf:Description">
+      <rng:interleave>
+        <rng:optional>
+          <rng:ref name="exif.OECF_SFR.Columns" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="exif.OECF_SFR.Rows" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="exif.OECF_SFR.Names" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="exif.OECF_SFR.Values" />
+        </rng:optional>
+      </rng:interleave>
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.OECF_SFR.Columns" combine="choice">
+    <rng:element name="exif:Columns">
+      <rng:ref name="ISO16684-1.Types.QValue.Integer" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.OECF_SFR.Rows" combine="choice">
+    <rng:element name="exif:Rows">
+      <rng:ref name="ISO16684-1.Types.QValue.Integer" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.OECF_SFR.Names" combine="choice">
+    <rng:element name="exif:Names">
+      <rng:ref name="ISO16684-1.Types.QValue.OrderedArray.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.OECF_SFR.Values" combine="choice">
+    <rng:element name="exif:Values">
+      <rng:ref name="ISO16684-1.Types.QValue.OrderedArray.Rational" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.CFAPattern.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.CFAPattern.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.CFAPattern.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.CFAPattern.Base" combine="choice">
+    <rng:element name="rdf:Description">
+      <rng:interleave>
+        <rng:optional>
+          <rng:ref name="exif.CFAPattern.Columns" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="exif.CFAPattern.Rows" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="exif.CFAPattern.Names" />
+        </rng:optional>
+      </rng:interleave>
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.CFAPattern.Columns" combine="choice">
+    <rng:element name="exif:Columns">
+      <rng:ref name="ISO16684-1.Types.QValue.Integer" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.CFAPattern.Rows" combine="choice">
+    <rng:element name="exif:Rows">
+      <rng:ref name="ISO16684-1.Types.QValue.Integer" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.CFAPattern.Names" combine="choice">
+    <rng:element name="exif:Names">
+      <rng:ref name="ISO16684-1.Types.QValue.OrderedArray.Integer" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.DeviceSettings.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="exif.DeviceSettings.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="exif.DeviceSettings.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="exif.DeviceSettings.Base" combine="choice">
+    <rng:element name="rdf:Description">
+      <rng:interleave>
+        <rng:optional>
+          <rng:ref name="exif.DeviceSettings.Columns" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="exif.DeviceSettings.Rows" />
+        </rng:optional>
+        <rng:optional>
+          <rng:ref name="exif.DeviceSettings.Settings" />
+        </rng:optional>
+      </rng:interleave>
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.DeviceSettings.Columns" combine="choice">
+    <rng:element name="exif:Columns">
+      <rng:ref name="ISO16684-1.Types.QValue.Integer" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.DeviceSettings.Rows" combine="choice">
+    <rng:element name="exif:Rows">
+      <rng:ref name="ISO16684-1.Types.QValue.Integer" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="exif.DeviceSettings.Settings" combine="choice">
+    <rng:element name="exif:Settings">
+      <rng:ref name="ISO16684-1.Types.QValue.OrderedArray.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaid.part" combine="choice">
+    <rng:element name="pdfaid:part">
+      <rng:ref name="pdfaid.part.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaid.conformance" combine="choice">
+    <rng:element name="pdfaid:conformance">
+      <rng:ref name="pdfaid.conformance.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaid.amd" combine="choice">
+    <rng:element name="pdfaid:amd">
+      <rng:ref name="pdfaid.amd.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaid.part.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="pdfaid.part.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="pdfaid.part.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="pdfaid.part.Base" combine="choice">
+    <rng:choice>
+      <rng:choice>
+        <rng:value type="string">1</rng:value>
+      </rng:choice>
+      <rng:ref name="ISO16684-1.Types.Base.Text" />
+    </rng:choice>
+  </rng:define>
+  <rng:define name="pdfaid.conformance.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="pdfaid.conformance.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="pdfaid.conformance.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="pdfaid.conformance.Base" combine="choice">
+    <rng:choice>
+      <rng:choice>
+        <rng:value type="string">A</rng:value>
+        <rng:value type="string">B</rng:value>
+      </rng:choice>
+      <rng:ref name="ISO16684-1.Types.Base.Text" />
+    </rng:choice>
+  </rng:define>
+  <rng:define name="pdfaid.amd.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="pdfaid.amd.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="pdfaid.amd.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="pdfaid.amd.Base" combine="choice">
+    <rng:ref name="ISO16684-1.Types.Base.Text" />
+  </rng:define>
+  <rng:define name="pdfaExtension.schemas" combine="choice">
+    <rng:element name="pdfaExtension:schemas">
+      <rng:ref name="pdfaExtension.schemas.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaExtension.schemas.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="pdfaExtension.schemas.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="pdfaExtension.schemas.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="pdfaExtension.schemas.Base" combine="choice">
+    <rng:element name="rdf:Bag">
+      <rng:zeroOrMore>
+        <rng:element name="rdf:li">
+          <rng:ref name="pdfaExtension.Schema.QValue" />
+        </rng:element>
+      </rng:zeroOrMore>
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaExtension.Schema.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="pdfaExtension.Schema.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="pdfaExtension.Schema.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="pdfaExtension.Schema.Base" combine="choice">
+    <rng:element name="rdf:Description">
+      <rng:interleave>
+        <rng:ref name="pdfaExtension.Schema.schema" />
+        <rng:ref name="pdfaExtension.Schema.namespaceURI" />
+        <rng:ref name="pdfaExtension.Schema.prefix" />
+        <rng:ref name="pdfaExtension.Schema.property" />
+        <rng:ref name="pdfaExtension.Schema.valueType" />
+      </rng:interleave>
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaExtension.Property.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="pdfaExtension.Property.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="pdfaExtension.Property.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="pdfaExtension.Property.Base" combine="choice">
+    <rng:element name="rdf:Description">
+      <rng:interleave>
+        <rng:ref name="pdfaExtension.Property.name" />
+        <rng:ref name="pdfaExtension.Property.valueType" />
+        <rng:ref name="pdfaExtension.Property.category" />
+        <rng:ref name="pdfaExtension.Property.description" />
+      </rng:interleave>
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaExtension.ValueType.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="pdfaExtension.ValueType.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="pdfaExtension.ValueType.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="pdfaExtension.ValueType.Base" combine="choice">
+    <rng:element name="rdf:Description">
+      <rng:interleave>
+        <rng:ref name="pdfaExtension.ValueType.type" />
+        <rng:ref name="pdfaExtension.ValueType.namespaceURI" />
+        <rng:ref name="pdfaExtension.ValueType.prefix" />
+        <rng:ref name="pdfaExtension.ValueType.description" />
+        <rng:ref name="pdfaExtension.ValueType.field" />
+      </rng:interleave>
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaExtension.Field.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="pdfaExtension.Field.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="pdfaExtension.Field.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="pdfaExtension.Field.Base" combine="choice">
+    <rng:element name="rdf:Description">
+      <rng:interleave>
+        <rng:ref name="pdfaExtension.Field.name" />
+        <rng:ref name="pdfaExtension.Field.valueType" />
+        <rng:ref name="pdfaExtension.Field.description" />
+      </rng:interleave>
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaExtension.Schema.schema" combine="choice">
+    <rng:element name="pdfaSchema:schema">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaExtension.Schema.namespaceURI" combine="choice">
+    <rng:element name="pdfaSchema:namespaceURI">
+      <rng:ref name="ISO16684-1.Types.QValue.URI" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaExtension.Schema.prefix" combine="choice">
+    <rng:element name="pdfaSchema:prefix">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaExtension.Schema.property" combine="choice">
+    <rng:element name="pdfaSchema:property">
+      <rng:ref name="pdfaExtension.Schema.property.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaExtension.Schema.valueType" combine="choice">
+    <rng:element name="pdfaSchema:valueType">
+      <rng:ref name="pdfaExtension.Schema.valueType.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaExtension.Property.name" combine="choice">
+    <rng:element name="pdfaProperty:name">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaExtension.Property.valueType" combine="choice">
+    <rng:element name="pdfaProperty:valueType">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaExtension.Property.category" combine="choice">
+    <rng:element name="pdfaProperty:category">
+      <rng:ref name="pdfaExtension.Property.category.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaExtension.Property.description" combine="choice">
+    <rng:element name="pdfaProperty:description">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaExtension.ValueType.type" combine="choice">
+    <rng:element name="pdfaType:type">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaExtension.ValueType.namespaceURI" combine="choice">
+    <rng:element name="pdfaType:namespaceURI">
+      <rng:ref name="ISO16684-1.Types.QValue.URI" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaExtension.ValueType.prefix" combine="choice">
+    <rng:element name="pdfaType:prefix">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaExtension.ValueType.description" combine="choice">
+    <rng:element name="pdfaType:description">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaExtension.ValueType.field" combine="choice">
+    <rng:element name="pdfaType:field">
+      <rng:ref name="pdfaExtension.ValueType.field.QValue" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaExtension.Field.name" combine="choice">
+    <rng:element name="pdfaField:name">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaExtension.Field.valueType" combine="choice">
+    <rng:element name="pdfaField:valueType">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaExtension.Field.description" combine="choice">
+    <rng:element name="pdfaField:description">
+      <rng:ref name="ISO16684-1.Types.QValue.Text" />
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaExtension.Schema.property.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="pdfaExtension.Schema.property.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="pdfaExtension.Schema.property.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="pdfaExtension.Schema.valueType.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="pdfaExtension.Schema.valueType.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="pdfaExtension.Schema.valueType.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="pdfaExtension.Property.category.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="pdfaExtension.Property.category.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="pdfaExtension.Property.category.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="pdfaExtension.ValueType.field.QValue" combine="choice">
+    <rng:choice>
+      <rng:ref name="pdfaExtension.ValueType.field.Base" />
+      <rng:element name="rdf:Description">
+        <rng:element name="rdf:value">
+          <rng:ref name="pdfaExtension.ValueType.field.Base" />
+        </rng:element>
+      </rng:element>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="pdfaExtension.Schema.property.Base" combine="choice">
+    <rng:element name="rdf:Seq">
+      <rng:zeroOrMore>
+        <rng:element name="rdf:li">
+          <rng:ref name="pdfaExtension.Property.QValue" />
+        </rng:element>
+      </rng:zeroOrMore>
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaExtension.Schema.valueType.Base" combine="choice">
+    <rng:element name="rdf:Seq">
+      <rng:zeroOrMore>
+        <rng:element name="rdf:li">
+          <rng:ref name="pdfaExtension.ValueType.QValue" />
+        </rng:element>
+      </rng:zeroOrMore>
+    </rng:element>
+  </rng:define>
+  <rng:define name="pdfaExtension.Property.category.Base" combine="choice">
+    <rng:choice>
+      <rng:value type="string">internal</rng:value>
+      <rng:value type="string">external</rng:value>
+    </rng:choice>
+  </rng:define>
+  <rng:define name="pdfaExtension.ValueType.field.Base" combine="choice">
+    <rng:element name="rdf:Seq">
+      <rng:zeroOrMore>
+        <rng:element name="rdf:li">
+          <rng:ref name="pdfaExtension.Field.QValue" />
+        </rng:element>
+      </rng:zeroOrMore>
+    </rng:element>
+  </rng:define>
+</rng:grammar>

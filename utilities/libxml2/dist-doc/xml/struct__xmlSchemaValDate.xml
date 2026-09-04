@@ -1,0 +1,141 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlSchemaValDate" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlSchemaValDate</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlSchemaValDate_1acd28caa024be171c367c6c71d45d2448" prot="public" static="no" mutable="no">
+        <type>long</type>
+        <definition>long year</definition>
+        <argsstring></argsstring>
+        <name>year</name>
+        <qualifiedname>_xmlSchemaValDate::year</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="58" column="9" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="58" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaValDate_1a6578b2fd377b29fb9dd3cc4b38b5b793" prot="public" static="no" mutable="no">
+        <type>unsigned int</type>
+        <definition>unsigned int mon</definition>
+        <argsstring></argsstring>
+        <name>mon</name>
+        <qualifiedname>_xmlSchemaValDate::mon</qualifiedname>
+        <bitfield>4</bitfield>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="59" column="17" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="59" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaValDate_1a2398ea43f7d25f677616371d3b545f59" prot="public" static="no" mutable="no">
+        <type>unsigned int</type>
+        <definition>unsigned int day</definition>
+        <argsstring></argsstring>
+        <name>day</name>
+        <qualifiedname>_xmlSchemaValDate::day</qualifiedname>
+        <bitfield>5</bitfield>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="60" column="17" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="60" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaValDate_1aa64c18c25aeef9a0d7c92d89fa24a636" prot="public" static="no" mutable="no">
+        <type>unsigned int</type>
+        <definition>unsigned int hour</definition>
+        <argsstring></argsstring>
+        <name>hour</name>
+        <qualifiedname>_xmlSchemaValDate::hour</qualifiedname>
+        <bitfield>5</bitfield>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="61" column="17" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="61" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaValDate_1ac3afd1b9a444494efa432019dc1dd1f8" prot="public" static="no" mutable="no">
+        <type>unsigned int</type>
+        <definition>unsigned int min</definition>
+        <argsstring></argsstring>
+        <name>min</name>
+        <qualifiedname>_xmlSchemaValDate::min</qualifiedname>
+        <bitfield>6</bitfield>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="62" column="17" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="62" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaValDate_1a741d9964fa8029b9468528756ea835af" prot="public" static="no" mutable="no">
+        <type>double</type>
+        <definition>double sec</definition>
+        <argsstring></argsstring>
+        <name>sec</name>
+        <qualifiedname>_xmlSchemaValDate::sec</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="63" column="11" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="63" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaValDate_1a7f780669b58e6ee99b8688156d157d3b" prot="public" static="no" mutable="no">
+        <type>unsigned int</type>
+        <definition>unsigned int tz_flag</definition>
+        <argsstring></argsstring>
+        <name>tz_flag</name>
+        <qualifiedname>_xmlSchemaValDate::tz_flag</qualifiedname>
+        <bitfield>1</bitfield>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="64" column="17" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="64" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaValDate_1a7674ff0ae086d3220f05dace8098909e" prot="public" static="no" mutable="no">
+        <type>signed int</type>
+        <definition>signed int tzo</definition>
+        <argsstring></argsstring>
+        <name>tzo</name>
+        <qualifiedname>_xmlSchemaValDate::tzo</qualifiedname>
+        <bitfield>12</bitfield>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="65" column="15" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="65" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="57" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="57" bodyend="67"/>
+    <listofallmembers>
+      <member refid="struct__xmlSchemaValDate_1a2398ea43f7d25f677616371d3b545f59" prot="public" virt="non-virtual"><scope>_xmlSchemaValDate</scope><name>day</name></member>
+      <member refid="struct__xmlSchemaValDate_1aa64c18c25aeef9a0d7c92d89fa24a636" prot="public" virt="non-virtual"><scope>_xmlSchemaValDate</scope><name>hour</name></member>
+      <member refid="struct__xmlSchemaValDate_1ac3afd1b9a444494efa432019dc1dd1f8" prot="public" virt="non-virtual"><scope>_xmlSchemaValDate</scope><name>min</name></member>
+      <member refid="struct__xmlSchemaValDate_1a6578b2fd377b29fb9dd3cc4b38b5b793" prot="public" virt="non-virtual"><scope>_xmlSchemaValDate</scope><name>mon</name></member>
+      <member refid="struct__xmlSchemaValDate_1a741d9964fa8029b9468528756ea835af" prot="public" virt="non-virtual"><scope>_xmlSchemaValDate</scope><name>sec</name></member>
+      <member refid="struct__xmlSchemaValDate_1a7f780669b58e6ee99b8688156d157d3b" prot="public" virt="non-virtual"><scope>_xmlSchemaValDate</scope><name>tz_flag</name></member>
+      <member refid="struct__xmlSchemaValDate_1a7674ff0ae086d3220f05dace8098909e" prot="public" virt="non-virtual"><scope>_xmlSchemaValDate</scope><name>tzo</name></member>
+      <member refid="struct__xmlSchemaValDate_1acd28caa024be171c367c6c71d45d2448" prot="public" virt="non-virtual"><scope>_xmlSchemaValDate</scope><name>year</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

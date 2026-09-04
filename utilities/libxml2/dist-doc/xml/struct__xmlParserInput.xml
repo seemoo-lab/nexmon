@@ -1,0 +1,455 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlParserInput" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlParserInput</compoundname>
+    <includes local="no">parser.h</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlParserInput_1a19cb36931244d9cd421505e5892e5f58" prot="public" static="no" mutable="no">
+        <type><ref refid="tree_8h_1a7a0ca7c6b30d7a9103b28626f820cab9" kindref="member">xmlParserInputBuffer</ref> *</type>
+        <definition>xmlParserInputBuffer* buf</definition>
+        <argsstring></argsstring>
+        <name>buf</name>
+        <qualifiedname>_xmlParserInput::buf</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="103" column="26" bodyfile="parser.h" bodystart="103" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserInput_1a7efa5e9c7494c7d4586359300221aa5d" prot="public" static="no" mutable="no">
+        <type>const char *</type>
+        <definition>const char* filename</definition>
+        <argsstring></argsstring>
+        <name>filename</name>
+        <qualifiedname>_xmlParserInput::filename</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000016"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1ad28619d7a08511e570dc279dd38bf0fc" kindref="member">xmlCtxtGetInputPosition</ref></para>
+</xrefdescription></xrefsect></para>
+<para>The filename or URI, if any </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="109" column="16" bodyfile="parser.h" bodystart="109" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserInput_1aad40676dcc4542a4ade5b6db5457737a" prot="public" static="no" mutable="no">
+        <type>const char *</type>
+        <definition>const char* directory</definition>
+        <argsstring></argsstring>
+        <name>directory</name>
+        <qualifiedname>_xmlParserInput::directory</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="111" column="16" bodyfile="parser.h" bodystart="111" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserInput_1a6d129c555de9187158cc02420b457cf0" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* base</definition>
+        <argsstring></argsstring>
+        <name>base</name>
+        <qualifiedname>_xmlParserInput::base</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="113" column="19" bodyfile="parser.h" bodystart="113" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserInput_1a31f01a37499663df3797227bda0636c3" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* cur</definition>
+        <argsstring></argsstring>
+        <name>cur</name>
+        <qualifiedname>_xmlParserInput::cur</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000017"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1aaed78db63b3868f3e682ca0a72cbc22d" kindref="member">xmlCtxtGetInputWindow</ref></para>
+</xrefdescription></xrefsect></para>
+<para>Current char being parsed </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="119" column="19" bodyfile="parser.h" bodystart="119" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserInput_1a4828145f4470b5dda758e6ad69a4ab55" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* end</definition>
+        <argsstring></argsstring>
+        <name>end</name>
+        <qualifiedname>_xmlParserInput::end</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="121" column="19" bodyfile="parser.h" bodystart="121" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserInput_1a9f59b34b1f25fe00023291b678246bcc" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int length</definition>
+        <argsstring></argsstring>
+        <name>length</name>
+        <qualifiedname>_xmlParserInput::length</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="123" column="9" bodyfile="parser.h" bodystart="123" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserInput_1a41ebd28ef1d7c6ade45642cb6acc1039" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int line</definition>
+        <argsstring></argsstring>
+        <name>line</name>
+        <qualifiedname>_xmlParserInput::line</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000018"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1ad28619d7a08511e570dc279dd38bf0fc" kindref="member">xmlCtxtGetInputPosition</ref></para>
+</xrefdescription></xrefsect></para>
+<para>Current line </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="129" column="9" bodyfile="parser.h" bodystart="129" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserInput_1afb52e720f5f0c483db5861f9e42e924e" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int col</definition>
+        <argsstring></argsstring>
+        <name>col</name>
+        <qualifiedname>_xmlParserInput::col</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000019"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1ad28619d7a08511e570dc279dd38bf0fc" kindref="member">xmlCtxtGetInputPosition</ref></para>
+</xrefdescription></xrefsect></para>
+<para>Current column </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="135" column="9" bodyfile="parser.h" bodystart="135" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserInput_1a4dcd402de9cf9b02e64841a56a78cd58" prot="public" static="no" mutable="no">
+        <type>unsigned long</type>
+        <definition>unsigned long consumed</definition>
+        <argsstring></argsstring>
+        <name>consumed</name>
+        <qualifiedname>_xmlParserInput::consumed</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000020"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="parser_8h_1ad28619d7a08511e570dc279dd38bf0fc" kindref="member">xmlCtxtGetInputPosition</ref></para>
+</xrefdescription></xrefsect></para>
+<para>How many xmlChars already consumed </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="141" column="19" bodyfile="parser.h" bodystart="141" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserInput_1ada36a4fd878fc906948d5f0f80e7c109" prot="public" static="no" mutable="no">
+        <type>xmlParserInputDeallocate</type>
+        <definition>xmlParserInputDeallocate free</definition>
+        <argsstring></argsstring>
+        <name>free</name>
+        <qualifiedname>_xmlParserInput::free</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="143" column="30" bodyfile="parser.h" bodystart="143" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserInput_1ad9e76039252fef00f7fc5ae5a35a754c" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* encoding</definition>
+        <argsstring></argsstring>
+        <name>encoding</name>
+        <qualifiedname>_xmlParserInput::encoding</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="145" column="19" bodyfile="parser.h" bodystart="145" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserInput_1a9d3984475d46b302c3f7685df9cf776d" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* version</definition>
+        <argsstring></argsstring>
+        <name>version</name>
+        <qualifiedname>_xmlParserInput::version</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="147" column="19" bodyfile="parser.h" bodystart="147" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserInput_1ac8bf36fe0577cba66bccda3a6f7e80a4" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int flags</definition>
+        <argsstring></argsstring>
+        <name>flags</name>
+        <qualifiedname>_xmlParserInput::flags</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="149" column="9" bodyfile="parser.h" bodystart="149" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserInput_1a7441ef0865bcb3db9b8064dd7375c1ea" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int id</definition>
+        <argsstring></argsstring>
+        <name>id</name>
+        <qualifiedname>_xmlParserInput::id</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="151" column="9" bodyfile="parser.h" bodystart="151" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserInput_1a0742acbe10ca2c01621184436dd718d7" prot="public" static="no" mutable="no">
+        <type>unsigned long</type>
+        <definition>unsigned long parentConsumed</definition>
+        <argsstring></argsstring>
+        <name>parentConsumed</name>
+        <qualifiedname>_xmlParserInput::parentConsumed</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="153" column="19" bodyfile="parser.h" bodystart="153" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlParserInput_1ae73cef48a369d8955c9ae08ed7e339fe" prot="public" static="no" mutable="no">
+        <type><ref refid="tree_8h_1a084cd84a8cefc3c95c7eaf95b2e652ce" kindref="member">xmlEntity</ref> *</type>
+        <definition>xmlEntity* entity</definition>
+        <argsstring></argsstring>
+        <name>entity</name>
+        <qualifiedname>_xmlParserInput::entity</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="155" column="15" bodyfile="parser.h" bodystart="155" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Parser input. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="12">
+        <label>_xmlAttr</label>
+        <link refid="struct__xmlAttr"/>
+        <childnode refid="6" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="12" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>ns</edgelabel>
+        </childnode>
+        <childnode refid="13" relation="usage">
+          <edgelabel>id</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlBuf</label>
+      </node>
+      <node id="3">
+        <label>_xmlCharEncodingHandler</label>
+        <link refid="struct__xmlCharEncodingHandler"/>
+      </node>
+      <node id="10">
+        <label>_xmlDict</label>
+        <childnode refid="11" relation="usage">
+          <edgelabel>strings</edgelabel>
+        </childnode>
+        <childnode refid="10" relation="usage">
+          <edgelabel>subdict</edgelabel>
+        </childnode>
+      </node>
+      <node id="11">
+        <label>_xmlDictStrings</label>
+        <childnode refid="11" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="7">
+        <label>_xmlDoc</label>
+        <link refid="struct__xmlDoc"/>
+        <childnode refid="6" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>extSubset</edgelabel>
+          <edgelabel>intSubset</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>oldNs</edgelabel>
+        </childnode>
+        <childnode refid="10" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="8">
+        <label>_xmlDtd</label>
+        <link refid="struct__xmlDtd"/>
+        <childnode refid="6" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>doc</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+      </node>
+      <node id="5">
+        <label>_xmlEntity</label>
+        <link refid="struct__xmlEntity"/>
+        <childnode refid="6" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>nexte</edgelabel>
+        </childnode>
+      </node>
+      <node id="13">
+        <label>_xmlID</label>
+        <link refid="struct__xmlID"/>
+        <childnode refid="13" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="12" relation="usage">
+          <edgelabel>attr</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+      </node>
+      <node id="6">
+        <label>_xmlNode</label>
+        <link refid="struct__xmlNode"/>
+        <childnode refid="6" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>ns</edgelabel>
+          <edgelabel>nsDef</edgelabel>
+        </childnode>
+        <childnode refid="12" relation="usage">
+          <edgelabel>properties</edgelabel>
+        </childnode>
+      </node>
+      <node id="9">
+        <label>_xmlNs</label>
+        <link refid="struct__xmlNs"/>
+        <childnode refid="9" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>context</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlParserInput</label>
+        <link refid="struct__xmlParserInput"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>buf</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>entity</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>_xmlParserInputBuffer</label>
+        <link refid="struct__xmlParserInputBuffer"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>encoder</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>buffer</edgelabel>
+          <edgelabel>raw</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="parser.h" line="101" column="1" bodyfile="parser.h" bodystart="101" bodyend="156"/>
+    <listofallmembers>
+      <member refid="struct__xmlParserInput_1a6d129c555de9187158cc02420b457cf0" prot="public" virt="non-virtual"><scope>_xmlParserInput</scope><name>base</name></member>
+      <member refid="struct__xmlParserInput_1a19cb36931244d9cd421505e5892e5f58" prot="public" virt="non-virtual"><scope>_xmlParserInput</scope><name>buf</name></member>
+      <member refid="struct__xmlParserInput_1afb52e720f5f0c483db5861f9e42e924e" prot="public" virt="non-virtual"><scope>_xmlParserInput</scope><name>col</name></member>
+      <member refid="struct__xmlParserInput_1a4dcd402de9cf9b02e64841a56a78cd58" prot="public" virt="non-virtual"><scope>_xmlParserInput</scope><name>consumed</name></member>
+      <member refid="struct__xmlParserInput_1a31f01a37499663df3797227bda0636c3" prot="public" virt="non-virtual"><scope>_xmlParserInput</scope><name>cur</name></member>
+      <member refid="struct__xmlParserInput_1aad40676dcc4542a4ade5b6db5457737a" prot="public" virt="non-virtual"><scope>_xmlParserInput</scope><name>directory</name></member>
+      <member refid="struct__xmlParserInput_1ad9e76039252fef00f7fc5ae5a35a754c" prot="public" virt="non-virtual"><scope>_xmlParserInput</scope><name>encoding</name></member>
+      <member refid="struct__xmlParserInput_1a4828145f4470b5dda758e6ad69a4ab55" prot="public" virt="non-virtual"><scope>_xmlParserInput</scope><name>end</name></member>
+      <member refid="struct__xmlParserInput_1ae73cef48a369d8955c9ae08ed7e339fe" prot="public" virt="non-virtual"><scope>_xmlParserInput</scope><name>entity</name></member>
+      <member refid="struct__xmlParserInput_1a7efa5e9c7494c7d4586359300221aa5d" prot="public" virt="non-virtual"><scope>_xmlParserInput</scope><name>filename</name></member>
+      <member refid="struct__xmlParserInput_1ac8bf36fe0577cba66bccda3a6f7e80a4" prot="public" virt="non-virtual"><scope>_xmlParserInput</scope><name>flags</name></member>
+      <member refid="struct__xmlParserInput_1ada36a4fd878fc906948d5f0f80e7c109" prot="public" virt="non-virtual"><scope>_xmlParserInput</scope><name>free</name></member>
+      <member refid="struct__xmlParserInput_1a7441ef0865bcb3db9b8064dd7375c1ea" prot="public" virt="non-virtual"><scope>_xmlParserInput</scope><name>id</name></member>
+      <member refid="struct__xmlParserInput_1a9f59b34b1f25fe00023291b678246bcc" prot="public" virt="non-virtual"><scope>_xmlParserInput</scope><name>length</name></member>
+      <member refid="struct__xmlParserInput_1a41ebd28ef1d7c6ade45642cb6acc1039" prot="public" virt="non-virtual"><scope>_xmlParserInput</scope><name>line</name></member>
+      <member refid="struct__xmlParserInput_1a0742acbe10ca2c01621184436dd718d7" prot="public" virt="non-virtual"><scope>_xmlParserInput</scope><name>parentConsumed</name></member>
+      <member refid="struct__xmlParserInput_1a9d3984475d46b302c3f7685df9cf776d" prot="public" virt="non-virtual"><scope>_xmlParserInput</scope><name>version</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

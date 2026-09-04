@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="structxmlEncTableEntry" kind="struct" language="C++" prot="public">
+    <compoundname>xmlEncTableEntry</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structxmlEncTableEntry_1a8f8f80d37794cde9472343e4487ba3eb" prot="public" static="no" mutable="no">
+        <type>const char *</type>
+        <definition>const char* name</definition>
+        <argsstring></argsstring>
+        <name>name</name>
+        <qualifiedname>xmlEncTableEntry::name</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="70" column="16" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="70" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structxmlEncTableEntry_1a787c179b51230462c39b76ce917d95a7" prot="public" static="no" mutable="no">
+        <type><ref refid="encoding_8h_1a662791d23b3d1e0a37244d35c57a02e5" kindref="member">xmlCharEncoding</ref></type>
+        <definition>xmlCharEncoding enc</definition>
+        <argsstring></argsstring>
+        <name>enc</name>
+        <qualifiedname>xmlEncTableEntry::enc</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/encoding.c" line="71" column="21" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="71" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/encoding.c" line="69" column="1" bodyfile="/builds/GNOME/libxml2/encoding.c" bodystart="69" bodyend="72"/>
+    <listofallmembers>
+      <member refid="structxmlEncTableEntry_1a787c179b51230462c39b76ce917d95a7" prot="public" virt="non-virtual"><scope>xmlEncTableEntry</scope><name>enc</name></member>
+      <member refid="structxmlEncTableEntry_1a8f8f80d37794cde9472343e4487ba3eb" prot="public" virt="non-virtual"><scope>xmlEncTableEntry</scope><name>name</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

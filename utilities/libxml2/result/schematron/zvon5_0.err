@@ -1,0 +1,6 @@
+./test/schematron/zvon5_0.xml:3: element CCC: schematron error : /AAA/BBB/CCC line 3: Source contains an empty element CCC 
+./test/schematron/zvon5_0.xml:3: element CCC: schematron error : /AAA/BBB/CCC line 3: [1]An element CCC does not contain any text
+./test/schematron/zvon5_0.xml:3: element CCC: schematron error : /AAA/BBB/CCC line 3: [2]An element CCC does not contain any text
+./test/schematron/zvon5_0.xml:3: element CCC: schematron error : /AAA/BBB/CCC line 3: [1]An element CCC does not contain any child element
+./test/schematron/zvon5_0.xml:3: element CCC: schematron error : /AAA/BBB/CCC line 3: [2]An element CCC does not contain any child element
+./test/schematron/zvon5_0.xml fails to validate

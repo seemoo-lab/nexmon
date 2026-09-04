@@ -1,0 +1,2 @@
+./test/schemas/extension1_2.xml:1: Schemas validity error : Element 'title': Element content is not allowed, because the content type is a simple type definition.
+./test/schemas/extension1_2.xml fails to validate

@@ -1,0 +1,630 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlXIncludeCtxt" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlXIncludeCtxt</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlXIncludeCtxt_1acb7e0779c02127031b073502aca38a8c" prot="public" static="no" mutable="no">
+        <type>xmlDocPtr</type>
+        <definition>xmlDocPtr doc</definition>
+        <argsstring></argsstring>
+        <name>doc</name>
+        <qualifiedname>_xmlXIncludeCtxt::doc</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="79" column="27" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="79" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXIncludeCtxt_1a58587ae8cd4893e8e2aca1096a80481b" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int incNr</definition>
+        <argsstring></argsstring>
+        <name>incNr</name>
+        <qualifiedname>_xmlXIncludeCtxt::incNr</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="80" column="25" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="80" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXIncludeCtxt_1add20ba16a51e6618cbb2c8b03d07fc24" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int incMax</definition>
+        <argsstring></argsstring>
+        <name>incMax</name>
+        <qualifiedname>_xmlXIncludeCtxt::incMax</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="81" column="24" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="81" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXIncludeCtxt_1a9338e688c95d9db940f5f15e64b363e5" prot="public" static="no" mutable="no">
+        <type>xmlXIncludeRefPtr *</type>
+        <definition>xmlXIncludeRefPtr* incTab</definition>
+        <argsstring></argsstring>
+        <name>incTab</name>
+        <qualifiedname>_xmlXIncludeCtxt::incTab</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="82" column="23" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="82" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXIncludeCtxt_1a78b653d41162afcfef291d9ec24fe1ba" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int txtNr</definition>
+        <argsstring></argsstring>
+        <name>txtNr</name>
+        <qualifiedname>_xmlXIncludeCtxt::txtNr</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="84" column="25" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="84" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXIncludeCtxt_1a3543ef7ff547ee6e4813c4f50ecd51a3" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int txtMax</definition>
+        <argsstring></argsstring>
+        <name>txtMax</name>
+        <qualifiedname>_xmlXIncludeCtxt::txtMax</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="85" column="24" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="85" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXIncludeCtxt_1a8e377740e20b825aca353a82ade8e74e" prot="public" static="no" mutable="no">
+        <type>xmlXIncludeTxt *</type>
+        <definition>xmlXIncludeTxt* txtTab</definition>
+        <argsstring></argsstring>
+        <name>txtTab</name>
+        <qualifiedname>_xmlXIncludeCtxt::txtTab</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="86" column="23" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="86" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXIncludeCtxt_1acbfc8545ad4215d62e6e184503b6fc9d" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int urlNr</definition>
+        <argsstring></argsstring>
+        <name>urlNr</name>
+        <qualifiedname>_xmlXIncludeCtxt::urlNr</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="88" column="25" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="88" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXIncludeCtxt_1ac0c4da97e00e660d431ae17e905d03a9" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int urlMax</definition>
+        <argsstring></argsstring>
+        <name>urlMax</name>
+        <qualifiedname>_xmlXIncludeCtxt::urlMax</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="89" column="24" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="89" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXIncludeCtxt_1a87bd33a9656760f73722e452f31ea368" prot="public" static="no" mutable="no">
+        <type>xmlXIncludeDoc *</type>
+        <definition>xmlXIncludeDoc* urlTab</definition>
+        <argsstring></argsstring>
+        <name>urlTab</name>
+        <qualifiedname>_xmlXIncludeCtxt::urlTab</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="90" column="23" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="90" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXIncludeCtxt_1a7c757b507ea7128441db47b33f5b9de7" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nbErrors</definition>
+        <argsstring></argsstring>
+        <name>nbErrors</name>
+        <qualifiedname>_xmlXIncludeCtxt::nbErrors</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="92" column="22" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="92" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXIncludeCtxt_1a8061a2b4b2d3337a642e73b14df864db" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int fatalErr</definition>
+        <argsstring></argsstring>
+        <name>fatalErr</name>
+        <qualifiedname>_xmlXIncludeCtxt::fatalErr</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="93" column="22" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="93" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXIncludeCtxt_1a1e9f18db46820d6e92e1cbbd0353d99e" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int errNo</definition>
+        <argsstring></argsstring>
+        <name>errNo</name>
+        <qualifiedname>_xmlXIncludeCtxt::errNo</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="94" column="25" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="94" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXIncludeCtxt_1a362543f7a7dc56b69f4720d4997a5083" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int legacy</definition>
+        <argsstring></argsstring>
+        <name>legacy</name>
+        <qualifiedname>_xmlXIncludeCtxt::legacy</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="95" column="24" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="95" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXIncludeCtxt_1ad02c3d50aafa6390177b1f9e096d9f93" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int parseFlags</definition>
+        <argsstring></argsstring>
+        <name>parseFlags</name>
+        <qualifiedname>_xmlXIncludeCtxt::parseFlags</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="96" column="20" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="96" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXIncludeCtxt_1a1cb76d737bf6f5b53e6c970073cba051" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* _private</definition>
+        <argsstring></argsstring>
+        <name>_private</name>
+        <qualifiedname>_xmlXIncludeCtxt::_private</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="98" column="21" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="98" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXIncludeCtxt_1acb5ba97551079e0b072c62c21d784ac5" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int depth</definition>
+        <argsstring></argsstring>
+        <name>depth</name>
+        <qualifiedname>_xmlXIncludeCtxt::depth</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="103" column="8" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="103" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXIncludeCtxt_1afe354e9b38a3008fe75a1a6403d419a2" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int isStream</definition>
+        <argsstring></argsstring>
+        <name>isStream</name>
+        <qualifiedname>_xmlXIncludeCtxt::isStream</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="104" column="13" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="104" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXIncludeCtxt_1a7473285f86001168c6d3f7b611dd6ff8" prot="public" static="no" mutable="no">
+        <type>xmlXPathContextPtr</type>
+        <definition>xmlXPathContextPtr xpctxt</definition>
+        <argsstring></argsstring>
+        <name>xpctxt</name>
+        <qualifiedname>_xmlXIncludeCtxt::xpctxt</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="107" column="24" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="107" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXIncludeCtxt_1a35c22f982a2638011b4860d3a6076e8b" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlerror_8h_1a43ce1e8b08b983fe847fdf074b021127" kindref="member">xmlStructuredErrorFunc</ref></type>
+        <definition>xmlStructuredErrorFunc errorHandler</definition>
+        <argsstring></argsstring>
+        <name>errorHandler</name>
+        <qualifiedname>_xmlXIncludeCtxt::errorHandler</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="110" column="28" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="110" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXIncludeCtxt_1acefd225fa9cf48ba9281f4f97abe0db7" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* errorCtxt</definition>
+        <argsstring></argsstring>
+        <name>errorCtxt</name>
+        <qualifiedname>_xmlXIncludeCtxt::errorCtxt</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="111" column="10" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="111" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXIncludeCtxt_1a30c0d77a995c819ff3a6bc91e0e92a8c" prot="public" static="no" mutable="no">
+        <type><ref refid="parser_8h_1a7c18bf0fce4a02394bd219d9422c27ed" kindref="member">xmlResourceLoader</ref></type>
+        <definition>xmlResourceLoader resourceLoader</definition>
+        <argsstring></argsstring>
+        <name>resourceLoader</name>
+        <qualifiedname>_xmlXIncludeCtxt::resourceLoader</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="113" column="23" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="113" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXIncludeCtxt_1ac728bd981e68086ac20cf0e6feb826ca" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* resourceCtxt</definition>
+        <argsstring></argsstring>
+        <name>resourceCtxt</name>
+        <qualifiedname>_xmlXIncludeCtxt::resourceCtxt</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="114" column="10" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="114" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="5">
+        <label>_xmlAttr</label>
+        <link refid="struct__xmlAttr"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>ns</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>id</edgelabel>
+        </childnode>
+      </node>
+      <node id="22">
+        <label>_xmlBuf</label>
+      </node>
+      <node id="21">
+        <label>_xmlCharEncodingHandler</label>
+        <link refid="struct__xmlCharEncodingHandler"/>
+      </node>
+      <node id="8">
+        <label>_xmlDict</label>
+        <childnode refid="9" relation="usage">
+          <edgelabel>strings</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>subdict</edgelabel>
+        </childnode>
+      </node>
+      <node id="9">
+        <label>_xmlDictStrings</label>
+        <childnode refid="9" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>_xmlDoc</label>
+        <link refid="struct__xmlDoc"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>extSubset</edgelabel>
+          <edgelabel>intSubset</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>oldNs</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="7">
+        <label>_xmlDtd</label>
+        <link refid="struct__xmlDtd"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>doc</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+      </node>
+      <node id="23">
+        <label>_xmlEntity</label>
+        <link refid="struct__xmlEntity"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="23" relation="usage">
+          <edgelabel>nexte</edgelabel>
+        </childnode>
+      </node>
+      <node id="18">
+        <label>_xmlError</label>
+        <link refid="struct__xmlError"/>
+      </node>
+      <node id="14">
+        <label>_xmlHashTable</label>
+        <childnode refid="15" relation="usage">
+          <edgelabel>table</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="6">
+        <label>_xmlID</label>
+        <link refid="struct__xmlID"/>
+        <childnode refid="6" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>attr</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>_xmlNode</label>
+        <link refid="struct__xmlNode"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>ns</edgelabel>
+          <edgelabel>nsDef</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>properties</edgelabel>
+        </childnode>
+      </node>
+      <node id="17">
+        <label>_xmlNodeSet</label>
+        <link refid="struct__xmlNodeSet"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>nodeTab</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlNs</label>
+        <link refid="struct__xmlNs"/>
+        <childnode refid="4" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>context</edgelabel>
+        </childnode>
+      </node>
+      <node id="19">
+        <label>_xmlParserInput</label>
+        <link refid="struct__xmlParserInput"/>
+        <childnode refid="20" relation="usage">
+          <edgelabel>buf</edgelabel>
+        </childnode>
+        <childnode refid="23" relation="usage">
+          <edgelabel>entity</edgelabel>
+        </childnode>
+      </node>
+      <node id="20">
+        <label>_xmlParserInputBuffer</label>
+        <link refid="struct__xmlParserInputBuffer"/>
+        <childnode refid="21" relation="usage">
+          <edgelabel>encoder</edgelabel>
+        </childnode>
+        <childnode refid="22" relation="usage">
+          <edgelabel>buffer</edgelabel>
+          <edgelabel>raw</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlXIncludeCtxt</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="10" relation="usage">
+          <edgelabel>incTab</edgelabel>
+        </childnode>
+        <childnode refid="11" relation="usage">
+          <edgelabel>txtTab</edgelabel>
+        </childnode>
+        <childnode refid="12" relation="usage">
+          <edgelabel>urlTab</edgelabel>
+        </childnode>
+        <childnode refid="13" relation="usage">
+          <edgelabel>xpctxt</edgelabel>
+        </childnode>
+        <childnode refid="18" relation="usage">
+          <edgelabel>errorHandler</edgelabel>
+        </childnode>
+        <childnode refid="19" relation="usage">
+          <edgelabel>resourceLoader</edgelabel>
+        </childnode>
+      </node>
+      <node id="12">
+        <label>_xmlXIncludeDoc</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+      </node>
+      <node id="10">
+        <label>_xmlXIncludeRef</label>
+        <childnode refid="3" relation="usage">
+          <edgelabel>elem</edgelabel>
+          <edgelabel>inc</edgelabel>
+        </childnode>
+      </node>
+      <node id="11">
+        <label>_xmlXIncludeTxt</label>
+      </node>
+      <node id="13">
+        <label>_xmlXPathContext</label>
+        <link refid="struct__xmlXPathContext"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>debugNode</edgelabel>
+          <edgelabel>here</edgelabel>
+          <edgelabel>node</edgelabel>
+          <edgelabel>origin</edgelabel>
+        </childnode>
+        <childnode refid="14" relation="usage">
+          <edgelabel>funcHash</edgelabel>
+          <edgelabel>nsHash</edgelabel>
+          <edgelabel>varHash</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>namespaces</edgelabel>
+          <edgelabel>tmpNsList</edgelabel>
+        </childnode>
+        <childnode refid="16" relation="usage">
+          <edgelabel>varLookupFunc</edgelabel>
+        </childnode>
+        <childnode refid="18" relation="usage">
+          <edgelabel>error</edgelabel>
+          <edgelabel>lastError</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="16">
+        <label>_xmlXPathObject</label>
+        <link refid="struct__xmlXPathObject"/>
+        <childnode refid="17" relation="usage">
+          <edgelabel>nodesetval</edgelabel>
+        </childnode>
+      </node>
+      <node id="15">
+        <label>xmlHashEntry</label>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/xinclude.c" line="78" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="78" bodyend="115"/>
+    <listofallmembers>
+      <member refid="struct__xmlXIncludeCtxt_1a1cb76d737bf6f5b53e6c970073cba051" prot="public" virt="non-virtual"><scope>_xmlXIncludeCtxt</scope><name>_private</name></member>
+      <member refid="struct__xmlXIncludeCtxt_1acb5ba97551079e0b072c62c21d784ac5" prot="public" virt="non-virtual"><scope>_xmlXIncludeCtxt</scope><name>depth</name></member>
+      <member refid="struct__xmlXIncludeCtxt_1acb7e0779c02127031b073502aca38a8c" prot="public" virt="non-virtual"><scope>_xmlXIncludeCtxt</scope><name>doc</name></member>
+      <member refid="struct__xmlXIncludeCtxt_1a1e9f18db46820d6e92e1cbbd0353d99e" prot="public" virt="non-virtual"><scope>_xmlXIncludeCtxt</scope><name>errNo</name></member>
+      <member refid="struct__xmlXIncludeCtxt_1acefd225fa9cf48ba9281f4f97abe0db7" prot="public" virt="non-virtual"><scope>_xmlXIncludeCtxt</scope><name>errorCtxt</name></member>
+      <member refid="struct__xmlXIncludeCtxt_1a35c22f982a2638011b4860d3a6076e8b" prot="public" virt="non-virtual"><scope>_xmlXIncludeCtxt</scope><name>errorHandler</name></member>
+      <member refid="struct__xmlXIncludeCtxt_1a8061a2b4b2d3337a642e73b14df864db" prot="public" virt="non-virtual"><scope>_xmlXIncludeCtxt</scope><name>fatalErr</name></member>
+      <member refid="struct__xmlXIncludeCtxt_1add20ba16a51e6618cbb2c8b03d07fc24" prot="public" virt="non-virtual"><scope>_xmlXIncludeCtxt</scope><name>incMax</name></member>
+      <member refid="struct__xmlXIncludeCtxt_1a58587ae8cd4893e8e2aca1096a80481b" prot="public" virt="non-virtual"><scope>_xmlXIncludeCtxt</scope><name>incNr</name></member>
+      <member refid="struct__xmlXIncludeCtxt_1a9338e688c95d9db940f5f15e64b363e5" prot="public" virt="non-virtual"><scope>_xmlXIncludeCtxt</scope><name>incTab</name></member>
+      <member refid="struct__xmlXIncludeCtxt_1afe354e9b38a3008fe75a1a6403d419a2" prot="public" virt="non-virtual"><scope>_xmlXIncludeCtxt</scope><name>isStream</name></member>
+      <member refid="struct__xmlXIncludeCtxt_1a362543f7a7dc56b69f4720d4997a5083" prot="public" virt="non-virtual"><scope>_xmlXIncludeCtxt</scope><name>legacy</name></member>
+      <member refid="struct__xmlXIncludeCtxt_1a7c757b507ea7128441db47b33f5b9de7" prot="public" virt="non-virtual"><scope>_xmlXIncludeCtxt</scope><name>nbErrors</name></member>
+      <member refid="struct__xmlXIncludeCtxt_1ad02c3d50aafa6390177b1f9e096d9f93" prot="public" virt="non-virtual"><scope>_xmlXIncludeCtxt</scope><name>parseFlags</name></member>
+      <member refid="struct__xmlXIncludeCtxt_1ac728bd981e68086ac20cf0e6feb826ca" prot="public" virt="non-virtual"><scope>_xmlXIncludeCtxt</scope><name>resourceCtxt</name></member>
+      <member refid="struct__xmlXIncludeCtxt_1a30c0d77a995c819ff3a6bc91e0e92a8c" prot="public" virt="non-virtual"><scope>_xmlXIncludeCtxt</scope><name>resourceLoader</name></member>
+      <member refid="struct__xmlXIncludeCtxt_1a3543ef7ff547ee6e4813c4f50ecd51a3" prot="public" virt="non-virtual"><scope>_xmlXIncludeCtxt</scope><name>txtMax</name></member>
+      <member refid="struct__xmlXIncludeCtxt_1a78b653d41162afcfef291d9ec24fe1ba" prot="public" virt="non-virtual"><scope>_xmlXIncludeCtxt</scope><name>txtNr</name></member>
+      <member refid="struct__xmlXIncludeCtxt_1a8e377740e20b825aca353a82ade8e74e" prot="public" virt="non-virtual"><scope>_xmlXIncludeCtxt</scope><name>txtTab</name></member>
+      <member refid="struct__xmlXIncludeCtxt_1ac0c4da97e00e660d431ae17e905d03a9" prot="public" virt="non-virtual"><scope>_xmlXIncludeCtxt</scope><name>urlMax</name></member>
+      <member refid="struct__xmlXIncludeCtxt_1acbfc8545ad4215d62e6e184503b6fc9d" prot="public" virt="non-virtual"><scope>_xmlXIncludeCtxt</scope><name>urlNr</name></member>
+      <member refid="struct__xmlXIncludeCtxt_1a87bd33a9656760f73722e452f31ea368" prot="public" virt="non-virtual"><scope>_xmlXIncludeCtxt</scope><name>urlTab</name></member>
+      <member refid="struct__xmlXIncludeCtxt_1a7473285f86001168c6d3f7b611dd6ff8" prot="public" virt="non-virtual"><scope>_xmlXIncludeCtxt</scope><name>xpctxt</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

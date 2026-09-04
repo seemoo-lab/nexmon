@@ -1,0 +1,30 @@
+Entity: line 1: parser error : Space required after '<!ENTITY'
+%zz;
+    ^
+Entity: line 1: 
+<!ENTITY<?xDOCTYPEm~?>
+        ^
+Entity: line 1: parser error : xmlParseEntityDecl: no name
+%zz;
+    ^
+Entity: line 1: 
+<!ENTITY<?xDOCTYPEm~?>
+        ^
+Entity: line 1: parser error : ParsePI: PI xDOCTYPEm space expected
+%zz;
+    ^
+Entity: line 1: 
+<!ENTITY<?xDOCTYPEm~?>
+                   ^
+./test/errors/759573-2.xml:6: parser error : Content error in the internal subset
+%xx;
+    ^
+Entity: line 1: 
+<![INCLUDE[
+^
+./test/errors/759573-2.xml:6: parser error : Content error in the internal subset
+%xx;
+    ^
+Entity: line 1: 
+<![INCLUDE[
+  ^

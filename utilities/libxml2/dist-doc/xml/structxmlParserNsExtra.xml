@@ -1,0 +1,90 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="structxmlParserNsExtra" kind="struct" language="C++" prot="public">
+    <compoundname>xmlParserNsExtra</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structxmlParserNsExtra_1aaaf16a6322373d03faee7d3f10280574" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* saxData</definition>
+        <argsstring></argsstring>
+        <name>saxData</name>
+        <qualifiedname>xmlParserNsExtra::saxData</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="109" column="10" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="109" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structxmlParserNsExtra_1ad42bcbf5d4d6216e53ca24d334243886" prot="public" static="no" mutable="no">
+        <type>unsigned</type>
+        <definition>unsigned prefixHashValue</definition>
+        <argsstring></argsstring>
+        <name>prefixHashValue</name>
+        <qualifiedname>xmlParserNsExtra::prefixHashValue</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="110" column="14" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="110" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structxmlParserNsExtra_1afe4b4857cb12f09faf3a14045bbce2dc" prot="public" static="no" mutable="no">
+        <type>unsigned</type>
+        <definition>unsigned uriHashValue</definition>
+        <argsstring></argsstring>
+        <name>uriHashValue</name>
+        <qualifiedname>xmlParserNsExtra::uriHashValue</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="111" column="14" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="111" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structxmlParserNsExtra_1a6721f732675b22692819cdf9e850c1db" prot="public" static="no" mutable="no">
+        <type>unsigned</type>
+        <definition>unsigned elementId</definition>
+        <argsstring></argsstring>
+        <name>elementId</name>
+        <qualifiedname>xmlParserNsExtra::elementId</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="112" column="14" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="112" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structxmlParserNsExtra_1aafdfcd92ee5fcb81a8ce268be0f53466" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int oldIndex</definition>
+        <argsstring></argsstring>
+        <name>oldIndex</name>
+        <qualifiedname>xmlParserNsExtra::oldIndex</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="113" column="9" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="113" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/parser.c" line="108" column="1" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="108" bodyend="114"/>
+    <listofallmembers>
+      <member refid="structxmlParserNsExtra_1a6721f732675b22692819cdf9e850c1db" prot="public" virt="non-virtual"><scope>xmlParserNsExtra</scope><name>elementId</name></member>
+      <member refid="structxmlParserNsExtra_1aafdfcd92ee5fcb81a8ce268be0f53466" prot="public" virt="non-virtual"><scope>xmlParserNsExtra</scope><name>oldIndex</name></member>
+      <member refid="structxmlParserNsExtra_1ad42bcbf5d4d6216e53ca24d334243886" prot="public" virt="non-virtual"><scope>xmlParserNsExtra</scope><name>prefixHashValue</name></member>
+      <member refid="structxmlParserNsExtra_1aaaf16a6322373d03faee7d3f10280574" prot="public" virt="non-virtual"><scope>xmlParserNsExtra</scope><name>saxData</name></member>
+      <member refid="structxmlParserNsExtra_1afe4b4857cb12f09faf3a14045bbce2dc" prot="public" virt="non-virtual"><scope>xmlParserNsExtra</scope><name>uriHashValue</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

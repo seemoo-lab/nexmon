@@ -1,0 +1,21 @@
+SAX.setDocumentLocator()
+SAX.startDocument()
+SAX.startElement(html)
+SAX.characters(
+, 1)
+SAX.startElement(body, bgcolor='#FFFFFF')
+SAX.characters(
+                , 17)
+SAX.startElement(a, href='mailto:katherine@cbfanc.org,website@bis.doc.gov?subject=South San Francisco BIS Seminar - October 16th')
+SAX.endElement(a)
+SAX.startElement(br)
+SAX.endElement(br)
+SAX.characters(
+, 1)
+SAX.endElement(body)
+SAX.characters(
+, 1)
+SAX.endElement(html)
+SAX.characters(
+, 1)
+SAX.endDocument()

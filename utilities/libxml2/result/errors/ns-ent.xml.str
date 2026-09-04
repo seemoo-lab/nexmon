@@ -1,0 +1,5 @@
+./test/errors/ns-ent.xml:8: namespace error : Namespace prefix ns on elem is not defined
+    <a xmlns:ns="urn:a">&ent2;</a>
+                              ^
+<ns:elem/>
+        ^

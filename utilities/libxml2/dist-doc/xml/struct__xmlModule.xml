@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlModule" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlModule</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlModule_1a95c1e48f64cb59ba1a4f9814d816be39" prot="public" static="no" mutable="no">
+        <type>unsigned char *</type>
+        <definition>unsigned char* name</definition>
+        <argsstring></argsstring>
+        <name>name</name>
+        <qualifiedname>_xmlModule::name</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmodule.c" line="30" column="19" bodyfile="/builds/GNOME/libxml2/xmlmodule.c" bodystart="30" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlModule_1a81011b79683fab64ce3aff71114f8fdd" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* handle</definition>
+        <argsstring></argsstring>
+        <name>handle</name>
+        <qualifiedname>_xmlModule::handle</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmodule.c" line="31" column="10" bodyfile="/builds/GNOME/libxml2/xmlmodule.c" bodystart="31" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/xmlmodule.c" line="29" column="1" bodyfile="/builds/GNOME/libxml2/xmlmodule.c" bodystart="29" bodyend="32"/>
+    <listofallmembers>
+      <member refid="struct__xmlModule_1a81011b79683fab64ce3aff71114f8fdd" prot="public" virt="non-virtual"><scope>_xmlModule</scope><name>handle</name></member>
+      <member refid="struct__xmlModule_1a95c1e48f64cb59ba1a4f9814d816be39" prot="public" virt="non-virtual"><scope>_xmlModule</scope><name>name</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

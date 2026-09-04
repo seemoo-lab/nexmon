@@ -1,0 +1,233 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlRelaxNGTypeLibrary" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlRelaxNGTypeLibrary</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlRelaxNGTypeLibrary_1a735984d41155bc1032e09bece8f8d66d" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* data</definition>
+        <argsstring></argsstring>
+        <name>data</name>
+        <qualifiedname>_xmlRelaxNGTypeLibrary::data</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/relaxng.c" line="602" column="10" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="601" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRelaxNGTypeLibrary_1a19171b13ed45b34d7e8968986dc14062" prot="public" static="no" mutable="no">
+        <type>xmlRelaxNGTypeHave</type>
+        <definition>xmlRelaxNGTypeHave have</definition>
+        <argsstring></argsstring>
+        <name>have</name>
+        <qualifiedname>_xmlRelaxNGTypeLibrary::have</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/relaxng.c" line="603" column="24" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="603" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRelaxNGTypeLibrary_1a6a685aa65c171b9f45b55757e5cdafdf" prot="public" static="no" mutable="no">
+        <type>xmlRelaxNGTypeCheck</type>
+        <definition>xmlRelaxNGTypeCheck check</definition>
+        <argsstring></argsstring>
+        <name>check</name>
+        <qualifiedname>_xmlRelaxNGTypeLibrary::check</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/relaxng.c" line="604" column="25" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="604" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRelaxNGTypeLibrary_1ad2ac0a2c1973e9981b3891926d9c2c29" prot="public" static="no" mutable="no">
+        <type>xmlRelaxNGTypeCompare</type>
+        <definition>xmlRelaxNGTypeCompare comp</definition>
+        <argsstring></argsstring>
+        <name>comp</name>
+        <qualifiedname>_xmlRelaxNGTypeLibrary::comp</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/relaxng.c" line="605" column="27" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="605" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRelaxNGTypeLibrary_1a1af9e1bdd8da7e1432e232efb83ebff4" prot="public" static="no" mutable="no">
+        <type>xmlRelaxNGFacetCheck</type>
+        <definition>xmlRelaxNGFacetCheck facet</definition>
+        <argsstring></argsstring>
+        <name>facet</name>
+        <qualifiedname>_xmlRelaxNGTypeLibrary::facet</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/relaxng.c" line="606" column="26" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="606" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRelaxNGTypeLibrary_1a8c96cc3de2f24e92a4004421d25c8146" prot="public" static="no" mutable="no">
+        <type>xmlRelaxNGTypeFree</type>
+        <definition>xmlRelaxNGTypeFree freef</definition>
+        <argsstring></argsstring>
+        <name>freef</name>
+        <qualifiedname>_xmlRelaxNGTypeLibrary::freef</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/relaxng.c" line="607" column="24" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="607" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="8">
+        <label>_xmlAttr</label>
+        <link refid="struct__xmlAttr"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>ns</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>id</edgelabel>
+        </childnode>
+      </node>
+      <node id="6">
+        <label>_xmlDict</label>
+        <childnode refid="7" relation="usage">
+          <edgelabel>strings</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>subdict</edgelabel>
+        </childnode>
+      </node>
+      <node id="7">
+        <label>_xmlDictStrings</label>
+        <childnode refid="7" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>_xmlDoc</label>
+        <link refid="struct__xmlDoc"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>extSubset</edgelabel>
+          <edgelabel>intSubset</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>oldNs</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlDtd</label>
+        <link refid="struct__xmlDtd"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+      </node>
+      <node id="9">
+        <label>_xmlID</label>
+        <link refid="struct__xmlID"/>
+        <childnode refid="9" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>attr</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>_xmlNode</label>
+        <link refid="struct__xmlNode"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>ns</edgelabel>
+          <edgelabel>nsDef</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>properties</edgelabel>
+        </childnode>
+      </node>
+      <node id="5">
+        <label>_xmlNs</label>
+        <link refid="struct__xmlNs"/>
+        <childnode refid="5" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>context</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlRelaxNGTypeLibrary</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>check</edgelabel>
+          <edgelabel>comp</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/relaxng.c" line="600" column="1" bodyfile="/builds/GNOME/libxml2/relaxng.c" bodystart="600" bodyend="608"/>
+    <listofallmembers>
+      <member refid="struct__xmlRelaxNGTypeLibrary_1a6a685aa65c171b9f45b55757e5cdafdf" prot="public" virt="non-virtual"><scope>_xmlRelaxNGTypeLibrary</scope><name>check</name></member>
+      <member refid="struct__xmlRelaxNGTypeLibrary_1ad2ac0a2c1973e9981b3891926d9c2c29" prot="public" virt="non-virtual"><scope>_xmlRelaxNGTypeLibrary</scope><name>comp</name></member>
+      <member refid="struct__xmlRelaxNGTypeLibrary_1a735984d41155bc1032e09bece8f8d66d" prot="public" virt="non-virtual"><scope>_xmlRelaxNGTypeLibrary</scope><name>data</name></member>
+      <member refid="struct__xmlRelaxNGTypeLibrary_1a1af9e1bdd8da7e1432e232efb83ebff4" prot="public" virt="non-virtual"><scope>_xmlRelaxNGTypeLibrary</scope><name>facet</name></member>
+      <member refid="struct__xmlRelaxNGTypeLibrary_1a8c96cc3de2f24e92a4004421d25c8146" prot="public" virt="non-virtual"><scope>_xmlRelaxNGTypeLibrary</scope><name>freef</name></member>
+      <member refid="struct__xmlRelaxNGTypeLibrary_1a19171b13ed45b34d7e8968986dc14062" prot="public" virt="non-virtual"><scope>_xmlRelaxNGTypeLibrary</scope><name>have</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

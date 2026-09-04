@@ -1,0 +1,7 @@
+./test/errors/content1.xml:7: parser error : ContentDecl : ',' '|' or ')' expected
+<!ELEMENT aElement (a |b * >
+                         ^
+./test/errors/content1.xml:7: parser error : Content error in the internal subset
+<!ELEMENT aElement (a |b * >
+                         ^
+./test/errors/content1.xml : failed to parse

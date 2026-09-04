@@ -1,0 +1,4 @@
+./test/HTML/encoding-error.html:5: HTML parser error : Invalid bytes in character encoding
+Bytes: 0x80 0x3C 0x2F 0x62
+    <body>
+          ^

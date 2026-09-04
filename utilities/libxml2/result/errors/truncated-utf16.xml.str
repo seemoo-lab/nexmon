@@ -1,0 +1,4 @@
+./test/errors/truncated-utf16.xml:1: I/O error : Invalid bytes in character encoding
+<d/>
+    ^
+./test/errors/truncated-utf16.xml : failed to parse

@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<doc>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="404.txt" parse="text">
+        <xi:fallback>text not found</xi:fallback>
+    </xi:include>
+</doc>
+

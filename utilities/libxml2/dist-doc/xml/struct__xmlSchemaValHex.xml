@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlSchemaValHex" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlSchemaValHex</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlSchemaValHex_1ac63702296edcf9bf955f021cc570661e" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* str</definition>
+        <argsstring></argsstring>
+        <name>str</name>
+        <qualifiedname>_xmlSchemaValHex::str</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="97" column="17" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="97" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaValHex_1af9031f7978e957b9979e78873830ce46" prot="public" static="no" mutable="no">
+        <type>unsigned int</type>
+        <definition>unsigned int total</definition>
+        <argsstring></argsstring>
+        <name>total</name>
+        <qualifiedname>_xmlSchemaValHex::total</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="98" column="18" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="98" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/xmlschemastypes.c" line="96" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemastypes.c" bodystart="96" bodyend="99"/>
+    <listofallmembers>
+      <member refid="struct__xmlSchemaValHex_1ac63702296edcf9bf955f021cc570661e" prot="public" virt="non-virtual"><scope>_xmlSchemaValHex</scope><name>str</name></member>
+      <member refid="struct__xmlSchemaValHex_1af9031f7978e957b9979e78873830ce46" prot="public" virt="non-virtual"><scope>_xmlSchemaValHex</scope><name>total</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>
