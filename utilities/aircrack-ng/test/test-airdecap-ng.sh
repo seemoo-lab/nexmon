@@ -6,14 +6,18 @@ TESTDIR="$(dirname $0)"
 if [ "$(uname -s)" = 'OpenBSD' ]; then
 	tmpdir="$(mktemp -d -t acng.XXXXXX)"
 else
+    if test -f /etc/alpine-release; then
+        tmpdir="$(mktemp -d -t acng.XXXXXX)"
+    else
 	tmpdir="$(mktemp -d -t acng.XXXX)"
+    fi
 fi
 
 compute_sha1() {
     if type "sha1sum" > /dev/null 2>/dev/null ; then
-        sha1sum "${1}" | awk '{print $1}'
+        sha1sum "${1}" | ${AWK} '{print $1}'
     elif type "shasum" > /dev/null 2>/dev/null ; then
-        shasum "${1}" | awk '{print $1}'
+        shasum "${1}" | ${AWK} '{print $1}'
     elif type "sha1" > /dev/null 2>/dev/null ; then
         sha1 -q "${1}"
     else
@@ -27,12 +31,12 @@ compute_sha1() {
 if [ "$(uname -s)" = 'OpenBSD' ]; then
 	trap "rm -rf "${tmpdir}"" EXIT
 else
-	trap "rm -fr "${tmpdir}"" SIGINT SIGKILL SIGQUIT SIGSEGV SIGPIPE SIGALRM SIGTERM EXIT
+	trap "rm -fr "${tmpdir}"" INT QUIT SEGV PIPE ALRM TERM EXIT
 fi
 # Test1
 cp -f "${TESTDIR}/wpa.cap" "${tmpdir}"
-./airdecap-ng -e test -p biscotte "${tmpdir}/wpa.cap" | \
-        grep "Number of decrypted WPA  packets         2" || exit 1
+"${abs_builddir}/../airdecap-ng${EXEEXT}" -e test -p biscotte "${tmpdir}/wpa.cap" | \
+        ${GREP} "Number of decrypted WPA  packets         2" || exit 1
 [ $? -ne 0 ] && exit 1
 result=$(compute_sha1 "${tmpdir}/wpa-dec.cap")
 
@@ -43,8 +47,8 @@ fi
 
 # Test 2
 cp -f "${TESTDIR}/wpa-psk-linksys.cap" "${tmpdir}"
-./airdecap-ng -e linksys -p dictionary "${tmpdir}/wpa-psk-linksys.cap" | \
-        grep "Number of decrypted WPA  packets        53"
+"${abs_builddir}/../airdecap-ng${EXEEXT}" -e linksys -p dictionary "${tmpdir}/wpa-psk-linksys.cap" | \
+        ${GREP} "Number of decrypted WPA  packets        53"
 [ $? -ne 0 ] && exit 1
 result=$(compute_sha1 "${tmpdir}/wpa-psk-linksys-dec.cap")
 
@@ -55,8 +59,8 @@ fi
 
 # Test 3
 cp -f "${TESTDIR}/wpa2-psk-linksys.cap" "${tmpdir}"
-./airdecap-ng -e linksys -p dictionary "${tmpdir}/wpa2-psk-linksys.cap" | \
-        grep "Number of decrypted WPA  packets        25"
+"${abs_builddir}/../airdecap-ng${EXEEXT}" -e linksys -p dictionary "${tmpdir}/wpa2-psk-linksys.cap" | \
+        ${GREP} "Number of decrypted WPA  packets        25"
 [ $? -ne 0 ] && exit 1
 result=$(compute_sha1 "${tmpdir}/wpa2-psk-linksys-dec.cap")
 

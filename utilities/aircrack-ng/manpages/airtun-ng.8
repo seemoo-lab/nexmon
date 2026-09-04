@@ -1,4 +1,4 @@
-.TH AIRTUN-NG 8 "February 2016" "Version 1.2-rc4"
+.TH AIRTUN-NG 8 "May 2022" "Version 1.7.0"
 
 .SH NAME
 airtun-ng - a virtual tunnel interface creator for aircrack-ng
@@ -34,6 +34,12 @@ Is the name of the file, which provides the keystream for WEP encoding. (No rece
 .TP
 .I -w <WEP-key>
 This is the WEP key to en-/decrypt all traffic going through the tunnel.
+.TP
+.I -e <ESSID>
+Sets the target network SSID (use with -p).
+.TP
+.I -p <passphrase>
+Use this WPA passphrase to decrypt packets (use with -a and -e).
 .TP
 .I -t <tods>
 Defines the ToDS and FromDS bit in the ieee802.11 header. For tods=1, the ToDS bit is set to 1 and FromDS to 0, while tods=0 sets them the other way around. If set to 2, it will be tunneled in a WDS/bridge.
@@ -99,3 +105,5 @@ Bidirectional mode. This enables communication in Transmitter\(aqs AND Receiver\
 .B packetforge-ng(1)
 .br
 .B wpaclean(1)
+.br
+.B airventriloquist(8)

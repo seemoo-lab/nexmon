@@ -1,4 +1,5 @@
-import os, sys
+import os
+import sys
 
 class bcolors:
     """
@@ -13,7 +14,7 @@ class bcolors:
 
     def disable(self):
         """
-        fucntion to disable colored text
+        function to disable colored text
         """
         self.HEADER = ''
         self.OKBLUE = ''
@@ -23,9 +24,15 @@ class bcolors:
         self.ENDC = ''
 
 encoding = sys.getfilesystemencoding()
+current_file=""
 if hasattr(sys, 'frozen'):
-    install_dir = os.path.abspath(os.path.dirname(unicode(sys.executable, encoding)))
-install_dir = os.path.abspath(os.path.dirname(unicode(__file__, encoding)))
+	current_file = sys.executable
+else:
+	current_file = __file__
+if sys.version_info[0] < 3:
+	current_file = unicode(current_file, encoding)
+
+install_dir = os.path.abspath(os.path.dirname(current_file))
 try:
     os.mkdir(install_dir + "/support")
 except:
