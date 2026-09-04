@@ -269,7 +269,9 @@ public class APfragment extends Fragment implements CurrentChannelListener {
         };
         MyApplication.getAppContext().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
         IntentFilter intentFilter = new IntentFilter("de.tu_darmstadt.seemoo.nexmon.NEW_AP");
-        getActivity().registerReceiver(APfinderServiceReceiver, intentFilter);
+        // Gate with the app signature-level permission (only this app may send).
+        getActivity().registerReceiver(APfinderServiceReceiver, intentFilter,
+                MyApplication.PERMISSION_INTERNAL_BROADCAST, null);
         contUpdate();
     }
 

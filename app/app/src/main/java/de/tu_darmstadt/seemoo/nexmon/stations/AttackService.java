@@ -11,6 +11,8 @@ import android.graphics.drawable.Icon;
 import android.os.IBinder;
 
 import com.google.gson.Gson;
+import android.util.Log;
+import java.lang.reflect.Type;
 
 import java.util.HashMap;
 
@@ -41,8 +43,6 @@ public class AttackService extends Service {
                     stopAttack(intent);
                 else if(intent.getAction().equals("de.tu_darmstadt.seemoo.nexmon.ATTACK_SERVICE_UPDATE"))
                     updateAttack(intent);
-                else if(intent.getAction().equals("de.tu_darmstadt.seemoo.nexmon.ATTACK_SERVICE_INSTANCE_REQUEST"))
-                    broadcastInstances();
                 else if(intent.getAction().equals("de.tu_darmstadt.seemoo.nexmon.ATTACK_INFO_UPDATE"))
                     updateText(intent);
 
@@ -51,7 +51,19 @@ public class AttackService extends Service {
 
             private void newAttack(Intent intent) {
                 String attackType = intent.getStringExtra("ATTACK_TYPE");
-                Attack attack = new Gson().fromJson(intent.getStringExtra("ATTACK"), Attack.ATTACK_TYPE.get(attackType));
+                // An unknown/absent ATTACK_TYPE makes Attack.ATTACK_TYPE.get()
+                // return null, which would crash Gson.fromJson(); reject it
+                // instead of taking down the service.
+                Type type = (attackType != null) ? Attack.ATTACK_TYPE.get(attackType) : null;
+                if(type == null) {
+                    Log.w("AttackService", "ignoring attack with unknown type: " + attackType);
+                    return;
+                }
+                Attack attack = new Gson().fromJson(intent.getStringExtra("ATTACK"), type);
+                if(attack == null) {
+                    Log.w("AttackService", "ignoring malformed attack payload");
+                    return;
+                }
                 if(!attacks.containsKey(attack.getGuid()))
                     startNewAttack(attack);
             }
@@ -126,11 +138,14 @@ public class AttackService extends Service {
         IntentFilter filterTwo = new IntentFilter("de.tu_darmstadt.seemoo.nexmon.ATTACK_SERVICE_STOP");
         IntentFilter filterThree = new IntentFilter("de.tu_darmstadt.seemoo.nexmon.ATTACK_SERVICE_UPDATE");
         IntentFilter filerFour = new IntentFilter("de.tu_darmstadt.seemoo.nexmon.ATTACK_INFO_UPDATE");
-        //LocalBroadcastManager.getInstance(MyApplication.getAppContext()).registerReceiver(receiver, filter);
-        registerReceiver(receiver, filter);
-        registerReceiver(receiver, filterTwo);
-        registerReceiver(receiver, filterThree);
-        registerReceiver(receiver, filerFour);
+        // Gate these control broadcasts (start/stop/update attacks) with the
+        // app's signature-level permission so another installed app cannot
+        // drive attack threads. Same-app senders hold the permission, so
+        // functionality is unchanged.
+        registerReceiver(receiver, filter, MyApplication.PERMISSION_INTERNAL_BROADCAST, null);
+        registerReceiver(receiver, filterTwo, MyApplication.PERMISSION_INTERNAL_BROADCAST, null);
+        registerReceiver(receiver, filterThree, MyApplication.PERMISSION_INTERNAL_BROADCAST, null);
+        registerReceiver(receiver, filerFour, MyApplication.PERMISSION_INTERNAL_BROADCAST, null);
     }
 
     private void evaluateMonitorModeNeed() {
